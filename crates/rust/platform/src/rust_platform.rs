@@ -1,4 +1,6 @@
-use crate::{bins_hash::RustBinsHash, find_cargo_lock, target_hash::RustTargetHash};
+use crate::{
+    bins_hash::RustBinsHash, find_cargo_lock, get_cargo_home, target_hash::RustTargetHash,
+};
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
 use moon_config::{
@@ -21,7 +23,7 @@ use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::async_trait;
-use proto::{rust::RustLanguage, Executable, Proto};
+use proto_core::{PluginLoader, ProtoEnvironment};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
@@ -33,7 +35,6 @@ use std::{
 
 const LOG_TARGET: &str = "moon:rust-platform";
 
-#[derive(Debug)]
 pub struct RustPlatform {
     pub config: RustConfig,
 
@@ -157,7 +158,7 @@ impl Platform for RustPlatform {
         Ok(Some((CARGO.lockfile.to_owned(), CARGO.manifest.to_owned())))
     }
 
-    async fn setup_toolchain(&mut self) -> miette::Result<()> {
+    async fn setup_toolchain(&mut self, plugin_loader: &PluginLoader) -> miette::Result<()> {
         let version = match &self.config.version {
             Some(v) => Version::new(v),
             None => Version::new_global(),
@@ -168,7 +169,13 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                RustTool::new(&Proto::new()?, &self.config, &version)?,
+                RustTool::new(
+                    &ProtoEnvironment::new()?,
+                    &self.config,
+                    &version,
+                    plugin_loader,
+                )
+                .await?,
             );
         }
 
@@ -190,13 +197,20 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
+        plugin_loader: &PluginLoader,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                RustTool::new(&Proto::new()?, &self.config, &version)?,
+                RustTool::new(
+                    &ProtoEnvironment::new()?,
+                    &self.config,
+                    &version,
+                    plugin_loader,
+                )
+                .await?,
             );
         }
 
@@ -223,7 +237,7 @@ impl Platform for RustPlatform {
             // Install cargo-binstall if it does not exist
             if !tool
                 .tool
-                .get_globals_bin_dir()?
+                .get_globals_bin_dir()
                 .unwrap()
                 .join("cargo-binstall")
                 .exists()
@@ -468,9 +482,12 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let globals_dir = RustLanguage::new(Proto::new()?)
-                    .get_globals_bin_dir()?
-                    .unwrap();
+                let globals_dir = if let Ok(tool) = self.toolchain.get() {
+                    tool.tool.get_globals_bin_dir().unwrap().to_path_buf()
+                } else {
+                    get_cargo_home().join("bin")
+                };
+
                 let global_bin_path = globals_dir.join(&task.command);
 
                 let cargo_bin = if task.command.starts_with("cargo-") {

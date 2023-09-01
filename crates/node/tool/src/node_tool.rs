@@ -7,18 +7,19 @@ use moon_node_lang::node;
 use moon_platform_runtime::Version;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
-use proto::{async_trait, node::NodeLanguage, Executable, Installable, Proto, Tool as ProtoTool};
+use moon_tool::{
+    async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
+};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
 pub struct NodeTool {
     pub config: NodeConfig,
 
     pub global: bool,
 
-    pub tool: NodeLanguage,
+    pub tool: ProtoTool,
 
     npm: Option<NpmTool>,
 
@@ -28,11 +29,22 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(proto: &Proto, config: &NodeConfig, version: &Version) -> miette::Result<NodeTool> {
+    pub async fn new(
+        proto: &ProtoEnvironment,
+        config: &NodeConfig,
+        version: &Version,
+        plugin_loader: &PluginLoader,
+    ) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
             config: config.to_owned(),
-            tool: NodeLanguage::new(proto),
+            tool: load_tool_plugin(
+                &Id::raw("node"),
+                proto,
+                config.plugin.as_ref().unwrap(),
+                plugin_loader,
+            )
+            .await?,
             npm: None,
             pnpm: None,
             yarn: None,
@@ -47,13 +59,13 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(proto, &config.npm)?);
+                node.npm = Some(NpmTool::new(proto, &config.npm, plugin_loader).await?);
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm)?);
+                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm, plugin_loader).await?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(proto, &config.yarn)?);
+                node.yarn = Some(YarnTool::new(proto, &config.yarn, plugin_loader).await?);
             }
         };
 
@@ -72,7 +84,7 @@ impl NodeTool {
         let mut cmd = Command::new(self.get_npx_path()?);
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
         }
 
         cmd.args(exec_args)
@@ -98,7 +110,7 @@ impl NodeTool {
         }
 
         Ok(node::find_package_manager_bin(
-            self.tool.get_install_dir()?,
+            self.tool.get_tool_dir(),
             "npx",
         ))
     }
@@ -155,11 +167,13 @@ impl Tool for NodeTool {
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
-            if self.tool.is_setup(version).await? {
+            let version_type = VersionType::parse(version)?;
+
+            if self.tool.is_setup(&version_type).await? {
                 debug!("Node.js has already been setup");
 
                 // When offline and the tool doesn't exist, fallback to the global binary
-            } else if proto::is_offline() {
+            } else if proto_core::is_offline() {
                 debug!(
                     "No internet connection and Node.js has not been setup, falling back to global binary in PATH"
                 );
@@ -173,10 +187,10 @@ impl Tool for NodeTool {
                     None => true,
                 };
 
-                if setup || !self.tool.get_install_dir()?.exists() {
+                if setup || !self.tool.get_tool_dir().exists() {
                     print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
 
-                    if self.tool.setup(version).await? {
+                    if self.tool.setup(&version_type).await? {
                         last_versions.insert("node".into(), version.to_string());
                         installed += 1;
                     }

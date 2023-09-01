@@ -20,6 +20,7 @@ pub fn get_default_toolchain() -> PartialToolchainConfig {
             sync_project_workspace_dependencies: Some(false),
             npm: Some(PartialNpmConfig {
                 version: Some("8.19.0".into()),
+                ..PartialNpmConfig::default()
             }),
             ..PartialNodeConfig::default()
         }),
@@ -149,6 +150,7 @@ pub fn get_project_graph_aliases_fixture_configs() -> (
             dedupe_on_lockfile_change: Some(false),
             npm: Some(PartialNpmConfig {
                 version: Some("8.19.0".into()),
+                ..PartialNpmConfig::default()
             }),
             ..PartialNodeConfig::default()
         }),
@@ -347,12 +349,14 @@ pub fn get_node_depman_fixture_configs(
                 node_config.package_manager = Some(NodePackageManager::Npm);
                 node_config.npm = Some(PartialNpmConfig {
                     version: Some("8.0.0".into()),
+                    ..PartialNpmConfig::default()
                 });
             }
             "pnpm" => {
                 node_config.package_manager = Some(NodePackageManager::Pnpm);
                 node_config.pnpm = Some(PartialPnpmConfig {
                     version: Some("7.5.0".into()),
+                    ..PartialPnpmConfig::default()
                 });
             }
             "yarn" => {
@@ -360,6 +364,7 @@ pub fn get_node_depman_fixture_configs(
                 node_config.yarn = Some(PartialYarnConfig {
                     version: Some("3.3.0".into()),
                     plugins: Some(vec!["workspace-tools".into()]),
+                    ..PartialYarnConfig::default()
                 });
             }
             "yarn1" => {
@@ -367,6 +372,7 @@ pub fn get_node_depman_fixture_configs(
                 node_config.yarn = Some(PartialYarnConfig {
                     version: Some("1.22.0".into()),
                     plugins: Some(vec![]),
+                    ..PartialYarnConfig::default()
                 });
             }
             _ => {}

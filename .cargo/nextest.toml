@@ -1,4 +1,8 @@
 [profile.ci]
-retries = 1
-test-threads = 1
 fail-fast = false
+failure-output = "immediate-final"
+retries = 1
+test-threads = 2
+
+[profile.default]
+test-threads = 8

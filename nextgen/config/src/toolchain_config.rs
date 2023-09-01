@@ -5,7 +5,7 @@ use crate::toolchain::*;
 use crate::validate::check_yml_extension;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
-use proto::ToolsConfig;
+use proto_core::ToolsConfig;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 

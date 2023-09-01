@@ -13,7 +13,7 @@ moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

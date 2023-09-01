@@ -4,35 +4,40 @@ use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{get_path_env_var, DependencyManager, Tool};
+use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::{is_ci, semver};
-use proto::{
-    async_trait,
-    node::{NodeDependencyManager, NodeDependencyManagerType},
-    Executable, Installable, Proto, Shimable, Tool as ProtoTool,
-};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
 pub struct PnpmTool {
     pub config: PnpmConfig,
 
     pub global: bool,
 
-    pub tool: NodeDependencyManager,
+    pub tool: ProtoTool,
 }
 
 impl PnpmTool {
-    pub fn new(proto: &Proto, config: &Option<PnpmConfig>) -> miette::Result<PnpmTool> {
+    pub async fn new(
+        proto: &ProtoEnvironment,
+        config: &Option<PnpmConfig>,
+        plugin_loader: &PluginLoader,
+    ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(PnpmTool {
             global: config.version.is_none(),
+            tool: load_tool_plugin(
+                &Id::raw("pnpm"),
+                proto,
+                config.plugin.as_ref().unwrap(),
+                plugin_loader,
+            )
+            .await?,
             config,
-            tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Pnpm),
         })
     }
 }
@@ -63,14 +68,16 @@ impl Tool for PnpmTool {
             return Ok(count);
         };
 
-        if self.tool.is_setup(&version).await? {
+        let version_type = VersionType::parse(&version)?;
+
+        if self.tool.is_setup(&version_type).await? {
             debug!("pnpm has already been setup");
 
             return Ok(count);
         }
 
         // When offline and the tool doesn't exist, fallback to the global binary
-        if proto::is_offline() {
+        if proto_core::is_offline() {
             debug!(
                 "No internet connection and pnpm has not been setup, falling back to global binary in PATH"
             );
@@ -81,14 +88,14 @@ impl Tool for PnpmTool {
         }
 
         if let Some(last) = last_versions.get("pnpm") {
-            if last == &version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_tool_dir().exists() {
                 return Ok(count);
             }
         }
 
         print_checkpoint(format!("installing pnpm v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&version).await? {
+        if self.tool.setup(&version_type).await? {
             last_versions.insert("pnpm".into(), version);
             count += 1;
         }
@@ -117,7 +124,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
         };
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
         }
 
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);

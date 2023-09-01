@@ -59,7 +59,9 @@ where
             let project_source =
                 to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
 
-            if project_source == consts::CONFIG_DIRNAME {
+            if project_source == consts::CONFIG_DIRNAME
+                || project_source.starts_with(consts::CONFIG_DIRNAME)
+            {
                 continue;
             }
 

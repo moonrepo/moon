@@ -11,14 +11,14 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::Tool;
+use proto_core::PluginLoader;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
-use std::fmt::Debug;
 use std::path::Path;
 use std::sync::Arc;
 
 #[async_trait]
-pub trait Platform: Debug + Send + Sync {
+pub trait Platform: Send + Sync {
     /// Return the type of this platform.
     fn get_type(&self) -> PlatformType;
 
@@ -86,7 +86,7 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Setup the top-level tool in the toolchain if applicable.
     /// This is a one off flow, as most flows will be using the pipeline.
-    async fn setup_toolchain(&mut self) -> miette::Result<()> {
+    async fn setup_toolchain(&mut self, plugin_loader: &PluginLoader) -> miette::Result<()> {
         Ok(())
     }
 
@@ -105,6 +105,7 @@ pub trait Platform: Debug + Send + Sync {
         context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
+        plugin_loader: &PluginLoader,
     ) -> miette::Result<u8> {
         Ok(0)
     }

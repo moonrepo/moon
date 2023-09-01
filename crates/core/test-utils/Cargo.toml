@@ -15,4 +15,5 @@ pretty_assertions = "1.4.0"
 rustc-hash = { workspace = true }
 serde_yaml = { workspace = true }
 starbase_utils = { workspace = true }
+# symlink = "0.1.0"
 tokio = { workspace = true, features = ["full", "test-util"] }

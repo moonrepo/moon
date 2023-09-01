@@ -58,7 +58,7 @@ miette = { workspace = true }
 mimalloc = { version = "0.1.37", default-features = false }
 open = "5.0.0"
 petgraph = { workspace = true }
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

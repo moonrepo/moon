@@ -6,7 +6,6 @@ use miette::{miette, IntoDiagnostic};
 use moon_api::Launchpad;
 use moon_cache::CacheEngine;
 use moon_utils::{get_workspace_root, semver::Version};
-use proto::ProtoError;
 use starbase::system;
 use starbase_utils::{dirs, fs};
 use std::{
@@ -19,7 +18,7 @@ use tracing::error;
 
 #[system]
 pub async fn upgrade() {
-    if proto::is_offline() {
+    if proto_core::is_offline() {
         return Err(miette!("Upgrading moon requires an internet connection!"));
     }
 
@@ -60,11 +59,7 @@ pub async fn upgrade() {
         }
         ("macos", arch) => format!("moon-{arch}-apple-darwin"),
         ("windows", "x86_64") => "moon-x86_64-pc-windows-msvc.exe".to_owned(),
-        (_, arch) => {
-            return Err(
-                ProtoError::UnsupportedArchitecture("moon".to_owned(), arch.to_owned()).into(),
-            )
-        }
+        (_, arch) => return Err(miette::miette!("Unsupported architecture: {arch}")),
     };
 
     let current_bin_path = env::current_exe().into_diagnostic()?;

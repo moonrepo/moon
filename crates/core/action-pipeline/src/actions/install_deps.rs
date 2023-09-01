@@ -54,7 +54,7 @@ pub async fn install_deps(
     let context = context.read().await;
     let install_key = get_installation_key(runtime, project);
 
-    if proto::is_offline() {
+    if proto_core::is_offline() {
         warn!(
             target: LOG_TARGET,
             "No internet connection, skipping install"

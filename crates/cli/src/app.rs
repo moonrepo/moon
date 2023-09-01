@@ -21,8 +21,10 @@ use crate::commands::syncs::codeowners::SyncCodeownersArgs;
 use crate::commands::syncs::hooks::SyncHooksArgs;
 use crate::commands::task::TaskArgs;
 use crate::enums::{CacheMode, LogLevel};
+use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use starbase::State;
+use starbase_styles::color::Color as ColorType;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -302,17 +304,32 @@ pub enum Commands {
     Upgrade,
 }
 
+fn fg(ty: ColorType) -> Style {
+    Style::new().fg_color(Some(Color::from(ty as u8)))
+}
+
+fn create_styles() -> Styles {
+    Styles::default()
+        .error(fg(ColorType::Red))
+        .header(Style::new().bold())
+        .invalid(fg(ColorType::Yellow))
+        .literal(fg(ColorType::Purple)) // args, options, etc
+        .placeholder(fg(ColorType::GrayLight))
+        .usage(fg(ColorType::Pink).bold())
+        .valid(fg(ColorType::Green))
+}
+
 #[derive(Clone, Debug, Parser, State)]
 #[command(
     bin_name = BIN_NAME,
     name = "moon",
     about = "Take your repo to the moon!",
     version,
-    disable_colored_help = true,
     disable_help_subcommand = true,
     next_line_help = false,
     propagate_version = true,
-    rename_all = "camelCase"
+    rename_all = "camelCase",
+    styles = create_styles()
 )]
 pub struct App {
     #[arg(

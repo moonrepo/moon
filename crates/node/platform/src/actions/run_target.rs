@@ -1,7 +1,6 @@
 use crate::target_hash::NodeTargetHash;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
-
 use moon_logger::trace;
 use moon_node_lang::{
     node::{self, BinFile},
@@ -13,7 +12,6 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::{get_cache_dir, path, string_vec};
-use proto::Installable;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::path::Path;
@@ -191,7 +189,7 @@ pub fn create_target_command(
         }
     };
 
-    command.env("PATH", get_path_env_var(&node.tool.get_install_dir()?));
+    command.env("PATH", get_path_env_var(&node.tool.get_tool_dir()));
 
     prepare_target_command(&mut command, context, task, &node.config)?;
 

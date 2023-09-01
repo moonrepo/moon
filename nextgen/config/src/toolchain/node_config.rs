@@ -1,6 +1,6 @@
 use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
-use proto::ToolsConfig;
+use proto_core::{PluginLocator, ToolsConfig};
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(
@@ -65,18 +65,24 @@ derive_enum!(
 
 #[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
+    pub plugin: Option<PluginLocator>,
+
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
+    pub plugin: Option<PluginLocator>,
+
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct YarnConfig {
+    pub plugin: Option<PluginLocator>,
+
     pub plugins: Vec<String>,
 
     #[setting(env = "MOON_YARN_VERSION", validate = validate_semver)]
@@ -105,6 +111,8 @@ pub struct NodeConfig {
     pub npm: NpmConfig,
 
     pub package_manager: NodePackageManager,
+
+    pub plugin: Option<PluginLocator>,
 
     #[setting(nested)]
     pub pnpm: Option<PnpmConfig>,
@@ -138,6 +146,10 @@ impl NodeConfig {
                 self.inherit_proto_yarn(proto_tools)?;
             }
         };
+
+        if self.plugin.is_none() {
+            self.plugin = proto_tools.plugins.get("node").cloned();
+        }
 
         Ok(())
     }

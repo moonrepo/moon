@@ -34,7 +34,7 @@ ci_env = { workspace = true }
 console = { workspace = true }
 miette = { workspace = true }
 num_cpus = "1.16.0"
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

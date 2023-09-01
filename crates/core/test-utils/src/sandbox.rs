@@ -130,6 +130,28 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     tasks_config: Option<PartialInheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
+    // let plugins_dir = get_fixtures_path("wasm-plugins");
+
+    // fs::create_dir_all(sandbox.path().join(".moon-home")).unwrap();
+
+    // // Symlinks don't have permissions in CI...
+    // if env::var("CI").is_ok() {
+    //     // This seems to corrupt the WASM files on linux
+    //     if cfg!(not(target_os = "linux")) {
+    //         starbase_utils::fs::copy_dir_all(
+    //             &plugins_dir,
+    //             &plugins_dir,
+    //             &sandbox.path().join(".moon-home/plugins"),
+    //         )
+    //         .unwrap();
+    //     }
+    // } else {
+    //     sandbox
+    //         .fixture
+    //         .child(".moon-home/plugins")
+    //         .symlink_to_dir(&plugins_dir)
+    //         .unwrap();
+    // }
 
     sandbox.create_file(
         ".moon/workspace.yml",

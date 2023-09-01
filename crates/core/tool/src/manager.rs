@@ -2,9 +2,7 @@ use crate::errors::ToolError;
 use crate::tool::Tool;
 use moon_platform_runtime::{Runtime, Version};
 use rustc_hash::FxHashMap;
-use std::fmt::Debug;
 
-#[derive(Debug)]
 pub struct ToolManager<T: Tool> {
     cache: FxHashMap<String, T>,
     default_version: Version,

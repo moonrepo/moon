@@ -1,5 +1,5 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use proto::ToolsConfig;
+use proto_core::ToolsConfig;
 use semver::Version;
 use starbase::Resource;
 use std::path::PathBuf;

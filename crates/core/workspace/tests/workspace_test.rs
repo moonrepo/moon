@@ -17,6 +17,12 @@ npm = "9.0.0"
 
     let workspace = Workspace::load_from(temp.path()).unwrap();
 
-    assert_eq!(workspace.proto_tools.tools.get("node").unwrap(), "18.0.0");
-    assert_eq!(workspace.proto_tools.tools.get("npm").unwrap(), "9.0.0");
+    assert_eq!(
+        workspace.proto_tools.tools.get("node").unwrap().to_string(),
+        "18.0.0"
+    );
+    assert_eq!(
+        workspace.proto_tools.tools.get("npm").unwrap().to_string(),
+        "9.0.0"
+    );
 }

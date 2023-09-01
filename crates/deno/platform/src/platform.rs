@@ -19,7 +19,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto::{get_sha256_hash_of_file, Proto};
+use proto_core::{hash_file_contents, PluginLoader, ProtoEnvironment};
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::{
@@ -29,7 +29,6 @@ use std::{
 
 const LOG_TARGET: &str = "moon:deno-platform";
 
-#[derive(Debug)]
 pub struct DenoPlatform {
     config: DenoConfig,
 
@@ -114,7 +113,7 @@ impl Platform for DenoPlatform {
         )))
     }
 
-    async fn setup_toolchain(&mut self) -> miette::Result<()> {
+    async fn setup_toolchain(&mut self, _plugin_loader: &PluginLoader) -> miette::Result<()> {
         // let version = match &self.config.version {
         //     Some(v) => Version::new(v),
         //     None => Version::new_global(),
@@ -126,7 +125,7 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&Proto::new()?, &self.config, &version)?,
+                DenoTool::new(&ProtoEnvironment::new()?, &self.config, &version)?,
             );
         }
 
@@ -148,13 +147,14 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
+        _plugin_loader: &PluginLoader,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&Proto::new()?, &self.config, &version)?,
+                DenoTool::new(&ProtoEnvironment::new()?, &self.config, &version)?,
             );
         }
 
@@ -299,7 +299,7 @@ impl Platform for DenoPlatform {
         if deps_path.exists() {
             deps_hash.dependencies.insert(
                 self.config.deps_file.to_owned(),
-                get_sha256_hash_of_file(deps_path)?,
+                hash_file_contents(deps_path)?,
             );
         }
 

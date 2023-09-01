@@ -12,7 +12,7 @@ moon_hash = { path = "../../../nextgen/hash" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }
 miette = { workspace = true }
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 reqwest = { workspace = true }
 starbase = { workspace = true }
 starbase_styles = { workspace = true }

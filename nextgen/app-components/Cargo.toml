@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }

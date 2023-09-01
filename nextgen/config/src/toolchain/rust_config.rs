@@ -1,5 +1,6 @@
 use super::bin_config::BinEntry;
 use crate::validate::validate_semver;
+use proto_core::PluginLocator;
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -7,6 +8,8 @@ use schematic::Config;
 pub struct RustConfig {
     #[setting(nested)]
     pub bins: Vec<BinEntry>,
+
+    pub plugin: Option<PluginLocator>,
 
     pub sync_toolchain_config: bool,
 

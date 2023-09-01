@@ -82,7 +82,7 @@ pub async fn run_cli() -> AppResult {
     setup_caching(&cli.cache);
 
     App::setup_tracing_with_options(TracingOptions {
-        filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
+        filter_modules: string_vec!["moon", "proto", "schematic", "starbase", "warpgate"],
         log_env: "STARBASE_LOG".into(),
         log_file: cli.log_file.clone(),
         // test_env: "MOON_TEST".into(),

@@ -1,7 +1,7 @@
 use moon_config::DenoConfig;
 use moon_platform_runtime::Version;
-use moon_tool::Tool;
-use proto::{async_trait, Proto};
+use moon_tool::{async_trait, Tool};
+use proto_core::ProtoEnvironment;
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -12,7 +12,11 @@ pub struct DenoTool {
 }
 
 impl DenoTool {
-    pub fn new(_proto: &Proto, config: &DenoConfig, version: &Version) -> miette::Result<DenoTool> {
+    pub fn new(
+        _proto: &ProtoEnvironment,
+        config: &DenoConfig,
+        version: &Version,
+    ) -> miette::Result<DenoTool> {
         let mut deno = DenoTool {
             config: config.to_owned(),
             global: true,

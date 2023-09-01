@@ -58,7 +58,7 @@ jobs:
         with:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
           components: llvm-tools-preview
-          cache: ${{ runner.os == 'Linux' }}
+          cache: false # ${{ runner.os == 'Linux' }}
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
@@ -66,7 +66,7 @@ jobs:
           NEXTEST_PROFILE: ci
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}
-        run: cargo make test
+        run: cargo make test-ci
         env:
           NEXTEST_PROFILE: ci
       - name: Generate code coverage

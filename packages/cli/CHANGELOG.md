@@ -5,8 +5,14 @@
 #### 🚀 Updates
 
 - Added an `allowFailure` task option, allowing tasks to fail without bailing the entire run.
-  - Tasks allowed to faill cannot be depended on.
+  - Tasks allowed to fail cannot be depended on.
+- Added colors to command line `--help` menus.
 - Updated `runner.archivableTargets` to support tag scoped targets.
+- Updated proto integration from v0.13 to v0.15:
+  - proto tools are now powered by WASM plugins, which will be downloaded by moon on-demand.
+  - Yarn v2+ will now download the requested version, and not downgrade to latest v1.
+  - Please report any issues or degradations from this migration.
+  - View entire [proto changelog](https://github.com/moonrepo/proto/blob/master/CHANGELOG.md#0150).
 
 #### 🐞 Fixes
 

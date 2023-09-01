@@ -19,7 +19,7 @@ members = [
 	# Next-gen
 	"nextgen/*",
 ]
-exclude = ["tests/fixtures", "crates/core/project-graph"]
+exclude = ["tests/fixtures"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
@@ -27,8 +27,8 @@ async-trait = "0.1.73"
 cached = "0.44.0"
 chrono = { version = "0.4.28", features = ["serde"] }
 ci_env = "0.2.0"
-clap = { version = "4.3.23", features = ["derive", "env", "wrap_help"] }
-clap_complete = "4.3.2"
+clap = { version = "4.4.2", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.4.0"
 console = "0.15.7"
 criterion = { version = "0.5.1", features = ["async_tokio"] }
 miette = "5.10.0"
@@ -63,7 +63,7 @@ starbase_archive = { version = "0.2.0", default-features = false, features = [
 starbase_events = "0.2.0"
 starbase_sandbox = "0.1.8"
 starbase_styles = { version = "0.1.13", features = ["relative-path"] }
-starbase_utils = { version = "0.2.20", default-features = false, features = [
+starbase_utils = { version = "0.2.21", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",

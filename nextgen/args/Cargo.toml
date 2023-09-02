@@ -2,6 +2,10 @@
 name = "moon_args"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Command line argument parsing and formatting."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 miette = { workspace = true }

@@ -2,9 +2,13 @@
 name = "moon_hash"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Content hashing engine."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_config = { path = "../config" }
+moon_config = { version = "0.1.0", path = "../config" }
 miette = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

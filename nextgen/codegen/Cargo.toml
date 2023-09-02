@@ -2,10 +2,14 @@
 name = "moon_codegen"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Code generation, templating, and scaffolding."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_common = { path = "../common" }
-moon_config = { path = "../config" }
+moon_common = { version = "0.1.0", path = "../common" }
+moon_config = { version = "0.1.0", path = "../config" }
 convert_case = "0.6.0"
 miette = { workspace = true }
 once_cell = { workspace = true }

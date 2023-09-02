@@ -2,6 +2,10 @@
 name = "moon_time"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Date and time utilities."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 chrono = { workspace = true }

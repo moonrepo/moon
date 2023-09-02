@@ -2,9 +2,10 @@
 name = "moon_app_components"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [dependencies]
-moon_config = { path = "../config" }
+moon_config = { version = "0.1.0", path = "../config" }
 proto_core = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }

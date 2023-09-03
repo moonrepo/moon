@@ -38,9 +38,9 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.16.3"
+proto_core = "0.16.4"
 relative-path = { version = "1.9.0", features = ["serde"] }
-regex = "1.9.4"
+regex = "1.9.5"
 # We don't use openssl but its required for musl builds
 reqwest = { version = "0.11.20", default-features = false, features = [
 	"rustls-tls",
@@ -70,8 +70,8 @@ starbase_utils = { version = "0.2.21", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
-tera = { version = "1.19.0", features = ["preserve_order"] }
-thiserror = "1.0.47"
+tera = { version = "1.19.1", features = ["preserve_order"] }
+thiserror = "1.0.48"
 tokio = { version = "1.32.0", default-features = false, features = [
 	"process",
 	"rt",

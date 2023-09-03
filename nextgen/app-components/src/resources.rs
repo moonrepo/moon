@@ -30,7 +30,7 @@ pub struct Tasks {
 pub struct Toolchain {
     pub config: ToolchainConfig,
     pub proto: ToolsConfig,
-    pub proto_root: PathBuf,
+    pub proto_home: PathBuf,
 }
 
 #[derive(Debug, Resource)]

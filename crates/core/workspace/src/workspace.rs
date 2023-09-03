@@ -6,7 +6,7 @@ use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, 
 use moon_hash::HashEngine;
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
-use proto_core::{get_root, PluginLoader, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{get_proto_home, PluginLoader, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};
@@ -219,7 +219,7 @@ impl Workspace {
             &config.vcs.remote_candidates,
         )?;
 
-        let toolchain_root = get_root()?;
+        let toolchain_root = get_proto_home()?;
         let mut plugin_loader =
             PluginLoader::new(toolchain_root.join("plugins"), toolchain_root.join("temp"));
         plugin_loader.set_seed(env::var("MOON_VERSION").unwrap_or_default().as_str());

@@ -252,6 +252,16 @@
             }
           ]
         },
+        "allowFailure": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "cache": {
           "anyOf": [
             {

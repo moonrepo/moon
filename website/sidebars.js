@@ -274,6 +274,7 @@ const sidebars = {
 			type: 'category',
 			label: 'Commands',
 			items: [
+				'proto/commands/add-plugin',
 				'proto/commands/alias',
 				'proto/commands/bin',
 				'proto/commands/clean',
@@ -286,6 +287,7 @@ const sidebars = {
 				'proto/commands/list-remote',
 				'proto/commands/local',
 				'proto/commands/plugins',
+				'proto/commands/remove-plugin',
 				'proto/commands/run',
 				'proto/commands/setup',
 				'proto/commands/unalias',

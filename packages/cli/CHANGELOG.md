@@ -14,7 +14,7 @@
   - proto tools are now powered by WASM plugins, which will be downloaded by moon on-demand.
   - Yarn v2+ will now download the requested version, and not downgrade to latest v1.
   - Please report any issues or degradations from this migration.
-  - View entire [proto changelog](https://github.com/moonrepo/proto/blob/master/CHANGELOG.md#0150).
+  - View entire [proto changelog](https://github.com/moonrepo/proto/blob/master/CHANGELOG.md#0160).
 
 #### 🐞 Fixes
 

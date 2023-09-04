@@ -1,0 +1,44 @@
+---
+slug: proto-v0.16
+title: proto v0.16 - Add, remove, and purge plugins
+authors: [milesj]
+tags: [proto, plugin]
+---
+
+This release adds functionality for managing plugins and purging the proto store.
+
+<!--truncate-->
+
+## Add and remove plugins
+
+## Purge tools and plugins
+
+proto has supported cleaning for quite some time through the
+[`proto clean`](/docs/proto/commands/clean) command (and the
+[`auto-clean` setting](/docs/proto/config#user-configuration)), which would automatically delete
+installed tool versions and temporary files that are older then a specific timeframe. This helps to
+free up disk space for unused or rarely used tools.
+
+In this release, we're expanding the `clean` command's functionality with a concept known as
+purging, which will "delete entirely". The first being the new `--purge` option, which will delete a
+tool, its manifest, _all_ installed versions, and the entire `~/.proto/tools/<id>` directory.
+
+```shell
+# Delete all traces of Node.js
+$ proto clean --purge node
+```
+
+Additionaly, a new `--purge-plugins` option can be used to delete all downloaded plugins (the
+`~/.proto/plugins` directory). Useful for house keeping or if you want to start fresh.
+
+```shell
+$ proto clean --purge-plugins
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.16.0) for a full list
+of changes.
+
+- Added folder locking during tool installation to avoid colliding processes.
+- Renamed `PROTO_ROOT` to `PROTO_HOME`, but we'll support `PROTO_ROOT` for the time being.

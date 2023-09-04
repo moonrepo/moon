@@ -1,14 +1,47 @@
 ---
 slug: moon-v1.13
-title: moon v1.13 - ???
+title: moon v1.13 - Toolchain now uses WASM plugins
 authors: [milesj]
-tags: [tasks]
-# image: ./img/moon/v1.12.png
+tags: [tasks, proto, wasm]
+image: ./img/moon/v1.13.png
 ---
 
-???
+This is a light release that focused primarily on upgrading to the WASM based proto implementation.
 
 <!--truncate-->
+
+## proto upgrade and WASM plugins
+
+Over the last few months, we've made immense strides on [proto](/proto), our multi-language
+toolchain. For those of you unaware, moon's toolchain is built on top of proto, and we accomplish
+this by utilizing the same Rust code between both tools.
+
+However, moon has been locked to [proto v0.12](/blog/proto-v0.12), which was a purely Rust based
+implementation. With the release of [proto v0.13](/blog/proto-v0.13) and onward, proto has moved to
+a WASM based plugin architecture (with the core still in Rust), which allows us to support more
+languages, and enables developers to write plugins in non-Rust languages.
+
+And since our WASM plugins have stabilized by [proto v0.16](/blog/proto-v0.16), we felt it was time
+to finally upgrade moon's implementation to the latest and greatest. So what does this mean exactly?
+A few things:
+
+- If you're using moon's [toolchain](/docs/config/toolchain) (like `node`), we will now download the
+  [Node.js WASM plugins](https://github.com/moonrepo/node-plugin) in the background (to
+  `~/.proto/plugins`).
+- These plugins are in charge of downloading and installing the Node.js, npm, pnpm, or yarn version
+  specified in your toolchain configuration.
+- The entire plugin flow is now logged to the console, so you can see what's happening behind the
+  scenes.
+- In the future (most likely moon v2), our platform and language integration will also be powered by
+  WASM plugins. This enables you to build your own custom plugins!
+
+:::info
+
+This entire process should be transparent to all users, and you should not notice any changes.
+However, in case this upgrade causes issues, we wanted to isolate it from other changes, hence the
+light release!
+
+:::
 
 ## Allow tasks to fail
 
@@ -44,3 +77,8 @@ that it's side-effect free.
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.13.0) for a full list
 of changes.
+
+- Added colors to command line `--help` menus.
+- Updated `runner.archivableTargets` to support tag scoped targets.
+- Updated `moon query tasks --affected` to filter based on affected task, instead of affected
+  project.

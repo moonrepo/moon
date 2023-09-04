@@ -10,7 +10,7 @@
 - Updated `runner.archivableTargets` to support tag scoped targets.
 - Updated `moon query tasks --affected` to filter based on affected task, instead of affected
   project.
-- Updated proto integration from v0.13 to v0.16:
+- Updated proto integration from v0.12 to v0.16:
   - proto tools are now powered by WASM plugins, which will be downloaded by moon on-demand.
   - Yarn v2+ will now download the requested version, and not downgrade to latest v1.
   - Please report any issues or degradations from this migration.

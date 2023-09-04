@@ -14,6 +14,9 @@ tasks:
       - '^:build'
     outputs:
       - 'build'
+    options:
+      # https://github.com/facebook/docusaurus/issues/9278
+      allowFailure: true
 
   start:
     command: 'docusaurus start'

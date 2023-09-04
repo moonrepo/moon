@@ -8,11 +8,14 @@
   - Tasks allowed to fail cannot be depended on.
 - Added colors to command line `--help` menus.
 - Updated `runner.archivableTargets` to support tag scoped targets.
-- Updated proto integration from v0.13 to v0.16:
+- Updated `moon query tasks` to filter out projects with no tasks.
+- Updated `moon query tasks --affected` to filter based on affected task, instead of affected
+  project.
+- Updated proto integration from v0.12 to v0.16:
   - proto tools are now powered by WASM plugins, which will be downloaded by moon on-demand.
   - Yarn v2+ will now download the requested version, and not downgrade to latest v1.
   - Please report any issues or degradations from this migration.
-  - View entire [proto changelog](https://github.com/moonrepo/proto/blob/master/CHANGELOG.md#0150).
+  - View entire [proto changelog](https://github.com/moonrepo/proto/blob/master/CHANGELOG.md#0160).
 
 #### 🐞 Fixes
 

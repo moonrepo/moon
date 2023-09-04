@@ -2,14 +2,27 @@
 title: clean
 ---
 
-The `proto clean` command can be used to uninstall all stale and unused tools. By default, it will
-remove tools that haven't been used in the last 30 days.
+The `proto clean` command can be used to uninstall stale and unused tools or plugins. By default, it
+will remove items that haven't been used in the last 30 days.
 
 ```shell
 $ proto clean
 ```
 
+Furthermore, the command can be used to purge a tool, which will remove it entirely from proto, or
+purge all downloaded plugins.
+
+```shell
+# Delete node from proto
+$ proto clean --purge node
+
+# Delete all plugins
+$ proto clean --purge-plugins
+```
+
 ### Options
 
 - `--days` - Number of days before a tool is considered stale.
+- `--purge` - Purge and delete the installed tool by ID (`~/.proto/tools/<id>`).
+- `--purge-plugins` - Purge and delete all downloaded plugins (`~/.proto/plugins`).
 - `--yes` - Avoid and confirm all prompts.

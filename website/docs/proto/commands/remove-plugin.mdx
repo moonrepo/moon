@@ -1,0 +1,20 @@
+---
+title: remove-plugin
+---
+
+The `proto remove-plugin <id>` (or `proto rp`) command will remove the provided plugin ID from to
+the `[plugins]` section of the local (`.prototools`) or global (`~/.proto/config.toml`) config file.
+
+```shell
+$ proto remove-plugin node
+```
+
+> Built-in plugins _cannot_ be removed!
+
+### Arguments
+
+- `<id>` - ID of the plugin.
+
+### Options
+
+- `--global` - Remove from the global config instead of local.

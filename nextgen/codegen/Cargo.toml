@@ -15,7 +15,6 @@ convert_case = "0.6.0"
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
-rustc-hash = { workspace = true }
 starbase_utils = { workspace = true }
 tera = { workspace = true }
 thiserror = { workspace = true }

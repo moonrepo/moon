@@ -84,6 +84,10 @@ impl<'app> CodeGenerator<'app> {
             }
         }
 
+        for asset in &template.assets {
+            template.copy_asset(asset)?;
+        }
+
         debug!(template = template.id.as_str(), "Code generation complete!");
 
         Ok(())

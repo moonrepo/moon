@@ -3265,7 +3265,6 @@ dependencies = [
  "moon_config",
  "once_cell",
  "regex",
- "rustc-hash",
  "starbase_sandbox",
  "starbase_utils",
  "tera",

@@ -1,3 +1,4 @@
+use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, TemplateFile};
 use crate::{filters, CodegenError};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
@@ -6,7 +7,6 @@ use moon_common::Id;
 use moon_config::TemplateConfig;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use rustc_hash::FxHashMap;
 use starbase_utils::{fs, json, yaml};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -16,7 +16,7 @@ static PATH_VAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)\]").u
 
 #[derive(Debug)]
 pub struct Template {
-    pub assets: FxHashMap<PathBuf, RelativePathBuf>,
+    pub assets: Vec<AssetFile>,
     pub config: TemplateConfig,
     pub engine: Tera,
     pub files: Vec<TemplateFile>,
@@ -41,7 +41,7 @@ impl Template {
         engine.register_filter("path_relative", filters::path_relative);
 
         Ok(Template {
-            assets: FxHashMap::default(),
+            assets: vec![],
             config: TemplateConfig::load_from(&root)?,
             engine,
             files: vec![],
@@ -69,7 +69,6 @@ impl Template {
 
             let source_path = entry.path();
             let source_content = fs::read_file_bytes(&source_path)?;
-
             let name =
                 self.interpolate_path(source_path.strip_prefix(&self.root).unwrap(), context)?;
 
@@ -82,7 +81,13 @@ impl Template {
                     "Loading asset file",
                 );
 
-                self.assets.insert(source_path, name);
+                self.assets.push(AssetFile {
+                    content: source_content,
+                    dest_path: name.to_logical_path(dest),
+                    name,
+                    source_path,
+                });
+
                 continue;
             }
 
@@ -191,6 +196,19 @@ impl Template {
             })?;
 
         Ok(RelativePathBuf::from(path))
+    }
+
+    /// Copy the asset file to the defined destination path.
+    pub fn copy_asset(&self, file: &AssetFile) -> miette::Result<()> {
+        debug!(
+            file = file.name.as_str(),
+            to = ?file.dest_path,
+            "Copying asset file",
+        );
+
+        fs::write_file(&file.dest_path, &file.content)?;
+
+        Ok(())
     }
 
     /// Write the template file to the defined destination path.

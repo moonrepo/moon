@@ -1,0 +1,22 @@
+---
+title: add-plugin
+---
+
+The `proto add-plugin <id> <locator>` (or `proto ap`) command will add the provided plugin ID and
+locator string to the `[plugins]` section of the local (`.prototools`) or global
+(`~/.proto/config.toml`) config file.
+
+```shell
+$ proto add-plugin node source:https://github.com/moonrepo/node-plugin/releases/latest/download/node_plugin.wasm
+```
+
+> Learn more about [plugin locator strings](../plugins#enabling-plugins).
+
+### Arguments
+
+- `<id>` - ID of the plugin.
+- `<locator>` - How to locate the plugin.
+
+### Options
+
+- `--global` - Add to the global config instead of local.

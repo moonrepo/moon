@@ -29,6 +29,7 @@ pub struct QueryProjectsOptions {
     pub source: Option<String>,
     pub tags: Option<String>,
     pub tasks: Option<String>,
+    pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
     pub type_of: Option<String>,
 }
 
@@ -60,7 +61,7 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<reg
     }
 }
 
-async fn load_touched_files(
+pub async fn load_touched_files(
     workspace: &Workspace,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     let mut buffer = String::new();
@@ -106,11 +107,6 @@ pub async fn query_projects(
     debug!("Querying for projects");
 
     let project_graph = generate_project_graph(workspace).await?;
-    let touched_files = if options.affected {
-        load_touched_files(workspace).await?
-    } else {
-        FxHashSet::default()
-    };
 
     // When a MQL input is provided, it takes full precedence over option args
     if let Some(query) = &options.query {
@@ -118,7 +114,7 @@ pub async fn query_projects(
             .query(moon_query::build_query(query)?)?
             .into_iter()
             .filter_map(|project| {
-                if options.affected && !project.is_affected(&touched_files) {
+                if options.affected && !project.is_affected(&options.touched_files) {
                     return None;
                 }
 
@@ -139,7 +135,7 @@ pub async fn query_projects(
     let mut projects = vec![];
 
     for project in project_graph.get_all()? {
-        if options.affected && !project.is_affected(&touched_files) {
+        if options.affected && !project.is_affected(&options.touched_files) {
             continue;
         }
 

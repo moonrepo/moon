@@ -2,7 +2,7 @@ use crate::enums::TouchedStatus;
 pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::query_hash_diff;
 pub use crate::queries::projects::{
-    query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
+    load_touched_files, query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
 };
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
@@ -12,9 +12,10 @@ use console::Term;
 use miette::IntoDiagnostic;
 use moon_terminal::ExtendedTerm;
 use moon_workspace::Workspace;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::system;
 use starbase_styles::color;
+use std::collections::BTreeMap;
 use std::io::{self, IsTerminal};
 
 #[derive(Args, Clone, Debug)]
@@ -149,6 +150,11 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, workspace: ResourceMut<W
         source: args.source,
         tags: args.tags,
         tasks: args.tasks,
+        touched_files: if args.affected {
+            load_touched_files(workspace).await?
+        } else {
+            FxHashSet::default()
+        },
         type_of: args.type_of,
     };
 
@@ -214,42 +220,62 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, workspace: ResourceMut<Workspa
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
-        affected: args.affected,
         id: args.id,
         json: args.json,
         language: args.language,
         query: args.query,
         source: args.source,
-        tags: None,
         tasks: args.tasks,
         type_of: args.type_of,
+        ..QueryProjectsOptions::default()
     };
 
     let projects = query_projects(workspace, &options).await?;
+    let touched_files = if args.affected {
+        load_touched_files(workspace).await?
+    } else {
+        FxHashSet::default()
+    };
+
+    // Filter and group tasks
+    let mut grouped_tasks = FxHashMap::default();
+
+    for project in projects {
+        let filtered_tasks = project
+            .tasks
+            .iter()
+            .filter_map(|(task_id, task)| {
+                if !args.affected || task.is_affected(&touched_files).is_ok_and(|v| v) {
+                    Some((task_id.to_owned(), task.to_owned()))
+                } else {
+                    None
+                }
+            })
+            .collect::<BTreeMap<_, _>>();
+
+        if filtered_tasks.is_empty() {
+            continue;
+        }
+
+        grouped_tasks.insert(project.id.clone(), filtered_tasks);
+    }
 
     // Write to stdout directly to avoid broken pipe panics
     let term = Term::buffered_stdout();
 
     if options.json {
-        let result = QueryTasksResult {
-            tasks: FxHashMap::from_iter(
-                projects
-                    .into_iter()
-                    .map(|p| (p.id.clone(), p.tasks.clone())),
-            ),
-            options,
-        };
+        term.line(
+            serde_json::to_string_pretty(&QueryTasksResult {
+                tasks: grouped_tasks,
+                options,
+            })
+            .into_diagnostic()?,
+        )?;
+    } else if !grouped_tasks.is_empty() {
+        for (project_id, tasks) in grouped_tasks {
+            term.line(project_id)?;
 
-        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
-    } else if !projects.is_empty() {
-        for project in projects {
-            if project.tasks.is_empty() {
-                continue;
-            }
-
-            term.line(&project.id)?;
-
-            for (task_id, task) in &project.tasks {
+            for (task_id, task) in tasks {
                 term.line(format!("\t:{} | {}", task_id, task.command))?;
             }
         }

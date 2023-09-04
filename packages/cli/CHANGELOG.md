@@ -8,6 +8,7 @@
   - Tasks allowed to fail cannot be depended on.
 - Added colors to command line `--help` menus.
 - Updated `runner.archivableTargets` to support tag scoped targets.
+- Updated `moon query tasks` to filter out projects with no tasks.
 - Updated `moon query tasks --affected` to filter based on affected task, instead of affected
   project.
 - Updated proto integration from v0.12 to v0.16:

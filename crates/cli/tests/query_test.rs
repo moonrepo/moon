@@ -658,20 +658,7 @@ mod tasks {
         projects.sort();
 
         assert_eq!(tasks, string_vec!["lint", "test"]);
-        assert_eq!(
-            projects,
-            string_vec![
-                "advanced",
-                "bar",
-                "basic",
-                "baz",
-                "emptyConfig",
-                "foo",
-                "noConfig",
-                "platforms",
-                "tasks",
-            ]
-        );
+        assert_eq!(projects, string_vec!["platforms", "tasks"]);
     }
 }
 

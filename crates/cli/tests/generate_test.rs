@@ -37,6 +37,7 @@ fn generates_files_from_template() {
     assert!(sandbox.path().join("test").exists());
     assert!(sandbox.path().join("test/file.ts").exists());
     assert!(sandbox.path().join("test/folder/nested-file.ts").exists());
+    assert!(sandbox.path().join("test/image.jpg").exists());
     assert!(!sandbox.path().join("test/template.yml").exists());
 }
 

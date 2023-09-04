@@ -1,3 +1,4 @@
+use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, TemplateFile};
 use crate::{filters, CodegenError};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
@@ -15,6 +16,7 @@ static PATH_VAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)\]").u
 
 #[derive(Debug)]
 pub struct Template {
+    pub assets: Vec<AssetFile>,
     pub config: TemplateConfig,
     pub engine: Tera,
     pub files: Vec<TemplateFile>,
@@ -39,6 +41,7 @@ impl Template {
         engine.register_filter("path_relative", filters::path_relative);
 
         Ok(Template {
+            assets: vec![],
             config: TemplateConfig::load_from(&root)?,
             engine,
             files: vec![],
@@ -65,11 +68,33 @@ impl Template {
             }
 
             let source_path = entry.path();
+            let source_content = fs::read_file_bytes(&source_path)?;
             let name =
                 self.interpolate_path(source_path.strip_prefix(&self.root).unwrap(), context)?;
 
+            // Images, etc
+            if content_inspector::inspect(&source_content).is_binary() {
+                debug!(
+                    template = self.id.as_str(),
+                    file = name.as_str(),
+                    source = ?source_path,
+                    "Loading asset file",
+                );
+
+                self.assets.push(AssetFile {
+                    content: source_content,
+                    dest_path: name.to_logical_path(dest),
+                    name,
+                    source_path,
+                });
+
+                continue;
+            }
+
+            let content = unsafe { String::from_utf8_unchecked(source_content) };
+
             self.engine
-                .add_template_file(&source_path, Some(name.as_str()))
+                .add_raw_template(name.as_str(), &content)
                 .map_err(|error| CodegenError::LoadTemplateFileFailed {
                     path: source_path.clone(),
                     error,
@@ -94,24 +119,30 @@ impl Template {
                 "Loading template file",
             );
 
-            files.push(TemplateFile::new(name, source_path));
+            let mut file = TemplateFile::new(name, source_path);
+
+            if file.raw {
+                file.content = content;
+            }
+
+            files.push(file);
         }
 
         // Do a second pass and render the content
         for file in &mut files {
-            file.set_content(
-                if file.raw {
-                    fs::read_file(&file.source_path)?
-                } else {
+            if file.raw {
+                file.set_raw_content(dest)?;
+            } else {
+                file.set_content(
                     self.engine
                         .render(file.name.as_str(), context)
                         .map_err(|error| CodegenError::RenderTemplateFileFailed {
                             path: file.source_path.clone(),
                             error,
-                        })?
-                },
-                dest,
-            )?;
+                        })?,
+                    dest,
+                )?;
+            }
         }
 
         // Sort so files are deterministic
@@ -165,6 +196,19 @@ impl Template {
             })?;
 
         Ok(RelativePathBuf::from(path))
+    }
+
+    /// Copy the asset file to the defined destination path.
+    pub fn copy_asset(&self, file: &AssetFile) -> miette::Result<()> {
+        debug!(
+            file = file.name.as_str(),
+            to = ?file.dest_path,
+            "Copying asset file",
+        );
+
+        fs::write_file(&file.dest_path, &file.content)?;
+
+        Ok(())
     }
 
     /// Write the template file to the defined destination path.

@@ -9,7 +9,7 @@ use tracing::debug;
 #[system]
 pub async fn load_workspace(cli: StateRef<CLI>, resources: ResourcesMut) {
     match &cli.command {
-        Commands::Completions(_) | Commands::Init(_) | Commands::Setup => {
+        Commands::Completions(_) | Commands::Init(_) | Commands::Setup | Commands::Upgrade => {
             // Do nothing
         }
         Commands::Bin(_) | Commands::Docker { .. } | Commands::Node { .. } | Commands::Teardown => {

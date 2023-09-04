@@ -135,6 +135,11 @@ export function {{ component_name }}() {
 }
 ```
 
+#### Assets
+
+Assets are binary files that are copied as-is to the destination, without any rendering, and no
+support for frontmatter. This applies to all non-text based files, like images, audio, video, etc.
+
 ### Template engine & syntax
 
 Rendering templates is powered by [Tera](https://keats.github.io/tera/), a Rust based template

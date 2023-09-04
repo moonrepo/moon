@@ -47,6 +47,15 @@ mod template {
                     fixture.join("folder/nested-file.ts")
                 ]
             );
+
+            assert_eq!(
+                template
+                    .assets
+                    .into_iter()
+                    .map(|f| f.source_path)
+                    .collect::<Vec<_>>(),
+                vec![fixture.join("image.jpg")]
+            );
         }
 
         #[test]

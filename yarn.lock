@@ -3403,8 +3403,8 @@ __metadata:
   resolution: "@moonrepo/visualizer@workspace:packages/visualizer"
   dependencies:
     "@preact/preset-vite": ^2.5.0
-    "@types/cytoscape": ^3.19.9
-    "@types/cytoscape-dagre": ^2.3.0
+    "@types/cytoscape": ^3.19.11
+    "@types/cytoscape-dagre": ^2.3.1
     autoprefixer: ^10.4.15
     cytoscape: ^3.26.0
     cytoscape-dagre: ^2.5.0
@@ -4033,10 +4033,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/docusaurus@npm:^1.0.7":
-  version: 1.0.7
-  resolution: "@tsconfig/docusaurus@npm:1.0.7"
-  checksum: 8f5b14005d90b2008f10daf03a5edec86d2a7603e5641c579ea936a5c2d165a8c3007a72254fc4c2adb0554d73062f52bb97b30ff818f01c9215957822f3c4db
+"@tsconfig/docusaurus@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@tsconfig/docusaurus@npm:2.0.0"
+  checksum: 39adca336d9d8d6838c982212e6661c3d211d02244be17861cae4e16b9b5ee9aa0f2d48099649417794b0c2b7661e53905615f94ffb4b5608a326f5b55194e2f
   languageName: node
   linkType: hard
 
@@ -4119,19 +4119,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/cytoscape-dagre@npm:^2.3.0":
-  version: 2.3.0
-  resolution: "@types/cytoscape-dagre@npm:2.3.0"
+"@types/cytoscape-dagre@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "@types/cytoscape-dagre@npm:2.3.1"
   dependencies:
     "@types/cytoscape": "*"
-  checksum: c7efab5f01dd8d8ee6a97c17462e663b007ce0b67ae8a32945a8c92189378430c4af0e2e8188761c2d0552f5cd6918a36ddea76e9e2593c6e20636bfa7731216
+  checksum: e363c69b93ffbeb54bb075c4f562351afa6303e4f594e767052e7eea11b90e2564e8238cdb08964b4bc1f2ce460b34c2f92cc58bdd2fa0fd6e67bdbfb8e60644
   languageName: node
   linkType: hard
 
-"@types/cytoscape@npm:*, @types/cytoscape@npm:^3.19.9":
-  version: 3.19.9
-  resolution: "@types/cytoscape@npm:3.19.9"
-  checksum: 773e7c73198a0dc9fe8fe708aca47af5e1fc47ba6e3138e37e3de23cd336441dd79d2a0215473c755a6bdd9842e3ed83e2e6d51abd128a34a5680fc10b3402b5
+"@types/cytoscape@npm:*, @types/cytoscape@npm:^3.19.11":
+  version: 3.19.11
+  resolution: "@types/cytoscape@npm:3.19.11"
+  checksum: 6c4a1ba52b416d70c6f8e00b5a5c474e1f2cae5150682c3e6976f6c8ac6b99cab99bcc5887640149901e6704f38627b58e3face8620bff8dac94404329164d8b
   languageName: node
   linkType: hard
 
@@ -4334,10 +4334,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:^18.16.1":
-  version: 18.16.1
-  resolution: "@types/node@npm:18.16.1"
-  checksum: 799026b949a48993cba7c9b81b2eabfdfb34c880744cb44c1c990fbedc9e315f3634d126eb2cf9a6e0795577c01016e2326d98565bef695ada9d363fadeb6946
+"@types/node@npm:*, @types/node@npm:^18.17.14":
+  version: 18.17.14
+  resolution: "@types/node@npm:18.17.14"
+  checksum: f96ce1e588426a26cf82440193084f8bbab47bfb3c2e668cf174095f99ce808a20654b2137448c7e88cfd7b6c2b8521ffb6f714f521b3502ac595a0df0bff679
   languageName: node
   linkType: hard
 
@@ -12069,7 +12069,7 @@ __metadata:
   resolution: "moon@workspace:."
   dependencies:
     "@moonrepo/cli": "workspace:*"
-    "@types/node": ^18.16.1
+    "@types/node": ^18.17.14
     babel-preset-moon: ^2.0.8
     eslint: ^8.48.0
     eslint-config-moon: ^2.0.9
@@ -13820,16 +13820,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^17.0.2":
-  version: 17.0.2
-  resolution: "react-dom@npm:17.0.2"
+"react-dom@npm:^18.2.0":
+  version: 18.2.0
+  resolution: "react-dom@npm:18.2.0"
   dependencies:
     loose-envify: ^1.1.0
-    object-assign: ^4.1.1
-    scheduler: ^0.20.2
+    scheduler: ^0.23.0
   peerDependencies:
-    react: 17.0.2
-  checksum: 1c1eaa3bca7c7228d24b70932e3d7c99e70d1d04e13bb0843bbf321582bc25d7961d6b8a6978a58a598af2af496d1cedcfb1bf65f6b0960a0a8161cb8dab743c
+    react: ^18.2.0
+  checksum: 7d323310bea3a91be2965f9468d552f201b1c27891e45ddc2d6b8f717680c95a75ae0bc1e3f5cf41472446a2589a75aed4483aee8169287909fcd59ad149e8cc
   languageName: node
   linkType: hard
 
@@ -13993,6 +13992,15 @@ __metadata:
     loose-envify: ^1.1.0
     object-assign: ^4.1.1
   checksum: b254cc17ce3011788330f7bbf383ab653c6848902d7936a87b09d835d091e3f295f7e9dd1597c6daac5dc80f90e778c8230218ba8ad599f74adcc11e33b9d61b
+  languageName: node
+  linkType: hard
+
+"react@npm:^18.2.0":
+  version: 18.2.0
+  resolution: "react@npm:18.2.0"
+  dependencies:
+    loose-envify: ^1.1.0
+  checksum: 88e38092da8839b830cda6feef2e8505dec8ace60579e46aa5490fc3dc9bba0bd50336507dc166f43e3afc1c42939c09fe33b25fae889d6f402721dcd78fca1b
   languageName: node
   linkType: hard
 
@@ -14624,6 +14632,15 @@ __metadata:
     loose-envify: ^1.1.0
     object-assign: ^4.1.1
   checksum: c4b35cf967c8f0d3e65753252d0f260271f81a81e427241295c5a7b783abf4ea9e905f22f815ab66676f5313be0a25f47be582254db8f9241b259213e999b8fc
+  languageName: node
+  linkType: hard
+
+"scheduler@npm:^0.23.0":
+  version: 0.23.0
+  resolution: "scheduler@npm:0.23.0"
+  dependencies:
+    loose-envify: ^1.1.0
+  checksum: d79192eeaa12abef860c195ea45d37cbf2bbf5f66e3c4dcd16f54a7da53b17788a70d109ee3d3dde1a0fd50e6a8fc171f4300356c5aee4fc0171de526bf35f8a
   languageName: node
   linkType: hard
 
@@ -16759,16 +16776,16 @@ __metadata:
     "@mdx-js/react": ^1.6.22
     "@moonrepo/runtime": "workspace:^"
     "@moonrepo/types": "workspace:^"
-    "@tsconfig/docusaurus": ^1.0.7
-    "@types/cytoscape": ^3.19.9
-    "@types/cytoscape-dagre": ^2.3.0
+    "@tsconfig/docusaurus": ^2.0.0
+    "@types/cytoscape": ^3.19.11
+    "@types/cytoscape-dagre": ^2.3.1
     clsx: ^2.0.0
     cytoscape: ^3.26.0
     cytoscape-dagre: ^2.5.0
     docusaurus-plugin-typedoc-api: ^3.0.0
     prism-react-renderer: ^1.3.5
-    react: ^17.0.2
-    react-dom: ^17.0.2
+    react: ^18.2.0
+    react-dom: ^18.2.0
     tailwindcss: ^3.3.3
   languageName: unknown
   linkType: soft

@@ -16,7 +16,7 @@ function hasLocalStorage() {
 }
 
 export function getSelectedLanguage() {
-	return (hasLocalStorage() && localStorage.getItem('moonrepo.language')) || 'node';
+	return (hasLocalStorage() ? localStorage.getItem('moonrepo.language') : null) ?? 'node';
 }
 
 export function useSelectedLanguage() {

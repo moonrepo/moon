@@ -131,18 +131,18 @@ impl Template {
         // Do a second pass and render the content
         for file in &mut files {
             if file.raw {
-                continue;
+                file.set_raw_content(dest)?;
+            } else {
+                file.set_content(
+                    self.engine
+                        .render(file.name.as_str(), context)
+                        .map_err(|error| CodegenError::RenderTemplateFileFailed {
+                            path: file.source_path.clone(),
+                            error,
+                        })?,
+                    dest,
+                )?;
             }
-
-            file.set_content(
-                self.engine
-                    .render(file.name.as_str(), context)
-                    .map_err(|error| CodegenError::RenderTemplateFileFailed {
-                        path: file.source_path.clone(),
-                        error,
-                    })?,
-                dest,
-            )?;
         }
 
         // Sort so files are deterministic

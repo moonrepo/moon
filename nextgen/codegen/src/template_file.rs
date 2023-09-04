@@ -109,6 +109,13 @@ impl TemplateFile {
         Ok(())
     }
 
+    pub fn set_raw_content(&mut self, dest: &Path) -> miette::Result<()> {
+        // Content already loaded during first pass, so re-use
+        let content = std::mem::take(&mut self.content);
+
+        self.set_content(content, dest)
+    }
+
     pub fn should_write(&self) -> bool {
         !matches!(self.state, FileState::Skip)
     }

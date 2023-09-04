@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue with codegen templates not working with asset/binary files correctly.
+
 ## 1.13.0
 
 #### 🚀 Updates

@@ -4,7 +4,7 @@
 
 #### 🐞 Fixes
 
-- Fixed an issue with codegen templates not working with asset/binary files correctly.
+- Fixed an issue with asset/binary files not working correctly with codegen templates.
 - Fixed an issue where `moon upgrade` would require a workspace.
 
 ## 1.13.0

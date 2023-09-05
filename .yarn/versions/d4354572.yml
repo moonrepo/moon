@@ -9,3 +9,6 @@ releases:
   '@moonrepo/core-windows-x64-msvc': patch
   '@moonrepo/runtime': patch
   '@moonrepo/visualizer': patch
+
+declined:
+  - 'website'

@@ -63,6 +63,7 @@ pub struct TasksBuilder<'proj> {
     task_ids: FxHashSet<&'proj Id>,
     global_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
     local_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
+    filters: Option<&'proj ProjectWorkspaceInheritedTasksConfig>,
 }
 
 impl<'proj> TasksBuilder<'proj> {
@@ -83,6 +84,7 @@ impl<'proj> TasksBuilder<'proj> {
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
             local_tasks: FxHashMap::default(),
+            filters: None,
         }
     }
 
@@ -168,6 +170,7 @@ impl<'proj> TasksBuilder<'proj> {
             self.task_ids.insert(task_key);
         }
 
+        self.filters = global_filters;
         self.implicit_deps.extend(&global_config.implicit_deps);
         self.implicit_inputs.extend(&global_config.implicit_inputs);
         self
@@ -327,6 +330,10 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !global_deps.is_empty() {
             task.deps = self.merge_vec(task.deps, global_deps, TaskMergeStrategy::Append, true);
+        }
+
+        if self.filters.is_some() {
+            task.deps = self.apply_filters_to_deps(task.deps);
         }
 
         task.id = id.to_owned();
@@ -564,6 +571,24 @@ impl<'proj> TasksBuilder<'proj> {
         extract_config(id, &self.local_tasks, &mut configs);
 
         configs
+    }
+
+    fn apply_filters_to_deps(&self, deps: Vec<Target>) -> Vec<Target> {
+        let Some(filters) = &self.filters else {
+            return deps;
+        };
+
+        deps.into_iter()
+            .filter(|dep| !filters.exclude.contains(&dep.task_id))
+            .map(|mut dep| {
+                if let Some(new_task_id) = filters.rename.get(&dep.task_id) {
+                    dep.id = Target::format(&dep.scope, new_task_id);
+                    dep.task_id = new_task_id.to_owned();
+                }
+
+                dep
+            })
+            .collect()
     }
 
     fn merge_map<K, V>(

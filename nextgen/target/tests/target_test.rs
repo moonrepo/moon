@@ -21,29 +21,23 @@ fn errors_on_too_wild() {
 
 #[test]
 fn format_all_scope() {
-    assert_eq!(Target::format(TargetScope::All, "build").unwrap(), ":build");
+    assert_eq!(Target::format(TargetScope::All, "build"), ":build");
 }
 
 #[test]
 fn format_deps_scope() {
-    assert_eq!(
-        Target::format(TargetScope::Deps, "build").unwrap(),
-        "^:build"
-    );
+    assert_eq!(Target::format(TargetScope::Deps, "build"), "^:build");
 }
 
 #[test]
 fn format_self_scope() {
-    assert_eq!(
-        Target::format(TargetScope::OwnSelf, "build").unwrap(),
-        "~:build"
-    );
+    assert_eq!(Target::format(TargetScope::OwnSelf, "build"), "~:build");
 }
 
 #[test]
 fn format_project_scope() {
     assert_eq!(
-        Target::format(TargetScope::Project(Id::raw("foo")), "build").unwrap(),
+        Target::format(TargetScope::Project(Id::raw("foo")), "build"),
         "foo:build"
     );
 }
@@ -51,7 +45,7 @@ fn format_project_scope() {
 #[test]
 fn format_tag_scope() {
     assert_eq!(
-        Target::format(TargetScope::Tag(Id::raw("foo")), "build").unwrap(),
+        Target::format(TargetScope::Tag(Id::raw("foo")), "build"),
         "#foo:build"
     );
 }
@@ -59,7 +53,7 @@ fn format_tag_scope() {
 #[test]
 fn format_with_slashes() {
     assert_eq!(
-        Target::format(TargetScope::Project(Id::raw("foo/sub")), "build/esm").unwrap(),
+        Target::format(TargetScope::Project(Id::raw("foo/sub")), "build/esm"),
         "foo/sub:build/esm"
     );
 }
@@ -67,7 +61,7 @@ fn format_with_slashes() {
 #[test]
 fn format_node_package() {
     assert_eq!(
-        Target::format(TargetScope::Project(Id::raw("@scope/foo")), "build").unwrap(),
+        Target::format(TargetScope::Project(Id::raw("@scope/foo")), "build"),
         "@scope/foo:build"
     );
 }

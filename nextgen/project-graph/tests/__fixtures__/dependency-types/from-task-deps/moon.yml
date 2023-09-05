@@ -1,0 +1,7 @@
+tasks:
+  build:
+    command: 'build'
+    deps: ['b:build']
+  check:
+    command: 'check'
+    deps: ['c:check']

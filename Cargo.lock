@@ -3726,7 +3726,7 @@ dependencies = [
  "moon_project_constraints",
  "moon_project_expander",
  "moon_query",
- "moon_target",
+ "moon_task",
  "moon_task_builder",
  "moon_vcs",
  "once_map",

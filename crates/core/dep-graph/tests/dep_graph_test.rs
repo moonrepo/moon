@@ -255,43 +255,23 @@ mod run_target {
 
         assert_snapshot!(graph.to_dot());
 
-        // These are the batches if the persistent target isn't moved to the end.
-        // Leaving this here as a reference to compare against!
-        // assert_eq!(
-        //     sort_batches(graph.sort_batched_topological().unwrap()),
-        //     vec![
-        //         vec![NodeIndex::new(0)],
-        //         vec![
-        //             NodeIndex::new(1),
-        //             NodeIndex::new(7),
-        //             NodeIndex::new(8),
-        //             NodeIndex::new(9)
-        //         ],
-        //         vec![NodeIndex::new(6), NodeIndex::new(11), NodeIndex::new(12)],
-        //         vec![NodeIndex::new(2), NodeIndex::new(10)],
-        //         vec![NodeIndex::new(5)],
-        //         vec![NodeIndex::new(4), NodeIndex::new(13)],
-        //         vec![NodeIndex::new(3)],
-        //     ]
-        // );
-
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
                 vec![NodeIndex::new(1)],
                 vec![
                     NodeIndex::new(2),
-                    NodeIndex::new(8),
-                    NodeIndex::new(9),
-                    NodeIndex::new(10)
+                    NodeIndex::new(5),
+                    NodeIndex::new(6),
+                    NodeIndex::new(7)
                 ],
-                vec![NodeIndex::new(7), NodeIndex::new(12), NodeIndex::new(13)],
+                vec![NodeIndex::new(4), NodeIndex::new(12), NodeIndex::new(13)],
                 vec![NodeIndex::new(3), NodeIndex::new(11)],
                 vec![NodeIndex::new(0)],
                 vec![
-                    NodeIndex::new(4),
-                    NodeIndex::new(5),
-                    NodeIndex::new(6),
+                    NodeIndex::new(8),
+                    NodeIndex::new(9),
+                    NodeIndex::new(10),
                     NodeIndex::new(14)
                 ],
             ]

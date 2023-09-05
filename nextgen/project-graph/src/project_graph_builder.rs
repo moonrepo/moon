@@ -257,6 +257,10 @@ impl<'app> ProjectGraphBuilder<'app> {
         for (task_id, task_config) in &project.tasks {
             for task_dep in &task_config.deps {
                 if let TargetScope::Project(dep_id) = &task_dep.scope {
+                    if project.dependencies.contains_key(dep_id) || dep_id == &id {
+                        continue;
+                    }
+
                     if cycle.contains(dep_id) {
                         warn!(
                             id = id.as_str(),

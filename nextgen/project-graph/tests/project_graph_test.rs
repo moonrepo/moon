@@ -828,6 +828,18 @@ mod project_graph {
 
                 assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
             }
+
+            #[tokio::test]
+            async fn self_task_deps() {
+                let sandbox = create_sandbox("dependency-types");
+                let container = GraphContainer::new(sandbox.path());
+                let context = container.create_context();
+                let graph = container
+                    .build_graph_for(context, &["self-task-deps"])
+                    .await;
+
+                assert_eq!(map_ids(graph.ids()), ["self-task-deps"]);
+            }
         }
     }
 

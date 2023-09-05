@@ -1,0 +1,6 @@
+tasks:
+  build:
+    command: 'build'
+    deps: ['self-task-deps:check', '~:check', 'check']
+  check:
+    command: 'check'

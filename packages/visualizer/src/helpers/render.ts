@@ -60,8 +60,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 		elements: { edges, nodes },
 		layout: {
 			fit: true,
-			// @ts-expect-error Types incorrect
-			name: 'dagre',
+			name: 'dagre' as 'cose',
 			nodeDimensionsIncludeLabels: true,
 			spacingFactor: 1.5,
 		},

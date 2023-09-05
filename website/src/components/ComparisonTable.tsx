@@ -342,6 +342,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Configuration presets',
 		support: {
+			moon: [SUPPORTED, 'via task `extends`'],
 			nx: [SUPPORTED, 'via `configurations`'],
 		},
 	},

@@ -17,6 +17,7 @@ moon_project_builder = { version = "0.1.0", path = "../project-builder" }
 moon_project_constraints = { version = "0.1.0", path = "../project-constraints" }
 moon_project_expander = { version = "0.1.0", path = "../project-expander" }
 moon_query = { version = "0.1.0", path = "../query" }
+moon_task = { version = "0.1.0", path = "../task" }
 moon_task_builder = { version = "0.1.0", path = "../task-builder" }
 moon_vcs = { version = "0.1.0", path = "../vcs" }
 async-recursion = "1.0.4"

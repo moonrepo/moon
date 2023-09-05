@@ -40,7 +40,7 @@ impl Target {
         let scope = TargetScope::Project(Id::new(scope_id).map_err(handle_error)?);
 
         Ok(Target {
-            id: Target::format(&scope, task_id)?,
+            id: Target::format(&scope, task_id),
             scope,
             scope_id: Some(Id::raw(scope_id)),
             task_id: Id::new(task_id).map_err(handle_error)?,
@@ -54,7 +54,7 @@ impl Target {
         let task_id = task_id.as_ref();
 
         Ok(Target {
-            id: Target::format(TargetScope::OwnSelf, task_id)?,
+            id: Target::format(TargetScope::OwnSelf, task_id),
             scope: TargetScope::OwnSelf,
             scope_id: None,
             task_id: Id::new(task_id)
@@ -62,12 +62,12 @@ impl Target {
         })
     }
 
-    pub fn format<S, T>(scope: S, task: T) -> miette::Result<String>
+    pub fn format<S, T>(scope: S, task: T) -> String
     where
         S: AsRef<TargetScope>,
         T: AsRef<str>,
     {
-        Ok(format!("{}:{}", scope.as_ref(), task.as_ref()))
+        format!("{}:{}", scope.as_ref(), task.as_ref())
     }
 
     pub fn parse(target_id: &str) -> miette::Result<Target> {

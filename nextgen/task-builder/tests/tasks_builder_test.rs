@@ -2,7 +2,8 @@ use moon_common::Id;
 use moon_config::{
     DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
     ProjectConfig, ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, RustConfig,
-    TaskOptionAffectedFiles, TaskOutputStyle, TaskType, ToolchainConfig,
+    TaskCommandArgs, TaskConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
+    ToolchainConfig,
 };
 use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
@@ -21,6 +22,7 @@ async fn build_tasks_with_config(
     source: &str,
     local_config: ProjectConfig,
     toolchain_config: ToolchainConfig,
+    global_name: Option<&str>,
 ) -> BTreeMap<Id, Task> {
     let platform = local_config.platform.unwrap_or_default();
     let emitter = Emitter::<DetectPlatformEvent>::new();
@@ -49,7 +51,8 @@ async fn build_tasks_with_config(
 
     builder.load_local_tasks(&local_config);
 
-    let global_manager = InheritedTasksManager::load(root, root.join("global")).unwrap();
+    let global_manager =
+        InheritedTasksManager::load(root, root.join(global_name.unwrap_or("global"))).unwrap();
 
     let global_config = global_manager
         .get_inherited_config(
@@ -74,6 +77,7 @@ async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
         &config_path.replace("/moon.yml", ""),
         ProjectConfig::load(root, root.join(config_path)).unwrap(),
         ToolchainConfig::default(),
+        None,
     )
     .await
 }
@@ -89,6 +93,7 @@ async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<
             rust: Some(RustConfig::default()),
             ..ToolchainConfig::default()
         },
+        None,
     )
     .await
 }
@@ -909,6 +914,7 @@ mod tasks_builder {
                 "project",
                 ProjectConfig::default(),
                 ToolchainConfig::default(),
+                None,
             )
             .await;
 
@@ -929,6 +935,7 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
+                None,
             )
             .await;
 
@@ -946,6 +953,7 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
+                None,
             )
             .await;
 
@@ -966,6 +974,7 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
+                None,
             )
             .await;
 
@@ -987,6 +996,7 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
+                None,
             )
             .await;
 
@@ -1011,6 +1021,7 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
+                None,
             )
             .await;
 
@@ -1018,6 +1029,56 @@ mod tasks_builder {
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 vec!["renamed-build", "renamed.test", "renamedTest"]
             );
+        }
+
+        #[tokio::test]
+        async fn applies_overrides_to_global_task_deps() {
+            let sandbox = create_sandbox("builder");
+
+            let mut project_config = create_overrides(ProjectWorkspaceInheritedTasksConfig {
+                exclude: vec!["test".into()],
+                rename: FxHashMap::from_iter([("build".into(), "compile".into())]),
+                ..Default::default()
+            });
+
+            project_config.tasks.insert(
+                "build".into(),
+                TaskConfig {
+                    command: TaskCommandArgs::String("build-local".into()),
+                    ..Default::default()
+                },
+            );
+
+            project_config.tasks.insert(
+                "test".into(),
+                TaskConfig {
+                    command: TaskCommandArgs::String("test-local".into()),
+                    ..Default::default()
+                },
+            );
+
+            let tasks = build_tasks_with_config(
+                sandbox.path(),
+                "project",
+                project_config,
+                ToolchainConfig::default(),
+                Some("global-overrides"),
+            )
+            .await;
+
+            assert_eq!(
+                tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+                vec!["build", "compile", "deploy", "test"]
+            );
+
+            assert_eq!(
+                tasks.get("deploy").unwrap().deps,
+                vec![Target::parse("~:compile").unwrap()]
+            );
+
+            assert_eq!(tasks.get("build").unwrap().command, "build-local");
+            assert_eq!(tasks.get("compile").unwrap().command, "build-global");
+            assert_eq!(tasks.get("test").unwrap().command, "test-local");
         }
     }
 

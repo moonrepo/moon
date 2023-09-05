@@ -5,14 +5,14 @@ use moon_config::{
     PartialInheritedTasksConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
     WorkspaceProjectsConfig,
 };
-use moon_project::Project;
+use moon_project::{FileGroup, Project};
 use moon_project_builder::DetectLanguageEvent;
 use moon_project_graph::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
     ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
 };
 use moon_query::build_query;
-use moon_target::Target;
+use moon_task::Target;
 use moon_task_builder::DetectPlatformEvent;
 use moon_vcs::{BoxedVcs, Git};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -529,8 +529,6 @@ mod project_graph {
     }
 
     mod inheritance {
-        use moon_project::FileGroup;
-
         use super::*;
 
         async fn generate_inheritance_project_graph(fixture: &str) -> ProjectGraph {
@@ -792,6 +790,44 @@ mod project_graph {
                 map_ids(graph.dependents_of(&graph.get("d").unwrap()).unwrap()),
                 string_vec![]
             );
+        }
+
+        mod isolation {
+            use super::*;
+
+            #[tokio::test]
+            async fn no_depends_on() {
+                let sandbox = create_sandbox("dependency-types");
+                let container = GraphContainer::new(sandbox.path());
+                let context = container.create_context();
+                let graph = container.build_graph_for(context, &["no-depends-on"]).await;
+
+                assert_eq!(map_ids(graph.ids()), ["no-depends-on"]);
+            }
+
+            #[tokio::test]
+            async fn some_depends_on() {
+                let sandbox = create_sandbox("dependency-types");
+                let container = GraphContainer::new(sandbox.path());
+                let context = container.create_context();
+                let graph = container
+                    .build_graph_for(context, &["some-depends-on"])
+                    .await;
+
+                assert_eq!(map_ids(graph.ids()), ["c", "a", "some-depends-on"]);
+            }
+
+            #[tokio::test]
+            async fn from_task_deps() {
+                let sandbox = create_sandbox("dependency-types");
+                let container = GraphContainer::new(sandbox.path());
+                let context = container.create_context();
+                let graph = container
+                    .build_graph_for(context, &["from-task-deps"])
+                    .await;
+
+                assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
+            }
         }
     }
 

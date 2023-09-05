@@ -12,8 +12,6 @@ digraph {
     6 [ label="implicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 -> 1 [ label="production" arrowhead=box, arrowtail=box]
     2 -> 0 [ label="production" arrowhead=box, arrowtail=box]
-    2 -> 0 [ label="peer" arrowhead=box, arrowtail=box]
-    2 -> 1 [ label="peer" arrowhead=box, arrowtail=box]
     3 -> 0 [ label="production" arrowhead=box, arrowtail=box]
     3 -> 1 [ label="peer" arrowhead=box, arrowtail=box]
     3 -> 2 [ label="development" arrowhead=box, arrowtail=box]

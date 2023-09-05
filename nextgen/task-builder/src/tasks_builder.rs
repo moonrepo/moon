@@ -16,18 +16,27 @@ use std::hash::Hash;
 use std::path::Path;
 use tracing::trace;
 
+struct ConfigChain<'proj> {
+    config: &'proj TaskConfig,
+    inherited: bool,
+}
+
 // This is a standalone function as recursive closures are not possible!
 fn extract_config<'builder, 'proj>(
     task_id: &'builder Id,
     tasks_map: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-    configs: &'builder mut Vec<&'proj TaskConfig>,
+    configs: &'builder mut Vec<ConfigChain<'proj>>,
+    global: bool,
 ) {
     if let Some(config) = tasks_map.get(task_id) {
         if let Some(extend_task_id) = &config.extends {
-            extract_config(extend_task_id, tasks_map, configs);
+            extract_config(extend_task_id, tasks_map, configs, global);
         }
 
-        configs.push(*config);
+        configs.push(ConfigChain {
+            config,
+            inherited: global,
+        });
     }
 }
 
@@ -207,15 +216,15 @@ impl<'proj> TasksBuilder<'proj> {
         trace!(target = target.as_str(), "Building task");
 
         let mut task = Task::default();
-        let configs = self.get_config_inherit_chain(id);
+        let chain = self.get_config_inherit_chain(id);
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
         let mut is_local = id == "dev" || id == "serve" || id == "start";
         let mut args_sets = vec![];
 
-        for config in &configs {
-            let (command, base_args) = self.get_command_and_args(config)?;
+        for link in &chain {
+            let (command, base_args) = self.get_command_and_args(&link.config)?;
 
             if let Some(command) = command {
                 task.command = command;
@@ -224,7 +233,7 @@ impl<'proj> TasksBuilder<'proj> {
             // Add to task later after we have a merge strategy
             args_sets.push(base_args);
 
-            if let Some(local) = config.local {
+            if let Some(local) = link.config.local {
                 is_local = local;
             }
         }
@@ -255,11 +264,17 @@ impl<'proj> TasksBuilder<'proj> {
         let mut configured_inputs = 0;
         let mut has_configured_inputs = false;
 
-        for config in configs {
+        for link in &chain {
+            let config = link.config;
+
             if !config.deps.is_empty() {
                 task.deps = self.merge_vec(
                     task.deps,
-                    config.deps.to_owned(),
+                    if link.inherited {
+                        self.apply_filters_to_deps(config.deps.to_owned())
+                    } else {
+                        config.deps.to_owned()
+                    },
                     task.options.merge_deps,
                     true,
                 );
@@ -332,10 +347,6 @@ impl<'proj> TasksBuilder<'proj> {
             task.deps = self.merge_vec(task.deps, global_deps, TaskMergeStrategy::Append, true);
         }
 
-        if self.filters.is_some() {
-            task.deps = self.apply_filters_to_deps(task.deps);
-        }
-
         task.id = id.to_owned();
 
         if !global_inputs.is_empty() {
@@ -390,7 +401,7 @@ impl<'proj> TasksBuilder<'proj> {
         let configs = self
             .get_config_inherit_chain(id)
             .iter()
-            .map(|cfg| &cfg.options)
+            .map(|link| &link.config.options)
             .collect::<Vec<_>>();
 
         for config in configs {
@@ -564,11 +575,11 @@ impl<'proj> TasksBuilder<'proj> {
         Ok((command, args))
     }
 
-    fn get_config_inherit_chain(&self, id: &Id) -> Vec<&TaskConfig> {
+    fn get_config_inherit_chain(&self, id: &Id) -> Vec<ConfigChain> {
         let mut configs = vec![];
 
-        extract_config(id, &self.global_tasks, &mut configs);
-        extract_config(id, &self.local_tasks, &mut configs);
+        extract_config(id, &self.global_tasks, &mut configs, true);
+        extract_config(id, &self.local_tasks, &mut configs, false);
 
         configs
     }

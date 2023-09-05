@@ -1,0 +1,10 @@
+tasks:
+  deploy:
+    command: 'deploy'
+    deps:
+      - 'test'
+      - '~:build'
+  build:
+    command: 'build-global'
+  test:
+    command: 'test-global'

@@ -224,7 +224,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut args_sets = vec![];
 
         for link in &chain {
-            let (command, base_args) = self.get_command_and_args(&link.config)?;
+            let (command, base_args) = self.get_command_and_args(link.config)?;
 
             if let Some(command) = command {
                 task.command = command;

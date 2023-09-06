@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `pnpm` or `yarn` would panic based on configuration combination.
+
 ## 1.13.1
 
 #### 🐞 Fixes

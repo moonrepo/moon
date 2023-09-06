@@ -405,6 +405,30 @@ node:
             }
 
             #[test]
+            fn inherits_plugin_locator_when_none() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: pnpm
+",
+                    |path| {
+                        let mut tools = ToolsConfig::default();
+                        tools.inherit_builtin_plugins();
+
+                        ToolchainConfig::load_from(path, &tools)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/node-plugin/releases/latest/download/node_depman_plugin.wasm".into()
+                    }
+                );
+            }
+
+            #[test]
             fn proto_version_doesnt_override() {
                 let config = test_load_config(
                     FILENAME,
@@ -482,6 +506,30 @@ node:
 node:
   packageManager: yarn
   yarn: {}
+",
+                    |path| {
+                        let mut tools = ToolsConfig::default();
+                        tools.inherit_builtin_plugins();
+
+                        ToolchainConfig::load_from(path, &tools)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().yarn.unwrap().plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/node-plugin/releases/latest/download/node_depman_plugin.wasm".into()
+                    }
+                );
+            }
+
+            #[test]
+            fn inherits_plugin_locator_when_none() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: yarn
 ",
                     |path| {
                         let mut tools = ToolsConfig::default();

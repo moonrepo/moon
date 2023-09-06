@@ -140,9 +140,17 @@ impl NodeConfig {
                 self.inherit_proto_npm(proto_tools)?;
             }
             NodePackageManager::Pnpm => {
+                if self.pnpm.is_none() {
+                    self.pnpm = Some(PnpmConfig::default());
+                }
+
                 self.inherit_proto_pnpm(proto_tools)?;
             }
             NodePackageManager::Yarn => {
+                if self.yarn.is_none() {
+                    self.yarn = Some(YarnConfig::default());
+                }
+
                 self.inherit_proto_yarn(proto_tools)?;
             }
         };

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tool globals directory was not being correctly located.
+- Fixed a panic when using the `rust` toolchain and attempting to install `bins`.
+
 ## 1.13.2
 
 #### 🐞 Fixes

@@ -119,6 +119,8 @@ impl Tool for YarnTool {
         let version_type = VersionType::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
+            self.tool.locate_globals_dir().await?;
+
             debug!("yarn has already been setup");
 
             return Ok(count);
@@ -147,6 +149,8 @@ impl Tool for YarnTool {
             last_versions.insert("yarn".into(), version);
             count += 1;
         }
+
+        self.tool.locate_globals_dir().await?;
 
         Ok(count)
     }

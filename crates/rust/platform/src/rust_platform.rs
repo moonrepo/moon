@@ -234,13 +234,11 @@ impl Platform for RustPlatform {
         if !self.config.bins.is_empty() {
             print_checkpoint("cargo binstall", Checkpoint::Setup);
 
+            let globals_dir = tool.tool.get_globals_bin_dir();
+
             // Install cargo-binstall if it does not exist
-            if !tool
-                .tool
-                .get_globals_bin_dir()
-                .unwrap()
-                .join("cargo-binstall")
-                .exists()
+            if globals_dir.is_none()
+                || globals_dir.is_some_and(|p| !p.join("cargo-binstall").exists())
             {
                 debug!(
                     target: LOG_TARGET,
@@ -482,11 +480,13 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let globals_dir = if let Ok(tool) = self.toolchain.get() {
-                    tool.tool.get_globals_bin_dir().unwrap().to_path_buf()
-                } else {
-                    get_cargo_home().join("bin")
-                };
+                let mut globals_dir = get_cargo_home().join("bin");
+
+                if let Ok(tool) = self.toolchain.get() {
+                    if let Some(new_globals_dir) = tool.tool.get_globals_bin_dir() {
+                        globals_dir = new_globals_dir.to_path_buf();
+                    }
+                }
 
                 let global_bin_path = globals_dir.join(&task.command);
 

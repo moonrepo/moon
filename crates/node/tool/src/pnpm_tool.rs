@@ -71,6 +71,8 @@ impl Tool for PnpmTool {
         let version_type = VersionType::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
+            self.tool.locate_globals_dir().await?;
+
             debug!("pnpm has already been setup");
 
             return Ok(count);
@@ -99,6 +101,8 @@ impl Tool for PnpmTool {
             last_versions.insert("pnpm".into(), version);
             count += 1;
         }
+
+        self.tool.locate_globals_dir().await?;
 
         Ok(count)
     }

@@ -69,6 +69,8 @@ impl Tool for NpmTool {
         let version_type = VersionType::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
+            self.tool.locate_globals_dir().await?;
+
             debug!("npm has already been setup");
 
             return Ok(count);
@@ -97,6 +99,8 @@ impl Tool for NpmTool {
             last_versions.insert("npm".into(), version);
             count += 1;
         }
+
+        self.tool.locate_globals_dir().await?;
 
         Ok(count)
     }

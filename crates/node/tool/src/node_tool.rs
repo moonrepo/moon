@@ -10,7 +10,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
-use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -167,7 +167,7 @@ impl Tool for NodeTool {
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
-            let version_type = VersionType::parse(version)?;
+            let version_type = UnresolvedVersionSpec::parse(version)?;
 
             if self.tool.is_setup(&version_type).await? {
                 debug!("Node.js has already been setup");

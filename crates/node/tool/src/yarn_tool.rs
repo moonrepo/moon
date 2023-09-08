@@ -8,7 +8,7 @@ use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
-use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -116,7 +116,7 @@ impl Tool for YarnTool {
             return Ok(count);
         };
 
-        let version_type = VersionType::parse(&version)?;
+        let version_type = UnresolvedVersionSpec::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
             self.tool.locate_globals_dir().await?;

@@ -1,0 +1,52 @@
+---
+slug: proto-v0.17
+title: proto v0.17 - Canary releases and experimental Python support
+authors: [milesj]
+tags: [proto, plugin, tool, canary, python]
+---
+
+This release implements two long requested features, canary releases and Python.
+
+<!--truncate-->
+
+## Install canary releases
+
+## Experimental Python support
+
+It's been quite a while since we've introduced a new language into proto, and we're excited to
+announce the highly requested language, Python! Since Python is now an
+[officially supported language](https://github.com/moonrepo/python-plugin), installing Python (and
+pip) is as simple as:
+
+```shell
+$ proto install python
+```
+
+However, we're marking language support as experimental for the time being. We expect our
+implementation to work for modern Python versions, but may not work for older versions, especially
+Python 2. The reasons for this are as follows:
+
+- proto will install pre-built binaries from
+  [indygreg/python-build-standalone](https://github.com/indygreg/python-build-standalone). This is
+  an unofficial project, and _does not_ support all Python versions.
+- If [`python-build`](https://github.com/pyenv/pyenv/blob/master/plugins/python-build/README.md) is
+  available, we'll attempt to use it to build + install Python. This currently requires `pyenv` to
+  be installed, and _does not_ work on Windows.
+- Furthermore, we only support `cpython` at the moment, and do not support `pypy`, `jython`, or
+  other Python implementations. It's unknown whether this functionality should be in the core Python
+  plugin, or another plugin entirely.
+
+In a future proto version, we want to support a true "build from source" approach for all tools.
+Once that functionality has landed, we can properly support Python on all platforms, but until then,
+let us know how this works for you!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.17.0) for a full list
+of changes.
+
+- Updated the following locations to support partial versions and aliases:
+  - Tool versions in `.prototools`.
+  - Pinning a default version with `proto install --pin`.
+  - Setting global version with `proto global`.
+  - Setting local version with `proto local`.

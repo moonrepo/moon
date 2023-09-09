@@ -11,33 +11,33 @@ through [plugins](./plugins).
 
 <WasmLink to="https://github.com/moonrepo/bun-plugin" />
 
-[Bun](https://bun.sh/) (`bun`) is an all-in-one runtime and toolset for JavaScript and TypeScript,
-powered by Zig and Webkit.
+[Bun](https://bun.sh/) is an all-in-one runtime and toolset for JavaScript and TypeScript, powered
+by Zig and Webkit.
 
-#### Global binaries
-
-- Installs to `~/.bun/bin`.
+- **Available binaries** - `bun`, `bunx`
+- **Globals directory** - `~/.bun/bin`
 
 ## Deno
 
 <WasmLink to="https://github.com/moonrepo/deno-plugin" />
 
-[Deno](https://deno.land/) (`deno`) is a secure runtime for JavaScript and TypeScript, powered by
-Rust and Chrome's V8 engine.
+[Deno](https://deno.land/) is a secure runtime for JavaScript and TypeScript, powered by Rust and
+Chrome's V8 engine.
 
-#### Global binaries
-
-- Installs to `DENO_INSTALL_ROOT` or `~/.deno/bin`.
-
-#### Detection sources
-
-- A [`.dvmrc`](https://github.com/justjavac/dvm) file.
+- **Available binaries** - `deno`
+- **Globals directory** - `$DENO_INSTALL_ROOT/bin`, `~/.deno/bin`
+- **Detection sources** - [`.dvmrc`](https://github.com/justjavac/dvm)
 
 ## Go
 
 <WasmLink to="https://github.com/moonrepo/go-plugin" />
 
-[Go](https://go.dev/) (`go`) is a simple, secure, and fast systems language.
+[Go](https://go.dev/) is a simple, secure, and fast systems language.
+
+- **Available binaries** - `go`
+- **Globals directory** - `$GOBIN`, `~/go/bin`
+- **Detection sources** - [`go.work`](https://go.dev/doc/tutorial/workspaces),
+  [`go.mod`](https://go.dev/doc/modules/gomod-ref)
 
 #### Post-install hook
 
@@ -50,20 +50,16 @@ installation.
 $ proto install go -- --no-gobin
 ```
 
-#### Global binaries
-
-- Installs to `GOBIN` or `~/go/bin`.
-
-#### Detection sources
-
-- Native [`go.work`](https://go.dev/doc/tutorial/workspaces) or
-  [`go.mod`](https://go.dev/doc/modules/gomod-ref) files.
-
 ## Node.js
 
 <WasmLink to="https://github.com/moonrepo/node-plugin" />
 
-[Node.js](https://nodejs.org/) (`node`) is a JavaScript runtime built on Chrome's V8 engine.
+[Node.js](https://nodejs.org/) is a JavaScript runtime built on Chrome's V8 engine.
+
+- **Available binaries** - `node`, `npx`
+- **Globals directory** - `~/.proto/tools/node/globals/bin`
+- **Detection sources** - [`.nvmrc`](https://github.com/nvm-sh/nvm),
+  [`.node-version`](https://github.com/nodenv/nodenv), `package.json` engines
 
 #### Post-install hook
 
@@ -74,34 +70,14 @@ functionality can be skipped by passing `--no-bundled-npm` during installation.
 $ proto install node -- --no-bundled-npm
 ```
 
-#### Global binaries
-
-- Installs to `~/.proto/tools/node/globals/bin`.
-
-#### Detection sources
-
-- An [`.nvmrc`](https://github.com/nvm-sh/nvm) or
-  [`.node-version`](https://github.com/nodenv/nodenv) file.
-
 ### npm, pnpm, yarn
 
 <WasmLink to="https://github.com/moonrepo/node-plugin" />
 
 proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
 
-#### Global binaries
-
-- Installs to `~/.proto/tools/node/globals/bin`.
-- Internally all package managers [install globals](./commands/install-global) with `npm` into the
-  location above.
-
-#### Detection sources
-
-- The `packageManager` field in `package.json`.
-
-### node-gyp
-
-The `node-gyp` binary is created alongside the `npm` tool, and cannot be installed manually.
+- **Available binaries** - `*`, `node-gyp`
+- **Detection sources** - `package.json` engines / package manager
 
 ### corepack
 
@@ -112,15 +88,11 @@ which is a far more poweful alternative.
 
 <WasmLink to="https://github.com/moonrepo/python-plugin" />
 
-[Python](https://www.python.org/) (`python`) is a high-level, general-purpose programming language.
+[Python](https://www.python.org/) is a high-level, general-purpose programming language.
 
-#### Global binaries
-
-- Installs to `~/.local/bin`.
-
-#### Detection sources
-
-- An [`.python-version`](https://github.com/pyenv/pyenv) file.
+- **Available binaries** - `python`, `pip`
+- **Globals directory** - `~/.local/bin`
+- **Detection sources** - [`.python-version`](https://github.com/pyenv/pyenv)
 
 ## Rust
 
@@ -141,12 +113,6 @@ using Rust in proto:
 - We don't create shims for `cargo`, `rustup`, etc.
 
 :::
-
-#### Global binaries
-
-- Installs to `CARGO_INSTALL_ROOT` or `~/.cargo/bin`.
-
-#### Detection sources
 
 Since we don't create shims for `cargo`, `rustup`, etc, we can't detect Rust versions at runtime.
 However, `rustup` supports this as well through the

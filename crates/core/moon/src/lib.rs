@@ -115,7 +115,7 @@ pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
     let workspace = load_workspace().await?;
 
     for platform in PlatformManager::write().list_mut() {
-        platform.setup_toolchain(&workspace.plugin_loader).await?;
+        platform.setup_toolchain().await?;
     }
 
     Ok(workspace)

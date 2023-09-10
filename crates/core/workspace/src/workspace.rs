@@ -6,7 +6,7 @@ use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, 
 use moon_hash::HashEngine;
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
-use proto_core::{get_proto_home, PluginLoader, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{get_proto_home, ProtoEnvironment, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};
@@ -149,7 +149,7 @@ pub struct Workspace {
     pub hash_engine: Arc<HashEngine>,
 
     /// The plugin loader.
-    pub plugin_loader: Arc<PluginLoader>,
+    pub proto_env: Arc<ProtoEnvironment>,
 
     /// Proto tools loaded from ".prototools".
     pub proto_tools: Arc<ToolsConfig>,
@@ -220,15 +220,13 @@ impl Workspace {
         )?;
 
         let toolchain_root = get_proto_home()?;
-        let mut plugin_loader =
-            PluginLoader::new(toolchain_root.join("plugins"), toolchain_root.join("temp"));
-        plugin_loader.set_seed(env::var("MOON_VERSION").unwrap_or_default().as_str());
+        let proto_env = ProtoEnvironment::new()?;
 
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),
             config,
             hash_engine: Arc::new(hash_engine),
-            plugin_loader: Arc::new(plugin_loader),
+            proto_env: Arc::new(proto_env),
             proto_tools: Arc::new(proto_tools),
             root: root_dir,
             session: None,

@@ -23,7 +23,7 @@ use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::async_trait;
-use proto_core::{PluginLoader, ProtoEnvironment};
+use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
@@ -158,7 +158,7 @@ impl Platform for RustPlatform {
         Ok(Some((CARGO.lockfile.to_owned(), CARGO.manifest.to_owned())))
     }
 
-    async fn setup_toolchain(&mut self, plugin_loader: &PluginLoader) -> miette::Result<()> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let version = match &self.config.version {
             Some(v) => Version::new(v),
             None => Version::new_global(),
@@ -169,13 +169,7 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                RustTool::new(
-                    &ProtoEnvironment::new()?,
-                    &self.config,
-                    &version,
-                    plugin_loader,
-                )
-                .await?,
+                RustTool::new(&ProtoEnvironment::new()?, &self.config, &version).await?,
             );
         }
 
@@ -197,20 +191,13 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-        plugin_loader: &PluginLoader,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                RustTool::new(
-                    &ProtoEnvironment::new()?,
-                    &self.config,
-                    &version,
-                    plugin_loader,
-                )
-                .await?,
+                RustTool::new(&ProtoEnvironment::new()?, &self.config, &version).await?,
             );
         }
 

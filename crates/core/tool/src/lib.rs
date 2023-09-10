@@ -8,8 +8,8 @@ pub use manager::*;
 pub use tool::*;
 
 use proto_core::{
-    inject_default_manifest_config, Id, PluginLoader, PluginLocator, ProtoEnvironment,
-    Tool as ProtoTool, UserConfig, Wasm,
+    inject_default_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool,
+    UserConfig, Wasm,
 };
 use std::env;
 use std::path::Path;
@@ -31,11 +31,10 @@ pub async fn load_tool_plugin(
     id: &Id,
     proto: &ProtoEnvironment,
     locator: &PluginLocator,
-    loader: &PluginLoader,
 ) -> miette::Result<ProtoTool> {
     let mut manifest = ProtoTool::create_plugin_manifest(
         proto,
-        Wasm::file(loader.load_plugin(id, locator).await?),
+        Wasm::file(proto.get_plugin_loader().load_plugin(id, locator).await?),
     )?;
 
     let user_config = UserConfig::load()?;

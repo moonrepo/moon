@@ -7,13 +7,19 @@ use moon_rust_platform::RustPlatform;
 use moon_task::Task;
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
+use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 fn create_platform() -> RustPlatform {
-    RustPlatform::new(&RustConfig::default(), &PathBuf::new())
+    RustPlatform::new(
+        &RustConfig::default(),
+        &PathBuf::new(),
+        Arc::new(ProtoEnvironment::new().unwrap()),
+    )
 }
 
 fn create_task() -> Task {

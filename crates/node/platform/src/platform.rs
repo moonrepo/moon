@@ -34,6 +34,8 @@ pub struct NodePlatform {
 
     package_names: FxHashMap<String, Id>,
 
+    proto_env: Arc<ProtoEnvironment>,
+
     toolchain: ToolManager<NodeTool>,
 
     typescript_config: Option<TypeScriptConfig>,
@@ -46,10 +48,12 @@ impl NodePlatform {
         config: &NodeConfig,
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
+        proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
+            proto_env,
             toolchain: ToolManager::new(Runtime::Node(Version::new_global())),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
@@ -274,7 +278,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                NodeTool::new(&ProtoEnvironment::new()?, &self.config, &version).await?,
+                NodeTool::new(&self.proto_env, &self.config, &version).await?,
             );
         }
 
@@ -302,7 +306,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                NodeTool::new(&ProtoEnvironment::new()?, &self.config, &version).await?,
+                NodeTool::new(&self.proto_env, &self.config, &version).await?,
             );
         }
 

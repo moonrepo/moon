@@ -6,7 +6,7 @@ use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, 
 use moon_hash::HashEngine;
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
-use proto_core::{get_proto_home, ProtoEnvironment, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{ProtoEnvironment, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};
@@ -166,9 +166,6 @@ pub struct Workspace {
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
     pub toolchain_config: ToolchainConfig,
 
-    /// The root of the toolchain, typically "~/.proto".
-    pub toolchain_root: PathBuf,
-
     /// Configured version control system.
     pub vcs: Arc<BoxedVcs>,
 
@@ -190,6 +187,7 @@ impl Workspace {
         );
 
         // Load proto tools
+        let proto_env = ProtoEnvironment::new()?;
         let mut proto_tools = ToolsConfig::load(root_dir.join(TOOLS_CONFIG_NAME))?;
         proto_tools.inherit_builtin_plugins();
 
@@ -219,9 +217,6 @@ impl Workspace {
             &config.vcs.remote_candidates,
         )?;
 
-        let toolchain_root = get_proto_home()?;
-        let proto_env = ProtoEnvironment::new()?;
-
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),
             config,
@@ -232,7 +227,6 @@ impl Workspace {
             session: None,
             tasks_config: Arc::new(tasks_config),
             toolchain_config,
-            toolchain_root,
             vcs: Arc::new(Box::new(vcs)),
             working_dir: working_dir.to_owned(),
         })

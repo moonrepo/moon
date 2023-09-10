@@ -32,6 +32,8 @@ const LOG_TARGET: &str = "moon:deno-platform";
 pub struct DenoPlatform {
     config: DenoConfig,
 
+    proto_env: Arc<ProtoEnvironment>,
+
     toolchain: ToolManager<DenoTool>,
 
     typescript_config: Option<TypeScriptConfig>,
@@ -44,9 +46,11 @@ impl DenoPlatform {
         config: &DenoConfig,
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
+        proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
         DenoPlatform {
             config: config.to_owned(),
+            proto_env,
             toolchain: ToolManager::new(Runtime::Deno(Version::new_global())),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
@@ -125,7 +129,7 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&ProtoEnvironment::new()?, &self.config, &version)?,
+                DenoTool::new(&self.proto_env, &self.config, &version)?,
             );
         }
 
@@ -153,7 +157,7 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&ProtoEnvironment::new()?, &self.config, &version)?,
+                DenoTool::new(&self.proto_env, &self.config, &version)?,
             );
         }
 

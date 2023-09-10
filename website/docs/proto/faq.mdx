@@ -53,6 +53,22 @@ also need to manually add these global directories to your `PATH`.
 However, if you'd prefer to use the native non-proto workflow, you can disable the globals intercept
 using the [`node-intercept-globals` setting](./config#settings).
 
+### How to run a canary release after installing it?
+
+Once a tool has been installed with `--canary`, the canary version can be explicitly referenced
+using our [version detection rules](./detection). The easiest approach is to prefix the shim with an
+environment variable:
+
+```shell
+$ PROTO_BUN_VERSION=canary bun ./index.ts
+```
+
+Or to explicitly configure the version in [`.prototools`](./config):
+
+```toml
+bun = "canary"
+```
+
 ### OS is unable to find an installed binary, how to resolve?
 
 To start, ensure that proto's binaries directory (`~/.proto/bin`) is listed first on `PATH`, and

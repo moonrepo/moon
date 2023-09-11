@@ -16,12 +16,11 @@ proto supports pinning versions of tools on a per-project or per-directory basis
 and can be created/updated with [`proto local`](./commands/local).
 
 This configuration simply maps tools to fully-qualified semantic versions for the current directory.
-Partial versions are not supported.
 
 ```toml title=".prototools"
 node = "16.16.0"
-npm = "9.0.0"
-go = "1.20.0"
+npm = "9"
+go = "1.20"
 rust = "1.68.0"
 ```
 

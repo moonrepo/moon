@@ -81,6 +81,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 deno_config,
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
+                Arc::clone(&workspace.proto_env),
             )),
         );
     }
@@ -92,6 +93,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 node_config,
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
+                Arc::clone(&workspace.proto_env),
             )),
         );
     }
@@ -99,7 +101,11 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
     if let Some(rust_config) = &workspace.toolchain_config.rust {
         registry.register(
             PlatformType::Rust,
-            Box::new(RustPlatform::new(rust_config, &workspace.root)),
+            Box::new(RustPlatform::new(
+                rust_config,
+                &workspace.root,
+                Arc::clone(&workspace.proto_env),
+            )),
         );
     }
 
@@ -115,7 +121,7 @@ pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
     let workspace = load_workspace().await?;
 
     for platform in PlatformManager::write().list_mut() {
-        platform.setup_toolchain(&workspace.plugin_loader).await?;
+        platform.setup_toolchain().await?;
     }
 
     Ok(workspace)

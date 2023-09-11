@@ -19,7 +19,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{hash_file_contents, PluginLoader, ProtoEnvironment};
+use proto_core::{hash_file_contents, ProtoEnvironment};
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::{
@@ -31,6 +31,8 @@ const LOG_TARGET: &str = "moon:deno-platform";
 
 pub struct DenoPlatform {
     config: DenoConfig,
+
+    proto_env: Arc<ProtoEnvironment>,
 
     toolchain: ToolManager<DenoTool>,
 
@@ -44,9 +46,11 @@ impl DenoPlatform {
         config: &DenoConfig,
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
+        proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
         DenoPlatform {
             config: config.to_owned(),
+            proto_env,
             toolchain: ToolManager::new(Runtime::Deno(Version::new_global())),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
@@ -113,7 +117,7 @@ impl Platform for DenoPlatform {
         )))
     }
 
-    async fn setup_toolchain(&mut self, _plugin_loader: &PluginLoader) -> miette::Result<()> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         // let version = match &self.config.version {
         //     Some(v) => Version::new(v),
         //     None => Version::new_global(),
@@ -125,7 +129,7 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&ProtoEnvironment::new()?, &self.config, &version)?,
+                DenoTool::new(&self.proto_env, &self.config, &version)?,
             );
         }
 
@@ -147,14 +151,13 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-        _plugin_loader: &PluginLoader,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&ProtoEnvironment::new()?, &self.config, &version)?,
+                DenoTool::new(&self.proto_env, &self.config, &version)?,
             );
         }
 

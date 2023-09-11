@@ -6,7 +6,7 @@ use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::{is_ci, semver};
-use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -24,19 +24,13 @@ impl PnpmTool {
     pub async fn new(
         proto: &ProtoEnvironment,
         config: &Option<PnpmConfig>,
-        plugin_loader: &PluginLoader,
     ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(PnpmTool {
             global: config.version.is_none(),
-            tool: load_tool_plugin(
-                &Id::raw("pnpm"),
-                proto,
-                config.plugin.as_ref().unwrap(),
-                plugin_loader,
-            )
-            .await?,
+            tool: load_tool_plugin(&Id::raw("pnpm"), proto, config.plugin.as_ref().unwrap())
+                .await?,
             config,
         })
     }
@@ -68,7 +62,7 @@ impl Tool for PnpmTool {
             return Ok(count);
         };
 
-        let version_type = VersionType::parse(&version)?;
+        let version_type = UnresolvedVersionSpec::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
             self.tool.locate_globals_dir().await?;

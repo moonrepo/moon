@@ -10,7 +10,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
-use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -33,18 +33,12 @@ impl NodeTool {
         proto: &ProtoEnvironment,
         config: &NodeConfig,
         version: &Version,
-        plugin_loader: &PluginLoader,
     ) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
             config: config.to_owned(),
-            tool: load_tool_plugin(
-                &Id::raw("node"),
-                proto,
-                config.plugin.as_ref().unwrap(),
-                plugin_loader,
-            )
-            .await?,
+            tool: load_tool_plugin(&Id::raw("node"), proto, config.plugin.as_ref().unwrap())
+                .await?,
             npm: None,
             pnpm: None,
             yarn: None,
@@ -59,13 +53,13 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(proto, &config.npm, plugin_loader).await?);
+                node.npm = Some(NpmTool::new(proto, &config.npm).await?);
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm, plugin_loader).await?);
+                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm).await?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(proto, &config.yarn, plugin_loader).await?);
+                node.yarn = Some(YarnTool::new(proto, &config.yarn).await?);
             }
         };
 
@@ -167,7 +161,7 @@ impl Tool for NodeTool {
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
-            let version_type = VersionType::parse(version)?;
+            let version_type = UnresolvedVersionSpec::parse(version)?;
 
             if self.tool.is_setup(&version_type).await? {
                 debug!("Node.js has already been setup");

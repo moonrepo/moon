@@ -24,28 +24,20 @@ Nah.
 
 ### Will you support more languages?
 
-Yes! We'd love to support as many as possible. We're looking into supporting Python, Ruby, and PHP
-next. Feel free to create a [plugin](./plugins) in the mean time.
-
-If you'd like to help, join our Discord community!
+Yes! We'd love to support as many as possible, and if you'd like to help, join our Discord
+community! Feel free to create a [plugin](./plugins) in the mean time.
 
 ### Will you support other kinds of tools?
 
-No, we will only support languages and dependency managers. However, you can create a
-[plugin](./plugins) to support other kinds of tools.
+No, we will only support languages, dependency managers, and CLIs, which should be enough. However,
+you can create a [plugin](./plugins) to support other kinds of tools.
 
 ### Will you support "build from source"?
 
 In the future we have plans to support building from source. For the time being, proto is built
 around pre-built archives for easier portability.
 
-### Can I contribute a new language?
-
-Yes, go for it! We have no official guide on how to do this, but the Rust code is rather straight
-forward. Feel free to copy another
-[language crate](https://github.com/moonrepo/proto/tree/master/crates).
-
-### How can I install a global binary for a language?
+### How can I install a global package for a language?
 
 You can install a global with the [`proto install-global`](./commands/install-global) command. Most
 languages install a global to a shared location regardless of the language's version (Deno is
@@ -60,6 +52,22 @@ also need to manually add these global directories to your `PATH`.
 
 However, if you'd prefer to use the native non-proto workflow, you can disable the globals intercept
 using the [`node-intercept-globals` setting](./config#settings).
+
+### How to run a canary release after installing it?
+
+Once a tool has been installed with `--canary`, the canary version can be explicitly referenced
+using our [version detection rules](./detection). The easiest approach is to prefix the shim with an
+environment variable:
+
+```shell
+$ PROTO_BUN_VERSION=canary bun ./index.ts
+```
+
+Or to explicitly configure the version in [`.prototools`](./config):
+
+```toml
+bun = "canary"
+```
 
 ### OS is unable to find an installed binary, how to resolve?
 

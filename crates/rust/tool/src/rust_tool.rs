@@ -4,7 +4,7 @@ use moon_platform_runtime::Version;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, Tool};
-use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::{
     ffi::OsStr,
@@ -24,18 +24,12 @@ impl RustTool {
         proto: &ProtoEnvironment,
         config: &RustConfig,
         version: &Version,
-        plugin_loader: &PluginLoader,
     ) -> miette::Result<RustTool> {
         let mut rust = RustTool {
             config: config.to_owned(),
             global: false,
-            tool: load_tool_plugin(
-                &Id::raw("rust"),
-                proto,
-                config.plugin.as_ref().unwrap(),
-                plugin_loader,
-            )
-            .await?,
+            tool: load_tool_plugin(&Id::raw("rust"), proto, config.plugin.as_ref().unwrap())
+                .await?,
         };
 
         if version.is_global() {
@@ -81,7 +75,7 @@ impl Tool for RustTool {
             return Ok(installed);
         };
 
-        let version_type = VersionType::parse(version)?;
+        let version_type = UnresolvedVersionSpec::parse(version)?;
 
         if self.tool.is_setup(&version_type).await? {
             debug!("Rust has already been setup");

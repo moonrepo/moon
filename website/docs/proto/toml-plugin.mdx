@@ -86,7 +86,9 @@ be downloaded and installed into the toolchain. The following settings are avail
   the `{arch}` token. This is useful if the tool has different terminology.
 - `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
+- `checksum-url-canary` - A URL for canary releases.
 - `download-url` (required) - A secure URL to download the tool/archive.
+- `download-url-canary` - A URL for canary releases.
 
 The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
 the values from the `[platform]` section.

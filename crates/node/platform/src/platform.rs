@@ -19,7 +19,7 @@ use moon_task::Task;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{PluginLoader, ProtoEnvironment};
+use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
@@ -34,6 +34,8 @@ pub struct NodePlatform {
 
     package_names: FxHashMap<String, Id>,
 
+    proto_env: Arc<ProtoEnvironment>,
+
     toolchain: ToolManager<NodeTool>,
 
     typescript_config: Option<TypeScriptConfig>,
@@ -46,10 +48,12 @@ impl NodePlatform {
         config: &NodeConfig,
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
+        proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
+            proto_env,
             toolchain: ToolManager::new(Runtime::Node(Version::new_global())),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
@@ -263,7 +267,7 @@ impl Platform for NodePlatform {
         )))
     }
 
-    async fn setup_toolchain(&mut self, plugin_loader: &PluginLoader) -> miette::Result<()> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let version = match &self.config.version {
             Some(v) => Version::new(v),
             None => Version::new_global(),
@@ -274,13 +278,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                NodeTool::new(
-                    &ProtoEnvironment::new()?,
-                    &self.config,
-                    &version,
-                    plugin_loader,
-                )
-                .await?,
+                NodeTool::new(&self.proto_env, &self.config, &version).await?,
             );
         }
 
@@ -302,20 +300,13 @@ impl Platform for NodePlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-        plugin_loader: &PluginLoader,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                NodeTool::new(
-                    &ProtoEnvironment::new()?,
-                    &self.config,
-                    &version,
-                    plugin_loader,
-                )
-                .await?,
+                NodeTool::new(&self.proto_env, &self.config, &version).await?,
             );
         }
 

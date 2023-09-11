@@ -7,10 +7,12 @@ their archive to `~/.proto/tools/<tool>`. If the tool has already been installed
 exit early.
 
 The command is also smart enough to resolve partial versions, so 1, 1.2, and 1.2.3 are all
-acceptable. It even supports aliases when applicable, like `latest`, `next`, `beta`, etc.
+acceptable. It even supports aliases when applicable, like `latest`, `next`, `beta`, etc. To install
+a canary release, use `--canary`.
 
 ```shell
 $ proto install deno 1.31
+$ proto install deno --canary
 ```
 
 Some tools run [post-install hooks](../tools) that support arbitrary arguments that can be passed
@@ -28,4 +30,5 @@ $ proto install go -- --no-gobin
 
 ### Options
 
+- `--canary` - Install a canary (next, nightly, etc) version.
 - `--pin` - Pin the resolved version as the global default.

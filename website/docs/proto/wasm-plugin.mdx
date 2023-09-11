@@ -1,6 +1,6 @@
 ---
-title: WASM plugin (experimental)
-sidebar_label: WASM (experimental)
+title: WASM plugin
+sidebar_label: WASM
 toc_max_heading_level: 5
 ---
 
@@ -161,7 +161,15 @@ The following fields are available on the
 - `env_vars` - A map of environment variables requested by the
   [`register_tool`](#registering-metadata) function.
 - `tool_dir` - A virtual path to the tool's directory for the current version.
-- `version` - The current version. If not resolved, will be "latest".
+- `version` - The current version or alias. If not resolved, will be "latest".
+
+:::caution
+
+The `version` field is either a fully-qualified semantic version (1.2.3), an alias ("latest",
+"stable"), or canary ("canary"). Be sure to account for all these variations when implementing
+plugin functions!
+
+:::
 
 ## Create a plugin
 
@@ -181,11 +189,15 @@ cargo new plugin --lib
 cd plugin
 ```
 
-And set the lib type to `cdylib`.
+And set the lib type to `cdylib`, and other settings.
 
 ```toml title="Cargo.toml"
 [lib]
 crate-type = ['cdylib']
+
+[profile.release]
+codegen-units = 1
+lto = true
 ```
 
 Our Rust plugins are powered by [Extism](https://extism.org/), so lets add their PDK and ours as a
@@ -579,7 +591,7 @@ as much as possible with built-in test utilities, and Rust macros for generating
 To begin, install all necessary development dependencies:
 
 ```shell
-cargo add --dev proto_core proto_pdk_test_utils starbase_sandbox tokio
+cargo add --dev proto_pdk_test_utils starbase_sandbox tokio
 ```
 
 And as mentioned above, everytime you make a change to the plugin, you'll need to rebuild it with:
@@ -631,7 +643,6 @@ plugin ID and a real version to test with.
 
 ```rust
 use proto_pdk_test_utils::*;
-use starbase_sandbox::create_empty_sandbox;
 
 generate_download_install_tests!("id", "1.2.3");
 ```
@@ -730,6 +741,7 @@ Some helpful resources for learning about and building plugins.
   - [Go](https://github.com/moonrepo/go-plugin)
   - [Node](https://github.com/moonrepo/node-plugin)
   - [npm, pnpm, yarn](https://github.com/moonrepo/node-plugin)
+  - [Python](https://github.com/moonrepo/python-plugin)
   - [Rust](https://github.com/moonrepo/rust-plugin)
   - [Schema](https://github.com/moonrepo/schema-plugin)
 - Plugin development kit

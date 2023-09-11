@@ -1,0 +1,84 @@
+---
+slug: proto-v0.17
+title: proto v0.17 - Experimental Python support and canary releases
+authors: [milesj]
+tags: [proto, plugin, tool, canary, python]
+image: ./img/proto/v0.17.png
+---
+
+This release implements two long requested features, Python language support and canary releases.
+
+<!--truncate-->
+
+## Experimental Python support
+
+It's been quite a while since we've introduced a new language into proto, and we're excited to
+announce the highly requested language, Python! Since Python is now an
+[officially supported language](https://github.com/moonrepo/python-plugin), installing Python (and
+pip) is as simple as:
+
+```shell
+$ proto install python
+```
+
+However, we're marking language support as experimental for the time being. We expect our
+implementation to work for modern Python versions, but may not work for older versions, especially
+Python 2. The reasons for this are as follows:
+
+- proto will install pre-built binaries from
+  [indygreg/python-build-standalone](https://github.com/indygreg/python-build-standalone). This is
+  an unofficial project, and _does not_ support all Python versions.
+- If [`python-build`](https://github.com/pyenv/pyenv/blob/master/plugins/python-build/README.md) is
+  available, we'll attempt to use it to build + install Python. This currently requires `pyenv` to
+  be installed, and _does not_ work on Windows.
+- Furthermore, we only support `cpython` at the moment, and do not support `pypy`, `jython`, or
+  other Python implementations. It's unknown whether this functionality should be in the core Python
+  plugin, or another plugin entirely.
+
+In a future proto version, we want to support a true "build from source" approach for all tools.
+Once that functionality has landed, we can properly support Python on all platforms, but until then,
+let us know how this works for you!
+
+## Install canary releases
+
+A canary release is a mechanism for rolling out new features and changes to a small subset of users,
+without it being an official release on an official channel. This allows users to opt-in and test
+functionality if they so choose. Canary releases are not meant to be used in production, and may
+contain bugs or breaking changes. A canary is similar to a nightly (or weekly) release, depending on
+the tool.
+
+We now support this workflow in proto. To install a canary release, simply use the
+[`--canary` flag when installing a tool](/docs/proto/commands/install):
+
+```shell
+$ proto install <tool> --canary
+```
+
+This will install the latest canary release to `~/.proto/tools/<tool>/canary`, and _only_ the latest
+release can be used. Re-installing with `--canary` will overwrite the previous canary installation.
+
+However, because we [detect a version to run with at runtime](/docs/proto/detection), how should you
+actually run canary? The easiest way is to prefix the shim with an environment variable:
+
+```shell
+$ PROTO_BUN_VERSION=canary bun ./index.ts
+```
+
+Or to explicitly configure the version in [`.prototools`](/docs/proto/config):
+
+```toml
+bun = "canary"
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.17.0) for a full list
+of changes.
+
+- Added colors to command line `--help` menus.
+- Updated the following locations to support partial versions and aliases:
+  - Tool versions in `.prototools`.
+  - Pinning a default version with `proto install --pin`.
+  - Setting global version with `proto global`.
+  - Setting local version with `proto local`.
+- Node, npm, pnpm, and yarn will again extract a version from `package.json` engines.

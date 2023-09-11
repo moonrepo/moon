@@ -8,7 +8,7 @@ use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
-use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -27,19 +27,13 @@ impl YarnTool {
     pub async fn new(
         proto: &ProtoEnvironment,
         config: &Option<YarnConfig>,
-        plugin_loader: &PluginLoader,
     ) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(YarnTool {
             global: config.version.is_none(),
-            tool: load_tool_plugin(
-                &Id::raw("yarn"),
-                proto,
-                config.plugin.as_ref().unwrap(),
-                plugin_loader,
-            )
-            .await?,
+            tool: load_tool_plugin(&Id::raw("yarn"), proto, config.plugin.as_ref().unwrap())
+                .await?,
             config,
         })
     }
@@ -116,7 +110,7 @@ impl Tool for YarnTool {
             return Ok(count);
         };
 
-        let version_type = VersionType::parse(&version)?;
+        let version_type = UnresolvedVersionSpec::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
             self.tool.locate_globals_dir().await?;

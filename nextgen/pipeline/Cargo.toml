@@ -7,9 +7,19 @@ description = "Generic pipeline for running jobs."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
+[[bin]]
+name = "moon_pipeline"
+path = "src/main.rs"
+
 [dependencies]
 async-trait = { workspace = true }
+futures = "0.3.28"
 miette = { workspace = true }
 num_cpus = "1.16.0"
 thiserror = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["macros", "signal", "time"] }
+tokio-util = "0.7.8"
+tracing = { workspace = true }
+
+# Remove
+starbase = { workspace = true }

@@ -41,7 +41,7 @@ impl<T> Context<T> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RunState {
     /// Job was explicitly aborted via the action.

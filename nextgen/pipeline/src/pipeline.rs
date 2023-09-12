@@ -10,6 +10,8 @@ use tokio_util::sync::CancellationToken;
 use tracing::debug;
 use tracing::warn;
 
+// TODO: bail on failure, run/ran events
+
 pub struct Pipeline<T> {
     pub on_job_progress: Arc<Emitter<JobProgressEvent>>,
     pub on_job_state_change: Arc<Emitter<JobStateChangeEvent>>,
@@ -40,6 +42,13 @@ impl<T> Pipeline<T> {
     }
 
     pub async fn run(self) -> miette::Result<Vec<JobResult<T>>> {
+        self.run_with_context(|_| {}).await
+    }
+
+    pub async fn run_with_context(
+        self,
+        on_run: impl FnOnce(Context<T>),
+    ) -> miette::Result<Vec<JobResult<T>>> {
         let concurrency = self.concurrency.unwrap_or_else(num_cpus::get);
 
         debug!(concurrency, "Running pipeline");
@@ -55,6 +64,8 @@ impl<T> Pipeline<T> {
             on_job_progress: Arc::clone(&self.on_job_progress),
             on_job_state_change: Arc::clone(&self.on_job_state_change),
         };
+
+        on_run(context.clone());
 
         // Monitor signals and ctrl+c
         monitor_signals(context.cancel_token.clone());

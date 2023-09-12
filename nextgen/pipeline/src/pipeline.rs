@@ -1,4 +1,5 @@
 use crate::context::Context;
+use crate::job::JobResult;
 use crate::pipeline_events::*;
 use crate::step::*;
 use starbase_events::Emitter;
@@ -11,6 +12,7 @@ use tracing::warn;
 
 pub struct Pipeline<T> {
     pub on_job_finished: Arc<Emitter<JobFinishedEvent>>,
+    pub on_job_progress: Arc<Emitter<JobProgressEvent>>,
     pub on_job_state_change: Arc<Emitter<JobStateChangeEvent>>,
 
     concurrency: Option<usize>,
@@ -21,6 +23,7 @@ impl<T> Pipeline<T> {
     pub fn new() -> Self {
         Self {
             on_job_finished: Arc::new(Emitter::new()),
+            on_job_progress: Arc::new(Emitter::new()),
             on_job_state_change: Arc::new(Emitter::new()),
             concurrency: None,
             steps: vec![],
@@ -37,19 +40,20 @@ impl<T> Pipeline<T> {
         self
     }
 
-    pub async fn run(self) -> miette::Result<Vec<Option<T>>> {
+    pub async fn run(self) -> miette::Result<Vec<JobResult<T>>> {
         let concurrency = self.concurrency.unwrap_or_else(num_cpus::get);
 
         debug!(concurrency, "Running pipeline");
 
         // This aggregates results from ran jobs
-        let (sender, mut receiver) = mpsc::channel::<Option<T>>(10);
+        let (sender, mut receiver) = mpsc::channel::<JobResult<T>>(10);
 
         let context = Context {
             cancel_token: CancellationToken::new(),
             semaphore: Arc::new(Semaphore::new(concurrency)),
             result_sender: sender.clone(),
             on_job_finished: Arc::clone(&self.on_job_finished),
+            on_job_progress: Arc::clone(&self.on_job_progress),
             on_job_state_change: Arc::clone(&self.on_job_state_change),
         };
 

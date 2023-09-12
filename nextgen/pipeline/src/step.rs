@@ -7,7 +7,7 @@ use tracing::debug;
 
 async fn spawn_job<T: 'static + Send>(
     context: Context<T>,
-    job: Job<T>,
+    mut job: Job<T>,
 ) -> JoinHandle<miette::Result<()>> {
     let permit = context
         .semaphore

@@ -7,6 +7,7 @@ macro_rules! impl_event {
     };
 
     ($name:ident, $data:ty, $impl:tt) => {
+        #[derive(Debug)]
         pub struct $name $impl
 
         impl Event for $name {
@@ -18,9 +19,15 @@ macro_rules! impl_event {
 impl_event!(JobStateChangeEvent, {
     pub job: String,
     pub state: JobState,
+    pub prev_state: JobState,
+});
+
+impl_event!(JobProgressEvent, {
+    pub job: String,
+    pub elapsed: u32,
 });
 
 impl_event!(JobFinishedEvent, {
     pub job: String,
-    pub result: JobResult,
+    // pub result: JobResult,
 });

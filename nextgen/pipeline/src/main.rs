@@ -1,5 +1,6 @@
 use moon_pipeline::{IsolatedStep, Job, Pipeline};
 use starbase::App;
+use starbase_events::EventState;
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -27,6 +28,22 @@ async fn main() {
     App::setup_tracing();
 
     let mut pipeline = Pipeline::<TestResult>::new();
+
+    pipeline
+        .on_job_state_change
+        .on(|e, _| async move {
+            dbg!("STATE CHANGE", &e);
+            Ok(EventState::Continue)
+        })
+        .await;
+
+    pipeline
+        .on_job_progress
+        .on(|e, _| async move {
+            dbg!("PROGRESS", &e);
+            Ok(EventState::Continue)
+        })
+        .await;
 
     // pipeline.pipe(create_batch("a".into()));
 

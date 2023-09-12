@@ -1,4 +1,4 @@
-use crate::pipeline_events::*;
+use crate::{job::JobResult, pipeline_events::*};
 use starbase_events::Emitter;
 use std::sync::Arc;
 use tokio::sync::{mpsc::Sender, Semaphore};
@@ -9,12 +9,13 @@ pub struct Context<T> {
     pub cancel_token: CancellationToken,
 
     /// Sends results to the parent pipeline.
-    pub result_sender: Sender<Option<T>>,
+    pub result_sender: Sender<JobResult<T>>,
 
     /// Acquires a permit for concurrency.
     pub semaphore: Arc<Semaphore>,
 
     pub on_job_finished: Arc<Emitter<JobFinishedEvent>>,
+    pub on_job_progress: Arc<Emitter<JobProgressEvent>>,
     pub on_job_state_change: Arc<Emitter<JobStateChangeEvent>>,
 }
 
@@ -29,6 +30,7 @@ impl<T> Context<T> {
             result_sender: self.result_sender.clone(),
             semaphore: self.semaphore.clone(),
             on_job_finished: self.on_job_finished.clone(),
+            on_job_progress: self.on_job_progress.clone(),
             on_job_state_change: self.on_job_state_change.clone(),
         }
     }

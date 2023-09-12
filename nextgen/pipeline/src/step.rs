@@ -5,16 +5,13 @@ use async_trait::async_trait;
 use tokio::task::JoinHandle;
 use tracing::debug;
 
-async fn spawn_job<T: 'static + Send>(
-    mut job: Job<T>,
-    context: Context<T>,
-) -> JoinHandle<RunState> {
+async fn spawn_job<T: 'static + Send>(job: Job<T>, context: Context<T>) -> JoinHandle<RunState> {
     let permit = context
         .semaphore
         .clone()
         .acquire_owned()
         .await
-        .expect("Failed to acquire semaphore!");
+        .expect("Failed to spawn job!");
 
     tokio::spawn(async move {
         let result = job.run(context).await;
@@ -91,16 +88,16 @@ impl<T: 'static + Send> Step<T> for BatchedStep<T> {
             batch.push(spawn_job(job, context.clone()).await);
         }
 
-        for job in batch {
-            if job.is_finished() {
+        for handle in batch {
+            if handle.is_finished() {
                 continue;
             }
 
             if context.abort_token.is_cancelled() {
-                job.abort();
+                handle.abort();
             }
 
-            if let Err(error) = job.await {
+            if let Err(error) = handle.await {
                 fail_count += 1;
 
                 if !error.is_cancelled() || error.is_panic() {

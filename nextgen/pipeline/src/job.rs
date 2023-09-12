@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +26,6 @@ pub struct JobResult<T> {
 pub struct Job<T: Send> {
     pub batch_id: Option<String>,
     pub id: String,
-    pub state: RunState,
 
     /// Maximum seconds to run before it's cancelled.
     pub timeout: Option<u64>,
@@ -34,29 +33,26 @@ pub struct Job<T: Send> {
     /// Seconds to emit progress events on an interval.
     pub interval: Option<u64>,
 
-    action: Option<Box<dyn JobAction<T>>>,
+    action: Box<dyn JobAction<T>>,
 }
 
 impl<T: 'static + Send> Job<T> {
     pub fn new(id: String, action: impl JobAction<T> + 'static) -> Self {
         Self {
-            action: Some(Box::new(action)),
+            action: Box::new(action),
             batch_id: None,
             id,
-            state: RunState::Pending,
             timeout: None,
             interval: Some(30),
         }
     }
 
-    pub async fn run(&mut self, context: Context<T>) -> miette::Result<RunState> {
-        let action_fn = self.action.take().expect("Missing job action!");
+    pub async fn run(self, context: Context<T>) -> miette::Result<RunState> {
+        let action_fn = self.action;
+        let batch_id = self.batch_id;
+        let id = self.id;
 
-        debug!(
-            batch = self.batch_id.as_ref(),
-            job = &self.id,
-            "Running job"
-        );
+        debug!(batch = batch_id.as_ref(), job = &id, "Running job");
 
         let started_at = Utc::now();
         let duration = Instant::now();
@@ -64,18 +60,25 @@ impl<T: 'static + Send> Job<T> {
         let mut error = None;
         let mut error_report = None;
 
-        self.update_state(&context, RunState::Running).await?;
+        context
+            .on_job_state_change
+            .emit(JobStateChangeEvent {
+                job: id.clone(),
+                state: RunState::Running,
+                prev_state: RunState::Pending,
+            })
+            .await?;
 
         let timeout_token = CancellationToken::new();
-        let timeout_handle = self.track_timeout(timeout_token.clone());
-        let progress_handle = self.track_progress(context.clone());
+        let timeout_handle = track_timeout(self.timeout, timeout_token.clone());
+        let progress_handle = track_progress(self.interval, context.clone(), id.clone());
 
         let final_state = tokio::select! {
             // Abort if a sibling job has failed
             _ = context.abort_token.cancelled() => {
                 trace!(
-                    batch = self.batch_id.as_ref(),
-                    job = &self.id,
+                    batch = batch_id.as_ref(),
+                    job = &id,
                     "Job aborted",
                 );
 
@@ -85,8 +88,8 @@ impl<T: 'static + Send> Job<T> {
             // Cancel if we receive a shutdown signal
             _ = context.cancel_token.cancelled() => {
                 trace!(
-                    batch = self.batch_id.as_ref(),
-                    job = &self.id,
+                    batch = batch_id.as_ref(),
+                    job = &id,
                     "Job cancelled",
                 );
 
@@ -96,8 +99,8 @@ impl<T: 'static + Send> Job<T> {
             // Cancel if we have timed out
             _ = timeout_token.cancelled() => {
                 trace!(
-                    batch = self.batch_id.as_ref(),
-                    job = &self.id,
+                    batch = batch_id.as_ref(),
+                    job = &id,
                     "Job timed out",
                 );
 
@@ -110,8 +113,8 @@ impl<T: 'static + Send> Job<T> {
                     action = Some(res);
 
                     trace!(
-                        batch = self.batch_id.as_ref(),
-                        job = &self.id,
+                        batch = batch_id.as_ref(),
+                        job = &id,
                         "Job passed",
                     );
 
@@ -122,8 +125,8 @@ impl<T: 'static + Send> Job<T> {
                     error_report = Some(e);
 
                     trace!(
-                        batch = self.batch_id.as_ref(),
-                        job = &self.id,
+                        batch = batch_id.as_ref(),
+                        job = &id,
                         error = error.as_ref(),
                         "Job failed",
                     );
@@ -133,7 +136,14 @@ impl<T: 'static + Send> Job<T> {
             },
         };
 
-        self.update_state(&context, final_state).await?;
+        context
+            .on_job_state_change
+            .emit(JobStateChangeEvent {
+                job: id.clone(),
+                state: final_state,
+                prev_state: RunState::Running,
+            })
+            .await?;
 
         timeout_handle.abort();
         progress_handle.abort();
@@ -144,96 +154,68 @@ impl<T: 'static + Send> Job<T> {
             error,
             error_report,
             finished_at: Utc::now(),
-            id: self.id.clone(),
+            id: id.clone(),
             started_at,
-            state: self.state,
+            state: final_state,
         };
 
         debug!(
-            batch = self.batch_id.as_ref(),
-            job = &self.id,
+            batch = batch_id.as_ref(),
+            job = &id,
             state = ?result.state,
             duration = ?result.duration,
             "Ran job",
         );
-
-        // context
-        //     .on_job_finished
-        //     .emit(JobFinishedEvent {
-        //         job: id.clone(),
-        //         result: result.clone(),
-        //     })
-        //     .await?;
 
         // Send the result or abort pipeline on failure
         if context.result_sender.send(result).await.is_err() {
             context.abort_token.cancel();
         }
 
-        Ok(self.state)
+        Ok(final_state)
     }
+}
 
-    async fn update_state(
-        &mut self,
-        context: &Context<T>,
-        next_state: RunState,
-    ) -> miette::Result<()> {
-        let prev_state = self.state;
-        let state = next_state;
+fn track_progress<T>(duration: Option<u64>, context: Context<T>, id: String) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        if let Some(duration) = duration {
+            let mut secs = 0;
 
-        context
-            .on_job_state_change
-            .emit(JobStateChangeEvent {
-                job: self.id.clone(),
-                state,
-                prev_state,
-            })
-            .await?;
+            loop {
+                sleep(Duration::from_secs(duration)).await;
+                secs += duration;
 
-        self.state = state;
-
-        Ok(())
-    }
-
-    fn track_progress(&self, context: Context<T>) -> JoinHandle<()> {
-        let duration = self.interval;
-        let id = self.id.clone();
-
-        tokio::spawn(async move {
-            if let Some(duration) = duration {
-                let mut secs = 0;
-
-                loop {
-                    sleep(Duration::from_secs(duration)).await;
-                    secs += duration;
-
-                    let _ = context
-                        .on_job_progress
-                        .emit(JobProgressEvent {
-                            job: id.clone(),
-                            elapsed: secs as u32,
-                        })
-                        .await;
-                }
-            }
-        })
-    }
-
-    fn track_timeout(&self, timeout_token: CancellationToken) -> JoinHandle<()> {
-        let duration = self.timeout;
-
-        tokio::spawn(async move {
-            if let Some(duration) = duration {
-                if timeout(
-                    Duration::from_secs(duration),
-                    sleep(Duration::from_secs(86400)), // 1 day
-                )
-                .await
-                .is_err()
+                if let Err(error) = context
+                    .on_job_progress
+                    .emit(JobProgressEvent {
+                        job: id.clone(),
+                        elapsed: secs as u32,
+                    })
+                    .await
                 {
-                    timeout_token.cancel();
+                    warn!(
+                        job = &id,
+                        error = error.to_string(),
+                        "Failed to emit job progress update event!"
+                    );
                 }
             }
-        })
-    }
+        }
+    })
+}
+
+fn track_timeout(duration: Option<u64>, timeout_token: CancellationToken) -> JoinHandle<()> {
+    tokio::spawn(async move {
+        if let Some(duration) = duration {
+            if timeout(
+                Duration::from_secs(duration),
+                sleep(Duration::from_secs(86400)), // 1 day
+            )
+            .await
+            .is_err()
+            {
+                timeout_token.cancel();
+            }
+        }
+    })
 }

@@ -3591,6 +3591,7 @@ dependencies = [
  "miette",
  "num_cpus",
  "starbase",
+ "starbase_events",
  "thiserror",
  "tokio",
  "tokio-util",

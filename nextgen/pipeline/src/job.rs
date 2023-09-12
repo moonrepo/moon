@@ -1,11 +1,12 @@
 use crate::context::Context;
+use crate::pipeline_events::JobStateChangeEvent;
 use chrono::{DateTime, Utc};
 use futures::future::BoxFuture;
 use std::future::Future;
 use std::time::{Duration, Instant};
 use tracing::{debug, trace};
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum JobState {
     Aborted,
     Cancelled,
@@ -28,6 +29,7 @@ pub struct JobResult {
 pub struct Job<T: Send> {
     pub id: String,
     pub state: JobState,
+    pub timeout: u64,
 
     func: BoxFuture<'static, miette::Result<T>>,
 }
@@ -41,6 +43,7 @@ impl<T: 'static + Send> Job<T> {
             func: Box::pin(func),
             id,
             state: JobState::Pending,
+            timeout: 7200, // 2 hours
         }
     }
 
@@ -62,7 +65,13 @@ impl<T: 'static + Send> Job<T> {
             state: JobState::Running,
         };
 
-        // TODO emit event
+        context
+            .on_job_state_change
+            .emit(JobStateChangeEvent {
+                job: id.clone(),
+                state: result.state,
+            })
+            .await?;
 
         tokio::select! {
             // Cancel if we receive a shutdown signal
@@ -84,17 +93,31 @@ impl<T: 'static + Send> Job<T> {
             },
         };
 
-        debug!(job = &id, state = ?result.state, "Ran job");
+        context
+            .on_job_state_change
+            .emit(JobStateChangeEvent {
+                job: id.clone(),
+                state: result.state,
+            })
+            .await?;
 
         result.finished_at = Utc::now();
         result.duration = duration.elapsed();
+
+        debug!(job = &id, state = ?result.state, duration = ?result.duration, "Ran job");
+
+        // context
+        //     .on_job_finished
+        //     .emit(JobFinishedEvent {
+        //         job: id.clone(),
+        //         result: result.clone(),
+        //     })
+        //     .await?;
 
         // Send the result or cancel pipeline on failure
         // if context.result_sender.send(result).await.is_err() {
         //     context.cancel_token.cancel();
         // }
-
-        // TODO emit event
 
         Ok(())
     }

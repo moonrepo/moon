@@ -25,6 +25,7 @@ pub struct JobResult<T> {
 }
 
 pub struct Job<T: Send> {
+    pub batch_id: Option<String>,
     pub id: String,
     pub state: RunState,
 
@@ -43,6 +44,7 @@ impl<T: 'static + Send> Job<T> {
         F: Future<Output = miette::Result<T>> + Send + 'static,
     {
         Self {
+            batch_id: None,
             func: Some(Box::pin(func)),
             id,
             state: RunState::Pending,
@@ -54,7 +56,11 @@ impl<T: 'static + Send> Job<T> {
     pub async fn run(&mut self, context: Context<T>) -> miette::Result<RunState> {
         let func = self.func.take().expect("Missing job action!");
 
-        debug!(job = &self.id, "Running job");
+        debug!(
+            batch = self.batch_id.as_ref(),
+            job = &self.id,
+            "Running job"
+        );
 
         let started_at = Utc::now();
         let duration = Instant::now();
@@ -71,21 +77,33 @@ impl<T: 'static + Send> Job<T> {
         let final_state = tokio::select! {
             // Abort if a sibling job has failed
             _ = context.abort_token.cancelled() => {
-                trace!(job = &self.id, "Job aborted");
+                trace!(
+                    batch = self.batch_id.as_ref(),
+                    job = &self.id,
+                    "Job aborted",
+                );
 
                 RunState::Aborted
             }
 
             // Cancel if we receive a shutdown signal
             _ = context.cancel_token.cancelled() => {
-                trace!(job = &self.id, "Job cancelled");
+                trace!(
+                    batch = self.batch_id.as_ref(),
+                    job = &self.id,
+                    "Job cancelled",
+                );
 
                 RunState::Cancelled
             }
 
             // Cancel if we have timed out
             _ = timeout_token.cancelled() => {
-                trace!(job = &self.id, "Job timed out");
+                trace!(
+                    batch = self.batch_id.as_ref(),
+                    job = &self.id,
+                    "Job timed out",
+                );
 
                 RunState::TimedOut
             }
@@ -95,7 +113,11 @@ impl<T: 'static + Send> Job<T> {
                 Ok(res) => {
                     action = Some(res);
 
-                    trace!(job = &self.id, "Job passed");
+                    trace!(
+                        batch = self.batch_id.as_ref(),
+                        job = &self.id,
+                        "Job passed",
+                    );
 
                     RunState::Passed
                 },
@@ -103,7 +125,12 @@ impl<T: 'static + Send> Job<T> {
                     error = Some(e.to_string());
                     error_report = Some(e);
 
-                    trace!(job = &self.id, error = error.as_ref(), "Job failed");
+                    trace!(
+                        batch = self.batch_id.as_ref(),
+                        job = &self.id,
+                        error = error.as_ref(),
+                        "Job failed",
+                    );
 
                     RunState::Failed
                 },
@@ -127,6 +154,7 @@ impl<T: 'static + Send> Job<T> {
         };
 
         debug!(
+            batch = self.batch_id.as_ref(),
             job = &self.id,
             state = ?result.state,
             duration = ?result.duration,
@@ -141,9 +169,9 @@ impl<T: 'static + Send> Job<T> {
         //     })
         //     .await?;
 
-        // Send the result or cancel pipeline on failure
+        // Send the result or abort pipeline on failure
         if context.result_sender.send(result).await.is_err() {
-            context.cancel_token.cancel();
+            context.abort_token.cancel();
         }
 
         Ok(self.state)

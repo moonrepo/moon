@@ -52,10 +52,10 @@ pub enum RunState {
     /// Cancelled via a signal (ctrl+c, etc).
     Cancelled,
 
-    /// Action failed.
+    /// Job failed.
     Failed,
 
-    /// Action passed.
+    /// Job passed.
     Passed,
 
     /// Job is waiting to run.

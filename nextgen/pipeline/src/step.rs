@@ -43,15 +43,11 @@ impl<T: 'static + Send> IsolatedStep<T> {
             job: Job::new(id, func),
         }
     }
-
-    pub fn from(job: Job<T>) -> Self {
-        Self { job }
-    }
 }
 
 impl<T: 'static + Send> From<Job<T>> for IsolatedStep<T> {
     fn from(job: Job<T>) -> IsolatedStep<T> {
-        IsolatedStep::from(job)
+        IsolatedStep { job }
     }
 }
 
@@ -75,7 +71,7 @@ impl<T: 'static + Send> BatchedStep<T> {
     }
 
     pub fn add_job(&mut self, mut job: Job<T>) -> &mut Self {
-        job.id = format!("{}::{}", self.id, job.id);
+        job.batch_id = Some(self.id.clone());
 
         self.jobs.push(job);
         self

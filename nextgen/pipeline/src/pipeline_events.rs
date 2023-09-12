@@ -26,8 +26,3 @@ impl_event!(JobProgressEvent, {
     pub job: String,
     pub elapsed: u32,
 });
-
-impl_event!(JobFinishedEvent, {
-    pub job: String,
-    // pub result: JobResult,
-});

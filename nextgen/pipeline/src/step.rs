@@ -1,7 +1,7 @@
 use crate::context::*;
 use crate::job::*;
+use crate::JobAction;
 use async_trait::async_trait;
-use std::future::Future;
 use tokio::task::JoinHandle;
 use tracing::debug;
 
@@ -35,12 +35,9 @@ pub struct IsolatedStep<T: Send> {
 }
 
 impl<T: 'static + Send> IsolatedStep<T> {
-    pub fn new<F>(id: String, func: F) -> Self
-    where
-        F: Future<Output = miette::Result<T>> + Send + 'static,
-    {
+    pub fn new(id: String, action: impl JobAction<T> + 'static) -> Self {
         Self {
-            job: Job::new(id, func),
+            job: Job::new(id, action),
         }
     }
 }

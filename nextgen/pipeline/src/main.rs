@@ -47,13 +47,13 @@ async fn main() {
 
     // pipeline.pipe(create_batch("a".into()));
 
-    pipeline.add_step(IsolatedStep::new("a".into(), async {
+    pipeline.add_step(IsolatedStep::new("a".into(), || async {
         sleep(Duration::from_secs(1)).await;
         println!("a");
         Ok(TestResult {})
     }));
 
-    let mut b = Job::new("b".into(), async {
+    let mut b = Job::new("b".into(), || async {
         sleep(Duration::from_secs(2)).await;
         println!("b");
         Ok(TestResult {})
@@ -64,19 +64,19 @@ async fn main() {
 
     // pipeline.pipe(create_batch("c".into()));
 
-    pipeline.add_step(IsolatedStep::new("c".into(), async {
+    pipeline.add_step(IsolatedStep::new("c".into(), || async {
         sleep(Duration::from_secs(1)).await;
         println!("c");
         Ok(TestResult {})
     }));
 
-    pipeline.add_step(IsolatedStep::new("d".into(), async {
+    pipeline.add_step(IsolatedStep::new("d".into(), || async {
         sleep(Duration::from_secs(1)).await;
         println!("d");
         Ok(TestResult {})
     }));
 
-    pipeline.add_step(IsolatedStep::new("e".into(), async {
+    pipeline.add_step(IsolatedStep::new("e".into(), || async {
         sleep(Duration::from_secs(1)).await;
         println!("e");
         Ok(TestResult {})

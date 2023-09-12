@@ -11,7 +11,6 @@ use tracing::debug;
 use tracing::warn;
 
 pub struct Pipeline<T> {
-    pub on_job_finished: Arc<Emitter<JobFinishedEvent>>,
     pub on_job_progress: Arc<Emitter<JobProgressEvent>>,
     pub on_job_state_change: Arc<Emitter<JobStateChangeEvent>>,
 
@@ -23,7 +22,6 @@ impl<T> Pipeline<T> {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
-            on_job_finished: Arc::new(Emitter::new()),
             on_job_progress: Arc::new(Emitter::new()),
             on_job_state_change: Arc::new(Emitter::new()),
             concurrency: None,
@@ -54,7 +52,6 @@ impl<T> Pipeline<T> {
             cancel_token: CancellationToken::new(),
             semaphore: Arc::new(Semaphore::new(concurrency)),
             result_sender: sender.clone(),
-            on_job_finished: Arc::clone(&self.on_job_finished),
             on_job_progress: Arc::clone(&self.on_job_progress),
             on_job_state_change: Arc::clone(&self.on_job_state_change),
         };

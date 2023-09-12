@@ -19,7 +19,6 @@ pub struct Context<T> {
     pub semaphore: Arc<Semaphore>,
 
     // Events:
-    pub on_job_finished: Arc<Emitter<JobFinishedEvent>>,
     pub on_job_progress: Arc<Emitter<JobProgressEvent>>,
     pub on_job_state_change: Arc<Emitter<JobStateChangeEvent>>,
 }
@@ -36,7 +35,6 @@ impl<T> Context<T> {
             cancel_token: self.cancel_token.clone(),
             result_sender: self.result_sender.clone(),
             semaphore: self.semaphore.clone(),
-            on_job_finished: self.on_job_finished.clone(),
             on_job_progress: self.on_job_progress.clone(),
             on_job_state_change: self.on_job_state_change.clone(),
         }

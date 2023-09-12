@@ -1,9 +1,8 @@
 use crate::context::*;
+use crate::job_action::JobAction;
 use crate::pipeline_events::*;
 use chrono::{DateTime, Utc};
-use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
-use std::future::Future;
 use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, timeout};
@@ -35,17 +34,14 @@ pub struct Job<T: Send> {
     /// Seconds to emit progress events on an interval.
     pub interval: Option<u64>,
 
-    func: Option<BoxFuture<'static, miette::Result<T>>>,
+    action: Option<Box<dyn JobAction<T>>>,
 }
 
 impl<T: 'static + Send> Job<T> {
-    pub fn new<F>(id: String, func: F) -> Self
-    where
-        F: Future<Output = miette::Result<T>> + Send + 'static,
-    {
+    pub fn new(id: String, action: impl JobAction<T> + 'static) -> Self {
         Self {
+            action: Some(Box::new(action)),
             batch_id: None,
-            func: Some(Box::pin(func)),
             id,
             state: RunState::Pending,
             timeout: None,
@@ -54,7 +50,7 @@ impl<T: 'static + Send> Job<T> {
     }
 
     pub async fn run(&mut self, context: Context<T>) -> miette::Result<RunState> {
-        let func = self.func.take().expect("Missing job action!");
+        let action_fn = self.action.take().expect("Missing job action!");
 
         debug!(
             batch = self.batch_id.as_ref(),
@@ -109,7 +105,7 @@ impl<T: 'static + Send> Job<T> {
             }
 
             // Or run the job to completion
-            res = func => match res {
+            res = action_fn.run() => match res {
                 Ok(res) => {
                     action = Some(res);
 

@@ -53,11 +53,14 @@ async fn main() {
         Ok(TestResult {})
     }));
 
-    pipeline.add_step(IsolatedStep::new("b".into(), async {
-        sleep(Duration::from_secs(1)).await;
+    let mut b = Job::new("b".into(), async {
+        sleep(Duration::from_secs(2)).await;
         println!("b");
         Ok(TestResult {})
-    }));
+    });
+    b.timeout = Some(1);
+
+    pipeline.add_step(IsolatedStep::from(b));
 
     // pipeline.pipe(create_batch("c".into()));
 

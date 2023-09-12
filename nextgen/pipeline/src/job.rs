@@ -1,7 +1,8 @@
-use crate::context::Context;
+use crate::context::*;
 use crate::pipeline_events::*;
 use chrono::{DateTime, Utc};
 use futures::future::BoxFuture;
+use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
@@ -9,45 +10,23 @@ use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, trace};
 
-#[derive(Clone, Copy, Debug)]
-pub enum JobState {
-    /// Job was explicitly aborted from the action.
-    Aborted,
-
-    /// Cancelled via a signal (ctrl+c, etc).
-    Cancelled,
-
-    /// Action failed.
-    Failed,
-
-    /// Action passed.
-    Passed,
-
-    /// Job is waiting to run.
-    Pending,
-
-    /// Job is currently running and executing action.
-    Running,
-
-    /// Cancelled via a timeout.
-    TimedOut,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JobResult<T> {
     pub action: Option<T>,
     pub finished_at: DateTime<Utc>,
     pub duration: Duration,
     pub error: Option<String>,
+    #[serde(skip)]
     pub error_report: Option<miette::Report>,
     pub id: String,
     pub started_at: DateTime<Utc>,
-    pub state: JobState,
+    pub state: RunState,
 }
 
 pub struct Job<T: Send> {
     pub id: String,
-    pub state: JobState,
+    pub state: RunState,
 
     /// Maximum seconds to run before it's cancelled.
     pub timeout: Option<u64>,
@@ -66,13 +45,13 @@ impl<T: 'static + Send> Job<T> {
         Self {
             func: Some(Box::pin(func)),
             id,
-            state: JobState::Pending,
+            state: RunState::Pending,
             timeout: None,
             interval: Some(30),
         }
     }
 
-    pub async fn run(&mut self, context: Context<T>) -> miette::Result<()> {
+    pub async fn run(&mut self, context: Context<T>) -> miette::Result<RunState> {
         let func = self.func.take().expect("Missing job action!");
 
         debug!(job = &self.id, "Running job");
@@ -83,37 +62,50 @@ impl<T: 'static + Send> Job<T> {
         let mut error = None;
         let mut error_report = None;
 
-        self.update_state(&context, JobState::Running).await?;
+        self.update_state(&context, RunState::Running).await?;
 
         let timeout_token = CancellationToken::new();
         let timeout_handle = self.track_timeout(timeout_token.clone());
         let progress_handle = self.track_progress(context.clone());
 
         let final_state = tokio::select! {
+            // Abort if a sibling job has failed
+            _ = context.abort_token.cancelled() => {
+                trace!(job = &self.id, "Job aborted");
+
+                RunState::Aborted
+            }
+
             // Cancel if we receive a shutdown signal
             _ = context.cancel_token.cancelled() => {
-                trace!(id = &self.id, "Job cancelled via signal");
+                trace!(job = &self.id, "Job cancelled");
 
-                JobState::Cancelled
+                RunState::Cancelled
             }
 
             // Cancel if we have timed out
             _ = timeout_token.cancelled() => {
-                trace!(id = &self.id, "Job timed out");
+                trace!(job = &self.id, "Job timed out");
 
-                JobState::TimedOut
+                RunState::TimedOut
             }
 
             // Or run the job to completion
             res = func => match res {
                 Ok(res) => {
                     action = Some(res);
-                    JobState::Passed
+
+                    trace!(job = &self.id, "Job passed");
+
+                    RunState::Passed
                 },
                 Err(e) => {
                     error = Some(e.to_string());
                     error_report = Some(e);
-                    JobState::Failed
+
+                    trace!(job = &self.id, error = error.as_ref(), "Job failed");
+
+                    RunState::Failed
                 },
             },
         };
@@ -134,7 +126,12 @@ impl<T: 'static + Send> Job<T> {
             state: self.state,
         };
 
-        debug!(job = &self.id, state = ?result.state, duration = ?result.duration, "Ran job");
+        debug!(
+            job = &self.id,
+            state = ?result.state,
+            duration = ?result.duration,
+            "Ran job",
+        );
 
         // context
         //     .on_job_finished
@@ -149,13 +146,13 @@ impl<T: 'static + Send> Job<T> {
             context.cancel_token.cancel();
         }
 
-        Ok(())
+        Ok(self.state)
     }
 
     async fn update_state(
         &mut self,
         context: &Context<T>,
-        next_state: JobState,
+        next_state: RunState,
     ) -> miette::Result<()> {
         let prev_state = self.state;
         let state = next_state;
@@ -175,7 +172,7 @@ impl<T: 'static + Send> Job<T> {
     }
 
     fn track_progress(&self, context: Context<T>) -> JoinHandle<()> {
-        let duration = self.interval.clone();
+        let duration = self.interval;
         let id = self.id.clone();
 
         tokio::spawn(async move {
@@ -184,13 +181,13 @@ impl<T: 'static + Send> Job<T> {
 
                 loop {
                     sleep(Duration::from_secs(duration)).await;
-                    secs += 30;
+                    secs += duration;
 
                     let _ = context
                         .on_job_progress
                         .emit(JobProgressEvent {
                             job: id.clone(),
-                            elapsed: secs,
+                            elapsed: secs as u32,
                         })
                         .await;
                 }
@@ -199,7 +196,7 @@ impl<T: 'static + Send> Job<T> {
     }
 
     fn track_timeout(&self, timeout_token: CancellationToken) -> JoinHandle<()> {
-        let duration = self.timeout.clone();
+        let duration = self.timeout;
 
         tokio::spawn(async move {
             if let Some(duration) = duration {

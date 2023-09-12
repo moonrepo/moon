@@ -1,4 +1,4 @@
-use crate::job::*;
+use crate::context::RunState;
 use starbase_events::Event;
 
 macro_rules! impl_event {
@@ -18,8 +18,8 @@ macro_rules! impl_event {
 
 impl_event!(JobStateChangeEvent, {
     pub job: String,
-    pub state: JobState,
-    pub prev_state: JobState,
+    pub state: RunState,
+    pub prev_state: RunState,
 });
 
 impl_event!(JobProgressEvent, {

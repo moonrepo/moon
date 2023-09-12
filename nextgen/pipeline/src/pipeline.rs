@@ -20,6 +20,7 @@ pub struct Pipeline<T> {
 }
 
 impl<T> Pipeline<T> {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             on_job_finished: Arc::new(Emitter::new()),
@@ -49,6 +50,7 @@ impl<T> Pipeline<T> {
         let (sender, mut receiver) = mpsc::channel::<JobResult<T>>(10);
 
         let context = Context {
+            abort_token: CancellationToken::new(),
             cancel_token: CancellationToken::new(),
             semaphore: Arc::new(Semaphore::new(concurrency)),
             result_sender: sender.clone(),
@@ -65,12 +67,8 @@ impl<T> Pipeline<T> {
         let mut complete_steps = 0;
 
         for step in self.steps {
-            let handle = step.run(context.clone()).await;
-
             // Wait for the handle to complete, as steps are ran serially
-            if handle.await.is_err() {
-                context.cancel_token.cancel();
-            }
+            step.run(context.clone()).await;
         }
 
         // Wait for our results or for jobs to shutdown
@@ -82,7 +80,10 @@ impl<T> Pipeline<T> {
             complete_steps += 1;
             results.push(result);
 
-            if complete_steps == total_steps || context.cancel_token.is_cancelled() {
+            if complete_steps == total_steps
+                || context.abort_token.is_cancelled()
+                || context.cancel_token.is_cancelled()
+            {
                 break;
             }
         }

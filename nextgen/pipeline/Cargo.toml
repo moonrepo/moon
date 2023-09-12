@@ -17,6 +17,7 @@ chrono = { workspace = true }
 futures = "0.3.28"
 miette = { workspace = true }
 num_cpus = "1.16.0"
+serde = { workspace = true }
 starbase_events = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["macros", "signal", "time"] }

@@ -1,4 +1,4 @@
-use crate::context::Context;
+use crate::context::*;
 use crate::job::*;
 use async_trait::async_trait;
 use std::future::Future;
@@ -6,9 +6,9 @@ use tokio::task::JoinHandle;
 use tracing::debug;
 
 async fn spawn_job<T: 'static + Send>(
-    context: Context<T>,
     mut job: Job<T>,
-) -> JoinHandle<miette::Result<()>> {
+    context: Context<T>,
+) -> JoinHandle<RunState> {
     let permit = context
         .semaphore
         .clone()
@@ -17,15 +17,17 @@ async fn spawn_job<T: 'static + Send>(
         .expect("Failed to acquire semaphore!");
 
     tokio::spawn(async move {
-        job.run(context).await?;
+        let result = job.run(context).await;
+
         drop(permit);
-        Ok(())
+
+        result.ok().unwrap_or(RunState::Failed)
     })
 }
 
 #[async_trait]
 pub trait Step<T>: Send {
-    async fn run(self: Box<Self>, context: Context<T>) -> JoinHandle<()>;
+    async fn run(self: Box<Self>, context: Context<T>) -> RunState;
 }
 
 pub struct IsolatedStep<T: Send> {
@@ -41,16 +43,24 @@ impl<T: 'static + Send> IsolatedStep<T> {
             job: Job::new(id, func),
         }
     }
+
+    pub fn from(job: Job<T>) -> Self {
+        Self { job }
+    }
+}
+
+impl<T: 'static + Send> From<Job<T>> for IsolatedStep<T> {
+    fn from(job: Job<T>) -> IsolatedStep<T> {
+        IsolatedStep::from(job)
+    }
 }
 
 #[async_trait]
 impl<T: 'static + Send> Step<T> for IsolatedStep<T> {
-    async fn run(self: Box<Self>, context: Context<T>) -> JoinHandle<()> {
-        // TODO: abort
+    async fn run(self: Box<Self>, context: Context<T>) -> RunState {
+        let handle = spawn_job(self.job, context).await;
 
-        tokio::spawn(async {
-            spawn_job(context, self.job).await.await.unwrap().unwrap();
-        })
+        handle.await.ok().unwrap()
     }
 }
 
@@ -74,21 +84,42 @@ impl<T: 'static + Send> BatchedStep<T> {
 
 #[async_trait]
 impl<T: 'static + Send> Step<T> for BatchedStep<T> {
-    async fn run(self: Box<Self>, context: Context<T>) -> JoinHandle<()> {
-        debug!(step = &self.id, "Running batched step");
+    async fn run(self: Box<Self>, context: Context<T>) -> RunState {
+        debug!(
+            batch = &self.id,
+            job_count = self.jobs.len(),
+            "Running batched step"
+        );
 
-        let mut batch = vec![];
+        let mut batch = Vec::with_capacity(self.jobs.len());
+        let mut fail_count = 0;
 
         for job in self.jobs {
-            batch.push(spawn_job(context.clone(), job).await);
+            batch.push(spawn_job(job, context.clone()).await);
         }
 
-        // TODO: abort
-
-        tokio::spawn(async move {
-            for job in batch {
-                job.await.unwrap().unwrap();
+        for job in batch {
+            if job.is_finished() {
+                continue;
             }
-        })
+
+            if context.abort_token.is_cancelled() {
+                job.abort();
+            }
+
+            if let Err(error) = job.await {
+                fail_count += 1;
+
+                if !error.is_cancelled() || error.is_panic() {
+                    context.abort_token.cancel();
+                }
+            }
+        }
+
+        if fail_count > 0 {
+            RunState::Failed
+        } else {
+            RunState::Passed
+        }
     }
 }

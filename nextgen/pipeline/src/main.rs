@@ -1,58 +1,68 @@
-use moon_pipeline::{Job, JobBatch, Pipeline};
+use moon_pipeline::{IsolatedStep, Job, Pipeline};
 use starbase::App;
 use std::time::Duration;
 use tokio::time::sleep;
 
-fn create_batch(id: String) -> JobBatch {
-    let mut batch = JobBatch::new(id.clone());
+// fn create_batch(id: String) -> JobBatch {
+//     let mut batch = JobBatch::new(id.clone());
 
-    for i in 1..=10 {
-        let job_id = format!("{id}{i}");
+//     for i in 1..=10 {
+//         let job_id = format!("{id}{i}");
 
-        batch.add_job(Job::new(job_id.clone(), async move {
-            sleep(Duration::from_secs(i)).await;
-            println!("{}", job_id);
-        }));
-    }
+//         batch.add_job(Job::new(job_id.clone(), async move {
+//             sleep(Duration::from_secs(i)).await;
+//             println!("{}", job_id);
+//         }));
+//     }
 
-    batch
-}
+//     batch
+// }
+
+#[derive(Debug)]
+struct TestResult {}
 
 #[tokio::main]
 async fn main() {
     App::setup_diagnostics();
     App::setup_tracing();
 
-    let mut pipeline = Pipeline::default();
+    let mut pipeline = Pipeline::<TestResult>::new();
 
     // pipeline.pipe(create_batch("a".into()));
 
-    pipeline.pipe(Job::new("a".into(), async {
+    pipeline.add_step(IsolatedStep::new("a".into(), async {
         sleep(Duration::from_secs(1)).await;
         println!("a");
+        Ok(TestResult {})
     }));
 
-    pipeline.pipe(Job::new("b".into(), async {
+    pipeline.add_step(IsolatedStep::new("b".into(), async {
         sleep(Duration::from_secs(1)).await;
         println!("b");
+        Ok(TestResult {})
     }));
 
     // pipeline.pipe(create_batch("c".into()));
 
-    pipeline.pipe(Job::new("c".into(), async {
+    pipeline.add_step(IsolatedStep::new("c".into(), async {
         sleep(Duration::from_secs(1)).await;
         println!("c");
+        Ok(TestResult {})
     }));
 
-    pipeline.pipe(Job::new("d".into(), async {
+    pipeline.add_step(IsolatedStep::new("d".into(), async {
         sleep(Duration::from_secs(1)).await;
         println!("d");
+        Ok(TestResult {})
     }));
 
-    pipeline.pipe(Job::new("e".into(), async {
+    pipeline.add_step(IsolatedStep::new("e".into(), async {
         sleep(Duration::from_secs(1)).await;
         println!("e");
+        Ok(TestResult {})
     }));
 
-    pipeline.run().await;
+    let results = pipeline.run().await.unwrap();
+
+    dbg!(results);
 }

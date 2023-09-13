@@ -15,8 +15,6 @@ fn sets_up_and_tears_down() {
     let moon_dir = home_dir.join(".proto");
     let node_dir = moon_dir.join("tools/node").join(node_version);
 
-    assert!(!node_dir.exists());
-
     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(

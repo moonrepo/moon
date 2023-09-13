@@ -3,6 +3,7 @@ use crate::job_action::JobAction;
 use crate::pipeline_events::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, timeout};
@@ -24,7 +25,7 @@ pub struct JobResult<T> {
 }
 
 pub struct Job<T: Send> {
-    pub batch_id: Option<String>,
+    pub batch_id: Option<Arc<String>>,
     pub id: String,
 
     /// Maximum seconds to run before it's cancelled.
@@ -49,10 +50,10 @@ impl<T: 'static + Send> Job<T> {
 
     pub async fn run(self, context: Context<T>) -> miette::Result<RunState> {
         let action_fn = self.action;
-        let batch_id = self.batch_id;
+        let batch_id = self.batch_id.as_deref().map(|id| id.as_str());
         let id = self.id;
 
-        debug!(batch = batch_id.as_ref(), job = &id, "Running job");
+        debug!(batch = &batch_id, job = &id, "Running job");
 
         let started_at = Utc::now();
         let duration = Instant::now();
@@ -80,7 +81,7 @@ impl<T: 'static + Send> Job<T> {
             // Abort if a sibling job has failed
             _ = context.abort_token.cancelled() => {
                 trace!(
-                    batch = batch_id.as_ref(),
+                    batch = &batch_id,
                     job = &id,
                     "Job aborted",
                 );
@@ -91,7 +92,7 @@ impl<T: 'static + Send> Job<T> {
             // Cancel if we receive a shutdown signal
             _ = context.cancel_token.cancelled() => {
                 trace!(
-                    batch = batch_id.as_ref(),
+                    batch = &batch_id,
                     job = &id,
                     "Job cancelled",
                 );
@@ -102,7 +103,7 @@ impl<T: 'static + Send> Job<T> {
             // Cancel if we have timed out
             _ = timeout_token.cancelled() => {
                 trace!(
-                    batch = batch_id.as_ref(),
+                    batch = &batch_id,
                     job = &id,
                     "Job timed out",
                 );
@@ -116,7 +117,7 @@ impl<T: 'static + Send> Job<T> {
                     action = Some(res);
 
                     trace!(
-                        batch = batch_id.as_ref(),
+                        batch = &batch_id,
                         job = &id,
                         "Job passed",
                     );
@@ -128,7 +129,7 @@ impl<T: 'static + Send> Job<T> {
                     error_report = Some(e);
 
                     trace!(
-                        batch = batch_id.as_ref(),
+                        batch = &batch_id,
                         job = &id,
                         error = error.as_ref(),
                         "Job failed",
@@ -163,17 +164,15 @@ impl<T: 'static + Send> Job<T> {
         };
 
         debug!(
-            batch = batch_id.as_ref(),
+            batch = &batch_id,
             job = &id,
             state = ?result.state,
             duration = ?result.duration,
             "Ran job",
         );
 
-        // Send the result or abort pipeline on failure
-        if context.result_sender.send(result).await.is_err() {
-            context.abort();
-        }
+        // Send the result to the pipeline
+        let _ = context.result_sender.send(result).await;
 
         Ok(final_state)
     }

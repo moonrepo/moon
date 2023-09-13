@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use moon_pipeline::*;
+use rand::Rng;
 use starbase_events::*;
 use std::sync::Arc;
 use std::time::Duration;
@@ -116,6 +117,62 @@ mod pipeline {
         assert_eq!(results[0].state, RunState::Passed);
         assert_eq!(results[1].state, RunState::TimedOut);
         assert_eq!(results[2].state, RunState::Passed);
+    }
+
+    mod concurrency {
+        use super::*;
+
+        #[tokio::test]
+        async fn runs_batched_jobs_in_parallel() {
+            let mut pipeline = Pipeline::<RunState>::new();
+            let mut batch = BatchedStep::new("batch".into());
+
+            for i in 1..=10 {
+                batch.add_job(create_job_with_sleep(
+                    format!("{i}").as_str(),
+                    rand::thread_rng().gen_range(100..500),
+                ));
+            }
+
+            pipeline.add_step(batch);
+
+            let results = pipeline.run().await.unwrap();
+
+            assert_eq!(results.len(), 10);
+
+            for i in 0..10 {
+                assert!(results[i].duration.as_millis() <= 550)
+            }
+
+            assert_ne!(
+                results.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+                vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            );
+        }
+
+        #[tokio::test]
+        async fn can_limit_parallel_concurrency() {
+            let mut pipeline = Pipeline::<RunState>::new();
+            pipeline.concurrency(1);
+
+            let mut batch = BatchedStep::new("batch".into());
+
+            for i in 1..=10 {
+                batch.add_job(create_job_with_sleep(
+                    format!("{i}").as_str(),
+                    rand::thread_rng().gen_range(100..500),
+                ));
+            }
+
+            pipeline.add_step(batch);
+
+            let results = pipeline.run().await.unwrap();
+
+            assert_eq!(
+                results.into_iter().map(|r| r.id).collect::<Vec<_>>(),
+                vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+            );
+        }
     }
 
     mod progress_event {

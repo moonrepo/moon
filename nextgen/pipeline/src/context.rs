@@ -47,6 +47,10 @@ impl<T> Context<T> {
     pub fn cancel(&self) {
         self.cancel_token.cancel();
     }
+
+    pub fn is_aborted_or_cancelled(&self) -> bool {
+        self.abort_token.is_cancelled() || self.cancel_token.is_cancelled()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
@@ -75,6 +79,8 @@ pub enum RunState {
 }
 
 impl RunState {
+    /// Has the run failed? A fail is determined by a job that has ran to completion,
+    /// but has ultimately failed. Aborted and cancelled jobs never run to completion.
     pub fn has_failed(&self) -> bool {
         matches!(self, Self::Failed | Self::TimedOut)
     }

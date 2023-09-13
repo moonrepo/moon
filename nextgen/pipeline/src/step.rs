@@ -2,6 +2,7 @@ use crate::context::*;
 use crate::job::*;
 use crate::JobAction;
 use async_trait::async_trait;
+use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tracing::debug;
 
@@ -24,6 +25,7 @@ async fn spawn_job<T: 'static + Send>(job: Job<T>, context: Context<T>) -> JoinH
 
 #[async_trait]
 pub trait Step<T>: Send {
+    fn get_job_count(&self) -> usize;
     async fn run(self: Box<Self>, context: Context<T>) -> RunState;
 }
 
@@ -47,6 +49,10 @@ impl<T: 'static + Send> From<Job<T>> for IsolatedStep<T> {
 
 #[async_trait]
 impl<T: 'static + Send> Step<T> for IsolatedStep<T> {
+    fn get_job_count(&self) -> usize {
+        1
+    }
+
     async fn run(self: Box<Self>, context: Context<T>) -> RunState {
         let handle = spawn_job(self.job, context).await;
 
@@ -55,13 +61,16 @@ impl<T: 'static + Send> Step<T> for IsolatedStep<T> {
 }
 
 pub struct BatchedStep<T: Send> {
-    id: String,
+    id: Arc<String>,
     jobs: Vec<Job<T>>,
 }
 
 impl<T: 'static + Send> BatchedStep<T> {
     pub fn new(id: String) -> Self {
-        Self { id, jobs: vec![] }
+        Self {
+            id: Arc::new(id),
+            jobs: vec![],
+        }
     }
 
     pub fn add_job(&mut self, mut job: Job<T>) -> &mut Self {
@@ -74,9 +83,13 @@ impl<T: 'static + Send> BatchedStep<T> {
 
 #[async_trait]
 impl<T: 'static + Send> Step<T> for BatchedStep<T> {
+    fn get_job_count(&self) -> usize {
+        self.jobs.len()
+    }
+
     async fn run(self: Box<Self>, context: Context<T>) -> RunState {
         debug!(
-            batch = &self.id,
+            batch = self.id.as_str(),
             job_count = self.jobs.len(),
             "Running batched step"
         );
@@ -93,10 +106,12 @@ impl<T: 'static + Send> Step<T> for BatchedStep<T> {
                 continue;
             }
 
-            if context.abort_token.is_cancelled() {
+            // If the pipeline is shutting down, abort the handle
+            if context.is_aborted_or_cancelled() {
                 handle.abort();
             }
 
+            // If the handle failed from a non-cancellation, abort the pipeline
             if let Err(error) = handle.await {
                 fail_count += 1;
 
@@ -105,6 +120,8 @@ impl<T: 'static + Send> Step<T> for BatchedStep<T> {
                 }
             }
         }
+
+        debug!(batch = self.id.as_str(), "Ran batched step");
 
         if fail_count > 0 {
             RunState::Failed

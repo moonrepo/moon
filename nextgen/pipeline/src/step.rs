@@ -101,7 +101,7 @@ impl<T: 'static + Send> Step<T> for BatchedStep<T> {
                 fail_count += 1;
 
                 if !error.is_cancelled() || error.is_panic() {
-                    context.abort_token.cancel();
+                    context.abort();
                 }
             }
         }

@@ -39,12 +39,20 @@ impl<T> Context<T> {
             on_job_state_change: self.on_job_state_change.clone(),
         }
     }
+
+    pub fn abort(&self) {
+        self.abort_token.cancel();
+    }
+
+    pub fn cancel(&self) {
+        self.cancel_token.cancel();
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum RunState {
-    /// Job was explicitly aborted via the action.
+    /// Job was explicitly aborted.
     Aborted,
 
     /// Cancelled via a signal (ctrl+c, etc).
@@ -68,9 +76,14 @@ pub enum RunState {
 
 impl RunState {
     pub fn has_failed(&self) -> bool {
-        matches!(
-            self,
-            Self::Aborted | Self::Cancelled | Self::Failed | Self::TimedOut
-        )
+        matches!(self, Self::Failed | Self::TimedOut)
+    }
+
+    pub fn is_incomplete(&self) -> bool {
+        matches!(self, Self::Aborted | Self::Cancelled | Self::TimedOut)
+    }
+
+    pub fn is_complete(&self) -> bool {
+        matches!(self, Self::Failed | Self::Passed)
     }
 }

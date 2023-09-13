@@ -17,6 +17,10 @@ fn create_job_with_sleep(id: &str, duration: u64) -> Job<RunState> {
     })
 }
 
+fn create_failure_job(id: &str) -> Job<RunState> {
+    Job::new(id.into(), || async { Err(miette::miette!("oops")) })
+}
+
 fn create_isolated(job: Job<RunState>) -> IsolatedStep<RunState> {
     IsolatedStep::from(job)
 }
@@ -41,6 +45,39 @@ mod pipeline {
         assert_eq!(results[0].id, "1");
         assert_eq!(results[1].id, "2");
         assert_eq!(results[2].id, "3");
+        assert_eq!(results[0].state, RunState::Passed);
+        assert_eq!(results[1].state, RunState::Passed);
+        assert_eq!(results[2].state, RunState::Passed);
+    }
+
+    #[tokio::test]
+    async fn runs_all_even_if_a_failure() {
+        let mut pipeline = Pipeline::<RunState>::new();
+        pipeline.add_step(create_isolated(create_failure_job("1")));
+        pipeline.add_step(create_isolated_job("2"));
+        pipeline.add_step(create_isolated_job("3"));
+
+        let results = pipeline.run().await.unwrap();
+
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0].state, RunState::Failed);
+        assert_eq!(results[1].state, RunState::Passed);
+        assert_eq!(results[2].state, RunState::Passed);
+    }
+
+    #[tokio::test]
+    async fn bails_on_a_failure() {
+        let mut pipeline = Pipeline::<RunState>::new();
+        pipeline.bail_on_failure();
+        pipeline.add_step(create_isolated_job("1"));
+        pipeline.add_step(create_isolated(create_failure_job("2")));
+        pipeline.add_step(create_isolated_job("3"));
+
+        let results = pipeline.run().await.unwrap();
+
+        assert_eq!(results.len(), 2); // Doesn't run 3
+        assert_eq!(results[0].state, RunState::Passed);
+        assert_eq!(results[1].state, RunState::Failed);
     }
 
     #[tokio::test]
@@ -52,7 +89,7 @@ mod pipeline {
 
         let results = pipeline
             .run_with_context(|ctx| {
-                ctx.cancel_token.cancel();
+                ctx.cancel();
             })
             .await
             .unwrap();

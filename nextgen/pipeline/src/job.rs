@@ -172,7 +172,7 @@ impl<T: 'static + Send> Job<T> {
 
         // Send the result or abort pipeline on failure
         if context.result_sender.send(result).await.is_err() {
-            context.abort_token.cancel();
+            context.abort();
         }
 
         Ok(final_state)

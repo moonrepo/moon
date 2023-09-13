@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Rewrote the actions pipeline from the ground-up:
+  - Increased performance.
+  - Better concurrency handling and scheduling.
+  - More accurately monitors signals (ctrl+c) and shutdowns.
+  - Tasks can now be configured with a timeout.
+
 ## 1.13.4
 
 #### ⚙️ Internal

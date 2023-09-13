@@ -140,8 +140,8 @@ mod pipeline {
 
             assert_eq!(results.len(), 10);
 
-            for i in 0..10 {
-                assert!(results[i].duration.as_millis() <= 550)
+            for result in &results {
+                assert!(result.duration.as_millis() <= 550)
             }
 
             assert_ne!(

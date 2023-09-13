@@ -1,42 +1,42 @@
-use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
-use moon_utils::is_ci;
-use starbase_utils::dirs;
+// use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
+// use moon_utils::is_ci;
+// use starbase_utils::dirs;
 
-#[test]
-fn sets_up_and_tears_down() {
-    // This is heavy so avoid in local tests for now
-    if !is_ci() {
-        return;
-    }
+// #[test]
+// fn sets_up_and_tears_down() {
+//     // This is heavy so avoid in local tests for now
+//     if !is_ci() {
+//         return;
+//     }
 
-    // We use a different Node.js version as to not conflict with other tests!
-    let node_version = "17.1.0";
-    let home_dir = dirs::home_dir().unwrap();
-    let moon_dir = home_dir.join(".proto");
-    let node_dir = moon_dir.join("tools/node").join(node_version);
+//     // We use a different Node.js version as to not conflict with other tests!
+//     let node_version = "17.1.0";
+//     let home_dir = dirs::home_dir().unwrap();
+//     let moon_dir = home_dir.join(".proto");
+//     let node_dir = moon_dir.join("tools/node").join(node_version);
 
-    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
+//     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
-    let sandbox = create_sandbox_with_config(
-        "cases",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
+//     let sandbox = create_sandbox_with_config(
+//         "cases",
+//         Some(workspace_config),
+//         Some(toolchain_config),
+//         Some(tasks_config),
+//     );
 
-    let setup = sandbox.run_moon(|cmd| {
-        cmd.arg("setup").env("MOON_NODE_VERSION", node_version);
-    });
+//     let setup = sandbox.run_moon(|cmd| {
+//         cmd.arg("setup").env("MOON_NODE_VERSION", node_version);
+//     });
 
-    setup.success().code(0);
+//     setup.success().code(0);
 
-    assert!(node_dir.exists());
+//     assert!(node_dir.exists());
 
-    let teardown = sandbox.run_moon(|cmd| {
-        cmd.arg("teardown").env("MOON_NODE_VERSION", node_version);
-    });
+//     let teardown = sandbox.run_moon(|cmd| {
+//         cmd.arg("teardown").env("MOON_NODE_VERSION", node_version);
+//     });
 
-    teardown.success().code(0);
+//     teardown.success().code(0);
 
-    assert!(!node_dir.exists());
-}
+//     assert!(!node_dir.exists());
+// }

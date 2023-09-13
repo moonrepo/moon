@@ -68,7 +68,7 @@ impl<T> Pipeline<T> {
         on_run(context.clone());
 
         // Monitor signals and ctrl+c
-        monitor_signals(context.cancel_token.clone());
+        let signal_handle = monitor_signals(context.cancel_token.clone());
 
         // Run our pipes (jobs) one-by-one
         let total_steps = self.steps.len();
@@ -96,11 +96,13 @@ impl<T> Pipeline<T> {
             }
         }
 
+        signal_handle.abort();
+
         Ok(results)
     }
 }
 
-fn monitor_signals(cancel_token: CancellationToken) {
+fn monitor_signals(cancel_token: CancellationToken) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         debug!("Listening for ctrl+c signal");
 
@@ -109,5 +111,5 @@ fn monitor_signals(cancel_token: CancellationToken) {
 
             cancel_token.cancel();
         }
-    });
+    })
 }

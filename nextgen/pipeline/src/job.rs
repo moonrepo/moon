@@ -74,6 +74,9 @@ impl<T: 'static + Send> Job<T> {
         let progress_handle = track_progress(self.interval, context.clone(), id.clone());
 
         let final_state = tokio::select! {
+            // Run conditions in order!
+            biased;
+
             // Abort if a sibling job has failed
             _ = context.abort_token.cancelled() => {
                 trace!(

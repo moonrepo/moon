@@ -42,7 +42,7 @@ starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tokio-util = "0.7.8"
+tokio-util = { workspace = true }
 
 [dev-dependencies]
 moon = { path = "../moon" }

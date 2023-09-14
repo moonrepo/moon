@@ -1,0 +1,23 @@
+[package]
+name = "moon_pipeline"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Generic pipeline for running jobs."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+async-trait = { workspace = true }
+chrono = { workspace = true }
+miette = { workspace = true }
+num_cpus = "1.16.0"
+serde = { workspace = true }
+starbase_events = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["macros", "signal", "time"] }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+rand = "0.8.5"

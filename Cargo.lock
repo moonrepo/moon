@@ -3582,6 +3582,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_pipeline"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "miette",
+ "num_cpus",
+ "rand",
+ "serde",
+ "starbase_events",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "moon_platform"
 version = "0.1.0"
 dependencies = [

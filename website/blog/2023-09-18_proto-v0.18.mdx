@@ -1,0 +1,67 @@
+---
+slug: proto-v0.18
+title: proto v0.18 - List installed tools and configure HTTP client
+authors: [milesj]
+tags: [proto, http]
+# image: ./img/proto/v0.17.png
+---
+
+Today we've got a small release that includes some helpful features.
+
+<!--truncate-->
+
+## New `proto tools` command
+
+Are you curious what tools you have installed? And more specifically, which versions? What about
+configured aliases? Until now, you had to manually check the `~/.proto/tools` directory for this
+information, but now, you can simply run [`proto tools`](/docs/proto/commands/tools) to get a list
+of all installed tools.
+
+This command will list all tools that have been installed, along with their installed versions,
+relevant timestamps, available aliases, and store location.
+
+```shell
+$ proto tools
+go - Go
+  Store: ~/.proto/tools/go
+  Versions:
+    1.20.0 - installed 08/24/23, last used 09/18/23
+    1.20.2 - installed 01/01/70, last used 09/18/23, default version
+
+node - Node.js
+  Store: ~/.proto/tools/node
+  Aliases:
+    ~20 = stable
+  Versions:
+    18.0.0 - installed 09/03/23, last used 09/18/23, default version
+    18.14.0 - installed 09/04/23, last used 09/04/23
+    18.17.1 - installed 09/04/23, last used 09/04/23
+    19.0.0 - installed 09/03/23
+    20.0.0 - installed 09/03/23
+    20.6.0 - installed 09/04/23, last used 09/18/23
+```
+
+> This information can also be represented as JSON by passing the `--json` flag.
+
+## New `[http]` user settings
+
+Furthermore, we've added a new [`[http]` setting to `~/.proto/config.toml`](/docs/proto/config#http)
+that allows you to configure aspects of the HTTP client, which is primarily used for downloading
+tools.
+
+This may useful if you're behind a proxy, a VPN, or corporate network, and certain requests and
+certificates are blocked.
+
+```toml title="~/.proto/config.toml"
+[http]
+proxies = ["http://intra.net/proxy"]
+root-cert = "/path/to/root/cert.pem"
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.18.0) for a full list
+of changes.
+
+- For TOML plugins, we updated the schema internally to be represented as JSON instead of TOML,
+  which may cause breakages depending on a version mismatch between proto and the plugin.

@@ -15,7 +15,7 @@ proto supports pinning versions of tools on a per-project or per-directory basis
 `.prototools` configuration file. This file takes precedence during [version detection](./detection)
 and can be created/updated with [`proto local`](./commands/local).
 
-This configuration simply maps tools to fully-qualified semantic versions for the current directory.
+This configuration simply maps tools to versions for the current directory.
 
 ```toml title=".prototools"
 node = "16.16.0"
@@ -26,9 +26,10 @@ rust = "1.68.0"
 
 > The names of tools are the same used on the command line!
 
-### Plugins
+### `[plugins]`
 
-[Plugins](./plugins) can also be configured on a per-project basis with the `[plugins]` section.
+[Plugins](./plugins) can also be configured with the `[plugins]` section.
+[Learn more about this syntax](./plugins#enabling-plugins).
 
 ```toml title=".prototools"
 [plugins]
@@ -47,26 +48,61 @@ proto operates with sane defaults and accomplishes its goals very well. However,
 user choice and customization, and as such, support a user configuration file located at
 `~/.proto/config.toml`, which can be used to customize the behavior of proto.
 
-```toml title="~/.proto/config.toml"
-auto-install = true
-```
-
-These settings (excluding plugins) can also be configured via environment variables.
+Some of these settings (excluding plugins) can also be configured via environment variables.
 
 ```shell
 PROTO_AUTO_INSTALL=true proto run node
 ```
 
-### Settings
+### `auto-install`
 
-- `auto-install` - When enabled, will automatically installing missing tools when
-  [`proto run`](./commands/run) is run, instead of erroring. Defaults to `false`.
-- `auto-clean` - When enabled, will automatically clean up the proto cache when
-  [`proto use`](./commands/use) is run. Defaults to `false`.
-- `node-intercept-globals` - When enabled, will intercept global package installs for npm/pnpm/yarn
-  and suggest using [`proto install-global`](./commands/install-global) instead. Defaults to `true`.
-- `[plugins]` - A mapping of plugins available to the user. Refer to the [plugins](#plugins) section
-  above for more information.
+When enabled, will automatically installing missing tools when [`proto run`](./commands/run) is run,
+instead of erroring. Defaults to `false`.
+
+```toml title="~/.proto/config.toml"
+auto-install = true
+```
+
+### `auto-clean`
+
+When enabled, will automatically clean up the proto cache when [`proto use`](./commands/use) is run.
+Defaults to `false`.
+
+```toml title="~/.proto/config.toml"
+auto-clean = true
+```
+
+### `node-intercept-globals`
+
+When enabled, will intercept global package installs for node/npm/pnpm/yarn and suggest using
+[`proto install-global`](./commands/install-global) instead. Defaults to `true`.
+
+```toml title="~/.proto/config.toml"
+node-intercept-globals = false
+```
+
+### `[http]`
+
+Can be used to customize the HTTP client used by proto and warpgate, primarily for requesting files
+to download, available versions, and more. The following settings are available:
+
+- `allow-invalid-certs` - When enabled, will allow invalid certificates instead of failing. This is
+  an _escape hatch_ and should only be used if other settings have failed. Be sure you know what
+  you're doing!
+- `proxies` - A list of proxy URLs to use for requests.
+- `root-cert` - The path to a root certificate to use for requests. This is useful for overriding
+  the native certificate, or for using a self-signed certificate, especially when in a
+  corporate/internal environment. Supports `pem` and `der` files.
+
+```toml title="~/.proto/config.toml"
+[http]
+root-cert = "/path/to/root/cert.pem"
+```
+
+### `[plugins]`
+
+A mapping of plugins available to the user, and not just a project/directory. Refer to the
+[`[plugins]`](#plugins) section above for more information.
 
 ## GitHub Action
 

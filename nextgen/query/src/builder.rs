@@ -114,6 +114,7 @@ fn build_criteria(ast: Vec<AstNode>) -> miette::Result<Criteria> {
                     }
                     "project" => Field::Project(value),
                     "projectAlias" => Field::ProjectAlias(value),
+                    "projectName" => Field::ProjectName(value),
                     "projectSource" => Field::ProjectSource(value),
                     "projectType" => {
                         Field::ProjectType(build_criteria_enum::<ProjectType>(&field, &op, value)?)

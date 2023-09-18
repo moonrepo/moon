@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the `projectName` query would not work correctly.
+
 ## 1.13.4
 
 #### ⚙️ Internal

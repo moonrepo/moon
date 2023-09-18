@@ -24,7 +24,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
           components: rustfmt
@@ -38,7 +38,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-make
@@ -53,7 +53,7 @@ jobs:
         os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
@@ -86,7 +86,7 @@ jobs:
     needs:
       - test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         name: Download coverage reports
         with:

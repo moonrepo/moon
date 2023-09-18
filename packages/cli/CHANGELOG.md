@@ -10,6 +10,11 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+#### ⚙️ Internal
+
+- Improved handling of certificates and proxies.
+- Updated to proto v0.18.
+
 ## 1.13.5
 
 #### 🐞 Fixes

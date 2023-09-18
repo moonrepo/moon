@@ -1,0 +1,41 @@
+---
+title: tools
+---
+
+The `proto tools` command will list all tools that have been installed, along with their installed
+versions, relevant timestamps, available aliases, and store location.
+
+```shell
+$ proto tools
+go - Go
+  Store: ~/.proto/tools/go
+  Versions:
+    1.20.0 - installed 08/24/23, last used 09/18/23
+    1.20.2 - installed 01/01/70, last used 09/18/23, default version
+
+node - Node.js
+  Store: ~/.proto/tools/node
+  Aliases:
+    ~20 = stable
+  Versions:
+    18.0.0 - installed 09/03/23, last used 09/18/23, default version
+    18.14.0 - installed 09/04/23, last used 09/04/23
+    18.17.1 - installed 09/04/23, last used 09/04/23
+    19.0.0 - installed 09/03/23
+    20.0.0 - installed 09/03/23
+    20.6.0 - installed 09/04/23, last used 09/18/23
+```
+
+A list of tool IDs can be provided to filter the output list.
+
+```shell
+$ proto tools node npm
+```
+
+### Arguments
+
+- `[id...]` - IDs of plugins.
+
+### Options
+
+- `--json` - Print the list in JSON format.

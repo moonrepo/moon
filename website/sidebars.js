@@ -291,6 +291,7 @@ const sidebars = {
 				'proto/commands/remove-plugin',
 				'proto/commands/run',
 				'proto/commands/setup',
+				'proto/commands/tools',
 				'proto/commands/unalias',
 				'proto/commands/uninstall',
 				'proto/commands/uninstall-global',

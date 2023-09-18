@@ -23,6 +23,9 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Args, Clone, Debug)]
 pub struct CiArgs {
+    #[arg(help = "List of targets (scope:task) to run")]
+    targets: Vec<Target>,
+
     #[arg(long, help = "Base branch, commit, or revision to compare against")]
     base: Option<String>,
 
@@ -88,37 +91,35 @@ async fn gather_touched_files(
 fn gather_runnable_targets(
     provider: &CiOutput,
     project_graph: &ProjectGraph,
-    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
+    args: &CiArgs,
 ) -> AppResult<TargetList> {
     print_header(provider, "Gathering runnable targets");
 
     let mut targets = vec![];
 
     // Required for dependents
-    for project in project_graph.get_all()? {
-        for task in project.get_tasks()? {
-            if task.should_run_in_ci() {
-                if task.is_affected(touched_files)? {
+    let projects = project_graph.get_all()?;
+
+    if args.targets.is_empty() {
+        for project in projects {
+            for task in project.get_tasks()? {
+                if task.should_run_in_ci() {
                     targets.push(task.target.clone());
+                } else {
+                    debug!(
+                        "Not running target {} because it either has no {} or {} is false",
+                        color::label(&task.target.id),
+                        color::property("outputs"),
+                        color::property("runInCI"),
+                    );
                 }
-            } else {
-                debug!(
-                    "Not running target {} because it either has no `outputs` or `runInCI` is false",
-                    color::label(&task.target),
-                );
             }
         }
-    }
-
-    if targets.is_empty() {
-        println!(
-            "{}",
-            color::invalid("No targets to run based on touched files")
-        );
     } else {
-        print_targets(&targets);
+        targets.extend(args.targets.clone());
     }
 
+    print_targets(&targets);
     print_footer(provider);
 
     Ok(targets)
@@ -165,6 +166,7 @@ fn generate_dep_graph(
     provider: &CiOutput,
     project_graph: &ProjectGraph,
     targets: &TargetList,
+    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<DepGraph> {
     print_header(provider, "Generating dependency graph");
 
@@ -172,7 +174,7 @@ fn generate_dep_graph(
 
     for target in targets {
         // Run the target and its dependencies
-        dep_builder.run_target(target, None)?;
+        dep_builder.run_target(target, Some(touched_files))?;
 
         // And also run its dependents to ensure consumers still work correctly
         dep_builder.run_dependents_for_target(target)?;
@@ -199,17 +201,28 @@ pub async fn ci(
     });
     let project_graph = generate_project_graph(workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, workspace, args).await?;
-    let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
+    let targets = gather_runnable_targets(&ci_provider, &project_graph, args)?;
 
     if targets.is_empty() {
+        println!("{}", color::invalid("No targets to run"));
+
         return Ok(());
     }
 
     let targets = distribute_targets_across_jobs(&ci_provider, args, targets);
-    let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets)?;
+    let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets, &touched_files)?;
+
+    if dep_graph.is_empty() {
+        println!(
+            "{}",
+            color::invalid("No targets to run based on touched files")
+        );
+
+        return Ok(());
+    }
 
     // Process all tasks in the graph
-    print_header(&ci_provider, "Running all targets");
+    print_header(&ci_provider, "Running targets");
 
     let context = ActionContext {
         primary_targets: FxHashSet::from_iter(targets),

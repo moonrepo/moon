@@ -9,6 +9,7 @@
   - Better concurrency handling and scheduling.
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
+- Updated `moon ci` to support running a list of targets, instead of running everything.
 
 #### ⚙️ Internal
 

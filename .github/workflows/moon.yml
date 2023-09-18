@@ -36,6 +36,10 @@ jobs:
         env:
           MOONBASE_SECRET_KEY: ${{ secrets.MOONBASE_SECRET_KEY }}
           MOONBASE_ACCESS_KEY: ${{ secrets.MOONBASE_ACCESS_KEY }}
+      - run: cargo run -- --color --log trace ci :build --base ${{ github.base_ref || 'master' }}
+        env:
+          MOONBASE_SECRET_KEY: ${{ secrets.MOONBASE_SECRET_KEY }}
+          MOONBASE_ACCESS_KEY: ${{ secrets.MOONBASE_ACCESS_KEY }}
       - uses: moonrepo/run-report-action@v1
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}

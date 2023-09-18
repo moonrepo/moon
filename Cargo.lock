@@ -4668,9 +4668,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.17.3"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d14fcbce786856785227d02edb778baeed6ecfc68f73367a72302adbee5b0b84"
+checksum = "dc1344505e5609bda7acbff3fae9260c42e20687d90d636429a679cf88fd4932"
 dependencies = [
  "cached",
  "extism",
@@ -4916,6 +4916,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rustls",
+ "rustls-native-certs",
  "rustls-pemfile",
  "serde",
  "serde_json",
@@ -5014,6 +5015,18 @@ dependencies = [
  "ring",
  "rustls-webpki 0.101.4",
  "sct",
+]
+
+[[package]]
+name = "rustls-native-certs"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9aace74cb666635c918e9c12bc0d348266037aa8eb599b5cba565709a8dff00"
+dependencies = [
+ "openssl-probe",
+ "rustls-pemfile",
+ "schannel",
+ "security-framework",
 ]
 
 [[package]]
@@ -5216,9 +5229,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.105"
+version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "693151e1ac27563d6dbcec9dee9fbd5da8539b20fa14ad3752b2e6d363ace360"
+checksum = "6b420ce6e3d8bd882e9b243c6eed35dbc9a6110c9769e74b584e0d68d1f20c65"
 dependencies = [
  "indexmap 2.0.0",
  "itoa",
@@ -6399,9 +6412,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.4"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37e105ab7fd178b2fc6b59439046418278b478e761549658a41eb48c97a9944a"
+checksum = "817057863344de5701a42c8fa6d02473acf29a7eb6f8df1ef05c333e966e802d"
 dependencies = [
  "extism",
  "miette",

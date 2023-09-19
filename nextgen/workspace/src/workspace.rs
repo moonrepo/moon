@@ -144,7 +144,7 @@ pub struct Workspace {
     pub cache_engine: Arc<CacheEngine>,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
-    pub config: WorkspaceConfig,
+    pub config: Arc<WorkspaceConfig>,
 
     /// Engine for reading and writing hashes/outputs.
     pub hash_engine: Arc<HashEngine>,
@@ -165,7 +165,7 @@ pub struct Workspace {
     pub tasks_config: Arc<InheritedTasksManager>,
 
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
-    pub toolchain_config: ToolchainConfig,
+    pub toolchain_config: Arc<ToolchainConfig>,
 
     /// Configured version control system.
     pub vcs: Arc<BoxedVcs>,
@@ -222,14 +222,14 @@ impl Workspace {
 
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),
-            config,
+            config: Arc::new(config),
             hash_engine: Arc::new(hash_engine),
             proto_env: Arc::new(proto_env),
             proto_tools: Arc::new(proto_tools),
             root: root_dir,
             session: None,
             tasks_config: Arc::new(tasks_config),
-            toolchain_config,
+            toolchain_config: Arc::new(toolchain_config),
             vcs: Arc::new(Box::new(vcs)),
             working_dir: working_dir.to_owned(),
         })

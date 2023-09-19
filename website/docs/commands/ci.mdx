@@ -5,12 +5,25 @@ title: ci
 The `moon ci` command is a special command that should be ran in a continuous integration (CI)
 environment, as it does all the heavy lifting necessary for effectively running tasks.
 
+By default this will run all tasks that are affected by touched files and have the
+[`runInCI`](../config/project#runinci) task option enabled.
+
 ```shell
 $ moon ci
 ```
 
+However, you can provide a list of targets to run, instead of relying on `runInCI`.
+
+```shell
+$ moon ci :build :lint
+```
+
 > View the official [continuous integration guide](../guides/ci) for a more in-depth example of how
 > to utilize this command.
+
+### Arguments
+
+- `...[target]` - [Targets](../concepts/target) to run.
 
 ### Options
 

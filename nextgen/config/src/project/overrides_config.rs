@@ -2,7 +2,7 @@ use moon_common::cacheable;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::Config;
-use semver::Version;
+use proto_core::Version;
 
 cacheable!(
     #[derive(Clone, Config, Debug)]

@@ -10,8 +10,7 @@ pub use node_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
 
-use proto_core::UnresolvedVersionSpec;
-use semver::Version;
+use proto_core::{UnresolvedVersionSpec, Version};
 
 pub fn extract_version_from_proto_config(version: &UnresolvedVersionSpec) -> Option<Version> {
     match version {

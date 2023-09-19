@@ -349,7 +349,7 @@ impl Platform for RustPlatform {
 
                 ToolchainTomlCache::write(
                     toolchain_path,
-                    ToolchainToml::new_with_channel(version.to_string()),
+                    ToolchainToml::new_with_channel(&version),
                 )?;
 
                 mutated_files = true;

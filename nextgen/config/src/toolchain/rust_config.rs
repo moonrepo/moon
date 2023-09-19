@@ -1,7 +1,6 @@
 use super::bin_config::BinEntry;
-use proto_core::PluginLocator;
+use proto_core::{PluginLocator, Version};
 use schematic::Config;
-use semver::Version;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
 #[derive(Clone, Config, Debug)]

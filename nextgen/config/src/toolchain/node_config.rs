@@ -1,8 +1,7 @@
 use super::extract_version_from_proto_config;
 use crate::{inherit_tool, inherit_tool_required};
-use proto_core::{PluginLocator, ToolsConfig};
+use proto_core::{PluginLocator, ToolsConfig, Version};
 use schematic::{derive_enum, Config, ConfigEnum};
-use semver::Version;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]

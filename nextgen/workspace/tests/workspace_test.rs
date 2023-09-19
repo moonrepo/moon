@@ -1,21 +1,19 @@
-use moon_test_utils::{assert_fs::prelude::*, create_sandbox_with_config};
 use moon_workspace::Workspace;
+use starbase_sandbox::create_empty_sandbox;
 
 #[test]
 fn loads_proto_tools() {
-    let temp = create_sandbox_with_config("base", None, None, None);
+    let sandbox = create_empty_sandbox();
 
-    temp.fixture
-        .child(".prototools")
-        .write_str(
-            r#"
+    sandbox.create_file(
+        ".prototools",
+        r#"
 node = "18.0.0"
 npm = "9.0.0"
 "#,
-        )
-        .unwrap();
+    );
 
-    let workspace = Workspace::load_from(temp.path()).unwrap();
+    let workspace = Workspace::load_from(sandbox.path()).unwrap();
 
     assert_eq!(
         workspace.proto_tools.tools.get("node").unwrap().to_string(),

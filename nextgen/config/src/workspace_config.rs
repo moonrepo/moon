@@ -4,9 +4,9 @@ use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
 use crate::validate::check_yml_extension;
 use crate::workspace::*;
 use moon_common::{consts, Id};
+use proto_core::VersionReq;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
-use semver::VersionReq;
 use std::path::Path;
 
 // We can't use serde based types in the enum below to handle validation,

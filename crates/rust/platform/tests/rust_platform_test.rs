@@ -7,7 +7,7 @@ use moon_rust_platform::RustPlatform;
 use moon_task::Task;
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
-use proto_core::ProtoEnvironment;
+use proto_core::{ProtoEnvironment, Version as SemVersion};
 use rustc_hash::FxHashMap;
 use std::env;
 use std::fs;
@@ -110,7 +110,7 @@ mod sync_project {
             let mut platform = create_platform();
             platform.config = RustConfig {
                 sync_toolchain_config: false,
-                version: Some("1.70.0".into()),
+                version: Some(SemVersion::parse("1.70.0").unwrap()),
                 ..RustConfig::default()
             };
 
@@ -168,7 +168,7 @@ mod sync_project {
             let mut platform = create_platform();
             platform.config = RustConfig {
                 sync_toolchain_config: true,
-                version: Some("1.70.0".into()),
+                version: Some(SemVersion::parse("1.70.0").unwrap()),
                 ..RustConfig::default()
             };
 
@@ -196,7 +196,7 @@ mod sync_project {
             let mut platform = create_platform();
             platform.config = RustConfig {
                 sync_toolchain_config: true,
-                version: Some("1.70.0".into()),
+                version: Some(SemVersion::parse("1.70.0").unwrap()),
                 ..RustConfig::default()
             };
 

@@ -41,6 +41,11 @@ fn find_workspace_root<P: AsRef<Path>>(working_dir: P) -> miette::Result<PathBuf
         return Err(WorkspaceError::MissingConfigDir.into());
     }
 
+    debug!(
+        workspace_root = ?possible_root,
+        "Found a potential workspace root",
+    );
+
     Ok(possible_root)
 }
 

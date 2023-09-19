@@ -13,7 +13,6 @@ moon_hash = { path = "../hash" }
 moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 proto_core = { workspace = true }
-reqwest = { workspace = true }
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

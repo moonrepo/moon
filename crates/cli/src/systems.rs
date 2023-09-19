@@ -35,7 +35,7 @@ pub async fn check_for_new_version(workspace: ResourceRef<Workspace>) {
             println!(
                 "{} There's a new version of moon available, {} (currently on {})!",
                 prefix,
-                color::success(latest.current_version),
+                color::hash(latest.current_version),
                 current_version,
             );
 

@@ -2,125 +2,17 @@
 title: Supported tools
 ---
 
-import WasmLink from '@site/src/components/Docs/WasmLink';
+import ToolCards from '@site/src/components/Products/Proto/ToolCards';
+import { BUILTIN_TOOLS, THIRD_PARTY_TOOLS } from '@site/src/data/proto-plugins';
 
-The following tools are supported natively in proto's toolchain. Additional tools can be supported
-through [plugins](./plugins).
+## Built-in
 
-## Bun
+The following tools are supported natively in proto's toolchain.
 
-<WasmLink to="https://github.com/moonrepo/bun-plugin" />
+<ToolCards tools={BUILTIN_TOOLS} />
 
-[Bun](https://bun.sh/) is an all-in-one runtime and toolset for JavaScript and TypeScript, powered
-by Zig and Webkit.
+## Third-party
 
-- **Available binaries** - `bun`, `bunx`
-- **Globals directory** - `~/.bun/bin`
+Additional tools can be supported through [plugins](./plugins).
 
-## Deno
-
-<WasmLink to="https://github.com/moonrepo/deno-plugin" />
-
-[Deno](https://deno.land/) is a secure runtime for JavaScript and TypeScript, powered by Rust and
-Chrome's V8 engine.
-
-- **Available binaries** - `deno`
-- **Globals directory** - `$DENO_INSTALL_ROOT/bin`, `~/.deno/bin`
-- **Detection sources** - [`.dvmrc`](https://github.com/justjavac/dvm)
-
-## Go
-
-<WasmLink to="https://github.com/moonrepo/go-plugin" />
-
-[Go](https://go.dev/) is a simple, secure, and fast systems language.
-
-- **Available binaries** - `go`
-- **Globals directory** - `$GOBIN`, `~/go/bin`
-- **Detection sources** - [`go.work`](https://go.dev/doc/tutorial/workspaces),
-  [`go.mod`](https://go.dev/doc/modules/gomod-ref)
-
-#### Post-install hook
-
-After installation, we'll inject a `GOBIN` environment variable into your shell, pointing to
-`~/go/bin`, if it does not already exist. This variable will be used to locate Go binaries across
-all installed versions. This functionality can be skipped by passing `--no-gobin` during
-installation.
-
-```shell
-$ proto install go -- --no-gobin
-```
-
-## Node.js
-
-<WasmLink to="https://github.com/moonrepo/node-plugin" />
-
-[Node.js](https://nodejs.org/) is a JavaScript runtime built on Chrome's V8 engine.
-
-- **Available binaries** - `node`, `npx`
-- **Globals directory** - `~/.proto/tools/node/globals/bin`
-- **Detection sources** - [`.nvmrc`](https://github.com/nvm-sh/nvm),
-  [`.node-version`](https://github.com/nodenv/nodenv), `package.json` engines
-
-#### Post-install hook
-
-After installation, the version of npm that came bundled with Node.js will also be installed. This
-functionality can be skipped by passing `--no-bundled-npm` during installation.
-
-```shell
-$ proto install node -- --no-bundled-npm
-```
-
-### npm, pnpm, yarn
-
-<WasmLink to="https://github.com/moonrepo/node-plugin" />
-
-proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
-
-- **Available binaries** - `*`, `node-gyp`
-- **Detection sources** - `package.json` engines / package manager
-
-### corepack
-
-Corepack _is not supported_ by proto, and never will be. Use [`proto use`](./commands/use) instead,
-which is a far more poweful alternative.
-
-## Python (experimental)
-
-<WasmLink to="https://github.com/moonrepo/python-plugin" />
-
-[Python](https://www.python.org/) is a high-level, general-purpose programming language.
-
-- **Available binaries** - `python`, `pip`
-- **Globals directory** - `~/.local/bin`
-- **Detection sources** - [`.python-version`](https://github.com/pyenv/pyenv)
-
-## Rust
-
-<WasmLink to="https://github.com/moonrepo/rust-plugin" />
-
-[Rust](https://www.rust-lang.org/) (`rust`) is blazingly fast and memory-efficient systems language.
-
-:::caution
-
-If you're familiar with Rust, you most likely use [rustup](https://rustup.rs), a Rust specific
-toolchain manager. This overlaps heavily with how proto works, so instead of proto reinventing the
-wheel here, we simply call `rustup` under the hood. Because of this, be aware of the following when
-using Rust in proto:
-
-- Rust and Cargo must be pre-installed on your system.
-- The `~/.cargo/bin` directory must be in your `PATH`.
-- We don't install Rust to `~/.proto/tools/rust` but instead reference `~/.rustup/toolchains`.
-- We don't create shims for `cargo`, `rustup`, etc.
-
-:::
-
-Since we don't create shims for `cargo`, `rustup`, etc, we can't detect Rust versions at runtime.
-However, `rustup` supports this through the
-[`rust-toolchain.toml`](https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file) file.
-We suggest using this file.
-
-```toml title="rust-toolchain.toml"
-[toolchain]
-profile = "default"
-channel = "1.68.0"
-```
+<ToolCards tools={THIRD_PARTY_TOOLS} />

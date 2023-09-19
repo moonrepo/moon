@@ -92,7 +92,7 @@ const config = {
 						items: [
 							{
 								to: '/moon',
-								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">System for managing codebases</div>',
+								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">Build system for managing codebases</div>',
 							},
 							{
 								to: '/moonbase',
@@ -100,7 +100,7 @@ const config = {
 							},
 							{
 								to: '/proto',
-								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Multi-language toolchain manager</div>',
+								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Multi-language version manager</div>',
 							},
 							{
 								to: 'https://espresso.build',

@@ -1,7 +1,8 @@
-use crate::validate::validate_semver;
+use super::extract_version_from_proto_config;
 use crate::{inherit_tool, inherit_tool_required};
 use proto_core::{PluginLocator, ToolsConfig};
 use schematic::{derive_enum, Config, ConfigEnum};
+use semver::Version;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -67,16 +68,16 @@ derive_enum!(
 pub struct NpmConfig {
     pub plugin: Option<PluginLocator>,
 
-    #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
-    pub version: Option<String>,
+    #[setting(env = "MOON_NPM_VERSION")]
+    pub version: Option<Version>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
     pub plugin: Option<PluginLocator>,
 
-    #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
-    pub version: Option<String>,
+    #[setting(env = "MOON_PNPM_VERSION")]
+    pub version: Option<Version>,
 }
 
 #[derive(Clone, Config, Debug)]
@@ -85,8 +86,8 @@ pub struct YarnConfig {
 
     pub plugins: Vec<String>,
 
-    #[setting(env = "MOON_YARN_VERSION", validate = validate_semver)]
-    pub version: Option<String>,
+    #[setting(env = "MOON_YARN_VERSION")]
+    pub version: Option<Version>,
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
@@ -122,8 +123,8 @@ pub struct NodeConfig {
 
     pub sync_version_manager_config: Option<NodeVersionManager>,
 
-    #[setting(env = "MOON_NODE_VERSION", validate = validate_semver)]
-    pub version: Option<String>,
+    #[setting(env = "MOON_NODE_VERSION")]
+    pub version: Option<Version>,
 
     #[setting(nested)]
     pub yarn: Option<YarnConfig>,

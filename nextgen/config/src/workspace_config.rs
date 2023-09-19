@@ -1,11 +1,12 @@
 // .moon/workspace.yml
 
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
-use crate::validate::{check_yml_extension, validate_semver_requirement};
+use crate::validate::check_yml_extension;
 use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
+use semver::VersionReq;
 use std::path::Path;
 
 // We can't use serde based types in the enum below to handle validation,
@@ -125,8 +126,7 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub vcs: VcsConfig,
 
-    #[setting(validate = validate_semver_requirement)]
-    pub version_constraint: Option<String>,
+    pub version_constraint: Option<VersionReq>,
 }
 
 impl WorkspaceConfig {

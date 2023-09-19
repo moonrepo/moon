@@ -19,7 +19,7 @@ moon_project = { path = "../../../nextgen/project" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../../../nextgen/task" }
 moon_utils = { path = "../utils" }
-moon_workspace = { path = "../workspace" }
+moon_workspace = { path = "../../../nextgen/workspace" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }

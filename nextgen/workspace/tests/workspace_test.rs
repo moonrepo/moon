@@ -5,6 +5,8 @@ use starbase_sandbox::create_empty_sandbox;
 fn loads_proto_tools() {
     let sandbox = create_empty_sandbox();
 
+    sandbox.create_file(".moon/workspace.yml", "");
+
     sandbox.create_file(
         ".prototools",
         r#"

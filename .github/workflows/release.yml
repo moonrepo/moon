@@ -71,7 +71,7 @@ jobs:
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         if: ${{ !matrix.docker-target }}
         with:
@@ -143,7 +143,7 @@ jobs:
     name: Test - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           cache: yarn
@@ -184,7 +184,7 @@ jobs:
     env:
       NPM_CHANNEL: latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           cache: yarn
@@ -221,7 +221,7 @@ jobs:
     env:
       NPM_CHANNEL: latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           cache: yarn

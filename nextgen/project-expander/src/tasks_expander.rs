@@ -244,7 +244,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     target = task.target.as_str(),
                     env_file = ?env_path,
                     "Setting {} is enabled but file doesn't exist, skipping as this may be intentional",
-                    color::symbol("options.envFile"),
+                    color::property("options.envFile"),
                 );
             }
         }

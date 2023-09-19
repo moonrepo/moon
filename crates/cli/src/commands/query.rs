@@ -32,7 +32,7 @@ pub async fn hash(args: ArgsRef<QueryHashArgs>, workspace: ResourceRef<Workspace
     let result = query_hash(workspace, &args.hash).await?;
 
     if !args.json {
-        println!("Hash: {}\n", color::id(result.0));
+        println!("Hash: {}\n", color::hash(result.0));
     }
 
     println!("{}", result.1);
@@ -68,8 +68,8 @@ pub async fn hash_diff(args: ArgsRef<QueryHashDiffArgs>, workspace: ResourceMut<
 
         term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else {
-        term.line(format!("Left:  {}", color::id(&result.left_hash)))?;
-        term.line(format!("Right: {}\n", color::id(&result.right_hash)))?;
+        term.line(format!("Left:  {}", color::hash(&result.left_hash)))?;
+        term.line(format!("Right: {}\n", color::hash(&result.right_hash)))?;
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {

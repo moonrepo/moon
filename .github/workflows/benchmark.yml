@@ -28,7 +28,7 @@ jobs:
             const response = await github.request(context.payload.issue.pull_request.url);
             return response.data.head.sha;
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: false
           ref: ${{ steps.sha.outputs.result }}
@@ -42,7 +42,7 @@ jobs:
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           clean: false
           ref: ${{ github.event.pull_request.base.sha }}

@@ -6,7 +6,9 @@ use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::is_ci;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
+use proto_core::{
+    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version as SemVersion,
+};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -48,7 +50,10 @@ impl Tool for NpmTool {
         self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
-    async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
+    async fn setup(
+        &mut self,
+        last_versions: &mut FxHashMap<String, SemVersion>,
+    ) -> miette::Result<u8> {
         let mut count = 0;
         let version = self.config.version.clone();
 
@@ -56,7 +61,7 @@ impl Tool for NpmTool {
             return Ok(count);
         };
 
-        let version_type = UnresolvedVersionSpec::parse(&version)?;
+        let version_type = UnresolvedVersionSpec::Version(version.to_owned());
 
         if self.tool.is_setup(&version_type).await? {
             self.tool.locate_globals_dir().await?;

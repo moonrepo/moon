@@ -44,7 +44,9 @@ fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson)
 /// Add `engines` constraint to `package.json`.
 fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
     if let Some(node_version) = &node_config.version {
-        if node_config.add_engines_constraint && package_json.add_engine("node", node_version) {
+        if node_config.add_engines_constraint
+            && package_json.add_engine("node", node_version.to_string())
+        {
             debug!(
                 target: LOG_TARGET,
                 "Adding engines version constraint to {}",
@@ -89,7 +91,7 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Resul
             };
             let rc_path = packages_root.join(rc_name);
 
-            fs::write_file(&rc_path, node_version)?;
+            fs::write_file(&rc_path, node_version.to_string())?;
 
             debug!(
                 target: LOG_TARGET,

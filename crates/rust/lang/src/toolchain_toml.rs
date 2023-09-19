@@ -38,10 +38,10 @@ pub struct ToolchainToml {
 }
 
 impl ToolchainToml {
-    pub fn new_with_channel(channel: &str) -> ToolchainToml {
+    pub fn new_with_channel<T: AsRef<str>>(channel: T) -> ToolchainToml {
         ToolchainToml {
             toolchain: ToolchainSection {
-                channel: Some(channel.to_owned()),
+                channel: Some(channel.as_ref().to_owned()),
                 ..ToolchainSection::default()
             },
         }

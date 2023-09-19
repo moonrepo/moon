@@ -8,7 +8,9 @@ use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
+use proto_core::{
+    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version as SemVersion,
+};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -42,7 +44,7 @@ impl YarnTool {
         self.config
             .version
             .as_ref()
-            .map(|v| !v.starts_with('1'))
+            .map(|v| v.major != 1)
             .unwrap_or(false)
     }
 
@@ -65,8 +67,10 @@ impl YarnTool {
                 color::shell(format!("yarn set version {version}"))
             );
 
+            let version_string = version.to_string();
+
             self.create_command(node)?
-                .args(["set", "version", version])
+                .args(["set", "version", &version_string])
                 .create_async()
                 .exec_capture_output()
                 .await?;
@@ -102,7 +106,10 @@ impl Tool for YarnTool {
         self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
-    async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
+    async fn setup(
+        &mut self,
+        last_versions: &mut FxHashMap<String, SemVersion>,
+    ) -> miette::Result<u8> {
         let mut count = 0;
         let version = self.config.version.clone();
 
@@ -110,7 +117,7 @@ impl Tool for YarnTool {
             return Ok(count);
         };
 
-        let version_type = UnresolvedVersionSpec::parse(&version)?;
+        let version_type = UnresolvedVersionSpec::Version(version.to_owned());
 
         if self.tool.is_setup(&version_type).await? {
             self.tool.locate_globals_dir().await?;

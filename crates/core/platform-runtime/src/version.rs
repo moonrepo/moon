@@ -14,9 +14,9 @@ pub struct Version {
 }
 
 impl Version {
-    pub fn new(version: &str) -> Self {
+    pub fn new<V: AsRef<str>>(version: V) -> Self {
         Version {
-            number: version.to_owned(),
+            number: version.as_ref().to_owned(),
             path_executable: false,
             project_override: false,
         }
@@ -30,9 +30,9 @@ impl Version {
         }
     }
 
-    pub fn new_override(version: &str) -> Self {
+    pub fn new_override<V: AsRef<str>>(version: V) -> Self {
         Version {
-            number: version.to_owned(),
+            number: version.as_ref().to_owned(),
             path_executable: false,
             project_override: true,
         }

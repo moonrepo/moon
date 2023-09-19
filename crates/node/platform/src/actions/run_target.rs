@@ -236,8 +236,10 @@ pub async fn create_target_hasher(
     workspace_root: &Path,
     hasher_config: &HasherConfig,
 ) -> miette::Result<NodeTargetHash> {
-    let mut hasher =
-        NodeTargetHash::new(node.map(|n| n.config.version.clone()).unwrap_or_default());
+    let mut hasher = NodeTargetHash::new(
+        node.map(|n| n.config.version.as_ref().map(|v| v.to_string()))
+            .unwrap_or_default(),
+    );
 
     let resolved_dependencies =
         if matches!(hasher_config.optimization, HasherOptimization::Accuracy) && node.is_some() {

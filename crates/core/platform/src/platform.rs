@@ -11,6 +11,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::Tool;
+use proto_core::Version as SemVersion;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -103,7 +104,7 @@ pub trait Platform: Send + Sync {
         &mut self,
         context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, String>,
+        last_versions: &mut FxHashMap<String, SemVersion>,
     ) -> miette::Result<u8> {
         Ok(0)
     }

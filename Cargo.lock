@@ -3641,6 +3641,7 @@ name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "semver",
  "serde",
 ]
 
@@ -3971,6 +3972,7 @@ dependencies = [
  "predicates",
  "pretty_assertions",
  "rustc-hash",
+ "semver",
  "serde_yaml 0.9.25",
  "starbase_utils",
  "tokio",

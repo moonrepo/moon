@@ -6,4 +6,5 @@ publish = false
 
 [dependencies]
 moon_config = { path = "../../../nextgen/config" }
+semver = { workspace = true }
 serde = { workspace = true }

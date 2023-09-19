@@ -2,12 +2,12 @@ import React from 'react';
 import { faPuzzle } from '@fortawesome/pro-regular-svg-icons';
 import Label from '../../ui/typography/Label';
 
-export interface WasmLinkProps {
+export interface TomlLinkProps {
 	to: string;
 	noMargin?: boolean;
 }
 
-export default function WasmLink({ to, noMargin }: WasmLinkProps) {
+export default function TomlLink({ to, noMargin }: TomlLinkProps) {
 	return (
 		<a
 			href={to}
@@ -15,7 +15,7 @@ export default function WasmLink({ to, noMargin }: WasmLinkProps) {
 			className="float-right block"
 			style={{ marginTop: noMargin ? 0 : '-3.75em' }}
 		>
-			<Label text="WASM" icon={faPuzzle} variant="success" />
+			<Label text="TOML" icon={faPuzzle} variant="info" />
 		</a>
 	);
 }

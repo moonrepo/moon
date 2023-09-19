@@ -2,8 +2,8 @@
 slug: proto-v0.18
 title: proto v0.18 - List installed tools and configure HTTP client
 authors: [milesj]
-tags: [proto, http]
-# image: ./img/proto/v0.17.png
+tags: [proto, http, registry, index]
+image: ./img/proto/v0.18.png
 ---
 
 Today we've got a small release that includes some helpful features.
@@ -57,6 +57,17 @@ certificates are blocked.
 proxies = ["http://intra.net/proxy"]
 root-cert = "/path/to/root/cert.pem"
 ```
+
+## Index for third-party tools
+
+Now that our TOML and WASM plugins have stabilized, we felt the time was right to start working on a
+third-party index, a registry of all available tools. We've updated the official
+[Supported tools](/docs/proto/tools) documentation to now include third-party tools.
+
+At this time, the list of tools is powered by a JS/JSON object,
+[which can be found here](https://github.com/moonrepo/moon/blob/master/website/src/data/proto-tools.tsx).
+In the future, we may move this to a database, add filtering, sorting, and everything else necessary
+for showcasing tools maintained by the community!
 
 ## Other changes
 

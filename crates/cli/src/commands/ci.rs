@@ -104,7 +104,7 @@ fn gather_runnable_targets(
             } else {
                 debug!(
                     "Not running target {} because it either has no `outputs` or `runInCI` is false",
-                    color::label(&task.target.id),
+                    color::label(&task.target),
                 );
             }
         }

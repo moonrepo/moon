@@ -5577,9 +5577,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "032493983d1aaa0e6107219e8b17e2b315452f902f0f512c8bd5af6df6704b44"
+checksum = "9e1665a9066fd0da6e608166a18dba7324734229b5554f6abff7b6a2761b5402"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",
@@ -5595,7 +5595,7 @@ dependencies = [
  "starbase_styles",
  "thiserror",
  "tokio",
- "toml 0.7.6",
+ "toml 0.8.0",
  "tracing",
  "wax",
 ]
@@ -6015,7 +6015,19 @@ dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit",
+ "toml_edit 0.19.14",
+]
+
+[[package]]
+name = "toml"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c226a7bba6d859b63c92c4b4fe69c5b6b72d0cb897dbc8e6012298e6154cb56e"
+dependencies = [
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_edit 0.20.0",
 ]
 
 [[package]]
@@ -6032,6 +6044,19 @@ name = "toml_edit"
 version = "0.19.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8123f27e969974a3dfba720fdb560be359f57b44302d280ba72e76a74480e8a"
+dependencies = [
+ "indexmap 2.0.0",
+ "serde",
+ "serde_spanned",
+ "toml_datetime",
+ "winnow",
+]
+
+[[package]]
+name = "toml_edit"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ff63e60a958cefbb518ae1fd6566af80d9d4be430a33f3723dfc47d1d411d95"
 dependencies = [
  "indexmap 2.0.0",
  "serde",

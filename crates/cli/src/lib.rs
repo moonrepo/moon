@@ -63,7 +63,7 @@ fn detect_running_version() {
     let version = env!("CARGO_PKG_VERSION");
 
     if let Ok(exe_with) = env::var("MOON_EXECUTED_WITH") {
-        debug!("Running moon v{} (with {})", version, color::file(exe_with),);
+        debug!("Running moon v{} (with {})", version, color::file(exe_with));
     } else {
         debug!("Running moon v{}", version);
     }

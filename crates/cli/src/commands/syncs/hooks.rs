@@ -19,7 +19,7 @@ pub async fn sync(args: ArgsRef<SyncHooksArgs>, workspace: ResourceRef<Workspace
     if workspace.config.vcs.hooks.is_empty() {
         println!(
             "No hooks available to sync. Configure them with the {} setting.",
-            color::id("vcs.hooks")
+            color::property("vcs.hooks")
         );
         println!(
             "Learn more: {}",

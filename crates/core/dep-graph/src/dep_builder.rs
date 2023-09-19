@@ -189,7 +189,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding dependents to run for target {}",
-            color::label(&target.id),
+            color::label(target),
         );
 
         if let TargetScope::Project(project_id) = &target.scope {
@@ -313,7 +313,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 trace!(
                     target: LOG_TARGET,
                     "Target {} not affected based on touched files, skipping",
-                    color::label(&target.id),
+                    color::label(target),
                 );
 
                 return Ok(None);

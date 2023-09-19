@@ -32,7 +32,7 @@ pub async fn sync_workspace(
         debug!(
             target: LOG_TARGET,
             "Syncing code owners ({} enabled)",
-            color::id("codeowners.syncOnRun"),
+            color::property("codeowners.syncOnRun"),
         );
 
         sync_codeowners(&workspace, &project_graph, false).await?;
@@ -43,7 +43,7 @@ pub async fn sync_workspace(
             target: LOG_TARGET,
             "Syncing {} hooks ({} enabled)",
             workspace.config.vcs.manager,
-            color::id("vcs.syncHooks"),
+            color::property("vcs.syncHooks"),
         );
 
         sync_vcs_hooks(&workspace, false).await?;

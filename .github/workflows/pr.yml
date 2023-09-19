@@ -9,7 +9,7 @@ jobs:
     name: Version check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
@@ -24,7 +24,7 @@ jobs:
     name: CLI binary check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: bash ./scripts/checks/cliBinary.sh
         shell: bash
   installer:
@@ -35,7 +35,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # Unix
       - run: bash ./website/static/install/moon.sh
         if: ${{ runner.os != 'Windows' }}

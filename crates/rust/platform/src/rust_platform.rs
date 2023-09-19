@@ -329,7 +329,7 @@ impl Platform for RustPlatform {
                             target: LOG_TARGET,
                             "Syncing {} configuration file with version {}",
                             color::file(RUSTUP.version_file),
-                            color::symbol(&version),
+                            color::hash(&version),
                         );
 
                         cfg.toolchain.channel = Some(version);

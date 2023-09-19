@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProtoTool } from '@site/src/data/proto-plugins';
+import { ProtoTool } from '../../../data/proto-tools';
 import ToolCard from './ToolCard';
 
 export interface ToolCardsProps {

@@ -1,22 +1,50 @@
+/**
+ * INSTRUCTIONS:
+ *
+ * 1. Add an entry to the `THIRD_PARTY_TOOLS` constant below.
+ *    The object key is the preferred tool identifier,
+ *    while the value is a `ProtoTool` object.
+ *
+ * 2. For third-party tools, ensure that the `pluginLocator`
+ *    field is set, so users know how to install the plugin.
+ *
+ * 3. If applicable, visit https://devicon.dev and grab the SVG
+ *    content for your tool. If you have a custom SVG, use that.
+ *    Copy the SVG to `website/static/img/tools`. Ensure the
+ *    following changes are made:
+ *      - Remove all unnecessary metadata (maybe use svgo).
+ *      - All colors should be set to `currentColor`.
+ *      - View box width/height should be 128 (if a square).
+ */
+
 export interface ProtoTool {
+	name: string;
+	description: string;
+	homepageUrl?: string;
+	repoUrl: string;
+	noIcon?: boolean; // If no SVG
+
+	// Plugin information:
+	// https://moonrepo.dev/docs/proto/plugins#enabling-plugins
+	pluginLocator?: string;
+	pluginType: 'toml' | 'wasm';
+	usageId?: string;
+
+	// Availble global binaries/directories:
+	// https://moonrepo.dev/docs/proto/wasm-plugin#locating-binaries
 	bins?: string[];
+	globalsDirs?: string[];
+
+	// Version detection sources:
+	// https://moonrepo.dev/docs/proto/wasm-plugin#detecting-versions
 	detectionSources?: {
 		file: string;
 		label?: string;
 		url?: string;
 	}[];
-	description: string;
-	globalsDirs?: string[];
-	homepageUrl?: string;
-	name: string;
-	noIcon?: boolean;
-	pluginLocator?: string;
-	pluginType: 'toml' | 'wasm';
-	repoUrl: string;
-	usageId?: string;
 }
 
-export const BUILTIN_TOOLS: Record<string, ProtoTool> = {
+export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 	bun: {
 		bins: ['bun', 'bunx'],
 		description:

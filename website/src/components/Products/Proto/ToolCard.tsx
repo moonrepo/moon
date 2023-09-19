@@ -4,7 +4,7 @@ import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';
 import CodeBlock from '@theme/CodeBlock';
 import Code from '@theme/MDXComponents/Code';
-import { ProtoTool } from '../../../data/proto-plugins';
+import { ProtoTool } from '../../../data/proto-tools';
 import TomlLink from '../../Docs/TomlLink';
 import WasmLink from '../../Docs/WasmLink';
 
@@ -18,6 +18,11 @@ export default function ToolCard({ id, tool }: ToolCardProps) {
 	const dirs = tool.globalsDirs ?? [];
 	const detect = tool.detectionSources ?? [];
 	const usageId = tool.usageId ?? id;
+	let usage = `proto install ${usageId}`;
+
+	if (tool.pluginLocator) {
+		usage = `proto add-plugin ${usageId} "${tool.pluginLocator}"\n${usage}`;
+	}
 
 	return (
 		<div className="relative rounded-lg px-2 py-2 text-black border-solid border border-t-0 border-b-2 bg-gray-50 border-gray-200/75 dark:bg-slate-700 dark:border-slate-900/75">
@@ -30,15 +35,7 @@ export default function ToolCard({ id, tool }: ToolCardProps) {
 
 			<Text>{tool.description}</Text>
 
-			<CodeBlock language="shell">
-				{tool.pluginLocator && (
-					<>
-						proto add-plugin {usageId} "{tool.pluginLocator}"
-						<br />
-					</>
-				)}
-				proto install {usageId}
-			</CodeBlock>
+			<CodeBlock language="shell">{usage}</CodeBlock>
 
 			{bins.length > 0 && (
 				<Text size="sm" variant="muted" className="m-0 mt-1">

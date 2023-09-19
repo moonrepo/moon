@@ -200,6 +200,16 @@
               "type": "null"
             }
           ]
+        },
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -295,6 +305,16 @@
             }
           ]
         },
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "pnpm": {
           "anyOf": [
             {
@@ -353,6 +373,16 @@
       "title": "PartialNpmConfig",
       "type": "object",
       "properties": {
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "version": {
           "anyOf": [
             {
@@ -370,6 +400,16 @@
       "title": "PartialPnpmConfig",
       "type": "object",
       "properties": {
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "version": {
           "anyOf": [
             {
@@ -395,6 +435,16 @@
               "items": {
                 "$ref": "#/definitions/PartialBinEntry"
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
             },
             {
               "type": "null"
@@ -511,6 +561,16 @@
       "title": "PartialYarnConfig",
       "type": "object",
       "properties": {
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "plugins": {
           "anyOf": [
             {

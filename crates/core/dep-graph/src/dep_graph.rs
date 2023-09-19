@@ -25,6 +25,10 @@ impl DepGraph {
         DepGraph { graph, indices }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.get_node_count() == 0
+    }
+
     pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
         self.indices.get(node)
     }

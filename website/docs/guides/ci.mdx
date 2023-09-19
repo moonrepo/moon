@@ -5,6 +5,7 @@ title: Continuous integration (CI)
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Image from '@site/src/components/Image';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 All companies and projects rely on continuous integration (CI) to ensure high quality code and to
 avoid regressions. Because this is such a critical piece of every developer's workflow, we wanted to
@@ -50,15 +51,10 @@ by default. This can be easily controlled with the [`local`](../config/project#l
 
 ## Integrating
 
-Although moon has an [integrated toolchain](../concepts/toolchain), we still require Node.js and
-dependencies to be installed _beforehand_, as moon is currently shipped as an
-[npm package](https://www.npmjs.com/package/@moonrepo/cli). This is unfortunate and we're looking
-into other distribution channels.
-
-With that being said, the following examples can be referenced for setting up moon and its CI
-workflow in popular services. The examples assume a
-[package script named `moon`](../install#adding-a-package-script) and are using Yarn 3, but feel
-free to replace with your chosen setup.
+The following examples can be referenced for setting up moon and its CI workflow in popular
+providers. For GitHub, we're using our
+[`setup-moon` action](https://github.com/moonrepo/setup-moon-action) to install moon. For other
+providers, we assume moon is an npm dependency and must be installed with Node.js.
 
 <Tabs groupId="ci-env">
 <TabItem value="github" label="GitHub">
@@ -78,11 +74,8 @@ jobs:
       - uses: 'actions/checkout@v4'
         with:
           fetch-depth: 0
-      - uses: 'actions/setup-node@v3'
-        with:
-          cache: 'yarn'
-      - run: 'yarn install --immutable'
-      - run: 'yarn moon ci'
+      - uses: 'moonrepo/setup-moon-action@v1'
+      - run: 'moon ci'
 ```
 
 </TabItem>
@@ -135,6 +128,24 @@ script: 'moon ci'
 
 </TabItem>
 </Tabs>
+
+## Choosing targets<VersionLabel version="1.14.0" />
+
+By default `moon ci` will run _all_ tasks from _all_ projects that are affected by touched files and
+have the [`runInCI`](../config/project#runinci) task option enabled. This is a great catch-all
+solution, but may not vibe with your workflow or requirements.
+
+If you'd prefer more control, you can pass a list of targets to `moon ci`, instead of moon
+attempting to detect them. When providing targets, `moon ci` will still only run them if affected by
+touched files, but will ignore the `runInCI` option.
+
+```shell
+# Run all builds
+$ moon ci :build
+
+# In another job, run tests
+$ moon ci :test :lint
+```
 
 ## Comparing revisions
 

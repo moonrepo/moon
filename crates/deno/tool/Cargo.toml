@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 moon_config = { path = "../../../nextgen/config" }
-moon_platform_runtime = { path = "../../core/platform-runtime" }
+moon_platform_runtime2 = { path = "../../../nextgen/platform-runtime" }
 moon_tool = { path = "../../core/tool" }
 miette = { workspace = true }
 proto_core = { workspace = true }

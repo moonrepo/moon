@@ -1,4 +1,4 @@
-use moon_config::{PlatformType, VersionSpec};
+use moon_config::{PlatformType, Version, VersionSpec};
 use serde::Serialize;
 use std::fmt;
 
@@ -19,9 +19,21 @@ impl RuntimeReq {
 
     pub fn is_latest(&self) -> bool {
         match self {
-            Self::Toolchain(VersionSpec::Alias(alias)) => alias == "latest",
-            Self::ToolchainOverride(VersionSpec::Alias(alias)) => alias == "latest",
+            Self::Toolchain(VersionSpec::Alias(alias))
+            | Self::ToolchainOverride(VersionSpec::Alias(alias)) => alias == "latest",
             _ => false,
+        }
+    }
+
+    pub fn is_override(&self) -> bool {
+        matches!(self, Self::ToolchainOverride(_))
+    }
+
+    pub fn to_version(&self) -> Option<Version> {
+        match self {
+            Self::Toolchain(VersionSpec::Version(version))
+            | Self::ToolchainOverride(VersionSpec::Version(version)) => Some(version.to_owned()),
+            _ => None,
         }
     }
 }
@@ -30,8 +42,7 @@ impl fmt::Display for RuntimeReq {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Global => write!(f, "global"),
-            Self::Toolchain(spec) => write!(f, "{}", spec),
-            Self::ToolchainOverride(spec) => write!(f, "{}", spec),
+            Self::Toolchain(spec) | Self::ToolchainOverride(spec) => write!(f, "{}", spec),
         }
     }
 }
@@ -55,6 +66,17 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    pub fn new(platform: PlatformType, requirement: RuntimeReq) -> Self {
+        Self {
+            platform,
+            requirement,
+        }
+    }
+
+    pub fn system() -> Self {
+        Self::new(PlatformType::System, RuntimeReq::Global)
+    }
+
     pub fn label(&self) -> String {
         match self.platform {
             PlatformType::System => "system".into(),

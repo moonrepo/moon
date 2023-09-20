@@ -1,5 +1,5 @@
 use moon_config::DenoConfig;
-use moon_platform_runtime::Version;
+use moon_platform_runtime2::RuntimeReq;
 use moon_tool::{async_trait, Tool};
 use proto_core::ProtoEnvironment;
 use std::path::PathBuf;
@@ -15,14 +15,14 @@ impl DenoTool {
     pub fn new(
         _proto: &ProtoEnvironment,
         config: &DenoConfig,
-        version: &Version,
+        req: &RuntimeReq,
     ) -> miette::Result<DenoTool> {
         let mut deno = DenoTool {
             config: config.to_owned(),
             global: true,
         };
 
-        if version.is_global() {
+        if req.is_global() {
             deno.global = true;
             // node.config.version = None;
         } else {

@@ -14,7 +14,7 @@ moon_emitter = { path = "../emitter" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
-moon_platform_runtime = { path = "../platform-runtime" }
+moon_platform_runtime2 = { path = "../../../nextgen/platform-runtime" }
 moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../../nextgen/project" }
 moon_target = { path = "../../../nextgen/target" }

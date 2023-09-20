@@ -1,6 +1,6 @@
 use moon_config::RustConfig;
 use moon_logger::debug;
-use moon_platform_runtime::Version;
+use moon_platform_runtime2::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, Tool};
@@ -25,7 +25,7 @@ impl RustTool {
     pub async fn new(
         proto: &ProtoEnvironment,
         config: &RustConfig,
-        version: &Version,
+        req: &RuntimeReq,
     ) -> miette::Result<RustTool> {
         let mut rust = RustTool {
             config: config.to_owned(),
@@ -34,11 +34,11 @@ impl RustTool {
                 .await?,
         };
 
-        if version.is_global() {
+        if req.is_global() {
             rust.global = true;
             rust.config.version = None;
         } else {
-            rust.config.version = SemVersion::parse(&version.number).ok();
+            rust.config.version = req.to_version();
         };
 
         Ok(rust)

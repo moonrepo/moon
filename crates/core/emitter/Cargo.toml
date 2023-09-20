@@ -14,7 +14,7 @@ harness = false
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
-moon_platform_runtime = { path = "../platform-runtime" }
+moon_platform_runtime2 = { path = "../../../nextgen/platform-runtime" }
 moon_project = { path = "../../../nextgen/project" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../../../nextgen/task" }

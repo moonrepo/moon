@@ -1,13 +1,13 @@
 use moon_action_context::ActionContext;
 use moon_config::{PlatformType, RustConfig};
-use moon_platform::{Platform, Runtime, Version};
+use moon_platform::{Platform, Runtime, RuntimeReq, VersionSpec};
 use moon_process::Command;
 use moon_project::Project;
 use moon_rust_platform::RustPlatform;
 use moon_task::Task;
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
-use proto_core::{ProtoEnvironment, Version as SemVersion};
+use proto_core::{ProtoEnvironment, Version};
 use rustc_hash::FxHashMap;
 use std::env;
 use std::fs;
@@ -37,7 +37,7 @@ async fn create_target_command(task: Task) -> Command {
             &ActionContext::default(),
             &Project::default(),
             &task,
-            &Runtime::Rust(Version::new_global()),
+            &Runtime::new(PlatformType::Rust, RuntimeReq::Global),
             &PathBuf::from("cwd"),
         )
         .await
@@ -110,7 +110,7 @@ mod sync_project {
             let mut platform = create_platform();
             platform.config = RustConfig {
                 sync_toolchain_config: false,
-                version: Some(SemVersion::parse("1.70.0").unwrap()),
+                version: Some(Version::parse("1.70.0").unwrap()),
                 ..RustConfig::default()
             };
 
@@ -168,7 +168,7 @@ mod sync_project {
             let mut platform = create_platform();
             platform.config = RustConfig {
                 sync_toolchain_config: true,
-                version: Some(SemVersion::parse("1.70.0").unwrap()),
+                version: Some(Version::parse("1.70.0").unwrap()),
                 ..RustConfig::default()
             };
 
@@ -196,7 +196,7 @@ mod sync_project {
             let mut platform = create_platform();
             platform.config = RustConfig {
                 sync_toolchain_config: true,
-                version: Some(SemVersion::parse("1.70.0").unwrap()),
+                version: Some(Version::parse("1.70.0").unwrap()),
                 ..RustConfig::default()
             };
 
@@ -271,7 +271,10 @@ mod target_command {
                 &ActionContext::default(),
                 &Project::default(),
                 &task,
-                &Runtime::Rust(Version::new_override("1.60.0")),
+                &Runtime::new(
+                    PlatformType::Rust,
+                    RuntimeReq::ToolchainOverride(VersionSpec::parse("1.60.0").unwrap()),
+                ),
                 &PathBuf::from("cwd"),
             )
             .await

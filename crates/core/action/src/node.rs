@@ -37,18 +37,18 @@ impl ActionNode {
         match self {
             ActionNode::InstallDeps(runtime) => {
                 if runtime.requirement.is_latest() {
-                    format!("Install{}Deps", runtime.platform)
+                    format!("Install{}Deps", runtime)
                 } else {
-                    format!("Install{}Deps({})", runtime.platform, runtime.requirement)
+                    format!("Install{}Deps({})", runtime, runtime.requirement)
                 }
             }
             ActionNode::InstallProjectDeps(runtime, id) => {
                 if runtime.requirement.is_latest() {
-                    format!("Install{}DepsInProject({id})", runtime.platform)
+                    format!("Install{}DepsInProject({id})", runtime)
                 } else {
                     format!(
                         "Install{}DepsInProject({}, {id})",
-                        runtime.platform, runtime.requirement
+                        runtime, runtime.requirement
                     )
                 }
             }
@@ -57,13 +57,13 @@ impl ActionNode {
             ActionNode::RunPersistentTarget(_, id) => format!("RunPersistentTarget({id})"),
             ActionNode::SetupTool(runtime) => {
                 if runtime.requirement.is_latest() {
-                    format!("Setup{}Tool", runtime.platform)
+                    format!("Setup{}Tool", runtime)
                 } else {
-                    format!("Setup{}Tool({})", runtime.platform, runtime.requirement)
+                    format!("Setup{}Tool({})", runtime, runtime.requirement)
                 }
             }
             ActionNode::SyncProject(runtime, id) => {
-                format!("Sync{}Project({id})", runtime.platform)
+                format!("Sync{}Project({id})", runtime)
             }
             ActionNode::SyncWorkspace => "SyncWorkspace".into(),
         }

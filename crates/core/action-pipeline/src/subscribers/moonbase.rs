@@ -460,7 +460,7 @@ impl Subscriber for MoonbaseSubscriber {
 
                                 // Create a fake action label so that we can check the CI cache
                                 let action_label =
-                                    ActionNode::RunTarget(Runtime::System, (*target).to_owned())
+                                    ActionNode::RunTarget(Runtime::system(), (*target).to_owned())
                                         .label();
                                 let job_id = self.job_ids.get(&action_label).cloned();
 

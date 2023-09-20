@@ -34,7 +34,7 @@ impl<T: Tool> ToolManager<T> {
     }
 
     pub fn has(&self, req: &RuntimeReq) -> bool {
-        self.cache.contains_key(&req)
+        self.cache.contains_key(req)
     }
 
     pub fn register(&mut self, req: &RuntimeReq, tool: T) {
@@ -52,14 +52,14 @@ impl<T: Tool> ToolManager<T> {
         req: &RuntimeReq,
         last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
-        match self.cache.get_mut(&req) {
+        match self.cache.get_mut(req) {
             Some(cache) => Ok(cache.setup(last_versions).await?),
             None => Err(ToolError::UnknownTool(self.runtime.to_string()).into()),
         }
     }
 
     pub async fn teardown(&mut self, req: &RuntimeReq) -> miette::Result<()> {
-        if let Some(mut tool) = self.cache.remove(&req) {
+        if let Some(mut tool) = self.cache.remove(req) {
             tool.teardown().await?;
         }
 

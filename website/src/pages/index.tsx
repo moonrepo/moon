@@ -132,8 +132,8 @@ export default function Home() {
 							<Link href="/moon" size="lg">
 								proto
 							</Link>
-							, our modern toolchain manager, this entire workflow is automated away through a
-							single tool.
+							, our modern version manager, this entire workflow is automated away through a single
+							tool.
 						</>
 					}
 					cta={{

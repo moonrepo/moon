@@ -5,6 +5,7 @@ use moon_logger::debug;
 use moon_platform::{PlatformManager, Runtime};
 use moon_utils::time;
 use moon_workspace::Workspace;
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::sync::Arc;
@@ -12,7 +13,7 @@ use tokio::sync::RwLock;
 
 cache_item!(
     pub struct ToolState {
-        pub last_versions: FxHashMap<String, proto_core::Version>,
+        pub last_versions: FxHashMap<String, UnresolvedVersionSpec>,
         pub last_version_check_time: u128,
     }
 );

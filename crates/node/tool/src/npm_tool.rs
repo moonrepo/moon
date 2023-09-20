@@ -6,7 +6,7 @@ use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::is_ci;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -50,18 +50,16 @@ impl Tool for NpmTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let mut count = 0;
-        let version = self.config.version.clone();
+        let version = self.config.version.as_ref();
 
         let Some(version) = version else {
             return Ok(count);
         };
 
-        let version_type = UnresolvedVersionSpec::Version(version.to_owned());
-
-        if self.tool.is_setup(&version_type).await? {
+        if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;
 
             debug!("npm has already been setup");
@@ -81,15 +79,15 @@ impl Tool for NpmTool {
         }
 
         if let Some(last) = last_versions.get("npm") {
-            if last == &version && self.tool.get_tool_dir().exists() {
+            if last == version && self.tool.get_tool_dir().exists() {
                 return Ok(count);
             }
         }
 
-        print_checkpoint(format!("installing npm v{version}"), Checkpoint::Setup);
+        print_checkpoint(format!("installing npm {version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&version_type).await? {
-            last_versions.insert("npm".into(), version);
+        if self.tool.setup(version).await? {
+            last_versions.insert("npm".into(), version.to_owned());
             count += 1;
         }
 

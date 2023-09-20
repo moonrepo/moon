@@ -1,13 +1,13 @@
 use moon_common::cacheable;
 use moon_common::Id;
-use proto_core::Version;
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 
 cacheable!(
     #[derive(Clone, Config, Debug)]
     pub struct ProjectToolchainCommonToolConfig {
-        pub version: Option<Version>,
+        pub version: Option<UnresolvedVersionSpec>,
     }
 );
 

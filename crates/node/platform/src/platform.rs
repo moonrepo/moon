@@ -5,21 +5,21 @@ use moon_common::Id;
 use moon_config::{
     Config, DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
     PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
-    TasksConfigsMap, TypeScriptConfig,
+    TasksConfigsMap, TypeScriptConfig, UnresolvedVersionSpec,
 };
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
-use moon_platform::{Platform, Runtime, RuntimeReq, VersionSpec};
+use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{ProtoEnvironment, Version};
+use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
@@ -73,7 +73,7 @@ impl Platform for NodePlatform {
                 if let Some(version) = &node_config.version {
                     return Runtime::new_override(
                         PlatformType::Node,
-                        RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+                        RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
             }
@@ -82,7 +82,7 @@ impl Platform for NodePlatform {
         if let Some(version) = &self.config.version {
             return Runtime::new(
                 PlatformType::Node,
-                RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+                RuntimeReq::Toolchain(version.to_owned()),
             );
         }
 
@@ -275,7 +275,7 @@ impl Platform for NodePlatform {
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let req = match &self.config.version {
-            Some(v) => RuntimeReq::Toolchain(VersionSpec::Version(v.to_owned())),
+            Some(v) => RuntimeReq::Toolchain(v.to_owned()),
             None => RuntimeReq::Global,
         };
 
@@ -305,7 +305,7 @@ impl Platform for NodePlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let req = &runtime.requirement;
 

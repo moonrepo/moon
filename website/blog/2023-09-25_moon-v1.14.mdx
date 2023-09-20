@@ -1,0 +1,52 @@
+---
+slug: moon-v1.14
+title: moon v1.14 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.13.png
+---
+
+???
+
+<!--truncate-->
+
+## Configure partial toolchain versions
+
+Since moon's inception, our integrated toolchain required fully qualified semantic versions
+(major.minor.patch) for tools. This was by design to ensure that we could provide a consistent,
+reliable, and deterministic experience for all users. This solved the problem of "Is X using the
+correct version of Y?".
+
+However, this also meant that we were unable to support partial versions (major.minor) of tools,
+which is a common use case and request for many users. Over the last few months, we've made immense
+progress in [proto](/proto) on how it parses, resolves, and evaluates versions, known as the version
+specification.
+
+We felt the time was right to pull these changes into moon, and as such, all `version` fields in
+[`.moon/toolchain.yml`](/docs/config/toolchain) now support partial versions, version
+requirements/ranges, and even aliases!
+
+```yaml title=".moon/toolchain.yml"
+node:
+  version: '20.7' # ~20.7
+  npm:
+    version: '^9'
+
+rust:
+  version: 'stable'
+```
+
+:::info
+
+Learn more about how this works under the hood in the
+[official version specification documentation](/docs/concepts/toolchain#version-specification).
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.14.0) for a full list
+of changes.
+
+- Improved handling of certificates and proxies.
+- Updated to proto v0.18.

@@ -4,6 +4,7 @@ use moon_runner::inputs_collector::collect_and_hash_inputs;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
 use moon_vcs::{BoxedVcs, Git};
 use std::path::Path;
+use std::sync::Arc;
 use std::{env, fs};
 
 fn cases_sandbox() -> Sandbox {
@@ -120,7 +121,9 @@ async fn filters_using_input_globs_in_glob_mode() {
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
 
-    workspace.config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+    let mut workspace_config = Arc::into_inner(workspace.config).unwrap();
+    workspace_config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+    workspace.config = Arc::new(workspace_config);
 
     let project = project_graph.get("outputsFiltering").unwrap();
 
@@ -261,7 +264,9 @@ async fn filters_using_input_files_in_glob_mode() {
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
 
-    workspace.config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+    let mut workspace_config = Arc::into_inner(workspace.config).unwrap();
+    workspace_config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+    workspace.config = Arc::new(workspace_config);
 
     let project = project_graph.get("outputsFiltering").unwrap();
 

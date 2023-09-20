@@ -30,7 +30,7 @@ moon_target = { path = "../../../nextgen/target" }
 moon_terminal = { path = "../terminal" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
-moon_workspace = { path = "../workspace" }
+moon_workspace = { path = "../../../nextgen/workspace" }
 ci_env = { workspace = true }
 console = { workspace = true }
 miette = { workspace = true }

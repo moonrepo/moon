@@ -23,7 +23,7 @@ moon_tool = { path = "../tool" }
 moon_terminal = { path = "../terminal" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }
-moon_workspace = { path = "../workspace" }
+moon_workspace = { path = "../../../nextgen/workspace" }
 console = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }

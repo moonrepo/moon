@@ -19,7 +19,7 @@ use moon_task::Task;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::ProtoEnvironment;
+use proto_core::{ProtoEnvironment, Version as SemVersion};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
@@ -71,13 +71,13 @@ impl Platform for NodePlatform {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Runtime::Node(Version::new_override(version));
+                    return Runtime::Node(Version::new_override(version.to_string()));
                 }
             }
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::Node(Version::new(version));
+            return Runtime::Node(Version::new(version.to_string()));
         }
 
         // Global
@@ -269,7 +269,7 @@ impl Platform for NodePlatform {
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let version = match &self.config.version {
-            Some(v) => Version::new(v),
+            Some(v) => Version::new(v.to_string()),
             None => Version::new_global(),
         };
 
@@ -299,7 +299,7 @@ impl Platform for NodePlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, String>,
+        last_versions: &mut FxHashMap<String, SemVersion>,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 

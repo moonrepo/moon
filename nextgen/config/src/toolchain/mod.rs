@@ -10,6 +10,15 @@ pub use node_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
 
+use proto_core::{UnresolvedVersionSpec, Version};
+
+pub fn extract_version_from_proto_config(version: &UnresolvedVersionSpec) -> Option<Version> {
+    match version {
+        UnresolvedVersionSpec::Version(ver) => Some(ver.to_owned()),
+        _ => None,
+    }
+}
+
 #[macro_export]
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
@@ -18,7 +27,7 @@ macro_rules! inherit_tool {
                 let config = self.$tool.get_or_insert_with($config::default);
 
                 if config.version.is_none() {
-                    config.version = Some(version.to_string());
+                    config.version = extract_version_from_proto_config(version);
                 }
             }
 
@@ -39,7 +48,7 @@ macro_rules! inherit_tool_required {
         pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
             if let Some(version) = proto_tools.tools.get($key) {
                 if self.$tool.version.is_none() {
-                    self.$tool.version = Some(version.to_string());
+                    self.$tool.version = extract_version_from_proto_config(version);
                 }
             }
 

@@ -10,7 +10,9 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
+use proto_core::{
+    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version as SemVersion,
+};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -48,7 +50,7 @@ impl NodeTool {
             node.global = true;
             node.config.version = None;
         } else {
-            node.config.version = Some(version.number.to_owned());
+            node.config.version = SemVersion::parse(&version.number).ok();
         };
 
         match config.package_manager {
@@ -156,12 +158,15 @@ impl Tool for NodeTool {
         })
     }
 
-    async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
+    async fn setup(
+        &mut self,
+        last_versions: &mut FxHashMap<String, SemVersion>,
+    ) -> miette::Result<u8> {
         let mut installed = 0;
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
-            let version_type = UnresolvedVersionSpec::parse(version)?;
+            let version_type = UnresolvedVersionSpec::Version(version.to_owned());
 
             if self.tool.is_setup(&version_type).await? {
                 debug!("Node.js has already been setup");
@@ -185,7 +190,7 @@ impl Tool for NodeTool {
                     print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
 
                     if self.tool.setup(&version_type).await? {
-                        last_versions.insert("node".into(), version.to_string());
+                        last_versions.insert("node".into(), version.to_owned());
                         installed += 1;
                     }
                 }

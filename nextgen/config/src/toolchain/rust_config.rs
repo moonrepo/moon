@@ -1,6 +1,5 @@
 use super::bin_config::BinEntry;
-use crate::validate::validate_semver;
-use proto_core::PluginLocator;
+use proto_core::{PluginLocator, Version};
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -13,6 +12,6 @@ pub struct RustConfig {
 
     pub sync_toolchain_config: bool,
 
-    #[setting(env = "MOON_RUST_VERSION", validate = validate_semver)]
-    pub version: Option<String>,
+    #[setting(env = "MOON_RUST_VERSION")]
+    pub version: Option<Version>,
 }

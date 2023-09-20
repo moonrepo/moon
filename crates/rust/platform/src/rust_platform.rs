@@ -23,7 +23,7 @@ use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::async_trait;
-use proto_core::ProtoEnvironment;
+use proto_core::{ProtoEnvironment, Version as SemVersion};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
@@ -71,13 +71,13 @@ impl Platform for RustPlatform {
         if let Some(config) = &project_config {
             if let Some(rust_config) = &config.toolchain.rust {
                 if let Some(version) = &rust_config.version {
-                    return Runtime::Rust(Version::new_override(version));
+                    return Runtime::Rust(Version::new_override(version.to_string()));
                 }
             }
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::Rust(Version::new(version));
+            return Runtime::Rust(Version::new(version.to_string()));
         }
 
         Runtime::Rust(Version::new_global())
@@ -167,7 +167,7 @@ impl Platform for RustPlatform {
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let version = match &self.config.version {
-            Some(v) => Version::new(v),
+            Some(v) => Version::new(v.to_string()),
             None => Version::new_global(),
         };
 
@@ -197,7 +197,7 @@ impl Platform for RustPlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, String>,
+        last_versions: &mut FxHashMap<String, SemVersion>,
     ) -> miette::Result<u8> {
         let version = runtime.version();
 
@@ -320,11 +320,11 @@ impl Platform for RustPlatform {
 
         // Sync version into `toolchain.channel`
         if self.config.sync_toolchain_config && self.config.version.is_some() {
-            let version = self.config.version.clone().unwrap();
+            let version = self.config.version.as_ref().map(|v| v.to_string()).unwrap();
 
             if toolchain_path.exists() {
                 ToolchainTomlCache::sync(toolchain_path, |cfg| {
-                    if cfg.toolchain.channel != self.config.version {
+                    if cfg.toolchain.channel.as_ref() != Some(&version) {
                         debug!(
                             target: LOG_TARGET,
                             "Syncing {} configuration file with version {}",

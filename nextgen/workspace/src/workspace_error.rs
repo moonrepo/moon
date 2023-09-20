@@ -1,7 +1,6 @@
 use miette::Diagnostic;
 use moon_common::consts;
 use starbase_styles::{Style, Stylize};
-use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -26,22 +25,9 @@ pub enum WorkspaceError {
     MissingWorkspaceConfigFile,
 
     #[error(
-        "Failed to validate {}/{} configuration file.\n\n{0}",
-        consts::CONFIG_DIRNAME.style(Style::File),
-        consts::CONFIG_TOOLCHAIN_FILENAME.style(Style::File)
+        "Invalid moon version, unable to proceed. Found {}, expected {}.",
+        .actual.style(Style::Hash),
+        .expected.style(Style::Hash)
     )]
-    InvalidToolchainConfigFile(String),
-
-    #[error(
-        "Failed to validate {}/{} configuration file.\n\n{0}",
-        consts::CONFIG_DIRNAME,
-        consts::CONFIG_WORKSPACE_FILENAME
-    )]
-    InvalidWorkspaceConfigFile(String),
-
-    #[error("Failed to validate {} configuration file.\n\n{1}", .0.style(Style::Path))]
-    InvalidTasksConfigFile(PathBuf, String),
-
-    #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
-    InvalidMoonVersion(String, String),
+    InvalidMoonVersion { actual: String, expected: String },
 }

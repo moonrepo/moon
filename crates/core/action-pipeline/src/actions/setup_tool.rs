@@ -12,7 +12,7 @@ use tokio::sync::RwLock;
 
 cache_item!(
     pub struct ToolState {
-        pub last_versions: FxHashMap<String, String>,
+        pub last_versions: FxHashMap<String, proto_core::Version>,
         pub last_version_check_time: u128,
     }
 );

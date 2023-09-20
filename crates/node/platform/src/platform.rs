@@ -71,9 +71,9 @@ impl Platform for NodePlatform {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Runtime::new(
+                    return Runtime::new_override(
                         PlatformType::Node,
-                        RuntimeReq::ToolchainOverride(VersionSpec::Version(version.to_owned())),
+                        RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
                     );
                 }
             }

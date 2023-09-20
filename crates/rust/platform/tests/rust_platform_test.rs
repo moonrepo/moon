@@ -271,9 +271,9 @@ mod target_command {
                 &ActionContext::default(),
                 &Project::default(),
                 &task,
-                &Runtime::new(
+                &Runtime::new_override(
                     PlatformType::Rust,
-                    RuntimeReq::ToolchainOverride(VersionSpec::parse("1.60.0").unwrap()),
+                    RuntimeReq::Toolchain(VersionSpec::parse("1.60.0").unwrap()),
                 ),
                 &PathBuf::from("cwd"),
             )

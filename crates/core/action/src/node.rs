@@ -36,14 +36,14 @@ impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             ActionNode::InstallDeps(runtime) => {
-                if runtime.requirement.is_latest() {
+                if runtime.requirement.is_global() {
                     format!("Install{}Deps", runtime)
                 } else {
                     format!("Install{}Deps({})", runtime, runtime.requirement)
                 }
             }
             ActionNode::InstallProjectDeps(runtime, id) => {
-                if runtime.requirement.is_latest() {
+                if runtime.requirement.is_global() {
                     format!("Install{}DepsInProject({id})", runtime)
                 } else {
                     format!(
@@ -56,7 +56,7 @@ impl ActionNode {
             ActionNode::RunInteractiveTarget(_, id) => format!("RunInteractiveTarget({id})"),
             ActionNode::RunPersistentTarget(_, id) => format!("RunPersistentTarget({id})"),
             ActionNode::SetupTool(runtime) => {
-                if runtime.requirement.is_latest() {
+                if runtime.requirement.is_global() {
                     format!("Setup{}Tool", runtime)
                 } else {
                     format!("Setup{}Tool({})", runtime, runtime.requirement)

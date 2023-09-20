@@ -71,9 +71,9 @@ impl Platform for RustPlatform {
         if let Some(config) = &project_config {
             if let Some(rust_config) = &config.toolchain.rust {
                 if let Some(version) = &rust_config.version {
-                    return Runtime::new(
+                    return Runtime::new_override(
                         PlatformType::Rust,
-                        RuntimeReq::ToolchainOverride(VersionSpec::Version(version.to_owned())),
+                        RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
                     );
                 }
             }
@@ -472,7 +472,7 @@ impl Platform for RustPlatform {
             | "rustdoc" | "rustfmt" | "rustup" => {}
             // Handle toolchains for cargo commands
             "cargo" => {
-                if runtime.requirement.is_override() {
+                if runtime.overridden {
                     args.push(format!("+{}", runtime.requirement));
                 }
             }

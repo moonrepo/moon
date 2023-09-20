@@ -8,8 +8,6 @@ pub enum RuntimeReq {
     Global,
     // Install tool into toolchain
     Toolchain(VersionSpec),
-    // Use toolchain but override the version
-    ToolchainOverride(VersionSpec),
 }
 
 impl RuntimeReq {
@@ -17,22 +15,9 @@ impl RuntimeReq {
         matches!(self, Self::Global)
     }
 
-    pub fn is_latest(&self) -> bool {
-        match self {
-            Self::Toolchain(VersionSpec::Alias(alias))
-            | Self::ToolchainOverride(VersionSpec::Alias(alias)) => alias == "latest",
-            _ => false,
-        }
-    }
-
-    pub fn is_override(&self) -> bool {
-        matches!(self, Self::ToolchainOverride(_))
-    }
-
     pub fn to_version(&self) -> Option<Version> {
         match self {
-            Self::Toolchain(VersionSpec::Version(version))
-            | Self::ToolchainOverride(VersionSpec::Version(version)) => Some(version.to_owned()),
+            Self::Toolchain(VersionSpec::Version(version)) => Some(version.to_owned()),
             _ => None,
         }
     }
@@ -42,7 +27,7 @@ impl fmt::Display for RuntimeReq {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Global => write!(f, "global"),
-            Self::Toolchain(spec) | Self::ToolchainOverride(spec) => write!(f, "{}", spec),
+            Self::Toolchain(spec) => write!(f, "{}", spec),
         }
     }
 }
@@ -63,6 +48,7 @@ impl From<&Runtime> for RuntimeReq {
 pub struct Runtime {
     pub platform: PlatformType,
     pub requirement: RuntimeReq,
+    pub overridden: bool,
 }
 
 impl Runtime {
@@ -70,7 +56,14 @@ impl Runtime {
         Self {
             platform,
             requirement,
+            overridden: false,
         }
+    }
+
+    pub fn new_override(platform: PlatformType, requirement: RuntimeReq) -> Self {
+        let mut runtime = Self::new(platform, requirement);
+        runtime.overridden = true;
+        runtime
     }
 
     pub fn system() -> Self {

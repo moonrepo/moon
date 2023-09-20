@@ -19,6 +19,7 @@ pub use language_platform::*;
 pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
+pub use proto_core::{ToolsConfig, Version, VersionReq};
 pub use schematic::{Config, ConfigEnum, ConfigError, PartialConfig};
 pub use shapes::*;
 pub use template::*;

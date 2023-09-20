@@ -3308,7 +3308,6 @@ dependencies = [
  "regex",
  "rustc-hash",
  "schematic",
- "semver",
  "serde",
  "serde_json",
  "serde_yaml 0.9.25",
@@ -3971,6 +3970,7 @@ dependencies = [
  "predicates",
  "pretty_assertions",
  "rustc-hash",
+ "semver",
  "serde_yaml 0.9.25",
  "starbase_utils",
  "tokio",
@@ -4110,12 +4110,10 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_test_utils",
- "moon_utils",
  "moon_vcs",
  "proto_core",
- "reqwest",
  "starbase",
+ "starbase_sandbox",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
@@ -5140,6 +5138,7 @@ version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c1123bff4039f2c45e13f390fbffd3f3763869de5f8d716816955e34bf87f62"
 dependencies = [
+ "semver",
  "warpgate",
 ]
 

@@ -16,6 +16,7 @@ export interface PartialDenoConfig {
 	/** @default 'deps.ts' */
 	depsFile?: string | null;
 	lockfile?: boolean | null;
+	plugin?: string | null;
 }
 
 export type NodeProjectAliasFormat = 'name-and-scope' | 'name-only';
@@ -32,18 +33,21 @@ export type NodeVersionFormat =
 	| 'workspace-tilde';
 
 export interface PartialNpmConfig {
+	plugin?: string | null;
 	version?: string | null;
 }
 
 export type NodePackageManager = 'npm' | 'pnpm' | 'yarn';
 
 export interface PartialPnpmConfig {
+	plugin?: string | null;
 	version?: string | null;
 }
 
 export type NodeVersionManager = 'nodenv' | 'nvm';
 
 export interface PartialYarnConfig {
+	plugin?: string | null;
 	plugins?: string[] | null;
 	version?: string | null;
 }
@@ -59,6 +63,7 @@ export interface PartialNodeConfig {
 	inferTasksFromScripts?: boolean | null;
 	npm?: PartialNpmConfig | null;
 	packageManager?: NodePackageManager | null;
+	plugin?: string | null;
 	pnpm?: PartialPnpmConfig | null;
 	/** @default true */
 	syncProjectWorkspaceDependencies?: boolean | null;
@@ -69,6 +74,7 @@ export interface PartialNodeConfig {
 
 export interface PartialRustConfig {
 	bins?: PartialBinEntry[] | null;
+	plugin?: string | null;
 	syncToolchainConfig?: boolean | null;
 	version?: string | null;
 }
@@ -112,17 +118,21 @@ export interface DenoConfig {
 	/** @default 'deps.ts' */
 	depsFile: string;
 	lockfile: boolean;
+	plugin: string | null;
 }
 
 export interface NpmConfig {
+	plugin: string | null;
 	version: string | null;
 }
 
 export interface PnpmConfig {
+	plugin: string | null;
 	version: string | null;
 }
 
 export interface YarnConfig {
+	plugin: string | null;
 	plugins: string[];
 	version: string | null;
 }
@@ -138,6 +148,7 @@ export interface NodeConfig {
 	inferTasksFromScripts: boolean;
 	npm: NpmConfig;
 	packageManager: NodePackageManager;
+	plugin: string | null;
 	pnpm: PnpmConfig | null;
 	/** @default true */
 	syncProjectWorkspaceDependencies: boolean;
@@ -148,6 +159,7 @@ export interface NodeConfig {
 
 export interface RustConfig {
 	bins: BinEntry[];
+	plugin: string | null;
 	syncToolchainConfig: boolean;
 	version: string | null;
 }

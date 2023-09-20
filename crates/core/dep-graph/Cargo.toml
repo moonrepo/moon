@@ -32,6 +32,6 @@ moon = { path = "../moon" }
 moon_config = { path = "../../../nextgen/config" }
 moon_test_utils = { path = "../test-utils" }
 moon_utils = { path = "../utils" }
-moon_workspace = { path = "../workspace" }
+moon_workspace = { path = "../../../nextgen/workspace" }
 criterion = { workspace = true }
 tokio = { workspace = true }

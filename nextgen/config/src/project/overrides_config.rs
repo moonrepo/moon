@@ -1,14 +1,13 @@
-use crate::validate::validate_semver;
 use moon_common::cacheable;
 use moon_common::Id;
+use proto_core::Version;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 
 cacheable!(
     #[derive(Clone, Config, Debug)]
     pub struct ProjectToolchainCommonToolConfig {
-        #[setting(validate = validate_semver)]
-        pub version: Option<String>,
+        pub version: Option<Version>,
     }
 );
 

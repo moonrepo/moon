@@ -569,9 +569,7 @@ vcs:
         use super::*;
 
         #[test]
-        #[should_panic(
-            expected = "doesn't meet semantic version requirements: unexpected character '@' while parsing major version number"
-        )]
+        #[should_panic(expected = "unexpected character '@' while parsing major version number")]
         fn errors_on_invalid_req() {
             test_load_config(FILENAME, "versionConstraint: '@1.0.0'", |path| {
                 WorkspaceConfig::load_from(path)

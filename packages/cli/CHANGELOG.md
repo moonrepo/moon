@@ -11,6 +11,11 @@
   - Tasks can now be configured with a timeout.
 - Updated `moon ci` to support running a list of targets, instead of running everything.
 
+#### 🐞 Fixes
+
+- Updated `version` settings to be parsed as semantic version objects instead of strings. This
+  should be transparent to users, but listing it just in case.
+
 #### ⚙️ Internal
 
 - Improved handling of certificates and proxies.

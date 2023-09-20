@@ -124,7 +124,7 @@ impl PackageJson {
 
     /// Add a version range to the `engines` field.
     /// Return true if the new value is different from the old value.
-    pub fn add_engine<T: AsRef<str>>(&mut self, engine: T, range: T) -> bool {
+    pub fn add_engine<K: AsRef<str>, V: AsRef<str>>(&mut self, engine: K, range: V) -> bool {
         let engine = engine.as_ref();
         let range = range.as_ref();
 

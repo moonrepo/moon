@@ -1,6 +1,5 @@
 use moon_common::color;
 use schematic::ValidateError;
-use semver::{Version, VersionReq};
 use std::path::{Path, PathBuf};
 use tracing::warn;
 
@@ -57,28 +56,6 @@ pub fn validate_child_or_root_path<T: AsRef<str>>(value: T) -> Result<(), Valida
             "parent relative paths are not supported",
         ));
     }
-
-    Ok(())
-}
-
-pub fn validate_semver<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
-    Version::parse(value)
-        .map_err(|error| ValidateError::new(format!("not a valid semantic version: {}", error)))?;
-
-    Ok(())
-}
-
-pub fn validate_semver_requirement<D, C>(
-    value: &str,
-    _data: &D,
-    _ctx: &C,
-) -> Result<(), ValidateError> {
-    VersionReq::parse(value).map_err(|error| {
-        ValidateError::new(format!(
-            "doesn't meet semantic version requirements: {}",
-            error
-        ))
-    })?;
 
     Ok(())
 }

@@ -90,7 +90,7 @@ impl Tool for PnpmTool {
             }
         }
 
-        print_checkpoint(format!("installing pnpm v{version}"), Checkpoint::Setup);
+        print_checkpoint(format!("installing pnpm {version}"), Checkpoint::Setup);
 
         if self.tool.setup(version).await? {
             last_versions.insert("pnpm".into(), version.to_owned());

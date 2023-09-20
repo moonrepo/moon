@@ -1,17 +1,17 @@
 $schema: '../website/static/schemas/toolchain.json'
 
 rust:
-  version: '1.72.0'
+  version: '1.72.1'
   bins:
     - 'cargo-make'
     - 'cargo-nextest'
   syncToolchainConfig: true
 
 node:
-  version: '20.0.0'
+  version: '20.7.0'
   packageManager: 'yarn'
   yarn:
-    version: '3.5.0'
+    version: '3.6.3'
     plugins:
       - 'interactive-tools'
       - 'version'

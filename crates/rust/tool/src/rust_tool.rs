@@ -97,7 +97,7 @@ impl Tool for RustTool {
             };
 
             if setup || !self.tool.get_tool_dir().exists() {
-                print_checkpoint(format!("installing rust v{version}"), Checkpoint::Setup);
+                print_checkpoint(format!("installing rust {version}"), Checkpoint::Setup);
 
                 if self.tool.setup(version).await? {
                     last_versions.insert("rust".into(), version.to_owned());

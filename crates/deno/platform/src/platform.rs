@@ -11,7 +11,7 @@ use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
-use moon_platform::{Platform, Runtime, Version};
+use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
@@ -19,7 +19,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{hash_file_contents, ProtoEnvironment, Version as SemVersion};
+use proto_core::{hash_file_contents, ProtoEnvironment, Version};
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::{
@@ -51,7 +51,7 @@ impl DenoPlatform {
         DenoPlatform {
             config: config.to_owned(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::Deno(Version::new_global())),
+            toolchain: ToolManager::new(Runtime::new(PlatformType::Deno, RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
@@ -65,7 +65,7 @@ impl Platform for DenoPlatform {
     }
 
     fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
-        Runtime::Deno(Version::new_global())
+        Runtime::new(PlatformType::Deno, RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -74,7 +74,7 @@ impl Platform for DenoPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::Deno(_));
+            return matches!(runtime.platform, PlatformType::Deno);
         }
 
         false
@@ -104,8 +104,8 @@ impl Platform for DenoPlatform {
         Ok(Box::new(tool))
     }
 
-    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>> {
-        let tool = self.toolchain.get_for_version(&version)?;
+    fn get_tool_for_version(&self, req: RuntimeReq) -> miette::Result<Box<&dyn Tool>> {
+        let tool = self.toolchain.get_for_version(&req)?;
 
         Ok(Box::new(tool))
     }
@@ -123,17 +123,15 @@ impl Platform for DenoPlatform {
         //     None => Version::new_global(),
         // };
 
-        let version = Version::new_global();
+        let req = RuntimeReq::Global;
         let mut last_versions = FxHashMap::default();
 
-        if !self.toolchain.has(&version) {
-            self.toolchain.register(
-                &version,
-                DenoTool::new(&self.proto_env, &self.config, &version)?,
-            );
+        if !self.toolchain.has(&req) {
+            self.toolchain
+                .register(&req, DenoTool::new(&self.proto_env, &self.config, &req)?);
         }
 
-        self.toolchain.setup(&version, &mut last_versions).await?;
+        self.toolchain.setup(&req, &mut last_versions).await?;
 
         Ok(())
     }
@@ -150,18 +148,16 @@ impl Platform for DenoPlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
-        let version = runtime.version();
+        let req = &runtime.requirement;
 
-        if !self.toolchain.has(&version) {
-            self.toolchain.register(
-                &version,
-                DenoTool::new(&self.proto_env, &self.config, &version)?,
-            );
+        if !self.toolchain.has(req) {
+            self.toolchain
+                .register(req, DenoTool::new(&self.proto_env, &self.config, req)?);
         }
 
-        Ok(self.toolchain.setup(&version, last_versions).await?)
+        Ok(self.toolchain.setup(req, last_versions).await?)
     }
 
     async fn install_deps(
@@ -174,7 +170,7 @@ impl Platform for DenoPlatform {
             return Ok(());
         }
 
-        let tool = self.toolchain.get_for_version(runtime.version())?;
+        let tool = self.toolchain.get_for_version(&runtime.requirement)?;
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 

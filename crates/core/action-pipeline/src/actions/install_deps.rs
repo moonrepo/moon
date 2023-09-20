@@ -46,7 +46,7 @@ pub async fn install_deps(
 ) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "install-deps");
 
-    if matches!(runtime, Runtime::System) {
+    if runtime.platform.is_system() {
         return Ok(ActionStatus::Skipped);
     }
 

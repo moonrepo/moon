@@ -3,7 +3,7 @@ use crate::tool::SystemToolStub;
 use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig};
 use moon_hash::ContentHasher;
-use moon_platform::{Platform, Runtime, Version};
+use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
@@ -23,7 +23,7 @@ impl Platform for SystemPlatform {
     }
 
     fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
-        Runtime::System
+        Runtime::system()
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -32,7 +32,7 @@ impl Platform for SystemPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::System);
+            return matches!(runtime.platform, PlatformType::System);
         }
 
         false
@@ -48,7 +48,7 @@ impl Platform for SystemPlatform {
         Ok(Box::new(&self.tool))
     }
 
-    fn get_tool_for_version(&self, _version: Version) -> miette::Result<Box<&dyn Tool>> {
+    fn get_tool_for_version(&self, _req: RuntimeReq) -> miette::Result<Box<&dyn Tool>> {
         Ok(Box::new(&self.tool))
     }
 

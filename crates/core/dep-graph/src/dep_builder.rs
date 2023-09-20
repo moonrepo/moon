@@ -89,8 +89,8 @@ impl<'ws> DepGraphBuilder<'ws> {
             return pair.clone();
         }
 
-        let mut project_runtime = Runtime::System;
-        let mut workspace_runtime = Runtime::System;
+        let mut project_runtime = Runtime::system();
+        let mut workspace_runtime = Runtime::system();
 
         if let Some(platform) = PlatformManager::read().find(|p| match task {
             Some(task) => p.matches(&task.platform, None),

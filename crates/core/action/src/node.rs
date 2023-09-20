@@ -35,37 +35,36 @@ pub enum ActionNode {
 impl ActionNode {
     pub fn label(&self) -> String {
         match self {
-            ActionNode::InstallDeps(platform) => {
-                let version = platform.version();
-
-                if version.is_latest() {
-                    format!("Install{platform}Deps")
+            ActionNode::InstallDeps(runtime) => {
+                if runtime.requirement.is_global() {
+                    format!("Install{}Deps", runtime)
                 } else {
-                    format!("Install{platform}Deps({version})")
+                    format!("Install{}Deps({})", runtime, runtime.requirement)
                 }
             }
-            ActionNode::InstallProjectDeps(platform, id) => {
-                let version = platform.version();
-
-                if version.is_latest() {
-                    format!("Install{platform}DepsInProject({id})")
+            ActionNode::InstallProjectDeps(runtime, id) => {
+                if runtime.requirement.is_global() {
+                    format!("Install{}DepsInProject({id})", runtime)
                 } else {
-                    format!("Install{platform}DepsInProject({version}, {id})")
+                    format!(
+                        "Install{}DepsInProject({}, {id})",
+                        runtime, runtime.requirement
+                    )
                 }
             }
             ActionNode::RunTarget(_, id) => format!("RunTarget({id})"),
             ActionNode::RunInteractiveTarget(_, id) => format!("RunInteractiveTarget({id})"),
             ActionNode::RunPersistentTarget(_, id) => format!("RunPersistentTarget({id})"),
-            ActionNode::SetupTool(platform) => {
-                let version = platform.version();
-
-                if version.is_latest() {
-                    format!("Setup{platform}Tool")
+            ActionNode::SetupTool(runtime) => {
+                if runtime.requirement.is_global() {
+                    format!("Setup{}Tool", runtime)
                 } else {
-                    format!("Setup{platform}Tool({version})")
+                    format!("Setup{}Tool({})", runtime, runtime.requirement)
                 }
             }
-            ActionNode::SyncProject(platform, id) => format!("Sync{platform}Project({id})"),
+            ActionNode::SyncProject(runtime, id) => {
+                format!("Sync{}Project({id})", runtime)
+            }
             ActionNode::SyncWorkspace => "SyncWorkspace".into(),
         }
     }

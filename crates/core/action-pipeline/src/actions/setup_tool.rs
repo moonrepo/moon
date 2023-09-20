@@ -27,7 +27,7 @@ pub async fn setup_tool(
 ) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "setup-tool");
 
-    if matches!(runtime, Runtime::System) {
+    if runtime.platform.is_system() {
         return Ok(ActionStatus::Skipped);
     }
 
@@ -40,11 +40,9 @@ pub async fn setup_tool(
     let workspace = workspace.write().await;
     let context = context.read().await;
 
-    let mut state = workspace.cache_engine.cache_state::<ToolState>(format!(
-        "tool{}-{}.json",
-        runtime,
-        runtime.version()
-    ))?;
+    let mut state = workspace
+        .cache_engine
+        .cache_state::<ToolState>(format!("tool{}-{}.json", runtime, runtime.requirement))?;
 
     // Install and setup the specific tool + version in the toolchain!
     let installed_count = PlatformManager::write()

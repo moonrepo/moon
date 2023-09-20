@@ -6,9 +6,7 @@ use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::is_ci;
-use proto_core::{
-    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version as SemVersion,
-};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -52,7 +50,7 @@ impl Tool for NpmTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
         let mut count = 0;
         let version = self.config.version.clone();

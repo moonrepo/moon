@@ -4,15 +4,13 @@ use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
-use moon_platform_runtime::Version;
+use moon_platform_runtime2::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
-use proto_core::{
-    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version as SemVersion,
-};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -34,7 +32,7 @@ impl NodeTool {
     pub async fn new(
         proto: &ProtoEnvironment,
         config: &NodeConfig,
-        version: &Version,
+        req: &RuntimeReq,
     ) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
@@ -46,11 +44,11 @@ impl NodeTool {
             yarn: None,
         };
 
-        if version.is_global() {
+        if req.is_global() {
             node.global = true;
             node.config.version = None;
         } else {
-            node.config.version = SemVersion::parse(&version.number).ok();
+            node.config.version = req.to_version();
         };
 
         match config.package_manager {
@@ -160,7 +158,7 @@ impl Tool for NodeTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
         let mut installed = 0;
 

@@ -1,4 +1,4 @@
-use moon_config::{PlatformType, Version, VersionSpec};
+pub use moon_config::{PlatformType, Version, VersionSpec};
 use serde::Serialize;
 use std::fmt;
 

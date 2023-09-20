@@ -4,9 +4,7 @@ use moon_platform_runtime2::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, Tool};
-use proto_core::{
-    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version as SemVersion,
-};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
 use rustc_hash::FxHashMap;
 use std::{
     ffi::OsStr,
@@ -72,7 +70,7 @@ impl Tool for RustTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
         let mut installed = 0;
 

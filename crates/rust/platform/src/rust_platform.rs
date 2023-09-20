@@ -23,7 +23,7 @@ use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::async_trait;
-use proto_core::{ProtoEnvironment, Version as SemVersion};
+use proto_core::{ProtoEnvironment, Version};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
@@ -172,21 +172,21 @@ impl Platform for RustPlatform {
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
-        let version = match &self.config.version {
+        let req = match &self.config.version {
             Some(v) => RuntimeReq::Toolchain(VersionSpec::Version(v.to_owned())),
             None => RuntimeReq::Global,
         };
 
         let mut last_versions = FxHashMap::default();
 
-        if !self.toolchain.has(&version) {
+        if !self.toolchain.has(&req) {
             self.toolchain.register(
-                &version,
-                RustTool::new(&self.proto_env, &self.config, &version).await?,
+                &req,
+                RustTool::new(&self.proto_env, &self.config, &req).await?,
             );
         }
 
-        self.toolchain.setup(&version, &mut last_versions).await?;
+        self.toolchain.setup(&req, &mut last_versions).await?;
 
         Ok(())
     }
@@ -203,7 +203,7 @@ impl Platform for RustPlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
         let req = &runtime.requirement;
 

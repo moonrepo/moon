@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 moon_config = { path = "../../../nextgen/config" }
 moon_logger = { path = "../../core/logger" }
-moon_platform_runtime = { path = "../../core/platform-runtime" }
+moon_platform_runtime2 = { path = "../../../nextgen/platform-runtime" }
 moon_process = { path = "../../../nextgen/process" }
 moon_node_lang = { path = "../lang" }
 moon_terminal = { path = "../../core/terminal" }

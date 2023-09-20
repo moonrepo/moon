@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_platform_runtime::Runtime;
+use moon_platform_runtime2::Runtime;
 use moon_target::Target;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -35,37 +35,36 @@ pub enum ActionNode {
 impl ActionNode {
     pub fn label(&self) -> String {
         match self {
-            ActionNode::InstallDeps(platform) => {
-                let version = platform.version();
-
-                if version.is_latest() {
-                    format!("Install{platform}Deps")
+            ActionNode::InstallDeps(runtime) => {
+                if runtime.requirement.is_latest() {
+                    format!("Install{}Deps", runtime.platform)
                 } else {
-                    format!("Install{platform}Deps({version})")
+                    format!("Install{}Deps({})", runtime.platform, runtime.requirement)
                 }
             }
-            ActionNode::InstallProjectDeps(platform, id) => {
-                let version = platform.version();
-
-                if version.is_latest() {
-                    format!("Install{platform}DepsInProject({id})")
+            ActionNode::InstallProjectDeps(runtime, id) => {
+                if runtime.requirement.is_latest() {
+                    format!("Install{}DepsInProject({id})", runtime.platform)
                 } else {
-                    format!("Install{platform}DepsInProject({version}, {id})")
+                    format!(
+                        "Install{}DepsInProject({}, {id})",
+                        runtime.platform, runtime.requirement
+                    )
                 }
             }
             ActionNode::RunTarget(_, id) => format!("RunTarget({id})"),
             ActionNode::RunInteractiveTarget(_, id) => format!("RunInteractiveTarget({id})"),
             ActionNode::RunPersistentTarget(_, id) => format!("RunPersistentTarget({id})"),
-            ActionNode::SetupTool(platform) => {
-                let version = platform.version();
-
-                if version.is_latest() {
-                    format!("Setup{platform}Tool")
+            ActionNode::SetupTool(runtime) => {
+                if runtime.requirement.is_latest() {
+                    format!("Setup{}Tool", runtime.platform)
                 } else {
-                    format!("Setup{platform}Tool({version})")
+                    format!("Setup{}Tool({})", runtime.platform, runtime.requirement)
                 }
             }
-            ActionNode::SyncProject(platform, id) => format!("Sync{platform}Project({id})"),
+            ActionNode::SyncProject(runtime, id) => {
+                format!("Sync{}Project({id})", runtime.platform)
+            }
             ActionNode::SyncWorkspace => "SyncWorkspace".into(),
         }
     }

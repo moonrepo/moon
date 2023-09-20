@@ -3,15 +3,14 @@ use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
-    ProjectsSourcesMap, TasksConfigsMap,
+    ProjectsSourcesMap, TasksConfigsMap, Version,
 };
 use moon_hash::ContentHasher;
-use moon_platform_runtime::{Runtime, Version};
+use moon_platform_runtime2::{Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::Tool;
-use proto_core::Version as SemVersion;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -76,7 +75,7 @@ pub trait Platform: Send + Sync {
 
     /// Return a tool instance from the internal toolchain for the provided version.
     /// If the version does not exist in the toolchain, return an error.
-    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>>;
+    fn get_tool_for_version(&self, req: RuntimeReq) -> miette::Result<Box<&dyn Tool>>;
 
     /// Return the filename of the lockfile and manifest (in this order)
     /// for the language's dependency manager, if applicable.
@@ -104,7 +103,7 @@ pub trait Platform: Send + Sync {
         &mut self,
         context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
         Ok(0)
     }

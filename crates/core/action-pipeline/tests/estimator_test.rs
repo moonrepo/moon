@@ -31,7 +31,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(10, 0)),
-                node: Some(ActionNode::RunTarget(Runtime::System, "proj:task".into())),
+                node: Some(ActionNode::RunTarget(Runtime::system(), "proj:task".into())),
                 ..Action::default()
             }],
             Duration::new(5, 0),
@@ -58,27 +58,27 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "a:build".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:build".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "a:lint".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:lint".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "b:build".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "b:build".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "c:test".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "c:test".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "d:lint".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "d:lint".into())),
                     ..Action::default()
                 },
             ],
@@ -113,17 +113,17 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool(Runtime::System)),
+                    node: Some(ActionNode::SetupTool(Runtime::system())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps(Runtime::System)),
+                    node: Some(ActionNode::InstallDeps(Runtime::system())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "proj:task".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "proj:task".into())),
                     ..Action::default()
                 },
             ],
@@ -153,7 +153,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(3, 0)),
-                node: Some(ActionNode::RunTarget(Runtime::System, "proj:task".into())),
+                node: Some(ActionNode::RunTarget(Runtime::system(), "proj:task".into())),
                 status: ActionStatus::Cached,
                 ..Action::default()
             }],
@@ -181,37 +181,37 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool(Runtime::System)),
+                    node: Some(ActionNode::SetupTool(Runtime::system())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps(Runtime::System)),
+                    node: Some(ActionNode::InstallDeps(Runtime::system())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "a:build".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:build".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "a:lint".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:lint".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "b:build".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "b:build".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "c:test".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "c:test".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "d:lint".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "d:lint".into())),
                     ..Action::default()
                 },
             ],
@@ -250,37 +250,37 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool(Runtime::System)),
+                    node: Some(ActionNode::SetupTool(Runtime::system())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps(Runtime::System)),
+                    node: Some(ActionNode::InstallDeps(Runtime::system())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "a:build".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:build".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "a:lint".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:lint".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "b:build".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "b:build".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "c:test".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "c:test".into())),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::System, "d:lint".into())),
+                    node: Some(ActionNode::RunTarget(Runtime::system(), "d:lint".into())),
                     ..Action::default()
                 },
             ],

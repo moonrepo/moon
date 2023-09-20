@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 moon_lang = { path = "../lang" }
-moon_platform_runtime = { path = "../platform-runtime" }
+moon_platform_runtime = { path = "../../../nextgen/platform-runtime" }
 moon_process = { path = "../../../nextgen/process" }
 async-trait = { workspace = true }
 miette = { workspace = true }

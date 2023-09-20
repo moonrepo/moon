@@ -5,11 +5,11 @@ use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
 use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
-    RustConfig,
+    RustConfig, VersionSpec,
 };
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
-use moon_platform::{Platform, Runtime, Version};
+use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_rust_lang::{
@@ -23,7 +23,7 @@ use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::async_trait;
-use proto_core::{ProtoEnvironment, Version as SemVersion};
+use proto_core::{ProtoEnvironment, Version};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
@@ -55,7 +55,7 @@ impl RustPlatform {
         RustPlatform {
             config: config.to_owned(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::Rust(Version::new_global())),
+            toolchain: ToolManager::new(Runtime::new(PlatformType::Rust, RuntimeReq::Global)),
             workspace_root: workspace_root.to_path_buf(),
         }
     }
@@ -71,16 +71,22 @@ impl Platform for RustPlatform {
         if let Some(config) = &project_config {
             if let Some(rust_config) = &config.toolchain.rust {
                 if let Some(version) = &rust_config.version {
-                    return Runtime::Rust(Version::new_override(version.to_string()));
+                    return Runtime::new_override(
+                        PlatformType::Rust,
+                        RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+                    );
                 }
             }
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::Rust(Version::new(version.to_string()));
+            return Runtime::new(
+                PlatformType::Rust,
+                RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+            );
         }
 
-        Runtime::Rust(Version::new_global())
+        Runtime::new(PlatformType::Rust, RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -89,7 +95,7 @@ impl Platform for RustPlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::Rust(_));
+            return matches!(runtime.platform, PlatformType::Rust);
         }
 
         false
@@ -155,8 +161,8 @@ impl Platform for RustPlatform {
         Ok(Box::new(tool))
     }
 
-    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>> {
-        let tool = self.toolchain.get_for_version(&version)?;
+    fn get_tool_for_version(&self, req: RuntimeReq) -> miette::Result<Box<&dyn Tool>> {
+        let tool = self.toolchain.get_for_version(&req)?;
 
         Ok(Box::new(tool))
     }
@@ -166,21 +172,21 @@ impl Platform for RustPlatform {
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
-        let version = match &self.config.version {
-            Some(v) => Version::new(v.to_string()),
-            None => Version::new_global(),
+        let req = match &self.config.version {
+            Some(v) => RuntimeReq::Toolchain(VersionSpec::Version(v.to_owned())),
+            None => RuntimeReq::Global,
         };
 
         let mut last_versions = FxHashMap::default();
 
-        if !self.toolchain.has(&version) {
+        if !self.toolchain.has(&req) {
             self.toolchain.register(
-                &version,
-                RustTool::new(&self.proto_env, &self.config, &version).await?,
+                &req,
+                RustTool::new(&self.proto_env, &self.config, &req).await?,
             );
         }
 
-        self.toolchain.setup(&version, &mut last_versions).await?;
+        self.toolchain.setup(&req, &mut last_versions).await?;
 
         Ok(())
     }
@@ -197,18 +203,18 @@ impl Platform for RustPlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
-        let version = runtime.version();
+        let req = &runtime.requirement;
 
-        if !self.toolchain.has(&version) {
+        if !self.toolchain.has(req) {
             self.toolchain.register(
-                &version,
-                RustTool::new(&self.proto_env, &self.config, &version).await?,
+                req,
+                RustTool::new(&self.proto_env, &self.config, req).await?,
             );
         }
 
-        Ok(self.toolchain.setup(&version, last_versions).await?)
+        Ok(self.toolchain.setup(req, last_versions).await?)
     }
 
     async fn install_deps(
@@ -217,7 +223,7 @@ impl Platform for RustPlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<()> {
-        let tool = self.toolchain.get_for_version(runtime.version())?;
+        let tool = self.toolchain.get_for_version(&runtime.requirement)?;
 
         if find_cargo_lock(working_dir).is_none() {
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
@@ -466,10 +472,8 @@ impl Platform for RustPlatform {
             | "rustdoc" | "rustfmt" | "rustup" => {}
             // Handle toolchains for cargo commands
             "cargo" => {
-                let version = runtime.version();
-
-                if version.is_override() {
-                    args.push(format!("+{}", version.number));
+                if runtime.overridden {
+                    args.push(format!("+{}", runtime.requirement));
                 }
             }
             // Binary may be installed to ~/.cargo/bin

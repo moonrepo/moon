@@ -3612,7 +3612,6 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
- "proto_core",
  "rustc-hash",
  "serde",
 ]

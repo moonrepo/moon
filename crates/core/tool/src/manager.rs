@@ -1,12 +1,12 @@
 use crate::errors::ToolError;
 use crate::tool::Tool;
-use moon_platform_runtime::{Runtime, Version};
-use proto_core::Version as SemVersion;
+use moon_platform_runtime::{Runtime, RuntimeReq};
+use proto_core::Version;
 use rustc_hash::FxHashMap;
 
 pub struct ToolManager<T: Tool> {
-    cache: FxHashMap<String, T>,
-    default_version: Version,
+    cache: FxHashMap<RuntimeReq, T>,
+    default_req: RuntimeReq,
     runtime: Runtime,
 }
 
@@ -14,54 +14,52 @@ impl<T: Tool> ToolManager<T> {
     pub fn new(runtime: Runtime) -> Self {
         ToolManager {
             cache: FxHashMap::default(),
-            default_version: runtime.version(),
+            default_req: runtime.requirement.clone(),
             runtime,
         }
     }
 
     pub fn get(&self) -> miette::Result<&T> {
-        self.get_for_version(&self.default_version)
+        self.get_for_version(&self.default_req)
     }
 
-    pub fn get_for_version<V: AsRef<Version>>(&self, version: V) -> miette::Result<&T> {
-        let version = version.as_ref();
+    pub fn get_for_version<V: AsRef<RuntimeReq>>(&self, req: V) -> miette::Result<&T> {
+        let req = req.as_ref();
 
-        if !self.has(version) {
-            return Err(
-                ToolError::UnknownTool(format!("{} {}", self.runtime, version.number)).into(),
-            );
+        if !self.has(req) {
+            return Err(ToolError::UnknownTool(format!("{} {}", self.runtime, req)).into());
         }
 
-        Ok(self.cache.get(&version.number).unwrap())
+        Ok(self.cache.get(req).unwrap())
     }
 
-    pub fn has(&self, version: &Version) -> bool {
-        self.cache.contains_key(&version.number)
+    pub fn has(&self, req: &RuntimeReq) -> bool {
+        self.cache.contains_key(req)
     }
 
-    pub fn register(&mut self, version: &Version, tool: T) {
+    pub fn register(&mut self, req: &RuntimeReq, tool: T) {
         // Nothing exists in the cache yet, so this tool must be the top-level
         // workspace tool. If so, update the default version within the platform.
-        if self.default_version.is_global() && !version.is_global() {
-            self.default_version = version.to_owned();
+        if self.default_req.is_global() && !req.is_global() {
+            self.default_req = req.to_owned();
         }
 
-        self.cache.insert(version.number.to_owned(), tool);
+        self.cache.insert(req.to_owned(), tool);
     }
 
     pub async fn setup(
         &mut self,
-        version: &Version,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        req: &RuntimeReq,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
-        match self.cache.get_mut(&version.number) {
+        match self.cache.get_mut(req) {
             Some(cache) => Ok(cache.setup(last_versions).await?),
             None => Err(ToolError::UnknownTool(self.runtime.to_string()).into()),
         }
     }
 
-    pub async fn teardown(&mut self, version: &Version) -> miette::Result<()> {
-        if let Some(mut tool) = self.cache.remove(&version.number) {
+    pub async fn teardown(&mut self, req: &RuntimeReq) -> miette::Result<()> {
+        if let Some(mut tool) = self.cache.remove(req) {
             tool.teardown().await?;
         }
 

@@ -12,14 +12,14 @@ use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
-use moon_platform::{Platform, Runtime, Version};
+use moon_platform::{Platform, Runtime, RuntimeReq, VersionSpec};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{ProtoEnvironment, Version as SemVersion};
+use proto_core::{ProtoEnvironment, Version};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
@@ -54,7 +54,7 @@ impl NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
             proto_env,
-            toolchain: ToolManager::new(Runtime::Node(Version::new_global())),
+            toolchain: ToolManager::new(Runtime::new(PlatformType::Node, RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
@@ -71,17 +71,23 @@ impl Platform for NodePlatform {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Runtime::Node(Version::new_override(version.to_string()));
+                    return Runtime::new_override(
+                        PlatformType::Node,
+                        RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+                    );
                 }
             }
         }
 
         if let Some(version) = &self.config.version {
-            return Runtime::Node(Version::new(version.to_string()));
+            return Runtime::new(
+                PlatformType::Node,
+                RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+            );
         }
 
         // Global
-        Runtime::Node(Version::new_global())
+        Runtime::new(PlatformType::Node, RuntimeReq::Global)
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -90,7 +96,7 @@ impl Platform for NodePlatform {
         }
 
         if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::Node(_));
+            return matches!(runtime.platform, PlatformType::Node);
         }
 
         false
@@ -251,8 +257,8 @@ impl Platform for NodePlatform {
         Ok(Box::new(tool))
     }
 
-    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>> {
-        let tool = self.toolchain.get_for_version(&version)?;
+    fn get_tool_for_version(&self, req: RuntimeReq) -> miette::Result<Box<&dyn Tool>> {
+        let tool = self.toolchain.get_for_version(&req)?;
 
         Ok(Box::new(tool))
     }
@@ -268,21 +274,21 @@ impl Platform for NodePlatform {
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
-        let version = match &self.config.version {
-            Some(v) => Version::new(v.to_string()),
-            None => Version::new_global(),
+        let req = match &self.config.version {
+            Some(v) => RuntimeReq::Toolchain(VersionSpec::Version(v.to_owned())),
+            None => RuntimeReq::Global,
         };
 
         let mut last_versions = FxHashMap::default();
 
-        if !self.toolchain.has(&version) {
+        if !self.toolchain.has(&req) {
             self.toolchain.register(
-                &version,
-                NodeTool::new(&self.proto_env, &self.config, &version).await?,
+                &req,
+                NodeTool::new(&self.proto_env, &self.config, &req).await?,
             );
         }
 
-        self.toolchain.setup(&version, &mut last_versions).await?;
+        self.toolchain.setup(&req, &mut last_versions).await?;
 
         Ok(())
     }
@@ -299,24 +305,20 @@ impl Platform for NodePlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, SemVersion>,
+        last_versions: &mut FxHashMap<String, Version>,
     ) -> miette::Result<u8> {
-        let version = runtime.version();
+        let req = &runtime.requirement;
 
-        if !self.toolchain.has(&version) {
+        if !self.toolchain.has(req) {
             self.toolchain.register(
-                &version,
-                NodeTool::new(&self.proto_env, &self.config, &version).await?,
+                req,
+                NodeTool::new(&self.proto_env, &self.config, req).await?,
             );
         }
 
-        let installed = self.toolchain.setup(&version, last_versions).await?;
+        let installed = self.toolchain.setup(req, last_versions).await?;
 
-        actions::setup_tool(
-            self.toolchain.get_for_version(runtime.version())?,
-            &self.workspace_root,
-        )
-        .await?;
+        actions::setup_tool(self.toolchain.get_for_version(req)?, &self.workspace_root).await?;
 
         Ok(installed)
     }
@@ -328,7 +330,7 @@ impl Platform for NodePlatform {
         working_dir: &Path,
     ) -> miette::Result<()> {
         actions::install_deps(
-            self.toolchain.get_for_version(runtime.version())?,
+            self.toolchain.get_for_version(&runtime.requirement)?,
             working_dir,
         )
         .await?;
@@ -390,7 +392,7 @@ impl Platform for NodePlatform {
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         let node_hash = actions::create_target_hasher(
-            self.toolchain.get_for_version(runtime.version()).ok(),
+            self.toolchain.get_for_version(&runtime.requirement).ok(),
             project,
             &self.workspace_root,
             hasher_config,
@@ -422,7 +424,7 @@ impl Platform for NodePlatform {
     ) -> miette::Result<Command> {
         let command = if self.is_toolchain_enabled()? {
             actions::create_target_command(
-                self.toolchain.get_for_version(runtime.version())?,
+                self.toolchain.get_for_version(&runtime.requirement)?,
                 context,
                 project,
                 task,

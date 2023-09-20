@@ -264,7 +264,7 @@ node:
         }
 
         #[test]
-        #[should_panic(expected = "not a valid semantic version")]
+        #[should_panic(expected = "unexpected end of input while parsing major version number")]
         fn validates_version() {
             test_load_config(
                 FILENAME,
@@ -765,7 +765,7 @@ rust:
         }
 
         #[test]
-        #[should_panic(expected = "not a valid semantic version")]
+        #[should_panic(expected = "unexpected end of input while parsing major version number")]
         fn validates_version() {
             test_load_config(
                 FILENAME,

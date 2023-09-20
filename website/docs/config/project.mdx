@@ -962,7 +962,8 @@ Currently, only the Node.js version can be overridden per-project, not the packa
 
 #### `version`
 
-Defines the explicit Node.js version to use when _running tasks_ for this project.
+Defines the explicit Node.js [version specification](../concepts/toolchain#version-specification) to
+use when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
 toolchain:
@@ -978,7 +979,9 @@ Configures Rust for this project and overrides the top-level [`rust`](./toolchai
 
 #### `version`
 
-Defines the explicit Rust version/channel to use when _running tasks_ for this project.
+Defines the explicit Rust
+[version/channel specification](../concepts/toolchain#version-specification) to use when _running
+tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
 toolchain:

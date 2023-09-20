@@ -50,8 +50,8 @@ const toolchainFeatures: Feature[] = [
 export default function ProductProto() {
 	return (
 		<Layout
-			title="proto - A multi-language toolchain manager"
-			description="Lightspeed toolchain manager for programming languages and their dependency managers."
+			title="proto - A multi-language version manager"
+			description="Lightspeed version manager for programming languages and their dependency managers."
 		>
 			<Hero />
 

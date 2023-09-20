@@ -71,15 +71,7 @@ following:
 ```yaml title="apps/client/moon.yml"
 tasks:
 	build:
-		command:
-			- 'webpack'
-			- 'build'
-			- '--mode'
-			- 'production'
-			- '--entry'
-			- 'src/index.tsx'
-			- '--output-path'
-			- 'build'
+		command: 'webpack build --mode production --entry src/index.tsx --output-path build'
 		inputs:
 			- 'src/**/*'
 		outputs:

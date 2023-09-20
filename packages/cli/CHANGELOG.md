@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Future roadmap
 
 #### 🚀 Updates
 
@@ -9,12 +9,14 @@
   - Better concurrency handling and scheduling.
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
-- Updated `moon ci` to support running a list of targets, instead of running everything.
 
-#### 🐞 Fixes
+## Unreleased
 
-- Updated `version` settings to be parsed as semantic version objects instead of strings. This
-  should be transparent to users, but listing it just in case.
+#### 🚀 Updates
+
+- Updated `moon ci` to support running an explicit list of targets, instead of running everything.
+- Updated `node.version`, `npm.version`, `pnpm.version`, `yarn.version`, and `rust.version` to
+  support partial versions and requirements/ranges like `1.2`, `1`, or `^1.2`.
 
 #### ⚙️ Internal
 

@@ -4,9 +4,9 @@ use moon_config::{
     PartialNpmConfig, PartialPnpmConfig, PartialTaskCommandArgs, PartialTaskConfig,
     PartialToolchainConfig, PartialTypeScriptConfig, PartialWorkspaceConfig,
     PartialWorkspaceProjects, PartialWorkspaceProjectsConfig, PartialYarnConfig,
+    UnresolvedVersionSpec,
 };
 use rustc_hash::FxHashMap;
-use semver::Version;
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
@@ -14,13 +14,13 @@ use std::str::FromStr;
 pub fn get_default_toolchain() -> PartialToolchainConfig {
     PartialToolchainConfig {
         node: Some(PartialNodeConfig {
-            version: Some(Version::parse("18.0.0").unwrap()),
+            version: Some(UnresolvedVersionSpec::parse("18.0.0").unwrap()),
             add_engines_constraint: Some(false),
             dedupe_on_lockfile_change: Some(false),
             infer_tasks_from_scripts: Some(false),
             sync_project_workspace_dependencies: Some(false),
             npm: Some(PartialNpmConfig {
-                version: Some(Version::parse("8.19.0").unwrap()),
+                version: Some(UnresolvedVersionSpec::parse("8.19.0").unwrap()),
                 ..PartialNpmConfig::default()
             }),
             ..PartialNodeConfig::default()
@@ -146,11 +146,11 @@ pub fn get_project_graph_aliases_fixture_configs() -> (
 
     let toolchain_config = PartialToolchainConfig {
         node: Some(PartialNodeConfig {
-            version: Some(Version::parse("18.0.0").unwrap()),
+            version: Some(UnresolvedVersionSpec::parse("18.0.0").unwrap()),
             add_engines_constraint: Some(false),
             dedupe_on_lockfile_change: Some(false),
             npm: Some(PartialNpmConfig {
-                version: Some(Version::parse("8.19.0").unwrap()),
+                version: Some(UnresolvedVersionSpec::parse("8.19.0").unwrap()),
                 ..PartialNpmConfig::default()
             }),
             ..PartialNodeConfig::default()
@@ -349,21 +349,21 @@ pub fn get_node_depman_fixture_configs(
             "npm" => {
                 node_config.package_manager = Some(NodePackageManager::Npm);
                 node_config.npm = Some(PartialNpmConfig {
-                    version: Some(Version::parse("8.0.0").unwrap()),
+                    version: Some(UnresolvedVersionSpec::parse("8.0.0").unwrap()),
                     ..PartialNpmConfig::default()
                 });
             }
             "pnpm" => {
                 node_config.package_manager = Some(NodePackageManager::Pnpm);
                 node_config.pnpm = Some(PartialPnpmConfig {
-                    version: Some(Version::parse("7.5.0").unwrap()),
+                    version: Some(UnresolvedVersionSpec::parse("7.5.0").unwrap()),
                     ..PartialPnpmConfig::default()
                 });
             }
             "yarn" => {
                 node_config.package_manager = Some(NodePackageManager::Yarn);
                 node_config.yarn = Some(PartialYarnConfig {
-                    version: Some(Version::parse("3.3.0").unwrap()),
+                    version: Some(UnresolvedVersionSpec::parse("3.3.0").unwrap()),
                     plugins: Some(vec!["workspace-tools".into()]),
                     ..PartialYarnConfig::default()
                 });
@@ -371,7 +371,7 @@ pub fn get_node_depman_fixture_configs(
             "yarn1" => {
                 node_config.package_manager = Some(NodePackageManager::Yarn);
                 node_config.yarn = Some(PartialYarnConfig {
-                    version: Some(Version::parse("1.22.0").unwrap()),
+                    version: Some(UnresolvedVersionSpec::parse("1.22.0").unwrap()),
                     plugins: Some(vec![]),
                     ..PartialYarnConfig::default()
                 });

@@ -3,7 +3,7 @@ use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
-    ProjectsSourcesMap, TasksConfigsMap, Version,
+    ProjectsSourcesMap, TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
 use moon_platform_runtime::{Runtime, RuntimeReq};
@@ -103,7 +103,7 @@ pub trait Platform: Send + Sync {
         &mut self,
         context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         Ok(0)
     }

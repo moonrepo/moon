@@ -38,16 +38,16 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.18.1"
+proto_core = { version = "0.18.3", features = ["schematic"] }
 relative-path = { version = "1.9.0", features = ["serde"] }
 regex = "1.9.5"
-# We don't use openssl but its required for musl builds
 reqwest = { version = "0.11.20", default-features = false, features = [
 	"rustls-tls-native-roots",
+	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.11.5", default-features = false, features = [
+schematic = { version = "0.11.6", default-features = false, features = [
 	"schema",
 	"yaml",
 	"type_semver",

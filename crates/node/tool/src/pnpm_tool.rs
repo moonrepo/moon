@@ -6,9 +6,7 @@ use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::is_ci;
-use proto_core::{
-    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version, VersionReq,
-};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -58,18 +56,16 @@ impl Tool for PnpmTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let mut count = 0;
-        let version = self.config.version.clone();
+        let version = self.config.version.as_ref();
 
         let Some(version) = version else {
             return Ok(count);
         };
 
-        let version_type = UnresolvedVersionSpec::Version(version.to_owned());
-
-        if self.tool.is_setup(&version_type).await? {
+        if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;
 
             debug!("pnpm has already been setup");
@@ -89,15 +85,15 @@ impl Tool for PnpmTool {
         }
 
         if let Some(last) = last_versions.get("pnpm") {
-            if last == &version && self.tool.get_tool_dir().exists() {
+            if last == version && self.tool.get_tool_dir().exists() {
                 return Ok(count);
             }
         }
 
         print_checkpoint(format!("installing pnpm v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&version_type).await? {
-            last_versions.insert("pnpm".into(), version);
+        if self.tool.setup(version).await? {
+            last_versions.insert("pnpm".into(), version.to_owned());
             count += 1;
         }
 
@@ -141,26 +137,28 @@ impl DependencyManager<NodeTool> for PnpmTool {
         working_dir: &Path,
         log: bool,
     ) -> miette::Result<()> {
-        if self.config.version.is_none() {
+        let Some(version) = self.config.version.as_ref() else {
             return Ok(());
-        }
+        };
 
         if working_dir.join(self.get_lock_filename()).exists() {
-            let version = self.config.version.as_ref().unwrap();
-
             // https://github.com/pnpm/pnpm/releases/tag/v7.26.0
-            if VersionReq::parse(">=7.26.0").unwrap().matches(version) {
-                self.create_command(node)?
-                    .arg("dedupe")
-                    .cwd(working_dir)
-                    .set_print_command(log)
-                    .create_async()
-                    .exec_capture_output()
-                    .await?;
-            } else {
-                node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
-                    .await?;
+            if let UnresolvedVersionSpec::Version(ver) = version {
+                if VersionReq::parse(">=7.26.0").unwrap().matches(ver) {
+                    self.create_command(node)?
+                        .arg("dedupe")
+                        .cwd(working_dir)
+                        .set_print_command(log)
+                        .create_async()
+                        .exec_capture_output()
+                        .await?;
+
+                    return Ok(());
+                }
             }
+
+            node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
+                .await?;
         }
 
         Ok(())

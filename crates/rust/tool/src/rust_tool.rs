@@ -4,7 +4,7 @@ use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, Tool};
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::{
     ffi::OsStr,
@@ -36,7 +36,7 @@ impl RustTool {
             rust.global = true;
             rust.config.version = None;
         } else {
-            rust.config.version = req.to_version();
+            rust.config.version = req.to_spec();
         };
 
         Ok(rust)
@@ -70,7 +70,7 @@ impl Tool for RustTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let mut installed = 0;
 
@@ -78,9 +78,7 @@ impl Tool for RustTool {
             return Ok(installed);
         };
 
-        let version_type = UnresolvedVersionSpec::Version(version.to_owned());
-
-        if self.tool.is_setup(&version_type).await? {
+        if self.tool.is_setup(version).await? {
             debug!("Rust has already been setup");
 
             // When offline and the tool doesn't exist, fallback to the global binary
@@ -101,7 +99,7 @@ impl Tool for RustTool {
             if setup || !self.tool.get_tool_dir().exists() {
                 print_checkpoint(format!("installing rust v{version}"), Checkpoint::Setup);
 
-                if self.tool.setup(&version_type).await? {
+                if self.tool.setup(version).await? {
                     last_versions.insert("rust".into(), version.to_owned());
                     installed += 1;
                 }

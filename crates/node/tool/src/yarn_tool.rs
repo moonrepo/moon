@@ -8,7 +8,7 @@ use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -42,7 +42,13 @@ impl YarnTool {
         self.config
             .version
             .as_ref()
-            .map(|v| v.major != 1)
+            .map(|v| match v {
+                UnresolvedVersionSpec::Canary => false,
+                UnresolvedVersionSpec::Alias(alias) => alias == "berry",
+                UnresolvedVersionSpec::Req(req) => req.comparators.iter().any(|c| c.major != 1),
+                UnresolvedVersionSpec::Version(version) => version.major != 1,
+                _ => false,
+            })
             .unwrap_or(false)
     }
 
@@ -60,12 +66,12 @@ impl YarnTool {
             .join(format!("yarn-{version}.cjs"));
 
         if !yarn_bin.exists() {
+            let version_string = version.to_string();
+
             debug!(
                 "Updating yarn version with {}",
-                color::shell(format!("yarn set version {version}"))
+                color::shell(format!("yarn set version {version_string}"))
             );
-
-            let version_string = version.to_string();
 
             self.create_command(node)?
                 .args(["set", "version", &version_string])
@@ -106,18 +112,16 @@ impl Tool for YarnTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let mut count = 0;
-        let version = self.config.version.clone();
+        let version = self.config.version.as_ref();
 
         let Some(version) = version else {
             return Ok(count);
         };
 
-        let version_type = UnresolvedVersionSpec::Version(version.to_owned());
-
-        if self.tool.is_setup(&version_type).await? {
+        if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;
 
             debug!("yarn has already been setup");
@@ -137,15 +141,15 @@ impl Tool for YarnTool {
         }
 
         if let Some(last) = last_versions.get("yarn") {
-            if last == &version && self.tool.get_tool_dir().exists() {
+            if last == version && self.tool.get_tool_dir().exists() {
                 return Ok(count);
             }
         }
 
         print_checkpoint(format!("installing yarn v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&version_type).await? {
-            last_versions.insert("yarn".into(), version);
+        if self.tool.setup(version).await? {
+            last_versions.insert("yarn".into(), version.to_owned());
             count += 1;
         }
 

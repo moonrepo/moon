@@ -5,7 +5,7 @@ use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
 use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
-    RustConfig, VersionSpec,
+    RustConfig, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
@@ -23,7 +23,7 @@ use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::async_trait;
-use proto_core::{ProtoEnvironment, Version};
+use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
@@ -73,7 +73,7 @@ impl Platform for RustPlatform {
                 if let Some(version) = &rust_config.version {
                     return Runtime::new_override(
                         PlatformType::Rust,
-                        RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+                        RuntimeReq::Toolchain(version.to_owned()),
                     );
                 }
             }
@@ -82,7 +82,7 @@ impl Platform for RustPlatform {
         if let Some(version) = &self.config.version {
             return Runtime::new(
                 PlatformType::Rust,
-                RuntimeReq::Toolchain(VersionSpec::Version(version.to_owned())),
+                RuntimeReq::Toolchain(version.to_owned()),
             );
         }
 
@@ -173,7 +173,7 @@ impl Platform for RustPlatform {
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let req = match &self.config.version {
-            Some(v) => RuntimeReq::Toolchain(VersionSpec::Version(v.to_owned())),
+            Some(v) => RuntimeReq::Toolchain(v.to_owned()),
             None => RuntimeReq::Global,
         };
 
@@ -203,7 +203,7 @@ impl Platform for RustPlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let req = &runtime.requirement;
 

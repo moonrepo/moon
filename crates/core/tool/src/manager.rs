@@ -1,7 +1,7 @@
 use crate::errors::ToolError;
 use crate::tool::Tool;
 use moon_platform_runtime::{Runtime, RuntimeReq};
-use proto_core::Version;
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 
 pub struct ToolManager<T: Tool> {
@@ -50,7 +50,7 @@ impl<T: Tool> ToolManager<T> {
     pub async fn setup(
         &mut self,
         req: &RuntimeReq,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         match self.cache.get_mut(req) {
             Some(cache) => Ok(cache.setup(last_versions).await?),

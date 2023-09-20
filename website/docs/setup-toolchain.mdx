@@ -62,8 +62,9 @@ node:
 	version: '18.0.0'
 ```
 
-This setting requires a fully qualified semantic version and _does not_ support version ranges, so
-be sure to use an explicit version. We suggest _always_ using an
+This setting can be a fully qualified semantic version (preferred), a partial version (missing patch
+or minor), or even an alias (learn more about the
+[version specification](./concepts/toolchain#version-specification)). We suggest _always_ using an
 [Active LTS](https://nodejs.org/en/about/releases/) version.
 
 Let's now run [`moon setup --log debug`](./commands/setup) to verify that Node.js is downloaded and
@@ -91,7 +92,8 @@ node:
 ```
 
 By default moon will install a stable version of the package manager, but this isn't consistently
-updated, so we suggest defining an explicit semantic version for the package manager as well,
+updated, so we suggest defining a
+[version specification](./concepts/toolchain#version-specification) for the package manager as well,
 through the [`node.<packageManager>.version`](./config/toolchain#version-1) setting.
 
 ```yaml title=".moon/toolchain.yml"

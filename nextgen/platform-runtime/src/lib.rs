@@ -1,13 +1,14 @@
-pub use moon_config::{PlatformType, Version, VersionSpec};
+pub use moon_config::{PlatformType, UnresolvedVersionSpec, Version};
 use serde::Serialize;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum RuntimeReq {
     // Use tool available on PATH
     Global,
     // Install tool into toolchain
-    Toolchain(VersionSpec),
+    Toolchain(UnresolvedVersionSpec),
 }
 
 impl RuntimeReq {
@@ -15,9 +16,9 @@ impl RuntimeReq {
         matches!(self, Self::Global)
     }
 
-    pub fn to_version(&self) -> Option<Version> {
+    pub fn to_spec(&self) -> Option<UnresolvedVersionSpec> {
         match self {
-            Self::Toolchain(VersionSpec::Version(version)) => Some(version.to_owned()),
+            Self::Toolchain(spec) => Some(spec.to_owned()),
             _ => None,
         }
     }
@@ -29,6 +30,25 @@ impl fmt::Display for RuntimeReq {
             Self::Global => write!(f, "global"),
             Self::Toolchain(spec) => write!(f, "{}", spec),
         }
+    }
+}
+
+impl Hash for RuntimeReq {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Global => "global".hash(state),
+            Self::Toolchain(spec) => match spec {
+                UnresolvedVersionSpec::Canary => "canary".hash(state),
+                UnresolvedVersionSpec::Alias(alias) => alias.hash(state),
+                UnresolvedVersionSpec::Req(req) => req.hash(state),
+                UnresolvedVersionSpec::ReqAny(reqs) => {
+                    for req in reqs {
+                        req.hash(state);
+                    }
+                }
+                UnresolvedVersionSpec::Version(version) => version.hash(state),
+            },
+        };
     }
 }
 

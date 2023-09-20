@@ -1,5 +1,5 @@
 use super::bin_config::BinEntry;
-use proto_core::{PluginLocator, Version};
+use proto_core::{PluginLocator, UnresolvedVersionSpec};
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -13,5 +13,5 @@ pub struct RustConfig {
     pub sync_toolchain_config: bool,
 
     #[setting(env = "MOON_RUST_VERSION")]
-    pub version: Option<Version>,
+    pub version: Option<UnresolvedVersionSpec>,
 }

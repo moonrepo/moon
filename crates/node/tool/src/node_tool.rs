@@ -1,7 +1,7 @@
 use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
-use moon_config::{NodeConfig, NodePackageManager};
+use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
 use moon_logger::debug;
 use moon_node_lang::node;
 use moon_platform_runtime::RuntimeReq;
@@ -10,7 +10,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
 };
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, Version};
+use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -48,7 +48,7 @@ impl NodeTool {
             node.global = true;
             node.config.version = None;
         } else {
-            node.config.version = req.to_version();
+            node.config.version = req.to_spec();
         };
 
         match config.package_manager {
@@ -158,15 +158,13 @@ impl Tool for NodeTool {
 
     async fn setup(
         &mut self,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let mut installed = 0;
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
-            let version_type = UnresolvedVersionSpec::Version(version.to_owned());
-
-            if self.tool.is_setup(&version_type).await? {
+            if self.tool.is_setup(version).await? {
                 debug!("Node.js has already been setup");
 
                 // When offline and the tool doesn't exist, fallback to the global binary
@@ -185,9 +183,9 @@ impl Tool for NodeTool {
                 };
 
                 if setup || !self.tool.get_tool_dir().exists() {
-                    print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
+                    print_checkpoint(format!("installing node {version}"), Checkpoint::Setup);
 
-                    if self.tool.setup(&version_type).await? {
+                    if self.tool.setup(version).await? {
                         last_versions.insert("node".into(), version.to_owned());
                         installed += 1;
                     }

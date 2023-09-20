@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_process::Command;
-use proto_core::Version;
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::any::Any;
 use std::path::{Path, PathBuf};
@@ -22,7 +22,7 @@ pub trait Tool: Any + Send + Sync {
     /// Return a count of how many sub-tools were installed.
     async fn setup(
         &mut self,
-        _last_versions: &mut FxHashMap<String, Version>,
+        _last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         Ok(0)
     }

@@ -19,7 +19,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{hash_file_contents, ProtoEnvironment, Version};
+use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::{
@@ -148,7 +148,7 @@ impl Platform for DenoPlatform {
         &mut self,
         _context: &ActionContext,
         runtime: &Runtime,
-        last_versions: &mut FxHashMap<String, Version>,
+        last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
     ) -> miette::Result<u8> {
         let req = &runtime.requirement;
 

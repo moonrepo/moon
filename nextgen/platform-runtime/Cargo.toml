@@ -1,0 +1,9 @@
+[package]
+name = "moon_platform_runtime2"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_config = { path = "../config" }
+serde = { workspace = true }

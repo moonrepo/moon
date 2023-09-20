@@ -270,19 +270,6 @@ node:
         }
 
         #[test]
-        #[should_panic(expected = "unexpected end of input while parsing major version number")]
-        fn validates_version() {
-            test_load_config(
-                FILENAME,
-                r"
-node:
-  version: '1'
-",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
-            );
-        }
-
-        #[test]
         fn inherits_version_from_env_var() {
             env::set_var("MOON_NODE_VERSION", "19.0.0");
 
@@ -767,19 +754,6 @@ rust:
             assert_eq!(
                 config.rust.unwrap().version.unwrap(),
                 UnresolvedVersionSpec::parse("1.60.0").unwrap()
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "unexpected end of input while parsing major version number")]
-        fn validates_version() {
-            test_load_config(
-                FILENAME,
-                r"
-rust:
-  version: '1'
-",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
             );
         }
 

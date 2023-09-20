@@ -5,7 +5,7 @@ use moon_config::{
     DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
     ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
 };
-use proto_core::Version;
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use utils::*;
 
@@ -620,7 +620,7 @@ toolchain:
 
             assert_eq!(
                 config.toolchain.node.unwrap().version,
-                Some(Version::parse("18.0.0").unwrap())
+                Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
             );
 
             let ts = config.toolchain.typescript.unwrap();

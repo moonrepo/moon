@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{BinConfig, BinEntry, NodePackageManager, ToolchainConfig};
-use proto_core::{Id, PluginLocator, ToolsConfig, UnresolvedVersionSpec, Version};
+use proto_core::{Id, PluginLocator, ToolsConfig, UnresolvedVersionSpec};
 use starbase_sandbox::create_sandbox;
 use std::env;
 use utils::*;
@@ -45,14 +45,20 @@ mod toolchain_config {
 
             let node = config.node.unwrap();
 
-            assert_eq!(node.version.unwrap(), Version::parse("4.5.6").unwrap());
+            assert_eq!(
+                node.version.unwrap(),
+                UnresolvedVersionSpec::parse("4.5.6").unwrap()
+            );
             assert!(node.add_engines_constraint);
             assert!(!node.dedupe_on_lockfile_change);
             assert_eq!(node.package_manager, NodePackageManager::Yarn);
 
             let yarn = node.yarn.unwrap();
 
-            assert_eq!(yarn.version.unwrap(), Version::parse("3.3.0").unwrap());
+            assert_eq!(
+                yarn.version.unwrap(),
+                UnresolvedVersionSpec::parse("3.3.0").unwrap()
+            );
         }
 
         #[test]
@@ -216,7 +222,7 @@ node:
             assert!(config.node.is_some());
             assert_eq!(
                 config.node.unwrap().version.unwrap(),
-                Version::parse("18.0.0").unwrap()
+                UnresolvedVersionSpec::parse("18.0.0").unwrap()
             );
         }
 
@@ -259,7 +265,7 @@ node:
             assert!(config.node.is_some());
             assert_eq!(
                 config.node.unwrap().version.unwrap(),
-                Version::parse("20.0.0").unwrap()
+                UnresolvedVersionSpec::parse("20.0.0").unwrap()
             );
         }
 
@@ -301,7 +307,7 @@ node:
 
             assert_eq!(
                 config.node.unwrap().version.unwrap(),
-                Version::parse("19.0.0").unwrap()
+                UnresolvedVersionSpec::parse("19.0.0").unwrap()
             );
         }
 
@@ -330,7 +336,7 @@ node:
 
                 assert_eq!(
                     config.node.unwrap().npm.version.unwrap(),
-                    Version::parse("9.0.0").unwrap()
+                    UnresolvedVersionSpec::parse("9.0.0").unwrap()
                 );
             }
 
@@ -377,7 +383,7 @@ node:
 
                 assert_eq!(
                     config.node.unwrap().npm.version.unwrap(),
-                    Version::parse("10.0.0").unwrap()
+                    UnresolvedVersionSpec::parse("10.0.0").unwrap()
                 );
             }
         }
@@ -471,7 +477,7 @@ node:
 
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().version.unwrap(),
-                    Version::parse("9.0.0").unwrap()
+                    UnresolvedVersionSpec::parse("9.0.0").unwrap()
                 );
             }
 
@@ -501,7 +507,7 @@ node:
 
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().version.unwrap(),
-                    Version::parse("10.0.0").unwrap()
+                    UnresolvedVersionSpec::parse("10.0.0").unwrap()
                 );
             }
         }
@@ -595,7 +601,7 @@ node:
 
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().version.unwrap(),
-                    Version::parse("9.0.0").unwrap()
+                    UnresolvedVersionSpec::parse("9.0.0").unwrap()
                 );
             }
 
@@ -625,7 +631,7 @@ node:
 
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().version.unwrap(),
-                    Version::parse("10.0.0").unwrap()
+                    UnresolvedVersionSpec::parse("10.0.0").unwrap()
                 );
             }
         }
@@ -717,7 +723,7 @@ rust:
             assert!(config.rust.is_some());
             assert_eq!(
                 config.rust.unwrap().version.unwrap(),
-                Version::parse("1.69.0").unwrap()
+                UnresolvedVersionSpec::parse("1.69.0").unwrap()
             );
         }
 
@@ -760,7 +766,7 @@ rust:
             assert!(config.rust.is_some());
             assert_eq!(
                 config.rust.unwrap().version.unwrap(),
-                Version::parse("1.60.0").unwrap()
+                UnresolvedVersionSpec::parse("1.60.0").unwrap()
             );
         }
 
@@ -802,7 +808,7 @@ rust:
 
             assert_eq!(
                 config.rust.unwrap().version.unwrap(),
-                Version::parse("1.70.0").unwrap()
+                UnresolvedVersionSpec::parse("1.70.0").unwrap()
             );
         }
     }

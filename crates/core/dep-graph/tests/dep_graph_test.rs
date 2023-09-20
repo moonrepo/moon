@@ -2,7 +2,7 @@ use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     PartialInheritedTasksConfig, PartialNodeConfig, PartialToolchainConfig, PartialWorkspaceConfig,
-    PartialWorkspaceProjects, Version,
+    PartialWorkspaceProjects, UnresolvedVersionSpec,
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
@@ -31,7 +31,7 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     };
     let toolchain_config = PartialToolchainConfig {
         node: Some(PartialNodeConfig {
-            version: Some(Version::parse("16.0.0").unwrap()),
+            version: Some(UnresolvedVersionSpec::parse("16.0.0").unwrap()),
             dedupe_on_lockfile_change: Some(false),
             ..PartialNodeConfig::default()
         }),
@@ -88,7 +88,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     };
     let toolchain_config = PartialToolchainConfig {
         node: Some(PartialNodeConfig {
-            version: Some(Version::parse("16.0.0").unwrap()),
+            version: Some(UnresolvedVersionSpec::parse("16.0.0").unwrap()),
             ..PartialNodeConfig::default()
         }),
         ..PartialToolchainConfig::default()

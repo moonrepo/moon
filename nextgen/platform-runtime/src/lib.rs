@@ -1,28 +1,32 @@
-use moon_config::{PlatformType, UnresolvedVersionSpec};
+use moon_config::{PlatformType, VersionSpec};
 use serde::Serialize;
 use std::fmt;
 
-#[derive(Clone, Debug, Serialize)]
-pub enum RuntimeRequirement {
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+pub enum RuntimeReq {
     // Use tool available on PATH
     Global,
     // Install tool into toolchain
-    Toolchain(UnresolvedVersionSpec),
+    Toolchain(VersionSpec),
     // Use toolchain but override the version
-    ToolchainOverride(UnresolvedVersionSpec),
+    ToolchainOverride(VersionSpec),
 }
 
-impl RuntimeRequirement {
+impl RuntimeReq {
+    pub fn is_global(&self) -> bool {
+        matches!(self, Self::Global)
+    }
+
     pub fn is_latest(&self) -> bool {
         match self {
-            Self::Toolchain(UnresolvedVersionSpec::Alias(alias)) => alias == "latest",
-            Self::ToolchainOverride(UnresolvedVersionSpec::Alias(alias)) => alias == "latest",
+            Self::Toolchain(VersionSpec::Alias(alias)) => alias == "latest",
+            Self::ToolchainOverride(VersionSpec::Alias(alias)) => alias == "latest",
             _ => false,
         }
     }
 }
 
-impl fmt::Display for RuntimeRequirement {
+impl fmt::Display for RuntimeReq {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Global => write!(f, "global"),
@@ -32,22 +36,22 @@ impl fmt::Display for RuntimeRequirement {
     }
 }
 
-impl AsRef<RuntimeRequirement> for RuntimeRequirement {
-    fn as_ref(&self) -> &RuntimeRequirement {
+impl AsRef<RuntimeReq> for RuntimeReq {
+    fn as_ref(&self) -> &RuntimeReq {
         self
     }
 }
 
-impl From<&Runtime> for RuntimeRequirement {
+impl From<&Runtime> for RuntimeReq {
     fn from(value: &Runtime) -> Self {
         value.requirement.clone()
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct Runtime {
     pub platform: PlatformType,
-    pub requirement: RuntimeRequirement,
+    pub requirement: RuntimeReq,
 }
 
 impl Runtime {

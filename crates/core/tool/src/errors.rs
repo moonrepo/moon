@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_platform_runtime::Runtime;
+use moon_platform_runtime2::Runtime;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 

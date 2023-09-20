@@ -4,7 +4,7 @@ use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
-use moon_platform_runtime2::RuntimeReq;
+use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{

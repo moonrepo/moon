@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_platform_runtime2::Runtime;
+use moon_platform_runtime::Runtime;
 use moon_target::Target;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};

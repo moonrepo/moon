@@ -1,5 +1,5 @@
 use moon_config::DenoConfig;
-use moon_platform_runtime2::RuntimeReq;
+use moon_platform_runtime::RuntimeReq;
 use moon_tool::{async_trait, Tool};
 use proto_core::ProtoEnvironment;
 use std::path::PathBuf;

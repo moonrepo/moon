@@ -3014,7 +3014,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_common",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_target",
  "moon_utils",
  "serde",
@@ -3366,7 +3366,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_config",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_tool",
  "proto_core",
  "rustc-hash",
@@ -3408,7 +3408,7 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_project",
  "moon_target",
  "moon_task",
@@ -3542,7 +3542,7 @@ dependencies = [
  "moon_config",
  "moon_logger",
  "moon_node_lang",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_process",
  "moon_terminal",
  "moon_tool",
@@ -3607,7 +3607,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_process",
  "moon_project",
  "moon_task",
@@ -3635,7 +3635,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_platform_runtime2"
+name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
  "moon_config",
@@ -3796,7 +3796,7 @@ dependencies = [
  "moon_hash",
  "moon_logger",
  "moon_platform",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_process",
  "moon_project",
  "moon_target",
@@ -3873,7 +3873,7 @@ dependencies = [
  "miette",
  "moon_config",
  "moon_logger",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_process",
  "moon_terminal",
  "moon_tool",
@@ -3991,7 +3991,7 @@ dependencies = [
  "async-trait",
  "miette",
  "moon_lang",
- "moon_platform_runtime2",
+ "moon_platform_runtime",
  "moon_process",
  "proto_core",
  "rustc-hash",

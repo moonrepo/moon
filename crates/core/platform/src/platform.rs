@@ -6,7 +6,7 @@ use moon_config::{
     ProjectsSourcesMap, TasksConfigsMap, Version,
 };
 use moon_hash::ContentHasher;
-use moon_platform_runtime2::{Runtime, RuntimeReq};
+use moon_platform_runtime::{Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;

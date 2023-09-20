@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
-use moon_platform_runtime2::Runtime;
+use moon_platform_runtime::Runtime;
 use moon_project::Project;
 use moon_target::Target;
 use moon_task::Task;

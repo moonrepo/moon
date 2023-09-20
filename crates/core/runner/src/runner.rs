@@ -11,7 +11,7 @@ use moon_emitter::{Emitter, Event, EventFlow};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
 use moon_platform::PlatformManager;
-use moon_platform_runtime2::Runtime;
+use moon_platform_runtime::Runtime;
 use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};

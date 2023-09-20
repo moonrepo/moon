@@ -1,6 +1,6 @@
 use moon_config::RustConfig;
 use moon_logger::debug;
-use moon_platform_runtime2::RuntimeReq;
+use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, Tool};

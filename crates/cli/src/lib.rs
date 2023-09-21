@@ -37,6 +37,7 @@ use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
+use std::ffi::OsString;
 use tracing::debug;
 
 pub use app::BIN_NAME;
@@ -71,11 +72,37 @@ fn detect_running_version() {
     env::set_var("MOON_VERSION", version);
 }
 
+fn gather_args() -> Vec<OsString> {
+    let mut args: Vec<OsString> = vec![];
+    let mut check_for_target = true;
+
+    env::args_os().for_each(|arg| {
+        if check_for_target {
+            // Find first non-option value, excluding index 0 which is the
+            // binary/file being executed.
+            if let Some(a) = arg.to_str() {
+                if !a.starts_with('-') && !a.ends_with(BIN_NAME) {
+                    check_for_target = false;
+
+                    // Looks like a target, but is not `run`, so prepend!
+                    if a.contains(':') {
+                        args.push(OsString::from("run"));
+                    }
+                }
+            }
+        }
+
+        args.push(arg);
+    });
+
+    args
+}
+
 pub async fn run_cli() -> AppResult {
     App::setup_diagnostics();
 
     // Create app and parse arguments
-    let cli = CLI::parse();
+    let cli = CLI::parse_from(gather_args());
 
     setup_colors(cli.color);
     setup_logging(&cli.log);

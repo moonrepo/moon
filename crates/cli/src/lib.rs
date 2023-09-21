@@ -60,13 +60,18 @@ fn setup_caching(mode: &CacheMode) {
     }
 }
 
-fn detect_running_version() {
+fn detect_running_version(args: &[OsString]) {
     let version = env!("CARGO_PKG_VERSION");
 
     if let Ok(exe_with) = env::var("MOON_EXECUTED_WITH") {
-        debug!("Running moon v{} (with {})", version, color::file(exe_with));
+        debug!(
+            args = ?args,
+            "Running moon v{} (with {})",
+            version,
+            color::file(exe_with)
+        );
     } else {
-        debug!("Running moon v{}", version);
+        debug!(args = ?args, "Running moon v{}", version);
     }
 
     env::set_var("MOON_VERSION", version);
@@ -74,20 +79,24 @@ fn detect_running_version() {
 
 fn gather_args() -> Vec<OsString> {
     let mut args: Vec<OsString> = vec![];
+    let mut leading_args: Vec<OsString> = vec![];
     let mut check_for_target = true;
 
-    env::args_os().for_each(|arg| {
-        if check_for_target {
-            // Find first non-option value, excluding index 0 which is the
-            // binary/file being executed.
-            if let Some(a) = arg.to_str() {
-                if !a.starts_with('-') && !a.ends_with(BIN_NAME) {
-                    check_for_target = false;
+    env::args_os().enumerate().for_each(|(index, arg)| {
+        if let Some(a) = arg.to_str() {
+            // Script being executed, so persist it
+            if index == 0 && a.ends_with(BIN_NAME) {
+                leading_args.push(arg);
+                return;
+            }
 
-                    // Looks like a target, but is not `run`, so prepend!
-                    if a.contains(':') {
-                        args.push(OsString::from("run"));
-                    }
+            // Find first non-option value
+            if check_for_target && !a.starts_with('-') {
+                check_for_target = false;
+
+                // Looks like a target, but is not `run`, so prepend!
+                if a.contains(':') {
+                    leading_args.push(OsString::from("run"));
                 }
             }
         }
@@ -95,14 +104,19 @@ fn gather_args() -> Vec<OsString> {
         args.push(arg);
     });
 
-    args
+    // We need a separate args list because options before the
+    // target cannot be placed before "run"
+    leading_args.extend(args);
+
+    leading_args
 }
 
 pub async fn run_cli() -> AppResult {
     App::setup_diagnostics();
 
     // Create app and parse arguments
-    let cli = CLI::parse_from(gather_args());
+    let args = gather_args();
+    let cli = CLI::parse_from(&args);
 
     setup_colors(cli.color);
     setup_logging(&cli.log);
@@ -116,7 +130,7 @@ pub async fn run_cli() -> AppResult {
         ..TracingOptions::default()
     });
 
-    detect_running_version();
+    detect_running_version(&args);
 
     let mut app = App::new();
     app.set_state(cli.global_args());

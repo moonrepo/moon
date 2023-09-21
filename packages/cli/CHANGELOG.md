@@ -14,9 +14,10 @@
 
 #### 🚀 Updates
 
+- Added a `moon run` shorthand, where "run" can be omitted. For example, `moon run app:build` can be
+  written as `moon app:build`.
+  - This only works for targets that contain a `:`.
 - Updated `moon ci` to support running an explicit list of targets, instead of running everything.
-- Updated `moon run` to run targets without the "run" command. For example, `moon run app:build` can
-  be written as `moon app:build`.
 - Updated `node.version`, `npm.version`, `pnpm.version`, `yarn.version`, and `rust.version` to
   support partial versions and requirements/ranges like `1.2`, `1`, or `^1.2`.
 

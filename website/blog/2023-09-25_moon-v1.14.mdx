@@ -2,13 +2,28 @@
 slug: moon-v1.14
 title: moon v1.14 - ???
 authors: [milesj]
-tags: []
+tags: [run, target, toolchain, version]
 # image: ./img/moon/v1.13.png
 ---
 
-???
+In this release, we've focused on loosening restrictions to improve the overall developer
+experience.
 
 <!--truncate-->
+
+## Shorthand for `moon run`
+
+This has been a long requested feature and we're happy to finally deliver it! You can now omit the
+"run" keyword for the [`moon run`](/docs/commands/run) command, just so long as the first non-option
+argument is a target (must contain a `:`).
+
+```shell
+# v1.13
+$ moon run app:build
+
+# v1.14+
+$ moon app:build
+```
 
 ## Configure partial toolchain versions
 

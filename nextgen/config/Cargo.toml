@@ -27,13 +27,13 @@ rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"json_schema",
 	"typescript",
-	"yaml",
 	"valid_url",
 ] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tracing = { workspace = true }
+version_spec = { version = "0.1.0", features = ["schematic"] }
 
 [dev-dependencies]
 httpmock = "0.6.8"

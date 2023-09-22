@@ -1,0 +1,4 @@
+tasks:
+  command:
+    command: 'dotnet-application'
+    inputs: ['c']

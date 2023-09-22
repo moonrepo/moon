@@ -43,7 +43,7 @@ root `inherited` object, which is structured as follows:
 
 - `order` - The order in which configuration files from `.moon` are loaded, from lowest to highest
   priority, and the order files are merged. The `*` entry is `.moon/tasks.yml`, while other entries
-  map to `.moon/tasks/*.yml`.
+  map to `.moon/tasks/**/*.yml`.
 - `layers` - A mapping of configuration files that were loaded, derived from the `order`. Each layer
   represents a partial object (not expanded or resolved). Only files that exist will be mapped here.
 - `config` - A partial configuration object representing the state of all merged layers. This is

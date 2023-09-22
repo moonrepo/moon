@@ -745,7 +745,7 @@ mod tasks_builder {
                     InputPath::ProjectFile("global".into()),
                     InputPath::ProjectFile("local".into()),
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
-                    InputPath::WorkspaceFile(".moon/tasks/tag-merge.yml".into()),
+                    InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
 
@@ -798,7 +798,7 @@ mod tasks_builder {
                     InputPath::ProjectFile("local".into()),
                     InputPath::ProjectFile("global".into()),
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
-                    InputPath::WorkspaceFile(".moon/tasks/tag-merge.yml".into()),
+                    InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
 
@@ -843,7 +843,7 @@ mod tasks_builder {
                 vec![
                     InputPath::ProjectFile("local".into()),
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
-                    InputPath::WorkspaceFile(".moon/tasks/tag-merge.yml".into()),
+                    InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
                 ]
             );
 
@@ -1276,7 +1276,7 @@ mod tasks_builder {
                     InputPath::ProjectFile("local-base".into()),
                     InputPath::ProjectFile("local-extender".into()),
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
-                    InputPath::WorkspaceFile(".moon/tasks/tag-extends.yml".into()),
+                    InputPath::WorkspaceFile("global/tasks/tag-extends.yml".into()),
                 ]
             );
 

@@ -20,6 +20,7 @@
 - Updated `moon ci` to support running an explicit list of targets, instead of running everything.
 - Updated `node.version`, `npm.version`, `pnpm.version`, `yarn.version`, and `rust.version` to
   support partial versions and requirements/ranges like `1.2`, `1`, or `^1.2`.
+- Updated `.moon/tasks` to support nested folders, for better organization of task files.
 
 #### ⚙️ Internal
 

@@ -83,12 +83,12 @@ fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
     debug!(
         workspace_root = ?root_dir,
         "Attempting to load {}",
-        color::file(format!("{}/{}", consts::CONFIG_DIRNAME, "tasks/*.yml")),
+        color::file(format!("{}/{}", consts::CONFIG_DIRNAME, "tasks/**/*.yml")),
     );
 
     for config_path in glob::walk_files(
         root_dir.join(consts::CONFIG_DIRNAME).join("tasks"),
-        ["*.yml"],
+        ["**/*.yml"],
     )? {
         do_load(&config_path)?;
     }

@@ -109,7 +109,7 @@ fn scaffold_workspace(
     // Copy moon configuration
     let moon_configs = glob::walk(
         workspace.root.join(CONFIG_DIRNAME),
-        ["*.yml", "tasks/*.yml"],
+        ["*.yml", "tasks/**/*.yml"],
     )?;
     let moon_configs = moon_configs
         .iter()

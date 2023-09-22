@@ -113,36 +113,43 @@ impl InheritedTasksManager {
             );
         }
 
-        // tasks/*.yml
+        // tasks/**/*.yml
         let tasks_dir = moon_dir.join("tasks");
 
         if !tasks_dir.exists() {
             return Ok(manager);
         }
 
-        for file in fs::read_dir(&tasks_dir)
-            .map_err(|error| ConfigError::ReadFileFailed {
-                path: tasks_dir,
-                error,
-            })?
-            .flatten()
-        {
-            let path = file.path();
-
-            if file
-                .file_type()
+        let load_dir = |dir: &Path| -> miette::Result<()> {
+            for entry in fs::read_dir(dir)
                 .map_err(|error| ConfigError::ReadFileFailed {
-                    path: path.to_path_buf(),
+                    path: dir.to_path_buf(),
                     error,
                 })?
-                .is_file()
+                .flatten()
             {
-                manager.add_config(
-                    &path,
-                    InheritedTasksConfig::load_partial(workspace_root, &path)?,
-                );
+                let path = entry.path();
+                let file_type = entry
+                    .file_type()
+                    .map_err(|error| ConfigError::ReadFileFailed {
+                        path: path.to_path_buf(),
+                        error,
+                    })?;
+
+                if file_type.is_file() {
+                    manager.add_config(
+                        &path,
+                        InheritedTasksConfig::load_partial(workspace_root, &path)?,
+                    );
+                } else if file_type.is_dir() {
+                    load_dir(&path)?;
+                }
             }
-        }
+
+            Ok(())
+        };
+
+        load_dir(&tasks_dir)?;
 
         Ok(manager)
     }
@@ -160,16 +167,12 @@ impl InheritedTasksManager {
             .to_str()
             .unwrap_or_default();
 
-        if !name.ends_with(".yml") {
-            return;
-        }
-
         let name = if name == consts::CONFIG_TASKS_FILENAME {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
             stripped_name
         } else {
-            name
+            return;
         };
 
         self.configs.insert(name.to_owned(), config);

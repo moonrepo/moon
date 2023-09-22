@@ -710,9 +710,9 @@ dependencies = [
 
 [[package]]
 name = "cd_env"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08a91cc18015c41dd5d117c356b1708a23a0469c3256403af09dc2a48a7879ce"
+checksum = "6c23158d7f47caa0e0262b69765a6438abdf4cf813eeb6354a1b84f035bbdee9"
 dependencies = [
  "serde",
 ]
@@ -768,9 +768,9 @@ checksum = "cca491388666e04d7248af3f60f0c40cfb0991c72205595d7c396e3510207d1a"
 
 [[package]]
 name = "ci_env"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8ec45c59e470d7c361345776fea051dd4d3e9c2db8ed0d3fb343cbaf0f2b50b"
+checksum = "38a69d4b43ed42f84c813e94bb07fe6e27dc0430a630d0ad4b787bcac353eaf1"
 dependencies = [
  "serde",
 ]

@@ -26,7 +26,8 @@ default-members = ["crates/cli"]
 async-trait = "0.1.73"
 cached = "0.45.1"
 chrono = { version = "0.4.31", features = ["serde"] }
-ci_env = "0.2.0"
+cd_env = "0.1.2"
+ci_env = "0.2.1"
 clap = { version = "4.4.4", features = ["derive", "env", "wrap_help"] }
 clap_complete = "4.4.1"
 console = "0.15.7"

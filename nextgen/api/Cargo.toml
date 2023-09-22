@@ -8,7 +8,7 @@ publish = false
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_time = { path = "../time" }
-cd_env = { version = "0.1.1" }
+cd_env = { workspace = true }
 ci_env = { workspace = true }
 md5 = "0.7.0"
 graphql_client = { version = "0.13.0", features = ["reqwest-rustls"] }

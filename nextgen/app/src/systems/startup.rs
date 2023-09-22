@@ -169,7 +169,7 @@ pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: Res
         file = ?config_path,
         "Attempting to load {} and {} (optional)",
         color::file(&config_name),
-        color::file(format!("{}/tasks/*.yml", consts::CONFIG_DIRNAME)),
+        color::file(format!("{}/tasks/**/*.yml", consts::CONFIG_DIRNAME)),
     );
 
     let manager = InheritedTasksManager::load_from(workspace_root)?;

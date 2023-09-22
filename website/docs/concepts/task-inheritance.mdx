@@ -9,8 +9,8 @@ moon uses an inheritance model where tasks can be defined once at the workspace-
 inherited by _many or all_ projects.
 
 Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks.yml`][tasks] or
-[`.moon/tasks/*.yml`][tasks], and are inherited by default. However, projects are able to include,
-exclude, or rename inherited tasks using the
+[`.moon/tasks/**/*.yml`][tasks], and are inherited by default. However, projects are able to
+include, exclude, or rename inherited tasks using the
 [`workspace.inheritedTasks`](../config/project#inheritedtasks) in [`moon.yml`](../config/project).
 
 ## Scope by project metadata
@@ -19,7 +19,7 @@ By default tasks defined in [`.moon/tasks.yml`][tasks] will be inherited by _all
 approach works well when a monorepo is comprised of a single programming language, but breaks down
 quickly in multi-language setups.
 
-To support these complex repositories, we support scoped tasks with [`.moon/tasks/*.yml`][tasks],
+To support these complex repositories, we support scoped tasks with [`.moon/tasks/**/*.yml`][tasks],
 where `*.yml` maps to a project based on a combination of its [language][language], [type][type], or
 [tags][tags]. This enables you to easily declare tasks for "JavaScript projects", "Go applications",
 "Ruby libraries", so on and so forth.

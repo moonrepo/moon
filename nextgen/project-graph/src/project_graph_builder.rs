@@ -409,7 +409,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Hash all workspace-level config files
         for file in glob::walk(
             context.workspace_root.join(consts::CONFIG_DIRNAME),
-            ["*.yml", "tasks/*.yml"],
+            ["*.yml", "tasks/**/*.yml"],
         )? {
             configs.push(to_virtual_string(
                 file.strip_prefix(context.workspace_root).unwrap(),

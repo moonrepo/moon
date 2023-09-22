@@ -12,7 +12,7 @@ use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use utils::*;
 
-const FILENAME: &str = ".moon/tasks.yml";
+const FILENAME: &str = "tasks.yml";
 
 mod tasks_config {
     use super::*;
@@ -393,9 +393,8 @@ mod task_manager {
         let mut global_inputs = vec![];
 
         if command != "global" {
-            global_inputs.push(InputPath::WorkspaceFile(format!(
-                ".moon/tasks/{command}.yml"
-            )));
+            // No .moon prefix since the fixture is contrived
+            global_inputs.push(InputPath::WorkspaceFile(format!("tasks/{command}.yml")));
         }
 
         TaskConfig {
@@ -432,6 +431,38 @@ mod task_manager {
                 "tag-kebab-case",
                 "tag-normal",
                 "typescript",
+            ]
+        );
+    }
+
+    #[test]
+    fn can_nest_configs_in_folders() {
+        let sandbox = create_sandbox("inheritance/nested");
+        let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+        let mut keys = manager.configs.keys().collect::<Vec<_>>();
+        keys.sort();
+
+        assert_eq!(
+            keys,
+            vec!["*", "dotnet", "dotnet-application", "node", "node-library",]
+        );
+
+        let mut inputs = manager
+            .configs
+            .values()
+            .map(|c| c.input.to_string_lossy().replace('\\', "/"))
+            .collect::<Vec<_>>();
+        inputs.sort();
+
+        assert_eq!(
+            inputs,
+            vec![
+                "tasks.yml",
+                "tasks/dotnet/dotnet-application.yml",
+                "tasks/dotnet/dotnet.yml",
+                "tasks/node/node-library.yml",
+                "tasks/node/node.yml"
             ]
         );
     }
@@ -583,10 +614,10 @@ mod task_manager {
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    ".moon/tasks.yml",
-                    ".moon/tasks/javascript.yml",
-                    ".moon/tasks/node-application.yml",
-                    ".moon/tasks/node.yml",
+                    "tasks.yml",
+                    "tasks/javascript.yml",
+                    "tasks/node-application.yml",
+                    "tasks/node.yml",
                 ]
             );
         }
@@ -619,11 +650,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec![
-                    ".moon/tasks.yml",
-                    ".moon/tasks/node.yml",
-                    ".moon/tasks/typescript.yml",
-                ]
+                vec!["tasks.yml", "tasks/node.yml", "tasks/typescript.yml",]
             );
         }
 
@@ -651,7 +678,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec![".moon/tasks.yml", ".moon/tasks/rust.yml",]
+                vec!["tasks.yml", "tasks/rust.yml",]
             );
         }
 
@@ -688,11 +715,11 @@ mod task_manager {
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    ".moon/tasks.yml",
-                    ".moon/tasks/node.yml",
-                    ".moon/tasks/tag-kebab-case.yml",
-                    ".moon/tasks/tag-normal.yml",
-                    ".moon/tasks/typescript.yml",
+                    "tasks.yml",
+                    "tasks/node.yml",
+                    "tasks/tag-kebab-case.yml",
+                    "tasks/tag-normal.yml",
+                    "tasks/typescript.yml",
                 ]
             );
         }
@@ -721,7 +748,7 @@ mod task_manager {
 
             assert_eq!(
                 config.layers.keys().collect::<Vec<_>>(),
-                vec![".moon/tasks.yml", ".moon/tasks/kotlin.yml",]
+                vec!["tasks.yml", "tasks/kotlin.yml",]
             );
         }
     }

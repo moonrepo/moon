@@ -112,6 +112,30 @@ fn creates_run_report() {
 }
 
 #[test]
+fn runs_with_shorthand_syntax() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    sandbox
+        .run_moon(|cmd| {
+            cmd.arg("base:standard");
+        })
+        .success();
+}
+
+#[test]
+fn runs_with_shorthand_syntax_with_leading_option() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    sandbox
+        .run_moon(|cmd| {
+            cmd.arg("--force").arg("base:standard");
+        })
+        .success();
+}
+
+#[test]
 fn bails_on_failing_task() {
     let sandbox = cases_sandbox();
     sandbox.enable_git();

@@ -1678,9 +1678,9 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "extism"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25944ee40692db74f53a65804c08f23b88c4f2b0903f3098e94bfcf6cbfd3d0f"
+checksum = "7a94848d5b49906bd97b83cf5a8bd25082dbc6f8bdfe98f12687910228734552"
 dependencies = [
  "anyhow",
  "extism-manifest",
@@ -1702,9 +1702,9 @@ dependencies = [
 
 [[package]]
 name = "extism-runtime"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b284fa52d9c9eed7c26bfaa348183f1c83f08e080859a392b481c70f3c0f848e"
+checksum = "a3b0ba8ef6ecbf59c0f6e47fd2feea575ebc3a09e81603d06a41af92fe61cdfa"
 dependencies = [
  "anyhow",
  "cbindgen",
@@ -3337,6 +3337,7 @@ dependencies = [
  "serde_yaml 0.9.25",
  "starbase_sandbox",
  "tracing",
+ "version_spec",
 ]
 
 [[package]]
@@ -4688,9 +4689,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.18.3"
+version = "0.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a321436d096a0dd86c95f8a735045ce5f36c9783174be5d193d1004298de54e4"
+checksum = "dec55eb026f4887cdf8ae1b6de17c0b96f4c83c50f1cdfea325468f3b3ff2fcc"
 dependencies = [
  "cached",
  "extism",
@@ -4701,7 +4702,6 @@ dependencies = [
  "proto_wasm_plugin",
  "regex",
  "reqwest",
- "schematic",
  "semver",
  "serde",
  "serde_json",
@@ -4714,6 +4714,7 @@ dependencies = [
  "tinytemplate",
  "tracing",
  "url",
+ "version_spec",
  "warpgate",
 ]
 
@@ -5122,9 +5123,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8592df69240651bac26079f142ab7c796ed888f7b5c0c4cddb5efc34149ca79b"
+checksum = "fe561cb5c8380d36ef80bf81a7cc16acfde8a0d130dd3394cc0cb48809d065ab"
 dependencies = [
  "garde",
  "indexmap 2.0.0",
@@ -6420,6 +6421,20 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "version_spec"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf76e050d169eab93ec6369ec26d60748d48f2f2edb59ed8f357e7d7242e809c"
+dependencies = [
+ "human-sort",
+ "once_cell",
+ "regex",
+ "schematic",
+ "semver",
+ "serde",
+]
 
 [[package]]
 name = "void"

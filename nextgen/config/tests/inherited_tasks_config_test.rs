@@ -451,7 +451,7 @@ mod task_manager {
         let mut inputs = manager
             .configs
             .values()
-            .map(|c| c.input.to_string_lossy())
+            .map(|c| c.input.to_string_lossy().replace('\\', "/"))
             .collect::<Vec<_>>();
         inputs.sort();
 

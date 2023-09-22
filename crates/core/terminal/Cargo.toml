@@ -6,6 +6,6 @@ publish = false
 
 [dependencies]
 console = { workspace = true }
-dialoguer = { version = "0.10.4", default-features = false }
+dialoguer = { version = "0.11.0", default-features = false }
 miette = { workspace = true }
 starbase_styles = { workspace = true }

@@ -1,9 +1,9 @@
 use moon_common::{path::WorkspaceRelativePathBuf, Id};
 use moon_config::PartialTaskConfig;
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, NodeConfig,
-    PartialInheritedTasksConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-    WorkspaceProjectsConfig,
+    DependencyConfig, DependencyScope, DependencySource, InheritedTasksEntry,
+    InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig, ToolchainConfig,
+    WorkspaceConfig, WorkspaceProjects, WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
 use moon_project_builder::DetectLanguageEvent;
@@ -46,12 +46,15 @@ impl GraphContainer {
         // Add a global task to all projects
         graph.inherited_tasks.configs.insert(
             "*".into(),
-            PartialInheritedTasksConfig {
-                tasks: Some(BTreeMap::from_iter([(
-                    "global".into(),
-                    PartialTaskConfig::default(),
-                )])),
-                ..PartialInheritedTasksConfig::default()
+            InheritedTasksEntry {
+                input: ".moon/tasks.yml".into(),
+                config: PartialInheritedTasksConfig {
+                    tasks: Some(BTreeMap::from_iter([(
+                        "global".into(),
+                        PartialTaskConfig::default(),
+                    )])),
+                    ..PartialInheritedTasksConfig::default()
+                },
             },
         );
 

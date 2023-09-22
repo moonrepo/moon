@@ -2,13 +2,13 @@ use crate::workspace_error::WorkspaceError;
 use moon_api::Moonbase;
 use moon_cache::CacheEngine;
 use moon_common::consts;
-use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;
 use moon_vcs::{BoxedVcs, Git};
 use proto_core::{ProtoEnvironment, ToolsConfig, Version, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
-use starbase_utils::{dirs, fs, glob};
+use starbase_utils::{dirs, fs};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -49,19 +49,8 @@ fn find_workspace_root<P: AsRef<Path>>(working_dir: P) -> miette::Result<PathBuf
     Ok(possible_root)
 }
 
-// .moon/tasks.yml, .moon/tasks/*.yml
+// .moon/tasks.yml, .moon/tasks/**/*.yml
 fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
-    let mut manager = InheritedTasksManager::default();
-
-    let mut do_load = |config_path: &Path| -> miette::Result<()> {
-        manager.add_config(
-            config_path,
-            InheritedTasksConfig::load_partial(root_dir, config_path)?,
-        );
-
-        Ok(())
-    };
-
     debug!(
         workspace_root = ?root_dir,
         "Attempting to load {}",
@@ -72,26 +61,19 @@ fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
         )),
     );
 
-    let config_path = root_dir
-        .join(consts::CONFIG_DIRNAME)
-        .join(consts::CONFIG_TASKS_FILENAME);
-
-    if config_path.exists() {
-        do_load(&config_path)?;
-    }
-
     debug!(
         workspace_root = ?root_dir,
         "Attempting to load {}",
         color::file(format!("{}/{}", consts::CONFIG_DIRNAME, "tasks/**/*.yml")),
     );
 
-    for config_path in glob::walk_files(
-        root_dir.join(consts::CONFIG_DIRNAME).join("tasks"),
-        ["**/*.yml"],
-    )? {
-        do_load(&config_path)?;
-    }
+    let manager = InheritedTasksManager::load_from(root_dir)?;
+
+    debug!(
+        scopes = ?manager.configs.keys(),
+        "Loaded {} task configs to inherit",
+        manager.configs.len(),
+    );
 
     Ok(manager)
 }

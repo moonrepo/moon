@@ -11,6 +11,7 @@ use rustc_hash::FxHashMap;
 use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
 use std::fs;
 use std::hash::Hash;
+use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
 
 pub fn merge_fxhashmap<K, V, C>(
@@ -89,9 +90,15 @@ cacheable!(
 );
 
 #[derive(Debug, Default)]
+pub struct InheritedTasksEntry {
+    pub input: PathBuf,
+    pub config: PartialInheritedTasksConfig,
+}
+
+#[derive(Debug, Default)]
 pub struct InheritedTasksManager {
     cache: OnceMap<String, InheritedTasksResult>,
-    pub configs: FxHashMap<String, PartialInheritedTasksConfig>,
+    pub configs: FxHashMap<String, InheritedTasksEntry>,
 }
 
 impl InheritedTasksManager {
@@ -108,6 +115,7 @@ impl InheritedTasksManager {
 
         if tasks_file.exists() {
             manager.add_config(
+                workspace_root,
                 &tasks_file,
                 InheritedTasksConfig::load_partial(workspace_root, &tasks_file)?,
             );
@@ -116,40 +124,9 @@ impl InheritedTasksManager {
         // tasks/**/*.yml
         let tasks_dir = moon_dir.join("tasks");
 
-        if !tasks_dir.exists() {
-            return Ok(manager);
+        if tasks_dir.exists() {
+            load_dir(&mut manager, workspace_root, &tasks_dir)?;
         }
-
-        let load_dir = |dir: &Path| -> miette::Result<()> {
-            for entry in fs::read_dir(dir)
-                .map_err(|error| ConfigError::ReadFileFailed {
-                    path: dir.to_path_buf(),
-                    error,
-                })?
-                .flatten()
-            {
-                let path = entry.path();
-                let file_type = entry
-                    .file_type()
-                    .map_err(|error| ConfigError::ReadFileFailed {
-                        path: path.to_path_buf(),
-                        error,
-                    })?;
-
-                if file_type.is_file() {
-                    manager.add_config(
-                        &path,
-                        InheritedTasksConfig::load_partial(workspace_root, &path)?,
-                    );
-                } else if file_type.is_dir() {
-                    load_dir(&path)?;
-                }
-            }
-
-            Ok(())
-        };
-
-        load_dir(&tasks_dir)?;
 
         Ok(manager)
     }
@@ -160,7 +137,12 @@ impl InheritedTasksManager {
         Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
     }
 
-    pub fn add_config(&mut self, path: &Path, config: PartialInheritedTasksConfig) {
+    pub fn add_config(
+        &mut self,
+        workspace_root: &Path,
+        path: &Path,
+        config: PartialInheritedTasksConfig,
+    ) {
         let name = path
             .file_name()
             .unwrap_or_default()
@@ -175,7 +157,13 @@ impl InheritedTasksManager {
             return;
         };
 
-        self.configs.insert(name.to_owned(), config);
+        self.configs.insert(
+            name.to_owned(),
+            InheritedTasksEntry {
+                input: path.strip_prefix(workspace_root).unwrap().to_path_buf(),
+                config,
+            },
+        );
     }
 
     pub fn get_lookup_order(
@@ -226,18 +214,9 @@ impl InheritedTasksManager {
             let context = ();
 
             for lookup in &lookup_order {
-                if let Some(managed_config) = self.configs.get(lookup) {
-                    let mut managed_config = managed_config.clone();
-
-                    let source_path = if lookup == "*" {
-                        format!(
-                            "{}/{}",
-                            consts::CONFIG_DIRNAME,
-                            consts::CONFIG_TASKS_FILENAME
-                        )
-                    } else {
-                        format!("{}/tasks/{lookup}.yml", consts::CONFIG_DIRNAME)
-                    };
+                if let Some(config_entry) = self.configs.get(lookup) {
+                    let source_path = format!("{}", config_entry.input.display());
+                    let mut managed_config = config_entry.config.clone();
 
                     // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
                     // as the latter will be globbed alongside toolchain/workspace configs.
@@ -286,4 +265,38 @@ impl InheritedTasksManager {
             })
         })
     }
+}
+
+fn load_dir(
+    manager: &mut InheritedTasksManager,
+    workspace_root: &Path,
+    dir: &Path,
+) -> miette::Result<()> {
+    for entry in fs::read_dir(dir)
+        .map_err(|error| ConfigError::ReadFileFailed {
+            path: dir.to_path_buf(),
+            error,
+        })?
+        .flatten()
+    {
+        let path = entry.path();
+        let file_type = entry
+            .file_type()
+            .map_err(|error| ConfigError::ReadFileFailed {
+                path: path.to_path_buf(),
+                error,
+            })?;
+
+        if file_type.is_file() {
+            manager.add_config(
+                workspace_root,
+                &path,
+                InheritedTasksConfig::load_partial(workspace_root, &path)?,
+            );
+        } else if file_type.is_dir() {
+            load_dir(manager, workspace_root, &path)?;
+        }
+    }
+
+    Ok(())
 }

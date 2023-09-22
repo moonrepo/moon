@@ -3,8 +3,8 @@ use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::{validate_tasks, ProjectType};
 use crate::shapes::InputPath;
 use crate::validate::check_yml_extension;
-use moon_common::cacheable;
-use moon_common::{consts, Id};
+use moon_common::path::standardize_separators;
+use moon_common::{cacheable, consts, Id};
 use moon_target::Target;
 use once_map::OnceMap;
 use rustc_hash::FxHashMap;
@@ -215,7 +215,8 @@ impl InheritedTasksManager {
 
             for lookup in &lookup_order {
                 if let Some(config_entry) = self.configs.get(lookup) {
-                    let source_path = format!("{}", config_entry.input.display());
+                    let source_path =
+                        standardize_separators(format!("{}", config_entry.input.display()));
                     let mut managed_config = config_entry.config.clone();
 
                     // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,

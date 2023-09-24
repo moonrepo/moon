@@ -141,14 +141,14 @@ To resolve a list of available versions using Git tags, the following settings a
 
 - `git-url` - The remote URL to fetch tags from.
 - `git-tag-pattern` - A regular expression to filter and match with. Defaults to
-  `^v?((\d+)\.(\d+)\.(\d+))`. The capture group `1` will be extracted as the version.
+  `^v?((\\d+)\\.(\\d+)\\.(\\d+))`. The capture group `1` will be extracted as the version.
 
 ```toml title="protostar.toml"
 # ...
 
 [resolve]
 git-url = "https://github.com/moonrepo/protostar"
-git-tag-pattern = "^@protostar/cli@((\\d+)\.(\\d+)\.(\\d+))"
+git-tag-pattern = "^@protostar/cli@((\\d+)\\.(\\d+)\\.(\\d+))"
 ```
 
 #### JSON manifest

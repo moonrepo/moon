@@ -6,7 +6,8 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon run` (or `moon r`) command will run one or many [targets](../concepts/target) and all of
 its dependencies in topological order. Each run will incrementally cache each task, improving speed
-and development times... over time.
+and development times... over time. View the official [Run a task](../run-task) and
+[Cheat sheet](../cheat-sheet#tasks) articles for more information!
 
 ```shell
 # Run `lint` in project `app`
@@ -30,8 +31,16 @@ $ moon run format
 $ moon run :build --query "language=javascript && projectType=library"
 ```
 
-> View the official [Run a task](../run-task) and [Cheat sheet](../cheat-sheet#tasks) articles for
-> more information!
+:::info
+
+How affected status is determined is highly dependent on whether the command is running locally, in
+CI, and what options are provided. The following scenarios are possible:
+
+- When `--affected` is provided, will explicitly use `--remote` to determine CI or local.
+- When not provided, will use `git diff` in CI, or `git status` for local.
+- To bypass affected logic entirely, use `--force`.
+
+:::
 
 ### Arguments
 

@@ -44,19 +44,19 @@ moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../../nextgen/vcs" }
 moon_workspace = { path = "../../nextgen/workspace" }
-bytes = "1.4.0"
+bytes = "1.5.0"
 ci_env = { workspace = true }
 clap = { workspace = true }
 clap_complete = { workspace = true }
 clap_lex = "0.5.1"
 console = { workspace = true }
 # console-subscriber = "0.1.8"
-dialoguer = { version = "0.10.4", default-features = false }
+dialoguer = { version = "0.11.0", default-features = false }
 diff = "0.1.13"
-indicatif = "0.17.6"
+indicatif = "0.17.7"
 itertools = "0.11.0"
 miette = { workspace = true }
-mimalloc = { version = "0.1.38", default-features = false }
+mimalloc = { version = "0.1.39", default-features = false }
 open = "5.0.0"
 petgraph = { workspace = true }
 proto_core = { workspace = true }

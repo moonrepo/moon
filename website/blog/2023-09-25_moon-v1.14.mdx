@@ -1,9 +1,9 @@
 ---
 slug: moon-v1.14
-title: moon v1.14 - ???
+title: moon v1.14 - Improvements to running targets and toolchain versions
 authors: [milesj]
-tags: [run, target, toolchain, version]
-# image: ./img/moon/v1.13.png
+tags: [run, target, toolchain, version, ci, shorthand]
+image: ./img/moon/v1.14.png
 ---
 
 In this release, we've focused on loosening restrictions to improve the overall developer
@@ -25,17 +25,79 @@ $ moon run app:build
 $ moon app:build
 ```
 
+## Choose targets for `moon ci`
+
+When we initially built [`moon ci`](/docs/commands/ci), we wanted a solution that simply ran
+everything in CI that _should be ran_, taking care of all the complicated logic to determine
+affected tasks, comparing Git branches, gathering targets, partitioning across jobs, etc... And it
+does just that, and it does it well!
+
+However, one major caveat to using `moon ci` is that it runs _every task_ in the workspace (assuming
+they're affected). This has been quite a blocker for adoption as teams may want fine-grained control
+of their CI. For example, running build tasks in one job, lint tasks in another, so on and so forth.
+
+In this release, we've made the necessary changes to allow these workflows, by supporting a list of
+targets for `moon ci`, similar to how `moon run` works. If no targets are provide, the existing "run
+everything" logic will be used.
+
+```shell
+# v1.13
+$ moon ci
+
+# v1.14+
+$ moon ci :build :lint :etc
+```
+
+Splitting targets across jobs is demonstrated with the following GitHub Action workflow:
+
+```yaml title=".github/workflows/ci.yml"
+name: 'CI'
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+jobs:
+  build:
+    name: 'Build'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v4'
+        with:
+          fetch-depth: 0
+      - uses: 'moonrepo/setup-moon-action@v1'
+      - run: 'moon ci :build'
+  format-lint:
+    name: 'Format + Lint'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v4'
+        with:
+          fetch-depth: 0
+      - uses: 'moonrepo/setup-moon-action@v1'
+      - run: 'moon ci :format :lint'
+  test:
+    name: 'Test'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v4'
+        with:
+          fetch-depth: 0
+      - uses: 'moonrepo/setup-moon-action@v1'
+      - run: 'moon ci :test'
+```
+
 ## Configure partial toolchain versions
 
-Since moon's inception, our integrated toolchain required fully qualified semantic versions
-(major.minor.patch) for tools. This was by design to ensure that we could provide a consistent,
-reliable, and deterministic experience for all users. This solved the problem of "Is X using the
-correct version of Y?".
+Since moon's inception, our [integrated toolchain](/docs/concepts/toolchain) required fully
+qualified semantic versions (major.minor.patch) for tools. This was by design to ensure that we
+could provide a consistent, reliable, and deterministic experience for all users. This solved the
+problem of "Is X using the correct version of Y?".
 
 However, this also meant that we were unable to support partial versions (major.minor) of tools,
 which is a common use case and request for many users. Over the last few months, we've made immense
-progress in [proto](/proto) on how it parses, resolves, and evaluates versions, known as the version
-specification.
+progress in [proto](/proto) on how it parses, resolves, and evaluates versions, known as the
+[version specification](https://crates.io/crates/version_spec).
 
 We felt the time was right to pull these changes into moon, and as such, all `version` fields in
 [`.moon/toolchain.yml`](/docs/config/toolchain) now support partial versions, version

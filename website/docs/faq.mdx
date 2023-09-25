@@ -130,9 +130,25 @@ tasks:
 		platform: 'system'
 ```
 
-Non system-tasks cannot run multiple commands, as a task in moon is a represented as a single
-command, with inputs, outputs, and more, and is managed by the toolchain. However, we do suggest the
-following alternatives:
+Non system-tasks cannot run multiple commands for the following reasons:
+
+- A task in moon is a represented as a single command, with its own arguments, inputs, outputs, and
+  more. This isolation is required for [task inheritance](./concepts/task-inheritance) to work
+  correctly. For example, if you had multiple commands in a task and were using inheritance, where
+  should arguments be appended?
+- If using the [integrated toolchain](./concepts/toolchain), we cannot easily statically analyze the
+  command string to determine where the binary is located. For example, given the multi-command
+  `rm -rf ./dist && node ./build.js && tsc --build`, moon has no knowledge of where to find these
+  binaries without considerable effort at runtime.
+  - `rm` can be assumed to exist on the system, but what if it's actually an npm package? This also
+    isn't portable on Windows.
+  - `node` is straight forward enough. This is Node.js.
+  - `tsc` is what exactly? A node module? An npm global? A system command? moon has no idea, and
+    since we can't use Node.js's built-in module resolution, we need to locate it ourselves.
+- The `platform` setting on each task easily solves these problems, but requires a single command
+  per task to avoid unnecessary complexity.
+
+However, we do suggest the following alternatives:
 
 - Create a task for each command, and link them as dependencies with
   [`deps`](./config/project#deps). This allows for each command to be incrementally cached (when
@@ -140,6 +156,7 @@ following alternatives:
 - Create a task for each command, and run them concurrently with [`moon run`](./commands/run).
 - Wrap all commands in an external file, and execute that file instead. Refer to the
   [piping question](#how-to-pipe-or-redirect-tasks) above for an example.
+- Avoid using the toolchain and assume everything exists on `PATH`.
 
 ### How to run tasks in a shell?
 

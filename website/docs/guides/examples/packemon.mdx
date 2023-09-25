@@ -26,85 +26,27 @@ repository.
 
 ## Setup
 
-Package building does not apply to every project, only packages, so where you place the build task
-is up to you. The following patterns are suggested:
+Since Packemon is per-project, the associated moon tasks should be defined in each project's
+[`moon.yml`](../../config/project) file.
 
-- A `build` task in [`.moon/tasks/node-library.yml`](../../config/tasks), which will be inherited by
-  package based projects.
-- A `build` task in [`moon.yml`](../../config/project) for each project.
+:::tip
 
-<Tabs
-  groupId="config-type"
-  defaultValue="global"
-  values={[
-    { label: 'Globally inherited', value: 'global' },
-    { label: 'Per project', value: 'local' },
-  ]}
->
-<TabItem value="global">
+We suggest inheriting Packemon tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/packemon).
 
-```yaml title=".moon/tasks/node-library.yml"
-build:
-	command:
-		- 'packemon'
-		- 'pack'
-		# Add `engines` field to package
-		- '--addEngines'
-		# Add `exports` field to package
-		- '--addExports'
-		# Generate TypeScript declarations
-		- '--declaration'
-	inputs:
-		# Source files only
-		- 'src/**/*'
-		- 'package.json'
-		# A build specific tsconfig
-		- 'tsconfig.*.json'
-		- '/tsconfig.options.json'
-	outputs:
-		# Compiled files: lib, esm, cjs, mjs, etc
-		- 'lib'
-```
+:::
 
-Depending on your Packemon configuration, you may need to change the task outputs per project like
-so:
+```yaml title="<project>/moon.yml"
+# Inherit tasks from the `packemon` preset
+# https://github.com/moonrepo/moon-configs
+tags: ['packemon']
 
-```yaml title="<package>/moon.yml"
-# Define additional compiled files unique to this project
+# Set the output formats
 tasks:
-	build:
-		outputs:
-			- 'cjs'
+  build:
+    outputs:
+      - 'cjs'
 ```
-
-</TabItem>
-<TabItem value="local">
-
-```yaml title="<package>/moon.yml"
-build:
-	command:
-		- 'packemon'
-		- 'pack'
-		# Add `engines` field to package
-		- '--addEngines'
-		# Add `exports` field to package
-		- '--addExports'
-		# Generate TypeScript declarations
-		- '--declaration'
-	inputs:
-		# Source files only
-		- 'src/**/*'
-		- 'package.json'
-		# A build specific tsconfig
-		- 'tsconfig.*.json'
-		- '/tsconfig.options.json'
-	outputs:
-		# Compiled files: lib, esm, cjs, mjs, etc
-		- 'lib'
-```
-
-</TabItem>
-</Tabs>
 
 ### TypeScript integration
 

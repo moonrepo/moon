@@ -27,48 +27,17 @@ otherwise skip to the setup section.
 Since Vite is per-project, the associated moon tasks should be defined in each project's
 [`moon.yml`](../../config/project) file.
 
+:::tip
+
+We suggest inheriting Vite tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/vite).
+
+:::
+
 ```yaml title="<project>/moon.yml"
-fileGroups:
-	vite:
-		- 'src/**/*'
-		- 'env.d.ts'
-		- 'index.html'
-		- 'vite.config.*'
-
-tasks:
-	# Development server
-	dev:
-		command: 'vite dev'
-		local: true
-
-	# Production build
-	build:
-		command: 'vite build'
-		inputs:
-			- '@group(vite)'
-		outputs:
-			- 'dist'
-
-	# Preview production build locally
-	preview:
-		command: 'vite preview'
-		deps:
-			- '~:build'
-		local: true
-
-	# Unit testing (if using Vitest)
-	test:
-		command:
-			- 'vitest'
-			- 'run'
-			# Always run code coverage
-			- '--coverage'
-			# Dont fail if a project has no tests
-			- '--passWithNoTests'
-		inputs:
-			- '@group(vite)'
-			- 'tests/**/*'
-			- 'vitest.config.*'
+# Inherit tasks from the `vite` and `vitest` presets
+# https://github.com/moonrepo/moon-configs
+tags: ['vite', 'vitest']
 ```
 
 ## Configuration

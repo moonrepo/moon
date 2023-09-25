@@ -28,47 +28,19 @@ and Vitest among other options. moon supports and has guides for many of these t
 ## Setup
 
 Since SvelteKit is per-project, the associated moon tasks should be defined in each project's
-moon.yml file.
+[`moon.yml`](../../config/project) file.
+
+:::tip
+
+We suggest inheriting SvelteKit tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/sveltekit).
+
+:::
 
 ```yaml title="<project>/moon.yml"
-type: 'application'
-language: 'typescript'
-
-fileGroups:
-  svelte:
-    - 'src/**/*'
-    - 'static/**/*'
-    - 'svelte.config.*'
-    - 'vite.config.*'
-
-tasks:
-  dev:
-    command: 'vite dev'
-    local: true
-
-  build:
-    command: 'vite build'
-    inputs:
-      - '@group(svelte)'
-    outputs:
-      - '.svelte-kit'
-
-  preview:
-    command: 'vite preview'
-    local: true
-    deps:
-      - 'build'
-
-  test:
-    command: 'vitest'
-    inputs:
-      - '@group(svelte)'
-```
-
-To run the SvelteKit dev server:
-
-```shell
-moon run <project>:dev
+# Inherit tasks from the `sveltekit` preset
+# https://github.com/moonrepo/moon-configs
+tags: ['sveltekit']
 ```
 
 ### ESLint integration
@@ -112,16 +84,21 @@ typechecking works. From here we suggest utilizing a [global `typecheck` task](.
 consistency across all projects within the repository. However, because Svelte isn't standard
 JavaScript, it requires the use of the `svelte-check` command for type-checking.
 
+:::info
+
+The
+[moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/sveltekit)
+provides the `check` task below.
+
+:::
+
 ```yaml title="<project>/moon.yml"
 workspace:
   inheritedTasks:
     exclude: ['typecheck']
 
 tasks:
-  typecheck-sync:
-    command: 'svelte-kit sync'
-
-  typecheck:
+  check:
     command: 'svelte-check --tsconfig ./tsconfig.json'
     deps:
       - 'typecheck-sync'

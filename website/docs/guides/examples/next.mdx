@@ -1,6 +1,6 @@
 ---
-title: Next.js example
-sidebar_label: Next.js
+title: Next example
+sidebar_label: Next
 ---
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
@@ -28,42 +28,17 @@ cd apps && npx create-next-app <project> --typescript
 Since Next.js is per-project, the associated moon tasks should be defined in each project's
 [`moon.yml`](../../config/project) file.
 
+:::tip
+
+We suggest inheriting Next.js tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/next).
+
+:::
+
 ```yaml title="<project>/moon.yml"
-fileGroups:
-	next:
-		- 'pages/**/*'
-		- 'public/**/*'
-		- 'src/**/*'
-		- 'next-env.d.ts'
-		- 'next.config.*'
-
-tasks:
-	# Development server
-	dev:
-		command: 'next dev'
-		local: true
-
-	# Production build (SSR)
-	build:
-		command: 'next build'
-		inputs:
-			- '@group(next)'
-
-	# Production build (SSG)
-	export:
-		command: 'next export -o ./build'
-		deps:
-			- '~:build'
-		inputs:
-			- '@group(next)'
-		outputs:
-			- '.next'
-			- 'build'
-
-	# Serve the build
-	start:
-		command: 'next start'
-		local: true
+# Inherit tasks from the `next` preset
+# https://github.com/moonrepo/moon-configs
+tags: ['next']
 ```
 
 ### ESLint integration

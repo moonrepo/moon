@@ -23,49 +23,21 @@ cd apps && npm create astro@latest
 Since Astro is per-project, the associated moon tasks should be defined in each project's
 [`moon.yml`](../../config/project) file.
 
+:::tip
+
+We suggest inheriting Astro tasks from the
+[official moon configuration preset](https://github.com/moonrepo/moon-configs/tree/master/javascript/astro).
+
+:::
+
 ```yaml title="<project>/moon.yml"
-fileGroups:
-	astro:
-		- 'public/**/*'
-		- 'src/**/*'
-		- 'astro.config.*'
-
-tasks:
-	astro:
-		command: 'astro'
-		local: true
-
-	# Development server
-	dev:
-		command: 'astro dev'
-		local: true
-
-	# Production build
-	build:
-		command: 'astro build'
-		inputs:
-			- '@group(astro)'
-		outputs:
-			- 'dist'
-
-	# Check .astro files
-	check:
-		command: 'astro check'
-		inputs:
-			- '@group(astro)'
-		deps:
-			- '~:typecheck'
-
-	# Preview production build locally
-	preview:
-		command: 'astro preview'
-		deps:
-			- '~:build'
-		local: true
+# Inherit tasks from the `astro` preset
+# https://github.com/moonrepo/moon-configs
+tags: ['astro']
 
 # Disable project references
 toolchain:
-	typescript:
+  typescript:
     syncProjectReferences: false
 ```
 

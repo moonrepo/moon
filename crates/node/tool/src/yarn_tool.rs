@@ -249,17 +249,19 @@ impl DependencyManager<NodeTool> for YarnTool {
     ) -> miette::Result<()> {
         let mut args = vec!["install"];
 
-        if !self.is_berry() {
-            args.push("--ignore-engines");
-        }
+        if !self.global {
+            if !self.is_berry() {
+                args.push("--ignore-engines");
+            }
 
-        if is_ci() {
-            if self.is_berry() {
-                args.push("--immutable");
-            } else {
-                args.push("--check-files");
-                args.push("--frozen-lockfile");
-                args.push("--non-interactive");
+            if is_ci() {
+                if self.is_berry() {
+                    args.push("--immutable");
+                } else {
+                    args.push("--check-files");
+                    args.push("--frozen-lockfile");
+                    args.push("--non-interactive");
+                }
             }
         }
 

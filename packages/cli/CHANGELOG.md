@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue when using a global version of npm/pnpm/yarn, and the wrong arguments were being
+  passed to commands.
+
 ## 1.14.0
 
 #### 🚀 Updates

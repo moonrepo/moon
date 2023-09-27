@@ -570,7 +570,7 @@ impl<'a> Runner<'a> {
         // For long-running process, log a message every 30 seconds to indicate it's still running
         let interval_target = self.task.target.clone();
         let interval_handle = task::spawn(async move {
-            if is_persistent {
+            if is_persistent || is_interactive {
                 return;
             }
 

@@ -191,7 +191,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
     ) -> miette::Result<()> {
         let mut args = vec!["install"];
 
-        if is_ci() {
+        if !self.global && is_ci() {
             let lockfile = working_dir.join(self.get_lock_filename());
 
             // Will fail with "Headless installation requires a pnpm-lock.yaml file"

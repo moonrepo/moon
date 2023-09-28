@@ -15,6 +15,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where non-YAML files in `.moon/tasks` would be parsed as YAML configs.
+- Fixed an issue where arguments were not passed to generated Git hooks.
+- Fixed an issue where moonbase would fail to sign in in CI.
 
 ## 1.14.1
 

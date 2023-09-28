@@ -48,7 +48,6 @@ fn create_anonymous_rid(workspace_root: &Path) -> String {
         "{:x}",
         md5::compute(
             env::var("MOONBASE_REPO_SLUG")
-                .or_else(|_| env::var("MOON_REPO_SLUG"))
                 .unwrap_or_else(|_| fs::file_name(workspace_root)),
         )
     )

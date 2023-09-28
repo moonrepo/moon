@@ -44,7 +44,7 @@ pub async fn load_workspace() -> miette::Result<Workspace> {
     if !is_test_env() {
         if workspace.vcs.is_enabled() {
             if let Ok(slug) = workspace.vcs.get_repository_slug().await {
-                env::set_var("MOON_REPO_SLUG", slug);
+                env::set_var("MOONBASE_REPO_SLUG", slug);
             }
         }
 

@@ -289,11 +289,18 @@ fn load_dir(
             })?;
 
         if file_type.is_file() {
-            manager.add_config(
-                workspace_root,
-                &path,
-                InheritedTasksConfig::load_partial(workspace_root, &path)?,
-            );
+            // Non-yaml files may be located in these folders,
+            // so avoid failing when trying to parse it as a config
+            if path
+                .extension()
+                .is_some_and(|ext| ext == "yml" || ext == "yaml")
+            {
+                manager.add_config(
+                    workspace_root,
+                    &path,
+                    InheritedTasksConfig::load_partial(workspace_root, &path)?,
+                );
+            }
         } else if file_type.is_dir() {
             load_dir(manager, workspace_root, &path)?;
         }

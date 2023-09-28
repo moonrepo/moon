@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where non-YAML files in `.moon/tasks` would be parsed as YAML configs.
+
 ## 1.14.1
 
 #### 🐞 Fixes

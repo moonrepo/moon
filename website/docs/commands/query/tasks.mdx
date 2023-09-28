@@ -46,7 +46,8 @@ passing the `--json` flag. The output has the following structure:
 
 ### Options
 
-- `--affected` - Filter projects that have been affected by touched files.
+- `--affected` - Filter projects that have been affected by touched files. This will only filter
+  based on files, and _does not_ include upstream or downstream dependencies.
 - `--json` - Display the projects in JSON format.
 
 #### Filters

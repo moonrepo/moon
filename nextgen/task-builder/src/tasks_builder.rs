@@ -117,7 +117,11 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        trace!(id = self.project_id, tasks = ?global_config.tasks.keys(), "Filtering global tasks");
+        trace!(
+            id = self.project_id,
+            tasks = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+            "Filtering global tasks",
+        );
 
         for (task_id, task_config) in &global_config.tasks {
             let target = Target::new(self.project_id, task_id).unwrap();
@@ -190,7 +194,11 @@ impl<'proj> TasksBuilder<'proj> {
             self.project_env.insert(key, value);
         }
 
-        trace!(id = self.project_id, tasks = ?local_config.tasks.keys(), "Loading local tasks");
+        trace!(
+            id = self.project_id,
+            tasks = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+            "Loading local tasks",
+        );
 
         self.local_tasks.extend(&local_config.tasks);
 

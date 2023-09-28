@@ -141,7 +141,7 @@ impl<'app> HooksGenerator<'app> {
                 self.create_file(
                     &external_path,
                     format!(
-                        "#!/bin/sh\n{} -NoProfile -ExecutionPolicy Bypass -File '{}'",
+                        "#!/bin/sh\n{} -NoProfile -ExecutionPolicy Bypass -File \"{} $1 $2 $3\"",
                         powershell_exe, external_command
                     ),
                 )?;
@@ -151,7 +151,11 @@ impl<'app> HooksGenerator<'app> {
             #[cfg(not(windows))]
             {
                 // pre-commit
-                self.create_hook_file(&external_path, &[external_command], false)?;
+                self.create_hook_file(
+                    &external_path,
+                    &[format!("{} $1 $2 $3", external_command)],
+                    false,
+                )?;
             }
         }
 

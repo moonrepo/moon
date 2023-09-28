@@ -105,6 +105,12 @@ impl Project {
             .iter()
             .any(|file| file.starts_with(&self.source))
     }
+
+    /// Return true if the provided locator string (an ID or alias) matches the
+    /// current project.
+    pub fn matches_locator(&self, locator: &str) -> bool {
+        self.id.as_str() == locator || self.alias.as_ref().is_some_and(|alias| alias == locator)
+    }
 }
 
 impl Queryable for Project {

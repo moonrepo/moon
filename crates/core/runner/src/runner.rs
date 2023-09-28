@@ -409,9 +409,9 @@ impl<'a> Runner<'a> {
                         return Ok(true);
                     }
                 }
-                TargetScope::Project(project_id) => {
+                TargetScope::Project(project_locator) => {
                     if let Some(owner_id) = &task.target.scope_id {
-                        if owner_id == project_id && is_matching_task {
+                        if owner_id == project_locator && is_matching_task {
                             return Ok(true);
                         }
                     }

@@ -187,8 +187,8 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     /// Load a single project by name or alias into the graph.
-    pub async fn load(&mut self, alias_or_id: &str) -> miette::Result<()> {
-        self.internal_load(alias_or_id, &mut FxHashSet::default())
+    pub async fn load(&mut self, project_locator: &str) -> miette::Result<()> {
+        self.internal_load(project_locator, &mut FxHashSet::default())
             .await?;
 
         Ok(())
@@ -208,10 +208,10 @@ impl<'app> ProjectGraphBuilder<'app> {
     #[async_recursion]
     async fn internal_load(
         &mut self,
-        alias_or_id: &str,
+        project_locator: &str,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
-        let id = self.resolve_id(alias_or_id);
+        let id = self.resolve_id(project_locator);
 
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
@@ -257,7 +257,12 @@ impl<'app> ProjectGraphBuilder<'app> {
         for (task_id, task_config) in &project.tasks {
             for task_dep in &task_config.deps {
                 if let TargetScope::Project(dep_id) = &task_dep.scope {
-                    if project.dependencies.contains_key(dep_id) || dep_id == &id {
+                    if
+                    // Already a dependency
+                    project.dependencies.contains_key(dep_id) ||
+                        // Don't reference itself
+                        project.matches_locator(dep_id.as_str())
+                    {
                         continue;
                     }
 
@@ -339,17 +344,16 @@ impl<'app> ProjectGraphBuilder<'app> {
             builder.extend_with_task(task_id, task_config);
         }
 
-        let mut project = builder.build().await?;
-
-        // Inherit alias (is there a better way to do this?)
+        // Inherit alias before building incase the project
+        // references itself in tasks or dependencies
         for (alias, project_id) in &self.aliases {
             if project_id == id {
-                project.alias = Some(alias.to_owned());
+                builder.set_alias(alias);
                 break;
             }
         }
 
-        Ok(project)
+        builder.build().await
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.
@@ -489,10 +493,10 @@ impl<'app> ProjectGraphBuilder<'app> {
         self.context.as_ref().unwrap()
     }
 
-    fn resolve_id(&self, alias_or_id: &str) -> Id {
-        match self.aliases.get(alias_or_id) {
+    fn resolve_id(&self, project_locator: &str) -> Id {
+        match self.aliases.get(project_locator) {
             Some(project_id) => project_id.to_owned(),
-            None => Id::raw(alias_or_id),
+            None => Id::raw(project_locator),
         }
     }
 }

@@ -192,8 +192,8 @@ impl<'ws> DepGraphBuilder<'ws> {
             color::label(target),
         );
 
-        if let TargetScope::Project(project_id) = &target.scope {
-            let project = self.project_graph.get(project_id)?;
+        if let TargetScope::Project(project_locator) = &target.scope {
+            let project = self.project_graph.get(project_locator)?;
             let dependents = self.project_graph.dependents_of(&project)?;
 
             for dependent_id in dependents {
@@ -246,8 +246,8 @@ impl<'ws> DepGraphBuilder<'ws> {
                 return Err(TargetError::NoDepsInRunContext.into());
             }
             // project:task
-            TargetScope::Project(project_id) => {
-                let project = self.project_graph.get(project_id)?;
+            TargetScope::Project(project_locator) => {
+                let project = self.project_graph.get(project_locator)?;
                 let task = project.get_task(&target.task_id)?;
 
                 if let Some(index) =

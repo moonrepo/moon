@@ -106,15 +106,15 @@ impl ProjectGraph {
 
     /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
-    pub fn get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
+    pub fn get(&self, project_locator: &str) -> miette::Result<Arc<Project>> {
         let mut boundaries = ExpansionBoundaries::default();
 
-        self.internal_get(alias_or_id, &mut boundaries)
+        self.internal_get(project_locator, &mut boundaries)
     }
 
     /// Return an unexpanded project with the provided name or alias from the graph.
-    pub fn get_unexpanded(&self, alias_or_id: &str) -> miette::Result<&Project> {
-        let id = self.resolve_id(alias_or_id);
+    pub fn get_unexpanded(&self, project_locator: &str) -> miette::Result<&Project> {
+        let id = self.resolve_id(project_locator);
 
         let node = self
             .nodes

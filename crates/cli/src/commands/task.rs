@@ -19,15 +19,15 @@ pub struct TaskArgs {
 
 #[system]
 pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
-    let Some(project_id) = args.target.scope_id.clone() else {
+    let Some(project_locator) = args.target.scope_id.clone() else {
         return Err(miette!("A project ID is required."));
     };
 
     let mut project_graph_builder = build_project_graph(workspace).await?;
-    project_graph_builder.load(&project_id).await?;
+    project_graph_builder.load(&project_locator).await?;
 
     let project_graph = project_graph_builder.build().await?;
-    let project = project_graph.get(&project_id)?;
+    let project = project_graph.get(&project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 
     if args.json {
@@ -41,7 +41,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
     term.line("")?;
     term.render_label(Label::Brand, &args.target.id)?;
     term.render_entry("Task", color::id(&args.target.task_id))?;
-    term.render_entry("Project", color::id(&project_id))?;
+    term.render_entry("Project", color::id(&project.id))?;
     term.render_entry("Platform", term.format(&task.platform))?;
     term.render_entry("Type", term.format(&task.type_of))?;
 

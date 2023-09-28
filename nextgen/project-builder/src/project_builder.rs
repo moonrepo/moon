@@ -40,6 +40,7 @@ pub struct ProjectBuilder<'app> {
     // Values to be continually built
     id: &'app Id,
     source: &'app WorkspaceRelativePath,
+    alias: Option<&'app str>,
     project_root: PathBuf,
 
     pub language: LanguageType,
@@ -64,6 +65,7 @@ impl<'app> ProjectBuilder<'app> {
             context,
             id,
             source,
+            alias: None,
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
@@ -188,9 +190,15 @@ impl<'app> ProjectBuilder<'app> {
         self
     }
 
+    pub fn set_alias(&mut self, alias: &'app str) -> &mut Self {
+        self.alias = Some(alias);
+        self
+    }
+
     #[tracing::instrument(name = "project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
         let mut project = Project {
+            alias: self.alias.map(|a| a.to_owned()),
             dependencies: self.build_dependencies()?,
             file_groups: self.build_file_groups()?,
             tasks: self.build_tasks().await?,

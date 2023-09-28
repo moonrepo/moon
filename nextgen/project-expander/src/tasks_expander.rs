@@ -156,16 +156,15 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     }
                 }
                 // id:task
-                TargetScope::Project(project_id) => {
-                    if project_id == &project.id {
+                TargetScope::Project(project_locator) => {
+                    if project.matches_locator(project_locator) {
                         if dep_target.task_id == task.id {
                             // Avoid circular references
                         } else {
                             check_and_push_dep(project, &dep_target.task_id, false)?;
                         }
                     } else {
-                        let results =
-                            (self.context.query)(format!("project={id}", id = project_id))?;
+                        let results = (self.context.query)(format!("project={}", project_locator))?;
 
                         if results.is_empty() {
                             return Err(TasksExpanderError::UnknownTarget {

@@ -19,25 +19,6 @@ fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), Valida
     Ok(())
 }
 
-pub fn validate_tasks<D, C>(
-    tasks: &BTreeMap<Id, PartialTaskConfig>,
-    _data: &D,
-    _ctx: &C,
-) -> Result<(), ValidateError> {
-    for (id, config) in tasks {
-        if let Some(extends_from) = &config.extends {
-            if !tasks.contains_key(extends_from) {
-                return Err(ValidateError::new(format!(
-                    "task {} is extending an unknown task {}",
-                    id, extends_from
-                )));
-            }
-        }
-    }
-
-    Ok(())
-}
-
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
     pub enum ProjectType {
@@ -108,7 +89,7 @@ cacheable!(
 
         pub tags: Vec<Id>,
 
-        #[setting(nested, validate = validate_tasks)]
+        #[setting(nested)]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         #[setting(nested)]

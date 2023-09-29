@@ -2,7 +2,7 @@ use clap::Args;
 use console::Term;
 use miette::{miette, IntoDiagnostic};
 use moon::build_project_graph;
-use moon_target::Target;
+use moon_target::{Target, TargetScope};
 use moon_terminal::{ExtendedTerm, Label};
 use moon_workspace::Workspace;
 use starbase::system;
@@ -19,15 +19,15 @@ pub struct TaskArgs {
 
 #[system]
 pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
-    let Some(project_locator) = args.target.scope_id.clone() else {
+    let TargetScope::Project(project_locator) = &args.target.scope else {
         return Err(miette!("A project ID is required."));
     };
 
     let mut project_graph_builder = build_project_graph(workspace).await?;
-    project_graph_builder.load(&project_locator).await?;
+    project_graph_builder.load(project_locator).await?;
 
     let project_graph = project_graph_builder.build().await?;
-    let project = project_graph.get(&project_locator)?;
+    let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 
     if args.json {

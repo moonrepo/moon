@@ -99,7 +99,7 @@ impl Task {
 
     /// Return a cache directory for this task, relative from the cache root.
     pub fn get_cache_dir(&self) -> PathBuf {
-        PathBuf::from(self.target.scope_id.as_ref().unwrap().as_str()).join(self.id.as_str())
+        PathBuf::from(self.target.get_project_id().unwrap().as_str()).join(self.id.as_str())
     }
 
     /// Return true if this task is affected based on touched files.

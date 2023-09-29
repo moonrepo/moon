@@ -168,7 +168,7 @@ pub async fn process_action(
         ActionNode::RunTarget(runtime, target)
         | ActionNode::RunInteractiveTarget(runtime, target)
         | ActionNode::RunPersistentTarget(runtime, target) => {
-            let project = local_project_graph.get(target.scope_id.as_ref().unwrap())?;
+            let project = local_project_graph.get(target.get_project_id().unwrap())?;
 
             local_emitter.emit(Event::TargetRunning { target }).await?;
 

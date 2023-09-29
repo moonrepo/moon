@@ -23,7 +23,6 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
 pub struct Target {
     pub id: String,
     pub scope: TargetScope,
-    pub scope_id: Option<Id>,
     pub task_id: Id,
 }
 
@@ -42,7 +41,6 @@ impl Target {
         Ok(Target {
             id: Target::format(&scope, task_id),
             scope,
-            scope_id: Some(Id::raw(scope_id)),
             task_id: Id::new(task_id).map_err(handle_error)?,
         })
     }
@@ -56,7 +54,6 @@ impl Target {
         Ok(Target {
             id: Target::format(TargetScope::OwnSelf, task_id),
             scope: TargetScope::OwnSelf,
-            scope_id: None,
             task_id: Id::new(task_id)
                 .map_err(|_| TargetError::InvalidFormat(format!("~:{task_id}")))?,
         })
@@ -83,9 +80,6 @@ impl Target {
             return Err(TargetError::InvalidFormat(target_id.to_owned()).into());
         };
 
-        let handle_error = |_| TargetError::InvalidFormat(target_id.to_owned());
-
-        let mut scope_id = None;
         let scope = match matches.name("scope") {
             Some(value) => match value.as_str() {
                 "" => TargetScope::All,
@@ -93,10 +87,8 @@ impl Target {
                 "~" => TargetScope::OwnSelf,
                 id => {
                     if let Some(tag) = id.strip_prefix('#') {
-                        scope_id = Some(Id::new(tag).map_err(handle_error)?);
                         TargetScope::Tag(Id::raw(tag))
                     } else {
-                        scope_id = Some(Id::new(id).map_err(handle_error)?);
                         TargetScope::Project(Id::raw(id))
                     }
                 }
@@ -104,12 +96,12 @@ impl Target {
             None => TargetScope::All,
         };
 
-        let task_id = Id::new(matches.name("task").unwrap().as_str()).map_err(handle_error)?;
+        let task_id = Id::new(matches.name("task").unwrap().as_str())
+            .map_err(|_| TargetError::InvalidFormat(target_id.to_owned()))?;
 
         Ok(Target {
             id: target_id.to_owned(),
             scope,
-            scope_id,
             task_id,
         })
     }
@@ -129,6 +121,13 @@ impl Target {
 
         false
     }
+
+    pub fn get_project_id(&self) -> Option<&Id> {
+        match &self.scope {
+            TargetScope::Project(id) => Some(id),
+            _ => None,
+        }
+    }
 }
 
 impl Default for Target {
@@ -136,7 +135,6 @@ impl Default for Target {
         Target {
             id: "~:unknown".into(),
             scope: TargetScope::OwnSelf,
-            scope_id: None,
             task_id: Id::raw("unknown"),
         }
     }

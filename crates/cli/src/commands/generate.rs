@@ -11,7 +11,6 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::{system, AppResult};
 use starbase_styles::color;
-use std::env;
 use std::fmt::Display;
 use tracing::{debug, warn};
 
@@ -314,7 +313,6 @@ fn gather_variables(
 pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Workspace>) {
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
-    let cwd = env::current_dir().into_diagnostic()?;
 
     // This is a special case for creating a new template with the generator itself!
     if args.template {
@@ -364,7 +362,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
                 .into_diagnostic()?
         }
     });
-    let dest = relative_dest.to_logical_path(&cwd);
+    let dest = relative_dest.to_logical_path(&workspace.working_dir);
 
     debug!(dest = ?dest, "Destination path set");
 
@@ -372,7 +370,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
     let mut context = gather_variables(&template, &theme, args)?;
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
-    context.insert("working_dir", &cwd);
+    context.insert("working_dir", &workspace.working_dir);
     context.insert("workspace_root", &workspace.root);
 
     // Load template files and determine when to overwrite
@@ -454,7 +452,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
             },
             color::muted_light(
                 file.dest_path
-                    .strip_prefix(&cwd)
+                    .strip_prefix(&workspace.working_dir)
                     .unwrap_or(&file.dest_path)
                     .to_str()
                     .unwrap()

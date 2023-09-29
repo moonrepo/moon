@@ -43,6 +43,7 @@ pub struct ProjectGraphBuilderContext<'app> {
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
     pub vcs: Option<&'app BoxedVcs>,
+    pub working_dir: &'app Path,
     pub workspace_config: &'app WorkspaceConfig,
     pub workspace_root: &'app Path,
 }
@@ -179,6 +180,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         let mut graph = ProjectGraph::new(self.graph, nodes, context.workspace_root);
+
+        graph.working_dir = context.working_dir.to_owned();
 
         graph.check_boundaries =
             !is_test_env() && context.workspace_config.experiments.task_output_boundaries;

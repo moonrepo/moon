@@ -128,6 +128,13 @@ impl Target {
             _ => None,
         }
     }
+
+    pub fn get_tag_id(&self) -> Option<&Id> {
+        match &self.scope {
+            TargetScope::Tag(id) => Some(id),
+            _ => None,
+        }
+    }
 }
 
 impl Default for Target {

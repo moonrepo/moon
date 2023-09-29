@@ -7,7 +7,6 @@ use moon_project::Project;
 use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::system;
-use std::env;
 use std::sync::Arc;
 use tracing::trace;
 
@@ -46,7 +45,7 @@ pub async fn check(
     } else if args.ids.is_empty() {
         trace!("Loading from path");
 
-        projects.push(project_graph.get_from_path(env::current_dir().unwrap())?);
+        projects.push(project_graph.get_from_path(None)?);
     } else {
         trace!(
             "Running for specific projects: {}",

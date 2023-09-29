@@ -393,14 +393,13 @@ impl<'ws> DepGraphBuilder<'ws> {
     ) -> miette::Result<Vec<Target>> {
         let mut qualified_targets = vec![];
         let mut project = None;
-        let cwd = std::env::current_dir().expect("Could not determine current working directory!");
 
         for locator in target_locators {
             let result = match locator {
                 TargetLocator::Qualified(target) => self.run_target(target, touched_files)?,
                 TargetLocator::TaskFromWorkingDir(task_id) => {
                     if project.is_none() {
-                        project = Some(self.project_graph.get_from_path(&cwd)?);
+                        project = Some(self.project_graph.get_from_path(None)?);
                     }
 
                     self.run_target(

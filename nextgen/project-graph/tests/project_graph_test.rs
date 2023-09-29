@@ -82,6 +82,7 @@ impl GraphContainer {
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
             vcs: self.vcs.as_ref(),
+            working_dir: &self.workspace_root,
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,
         }
@@ -179,7 +180,7 @@ mod project_graph {
 
         assert_eq!(
             graph
-                .get_from_path(sandbox.path().join("c/moon.yml"))
+                .get_from_path(Some(&sandbox.path().join("c/moon.yml")))
                 .unwrap()
                 .id,
             "c"
@@ -193,7 +194,7 @@ mod project_graph {
         let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
 
         graph
-            .get_from_path(sandbox.path().join("z/moon.yml"))
+            .get_from_path(Some(&sandbox.path().join("z/moon.yml")))
             .unwrap();
     }
 

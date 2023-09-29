@@ -184,7 +184,7 @@ impl<'cmd> CommandInspector<'cmd> {
         let command_line = self.get_command_line();
         let workspace_root = env::var("MOON_WORKSPACE_ROOT")
             .map(PathBuf::from)
-            .unwrap_or_else(|_| env::current_dir().unwrap());
+            .unwrap_or_else(|_| env::current_dir().unwrap_or_default());
 
         if self.command.print_command {
             println!(

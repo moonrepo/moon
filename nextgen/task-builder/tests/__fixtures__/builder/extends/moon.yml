@@ -36,8 +36,6 @@ tasks:
     extends: base
     local: false
 
-  # Tests global inheritance
-
   local-base:
     inputs:
       - 'local-base'
@@ -52,3 +50,9 @@ tasks:
       - 'local-extender'
     options:
       mergeArgs: 'prepend'
+
+  local-extends-global:
+    extends: 'global-base'
+    inputs:
+      - 'local-extender'
+

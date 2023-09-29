@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon dep-graph` to support a task in closest project, similar to `moon run`.
+
 ## 1.14.2
 
 #### 🐞 Fixes

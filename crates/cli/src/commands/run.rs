@@ -9,6 +9,7 @@ use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
 use moon_project_graph::ProjectGraph;
+use moon_target::TargetLocator;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -22,8 +23,8 @@ const HEADING_DEBUGGING: &str = "Debugging";
 
 #[derive(Args, Clone, Debug, Default)]
 pub struct RunArgs {
-    #[arg(required = true, help = "List of targets (scope:task) to run")]
-    pub targets: Vec<String>,
+    #[arg(required = true, help = "List of targets to run")]
+    pub targets: Vec<TargetLocator>,
 
     #[arg(
         long,
@@ -103,7 +104,7 @@ pub fn is_local(args: &RunArgs) -> bool {
 }
 
 pub async fn run_target(
-    target_ids: &[String],
+    target_locators: &[TargetLocator],
     args: &RunArgs,
     concurrency: Option<usize>,
     workspace: &Workspace,
@@ -142,8 +143,8 @@ pub async fn run_target(
     }
 
     // Run targets, optionally based on affected files
-    let primary_targets = dep_builder.run_targets_by_id(
-        target_ids,
+    let primary_targets = dep_builder.run_targets_by_locator(
+        target_locators,
         if should_run_affected {
             Some(&touched_files)
         } else {
@@ -152,7 +153,7 @@ pub async fn run_target(
     )?;
 
     if primary_targets.is_empty() {
-        let targets_list = map_list(target_ids, |id| color::label(id));
+        let targets_list = map_list(target_locators, |id| color::label(id));
 
         if should_run_affected {
             let status_list = if args.status.is_empty() {
@@ -192,7 +193,7 @@ pub async fn run_target(
     // Process all tasks in the graph
     let context = ActionContext {
         affected_only: should_run_affected,
-        initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
+        initial_targets: FxHashSet::from_iter(target_locators.to_owned()),
         interactive: args.interactive,
         passthrough_args: args.passthrough.to_owned(),
         primary_targets: FxHashSet::from_iter(primary_targets),

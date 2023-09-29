@@ -43,6 +43,25 @@ fn focused_by_target() {
 }
 
 #[test]
+fn focused_by_task_in_cwd() {
+    let (workspace_config, toolchain_config, tasks_config) = get_tasks_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "tasks",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("dep-graph").arg("--dot").arg("lint");
+        cmd.current_dir(sandbox.path().join("basic"));
+    });
+
+    assert_snapshot!(assert.output());
+}
+
+#[test]
 fn includes_dependencies_when_focused() {
     let (workspace_config, toolchain_config, tasks_config) = get_tasks_fixture_configs();
 

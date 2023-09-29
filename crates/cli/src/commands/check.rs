@@ -4,9 +4,9 @@ use clap::Args;
 use moon::generate_project_graph;
 use moon_common::Id;
 use moon_project::Project;
+use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::system;
-use std::env;
 use std::sync::Arc;
 use tracing::trace;
 
@@ -45,7 +45,7 @@ pub async fn check(
     } else if args.ids.is_empty() {
         trace!("Loading from path");
 
-        projects.push(project_graph.get_from_path(env::current_dir().unwrap())?);
+        projects.push(project_graph.get_from_path(None)?);
     } else {
         trace!(
             "Running for specific projects: {}",
@@ -67,7 +67,7 @@ pub async fn check(
     for project in projects {
         for task in project.get_tasks()? {
             if task.is_build_type() || task.is_test_type() {
-                targets.push(task.target.id.clone());
+                targets.push(TargetLocator::Qualified(task.target.clone()));
             }
         }
     }

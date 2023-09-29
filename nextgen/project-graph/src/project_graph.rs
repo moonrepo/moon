@@ -50,8 +50,11 @@ pub struct ProjectGraph {
     /// Cache of query results, mapped by query input to project IDs.
     query_cache: OnceMap<String, Vec<Id>>,
 
+    /// The current working directory.
+    pub working_dir: PathBuf,
+
     /// Workspace root, required for expansion.
-    workspace_root: PathBuf,
+    pub workspace_root: PathBuf,
 }
 
 impl ProjectGraph {
@@ -62,6 +65,7 @@ impl ProjectGraph {
             graph,
             nodes,
             projects: Arc::new(RwLock::new(FxHashMap::default())),
+            working_dir: workspace_root.to_owned(),
             workspace_root: workspace_root.to_owned(),
             query_cache: OnceMap::new(),
             check_boundaries: false,
@@ -147,8 +151,8 @@ impl ProjectGraph {
 
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
-    pub fn get_from_path<P: AsRef<Path>>(&self, starting_file: P) -> miette::Result<Arc<Project>> {
-        let current_file = starting_file.as_ref();
+    pub fn get_from_path(&self, starting_file: Option<&Path>) -> miette::Result<Arc<Project>> {
+        let current_file = starting_file.unwrap_or(&self.working_dir);
 
         let file = if current_file == self.workspace_root {
             Path::new(".")

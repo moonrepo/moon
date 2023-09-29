@@ -73,7 +73,6 @@ fn parse_ids() {
         Target {
             id: String::from("foo:build"),
             scope: TargetScope::Project(Id::raw("foo")),
-            scope_id: Some(Id::raw("foo")),
             task_id: Id::raw("build"),
         }
     );
@@ -86,7 +85,6 @@ fn parse_deps_scope() {
         Target {
             id: String::from("^:build"),
             scope: TargetScope::Deps,
-            scope_id: None,
             task_id: Id::raw("build"),
         }
     );
@@ -111,7 +109,6 @@ fn parse_self_scope() {
         Target {
             id: String::from("~:build"),
             scope: TargetScope::OwnSelf,
-            scope_id: None,
             task_id: Id::raw("build"),
         }
     );
@@ -124,7 +121,6 @@ fn parse_self_when_no_colon() {
         Target {
             id: String::from("~:build"),
             scope: TargetScope::OwnSelf,
-            scope_id: None,
             task_id: Id::raw("build"),
         }
     );
@@ -149,7 +145,6 @@ fn parse_all_scopes() {
         Target {
             id: String::from(":build"),
             scope: TargetScope::All,
-            scope_id: None,
             task_id: Id::raw("build"),
         }
     );
@@ -174,7 +169,6 @@ fn parse_node_package() {
         Target {
             id: String::from("@scope/foo:build"),
             scope: TargetScope::Project(Id::raw("@scope/foo")),
-            scope_id: Some(Id::raw("@scope/foo")),
             task_id: Id::raw("build"),
         }
     );
@@ -187,7 +181,6 @@ fn parse_slashes() {
         Target {
             id: String::from("foo/sub:build/esm"),
             scope: TargetScope::Project(Id::raw("foo/sub")),
-            scope_id: Some(Id::raw("foo/sub")),
             task_id: Id::raw("build/esm"),
         }
     );

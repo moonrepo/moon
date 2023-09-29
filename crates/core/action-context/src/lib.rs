@@ -1,6 +1,6 @@
 use clap::ValueEnum;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_target::Target;
+use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -31,7 +31,7 @@ impl TargetState {
 pub struct ActionContext {
     pub affected_only: bool,
 
-    pub initial_targets: FxHashSet<String>,
+    pub initial_targets: FxHashSet<TargetLocator>,
 
     pub interactive: bool,
 
@@ -62,8 +62,8 @@ impl ActionContext {
         }
 
         // :task == scope:task
-        for initial_target in &self.initial_targets {
-            if target.is_all_task(initial_target) {
+        for locator in &self.initial_targets {
+            if target.is_all_task(locator.as_str()) {
                 return true;
             }
         }

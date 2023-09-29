@@ -2,14 +2,14 @@ use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_se
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon::{build_dep_graph, generate_project_graph};
-use moon_target::Target;
+use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct DepGraphArgs {
     #[arg(help = "Target to *only* graph")]
-    target: Option<String>,
+    target: Option<TargetLocator>,
 
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
@@ -24,11 +24,10 @@ pub async fn dep_graph(args: ArgsRef<DepGraphArgs>, workspace: ResourceMut<Works
     let mut dep_builder = build_dep_graph(&project_graph);
 
     // Focus a target and its dependencies/dependents
-    if let Some(id) = &args.target {
-        let target = Target::parse(id)?;
-
-        dep_builder.run_target(&target, None)?;
-        dep_builder.run_dependents_for_target(&target)?;
+    if let Some(locator) = args.target.clone() {
+        for target in dep_builder.run_targets_by_locator(&[locator], None)? {
+            dep_builder.run_dependents_for_target(&target)?;
+        }
 
         // Show all targets and actions
     } else {

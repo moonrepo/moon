@@ -13,6 +13,7 @@ use moon_rust_lang::CARGO;
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
 use moon_vcs::{Git, Vcs};
+use moon_workspace::WorkspaceError;
 use node::init_node;
 use rust::init_rust;
 use starbase::{system, AppResult};
@@ -166,7 +167,7 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     };
 
     let theme = create_theme();
-    let working_dir = env::current_dir().expect("Failed to determine working directory.");
+    let working_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
     let dest_path = PathBuf::from(&args.dest);
     let dest_dir = if args.dest == "." {
         working_dir

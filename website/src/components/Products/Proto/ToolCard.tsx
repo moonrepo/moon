@@ -13,6 +13,7 @@ export interface ToolCardProps {
 	tool: ProtoTool;
 }
 
+// eslint-disable-next-line complexity
 export default function ToolCard({ id, tool }: ToolCardProps) {
 	const bins = tool.bins ?? [];
 	const dirs = tool.globalsDirs ?? [];
@@ -30,7 +31,7 @@ export default function ToolCard({ id, tool }: ToolCardProps) {
 			{tool.pluginType === 'wasm' && <WasmLink to={tool.repoUrl} noMargin />}
 
 			<Heading level={5} className="mb-1">
-				<Link href={tool.homepageUrl}>{tool.name}</Link>
+				<Link href={tool.homepageUrl ?? tool.repoUrl}>{tool.name}</Link>
 			</Heading>
 
 			<Text>{tool.description}</Text>

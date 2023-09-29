@@ -1,0 +1,78 @@
+---
+slug: proto-v0.19
+title: proto v0.19 - Version pinning and outdated checks
+authors: [milesj]
+tags: [proto, pin, global, local, outdated]
+image: ./img/proto/v0.18.png
+---
+
+In this release, we're improving version pinning and introducing a new command to check for outdated
+versions.
+
+<!--truncate-->
+
+## New `proto pin` command (breaking)
+
+Before our official v1 release, which is relatively soon, we'll be making some breaking changes with
+the proto APIs. The first is the introduction of the new [`proto pin`](/docs/proto/commands/pin)
+command, which replaces the previous `proto local` and `proto global` commands. We felt this was a
+much cleaner change, and far easier to understand than the previous command names.
+
+```shell
+# v0.18
+$ proto local go 1.20
+$ proto global node 20
+
+# v0.19+
+$ proto pin go 1.20
+$ proto pin node 20 --global
+```
+
+## New `pin-latest` setting
+
+While we're on the subject of pinning versions, we've also introduced a new
+[`pin-latest`](/docs/proto/config#pin-latest) setting. Do you want the latest version to always be
+pinned? Do you forgot to pass `--pin` when installing? Do you forget to run the `proto global` or
+`proto local` commands (now `proto pin`)? If you answered yes to any of these questions, then this
+setting is for you.
+
+When enabled, and a tool is installed with the "latest" version, the resolved version will
+automatically be pinned to the configuration of your choice. For example, say we have the following
+user config:
+
+```toml title="~/.proto/config.toml"
+pin-latest = "local"
+```
+
+And we run one of the following commands:
+
+```shell
+$ proto install go
+$ proto install node latest
+```
+
+Then the resolved version of the tool will automatically be set to the `.prototools` file in the
+current directory. Handy right?
+
+## New `proto outdated` command
+
+By request of the community, we're introducing yet another new command,
+[`proto outdated`](/docs/proto/commands/outdated). If you're familiar with package managers, you can
+probably guess what this command does! It'll check for newer available versions, for all tools
+configured in the closest `.prototools` file. Very handy for keeping your tools up to date.
+
+```
+$ proto outdated
+
+go - current version 1.20.2 (via ~1.20), newer version 1.20.8, update available!
+node - current version 20.7.0 (via 20.7.0), latest version 20.8.0, update available!
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.19.0) for a full list
+of changes.
+
+- Added `PROTO_WASM_LOG` environment variable to toggle the logging of messages from Extism and WASM
+  plugins. Useful for debugging.
+- Updated `proto install` to auto-clean stale plugins after a successful installation.

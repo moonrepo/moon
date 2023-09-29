@@ -59,6 +59,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allocator-api2"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0942ffc6dcaadf03badf6e6a2d0228460359d5e34b57ccdc720b7382dfbd5ec5"
+
+[[package]]
 name = "ambient-authority"
 version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -544,13 +550,14 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cached"
-version = "0.45.1"
+version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90eb5776f28a149524d1d8623035760b4454ec881e8cf3838fa8d7e1b11254b3"
+checksum = "8cead8ece0da6b744b2ad8ef9c58a4cdc7ef2921e60a6ddfb9eaaa86839b5fc5"
 dependencies = [
+ "ahash 0.8.3",
  "cached_proc_macro",
  "cached_proc_macro_types",
- "hashbrown 0.13.2",
+ "hashbrown 0.14.0",
  "instant",
  "once_cell",
  "thiserror",
@@ -2208,6 +2215,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c6201b9ff9fd90a5a3bac2e56a830d0caa509576f0e503818ee82c181b3437a"
 dependencies = [
  "ahash 0.8.3",
+ "allocator-api2",
 ]
 
 [[package]]
@@ -4689,9 +4697,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.18.6"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe929fdf894df177f0812c3567a39ecaedf6d1d3d723c4bcd79ca3943158579e"
+checksum = "9c27854ec66a980607216b7e415a2d2354aea5fceaef9fab4732d4636f92557a"
 dependencies = [
  "cached",
  "extism",
@@ -4720,23 +4728,24 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a35152b2019ada980d05aee93c0dd1224b91013c6db0c61854a10bdd060afdcd"
+checksum = "fbd3aa9e83629f274dba31ed08d5d6d80a2d07d81c333f298a6d2518023cd144"
 dependencies = [
  "anyhow",
  "semver",
  "serde",
  "serde_json",
+ "system_env",
  "thiserror",
  "warpgate_api",
 ]
 
 [[package]]
 name = "proto_wasm_plugin"
-version = "0.6.7"
+version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fdb73a4e0527cf8846435fb5bc568f71a59916a43fbaff35bf056c7302d0720"
+checksum = "b071ce67ba3635587bd88d82a3fd7f1fd158786509555d6aeb93cacc1edc0388"
 dependencies = [
  "extism",
  "proto_pdk_api",
@@ -5356,9 +5365,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.10.7"
+version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "479fb9d862239e610720565ca91403019f2f00410f1864c5aa7479b950a76ed8"
+checksum = "793db75ad2bcafc3ffa7c68b215fee268f537982cd901d132f89c6343f3a3dc8"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -5735,6 +5744,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "system_env"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19f0bb1e81abbd0fb277368d39b0470f4bbc01b1f4c6cede760f3e4d4b5d9bfe"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "tar"
 version = "0.4.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5851,18 +5871,18 @@ checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
-version = "1.0.48"
+version = "1.0.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d6d7a740b8a666a7e828dd00da9c0dc290dff53154ea77ac109281de90589b7"
+checksum = "1177e8c6d7ede7afde3585fd2513e611227efd6481bd78d2e82ba1ce16557ed4"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.48"
+version = "1.0.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49922ecae66cc8a249b77e68d1d0623c1b2c514f0060c27cdc68bd62a1219d35"
+checksum = "10712f02019e9288794769fba95cd6847df9874d49d871d062172f9dd41bc4cc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6425,9 +6445,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "version_spec"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf76e050d169eab93ec6369ec26d60748d48f2f2edb59ed8f357e7d7242e809c"
+checksum = "5babc3fe9e74e0559d8f8a825b6dcfec6f0dbf04db30926eaaf3caddcb4fb8ef"
 dependencies = [
  "human-sort",
  "once_cell",
@@ -6480,9 +6500,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.7"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cbf79662d393831516fe10316f9613a4810db388adf86a57c763cf72b32e68b"
+checksum = "b86b10e880209a6cf820f5c33101a4c7e98f5121ff8466ab0f2ba517e656d514"
 dependencies = [
  "extism",
  "miette",
@@ -6503,9 +6523,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c87f4f62fa42fa715ce697387b4c5c66ae0380723b841b1e0ff9fd285c78ab5f"
+checksum = "88d55e21fc85ba24a15b008acf53638354e81d14ba966bb909918271b1f0138d"
 dependencies = [
  "serde",
 ]

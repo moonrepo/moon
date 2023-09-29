@@ -3,6 +3,7 @@ title: Configuration
 ---
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <HeaderLabel text="1 min" />
 
@@ -13,7 +14,7 @@ We support configuration for both projects and users. Both config files are in
 
 proto supports pinning versions of tools on a per-project or per-directory basis through our
 `.prototools` configuration file. This file takes precedence during [version detection](./detection)
-and can be created/updated with [`proto local`](./commands/local).
+and can be created/updated with [`proto pin`](./commands/pin).
 
 This configuration simply maps tools to versions for the current directory.
 
@@ -81,7 +82,19 @@ When enabled, will intercept global package installs for node/npm/pnpm/yarn and 
 node-intercept-globals = false
 ```
 
-### `[http]`
+### `pin-latest`<VersionLabel version="0.19.0" />
+
+When defined and a tool is installed with the "latest" version, will automatically pin the resolved
+version to the configured location. Accepts the following locations:
+
+- `global` - Pins globally to `~/.proto/config.toml`.
+- `local` - Pins locally to `.prototools`.
+
+```toml title="~/.proto/config.toml"
+pin-latest = "local"
+```
+
+### `[http]`<VersionLabel version="0.18.0" />
 
 Can be used to customize the HTTP client used by proto and warpgate, primarily for requesting files
 to download, available versions, and more. The following settings are available:

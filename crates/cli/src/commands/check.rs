@@ -4,6 +4,7 @@ use clap::Args;
 use moon::generate_project_graph;
 use moon_common::Id;
 use moon_project::Project;
+use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::system;
 use std::env;
@@ -67,7 +68,7 @@ pub async fn check(
     for project in projects {
         for task in project.get_tasks()? {
             if task.is_build_type() || task.is_test_type() {
-                targets.push(task.target.id.clone());
+                targets.push(TargetLocator::Target(task.target.clone()));
             }
         }
     }

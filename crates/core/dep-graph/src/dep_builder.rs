@@ -7,7 +7,7 @@ use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_query::{build_query, Criteria};
-use moon_target::{Target, TargetError, TargetScope};
+use moon_target::{Target, TargetError, TargetLocator, TargetScope};
 use moon_task::Task;
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
@@ -386,35 +386,31 @@ impl<'ws> DepGraphBuilder<'ws> {
         Ok(indexes)
     }
 
-    pub fn run_targets_by_id(
+    pub fn run_targets_by_locator(
         &mut self,
-        target_ids: &[String],
+        target_locators: &[TargetLocator],
         touched_files: Option<&TouchedFilePaths>,
     ) -> miette::Result<Vec<Target>> {
         let mut qualified_targets = vec![];
-        let mut project_targets = vec![];
+        let mut project = None;
+        let cwd = std::env::current_dir().expect("Could not determine current working directory!");
 
-        for target_id in target_ids {
-            // Target (with possible scope) provided
-            if target_id.contains(':') {
-                qualified_targets
-                    .extend(self.run_target(Target::parse(target_id)?, touched_files)?.0);
-            // Task name provided, find closest project
-            } else {
-                project_targets.push(target_id);
-            }
-        }
+        for locator in target_locators {
+            let result = match locator {
+                TargetLocator::Target(target) => self.run_target(target, touched_files)?,
+                TargetLocator::Path(task_id) => {
+                    if project.is_none() {
+                        project = Some(self.project_graph.get_from_path(&cwd)?);
+                    }
 
-        if !project_targets.is_empty() {
-            let cwd = std::env::current_dir().unwrap();
-            let project = self.project_graph.get_from_path(&cwd)?;
+                    self.run_target(
+                        Target::new(&project.as_ref().unwrap().id, task_id)?,
+                        touched_files,
+                    )?
+                }
+            };
 
-            for target_id in project_targets {
-                qualified_targets.extend(
-                    self.run_target(Target::new(&project.id, target_id)?, touched_files)?
-                        .0,
-                );
-            }
+            qualified_targets.extend(result.0);
         }
 
         Ok(qualified_targets)

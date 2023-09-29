@@ -136,7 +136,7 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         );
     }
 
-    let mut proto_tools = ToolsConfig::load(proto_path)?;
+    let mut proto_tools = ToolsConfig::load_from(workspace_root)?;
     proto_tools.inherit_builtin_plugins();
 
     let config = if config_path.exists() {

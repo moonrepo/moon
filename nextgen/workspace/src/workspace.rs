@@ -5,7 +5,7 @@ use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;
 use moon_vcs::{BoxedVcs, Git};
-use proto_core::{ProtoEnvironment, ToolsConfig, Version, TOOLS_CONFIG_NAME};
+use proto_core::{ProtoEnvironment, ToolsConfig, Version};
 use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
@@ -176,7 +176,7 @@ impl Workspace {
 
         // Load proto tools
         let proto_env = ProtoEnvironment::new()?;
-        let mut proto_tools = ToolsConfig::load(root_dir.join(TOOLS_CONFIG_NAME))?;
+        let mut proto_tools = ToolsConfig::load_from(&root_dir)?;
         proto_tools.inherit_builtin_plugins();
 
         // Load configs

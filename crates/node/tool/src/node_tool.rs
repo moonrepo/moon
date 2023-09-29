@@ -185,7 +185,7 @@ impl Tool for NodeTool {
                 if setup || !self.tool.get_tool_dir().exists() {
                     print_checkpoint(format!("installing node {version}"), Checkpoint::Setup);
 
-                    if self.tool.setup(version).await? {
+                    if self.tool.setup(version, false).await? {
                         last_versions.insert("node".into(), version.to_owned());
                         installed += 1;
                     }

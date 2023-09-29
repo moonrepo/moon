@@ -62,8 +62,8 @@ impl ActionContext {
         }
 
         // :task == scope:task
-        for initial_target in &self.initial_targets {
-            if target.is_all_task(initial_target) {
+        for locator in &self.initial_targets {
+            if target.is_all_task(locator.as_str()) {
                 return true;
             }
         }

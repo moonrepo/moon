@@ -5,8 +5,8 @@ use std::str::FromStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TargetLocator {
-    Target(Target),
-    Path(Id),
+    Qualified(Target),      // scope:task_id
+    TaskFromWorkingDir(Id), // task_id
 }
 
 impl TargetLocator {
@@ -24,8 +24,8 @@ impl AsRef<TargetLocator> for TargetLocator {
 impl AsRef<str> for TargetLocator {
     fn as_ref(&self) -> &str {
         match self {
-            Self::Target(target) => target.as_str(),
-            Self::Path(id) => id.as_str(),
+            Self::Qualified(target) => target.as_str(),
+            Self::TaskFromWorkingDir(id) => id.as_str(),
         }
     }
 }
@@ -35,9 +35,9 @@ impl FromStr for TargetLocator {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Ok(if value.contains(':') {
-            TargetLocator::Target(Target::parse(&value)?)
+            TargetLocator::Qualified(Target::parse(value)?)
         } else {
-            TargetLocator::Path(Id::new(&value)?)
+            TargetLocator::TaskFromWorkingDir(Id::new(value)?)
         })
     }
 }

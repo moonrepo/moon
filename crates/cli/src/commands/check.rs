@@ -68,7 +68,7 @@ pub async fn check(
     for project in projects {
         for task in project.get_tasks()? {
             if task.is_build_type() || task.is_test_type() {
-                targets.push(TargetLocator::Target(task.target.clone()));
+                targets.push(TargetLocator::Qualified(task.target.clone()));
             }
         }
     }

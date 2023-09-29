@@ -397,8 +397,8 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         for locator in target_locators {
             let result = match locator {
-                TargetLocator::Target(target) => self.run_target(target, touched_files)?,
-                TargetLocator::Path(task_id) => {
+                TargetLocator::Qualified(target) => self.run_target(target, touched_files)?,
+                TargetLocator::TaskFromWorkingDir(task_id) => {
                     if project.is_none() {
                         project = Some(self.project_graph.get_from_path(&cwd)?);
                     }

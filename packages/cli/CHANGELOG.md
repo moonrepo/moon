@@ -15,6 +15,7 @@
 #### 🚀 Updates
 
 - Updated `moon dep-graph` to support a task in closest project, similar to `moon run`.
+- Updated to proto v0.19.
 
 #### 🐞 Fixes
 

@@ -285,6 +285,7 @@ const sidebars = {
 				'proto/commands/list',
 				'proto/commands/list-global',
 				'proto/commands/list-remote',
+				'proto/commands/outdated',
 				'proto/commands/pin',
 				'proto/commands/plugins',
 				'proto/commands/remove-plugin',

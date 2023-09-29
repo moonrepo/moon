@@ -19,12 +19,26 @@ much cleaner change, and far easier to understand that the previous command name
 
 ```shell
 # v0.18
-$ proto global node 20
 $ proto local go 1.20
+$ proto global node 20
 
 # v0.19+
-$ proto pin node 20 --global
 $ proto pin go 1.20
+$ proto pin node 20 --global
+```
+
+## New `proto outdated` command
+
+By request of the community, we're introducing another new command,
+[`proto outdated`](/docs/proto/commands/outdated). If you're familiar with package managers, you can
+probably guess what this command does! It'll check for newer available versions, for all tools
+configured in the closest `.prototools` file. Very handy for keeping your tools up to date.
+
+```
+$ proto outdated
+
+go - current version 1.20.2 (via ~1.20), newer version 1.20.8, update available!
+node - current version 20.7.0 (via 20.7.0), latest version 20.8.0, update available!
 ```
 
 ## Other changes

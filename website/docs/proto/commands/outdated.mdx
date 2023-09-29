@@ -1,0 +1,23 @@
+---
+title: outdated
+---
+
+The `proto outdated` command will load the closest `.prototools` file and check for newer versions
+of each configured tool. By default, only newer versions that match the configured version
+requirements or ranges will be used. To ignore this and use the latest version, pass `--latest`.
+
+```
+$ proto outdated
+
+go - current version 1.20.2 (via ~1.20), newer version 1.20.8, update available!
+node - current version 20.7.0 (via 20.7.0), latest version 20.8.0, update available!
+```
+
+> [Learn more about the `.prototools` configuration file!](../config)
+
+### Options
+
+- `--json` - Print the list in JSON format.
+- `--latest` - Check for the latest available version, ignoring any version requirements, ranges, or
+  constraints.
+- `--update` - Update the loaded `.prototools` file with newer versions if available.

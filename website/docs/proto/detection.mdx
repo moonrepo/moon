@@ -35,7 +35,7 @@ and traverse upwards through parent directories until a file is found.
 ##### 3.1. Version is defined locally in `.prototools`
 
 A `.prototools` file was found and a version entry exists for the current tool. This is also known
-as a "local version" and can be created with [`proto local`](./commands/local).
+as a "local version" and can be created with [`proto pin`](./commands/pin).
 
 ```toml title=".prototools"
 node = "18.0.0"
@@ -54,7 +54,7 @@ more.
 #### 4. Version is defined globally
 
 As the last check, we look for a "global version" that was pinned with
-[`proto global`](./commands/global). This version is stored at `~/.proto/tools/*/manifest.json`.
+[`proto pin --global`](./commands/pin). This version is stored at `~/.proto/tools/*/manifest.json`.
 
 #### 5. Version _could not_ be detected
 

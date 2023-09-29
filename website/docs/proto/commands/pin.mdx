@@ -1,0 +1,30 @@
+---
+title: pin
+---
+
+The `proto pin <tool> <version>` command will pin a version (or alias) of a tool. By default it will
+pin to a `.prototools` file in the current directory. This version will be used when attempting to
+[detect a version](../detection).
+
+```shell
+$ proto pin go 1.20
+```
+
+When the `--global` option is passed, the version will be pinned globally in
+`~/.proto/tools/<tool>/manifest.json`. This version will be used as a global fallback when
+attempting to [detect a version](../detection).
+
+```shell
+$ proto pin go 1.20 --global
+```
+
+> [Learn more about the `.prototools` configuration file!](../config)
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `<version>` - Version of tool.
+
+### Options
+
+- `--global` - Pin the version globally, rather than in the current directory.

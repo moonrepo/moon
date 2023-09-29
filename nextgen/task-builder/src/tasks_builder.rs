@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::tasks_builder_error::TasksBuilderError;
 use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
@@ -23,21 +24,43 @@ struct ConfigChain<'proj> {
 
 // This is a standalone function as recursive closures are not possible!
 fn extract_config<'builder, 'proj>(
-    task_id: &'builder Id,
-    tasks_map: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
     configs: &'builder mut Vec<ConfigChain<'proj>>,
-    global: bool,
-) {
-    if let Some(config) = tasks_map.get(task_id) {
+    task_id: &'builder Id,
+    tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    extendable_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    inherited: bool,
+    extended: bool,
+) -> miette::Result<()> {
+    let config = if extended {
+        extendable_tasks.get(task_id)
+    } else {
+        tasks.get(task_id)
+    };
+
+    if let Some(config) = config {
         if let Some(extend_task_id) = &config.extends {
-            extract_config(extend_task_id, tasks_map, configs, global);
+            if !extendable_tasks.contains_key(extend_task_id) {
+                return Err(TasksBuilderError::UnknownExtendsSource {
+                    source_id: task_id.to_owned(),
+                    target_id: extend_task_id.to_owned(),
+                }
+                .into());
+            }
+
+            extract_config(
+                configs,
+                extend_task_id,
+                tasks,
+                extendable_tasks,
+                inherited,
+                true,
+            )?;
         }
 
-        configs.push(ConfigChain {
-            config,
-            inherited: global,
-        });
+        configs.push(ConfigChain { config, inherited });
     }
+
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -230,7 +253,7 @@ impl<'proj> TasksBuilder<'proj> {
         );
 
         let mut task = Task::default();
-        let chain = self.get_config_inherit_chain(id);
+        let chain = self.get_config_inherit_chain(id)?;
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -413,7 +436,7 @@ impl<'proj> TasksBuilder<'proj> {
         };
 
         let configs = self
-            .get_config_inherit_chain(id)
+            .get_config_inherit_chain(id)?
             .iter()
             .map(|link| &link.config.options)
             .collect::<Vec<_>>();
@@ -589,13 +612,34 @@ impl<'proj> TasksBuilder<'proj> {
         Ok((command, args))
     }
 
-    fn get_config_inherit_chain(&self, id: &Id) -> Vec<ConfigChain> {
+    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
         let mut configs = vec![];
 
-        extract_config(id, &self.global_tasks, &mut configs, true);
-        extract_config(id, &self.local_tasks, &mut configs, false);
+        let mut extendable_tasks = FxHashMap::default();
+        extendable_tasks.extend(&self.global_tasks);
+        extendable_tasks.extend(&self.local_tasks);
 
-        configs
+        // Inherit all global first
+        extract_config(
+            &mut configs,
+            id,
+            &self.global_tasks,
+            &extendable_tasks,
+            true,
+            false,
+        )?;
+
+        // Then all local
+        extract_config(
+            &mut configs,
+            id,
+            &self.local_tasks,
+            &extendable_tasks,
+            false,
+            false,
+        )?;
+
+        Ok(configs)
     }
 
     fn apply_filters_to_deps(&self, deps: Vec<Target>) -> Vec<Target> {

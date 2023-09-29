@@ -16,6 +16,10 @@
 
 - Updated `moon dep-graph` to support a task in closest project, similar to `moon run`.
 
+#### 🐞 Fixes
+
+- Fixed an issue where local tasks could not extend global tasks using the `extends` setting.
+
 ## 1.14.2
 
 #### 🐞 Fixes

@@ -1213,6 +1213,15 @@ mod tasks_builder {
         use super::*;
 
         #[tokio::test]
+        #[should_panic(expected = "Task base is extending an unknown task unknown.")]
+        async fn errors_for_unknown_extend_task() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends-unknown/moon.yml").await;
+
+            tasks.get("base").unwrap();
+        }
+
+        #[tokio::test]
         async fn handles_args() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
@@ -1284,6 +1293,24 @@ mod tasks_builder {
             assert!(!task.options.run_in_ci);
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
+        }
+
+        #[tokio::test]
+        async fn can_extend_a_global_from_local() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("local-extends-global").unwrap();
+
+            assert_eq!(task.command, "global-base");
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("global-base".into()),
+                    InputPath::ProjectFile("local-extender".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile("global/tasks/tag-extends.yml".into()),
+                ]
+            );
         }
 
         #[tokio::test]

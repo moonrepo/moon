@@ -27,11 +27,19 @@ fn extract_config<'builder, 'proj>(
     configs: &'builder mut Vec<ConfigChain<'proj>>,
     task_id: &'builder Id,
     tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    extendable_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
     inherited: bool,
+    extended: bool,
 ) -> miette::Result<()> {
-    if let Some(config) = tasks.get(task_id) {
+    let config = if extended {
+        extendable_tasks.get(task_id)
+    } else {
+        tasks.get(task_id)
+    };
+
+    if let Some(config) = config {
         if let Some(extend_task_id) = &config.extends {
-            if !tasks.contains_key(extend_task_id) {
+            if !extendable_tasks.contains_key(extend_task_id) {
                 return Err(TasksBuilderError::UnknownExtendsSource {
                     source_id: task_id.to_owned(),
                     target_id: extend_task_id.to_owned(),
@@ -39,7 +47,14 @@ fn extract_config<'builder, 'proj>(
                 .into());
             }
 
-            extract_config(configs, extend_task_id, tasks, inherited)?;
+            extract_config(
+                configs,
+                extend_task_id,
+                tasks,
+                extendable_tasks,
+                inherited,
+                true,
+            )?;
         }
 
         configs.push(ConfigChain { config, inherited });
@@ -47,65 +62,6 @@ fn extract_config<'builder, 'proj>(
 
     Ok(())
 }
-
-// fn extract_config<'builder, 'proj>(
-//     configs: &'builder mut Vec<ConfigChain<'proj>>,
-//     task_id: &'builder Id,
-//     local_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-//     global_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-// ) -> miette::Result<()> {
-//     let (inherited, config) = if let Some(cfg) = local_tasks.get(task_id) {
-//         (false, cfg)
-//     } else if let Some(cfg) = global_tasks.get(task_id) {
-//         (true, cfg)
-//     } else {
-//         return Ok(());
-//     };
-
-//     if let Some(extend_task_id) = &config.extends {
-//         if !local_tasks.contains_key(extend_task_id) && !global_tasks.contains_key(extend_task_id) {
-//             return Err(TasksBuilderError::UnknownExtendsSource {
-//                 source_id: task_id.to_owned(),
-//                 target_id: extend_task_id.to_owned(),
-//             }
-//             .into());
-//         }
-
-//         extract_config(configs, extend_task_id, local_tasks, global_tasks)?;
-//     }
-
-//     configs.push(ConfigChain { config, inherited });
-
-//     Ok(())
-// }
-
-// fn extract_config<'builder, 'proj>(
-//     configs: &'builder mut Vec<ConfigChain<'proj>>,
-//     task_id: &'builder Id,
-//     all_task_configs: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-//     global_task_ids: &'builder FxHashSet<&'proj Id>,
-// ) -> miette::Result<()> {
-//     if let Some(config) = all_task_configs.get(task_id) {
-//         if let Some(extend_task_id) = &config.extends {
-//             if !all_task_configs.contains_key(extend_task_id) {
-//                 return Err(TasksBuilderError::UnknownExtendsSource {
-//                     source_id: task_id.to_owned(),
-//                     target_id: extend_task_id.to_owned(),
-//                 }
-//                 .into());
-//             }
-
-//             extract_config(configs, extend_task_id, all_task_configs, global_task_ids)?;
-//         }
-
-//         configs.push(ConfigChain {
-//             config,
-//             inherited: global_task_ids.contains(task_id),
-//         });
-//     }
-
-//     Ok(())
-// }
 
 #[derive(Debug)]
 pub struct DetectPlatformEvent {
@@ -658,15 +614,30 @@ impl<'proj> TasksBuilder<'proj> {
 
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
         let mut configs = vec![];
-        let mut tasks = FxHashMap::default();
+
+        let mut extendable_tasks = FxHashMap::default();
+        extendable_tasks.extend(&self.global_tasks);
+        extendable_tasks.extend(&self.local_tasks);
 
         // Inherit all global first
-        tasks.extend(&self.global_tasks);
-        extract_config(&mut configs, id, &tasks, true)?;
+        extract_config(
+            &mut configs,
+            id,
+            &self.global_tasks,
+            &extendable_tasks,
+            true,
+            false,
+        )?;
 
         // Then all local
-        tasks.extend(&self.local_tasks);
-        extract_config(&mut configs, id, &tasks, false)?;
+        extract_config(
+            &mut configs,
+            id,
+            &self.local_tasks,
+            &extendable_tasks,
+            false,
+            false,
+        )?;
 
         Ok(configs)
     }

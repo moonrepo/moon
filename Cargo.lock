@@ -3338,7 +3338,6 @@ dependencies = [
  "serde_yaml 0.9.25",
  "starbase_sandbox",
  "tracing",
- "version_spec",
 ]
 
 [[package]]
@@ -4690,9 +4689,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.18.4"
+version = "0.18.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dec55eb026f4887cdf8ae1b6de17c0b96f4c83c50f1cdfea325468f3b3ff2fcc"
+checksum = "fe929fdf894df177f0812c3567a39ecaedf6d1d3d723c4bcd79ca3943158579e"
 dependencies = [
  "cached",
  "extism",
@@ -4735,9 +4734,9 @@ dependencies = [
 
 [[package]]
 name = "proto_wasm_plugin"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99e2b8dc5c25b9c3eaf31b21adf0890bd5e03476db73c22289b3cfa2a1397090"
+checksum = "7fdb73a4e0527cf8846435fb5bc568f71a59916a43fbaff35bf056c7302d0720"
 dependencies = [
  "extism",
  "proto_pdk_api",
@@ -5124,9 +5123,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.11.7"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe561cb5c8380d36ef80bf81a7cc16acfde8a0d130dd3394cc0cb48809d065ab"
+checksum = "9b21a16b67839da14dc4c238a18687628123cd707a075c1716af39a0dbbe5b61"
 dependencies = [
  "garde",
  "indexmap 2.0.0",
@@ -5146,9 +5145,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccc05cf6b1a3cb5c631b2955e63581b6ab1386eee26f71d5f0472dda99c61f84"
+checksum = "6cda999e66473ef3d9a430e87e441d1d4ab02b186d1c01de672f8a9f03690949"
 dependencies = [
  "convert_case",
  "darling 0.20.3",
@@ -5159,11 +5158,12 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.4.6"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2f0fb227e27447defdd9e26f121ac10836120b122c35d05b02c6e588a91353d"
+checksum = "09211563f9c50c0f268d1b66ba8369af388decb160fe271159fd3c486bf3c215"
 dependencies = [
  "semver",
+ "version_spec",
  "warpgate",
 ]
 
@@ -6432,7 +6432,6 @@ dependencies = [
  "human-sort",
  "once_cell",
  "regex",
- "schematic",
  "semver",
  "serde",
 ]

@@ -10,7 +10,7 @@ use moon_node_tool::NodeTool;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
+use moon_tool::{prepend_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::{get_cache_dir, path, string_vec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -163,6 +163,7 @@ pub fn create_target_command(
     let node_bin = node.get_bin_path()?;
     let node_options = create_node_options(&node.config, context, task)?;
     let mut command = Command::new(node.get_shim_path().unwrap_or(node_bin));
+    let mut is_package_manager = false;
 
     match task.command.as_str() {
         "node" | "nodejs" => {
@@ -172,12 +173,15 @@ pub fn create_target_command(
             command = Command::new(node.get_npx_path()?);
         }
         "npm" => {
+            is_package_manager = true;
             command = node.get_npm()?.create_command(node)?;
         }
         "pnpm" => {
+            is_package_manager = true;
             command = node.get_pnpm()?.create_command(node)?;
         }
         "yarn" | "yarnpkg" => {
+            is_package_manager = true;
             command = node.get_yarn()?.create_command(node)?;
         }
         bin => {
@@ -189,10 +193,12 @@ pub fn create_target_command(
         }
     };
 
-    command.env(
-        "PATH",
-        get_path_env_var(node.tool.get_bin_path()?.parent().unwrap()),
-    );
+    if !is_package_manager {
+        command.env(
+            "PATH",
+            prepend_path_env_var([node.tool.get_bin_path()?.parent().unwrap()]),
+        );
+    }
 
     prepare_target_command(&mut command, context, task, &node.config)?;
 

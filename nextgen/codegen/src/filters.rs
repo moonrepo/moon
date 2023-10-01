@@ -41,11 +41,15 @@ pub fn upper_snake_case(value: &Value, _: &HashMap<String, Value>) -> Result<Val
 }
 
 pub fn lower_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("lower_case", Case::Lower, value)
+    let s = try_get_value!("lower_case", "value", String, value);
+
+    Ok(to_value(s.to_lowercase()).unwrap())
 }
 
 pub fn upper_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
-    to_case("upper_case", Case::Upper, value)
+    let s = try_get_value!("upper_case", "value", String, value);
+
+    Ok(to_value(s.to_uppercase()).unwrap())
 }
 
 // PATHS

@@ -379,6 +379,17 @@ fn can_exec_global_bin_as_child_process() {
     assert!(predicate::str::contains("v18.0.0").eval(&output));
 }
 
+#[test]
+fn can_exec_global_bin_as_child_process_from_postinstall() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("postinstall:noop");
+    });
+
+    assert.success();
+}
+
 mod install_deps {
     use super::*;
 

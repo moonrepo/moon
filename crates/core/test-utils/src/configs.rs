@@ -284,6 +284,7 @@ pub fn get_node_fixture_configs() -> (
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("node".into(), "base".to_owned()),
             ("lifecycles".into(), "lifecycles".to_owned()),
+            ("postinstall".into(), "postinstall".to_owned()),
             (
                 "postinstallRecursion".into(),
                 "postinstall-recursion".to_owned(),

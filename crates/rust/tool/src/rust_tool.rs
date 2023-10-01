@@ -84,8 +84,8 @@ impl Tool for RustTool {
             // When offline and the tool doesn't exist, fallback to the global binary
         } else if proto_core::is_offline() {
             debug!(
-                    "No internet connection and Rust has not been setup, falling back to global binary in PATH"
-                );
+                "No internet connection and Rust has not been setup, falling back to global binary in PATH"
+            );
 
             self.global = true;
 

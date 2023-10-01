@@ -12,6 +12,9 @@ tasks:
   mjs:
     command: node
     args: ./mjsFile.mjs
+  execBinSelf:
+    command: node
+    args: ./execBin.js
 
   # Runner cases
   exitCodeNonZero:

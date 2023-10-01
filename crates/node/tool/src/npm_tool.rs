@@ -117,7 +117,10 @@ impl DependencyManager<NodeTool> for NpmTool {
         };
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
+            cmd.env(
+                "PATH",
+                get_path_env_var(self.tool.get_bin_path()?.parent().unwrap()),
+            );
         }
 
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);

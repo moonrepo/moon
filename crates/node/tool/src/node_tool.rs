@@ -78,7 +78,10 @@ impl NodeTool {
         let mut cmd = Command::new(self.get_npx_path()?);
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
+            cmd.env(
+                "PATH",
+                get_path_env_var(self.tool.get_bin_path()?.parent().unwrap()),
+            );
         }
 
         cmd.args(exec_args)

@@ -189,7 +189,10 @@ pub fn create_target_command(
         }
     };
 
-    command.env("PATH", get_path_env_var(&node.tool.get_tool_dir()));
+    command.env(
+        "PATH",
+        get_path_env_var(node.tool.get_bin_path()?.parent().unwrap()),
+    );
 
     prepare_target_command(&mut command, context, task, &node.config)?;
 

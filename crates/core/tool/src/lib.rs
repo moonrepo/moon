@@ -18,9 +18,17 @@ use std::path::Path;
 /// other binaries of the same name. Otherwise, tooling like nvm will
 /// intercept execution and break our processes. We can work around this
 /// by prepending the `PATH` environment variable.
-pub fn get_path_env_var(bin_dir: &Path) -> std::ffi::OsString {
+pub fn prepend_path_env_var<I, V>(paths: I) -> std::ffi::OsString
+where
+    I: IntoIterator<Item = V>,
+    V: AsRef<Path>,
+{
     let path = env::var("PATH").unwrap_or_default();
-    let mut paths = vec![bin_dir.to_path_buf()];
+
+    let mut paths = paths
+        .into_iter()
+        .map(|p| p.as_ref().to_path_buf())
+        .collect::<Vec<_>>();
 
     paths.extend(env::split_paths(&path).collect::<Vec<_>>());
 

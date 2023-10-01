@@ -4,7 +4,7 @@ use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
+use moon_tool::{async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool};
 use moon_utils::is_ci;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
@@ -117,7 +117,13 @@ impl DependencyManager<NodeTool> for NpmTool {
         };
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
+            cmd.env(
+                "PATH",
+                prepend_path_env_var([
+                    node.get_bin_path()?.parent().unwrap(),
+                    self.tool.get_bin_path()?.parent().unwrap(),
+                ]),
+            );
         }
 
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);

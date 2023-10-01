@@ -5,7 +5,7 @@ use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
+    async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
@@ -179,7 +179,13 @@ impl DependencyManager<NodeTool> for YarnTool {
         };
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
+            cmd.env(
+                "PATH",
+                prepend_path_env_var([
+                    node.get_bin_path()?.parent().unwrap(),
+                    self.tool.get_bin_path()?.parent().unwrap(),
+                ]),
+            );
         }
 
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);

@@ -366,6 +366,30 @@ fn avoids_postinstall_recursion() {
     assert.success();
 }
 
+#[test]
+fn can_exec_global_bin_as_child_process() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:execBinSelf");
+    });
+
+    let output = assert.output();
+
+    assert!(predicate::str::contains("v18.0.0").eval(&output));
+}
+
+#[test]
+fn can_exec_global_bin_as_child_process_from_postinstall() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("postinstall:noop");
+    });
+
+    assert.success();
+}
+
 mod install_deps {
     use super::*;
 

@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed some `PATH` inconsistencies when executing npm/pnpm/yarn binaries.
+- Fixed codegen `lower_case` and `upper_case` stripping characters.
 
 ## 1.14.3
 

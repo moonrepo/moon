@@ -293,6 +293,54 @@ mod scaffold_sources {
         // Check that some others DO NOT exist
         assert!(!docker.join("output-styles/style.js").exists());
     }
+
+    #[test]
+    fn doesnt_copy_node_modules() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+
+        sandbox.create_file("node_modules/root/file", "");
+        sandbox.create_file("basic/node_modules/nested/file", "");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("basic");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/sources");
+
+        assert!(!docker.join("node_modules").exists());
+        assert!(!docker.join("basic/node_nodules").exists());
+    }
+
+    #[test]
+    fn doesnt_copy_rust_target() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+
+        sandbox.create_file("target/root/file", "");
+        sandbox.create_file("basic/target/nested/file", "");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("basic");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/sources");
+
+        assert!(!docker.join("target").exists());
+        assert!(!docker.join("basic/target").exists());
+    }
 }
 
 mod prune {

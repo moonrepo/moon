@@ -132,7 +132,15 @@ fn scaffold_sources_project(
 
     manifest.focused_projects.insert(project_id.to_owned());
 
-    copy_files(&[&project.source], &workspace.root, docker_sources_root)?;
+    for file in glob::walk_files(
+        &project.root,
+        ["**/*", "!node_modules/**", "!target/**/*", "!vendor/**"],
+    )? {
+        fs::copy_file(
+            &file,
+            docker_sources_root.join(file.strip_prefix(&workspace.root).unwrap()),
+        )?;
+    }
 
     for dep_id in project.get_dependency_ids() {
         scaffold_sources_project(

@@ -4697,9 +4697,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.19.0"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c27854ec66a980607216b7e415a2d2354aea5fceaef9fab4732d4636f92557a"
+checksum = "2c68fe1824ab8c19d63392f686a9f48e03425f2e687b272b421170867de3b19b"
 dependencies = [
  "cached",
  "extism",
@@ -4728,9 +4728,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbd3aa9e83629f274dba31ed08d5d6d80a2d07d81c333f298a6d2518023cd144"
+checksum = "96b86ccfd83ad829a3666f84aacbd55e60cf0044608db9b1dfe890b80f0bafe9"
 dependencies = [
  "anyhow",
  "semver",
@@ -4743,13 +4743,14 @@ dependencies = [
 
 [[package]]
 name = "proto_wasm_plugin"
-version = "0.6.8"
+version = "0.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b071ce67ba3635587bd88d82a3fd7f1fd158786509555d6aeb93cacc1edc0388"
+checksum = "0ebaad7908984fc92cc4391ac5a85617b26d14cab9bca94133cb93838ea09c12"
 dependencies = [
  "extism",
  "proto_pdk_api",
  "serde_json",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -5745,9 +5746,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19f0bb1e81abbd0fb277368d39b0470f4bbc01b1f4c6cede760f3e4d4b5d9bfe"
+checksum = "96f6684a5639ae55e0454ad7dd9e09a1a488c9d1648fba2f4b4b1af3c93256d8"
 dependencies = [
  "serde",
  "serde_json",

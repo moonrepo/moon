@@ -14,6 +14,7 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where `moon docker scaffold` was too greedy and would copy files it shouldn't.
 - Fixed some `PATH` inconsistencies when executing npm/pnpm/yarn binaries.
 - Fixed codegen `lower_case` and `upper_case` stripping characters.
 

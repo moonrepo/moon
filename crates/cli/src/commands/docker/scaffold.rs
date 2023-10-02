@@ -134,7 +134,7 @@ fn scaffold_sources_project(
 
     for file in glob::walk_files(
         &project.root,
-        ["**/*", "!**/node_modules/**", "!target/**/*"],
+        ["**/*", "!node_modules/**", "!target/**/*", "!vendor/**"],
     )? {
         fs::copy_file(
             &file,

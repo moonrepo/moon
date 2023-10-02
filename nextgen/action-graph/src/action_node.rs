@@ -4,7 +4,7 @@ use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use moon_task::Target;
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
     InstallDeps { runtime: Runtime },
@@ -44,13 +44,41 @@ impl ActionNode {
     }
 
     pub fn label(&self) -> String {
-        String::new()
-    }
-}
-
-impl PartialEq for ActionNode {
-    fn eq(&self, other: &Self) -> bool {
-        self.label() == other.label()
+        match self {
+            Self::InstallDeps { runtime } => {
+                format!("Install{runtime}Deps({})", runtime.requirement)
+            }
+            Self::InstallProjectDeps { runtime, project } => {
+                format!(
+                    "Install{runtime}DepsInProject({}, {project})",
+                    runtime.requirement
+                )
+            }
+            Self::RunTask {
+                interactive,
+                persistent,
+                target,
+                ..
+            } => {
+                format!(
+                    "Run{}Task({target})",
+                    if *persistent {
+                        "Persistent"
+                    } else if *interactive {
+                        "Interactive"
+                    } else {
+                        ""
+                    }
+                )
+            }
+            Self::SetupTool { runtime } => {
+                format!("Setup{runtime}Tool({})", runtime.requirement)
+            }
+            Self::SyncProject { runtime, project } => {
+                format!("Sync{runtime}Project({project})")
+            }
+            Self::SyncWorkspace => "SyncWorkspace".into(),
+        }
     }
 }
 

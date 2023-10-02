@@ -15,6 +15,7 @@ moon_platform_runtime = { path = "../platform-runtime" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
+moon_query = { path = "../query" }
 miette = { workspace = true }
 petgraph = { workspace = true, features = ["stable_graph"] }
 rustc-hash = { workspace = true }

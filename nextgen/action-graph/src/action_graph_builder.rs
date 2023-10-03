@@ -1,3 +1,4 @@
+use crate::action_graph::ActionGraph;
 use crate::action_node::ActionNode;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
 use moon_platform::{PlatformManager, Runtime};
@@ -28,6 +29,10 @@ impl<'app> ActionGraphBuilder<'app> {
             project_graph,
             query: None,
         })
+    }
+
+    pub fn build(self) -> miette::Result<ActionGraph> {
+        Ok(ActionGraph::new(self.graph, self.indices))
     }
 
     pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {

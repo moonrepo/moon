@@ -1,8 +1,7 @@
-use std::hash::{Hash, Hasher};
-
 use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use moon_task::Target;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ActionNode {

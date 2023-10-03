@@ -3040,6 +3040,7 @@ dependencies = [
  "moon_task",
  "petgraph",
  "rustc-hash",
+ "starbase_sandbox",
  "thiserror",
  "tracing",
 ]

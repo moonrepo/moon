@@ -21,3 +21,6 @@ petgraph = { workspace = true, features = ["stable_graph"] }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

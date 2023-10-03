@@ -1,20 +1,49 @@
 use crate::action_graph_error::ActionGraphError;
 use crate::action_node::ActionNode;
+use moon_common::is_test_env;
 use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
-use rustc_hash::FxHashMap;
+use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::VecDeque;
+
+pub type GraphType = StableGraph<ActionNode, ()>;
+pub type IndicesMap = FxHashMap<ActionNode, NodeIndex>;
 
 pub struct ActionGraph {
-    graph: StableGraph<ActionNode, ()>,
-    indices: FxHashMap<ActionNode, NodeIndex>,
+    graph: GraphType,
+    indices: IndicesMap,
+
+    // States when iterating
+    queue: VecDeque<NodeIndex>,
+    visited: FxHashSet<NodeIndex>,
 }
 
 impl ActionGraph {
-    pub fn new(
-        graph: StableGraph<ActionNode, ()>,
-        indices: FxHashMap<ActionNode, NodeIndex>,
-    ) -> Self {
-        ActionGraph { graph, indices }
+    pub fn new(graph: GraphType, indices: IndicesMap) -> Self {
+        ActionGraph {
+            graph,
+            indices,
+            queue: VecDeque::default(),
+            visited: FxHashSet::default(),
+        }
+    }
+
+    pub fn reset_iterator(&mut self) -> miette::Result<()> {
+        self.detect_cycle()?;
+
+        self.queue.clear();
+        self.visited.clear();
+
+        // Extract root/initial nodes (those without edges)
+        self.queue.extend(self.graph.node_indices().filter(|&idx| {
+            self.graph
+                .neighbors_directed(idx, Incoming)
+                .next()
+                .is_none()
+        }));
+
+        Ok(())
     }
 
     pub fn is_empty(&self) -> bool {
@@ -33,31 +62,38 @@ impl ActionGraph {
         self.graph.node_weight(*index)
     }
 
-    pub fn create_queue(&self) -> miette::Result<()> {
-        self.detect_cycle()?;
-
-        Ok(())
-    }
-
     pub fn to_dot(&self) -> String {
-        let graph = self.graph.map(|_, n| n.label(), |_, e| e);
+        type DotGraph = StableGraph<String, ()>;
+
+        let is_test = is_test_env() || cfg!(debug_assertions);
+        let graph = self.graph.map(|_, n| n.label(), |_, _| ());
+
+        let edge = |_: &DotGraph, e: <&DotGraph as IntoEdgeReferences>::EdgeRef| {
+            if is_test {
+                String::new()
+            } else if e.source().index() == 0 {
+                String::from("arrowhead=none")
+            } else {
+                String::from("arrowhead=box, arrowtail=box")
+            }
+        };
+
+        let node = |_: &DotGraph, n: <&DotGraph as IntoNodeReferences>::NodeRef| {
+            if is_test {
+                format!("label=\"{}\" ", n.1)
+            } else {
+                format!(
+                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black ",
+                    n.1
+                )
+            }
+        };
 
         let dot = Dot::with_attr_getters(
             &graph,
             &[Config::EdgeNoLabel, Config::NodeNoLabel],
-            &|_, e| {
-                if e.source().index() == 0 {
-                    String::from("arrowhead=none")
-                } else {
-                    String::from("arrowhead=box, arrowtail=box")
-                }
-            },
-            &|_, n| {
-                format!(
-                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
-                    n.1
-                )
-            },
+            &edge,
+            &node,
         );
 
         format!("{dot:?}")
@@ -68,7 +104,14 @@ impl ActionGraph {
     }
 
     fn detect_cycle(&self) -> miette::Result<()> {
+        if self.is_empty() || self.get_node_count() == 1 {
+            return Ok(());
+        }
+
         let scc = petgraph::algo::kosaraju_scc(&self.graph);
+
+        // TODO
+        dbg!(&scc);
 
         // The cycle is always the last sequence in the list
         let Some(cycle) = scc.last() else {
@@ -82,5 +125,36 @@ impl ActionGraph {
             .join(" → ");
 
         Err(ActionGraphError::CycleDetected(path).into())
+    }
+}
+
+// This is based on the `Topo` struct from petgraph!
+impl Iterator for ActionGraph {
+    type Item = ActionNode;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(idx) = self.queue.pop_front() {
+            if self.visited.contains(&idx) {
+                continue;
+            }
+
+            self.visited.insert(idx);
+
+            for neighbor in self.graph.neighbors_directed(idx, Direction::Outgoing) {
+                // Look at each neighbor, and those that only have incoming edges
+                // from the already ordered list, they are the next to visit.
+                if self
+                    .graph
+                    .neighbors_directed(neighbor, Direction::Incoming)
+                    .all(|b| self.visited.contains(&b))
+                {
+                    self.queue.push_back(neighbor);
+                }
+            }
+
+            return self.graph.node_weight(idx).map(|n| n.to_owned());
+        }
+
+        None
     }
 }

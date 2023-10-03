@@ -33,12 +33,26 @@ pub enum ActionNode {
 impl ActionNode {
     pub fn get_runtime(&self) -> &Runtime {
         match self {
-            ActionNode::InstallDeps { runtime } => runtime,
-            ActionNode::InstallProjectDeps { runtime, .. } => runtime,
-            ActionNode::RunTask { runtime, .. } => runtime,
-            ActionNode::SetupTool { runtime } => runtime,
-            ActionNode::SyncProject { runtime, .. } => runtime,
-            ActionNode::SyncWorkspace => unreachable!(),
+            Self::InstallDeps { runtime } => runtime,
+            Self::InstallProjectDeps { runtime, .. } => runtime,
+            Self::RunTask { runtime, .. } => runtime,
+            Self::SetupTool { runtime } => runtime,
+            Self::SyncProject { runtime, .. } => runtime,
+            Self::SyncWorkspace => unreachable!(),
+        }
+    }
+
+    pub fn is_interactive(&self) -> bool {
+        match self {
+            Self::RunTask { interactive, .. } => *interactive,
+            _ => false,
+        }
+    }
+
+    pub fn is_persistent(&self) -> bool {
+        match self {
+            Self::RunTask { persistent, .. } => *persistent,
+            _ => false,
         }
     }
 

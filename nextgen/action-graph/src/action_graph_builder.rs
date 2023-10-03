@@ -15,19 +15,19 @@ type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 // TODO: run task dependents
 
 pub struct ActionGraphBuilder<'app> {
+    all_query: Option<Criteria>,
     graph: StableGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     project_graph: &'app ProjectGraph,
-    query: Option<Criteria>,
 }
 
 impl<'app> ActionGraphBuilder<'app> {
     pub fn new(project_graph: &'app ProjectGraph) -> miette::Result<ActionGraphBuilder> {
         Ok(ActionGraphBuilder {
+            all_query: None,
             graph: StableGraph::new(),
             indices: FxHashMap::default(),
             project_graph,
-            query: None,
         })
     }
 
@@ -60,7 +60,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn set_query(&mut self, input: &str) -> miette::Result<()> {
-        self.query = Some(build_query(input)?);
+        self.all_query = Some(build_query(input)?);
 
         Ok(())
     }
@@ -213,7 +213,7 @@ impl<'app> ActionGraphBuilder<'app> {
             TargetScope::All => {
                 let mut projects = vec![];
 
-                if let Some(all_query) = &self.query {
+                if let Some(all_query) = &self.all_query {
                     projects.extend(self.project_graph.query(all_query)?);
                 } else {
                     projects.extend(self.project_graph.get_all()?);

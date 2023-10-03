@@ -18,15 +18,24 @@ pub struct ActionGraphBuilder<'app> {
     all_query: Option<Criteria>,
     graph: StableGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
+    platform_manager: &'app PlatformManager,
     project_graph: &'app ProjectGraph,
 }
 
 impl<'app> ActionGraphBuilder<'app> {
-    pub fn new(project_graph: &'app ProjectGraph) -> miette::Result<ActionGraphBuilder> {
+    pub fn new(project_graph: &'app ProjectGraph) -> miette::Result<Self> {
+        ActionGraphBuilder::with_platforms(PlatformManager::read(), project_graph)
+    }
+
+    pub fn with_platforms(
+        platform_manager: &'app PlatformManager,
+        project_graph: &'app ProjectGraph,
+    ) -> miette::Result<Self> {
         Ok(ActionGraphBuilder {
             all_query: None,
             graph: StableGraph::new(),
             indices: FxHashMap::default(),
+            platform_manager,
             project_graph,
         })
     }
@@ -45,7 +54,7 @@ impl<'app> ActionGraphBuilder<'app> {
         task: Option<&Task>,
         allow_override: bool,
     ) -> Runtime {
-        if let Some(platform) = PlatformManager::read().find(|p| match task {
+        if let Some(platform) = self.platform_manager.find(|p| match task {
             Some(task) => p.matches(&task.platform, None),
             None => p.matches(&project.language.clone().into(), None),
         }) {
@@ -76,7 +85,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Ok(platform) = PlatformManager::read().get(project.language.clone()) {
+        if let Ok(platform) = self.platform_manager.get(project.language.clone()) {
             if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
                 in_project = true;
 
@@ -309,13 +318,10 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(*index);
         }
 
-        // Syncing depends on the language's tool to be installed
-        let sync_workspace_index = self.sync_workspace();
+        // Syncing requires the language's tool to be installed
         let setup_tool_index = self.setup_tool(node.get_runtime());
         let index = self.insert_node(node);
-
-        self.graph.add_edge(index, sync_workspace_index, ());
-        self.graph.add_edge(index, setup_tool_index, ());
+        let mut reqs = vec![setup_tool_index];
 
         // And we should also depend on other projects
         for dep_project_id in self.project_graph.dependencies_of(project)? {
@@ -323,9 +329,11 @@ impl<'app> ActionGraphBuilder<'app> {
             let dep_project_index = self.sync_project(&dep_project)?;
 
             if index != dep_project_index {
-                self.graph.add_edge(index, dep_project_index, ());
+                reqs.push(dep_project_index);
             }
         }
+
+        self.link_requirements(index, reqs);
 
         Ok(index)
     }
@@ -342,10 +350,26 @@ impl<'app> ActionGraphBuilder<'app> {
 
     // PRIVATE
 
-    fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
-        debug!("Adding {} to graph", color::muted_light(node.label()));
+    fn link_requirements(&mut self, index: NodeIndex, reqs: Vec<NodeIndex>) {
+        trace!(
+            index = index.index(),
+            requires = ?reqs,
+            "Linking requirements for index"
+        );
 
+        for req in reqs {
+            self.graph.add_edge(index, req, ());
+        }
+    }
+
+    fn insert_node(&mut self, node: ActionNode) -> NodeIndex {
         let index = self.graph.add_node(node.clone());
+
+        debug!(
+            index = index.index(),
+            "Adding {} to graph",
+            color::muted_light(node.label())
+        );
 
         self.indices.insert(node, index);
 

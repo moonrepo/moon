@@ -85,7 +85,11 @@ impl ActionNode {
                 )
             }
             Self::SetupTool { runtime } => {
-                format!("Setup{runtime}Tool({})", runtime.requirement)
+                if runtime.platform.is_system() {
+                    format!("SetupSystemTool")
+                } else {
+                    format!("Setup{runtime}Tool({})", runtime.requirement)
+                }
             }
             Self::SyncProject { runtime, project } => {
                 format!("Sync{runtime}Project({project})")

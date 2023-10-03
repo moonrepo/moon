@@ -30,7 +30,7 @@ impl ActionGraph {
     }
 
     pub fn reset_iterator(&mut self) -> miette::Result<()> {
-        self.detect_cycle()?;
+        // self.detect_cycle()?;
 
         self.queue.clear();
         self.visited.clear();
@@ -38,7 +38,7 @@ impl ActionGraph {
         // Extract root/initial nodes (those without edges)
         self.queue.extend(self.graph.node_indices().filter(|&idx| {
             self.graph
-                .neighbors_directed(idx, Incoming)
+                .neighbors_directed(idx, Outgoing)
                 .next()
                 .is_none()
         }));
@@ -140,12 +140,12 @@ impl Iterator for ActionGraph {
 
             self.visited.insert(idx);
 
-            for neighbor in self.graph.neighbors_directed(idx, Direction::Outgoing) {
+            for neighbor in self.graph.neighbors_directed(idx, Direction::Incoming) {
                 // Look at each neighbor, and those that only have incoming edges
                 // from the already ordered list, they are the next to visit.
                 if self
                     .graph
-                    .neighbors_directed(neighbor, Direction::Incoming)
+                    .neighbors_directed(neighbor, Direction::Outgoing)
                     .all(|b| self.visited.contains(&b))
                 {
                     self.queue.push_back(neighbor);

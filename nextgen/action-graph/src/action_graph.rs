@@ -7,7 +7,7 @@ use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::VecDeque;
 
-pub type GraphType = StableGraph<ActionNode, ()>;
+pub type GraphType = DiGraph<ActionNode, ()>;
 pub type IndicesMap = FxHashMap<ActionNode, NodeIndex>;
 
 pub struct ActionGraph {
@@ -63,7 +63,7 @@ impl ActionGraph {
     }
 
     pub fn to_dot(&self) -> String {
-        type DotGraph = StableGraph<String, ()>;
+        type DotGraph = DiGraph<String, ()>;
 
         let is_test = is_test_env() || cfg!(debug_assertions);
         let graph = self.graph.map(|_, n| n.label(), |_, _| ());
@@ -99,7 +99,7 @@ impl ActionGraph {
         format!("{dot:?}")
     }
 
-    pub fn to_labeled_graph(&self) -> StableGraph<String, String> {
+    pub fn to_labeled_graph(&self) -> DiGraph<String, String> {
         self.graph.map(|_, n| n.label(), |_, _| String::new())
     }
 

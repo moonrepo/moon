@@ -1,8 +1,0 @@
----
-source: nextgen/action-graph/tests/action_graph_test.rs
-assertion_line: 296
-expression: graph.to_dot()
----
-digraph {
-}
-

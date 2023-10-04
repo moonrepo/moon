@@ -17,7 +17,7 @@ moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
 moon_query = { path = "../query" }
 miette = { workspace = true }
-petgraph = { workspace = true, features = ["stable_graph"] }
+petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

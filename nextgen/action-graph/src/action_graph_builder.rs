@@ -16,7 +16,7 @@ type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
 pub struct ActionGraphBuilder<'app> {
     all_query: Option<Criteria>,
-    graph: StableGraph<ActionNode, ()>,
+    graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
     project_graph: &'app ProjectGraph,
@@ -33,7 +33,7 @@ impl<'app> ActionGraphBuilder<'app> {
     ) -> miette::Result<Self> {
         Ok(ActionGraphBuilder {
             all_query: None,
-            graph: StableGraph::new(),
+            graph: DiGraph::new(),
             indices: FxHashMap::default(),
             platform_manager,
             project_graph,

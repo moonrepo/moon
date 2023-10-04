@@ -30,7 +30,7 @@ Tasks are grouped into 1 of the following types based on their configured parame
 ## Modes
 
 Alongside types, tasks can also grouped into a special mode that provides unique handling within the
-dependency graph and pipelines.
+action graph and pipelines.
 
 ### Local only
 
@@ -52,8 +52,8 @@ tasks:
 
 Tasks that need to interact with the user via terminal prompts are known as interactive tasks.
 Because interactive tasks require stdin, and it's not possible to have multiple parallel running
-tasks interact with stdin, we isolate interactive tasks from other tasks in the dependency graph.
-This ensures that only 1 interactive task is ran at a time.
+tasks interact with stdin, we isolate interactive tasks from other tasks in the action graph. This
+ensures that only 1 interactive task is ran at a time.
 
 To mark a task as interactive, enable the [`options.interactive`](../config/project#interactive)
 setting.
@@ -72,8 +72,8 @@ Tasks that never complete, like servers and watchers, are known as persistent ta
 tasks are typically problematic when it comes to dependency graphs, because if they run in the
 middle of the graph, subsequent tasks will never run because the persistent task never completes!
 
-However in moon, this is a non-issue, as we collect all persistent tasks within the dependency graph
-and run them _last as a batch_. This is perfect for a few reasons:
+However in moon, this is a non-issue, as we collect all persistent tasks within the action graph and
+run them _last as a batch_. This is perfect for a few reasons:
 
 - All persistent tasks are ran in parallel, so they don't block each other.
 - Running both the backend API and frontend webapp in parallel is a breeze.

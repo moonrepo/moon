@@ -317,9 +317,9 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Syncing requires the language's tool to be installed
-        let sync_workspace_index = self.sync_workspace();
+        let setup_tool_index = self.setup_tool(node.get_runtime());
         let index = self.insert_node(node);
-        let mut reqs = vec![sync_workspace_index];
+        let mut reqs = vec![setup_tool_index];
 
         // And we should also depend on other projects
         for dep_project_id in self.project_graph.dependencies_of(project)? {

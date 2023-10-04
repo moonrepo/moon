@@ -13,7 +13,7 @@ function mockReport(): RunReport {
 				},
 				error: null,
 				flaky: false,
-				label: 'RunTarget(types:build)',
+				label: 'RunTask(types:build)',
 				nodeIndex: 5,
 				status: 'cached',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
@@ -28,7 +28,7 @@ function mockReport(): RunReport {
 				},
 				error: null,
 				flaky: true,
-				label: 'RunTarget(runtime:typecheck)',
+				label: 'RunTask(runtime:typecheck)',
 				nodeIndex: 4,
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
@@ -43,7 +43,7 @@ function mockReport(): RunReport {
 				},
 				error: null,
 				flaky: false,
-				label: 'RunTarget(types:typecheck)',
+				label: 'RunTask(types:typecheck)',
 				nodeIndex: 6,
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
@@ -58,7 +58,7 @@ function mockReport(): RunReport {
 				},
 				error: null,
 				flaky: false,
-				label: 'RunTarget(website:typecheck)',
+				label: 'RunTask(website:typecheck)',
 				nodeIndex: 8,
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
@@ -102,10 +102,10 @@ describe('sortReport()', () => {
 		sortReport(report, 'time', 'asc');
 
 		expect(report.actions.map((a) => a.label)).toEqual([
-			'RunTarget(types:build)',
-			'RunTarget(website:typecheck)',
-			'RunTarget(types:typecheck)',
-			'RunTarget(runtime:typecheck)',
+			'RunTask(types:build)',
+			'RunTask(website:typecheck)',
+			'RunTask(types:typecheck)',
+			'RunTask(runtime:typecheck)',
 		]);
 	});
 
@@ -114,10 +114,10 @@ describe('sortReport()', () => {
 		sortReport(report, 'time', 'desc');
 
 		expect(report.actions.map((a) => a.label)).toEqual([
-			'RunTarget(runtime:typecheck)',
-			'RunTarget(types:typecheck)',
-			'RunTarget(website:typecheck)',
-			'RunTarget(types:build)',
+			'RunTask(runtime:typecheck)',
+			'RunTask(types:typecheck)',
+			'RunTask(website:typecheck)',
+			'RunTask(types:build)',
 		]);
 	});
 
@@ -126,10 +126,10 @@ describe('sortReport()', () => {
 		sortReport(report, 'label', 'asc');
 
 		expect(report.actions.map((a) => a.label)).toEqual([
-			'RunTarget(runtime:typecheck)',
-			'RunTarget(types:build)',
-			'RunTarget(types:typecheck)',
-			'RunTarget(website:typecheck)',
+			'RunTask(runtime:typecheck)',
+			'RunTask(types:build)',
+			'RunTask(types:typecheck)',
+			'RunTask(website:typecheck)',
 		]);
 	});
 
@@ -138,10 +138,10 @@ describe('sortReport()', () => {
 		sortReport(report, 'label', 'desc');
 
 		expect(report.actions.map((a) => a.label)).toEqual([
-			'RunTarget(website:typecheck)',
-			'RunTarget(types:typecheck)',
-			'RunTarget(types:build)',
-			'RunTarget(runtime:typecheck)',
+			'RunTask(website:typecheck)',
+			'RunTask(types:typecheck)',
+			'RunTask(types:build)',
+			'RunTask(runtime:typecheck)',
 		]);
 	});
 });
@@ -156,7 +156,7 @@ describe('prepareReportActions()', () => {
 					secs: 0,
 				},
 				icon: '🟪',
-				label: 'RunTarget(types:build)',
+				label: 'RunTask(types:build)',
 				status: 'cached',
 				time: '0s',
 			},
@@ -167,7 +167,7 @@ describe('prepareReportActions()', () => {
 					secs: 1922,
 				},
 				icon: '🟩',
-				label: 'RunTarget(runtime:typecheck)',
+				label: 'RunTask(runtime:typecheck)',
 				status: 'passed',
 				time: '32m 2s',
 			},
@@ -178,7 +178,7 @@ describe('prepareReportActions()', () => {
 					secs: 64,
 				},
 				icon: '🟩',
-				label: 'RunTarget(types:typecheck)',
+				label: 'RunTask(types:typecheck)',
 				status: 'passed',
 				time: '1m 4s',
 			},
@@ -189,7 +189,7 @@ describe('prepareReportActions()', () => {
 					secs: 34,
 				},
 				icon: '🟩',
-				label: 'RunTarget(website:typecheck)',
+				label: 'RunTask(website:typecheck)',
 				status: 'passed',
 				time: '34.4s',
 			},

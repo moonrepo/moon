@@ -30,7 +30,7 @@ impl ActionGraph {
     }
 
     pub fn reset_iterator(&mut self) -> miette::Result<()> {
-        // self.detect_cycle()?;
+        self.detect_cycle()?;
 
         self.queue.clear();
         self.visited.clear();
@@ -104,27 +104,18 @@ impl ActionGraph {
     }
 
     fn detect_cycle(&self) -> miette::Result<()> {
-        if self.is_empty() || self.get_node_count() == 1 {
-            return Ok(());
+        if self.get_node_count() > 1 {
+            if let Err(cycle) = petgraph::algo::toposort(&self.graph, None) {
+                return Err(ActionGraphError::CycleDetected(
+                    self.get_node_from_index(&cycle.node_id())
+                        .map(|n| n.label())
+                        .unwrap_or_else(|| "(unknown)".into()),
+                )
+                .into());
+            }
         }
 
-        let scc = petgraph::algo::kosaraju_scc(&self.graph);
-
-        // TODO
-        dbg!(&scc);
-
-        // The cycle is always the last sequence in the list
-        let Some(cycle) = scc.last() else {
-            return Err(ActionGraphError::CycleDetected("(unknown)".into()).into());
-        };
-
-        let path = cycle
-            .iter()
-            .filter_map(|i| self.get_node_from_index(i).map(|n| n.label()))
-            .collect::<Vec<String>>()
-            .join(" → ");
-
-        Err(ActionGraphError::CycleDetected(path).into())
+        Ok(())
     }
 }
 

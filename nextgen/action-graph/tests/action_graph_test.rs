@@ -174,6 +174,31 @@ fn topo(mut graph: ActionGraph) -> Vec<ActionNode> {
 mod action_graph {
     use super::*;
 
+    // #[test]
+    // fn errors_on_cycle() {
+    //     let mut graph = ProjectGraphType::new();
+    //     let a = graph.add_node(create_project("a"));
+    //     let b = graph.add_node(create_project("b"));
+    //     graph.add_edge(a, b, DependencyScope::Build);
+    //     graph.add_edge(b, a, DependencyScope::Build);
+
+    //     let pg = ProjectGraph::new(
+    //         graph,
+    //         FxHashMap::from_iter([
+    //             ("a".into(), ProjectNode::new(0)),
+    //             ("b".into(), ProjectNode::new(1)),
+    //         ]),
+    //         &PathBuf::from("."),
+    //     );
+
+    //     let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+
+    //     builder.sync_project(&pg.get("a").unwrap()).unwrap();
+    //     builder.sync_project(&pg.get("b").unwrap()).unwrap();
+
+    //     builder.build().unwrap().reset_iterator().unwrap();
+    // }
+
     mod install_deps {
         use super::*;
 

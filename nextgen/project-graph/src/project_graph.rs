@@ -34,6 +34,15 @@ pub struct ProjectNode {
     pub source: WorkspaceRelativePathBuf,
 }
 
+impl ProjectNode {
+    pub fn new(index: usize) -> Self {
+        ProjectNode {
+            index: NodeIndex::new(index),
+            ..ProjectNode::default()
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct ProjectGraph {
     pub check_boundaries: bool,

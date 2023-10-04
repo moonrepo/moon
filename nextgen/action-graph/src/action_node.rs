@@ -86,7 +86,7 @@ impl ActionNode {
             }
             Self::SetupTool { runtime } => {
                 if runtime.platform.is_system() {
-                    format!("SetupSystemTool")
+                    "SetupSystemTool".into()
                 } else {
                     format!("Setup{runtime}Tool({})", runtime.requirement)
                 }

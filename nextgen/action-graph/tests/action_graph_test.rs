@@ -1,4 +1,7 @@
+#![allow(clippy::disallowed_names)]
+
 use moon_action_graph::*;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, LanguageType, NodeConfig,
@@ -10,16 +13,26 @@ use moon_platform_runtime::*;
 use moon_project::Project;
 use moon_project_graph::{GraphType as ProjectGraphType, ProjectGraph, ProjectNode};
 use moon_rust_platform::RustPlatform;
+use moon_task::{Target, Task};
 use proto_core::ProtoEnvironment;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::assert_snapshot;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+fn create_task(id: &str, project: &str) -> Task {
+    Task {
+        id: Id::raw(id),
+        target: Target::new(project, id).unwrap(),
+        ..Task::default()
+    }
+}
+
 fn create_project(id: &str) -> Project {
-    let mut project = Project::default();
-    project.id = Id::raw(id);
-    project
+    Project {
+        id: Id::raw(id),
+        ..Project::default()
+    }
 }
 
 fn create_project_graph() -> ProjectGraph {
@@ -99,6 +112,20 @@ fn create_project_graph() -> ProjectGraph {
     ProjectGraph::new(graph, nodes, &PathBuf::from("."))
 }
 
+fn create_node_runtime() -> Runtime {
+    Runtime::new(
+        PlatformType::Node,
+        RuntimeReq::with_version(Version::new(20, 0, 0)),
+    )
+}
+
+fn create_rust_runtime() -> Runtime {
+    Runtime::new(
+        PlatformType::Rust,
+        RuntimeReq::with_version(Version::new(1, 70, 0)),
+    )
+}
+
 fn create_platform_manager() -> PlatformManager {
     let mut manager = PlatformManager::default();
     let root = PathBuf::from(".");
@@ -121,7 +148,7 @@ fn create_platform_manager() -> PlatformManager {
         PlatformType::Rust,
         Box::new(RustPlatform::new(
             &RustConfig {
-                version: Some(UnresolvedVersionSpec::Version(Version::new(1, 72, 0))),
+                version: Some(UnresolvedVersionSpec::Version(Version::new(1, 70, 0))),
                 ..Default::default()
             },
             &root,
@@ -146,6 +173,286 @@ fn topo(mut graph: ActionGraph) -> Vec<ActionNode> {
 
 mod action_graph {
     use super::*;
+
+    mod install_deps {
+        use super::*;
+
+        #[test]
+        fn graphs() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let bar = pg.get("bar").unwrap();
+            builder.install_deps(&bar, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        fn ignores_dupes() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let bar = pg.get("bar").unwrap();
+            builder.install_deps(&bar, None).unwrap();
+            builder.install_deps(&bar, None).unwrap();
+            builder.install_deps(&bar, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    }
+                ]
+            );
+        }
+    }
+
+    mod run_task {
+        use super::*;
+        use starbase_sandbox::pretty_assertions::assert_eq;
+
+        #[test]
+        fn graphs() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        fn ignores_dupes() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            builder.run_task(&project, &task, None).unwrap();
+            builder.run_task(&project, &task, None).unwrap();
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        fn doesnt_graph_if_not_affected_by_touched_files() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            builder
+                // Empty set works fine, just needs to be some
+                .run_task(&project, &task, Some(&FxHashSet::default()))
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert!(topo(graph).is_empty());
+        }
+
+        #[test]
+        fn graphs_if_affected_by_touched_files() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let file = WorkspaceRelativePathBuf::from("bar/file.js");
+
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+            task.input_files.insert(file.clone());
+
+            builder
+                .run_task(&project, &task, Some(&FxHashSet::from_iter([file])))
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert!(!topo(graph).is_empty());
+        }
+
+        #[test]
+        fn task_can_have_a_diff_platform_from_project() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            // node
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Rust;
+
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SetupTool {
+                        runtime: create_rust_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_rust_runtime()
+                    },
+                    ActionNode::RunTask {
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_rust_runtime(),
+                        target: task.target
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        fn sets_interactive() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.options.interactive = true;
+
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph).last().unwrap(),
+                &ActionNode::RunTask {
+                    interactive: true,
+                    persistent: false,
+                    runtime: Runtime::system(),
+                    target: task.target
+                }
+            );
+        }
+
+        #[test]
+        fn sets_persistent() {
+            let pm = create_platform_manager();
+            let pg = create_project_graph();
+            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+
+            let project = pg.get("bar").unwrap();
+
+            let mut task = create_task("build", "bar");
+            task.options.persistent = true;
+
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph).last().unwrap(),
+                &ActionNode::RunTask {
+                    interactive: false,
+                    persistent: true,
+                    runtime: Runtime::system(),
+                    target: task.target
+                }
+            );
+        }
+    }
 
     mod setup_tool {
         use super::*;
@@ -248,9 +555,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
-                        runtime: Runtime::system()
-                    },
                     ActionNode::SyncProject {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
@@ -274,9 +578,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
-                        runtime: Runtime::system()
-                    },
                     ActionNode::SyncProject {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
@@ -310,9 +611,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
-                        runtime: Runtime::system()
-                    },
                     ActionNode::SyncProject {
                         project: Id::raw("qux"),
                         runtime: Runtime::system()
@@ -346,9 +644,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
-                        runtime: Runtime::system()
-                    },
                     ActionNode::SyncProject {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
@@ -380,31 +675,13 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
-                        runtime: Runtime::new(
-                            PlatformType::Rust,
-                            RuntimeReq::with_version(Version::new(1, 72, 0))
-                        )
-                    },
-                    ActionNode::SetupTool {
-                        runtime: Runtime::new(
-                            PlatformType::Node,
-                            RuntimeReq::with_version(Version::new(20, 0, 0))
-                        )
-                    },
                     ActionNode::SyncProject {
                         project: Id::raw("qux"),
-                        runtime: Runtime::new(
-                            PlatformType::Rust,
-                            RuntimeReq::with_version(Version::new(1, 72, 0))
-                        )
+                        runtime: create_rust_runtime()
                     },
                     ActionNode::SyncProject {
                         project: Id::raw("bar"),
-                        runtime: Runtime::new(
-                            PlatformType::Node,
-                            RuntimeReq::with_version(Version::new(20, 0, 0))
-                        )
+                        runtime: create_node_runtime()
                     }
                 ]
             );
@@ -429,18 +706,6 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
-                        runtime: Runtime::new_override(
-                            PlatformType::Node,
-                            RuntimeReq::with_version(Version::new(18, 0, 0))
-                        )
-                    },
-                    ActionNode::SetupTool {
-                        runtime: Runtime::new(
-                            PlatformType::Node,
-                            RuntimeReq::with_version(Version::new(20, 0, 0))
-                        )
-                    },
                     ActionNode::SyncProject {
                         project: Id::raw("baz"),
                         runtime: Runtime::new_override(
@@ -450,10 +715,7 @@ mod action_graph {
                     },
                     ActionNode::SyncProject {
                         project: Id::raw("bar"),
-                        runtime: Runtime::new(
-                            PlatformType::Node,
-                            RuntimeReq::with_version(Version::new(20, 0, 0))
-                        )
+                        runtime: create_node_runtime()
                     },
                 ]
             );

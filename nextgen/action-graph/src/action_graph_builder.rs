@@ -49,7 +49,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn get_runtime(
-        &mut self,
+        &self,
         project: &Project,
         task: Option<&Task>,
         allow_override: bool,
@@ -78,8 +78,8 @@ impl<'app> ActionGraphBuilder<'app> {
 
     pub fn install_deps(
         &mut self,
-        runtime: &Runtime,
         project: &Project,
+        task: Option<&Task>,
     ) -> miette::Result<NodeIndex> {
         let mut in_project = false;
 
@@ -90,7 +90,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 in_project = true;
 
                 debug!(
-                    "Project {} not within dependency manager workspace, dependencies will be installed within the project instead of the root",
+                    "Project {} is not within the dependency manager workspace, dependencies will be installed within the project instead of the root",
                     color::id(&project.id),
                 );
             }
@@ -99,11 +99,11 @@ impl<'app> ActionGraphBuilder<'app> {
         let node = if in_project {
             ActionNode::InstallProjectDeps {
                 project: project.id.to_owned(),
-                runtime: runtime.to_owned(),
+                runtime: self.get_runtime(project, task, true),
             }
         } else {
             ActionNode::InstallDeps {
-                runtime: self.get_runtime(project, None, false),
+                runtime: self.get_runtime(project, task, false),
             }
         };
 
@@ -115,7 +115,7 @@ impl<'app> ActionGraphBuilder<'app> {
         let setup_tool_index = self.setup_tool(node.get_runtime());
         let index = self.insert_node(node);
 
-        self.graph.add_edge(index, setup_tool_index, ());
+        self.link_requirements(index, vec![setup_tool_index]);
 
         Ok(index)
     }
@@ -150,12 +150,10 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_deps(node.get_runtime(), project)?;
+        let install_deps_index = self.install_deps(project, Some(task))?;
         let sync_project_index = self.sync_project(project)?;
         let index = self.insert_node(node);
-
-        self.graph.add_edge(index, install_deps_index, ());
-        self.graph.add_edge(index, sync_project_index, ());
+        let mut reqs = vec![install_deps_index, sync_project_index];
 
         // And we also need to create edges for task dependencies
         if !task.deps.is_empty() {
@@ -167,10 +165,10 @@ impl<'app> ActionGraphBuilder<'app> {
 
             // We don't pass touched files to dependencies, because if the parent
             // task is affected/going to run, then so should all of these!
-            for dep_index in self.run_task_dependencies(task, None)? {
-                self.graph.add_edge(index, dep_index, ());
-            }
+            reqs.extend(self.run_task_dependencies(task, None)?);
         }
+
+        self.link_requirements(index, reqs);
 
         Ok(Some(index))
     }
@@ -194,7 +192,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
                     // When serial, next child depends on previous child
                 } else if let Some(prev) = previous_target_index {
-                    self.graph.add_edge(dep_index, prev, ());
+                    self.link_requirements(dep_index, vec![prev]);
                 }
 
                 previous_target_index = Some(dep_index);
@@ -303,7 +301,7 @@ impl<'app> ActionGraphBuilder<'app> {
         let sync_workspace_index = self.sync_workspace();
         let index = self.insert_node(node);
 
-        self.graph.add_edge(index, sync_workspace_index, ());
+        self.link_requirements(index, vec![sync_workspace_index]);
 
         index
     }
@@ -319,9 +317,9 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Syncing requires the language's tool to be installed
-        let setup_tool_index = self.setup_tool(node.get_runtime());
+        let sync_workspace_index = self.sync_workspace();
         let index = self.insert_node(node);
-        let mut reqs = vec![setup_tool_index];
+        let mut reqs = vec![sync_workspace_index];
 
         // And we should also depend on other projects
         for dep_project_id in self.project_graph.dependencies_of(project)? {

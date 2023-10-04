@@ -1,10 +1,8 @@
 ---
 source: nextgen/action-graph/tests/action_graph_test.rs
+assertion_line: 296
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="SyncWorkspace" ]
-    1 [ label="SyncSystemProject(bar)" ]
-    1 -> 0 [ ]
 }
 

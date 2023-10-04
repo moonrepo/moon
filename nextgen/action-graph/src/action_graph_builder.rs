@@ -56,7 +56,7 @@ impl<'app> ActionGraphBuilder<'app> {
     ) -> Runtime {
         if let Some(platform) = self.platform_manager.find(|p| match task {
             Some(task) => p.matches(&task.platform, None),
-            None => p.matches(&project.language.clone().into(), None),
+            None => p.matches(&project.platform, None),
         }) {
             return platform.get_runtime_from_config(if allow_override {
                 Some(&project.config)

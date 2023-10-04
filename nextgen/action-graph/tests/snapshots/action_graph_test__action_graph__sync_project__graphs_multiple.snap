@@ -4,12 +4,14 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SyncSystemProject(foo)" ]
-    2 [ label="SyncSystemProject(bar)" ]
-    3 [ label="SyncSystemProject(qux)" ]
-    2 -> 0 [ ]
+    1 [ label="SetupSystemTool" ]
+    2 [ label="SyncSystemProject(foo)" ]
+    3 [ label="SyncSystemProject(bar)" ]
+    4 [ label="SyncSystemProject(qux)" ]
     1 -> 0 [ ]
-    1 -> 2 [ ]
-    3 -> 0 [ ]
+    3 -> 1 [ ]
+    2 -> 1 [ ]
+    2 -> 3 [ ]
+    4 -> 1 [ ]
 }
 

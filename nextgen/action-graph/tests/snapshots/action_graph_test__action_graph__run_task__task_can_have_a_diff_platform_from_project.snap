@@ -6,12 +6,14 @@ digraph {
     0 [ label="SyncWorkspace" ]
     1 [ label="SetupRustTool(1.70.0)" ]
     2 [ label="InstallRustDeps(1.70.0)" ]
-    3 [ label="SyncNodeProject(bar)" ]
-    4 [ label="RunTask(bar:build)" ]
+    3 [ label="SetupNodeTool(20.0.0)" ]
+    4 [ label="SyncNodeProject(bar)" ]
+    5 [ label="RunTask(bar:build)" ]
     1 -> 0 [ ]
     2 -> 1 [ ]
     3 -> 0 [ ]
-    4 -> 2 [ ]
     4 -> 3 [ ]
+    5 -> 2 [ ]
+    5 -> 4 [ ]
 }
 

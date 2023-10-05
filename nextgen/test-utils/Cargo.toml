@@ -1,0 +1,16 @@
+[package]
+name = "moon_test_utils2"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Testing utilities."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+moon_config = { path = "../config" }
+moon_project_graph = { path = "../project-graph" }
+moon_vcs = { path = "../vcs" }
+miette = { workspace = true }
+starbase_events = { workspace = true }
+starbase_sandbox = { workspace = true }

@@ -1,123 +1,25 @@
 use moon_common::{path::WorkspaceRelativePathBuf, Id};
-use moon_config::PartialTaskConfig;
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, InheritedTasksEntry,
-    InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects, WorkspaceProjectsConfig,
+    DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, WorkspaceProjects,
+    WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
-use moon_project_builder::DetectLanguageEvent;
 use moon_project_graph::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
+    ProjectGraph, ProjectGraphBuilder,
 };
 use moon_query::build_query;
 use moon_task::Target;
-use moon_task_builder::DetectPlatformEvent;
-use moon_vcs::{BoxedVcs, Git};
+use moon_test_utils2::*;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_events::{Emitter, EventState};
+use starbase_events::EventState;
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
-use starbase_utils::string_vec;
-use starbase_utils::{fs, json};
-use std::collections::BTreeMap;
+use starbase_utils::{fs, json, string_vec};
 use std::fs::OpenOptions;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-
-#[derive(Default)]
-struct GraphContainer {
-    pub inherited_tasks: InheritedTasksManager,
-    pub toolchain_config: ToolchainConfig,
-    pub workspace_config: WorkspaceConfig,
-    pub workspace_root: PathBuf,
-    pub vcs: Option<BoxedVcs>,
-}
-
-impl GraphContainer {
-    pub fn new(root: &Path) -> Self {
-        let mut graph = Self {
-            workspace_root: root.to_path_buf(),
-            ..Default::default()
-        };
-
-        // Add a global task to all projects
-        graph.inherited_tasks.configs.insert(
-            "*".into(),
-            InheritedTasksEntry {
-                input: ".moon/tasks.yml".into(),
-                config: PartialInheritedTasksConfig {
-                    tasks: Some(BTreeMap::from_iter([(
-                        "global".into(),
-                        PartialTaskConfig::default(),
-                    )])),
-                    ..PartialInheritedTasksConfig::default()
-                },
-            },
-        );
-
-        // Always use the node platform
-        graph.toolchain_config.node = Some(NodeConfig::default());
-
-        // Use folders as project names
-        graph.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*"]);
-
-        graph
-    }
-
-    pub fn new_with_vcs(root: &Path) -> Self {
-        let mut container = Self::new(root);
-        container.vcs = Some(Box::new(Git::load(root, "master", &[]).unwrap()));
-        container
-    }
-
-    pub fn create_context(&self) -> ProjectGraphBuilderContext {
-        ProjectGraphBuilderContext {
-            extend_project: Emitter::<ExtendProjectEvent>::new(),
-            extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
-            detect_language: Emitter::<DetectLanguageEvent>::new(),
-            detect_platform: Emitter::<DetectPlatformEvent>::new(),
-            inherited_tasks: &self.inherited_tasks,
-            toolchain_config: &self.toolchain_config,
-            vcs: self.vcs.as_ref(),
-            working_dir: &self.workspace_root,
-            workspace_config: &self.workspace_config,
-            workspace_root: &self.workspace_root,
-        }
-    }
-
-    pub async fn build_graph<'l>(&self, context: ProjectGraphBuilderContext<'l>) -> ProjectGraph {
-        let mut builder = ProjectGraphBuilder::new(context).await.unwrap();
-        builder.load_all().await.unwrap();
-
-        let mut graph = builder.build().await.unwrap();
-        graph.check_boundaries = true;
-        graph.get_all().unwrap();
-        graph
-    }
-
-    pub async fn build_graph_for<'l>(
-        &self,
-        context: ProjectGraphBuilderContext<'l>,
-        ids: &[&str],
-    ) -> ProjectGraph {
-        let mut builder = ProjectGraphBuilder::new(context).await.unwrap();
-
-        for id in ids {
-            builder.load(id).await.unwrap();
-        }
-
-        let graph = builder.build().await.unwrap();
-
-        for id in ids {
-            graph.get(id).unwrap();
-        }
-
-        graph
-    }
-}
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     let mut file = OpenOptions::new()
@@ -144,19 +46,6 @@ fn get_ids_from_projects(projects: Vec<Arc<Project>>) -> Vec<String> {
 
 mod project_graph {
     use super::*;
-
-    async fn generate_project_graph(fixture: &str) -> ProjectGraph {
-        let sandbox = create_sandbox(fixture);
-
-        generate_project_graph_from_sandbox(sandbox.path()).await
-    }
-
-    async fn generate_project_graph_from_sandbox(path: &Path) -> ProjectGraph {
-        let container = GraphContainer::new(path);
-        let context = container.create_context();
-
-        container.build_graph(context).await
-    }
 
     #[tokio::test]
     async fn gets_by_id() {
@@ -219,7 +108,7 @@ mod project_graph {
             // Move files so that we can infer a compatible root project name
             fs::copy_dir_all(sandbox.path(), sandbox.path(), &root).unwrap();
 
-            let mut container = GraphContainer::new(&root);
+            let mut container = ProjectGraphContainer::new(&root);
 
             container.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*", "."]);
 
@@ -235,7 +124,7 @@ mod project_graph {
         #[tokio::test]
         async fn paths() {
             let sandbox = create_sandbox("dependencies");
-            let mut container = GraphContainer::new(sandbox.path());
+            let mut container = ProjectGraphContainer::new(sandbox.path());
 
             container.workspace_config.projects =
                 WorkspaceProjects::Sources(FxHashMap::from_iter([
@@ -252,7 +141,7 @@ mod project_graph {
         #[tokio::test]
         async fn paths_and_globs() {
             let sandbox = create_sandbox("dependencies");
-            let mut container = GraphContainer::new(sandbox.path());
+            let mut container = ProjectGraphContainer::new(sandbox.path());
 
             container.workspace_config.projects =
                 WorkspaceProjects::Both(WorkspaceProjectsConfig {
@@ -308,7 +197,7 @@ mod project_graph {
             sandbox.enable_git();
             sandbox.create_file(".gitignore", "*-other");
 
-            let container = GraphContainer::new_with_vcs(sandbox.path());
+            let container = ProjectGraphContainer::with_vcs(sandbox.path());
             let context = container.create_context();
             let graph = container.build_graph(context).await;
 
@@ -348,7 +237,7 @@ mod project_graph {
         async fn do_generate(root: &Path) -> ProjectGraph {
             let cache_engine = CacheEngine::new(root).unwrap();
             let hash_engine = HashEngine::new(&cache_engine.cache_dir).unwrap();
-            let container = GraphContainer::new_with_vcs(root);
+            let container = ProjectGraphContainer::with_vcs(root);
             let context = container.create_context();
 
             let mut builder = ProjectGraphBuilder::generate(context, &cache_engine, &hash_engine)
@@ -538,13 +427,12 @@ mod project_graph {
         async fn generate_inheritance_project_graph(fixture: &str) -> ProjectGraph {
             let sandbox = create_sandbox(fixture);
 
-            let mut container = GraphContainer::new(sandbox.path());
-            container.inherited_tasks =
-                InheritedTasksManager::load(sandbox.path(), sandbox.path().join(".moon")).unwrap();
-
-            let context = container.create_context();
-
-            container.build_graph(context).await
+            generate_project_graph_with_changes(sandbox.path(), |container| {
+                container.inherited_tasks =
+                    InheritedTasksManager::load(sandbox.path(), sandbox.path().join(".moon"))
+                        .unwrap();
+            })
+            .await
         }
 
         #[tokio::test]
@@ -802,7 +690,7 @@ mod project_graph {
             #[tokio::test]
             async fn no_depends_on() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = GraphContainer::new(sandbox.path());
+                let container = ProjectGraphContainer::new(sandbox.path());
                 let context = container.create_context();
                 let graph = container.build_graph_for(context, &["no-depends-on"]).await;
 
@@ -812,7 +700,7 @@ mod project_graph {
             #[tokio::test]
             async fn some_depends_on() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = GraphContainer::new(sandbox.path());
+                let container = ProjectGraphContainer::new(sandbox.path());
                 let context = container.create_context();
                 let graph = container
                     .build_graph_for(context, &["some-depends-on"])
@@ -824,7 +712,7 @@ mod project_graph {
             #[tokio::test]
             async fn from_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = GraphContainer::new(sandbox.path());
+                let container = ProjectGraphContainer::new(sandbox.path());
                 let context = container.create_context();
                 let graph = container
                     .build_graph_for(context, &["from-task-deps"])
@@ -836,7 +724,7 @@ mod project_graph {
             #[tokio::test]
             async fn self_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = GraphContainer::new(sandbox.path());
+                let container = ProjectGraphContainer::new(sandbox.path());
                 let context = container.create_context();
                 let graph = container
                     .build_graph_for(context, &["self-task-deps"])
@@ -852,7 +740,7 @@ mod project_graph {
 
         async fn generate_aliases_project_graph() -> ProjectGraph {
             let sandbox = create_sandbox("aliases");
-            let container = GraphContainer::new(sandbox.path());
+            let container = ProjectGraphContainer::new(sandbox.path());
             let context = container.create_context();
 
             // Set aliases for projects
@@ -1036,7 +924,7 @@ mod project_graph {
 
             func(&sandbox);
 
-            let mut container = GraphContainer::new(sandbox.path());
+            let mut container = ProjectGraphContainer::new(sandbox.path());
 
             container
                 .workspace_config
@@ -1178,7 +1066,7 @@ mod project_graph {
 
             func(&sandbox);
 
-            let mut container = GraphContainer::new(sandbox.path());
+            let mut container = ProjectGraphContainer::new(sandbox.path());
 
             container
                 .workspace_config
@@ -1464,7 +1352,7 @@ mod project_graph {
         #[tokio::test]
         async fn renders_partial() {
             let sandbox = create_sandbox("dependencies");
-            let container = GraphContainer::new(sandbox.path());
+            let container = ProjectGraphContainer::new(sandbox.path());
             let context = container.create_context();
             let graph = container.build_graph_for(context, &["b"]).await;
 

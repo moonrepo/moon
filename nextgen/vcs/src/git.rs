@@ -83,7 +83,7 @@ pub struct Git {
     pub remote_candidates: Vec<String>,
 
     /// Path between the git and workspace root.
-    pub root_prefix: RelativePathBuf,
+    pub root_prefix: Option<RelativePathBuf>,
 
     /// If in a git worktree, the root of the worktree (the `.git` file).
     pub worktree_root: Option<PathBuf>,
@@ -176,10 +176,10 @@ impl Git {
             ignore,
             remote_candidates: remote_candidates.to_owned(),
             root_prefix: if repository_root == workspace_root {
-                RelativePathBuf::default()
+                None
             } else {
                 RelativePathBuf::from_path(workspace_root.strip_prefix(repository_root).unwrap())
-                    .into_diagnostic()?
+                    .ok()
             },
             process: ProcessCache::new("git", workspace_root),
             git_root,
@@ -301,7 +301,11 @@ impl Vcs for Git {
                 // When moon is setup in a sub-folder and not the git root,
                 // we need to prefix the paths because `--stdin-paths` assumes
                 // the paths are from the git root and don't work correctly...
-                objects.push(self.root_prefix.join(file).as_str().to_owned());
+                if let Some(prefix) = &self.root_prefix {
+                    objects.push(prefix.join(file).as_str().to_owned());
+                } else {
+                    objects.push(file.to_owned());
+                }
             }
         }
 
@@ -332,8 +336,10 @@ impl Vcs for Git {
                     let mut file = WorkspaceRelativePathBuf::from(&slice[i]);
 
                     // Convert the prefixed path back to a workspace relative one...
-                    if !self.root_prefix.as_str().is_empty() {
-                        file = file.strip_prefix(&self.root_prefix).unwrap().to_owned();
+                    if let Some(prefix) = &self.root_prefix {
+                        if file.starts_with(prefix) {
+                            file = file.strip_prefix(prefix).unwrap().to_owned();
+                        }
                     }
 
                     map.insert(file, hash.to_owned());

@@ -44,7 +44,7 @@ mod root_detection {
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree_root, None);
         assert_eq!(git.process.root, sandbox.path());
-        assert_eq!(git.root_prefix, RelativePathBuf::new());
+        assert_eq!(git.root_prefix, None);
     }
 
     #[tokio::test]
@@ -56,7 +56,7 @@ mod root_detection {
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree_root, None);
         assert_eq!(git.process.root, sandbox.path());
-        assert_eq!(git.root_prefix, RelativePathBuf::new());
+        assert_eq!(git.root_prefix, None);
     }
 
     #[tokio::test]
@@ -74,7 +74,7 @@ mod root_detection {
         assert_eq!(git.git_root, sandbox.path().join(".git"));
         assert_eq!(git.worktree_root, None);
         assert_eq!(git.process.root, sandbox.path().join("nested/moon"));
-        assert_eq!(git.root_prefix, RelativePathBuf::from("nested/moon"));
+        assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
 
     #[tokio::test]
@@ -91,7 +91,7 @@ mod root_detection {
         assert!(git.git_root.ends_with(".git/worktrees/tree"));
         assert_eq!(git.worktree_root, Some(sandbox.path().join("tree")));
         assert_eq!(git.process.root, sandbox.path().join("tree"));
-        assert_eq!(git.root_prefix, RelativePathBuf::new());
+        assert_eq!(git.root_prefix, None);
     }
 
     #[tokio::test]
@@ -113,7 +113,7 @@ mod root_detection {
         assert!(git.git_root.ends_with(".git/worktrees/tree"));
         assert_eq!(git.worktree_root, Some(sandbox.path().join("tree")));
         assert_eq!(git.process.root, sandbox.path().join("tree/nested/moon"));
-        assert_eq!(git.root_prefix, RelativePathBuf::from("nested/moon"));
+        assert_eq!(git.root_prefix, Some(RelativePathBuf::from("nested/moon")));
     }
 }
 

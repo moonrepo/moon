@@ -148,8 +148,6 @@ mod unix {
 
         run_generator(&sandbox.path().join("tree")).await;
 
-        sandbox.debug_files();
-
         let pre_commit = sandbox.path().join("tree/.moon/hooks/pre-commit.sh");
         let post_push = sandbox.path().join("tree/.moon/hooks/post-push.sh");
 

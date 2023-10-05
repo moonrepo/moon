@@ -60,14 +60,14 @@ semver = "1.0.19"
 serde = { version = "1.0.188", features = ["derive", "rc"] }
 serde_json = "1.0.107"
 serde_yaml = "0.9.25"
-starbase = "0.2.6"
-starbase_archive = { version = "0.2.2", default-features = false, features = [
+starbase = "0.2.7"
+starbase_archive = { version = "0.2.3", default-features = false, features = [
 	"tar-gz",
 ] }
 starbase_events = { version = "0.2.1" }
-starbase_sandbox = "0.1.10"
-starbase_styles = { version = "0.1.15", features = ["relative-path"] }
-starbase_utils = { version = "0.3.2", default-features = false, features = [
+starbase_sandbox = "0.1.11"
+starbase_styles = { version = "0.1.16", features = ["relative-path"] }
+starbase_utils = { version = "0.3.4", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",

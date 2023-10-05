@@ -180,27 +180,36 @@ impl DepGraph {
 
     #[track_caller]
     fn detect_cycle(&self) -> miette::Result<()> {
-        use petgraph::algo::kosaraju_scc;
+        // use petgraph::algo::kosaraju_scc;
 
-        let scc = kosaraju_scc(&self.graph);
+        // let scc = kosaraju_scc(&self.graph);
 
-        // Remove the sync workspace node
-        let scc = scc
-            .into_iter()
-            .filter(|list| !(list.len() == 1 && list[0].index() == 0))
-            .collect::<Vec<Vec<NodeIndex>>>();
+        // // Remove the sync workspace node
+        // let scc = scc
+        //     .into_iter()
+        //     .filter(|list| !(list.len() == 1 && list[0].index() == 0))
+        //     .collect::<Vec<Vec<NodeIndex>>>();
 
-        // The cycle is always the last sequence in the list
-        let Some(cycle) = scc.last() else {
-            return Err(DepGraphError::CycleDetected("(unknown)".into()).into());
-        };
+        // // The cycle is always the last sequence in the list
+        // let Some(cycle) = scc.last() else {
+        //     return Err(DepGraphError::CycleDetected("(unknown)".into()).into());
+        // };
 
-        let path = cycle
-            .iter()
-            .filter_map(|i| self.get_node_from_index(i).map(|n| n.label()))
-            .collect::<Vec<String>>()
-            .join(" → ");
+        // let path = cycle
+        //     .iter()
+        //     .filter_map(|i| self.get_node_from_index(i).map(|n| n.label()))
+        //     .collect::<Vec<String>>()
+        //     .join(" → ");
 
-        Err(DepGraphError::CycleDetected(path).into())
+        // Err(DepGraphError::CycleDetected(path).into())
+
+        if let Err(error) = toposort(&self.graph, None) {
+            return Err(DepGraphError::CycleDetected(
+                self.get_node_from_index(&error.node_id()).unwrap().label(),
+            )
+            .into());
+        }
+
+        Ok(())
     }
 }

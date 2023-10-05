@@ -4,14 +4,14 @@
 # Thanks to Deno for the original script:
 # https://github.com/denoland/deno_install/blob/master/install.sh
 
-set -e
+set -eo pipefail
 
 bin="proto"
 arch=$(uname -sm)
 version="${1:-latest}"
 ext=".tar.xz"
 
-if [ "$OS" = "Windows_NT" ]; then
+if [[ "$OS" == "Windows_NT" ]]; then
 	target="proto_cli-x86_64-pc-windows-msvc"
 	bin="proto.exe"
 	ext=".zip"
@@ -43,7 +43,7 @@ else
   is_wsl=false
 fi
 
-if [ $# -eq 0 ]; then
+if [[ "$version" == "latest" ]]; then
 	download_url="https://github.com/moonrepo/proto/releases/latest/download/$target$ext"
 else
 	download_url="https://github.com/moonrepo/proto/releases/download/v$version/$target$ext"
@@ -62,7 +62,7 @@ fi
 
 curl --fail --location --progress-bar --output "$download_file" "$download_url"
 
-if [ "$ext" = ".zip" ]; then
+if [[ "$ext" == ".zip" ]]; then
 	unzip -d "$temp_dir" "$download_file"
 
 	# Unzip doesnt remove components folder
@@ -91,7 +91,7 @@ echo "Launch a new terminal window to start using proto!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ "$PROTO_DEBUG" = "true" ]; then
+if [[ "$PROTO_DEBUG" == "true" ]]; then
 	echo
 	echo "arch=$arch"
 	echo "target=$target"

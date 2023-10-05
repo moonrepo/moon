@@ -70,6 +70,9 @@ pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
 
+    /// Root of the `.git` directory.
+    pub git_root: PathBuf,
+
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
 
@@ -78,9 +81,6 @@ pub struct Git {
 
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
-
-    /// Root of the git repository (where `.git` directory is located).
-    pub repository_root: PathBuf,
 
     /// Path between the git and workspace root.
     pub root_prefix: RelativePathBuf,
@@ -106,8 +106,9 @@ impl Git {
 
         // Find the .git dir
         let mut current_dir = workspace_root;
-        let mut repository_root = workspace_root.to_path_buf();
         let mut worktree_root = None;
+        let repository_root;
+        let git_root;
 
         loop {
             let git_check = current_dir.join(".git");
@@ -116,16 +117,20 @@ impl Git {
                 if git_check.is_file() {
                     debug!(
                         git = ?git_check,
-                        "Found a .git file (worktree root), continuing search"
+                        "Found a .git file (worktree root)"
                     );
 
+                    git_root = extract_gitdir_from_worktree(&git_check)?;
+                    repository_root = current_dir.to_path_buf();
                     worktree_root = Some(current_dir.to_path_buf());
+                    break;
                 } else {
                     debug!(
                         git = ?git_check,
                         "Found a .git directory (repository root)"
                     );
 
+                    git_root = git_check.to_path_buf();
                     repository_root = current_dir.to_path_buf();
                     break;
                 }
@@ -135,14 +140,17 @@ impl Git {
                 Some(parent) => current_dir = parent,
                 None => {
                     debug!("Unable to find .git, falling back to workspace root");
+
+                    git_root = workspace_root.join(".git");
+                    repository_root = workspace_root.to_path_buf();
                     break;
                 }
             };
         }
 
         // Load .gitignore
-        let mut ignore: Option<Gitignore> = None;
         let ignore_path = repository_root.join(".gitignore");
+        let mut ignore: Option<Gitignore> = None;
 
         if ignore_path.exists() {
             debug!(
@@ -163,20 +171,18 @@ impl Git {
             );
         }
 
-        let active_dir = worktree_root.as_ref().unwrap_or(&repository_root);
-
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
             ignore,
             remote_candidates: remote_candidates.to_owned(),
-            root_prefix: if active_dir == workspace_root {
+            root_prefix: if repository_root == workspace_root {
                 RelativePathBuf::default()
             } else {
-                RelativePathBuf::from_path(workspace_root.strip_prefix(active_dir).unwrap())
+                RelativePathBuf::from_path(workspace_root.strip_prefix(repository_root).unwrap())
                     .into_diagnostic()?
             },
             process: ProcessCache::new("git", workspace_root),
-            repository_root,
+            git_root,
             worktree_root,
         })
     }
@@ -249,7 +255,9 @@ impl Git {
     }
 
     fn get_working_root(&self) -> &Path {
-        self.worktree_root.as_ref().unwrap_or(&self.repository_root)
+        self.worktree_root
+            .as_deref()
+            .unwrap_or(self.git_root.parent().unwrap())
     }
 }
 
@@ -385,11 +393,11 @@ impl Vcs for Git {
             return Ok(PathBuf::from(dir).join("hooks"));
         }
 
-        Ok(self.repository_root.join(".git").join("hooks"))
+        Ok(self.git_root.join("hooks"))
     }
 
     async fn get_repository_root(&self) -> miette::Result<PathBuf> {
-        Ok(self.repository_root.to_owned())
+        Ok(self.git_root.parent().unwrap().to_owned())
     }
 
     async fn get_repository_slug(&self) -> miette::Result<&str> {
@@ -643,4 +651,18 @@ impl Vcs for Git {
             false
         }
     }
+}
+
+fn extract_gitdir_from_worktree(git_file: &Path) -> miette::Result<PathBuf> {
+    let contents = std::fs::read_to_string(git_file).into_diagnostic()?;
+
+    for line in contents.lines() {
+        if let Some(suffix) = line.strip_prefix("gitdir:") {
+            return PathBuf::from(suffix.trim())
+                .canonicalize()
+                .into_diagnostic();
+        }
+    }
+
+    Err(miette::miette!("Failed to parse .git worktree file."))
 }

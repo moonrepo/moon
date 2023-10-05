@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Temporarily fixed the "A dependency cycle has been detected for (unknown)" issue.
+
 ## 1.14.4
 
 #### 🐞 Fixes

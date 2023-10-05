@@ -19,7 +19,12 @@ $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/moon/releases/download/v${Version}/${Target}"
 }
 
-$InstallDir = "${Home}\.moon\bin"
+$InstallDir = if ($env:MOON_INSTALL_DIR -eq "") {
+  "${Home}\.moon\bin"
+} else {
+  $env:MOON_INSTALL_DIR
+}
+
 $BinPath = "${InstallDir}\moon.exe"
 
 if (!(Test-Path $InstallDir)) {

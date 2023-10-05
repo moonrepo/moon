@@ -43,13 +43,18 @@ else
   is_wsl=false
 fi
 
-if [ $# -eq 0 ]; then
+if [ "$version" == "latest" ]; then
 	download_url="https://github.com/moonrepo/moon/releases/latest/download/${target}"
 else
 	download_url="https://github.com/moonrepo/moon/releases/download/v${version}/${target}"
 fi
 
-install_dir="$HOME/.moon/bin"
+if [ -z "$MOON_INSTALL_DIR" ]; then
+	install_dir="$MOON_INSTALL_DIR"
+else
+	install_dir="$HOME/.moon/bin"
+fi
+
 bin_path="$install_dir/$bin"
 
 if [ ! -d "$install_dir" ]; then
@@ -60,15 +65,9 @@ curl --fail --location --progress-bar --output "$bin_path" "$download_url"
 chmod +x "$bin_path"
 
 echo "Successfully installed moon to $bin_path"
-
-if ln -sf "$bin_path" "/usr/local/bin/$bin" &> /dev/null; then
-	echo "Run 'moon --help' to get started!"
-else
-	echo "Manually update PATH in your shell to get started!"
-	echo
-	echo "  export PATH=\"\$HOME/.moon/bin:\$PATH\""
-fi
-
+echo "Manually update PATH in your shell to get started!"
+echo
+echo "  export PATH=\"$install_dir:\$PATH\""
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 

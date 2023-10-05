@@ -136,6 +136,32 @@ mod unix {
         assert_snapshot!(fs::read_to_string(pre_commit).unwrap());
         assert_snapshot!(fs::read_to_string(post_push).unwrap());
     }
+
+    #[tokio::test]
+    async fn supports_git_worktrees() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_git(|cmd| {
+            cmd.args(["worktree", "add", "tree"]);
+        });
+
+        run_generator(&sandbox.path().join("tree")).await;
+
+        sandbox.debug_files();
+
+        let pre_commit = sandbox.path().join("tree/.moon/hooks/pre-commit.sh");
+        let post_push = sandbox.path().join("tree/.moon/hooks/post-push.sh");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        let pre_commit = sandbox.path().join(".git/worktrees/tree/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/worktrees/tree/hooks/post-push");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+    }
 }
 
 #[cfg(windows)]

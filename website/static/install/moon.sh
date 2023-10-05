@@ -10,7 +10,7 @@ bin="moon"
 arch=$(uname -sm)
 version="${1:-latest}"
 
-if [ "$OS" = "Windows_NT" ]; then
+if [[ "$OS" == "Windows_NT" ]]; then
 	target="moon-x86_64-pc-windows-msvc.exe"
 	bin="moon.exe"
 else
@@ -43,7 +43,7 @@ else
   is_wsl=false
 fi
 
-if [ "$version" == "latest" ]; then
+if [[ "$version" == "latest" ]]; then
 	download_url="https://github.com/moonrepo/moon/releases/latest/download/${target}"
 else
 	download_url="https://github.com/moonrepo/moon/releases/download/v${version}/${target}"
@@ -71,7 +71,7 @@ echo "  export PATH=\"$install_dir:\$PATH\""
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ "$MOON_DEBUG" = "true" ]; then
+if [[ "$MOON_DEBUG" == "true" ]]; then
 	echo
 	echo "arch=$arch"
 	echo "target=$target"

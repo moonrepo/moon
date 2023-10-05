@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Temporarily fixed the "A dependency cycle has been detected for (unknown)" issue.
+- Fixed an issue where Git hooks were not created properly when using Git worktrees.
 
 ## 1.14.4
 

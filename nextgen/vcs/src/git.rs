@@ -253,12 +253,6 @@ impl Git {
 
         Ok(&self.default_branch)
     }
-
-    fn get_working_root(&self) -> &Path {
-        self.worktree_root
-            .as_deref()
-            .unwrap_or(self.git_root.parent().unwrap())
-    }
 }
 
 #[async_trait]
@@ -295,7 +289,6 @@ impl Vcs for Git {
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
-        let is_not_root = self.process.root != self.get_working_root();
 
         for file in files {
             let abs_file = self.process.root.join(file);
@@ -308,11 +301,7 @@ impl Vcs for Git {
                 // When moon is setup in a sub-folder and not the git root,
                 // we need to prefix the paths because `--stdin-paths` assumes
                 // the paths are from the git root and don't work correctly...
-                if is_not_root {
-                    objects.push(self.root_prefix.join(file).as_str().to_owned());
-                } else {
-                    objects.push(file.to_owned());
-                }
+                objects.push(self.root_prefix.join(file).as_str().to_owned());
             }
         }
 
@@ -343,7 +332,7 @@ impl Vcs for Git {
                     let mut file = WorkspaceRelativePathBuf::from(&slice[i]);
 
                     // Convert the prefixed path back to a workspace relative one...
-                    if is_not_root {
+                    if !self.root_prefix.as_str().is_empty() {
                         file = file.strip_prefix(&self.root_prefix).unwrap().to_owned();
                     }
 
@@ -397,7 +386,11 @@ impl Vcs for Git {
     }
 
     async fn get_repository_root(&self) -> miette::Result<PathBuf> {
-        Ok(self.git_root.parent().unwrap().to_owned())
+        Ok(self
+            .worktree_root
+            .as_deref()
+            .unwrap_or_else(|| self.git_root.parent().unwrap())
+            .to_path_buf())
     }
 
     async fn get_repository_slug(&self) -> miette::Result<&str> {
@@ -641,7 +634,7 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        self.get_working_root().join(".git").exists()
+        self.git_root.exists()
     }
 
     fn is_ignored(&self, file: &Path) -> bool {

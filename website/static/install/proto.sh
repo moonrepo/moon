@@ -4,7 +4,7 @@
 # Thanks to Deno for the original script:
 # https://github.com/denoland/deno_install/blob/master/install.sh
 
-set -e
+set -eo pipefail
 
 bin="proto"
 arch=$(uname -sm)

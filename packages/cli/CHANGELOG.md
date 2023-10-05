@@ -16,6 +16,7 @@
 
 - Temporarily fixed the "A dependency cycle has been detected for (unknown)" issue.
 - Fixed an issue where Git hooks were not created properly when using Git worktrees.
+- Fixed a panic when attempting to clean/parse a JSON string.
 
 ## 1.14.4
 

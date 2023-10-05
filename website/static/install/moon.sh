@@ -50,9 +50,9 @@ else
 fi
 
 if [ -z "$MOON_INSTALL_DIR" ]; then
-	install_dir="$MOON_INSTALL_DIR"
-else
 	install_dir="$HOME/.moon/bin"
+else
+	install_dir="$MOON_INSTALL_DIR"
 fi
 
 bin_path="$install_dir/$bin"

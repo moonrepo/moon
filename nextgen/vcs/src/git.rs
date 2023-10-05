@@ -70,6 +70,9 @@ pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
 
+    /// Root of the `.git` directory.
+    pub git_root: PathBuf,
+
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
 
@@ -79,11 +82,8 @@ pub struct Git {
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
 
-    /// Root of the git repository (where `.git` directory is located).
-    pub repository_root: PathBuf,
-
     /// Path between the git and workspace root.
-    pub root_prefix: RelativePathBuf,
+    pub root_prefix: Option<RelativePathBuf>,
 
     /// If in a git worktree, the root of the worktree (the `.git` file).
     pub worktree_root: Option<PathBuf>,
@@ -106,8 +106,9 @@ impl Git {
 
         // Find the .git dir
         let mut current_dir = workspace_root;
-        let mut repository_root = workspace_root.to_path_buf();
         let mut worktree_root = None;
+        let repository_root;
+        let git_root;
 
         loop {
             let git_check = current_dir.join(".git");
@@ -116,16 +117,20 @@ impl Git {
                 if git_check.is_file() {
                     debug!(
                         git = ?git_check,
-                        "Found a .git file (worktree root), continuing search"
+                        "Found a .git file (worktree root)"
                     );
 
+                    git_root = extract_gitdir_from_worktree(&git_check)?;
+                    repository_root = current_dir.to_path_buf();
                     worktree_root = Some(current_dir.to_path_buf());
+                    break;
                 } else {
                     debug!(
                         git = ?git_check,
                         "Found a .git directory (repository root)"
                     );
 
+                    git_root = git_check.to_path_buf();
                     repository_root = current_dir.to_path_buf();
                     break;
                 }
@@ -135,14 +140,17 @@ impl Git {
                 Some(parent) => current_dir = parent,
                 None => {
                     debug!("Unable to find .git, falling back to workspace root");
+
+                    git_root = workspace_root.join(".git");
+                    repository_root = workspace_root.to_path_buf();
                     break;
                 }
             };
         }
 
         // Load .gitignore
-        let mut ignore: Option<Gitignore> = None;
         let ignore_path = repository_root.join(".gitignore");
+        let mut ignore: Option<Gitignore> = None;
 
         if ignore_path.exists() {
             debug!(
@@ -163,20 +171,18 @@ impl Git {
             );
         }
 
-        let active_dir = worktree_root.as_ref().unwrap_or(&repository_root);
-
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
             ignore,
             remote_candidates: remote_candidates.to_owned(),
-            root_prefix: if active_dir == workspace_root {
-                RelativePathBuf::default()
+            root_prefix: if repository_root == workspace_root {
+                None
             } else {
-                RelativePathBuf::from_path(workspace_root.strip_prefix(active_dir).unwrap())
-                    .into_diagnostic()?
+                RelativePathBuf::from_path(workspace_root.strip_prefix(repository_root).unwrap())
+                    .ok()
             },
             process: ProcessCache::new("git", workspace_root),
-            repository_root,
+            git_root,
             worktree_root,
         })
     }
@@ -247,10 +253,6 @@ impl Git {
 
         Ok(&self.default_branch)
     }
-
-    fn get_working_root(&self) -> &Path {
-        self.worktree_root.as_ref().unwrap_or(&self.repository_root)
-    }
 }
 
 #[async_trait]
@@ -287,7 +289,6 @@ impl Vcs for Git {
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
-        let is_not_root = self.process.root != self.get_working_root();
 
         for file in files {
             let abs_file = self.process.root.join(file);
@@ -300,8 +301,8 @@ impl Vcs for Git {
                 // When moon is setup in a sub-folder and not the git root,
                 // we need to prefix the paths because `--stdin-paths` assumes
                 // the paths are from the git root and don't work correctly...
-                if is_not_root {
-                    objects.push(self.root_prefix.join(file).as_str().to_owned());
+                if let Some(prefix) = &self.root_prefix {
+                    objects.push(prefix.join(file).as_str().to_owned());
                 } else {
                     objects.push(file.to_owned());
                 }
@@ -335,8 +336,10 @@ impl Vcs for Git {
                     let mut file = WorkspaceRelativePathBuf::from(&slice[i]);
 
                     // Convert the prefixed path back to a workspace relative one...
-                    if is_not_root {
-                        file = file.strip_prefix(&self.root_prefix).unwrap().to_owned();
+                    if let Some(prefix) = &self.root_prefix {
+                        if file.starts_with(prefix) {
+                            file = file.strip_prefix(prefix).unwrap().to_owned();
+                        }
                     }
 
                     map.insert(file, hash.to_owned());
@@ -385,11 +388,15 @@ impl Vcs for Git {
             return Ok(PathBuf::from(dir).join("hooks"));
         }
 
-        Ok(self.repository_root.join(".git").join("hooks"))
+        Ok(self.git_root.join("hooks"))
     }
 
     async fn get_repository_root(&self) -> miette::Result<PathBuf> {
-        Ok(self.repository_root.to_owned())
+        Ok(self
+            .worktree_root
+            .as_deref()
+            .unwrap_or_else(|| self.git_root.parent().unwrap())
+            .to_path_buf())
     }
 
     async fn get_repository_slug(&self) -> miette::Result<&str> {
@@ -633,7 +640,7 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        self.get_working_root().join(".git").exists()
+        self.git_root.exists()
     }
 
     fn is_ignored(&self, file: &Path) -> bool {
@@ -643,4 +650,18 @@ impl Vcs for Git {
             false
         }
     }
+}
+
+fn extract_gitdir_from_worktree(git_file: &Path) -> miette::Result<PathBuf> {
+    let contents = std::fs::read_to_string(git_file).into_diagnostic()?;
+
+    for line in contents.lines() {
+        if let Some(suffix) = line.strip_prefix("gitdir:") {
+            return PathBuf::from(suffix.trim())
+                .canonicalize()
+                .into_diagnostic();
+        }
+    }
+
+    Err(miette::miette!("Failed to parse .git worktree file."))
 }

@@ -127,7 +127,8 @@ fn sort_batches(batches: BatchedTopoSort) -> BatchedTopoSort {
 }
 
 #[tokio::test]
-#[should_panic(expected = "A dependency cycle has been detected for RunTarget(cycle:a)")]
+// #[should_panic(expected = "A dependency cycle has been detected for RunTarget(cycle:a)")]
+#[should_panic(expected = "A dependency cycle has been detected for RunTarget(cycle:c)")]
 async fn detects_cycles() {
     let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 

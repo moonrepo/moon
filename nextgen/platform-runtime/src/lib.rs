@@ -12,6 +12,10 @@ pub enum RuntimeReq {
 }
 
 impl RuntimeReq {
+    pub fn with_version(version: Version) -> Self {
+        Self::Toolchain(UnresolvedVersionSpec::Version(version))
+    }
+
     pub fn is_global(&self) -> bool {
         matches!(self, Self::Global)
     }

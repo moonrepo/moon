@@ -1,0 +1,8 @@
+---
+source: nextgen/action-graph/tests/action_graph_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+}
+

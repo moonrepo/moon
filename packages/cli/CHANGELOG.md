@@ -10,6 +10,63 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Tasks that depend (via `deps`) on other tasks from arbitrary projects (the parent project doesn't
+  implicitly or explicitly depend on the other project) will now automatically mark that other
+  project as a "peer" dependency. For example, "b" becomes a peer dependency for "a".
+
+  ```yaml
+  tasks:
+    build:
+      deps: ['b:build']
+
+  # Now internally becomes:
+  dependsOn:
+    - id: 'b'
+      scope: 'peer'
+
+  tasks:
+    build:
+      deps: ['b:build']
+  ```
+
+  We're marking this as a breaking change as this could subtly introduce cycles in the project graph
+  that weren't present before, and for Node.js projects, this may inject `peerDependencies`.
+
+#### 🎉 Release
+
+- Rewrote the dependency graph from the ground-up:
+  - Now known as the action graph.
+  - All actions now depend on the `SyncWorkspace` action, instead of this action running
+    arbitrarily.
+  - Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
+  - Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
+- Updated the action graph to iterate using a topological queue, which executes ready-to-run actions
+  in the thread pool. Previously, we would sort topologically _into batches_, which worked, but
+  resulted in many threads uselessly waiting for an action to run, which was blocked waiting for the
+  current batch to complete.
+  - For large graphs, this should result in a significant performance improvement, upwards of 10x.
+  - Persistent tasks will still be ran as a batch, but since it's the last operation, it's fine.
+- Released a new GitHub action,
+  [`moonrepo/setup-toolchain`](https://github.com/marketplace/actions/setup-proto-and-moon-toolchains),
+  that replaces both `setup-moon-action` and `setup-proto`.
+
+#### 🚀 Updates
+
+- Added a `moon action-graph` command and deprecated `moon dep-graph`.
+
+#### 🐞 Fixes
+
+- Fixed an issue where task dependents (via `moon ci` or `moon run --dependents`) wouldn't always
+  locate all downstream tasks.
+
+#### ⚙️ Internal
+
+- Added in-memory caching to project graph file system lookup operations.
+
 ## 1.14.5
 
 #### 🐞 Fixes

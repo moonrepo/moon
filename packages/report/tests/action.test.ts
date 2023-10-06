@@ -10,7 +10,7 @@ const action: Action = {
 	},
 	error: null,
 	flaky: false,
-	label: 'RunTarget(app:build)',
+	label: 'RunTask(app:build)',
 	nodeIndex: 8,
 	status: 'passed',
 	finishedAt: '2022-09-12T22:50:12.932311Z',

@@ -1,0 +1,6 @@
+node:
+  version: '20.0.0'
+  packageManager: 'npm'
+
+rust:
+  version: '1.70.0'

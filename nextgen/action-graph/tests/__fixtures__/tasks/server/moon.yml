@@ -1,0 +1,10 @@
+language: 'rust'
+
+tasks:
+  build:
+    command: 'build'
+    deps: ['^:build']
+  lint:
+    command: 'lint'
+  test:
+    command: 'test'

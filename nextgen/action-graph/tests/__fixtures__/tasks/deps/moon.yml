@@ -1,0 +1,31 @@
+tasks:
+  base: {}
+
+  a:
+    command: 'a'
+  b:
+    command: 'b'
+  c:
+    command: 'd'
+
+  parallel:
+    deps: [c, a, b]
+
+  serial:
+    deps: [b, c, a]
+    options:
+      runDepsInParallel: false
+
+  chain1:
+    deps: ['chain2']
+  chain2:
+    deps: ['chain3']
+  chain3: {}
+
+  internal:
+    deps: ['base']
+
+  cycle1:
+    deps: ['cycle2']
+  cycle2:
+    deps: ['cycle1']

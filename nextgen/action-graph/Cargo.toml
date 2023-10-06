@@ -1,0 +1,29 @@
+[package]
+name = "moon_action_graph"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Dependency graph for actions (tasks)."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+moon_common = { path = "../common" }
+# TODO remove
+moon_platform = { path = "../../crates/core/platform" }
+moon_platform_runtime = { path = "../platform-runtime" }
+moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
+moon_task = { path = "../task" }
+moon_query = { path = "../query" }
+miette = { workspace = true }
+petgraph = { workspace = true }
+rustc-hash = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_config = { path = "../config" }
+moon_test_utils2 = { path = "../test-utils" }
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }

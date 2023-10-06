@@ -227,6 +227,10 @@ const config = {
 						from: '/docs/guides/git-hooks',
 						to: '/docs/guides/vcs-hooks',
 					},
+					{
+						from: '/docs/commands/dep-graph',
+						to: '/docs/commands/action-graph',
+					},
 				],
 			},
 		],

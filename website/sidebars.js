@@ -97,12 +97,12 @@ const sidebars = {
 			label: 'Commands',
 			items: [
 				'commands/overview',
+				'commands/action-graph',
 				'commands/bin',
 				'commands/ci',
 				'commands/check',
 				'commands/clean',
 				'commands/completions',
-				'commands/dep-graph',
 				{
 					type: 'category',
 					label: 'docker',

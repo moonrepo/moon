@@ -1,12 +1,13 @@
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::{color, consts, Id};
 use moon_config::{
-    DependencyConfig, DependencySource, InheritedTasksManager, InheritedTasksResult, LanguageType,
-    PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
+    DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
+    InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig,
+    ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{TargetScope, Task};
 use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, Event};
@@ -197,11 +198,13 @@ impl<'app> ProjectBuilder<'app> {
 
     #[tracing::instrument(name = "project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
+        let tasks = self.build_tasks().await?;
+
         let mut project = Project {
             alias: self.alias.map(|a| a.to_owned()),
-            dependencies: self.build_dependencies()?,
+            dependencies: self.build_dependencies(&tasks)?,
             file_groups: self.build_file_groups()?,
-            tasks: self.build_tasks().await?,
+            tasks,
             id: self.id.to_owned(),
             language: self.language,
             platform: self.platform,
@@ -220,7 +223,10 @@ impl<'app> ProjectBuilder<'app> {
         Ok(project)
     }
 
-    fn build_dependencies(&self) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
+    fn build_dependencies(
+        &self,
+        tasks: &BTreeMap<Id, Task>,
+    ) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(id = self.id.as_str(), "Building project dependencies");
@@ -237,7 +243,41 @@ impl<'app> ProjectBuilder<'app> {
 
                 deps.insert(dep_config.id.clone(), dep_config);
             }
+        }
 
+        // Tasks can depend on arbitray projects, so include them also
+        for task_config in tasks.values() {
+            for task_dep in &task_config.deps {
+                if let TargetScope::Project(dep_id) = &task_dep.scope {
+                    // Already a dependency, or references self
+                    if deps.contains_key(dep_id)
+                        || self.id == dep_id
+                        || self.alias.as_ref().is_some_and(|a| *a == dep_id.as_str())
+                    {
+                        continue;
+                    }
+
+                    trace!(
+                        id = self.id.as_str(),
+                        dep = dep_id.as_str(),
+                        task = task_config.target.as_str(),
+                        "Marking arbitrary project as a peer dependency because of a task dependency"
+                    );
+
+                    deps.insert(
+                        dep_id.to_owned(),
+                        DependencyConfig {
+                            id: dep_id.to_owned(),
+                            scope: DependencyScope::Peer,
+                            source: DependencySource::Implicit,
+                            via: Some(task_config.target.to_string()),
+                        },
+                    );
+                }
+            }
+        }
+
+        if !deps.is_empty() {
             trace!(
                 id = self.id.as_str(),
                 deps = ?deps.keys().map(|k| k.as_str()).collect::<Vec<_>>(),

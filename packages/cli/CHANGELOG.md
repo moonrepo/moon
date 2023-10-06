@@ -10,6 +10,32 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Tasks that depend (via `deps`) on other tasks from arbitrary projects (the parent project doesn't
+  implicitly or explicitly depend on the other project) will now automatically mark that other
+  project as a "peer" dependency. For example, "b" becomes a peer dependency for "a".
+
+  ```yaml
+  tasks:
+    build:
+      deps: ['b:build']
+
+  # Now internally becomes:
+  dependsOn:
+    - id: 'b'
+      scope: 'peer'
+
+  tasks:
+    build:
+      deps: ['b:build']
+  ```
+
+  We're marking this as a breaking change as this could subtly introduce cycles in the project graph
+  that weren't present before, and for Node.js projects, this may inject `peerDependencies`.
+
 ## 1.14.5
 
 #### 🐞 Fixes

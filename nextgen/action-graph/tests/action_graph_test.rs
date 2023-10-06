@@ -446,7 +446,7 @@ mod action_graph {
             let project = container.project_graph.get("cases").unwrap();
             let task = project.get_task("parallel").unwrap();
 
-            builder.run_task(&project, &task, None).unwrap();
+            builder.run_task(&project, task, None).unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -462,7 +462,7 @@ mod action_graph {
             let project = container.project_graph.get("cases").unwrap();
             let task = project.get_task("serial").unwrap();
 
-            builder.run_task(&project, &task, None).unwrap();
+            builder.run_task(&project, task, None).unwrap();
 
             let graph = builder.build().unwrap();
 

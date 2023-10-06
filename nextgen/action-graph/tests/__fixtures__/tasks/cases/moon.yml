@@ -1,0 +1,15 @@
+tasks:
+  a:
+    command: 'a'
+  b:
+    command: 'b'
+  c:
+    command: 'd'
+
+  parallel:
+    deps: [c, a, b]
+
+  serial:
+    deps: [b, c, a]
+    options:
+      runDepsInParallel: false

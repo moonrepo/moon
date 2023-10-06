@@ -434,6 +434,42 @@ mod action_graph {
         }
     }
 
+    mod run_task_dependencies {
+        use super::*;
+
+        #[tokio::test]
+        async fn runs_deps_in_parallel() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("cases").unwrap();
+            let task = project.get_task("parallel").unwrap();
+
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_deps_in_serial() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("cases").unwrap();
+            let task = project.get_task("serial").unwrap();
+
+            builder.run_task(&project, &task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+    }
+
     mod run_task_by_target {
         use super::*;
 

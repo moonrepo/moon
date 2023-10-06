@@ -830,8 +830,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#persistent" />
 
 Marks the task as persistent (continuously running). [Persistent tasks](../concepts/task#persistent)
-are handled differently than non-persistent tasks in the dependency graph. When running a target,
-all persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
+are handled differently than non-persistent tasks in the action graph. When running a target, all
+persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
 
 This is extremely useful for running a server (or a watcher) in the background while other tasks are
 running.

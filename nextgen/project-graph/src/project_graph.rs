@@ -34,9 +34,21 @@ pub struct ProjectNode {
     pub source: WorkspaceRelativePathBuf,
 }
 
+impl ProjectNode {
+    pub fn new(index: usize) -> Self {
+        ProjectNode {
+            index: NodeIndex::new(index),
+            ..ProjectNode::default()
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct ProjectGraph {
     pub check_boundaries: bool,
+
+    /// Cache of file path lookups, mapped by starting path to project ID (as a string).
+    fs_cache: OnceMap<PathBuf, String>,
 
     /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
     graph: GraphType,
@@ -67,6 +79,7 @@ impl ProjectGraph {
             projects: Arc::new(RwLock::new(FxHashMap::default())),
             working_dir: workspace_root.to_owned(),
             workspace_root: workspace_root.to_owned(),
+            fs_cache: OnceMap::new(),
             query_cache: OnceMap::new(),
             check_boundaries: false,
         }
@@ -162,36 +175,7 @@ impl ProjectGraph {
             current_file
         };
 
-        // Find the deepest matching path in case sub-projects are being used
-        let mut remaining_length = 1000; // Start with a really fake number
-        let mut possible_id = String::new();
-
-        for (id, node) in &self.nodes {
-            if !file.starts_with(node.source.as_str()) {
-                continue;
-            }
-
-            if let Ok(diff) = file.relative_to(node.source.as_str()) {
-                let diff_comps = diff.components().count();
-
-                // Exact match, abort
-                if diff_comps == 0 {
-                    possible_id = id.as_str().to_owned();
-                    break;
-                }
-
-                if diff_comps < remaining_length {
-                    remaining_length = diff_comps;
-                    possible_id = id.as_str().to_owned();
-                }
-            }
-        }
-
-        if possible_id.is_empty() {
-            return Err(ProjectGraphError::MissingFromPath(file.to_path_buf()).into());
-        }
-
-        self.get(&possible_id)
+        self.get(self.internal_search(file)?)
     }
 
     /// Return a list of IDs for all projects currently within the graph.
@@ -312,10 +296,10 @@ impl ProjectGraph {
         let query = query.as_ref();
         let query_input = query
             .input
-            .clone()
+            .as_ref()
             .expect("Querying the project graph requires a query input string.");
 
-        self.query_cache.try_insert(query_input.clone(), |_| {
+        self.query_cache.try_insert(query_input.to_owned(), |_| {
             debug!("Querying projects with {}", color::shell(query_input));
 
             let mut project_ids = vec![];
@@ -342,6 +326,41 @@ impl ProjectGraph {
             project_ids.sort();
 
             Ok(project_ids)
+        })
+    }
+
+    fn internal_search(&self, search: &Path) -> miette::Result<&str> {
+        self.fs_cache.try_insert(search.to_path_buf(), |_| {
+            // Find the deepest matching path in case sub-projects are being used
+            let mut remaining_length = 1000; // Start with a really fake number
+            let mut possible_id = String::new();
+
+            for (id, node) in &self.nodes {
+                if !search.starts_with(node.source.as_str()) {
+                    continue;
+                }
+
+                if let Ok(diff) = search.relative_to(node.source.as_str()) {
+                    let diff_comps = diff.components().count();
+
+                    // Exact match, abort
+                    if diff_comps == 0 {
+                        possible_id = id.as_str().to_owned();
+                        break;
+                    }
+
+                    if diff_comps < remaining_length {
+                        remaining_length = diff_comps;
+                        possible_id = id.as_str().to_owned();
+                    }
+                }
+            }
+
+            if possible_id.is_empty() {
+                return Err(ProjectGraphError::MissingFromPath(search.to_path_buf()).into());
+            }
+
+            Ok(possible_id)
         })
     }
 

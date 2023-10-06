@@ -3027,6 +3027,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_action_graph"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_platform",
+ "moon_platform_runtime",
+ "moon_project",
+ "moon_project_graph",
+ "moon_query",
+ "moon_task",
+ "moon_test_utils2",
+ "petgraph",
+ "rustc-hash",
+ "starbase_sandbox",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "moon_action_pipeline"
 version = "0.1.0"
 dependencies = [
@@ -3733,6 +3755,7 @@ dependencies = [
  "moon_query",
  "moon_task",
  "moon_task_builder",
+ "moon_test_utils2",
  "moon_vcs",
  "once_map",
  "petgraph",
@@ -3967,6 +3990,23 @@ dependencies = [
  "serde_yaml 0.9.25",
  "starbase_utils",
  "tokio",
+]
+
+[[package]]
+name = "moon_test_utils2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_config",
+ "moon_node_platform",
+ "moon_platform",
+ "moon_project_graph",
+ "moon_rust_platform",
+ "moon_system_platform",
+ "moon_vcs",
+ "proto_core",
+ "starbase_events",
+ "starbase_sandbox",
 ]
 
 [[package]]

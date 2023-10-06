@@ -1,13 +1,25 @@
 import React, { useEffect, useRef } from 'react';
 import { renderGraph } from '../../utils/renderGraph';
 
-export default function DepGraph() {
+export default function ActionGraph() {
 	const graphRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (graphRef.current) {
 			renderGraph(graphRef.current, {
 				edges: [
+					{
+						data: {
+							source: 'sync-workspace',
+							target: 'node-tool',
+						},
+					},
+					{
+						data: {
+							source: 'sync-workspace',
+							target: 'system-tool',
+						},
+					},
 					{
 						data: {
 							source: 'node-tool',
@@ -125,21 +137,21 @@ export default function DepGraph() {
 					{
 						data: {
 							id: 'target-clean',
-							label: 'RunTarget(example:clean)',
+							label: 'RunTask(example:clean)',
 							type: 'sm',
 						},
 					},
 					{
 						data: {
 							id: 'target-build',
-							label: 'RunTarget(example:build)',
+							label: 'RunTask(example:build)',
 							type: 'sm',
 						},
 					},
 					{
 						data: {
 							id: 'target-package',
-							label: 'RunTarget(example:package)',
+							label: 'RunTask(example:package)',
 							type: 'sm',
 						},
 					},

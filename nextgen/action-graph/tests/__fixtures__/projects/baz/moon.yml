@@ -1,0 +1,5 @@
+language: typescript
+
+toolchain:
+  node:
+    version: '18.0.0'

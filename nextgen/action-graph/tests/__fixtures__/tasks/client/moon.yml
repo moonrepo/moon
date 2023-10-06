@@ -1,0 +1,14 @@
+language: 'javascript'
+
+dependsOn: ['common', 'server']
+
+tags: ['frontend']
+
+tasks:
+  build:
+    command: 'build'
+    deps: ['^:build']
+  lint:
+    command: 'lint'
+  test:
+    command: 'test'

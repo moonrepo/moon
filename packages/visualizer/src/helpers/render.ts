@@ -9,8 +9,8 @@ function getActionType(label: string) {
 		return 'sync-workspace';
 	}
 
-	if (label.startsWith('RunTarget') || label.startsWith('RunPersistentTarget')) {
-		return 'run-target';
+	if (label.startsWith('Run') && (label.includes('Target') || label.includes('Task'))) {
+		return 'run-task';
 	}
 
 	if (label.startsWith('Sync') && label.includes('Project')) {
@@ -105,7 +105,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				},
 			},
 			{
-				selector: 'node[type="run-target"]',
+				selector: 'node[type="run-task"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',

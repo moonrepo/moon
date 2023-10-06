@@ -1,18 +1,17 @@
 ---
-title: Dependency graph
+title: Action graph
 ---
 
-import DepGraph from '@site/src/components/Docs/DepGraph';
+import ActionGraph from '@site/src/components/Docs/ActionGraph';
 
-When you run a [task](../config/project#tasks-1) on the command line, we generate a dependency graph
-to ensure [dependencies](../config/project#deps) of tasks have ran before running run the primary
-task.
+When you run a [task](../config/project#tasks-1) on the command line, we generate an action graph to
+ensure [dependencies](../config/project#deps) of tasks have ran before running run the primary task.
 
-The dependency graph is a representation of all [tasks](../concepts/task), derived from the
+The action graph is a representation of all [tasks](../concepts/task), derived from the
 [project graph](./project-graph), and is also represented internally as a directed acyclic graph
 (DAG).
 
-<DepGraph />
+<ActionGraph />
 
 ## Actions
 
@@ -21,7 +20,7 @@ represent each node in the graph as an action to perform. This allows us to be m
 efficient with how we run tasks, and allows us to provide more functionality and automation than
 other runners.
 
-The following actions compose our dependency graph:
+The following actions compose our action graph:
 
 ### Sync workspace
 
@@ -36,12 +35,12 @@ tier 3 language into the toolchain. For other tiers, this is basically a no-oper
 - When the tool has already been installed, this action will be skipped.
 - Actions will be scoped by language and version, also known as a runtime. For example,
   `SetupNodeTool(18.1.0)` or `SetupDenoTool(1.31.0)`.
-- Tools that require a global language binary will display the version as "global". For example,
-  `SetupNodeTool(global)`.
+- Tools that require a global binary (found on `PATH`) will display the version as "global". For
+  example, `SetupNodeTool(global)`.
 
 ### Install dependencies
 
-Before we run a target, we ensure that all language dependencies (`node_modules` for example) have
+Before we run a task, we ensure that all language dependencies (`node_modules` for example) have
 been installed, by automatically installing them if we detect changes since the last run. We achieve
 this by comparing lockfile modified timestamps, parsing manifest files, and hashing resolved
 dependency versions.
@@ -58,7 +57,7 @@ dependency versions.
 ### Sync project
 
 To ensure a consistently healthy project and repository, we run a process known as syncing
-_everytime_ a target is ran. Actions will be scoped by language, for example,
+_everytime_ a task is ran. Actions will be scoped by language, for example,
 `SyncNodeProject(example)`.
 
 What is synced or considered healthcare is dependent on the language and its ecosystem.
@@ -74,26 +73,27 @@ What is synced or considered healthcare is dependent on the language and its eco
 > This action depends on the setup toolchain action, in case it requires binaries or functionality
 > that the toolchain provides.
 
-### Run target
+### Run task
 
-The primary action in the graph is the run [target](../concepts/target) action, which runs a
-project's task as a child process. Tasks can depend on other tasks, and they'll be effectively
-orchestrated and executed by running in topological order _and_ in batches via a worker pool.
+The primary action in the graph is the run [task](../concepts/task) action, which runs a project's
+task as a child process, derived from a [target](../concepts/target). Tasks can depend on other
+tasks, and they'll be effectively orchestrated and executed by running in topological order using a
+thread pool.
 
 > This action depends on the previous actions, as the toolchain is used for running the task's
 > command, and the outcome of the task is best when the project state is healthy and deterministic.
 
-### Run interactive target
+### Run interactive task
 
-Like the base run target, but runs the [task interactively](../concepts/task#interactive) with stdin
+Like the base run task, but runs the [task interactively](../concepts/task#interactive) with stdin
 capabilities. All interactive tasks are run in isolation in the graph.
 
-### Run persistent target
+### Run persistent task
 
-Like the base run target, but runs the [task in a persistent process](../concepts/task#persistent)
+Like the base run task, but runs the [task in a persistent process](../concepts/task#persistent)
 that never exits. All persistent tasks are run in parallel as the last batch in the graph.
 
 ## What is the graph used for?
 
-Without the dependency graph, tasks would not efficiently, or possibly at all! The graph helps to
-run tasks in parallel, in the correct order, and to ensure a reliable outcome.
+Without the action graph, tasks would not efficiently, or possibly at all! The graph helps to run
+tasks in parallel, in the correct order, and to ensure a reliable outcome.

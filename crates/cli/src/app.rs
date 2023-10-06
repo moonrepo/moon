@@ -178,6 +178,14 @@ pub enum Commands {
 
     // PROJECTS
 
+    // moon action-graph [target]
+    #[command(
+        alias = "ag",
+        name = "action-graph",
+        about = "Display an interactive dependency graph of all tasks and actions."
+    )]
+    ActionGraph(ActionGraphArgs),
+
     // moon dep-graph [target]
     #[command(
         name = "dep-graph",

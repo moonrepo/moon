@@ -1,4 +1,6 @@
 tasks:
+  base: {}
+
   a:
     command: 'a'
   b:
@@ -20,7 +22,10 @@ tasks:
     deps: ['chain3']
   chain3: {}
 
-  base: {}
-
   internal:
-    deps: ['~:base']
+    deps: ['base']
+
+  cycle1:
+    deps: ['cycle2']
+  cycle2:
+    deps: ['cycle1']

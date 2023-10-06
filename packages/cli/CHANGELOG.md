@@ -38,17 +38,27 @@
 
 #### 🚀 Updates
 
-- Rewrote the dependency graph ground the ground-up:
+- Rewrote the dependency graph from the ground-up:
   - Now known as the action graph.
   - All actions now depend on the `SyncWorkspace` action, instead of this action running
     arbitrarily.
   - Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
   - Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
+- Updated the action graph to iterate using a topological queue, which executes ready-to-run actions
+  in the thread pool. Previously, we would sort topologically _into batches_, which worked, but
+  resulted in many threads uselessly waiting for an action to run, which was blocked waiting for the
+  current batch to complete.
+  - For large graphs, this should result in a significant performance improvement, upwards of 10x.
+  - Persistent tasks will still be ran as a batch, but since it's the last operation, it's fine.
 
 #### 🐞 Fixes
 
 - Fixed an issue where task dependents (via `moon ci` or `moon run --dependents`) wouldn't always
   locate all downstream tasks.
+
+#### ⚙️ Internal
+
+- Added in-memory caching to project graph file system lookup operations.
 
 ## 1.14.5
 

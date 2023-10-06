@@ -25,10 +25,5 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_config = { path = "../config" }
 moon_test_utils2 = { path = "../test-utils" }
-proto_core = { workspace = true }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
-
-# TODO remove
-moon_node_platform = { path = "../../crates/node/platform" }
-moon_rust_platform = { path = "../../crates/rust/platform" }

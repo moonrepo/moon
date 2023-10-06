@@ -5,19 +5,12 @@ mod utils;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{NodeConfig, RustConfig};
-use moon_node_platform::NodePlatform;
-use moon_platform::PlatformManager;
 use moon_platform_runtime::*;
 use moon_project_graph::ProjectGraph;
-use moon_rust_platform::RustPlatform;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_project_graph;
-use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{assert_snapshot, create_sandbox};
-use std::path::Path;
-use std::sync::Arc;
 use utils::ActionGraphContainer;
 
 fn create_task(id: &str, project: &str) -> Task {
@@ -46,38 +39,6 @@ fn create_rust_runtime() -> Runtime {
     )
 }
 
-fn create_platform_manager(root: &Path) -> PlatformManager {
-    let mut manager = PlatformManager::default();
-    let proto = Arc::new(ProtoEnvironment::new_testing(root));
-
-    manager.register(
-        PlatformType::Node,
-        Box::new(NodePlatform::new(
-            &NodeConfig {
-                version: Some(UnresolvedVersionSpec::Version(Version::new(20, 0, 0))),
-                ..Default::default()
-            },
-            &None,
-            root,
-            proto.clone(),
-        )),
-    );
-
-    manager.register(
-        PlatformType::Rust,
-        Box::new(RustPlatform::new(
-            &RustConfig {
-                version: Some(UnresolvedVersionSpec::Version(Version::new(1, 70, 0))),
-                ..Default::default()
-            },
-            root,
-            proto.clone(),
-        )),
-    );
-
-    manager
-}
-
 fn topo(mut graph: ActionGraph) -> Vec<ActionNode> {
     let mut nodes = vec![];
 
@@ -93,30 +54,24 @@ fn topo(mut graph: ActionGraph) -> Vec<ActionNode> {
 mod action_graph {
     use super::*;
 
-    // #[test]
-    // fn errors_on_cycle() {
-    //     let mut graph = ProjectGraphType::new();
-    //     let a = graph.add_node(create_project("a"));
-    //     let b = graph.add_node(create_project("b"));
-    //     graph.add_edge(a, b, DependencyScope::Build);
-    //     graph.add_edge(b, a, DependencyScope::Build);
+    #[tokio::test]
+    #[should_panic(expected = "A dependency cycle has been detected for RunTask(deps:cycle2).")]
+    async fn errors_on_cycle() {
+        let sandbox = create_sandbox("tasks");
+        let container = ActionGraphContainer::new(sandbox.path()).await;
+        let mut builder = container.create_builder();
 
-    //     let pg = ProjectGraph::new(
-    //         graph,
-    //         FxHashMap::from_iter([
-    //             ("a".into(), ProjectNode::new(0)),
-    //             ("b".into(), ProjectNode::new(1)),
-    //         ]),
-    //         &PathBuf::from("."),
-    //     );
+        let project = container.project_graph.get("deps").unwrap();
 
-    //     let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+        builder
+            .run_task(&project, project.get_task("cycle1").unwrap(), None)
+            .unwrap();
+        builder
+            .run_task(&project, project.get_task("cycle2").unwrap(), None)
+            .unwrap();
 
-    //     builder.sync_project(&pg.get("a").unwrap()).unwrap();
-    //     builder.sync_project(&pg.get("b").unwrap()).unwrap();
-
-    //     builder.build().unwrap().reset_iterator().unwrap();
-    // }
+        builder.build().unwrap().reset_iterator().unwrap();
+    }
 
     mod install_deps {
         use super::*;
@@ -941,14 +896,14 @@ mod action_graph {
 
         #[tokio::test]
         async fn inherits_platform_tool() {
-            let pg = create_project_graph().await;
-            let pm = create_platform_manager(&pg.workspace_root);
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let bar = pg.get("bar").unwrap();
+            let bar = container.project_graph.get("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
-            let qux = pg.get("qux").unwrap();
+            let qux = container.project_graph.get("qux").unwrap();
             builder.sync_project(&qux).unwrap();
 
             let graph = builder.build().unwrap();
@@ -978,14 +933,14 @@ mod action_graph {
 
         #[tokio::test]
         async fn supports_platform_override() {
-            let pg = create_project_graph().await;
-            let pm = create_platform_manager(&pg.workspace_root);
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let bar = pg.get("bar").unwrap();
+            let bar = container.project_graph.get("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
-            let baz = pg.get("baz").unwrap();
+            let baz = container.project_graph.get("baz").unwrap();
             builder.sync_project(&baz).unwrap();
 
             let graph = builder.build().unwrap();

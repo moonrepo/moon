@@ -190,7 +190,8 @@ pub enum Commands {
     #[command(
         name = "dep-graph",
         about = "Display an interactive dependency graph of all tasks and actions.",
-        alias = "dg"
+        alias = "dg",
+        hide = true
     )]
     DepGraph(ActionGraphArgs),
 

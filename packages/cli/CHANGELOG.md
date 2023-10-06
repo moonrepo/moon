@@ -36,7 +36,7 @@
   We're marking this as a breaking change as this could subtly introduce cycles in the project graph
   that weren't present before, and for Node.js projects, this may inject `peerDependencies`.
 
-#### 🚀 Updates
+#### 🎉 Release
 
 - Rewrote the dependency graph from the ground-up:
   - Now known as the action graph.
@@ -50,6 +50,13 @@
   current batch to complete.
   - For large graphs, this should result in a significant performance improvement, upwards of 10x.
   - Persistent tasks will still be ran as a batch, but since it's the last operation, it's fine.
+- Released a new GitHub action,
+  [`moonrepo/setup-toolchain`](https://github.com/marketplace/actions/setup-proto-and-moon-toolchains),
+  that replaces both `setup-moon-action` and `setup-proto`.
+
+#### 🚀 Updates
+
+- Added a `moon action-graph` command and deprecated `moon dep-graph`.
 
 #### 🐞 Fixes
 

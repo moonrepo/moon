@@ -262,11 +262,11 @@ mod run_target {
                 vec![NodeIndex::new(1)],
                 vec![
                     NodeIndex::new(2),
-                    NodeIndex::new(5),
+                    NodeIndex::new(4),
                     NodeIndex::new(6),
                     NodeIndex::new(7)
                 ],
-                vec![NodeIndex::new(4), NodeIndex::new(12), NodeIndex::new(13)],
+                vec![NodeIndex::new(5), NodeIndex::new(12), NodeIndex::new(13)],
                 vec![NodeIndex::new(3), NodeIndex::new(11)],
                 vec![NodeIndex::new(0)],
                 vec![

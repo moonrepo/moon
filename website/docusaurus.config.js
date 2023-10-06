@@ -212,6 +212,10 @@ const config = {
 			{
 				redirects: [
 					{
+						from: '/docs/how-it-works/dep-graph',
+						to: '/docs/how-it-works/action-graph',
+					},
+					{
 						from: '/docs/config/global-project',
 						to: '/docs/config/tasks',
 					},

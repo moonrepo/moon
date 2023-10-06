@@ -1,0 +1,9 @@
+dependsOn: ['base']
+
+tags: ['frontend']
+
+tasks:
+  build:
+    command: 'build'
+  lint:
+    command: 'lint'

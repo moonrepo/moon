@@ -1,5 +1,4 @@
-use crate::project_events::ExtendProjectEvent;
-use crate::project_events::ExtendProjectGraphEvent;
+use crate::project_events::{ExtendProjectEvent, ExtendProjectGraphEvent};
 use crate::project_graph::{GraphType, ProjectGraph, ProjectNode};
 use crate::project_graph_cache::ProjectsState;
 use crate::project_graph_error::ProjectGraphError;
@@ -7,17 +6,13 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
-use moon_common::is_test_env;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_common::{color, consts, Id};
-use moon_config::{
-    DependencyScope, InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-};
+use moon_common::{color, consts, is_test_env, Id};
+use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_hash::HashEngine;
 use moon_project::Project;
 use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_task::TargetScope;
 use moon_task_builder::DetectPlatformEvent;
 use moon_vcs::BoxedVcs;
 use petgraph::graph::DiGraph;
@@ -253,36 +248,6 @@ impl<'app> ProjectGraphBuilder<'app> {
                 );
             } else {
                 edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
-            }
-        }
-
-        // Tasks can depend on arbitray projects, so include them also
-        for (task_id, task_config) in &project.tasks {
-            for task_dep in &task_config.deps {
-                if let TargetScope::Project(dep_id) = &task_dep.scope {
-                    if
-                    // Already a dependency
-                    project.dependencies.contains_key(dep_id) ||
-                        // Don't reference itself
-                        project.matches_locator(dep_id.as_str())
-                    {
-                        continue;
-                    }
-
-                    if cycle.contains(dep_id) {
-                        warn!(
-                            id = id.as_str(),
-                            dependency_id = dep_id.as_str(),
-                            task_id = task_id.as_str(),
-                            "Encountered a dependency cycle (from task); will disconnect nodes to avoid recursion",
-                        );
-                    } else {
-                        edges.push((
-                            self.internal_load(dep_id, cycle).await?,
-                            DependencyScope::Peer,
-                        ));
-                    }
-                }
             }
         }
 

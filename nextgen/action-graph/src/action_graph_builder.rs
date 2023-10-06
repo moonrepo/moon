@@ -80,7 +80,7 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         project: &Project,
         task: Option<&Task>,
-    ) -> miette::Result<NodeIndex> {
+    ) -> miette::Result<Option<NodeIndex>> {
         let mut in_project = false;
 
         // If project is NOT in the package manager workspace, then we should
@@ -107,8 +107,12 @@ impl<'app> ActionGraphBuilder<'app> {
             }
         };
 
+        if node.get_runtime().platform.is_system() {
+            return Ok(None);
+        }
+
         if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(*index);
+            return Ok(Some(*index));
         }
 
         // Before we install deps, we must ensure the language has been installed
@@ -117,7 +121,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         self.link_requirements(index, vec![setup_tool_index]);
 
-        Ok(index)
+        Ok(Some(index))
     }
 
     pub fn run_task(
@@ -150,10 +154,15 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_deps(project, Some(task))?;
-        let sync_project_index = self.sync_project(project)?;
+        let mut reqs = vec![];
+
+        if let Some(install_deps_index) = self.install_deps(project, Some(task))? {
+            reqs.push(install_deps_index);
+        }
+
+        reqs.push(self.sync_project(project)?);
+
         let index = self.insert_node(node);
-        let mut reqs = vec![install_deps_index, sync_project_index];
 
         // And we also need to create edges for task dependencies
         if !task.deps.is_empty() {

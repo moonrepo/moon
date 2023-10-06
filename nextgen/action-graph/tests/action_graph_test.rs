@@ -11,7 +11,7 @@ use moon_platform::PlatformManager;
 use moon_platform_runtime::*;
 use moon_project_graph::ProjectGraph;
 use moon_rust_platform::RustPlatform;
-use moon_task::{Target, Task};
+use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_project_graph;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashSet;
@@ -431,6 +431,211 @@ mod action_graph {
                     target: task.target
                 }
             );
+        }
+    }
+
+    mod run_task_by_target {
+        use super::*;
+
+        #[tokio::test]
+        #[should_panic(expected = "Dependencies scope (^:) is not supported in run contexts.")]
+        async fn errors_on_parent_scope() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("^:build").unwrap(), None)
+                .unwrap();
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Self scope (~:) is not supported in run contexts.")]
+        async fn errors_on_self_scope() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("~:build").unwrap(), None)
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn runs_all() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse(":build").unwrap(), None)
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_all_with_query() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder.set_query("language=rust").unwrap();
+
+            builder
+                .run_task_by_target(Target::parse(":build").unwrap(), None)
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_all_no_nodes() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse(":unknown").unwrap(), None)
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert!(graph.is_empty());
+        }
+
+        #[tokio::test]
+        async fn runs_by_project() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("client:lint").unwrap(), None)
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "No project has been configured with the name or alias unknown.")]
+        async fn errors_for_unknown_project() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("unknown:build").unwrap(), None)
+                .unwrap();
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Unknown task unknown for project server.")]
+        async fn errors_for_unknown_project_task() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("server:unknown").unwrap(), None)
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn runs_tag() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("#frontend:lint").unwrap(), None)
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_tag_no_nodes() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(Target::parse("#unknown:lint").unwrap(), None)
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert!(graph.is_empty());
+        }
+    }
+
+    mod run_task_by_target_locator {
+        use super::*;
+
+        #[tokio::test]
+        async fn runs_by_target() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::Qualified(Target::parse("server:build").unwrap()),
+                    None,
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn runs_by_file_path() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path()).await;
+
+            container.project_graph.working_dir = sandbox.path().join("server/nested");
+
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
+                    None,
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "No project could be located starting from path unknown/path.")]
+        async fn errors_if_no_project_by_path() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path()).await;
+
+            container.project_graph.working_dir = sandbox.path().join("unknown/path");
+
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
+                    None,
+                )
+                .unwrap();
         }
     }
 

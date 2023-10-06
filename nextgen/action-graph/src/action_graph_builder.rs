@@ -12,9 +12,9 @@ use tracing::{debug, trace};
 
 type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
-// TODO: run task dependents
-
 pub struct ActionGraphBuilder<'app> {
+    pub include_dependents: bool,
+
     all_query: Option<Criteria>,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
@@ -34,6 +34,7 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok(ActionGraphBuilder {
             all_query: None,
             graph: DiGraph::new(),
+            include_dependents: false,
             indices: FxHashMap::default(),
             platform_manager,
             project_graph,
@@ -171,28 +172,28 @@ impl<'app> ActionGraphBuilder<'app> {
                 "Adding dependencies for task {}",
                 color::label(&task.target),
             );
-
-            // We don't pass touched files to dependencies, because if the parent
-            // task is affected/going to run, then so should all of these!
-            reqs.extend(self.run_task_dependencies(task, None)?);
+            reqs.extend(self.run_task_dependencies(task)?);
         }
 
         self.link_requirements(index, reqs);
 
+        // And possibly dependents
+        if self.include_dependents {
+            self.run_task_dependents(task)?;
+        }
+
         Ok(Some(index))
     }
 
-    pub fn run_task_dependencies(
-        &mut self,
-        task: &Task,
-        touched_files: Option<&TouchedFilePaths>,
-    ) -> miette::Result<Vec<NodeIndex>> {
+    // We don't pass touched files to dependencies, because if the parent
+    // task is affected/going to run, then so should all of these!
+    pub fn run_task_dependencies(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
         let mut indices = vec![];
         let mut previous_target_index = None;
 
         for dep_target in &task.deps {
-            let (_, dep_indices) = self.run_task_by_target(dep_target, touched_files)?;
+            let (_, dep_indices) = self.run_task_by_target(dep_target, None)?;
 
             for dep_index in dep_indices {
                 // When parallel, parent depends on child
@@ -210,6 +211,39 @@ impl<'app> ActionGraphBuilder<'app> {
 
         if !parallel {
             indices.push(previous_target_index.unwrap());
+        }
+
+        Ok(indices)
+    }
+
+    // This is costly, is there a better way to do this?
+    pub fn run_task_dependents(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
+        let mut indices = vec![];
+
+        if let TargetScope::Project(project_locator) = &task.target.scope {
+            let project = self.project_graph.get(project_locator)?;
+
+            // From self project
+            for dep_task in project.tasks.values() {
+                if dep_task.deps.contains(&task.target) {
+                    if let Some(index) = self.run_task(&project, dep_task, None)? {
+                        indices.push(index);
+                    }
+                }
+            }
+
+            // From other projects
+            for dependent_id in self.project_graph.dependents_of(&project)? {
+                let dep_project = self.project_graph.get(dependent_id)?;
+
+                for dep_task in dep_project.tasks.values() {
+                    if dep_task.deps.contains(&task.target) {
+                        if let Some(index) = self.run_task(&dep_project, dep_task, None)? {
+                            indices.push(index);
+                        }
+                    }
+                }
+            }
         }
 
         Ok(indices)

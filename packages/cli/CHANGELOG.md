@@ -36,6 +36,20 @@
   We're marking this as a breaking change as this could subtly introduce cycles in the project graph
   that weren't present before, and for Node.js projects, this may inject `peerDependencies`.
 
+#### 🚀 Updates
+
+- Rewrote the dependency graph ground the ground-up:
+  - Now known as the action graph.
+  - All actions now depend on the `SyncWorkspace` action, instead of this action running
+    arbitrarily.
+  - Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
+  - Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
+
+#### 🐞 Fixes
+
+- Fixed an issue where task dependents (via `moon ci` or `moon run --dependents`) wouldn't always
+  locate all downstream tasks.
+
 ## 1.14.5
 
 #### 🐞 Fixes

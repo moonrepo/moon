@@ -443,7 +443,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("cases").unwrap();
+            let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("parallel").unwrap();
 
             builder.run_task(&project, task, None).unwrap();
@@ -459,8 +459,58 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("cases").unwrap();
+            let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("serial").unwrap();
+
+            builder.run_task(&project, task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn can_create_a_chain() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("deps").unwrap();
+            let task = project.get_task("chain1").unwrap();
+
+            builder.run_task(&project, task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn doesnt_include_dependents() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("deps").unwrap();
+            let task = project.get_task("base").unwrap();
+
+            builder.run_task(&project, task, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn includes_dependents() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder.include_dependents = true;
+
+            let project = container.project_graph.get("deps").unwrap();
+            let task = project.get_task("base").unwrap();
 
             builder.run_task(&project, task, None).unwrap();
 

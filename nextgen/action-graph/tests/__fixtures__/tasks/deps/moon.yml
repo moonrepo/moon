@@ -13,3 +13,14 @@ tasks:
     deps: [b, c, a]
     options:
       runDepsInParallel: false
+
+  chain1:
+    deps: ['chain2']
+  chain2:
+    deps: ['chain3']
+  chain3: {}
+
+  base: {}
+
+  internal:
+    deps: ['~:base']

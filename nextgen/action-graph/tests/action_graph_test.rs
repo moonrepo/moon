@@ -1,24 +1,24 @@
 #![allow(clippy::disallowed_names)]
 
+mod utils;
+
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, LanguageType, NodeConfig,
-    ProjectToolchainCommonToolConfig, RustConfig,
-};
+use moon_config::{NodeConfig, RustConfig};
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_platform_runtime::*;
-use moon_project::Project;
-use moon_project_graph::{GraphType as ProjectGraphType, ProjectGraph, ProjectNode};
+use moon_project_graph::ProjectGraph;
 use moon_rust_platform::RustPlatform;
 use moon_task::{Target, Task};
+use moon_test_utils2::generate_project_graph;
 use proto_core::ProtoEnvironment;
-use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_sandbox::assert_snapshot;
-use std::path::PathBuf;
+use rustc_hash::FxHashSet;
+use starbase_sandbox::{assert_snapshot, create_sandbox};
+use std::path::Path;
 use std::sync::Arc;
+use utils::ActionGraphContainer;
 
 fn create_task(id: &str, project: &str) -> Task {
     Task {
@@ -28,88 +28,8 @@ fn create_task(id: &str, project: &str) -> Task {
     }
 }
 
-fn create_project(id: &str) -> Project {
-    Project {
-        id: Id::raw(id),
-        ..Project::default()
-    }
-}
-
-fn create_project_graph() -> ProjectGraph {
-    // Create projects
-    let mut foo = create_project("foo");
-    foo.dependencies.insert(
-        Id::raw("bar"),
-        DependencyConfig {
-            id: Id::raw("bar"),
-            scope: DependencyScope::Production,
-            source: DependencySource::Explicit,
-            via: None,
-        },
-    );
-
-    let mut bar = create_project("bar");
-    bar.language = LanguageType::JavaScript;
-    bar.platform = PlatformType::Node;
-
-    let mut baz = create_project("baz");
-    baz.language = LanguageType::TypeScript;
-    baz.platform = PlatformType::Node;
-    baz.config.toolchain.node = Some(ProjectToolchainCommonToolConfig {
-        version: Some(UnresolvedVersionSpec::Version(Version::new(18, 0, 0))),
-    });
-
-    let mut qux = create_project("qux");
-    qux.language = LanguageType::Rust;
-    qux.platform = PlatformType::Rust;
-
-    // Map nodes and create graph (in order of expected insertion)
-    let mut nodes = FxHashMap::default();
-    let mut graph = ProjectGraphType::new();
-
-    let bi = graph.add_node(bar);
-    nodes.insert(
-        "bar".into(),
-        ProjectNode {
-            alias: None,
-            index: bi,
-            source: "bar".into(),
-        },
-    );
-
-    let fi = graph.add_node(foo);
-    nodes.insert(
-        "foo".into(),
-        ProjectNode {
-            alias: None,
-            index: fi,
-            source: "foo".into(),
-        },
-    );
-
-    graph.add_edge(fi, bi, DependencyScope::Production);
-
-    let zi = graph.add_node(baz);
-    nodes.insert(
-        "baz".into(),
-        ProjectNode {
-            alias: None,
-            index: zi,
-            source: "baz".into(),
-        },
-    );
-
-    let qi = graph.add_node(qux);
-    nodes.insert(
-        "qux".into(),
-        ProjectNode {
-            alias: None,
-            index: qi,
-            source: "qux".into(),
-        },
-    );
-
-    ProjectGraph::new(graph, nodes, &PathBuf::from("."))
+async fn create_project_graph() -> ProjectGraph {
+    generate_project_graph("projects").await
 }
 
 fn create_node_runtime() -> Runtime {
@@ -126,10 +46,9 @@ fn create_rust_runtime() -> Runtime {
     )
 }
 
-fn create_platform_manager() -> PlatformManager {
+fn create_platform_manager(root: &Path) -> PlatformManager {
     let mut manager = PlatformManager::default();
-    let root = PathBuf::from(".");
-    let proto = Arc::new(ProtoEnvironment::new_testing(&root));
+    let proto = Arc::new(ProtoEnvironment::new_testing(root));
 
     manager.register(
         PlatformType::Node,
@@ -139,7 +58,7 @@ fn create_platform_manager() -> PlatformManager {
                 ..Default::default()
             },
             &None,
-            &root,
+            root,
             proto.clone(),
         )),
     );
@@ -151,7 +70,7 @@ fn create_platform_manager() -> PlatformManager {
                 version: Some(UnresolvedVersionSpec::Version(Version::new(1, 70, 0))),
                 ..Default::default()
             },
-            &root,
+            root,
             proto.clone(),
         )),
     );
@@ -202,13 +121,13 @@ mod action_graph {
     mod install_deps {
         use super::*;
 
-        #[test]
-        fn graphs() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn graphs() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let bar = pg.get("bar").unwrap();
+            let bar = container.project_graph.get("bar").unwrap();
             builder.install_deps(&bar, None).unwrap();
 
             let graph = builder.build().unwrap();
@@ -228,13 +147,13 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn ignores_dupes() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn ignores_dupes() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let bar = pg.get("bar").unwrap();
+            let bar = container.project_graph.get("bar").unwrap();
             builder.install_deps(&bar, None).unwrap();
             builder.install_deps(&bar, None).unwrap();
             builder.install_deps(&bar, None).unwrap();
@@ -251,6 +170,39 @@ mod action_graph {
                     ActionNode::InstallDeps {
                         runtime: create_node_runtime()
                     }
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn installs_in_project_when_not_in_depman_workspace() {
+            let sandbox = create_sandbox("dep-workspace");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let inside = container.project_graph.get("in").unwrap();
+            builder.install_deps(&inside, None).unwrap();
+
+            let outside = container.project_graph.get("out").unwrap();
+            builder.install_deps(&outside, None).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallProjectDeps {
+                        project: Id::raw("out"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
                 ]
             );
         }
@@ -260,13 +212,13 @@ mod action_graph {
         use super::*;
         use starbase_sandbox::pretty_assertions::assert_eq;
 
-        #[test]
-        fn graphs() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn graphs() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -300,13 +252,13 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn ignores_dupes() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn ignores_dupes() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -341,13 +293,13 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn doesnt_graph_if_not_affected_by_touched_files() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn doesnt_graph_if_not_affected_by_touched_files() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -362,15 +314,15 @@ mod action_graph {
             assert!(topo(graph).is_empty());
         }
 
-        #[test]
-        fn graphs_if_affected_by_touched_files() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn graphs_if_affected_by_touched_files() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
             let file = WorkspaceRelativePathBuf::from("bar/file.js");
 
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -385,14 +337,14 @@ mod action_graph {
             assert!(!topo(graph).is_empty());
         }
 
-        #[test]
-        fn task_can_have_a_diff_platform_from_project() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn task_can_have_a_diff_platform_from_project() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
             // node
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Rust;
@@ -429,13 +381,13 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn sets_interactive() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn sets_interactive() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.options.interactive = true;
@@ -455,13 +407,13 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn sets_persistent() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
-            let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
+        #[tokio::test]
+        async fn sets_persistent() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
 
-            let project = pg.get("bar").unwrap();
+            let project = container.project_graph.get("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.options.persistent = true;
@@ -485,8 +437,8 @@ mod action_graph {
     mod setup_tool {
         use super::*;
 
-        #[test]
-        fn graphs() {
+        #[tokio::test]
+        async fn graphs() {
             let pg = ProjectGraph::default();
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
             let system = Runtime::system();
@@ -511,8 +463,8 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn graphs_same_platform() {
+        #[tokio::test]
+        async fn graphs_same_platform() {
             let pg = ProjectGraph::default();
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
 
@@ -544,8 +496,8 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn ignores_dupes() {
+        #[tokio::test]
+        async fn ignores_dupes() {
             let pg = ProjectGraph::default();
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
             let system = Runtime::system();
@@ -568,9 +520,9 @@ mod action_graph {
     mod sync_project {
         use super::*;
 
-        #[test]
-        fn graphs_single() {
-            let pg = create_project_graph();
+        #[tokio::test]
+        async fn graphs_single() {
+            let pg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
 
             let bar = pg.get("bar").unwrap();
@@ -594,9 +546,9 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn graphs_single_with_dep() {
-            let pg = create_project_graph();
+        #[tokio::test]
+        async fn graphs_single_with_dep() {
+            let pg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
 
             let foo = pg.get("foo").unwrap();
@@ -624,9 +576,9 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn graphs_multiple() {
-            let pg = create_project_graph();
+        #[tokio::test]
+        async fn graphs_multiple() {
+            let pg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
 
             let foo = pg.get("foo").unwrap();
@@ -664,9 +616,9 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn ignores_dupes() {
-            let pg = create_project_graph();
+        #[tokio::test]
+        async fn ignores_dupes() {
+            let pg = create_project_graph().await;
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
 
             let foo = pg.get("foo").unwrap();
@@ -696,10 +648,10 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn inherits_platform_tool() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
+        #[tokio::test]
+        async fn inherits_platform_tool() {
+            let pg = create_project_graph().await;
+            let pm = create_platform_manager(&pg.workspace_root);
             let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
 
             let bar = pg.get("bar").unwrap();
@@ -733,10 +685,10 @@ mod action_graph {
             );
         }
 
-        #[test]
-        fn supports_platform_override() {
-            let pm = create_platform_manager();
-            let pg = create_project_graph();
+        #[tokio::test]
+        async fn supports_platform_override() {
+            let pg = create_project_graph().await;
+            let pm = create_platform_manager(&pg.workspace_root);
             let mut builder = ActionGraphBuilder::with_platforms(&pm, &pg).unwrap();
 
             let bar = pg.get("bar").unwrap();
@@ -780,8 +732,8 @@ mod action_graph {
     mod sync_workspace {
         use super::*;
 
-        #[test]
-        fn graphs() {
+        #[tokio::test]
+        async fn graphs() {
             let pg = ProjectGraph::default();
 
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
@@ -793,8 +745,8 @@ mod action_graph {
             assert_eq!(topo(graph), vec![ActionNode::SyncWorkspace]);
         }
 
-        #[test]
-        fn ignores_dupes() {
+        #[tokio::test]
+        async fn ignores_dupes() {
             let pg = ProjectGraph::default();
 
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();

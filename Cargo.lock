@@ -3041,11 +3041,13 @@ dependencies = [
  "moon_query",
  "moon_rust_platform",
  "moon_task",
+ "moon_test_utils2",
  "petgraph",
  "proto_core",
  "rustc-hash",
  "starbase_sandbox",
  "thiserror",
+ "tokio",
  "tracing",
 ]
 
@@ -3999,8 +4001,13 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_node_platform",
+ "moon_platform",
  "moon_project_graph",
+ "moon_rust_platform",
+ "moon_system_platform",
  "moon_vcs",
+ "proto_core",
  "starbase_events",
  "starbase_sandbox",
 ]

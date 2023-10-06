@@ -1,6 +1,6 @@
 use moon_config::{
     InheritedTasksEntry, InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig,
-    PartialTaskConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    PartialTaskConfig, ToolchainConfig, ToolsConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project_graph::{
     DetectLanguageEvent, DetectPlatformEvent, ExtendProjectEvent, ExtendProjectGraphEvent,
@@ -23,7 +23,10 @@ pub struct ProjectGraphContainer {
 
 impl ProjectGraphContainer {
     pub fn new(root: &Path) -> Self {
+        let proto = ToolsConfig::default();
         let mut graph = Self {
+            inherited_tasks: InheritedTasksManager::load_from(root).unwrap(),
+            toolchain_config: ToolchainConfig::load_from(root, &proto).unwrap(),
             workspace_root: root.to_path_buf(),
             ..Default::default()
         };
@@ -44,7 +47,9 @@ impl ProjectGraphContainer {
         );
 
         // Always use the node platform
-        graph.toolchain_config.node = Some(NodeConfig::default());
+        if graph.toolchain_config.node.is_none() {
+            graph.toolchain_config.node = Some(NodeConfig::default());
+        }
 
         // Use folders as project names
         graph.workspace_config.projects = WorkspaceProjects::Globs(vec!["*".into()]);
@@ -109,15 +114,15 @@ pub async fn generate_project_graph(fixture: &str) -> ProjectGraph {
     generate_project_graph_from_sandbox(create_sandbox(fixture).path()).await
 }
 
-pub async fn generate_project_graph_from_sandbox(path: &Path) -> ProjectGraph {
-    generate_project_graph_with_changes(path, |_| {}).await
+pub async fn generate_project_graph_from_sandbox(root: &Path) -> ProjectGraph {
+    generate_project_graph_with_changes(root, |_| {}).await
 }
 
-pub async fn generate_project_graph_with_changes<F>(path: &Path, mut op: F) -> ProjectGraph
+pub async fn generate_project_graph_with_changes<F>(root: &Path, mut op: F) -> ProjectGraph
 where
     F: FnMut(&mut ProjectGraphContainer),
 {
-    let mut container = ProjectGraphContainer::new(path);
+    let mut container = ProjectGraphContainer::new(root);
 
     op(&mut container);
 

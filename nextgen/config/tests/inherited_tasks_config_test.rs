@@ -198,8 +198,6 @@ fileGroups:
 
             let url = server.url("/config.yml");
 
-            dbg!(&url);
-
             sandbox.create_file(
                 "tasks.yml",
                 format!(

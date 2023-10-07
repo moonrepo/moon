@@ -7,7 +7,7 @@ use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
 use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::generate::GenerateArgs;
-use crate::commands::graph::dep::DepGraphArgs;
+use crate::commands::graph::action::ActionGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::migrate::FromPackageJsonArgs;
@@ -178,13 +178,22 @@ pub enum Commands {
 
     // PROJECTS
 
+    // moon action-graph [target]
+    #[command(
+        alias = "ag",
+        name = "action-graph",
+        about = "Display an interactive dependency graph of all tasks and actions."
+    )]
+    ActionGraph(ActionGraphArgs),
+
     // moon dep-graph [target]
     #[command(
         name = "dep-graph",
         about = "Display an interactive dependency graph of all tasks and actions.",
-        alias = "dg"
+        alias = "dg",
+        hide = true
     )]
-    DepGraph(DepGraphArgs),
+    DepGraph(ActionGraphArgs),
 
     // moon project <id>
     #[command(

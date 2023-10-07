@@ -84,7 +84,7 @@ pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
 }
 
 /// Get a serialized representation of the dependency graph.
-pub async fn dep_graph_repr(dep_graph: &DepGraph) -> GraphInfoDto {
+pub async fn action_graph_repr(dep_graph: &DepGraph) -> GraphInfoDto {
     let labeled_graph = dep_graph.labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, false)
 }

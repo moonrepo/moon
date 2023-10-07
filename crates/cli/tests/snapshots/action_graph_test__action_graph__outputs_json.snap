@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/dep_graph_test.rs
+source: crates/cli/tests/action_graph_test.rs
 expression: assert.output()
 ---
 {"nodes":[{"id":2,"label":"InstallNodeDeps(18.0.0)"},{"id":4,"label":"RunTarget(basic:lint)"},{"id":1,"label":"SetupNodeTool(18.0.0)"},{"id":3,"label":"SyncNodeProject(basic)"}],"edges":[{"id":"2 -> 1","label":"","source":2,"target":1},{"id":"3 -> 1","label":"","source":3,"target":1},{"id":"4 -> 2","label":"","source":4,"target":2},{"id":"4 -> 3","label":"","source":4,"target":3}]}

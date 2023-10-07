@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/dep_graph_test.rs
+source: crates/cli/tests/action_graph_test.rs
 expression: assert.output()
 ---
 digraph {

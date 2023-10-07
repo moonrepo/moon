@@ -57,6 +57,7 @@
 #### 🚀 Updates
 
 - Added a `moon action-graph` command and deprecated `moon dep-graph`.
+- Added a `--dependents` argument to `moon action-graph`.
 
 #### 🐞 Fixes
 

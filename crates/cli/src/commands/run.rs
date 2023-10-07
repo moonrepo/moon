@@ -26,10 +26,7 @@ pub struct RunArgs {
     #[arg(required = true, help = "List of targets to run")]
     pub targets: Vec<TargetLocator>,
 
-    #[arg(
-        long,
-        help = "Run dependents of the primary targets, as well as dependencies"
-    )]
+    #[arg(long, help = "Run dependents of the primary targets")]
     pub dependents: bool,
 
     #[arg(

@@ -11,6 +11,9 @@ pub struct ActionGraphArgs {
     #[arg(help = "Target to *only* graph")]
     target: Option<TargetLocator>,
 
+    #[arg(long, help = "Include dependents of the focused target")]
+    dependents: bool,
+
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
 
@@ -27,14 +30,14 @@ pub async fn internal_action_graph(
 
     // Focus a target and its dependencies/dependents
     if let Some(locator) = args.target.clone() {
-        action_graph_builder.include_dependents = true;
+        action_graph_builder.include_dependents = args.dependents;
         action_graph_builder.run_task_by_target_locator(locator, None)?;
 
         // Show all targets and actions
     } else {
-        for project in project_graph.get_all_unexpanded() {
+        for project in project_graph.get_all()? {
             for task in project.tasks.values() {
-                action_graph_builder.run_task(project, task, None)?;
+                action_graph_builder.run_task(&project, task, None)?;
             }
         }
     }

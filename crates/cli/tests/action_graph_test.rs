@@ -24,7 +24,7 @@ mod action_graph {
         let dot = assert.output();
 
         // Snapshot is not deterministic
-        assert_eq!(dot.split('\n').count(), 568);
+        assert_eq!(dot.split('\n').count(), 450);
     }
 
     #[test]
@@ -95,6 +95,15 @@ mod action_graph {
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("action-graph").arg("--dot").arg("basic:build");
+        });
+
+        assert_snapshot!(assert.output());
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("action-graph")
+                .arg("--dot")
+                .arg("--dependents")
+                .arg("basic:build");
         });
 
         assert_snapshot!(assert.output());

@@ -3392,33 +3392,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_dep_graph"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "miette",
- "moon",
- "moon_action",
- "moon_common",
- "moon_config",
- "moon_logger",
- "moon_platform",
- "moon_project",
- "moon_project_graph",
- "moon_query",
- "moon_target",
- "moon_task",
- "moon_test_utils",
- "moon_utils",
- "moon_workspace",
- "petgraph",
- "rustc-hash",
- "starbase_styles",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "moon_emitter"
 version = "0.1.0"
 dependencies = [

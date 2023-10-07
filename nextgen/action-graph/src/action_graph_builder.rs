@@ -31,6 +31,8 @@ impl<'app> ActionGraphBuilder<'app> {
         platform_manager: &'app PlatformManager,
         project_graph: &'app ProjectGraph,
     ) -> miette::Result<Self> {
+        debug!("Building action graph");
+
         Ok(ActionGraphBuilder {
             all_query: None,
             graph: DiGraph::new(),
@@ -168,10 +170,11 @@ impl<'app> ActionGraphBuilder<'app> {
         // And we also need to create edges for task dependencies
         if !task.deps.is_empty() {
             trace!(
+                task = task.target.as_str(),
                 deps = ?task.deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
-                "Adding dependencies for task {}",
-                color::label(&task.target),
+                "Linking dependencies for task",
             );
+
             reqs.extend(self.run_task_dependencies(task)?);
         }
 
@@ -394,7 +397,7 @@ impl<'app> ActionGraphBuilder<'app> {
     fn link_requirements(&mut self, index: NodeIndex, reqs: Vec<NodeIndex>) {
         trace!(
             index = index.index(),
-            requires = ?reqs,
+            requires = ?reqs.iter().map(|i| i.index()).collect::<Vec<_>>(),
             "Linking requirements for index"
         );
 

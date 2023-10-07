@@ -117,7 +117,9 @@ impl Pipeline {
 
         action_graph.reset_iterator()?;
 
-        for (i, node) in action_graph.enumerate() {
+        for node in action_graph {
+            dbg!(node.label(), semaphore.available_permits());
+
             // Run these later
             if node.is_persistent() {
                 persistent_nodes.push(node);
@@ -129,10 +131,10 @@ impl Pipeline {
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let cancel_token_clone = cancel_token.clone();
-            let mut action = Action::new(node.to_owned());
+            let action = Action::new(node.to_owned());
 
             let Ok(permit) = semaphore.clone().acquire_owned().await else {
-                break; // Should error?
+                continue; // Should error?
             };
 
             action_handles.push(tokio::spawn(async move {
@@ -253,10 +255,16 @@ impl Pipeline {
         results: &mut ActionResults,
         emitter: &RwLockReadGuard<'_, Emitter>,
     ) -> miette::Result<()> {
+        dbg!("RUNNING HANDLES", handles.len());
+
         let mut abort_error: Option<miette::Report> = None;
         let mut show_abort_log = false;
+        let mut count = 0;
 
         for handle in handles {
+            dbg!(count);
+            count += 1;
+
             if abort_error.is_some() {
                 if !handle.is_finished() {
                     handle.abort();

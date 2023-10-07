@@ -459,9 +459,13 @@ impl Subscriber for MoonbaseSubscriber {
                                 let archive_path = archive_path.to_owned();
 
                                 // Create a fake action label so that we can check the CI cache
-                                let action_label =
-                                    ActionNode::RunTarget(Runtime::system(), (*target).to_owned())
-                                        .label();
+                                let action_label = ActionNode::RunTask {
+                                    interactive: false,
+                                    persistent: false,
+                                    runtime: Runtime::system(),
+                                    target: (*target).to_owned(),
+                                }
+                                .label();
                                 let job_id = self.job_ids.get(&action_label).cloned();
 
                                 // Run this in the background so we don't slow down the pipeline

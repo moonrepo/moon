@@ -69,7 +69,7 @@ impl Pipeline {
 
     pub async fn run(
         &mut self,
-        action_graph: ActionGraph,
+        mut action_graph: ActionGraph,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
@@ -312,9 +312,7 @@ impl Pipeline {
 
             term.line(label_checkpoint(
                 match &result.node {
-                    Some(ActionNode::RunTarget(_, target)) => target.as_str(),
-                    Some(ActionNode::RunInteractiveTarget(_, target)) => target.as_str(),
-                    Some(ActionNode::RunPersistentTarget(_, target)) => target.as_str(),
+                    Some(ActionNode::RunTask { target, .. }) => target.as_str(),
                     _ => &result.label,
                 },
                 Checkpoint::RunFailed,
@@ -416,14 +414,7 @@ impl Pipeline {
         let mut skipped_count = 0;
 
         for result in results {
-            if compact
-                && !matches!(
-                    result.node.as_ref().unwrap(),
-                    ActionNode::RunTarget(_, _)
-                        | ActionNode::RunInteractiveTarget(_, _)
-                        | ActionNode::RunPersistentTarget(_, _)
-                )
-            {
+            if compact && !matches!(result.node.as_ref().unwrap(), ActionNode::RunTask { .. }) {
                 continue;
             }
 

@@ -19,6 +19,7 @@ moon_query = { path = "../query" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

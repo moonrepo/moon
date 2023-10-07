@@ -120,31 +120,31 @@ impl DepGraph {
         let mut sorted_batches: BatchedTopoSort = vec![];
         let mut persistent: Vec<NodeIndex> = vec![];
 
-        for mut batch in batches.into_iter().rev() {
-            batch.retain(|ix| match self.graph.node_weight(*ix).unwrap() {
-                // Interactive tasks must be the only item in their batch
-                // for stdin to work correctly
-                ActionNode::RunInteractiveTarget(_, _) => {
-                    sorted_batches.push(vec![*ix]);
-                    false
-                }
-                // Persistent tasks always run last as a combined batch,
-                // as their processes may never end
-                ActionNode::RunPersistentTarget(_, _) => {
-                    persistent.push(*ix);
-                    false
-                }
-                _ => true,
-            });
+        // for mut batch in batches.into_iter().rev() {
+        //     batch.retain(|ix| match self.graph.node_weight(*ix).unwrap() {
+        //         // Interactive tasks must be the only item in their batch
+        //         // for stdin to work correctly
+        //         ActionNode::RunInteractiveTarget(_, _) => {
+        //             sorted_batches.push(vec![*ix]);
+        //             false
+        //         }
+        //         // Persistent tasks always run last as a combined batch,
+        //         // as their processes may never end
+        //         ActionNode::RunPersistentTarget(_, _) => {
+        //             persistent.push(*ix);
+        //             false
+        //         }
+        //         _ => true,
+        //     });
 
-            if !batch.is_empty() {
-                sorted_batches.push(batch);
-            }
-        }
+        //     if !batch.is_empty() {
+        //         sorted_batches.push(batch);
+        //     }
+        // }
 
-        if !persistent.is_empty() {
-            sorted_batches.push(persistent);
-        }
+        // if !persistent.is_empty() {
+        //     sorted_batches.push(persistent);
+        // }
 
         Ok(sorted_batches)
     }

@@ -3009,6 +3009,7 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_action_graph",
  "moon_common",
  "moon_platform_runtime",
  "moon_target",
@@ -3043,6 +3044,7 @@ dependencies = [
  "moon_test_utils2",
  "petgraph",
  "rustc-hash",
+ "serde",
  "starbase_sandbox",
  "thiserror",
  "tokio",

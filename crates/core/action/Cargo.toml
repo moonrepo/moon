@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_action_graph = { path = "../../../nextgen/action-graph" }
 moon_common = { path = "../../../nextgen/common" }
 moon_platform_runtime = { path = "../../../nextgen/platform-runtime" }
 moon_target = { path = "../../../nextgen/target" }

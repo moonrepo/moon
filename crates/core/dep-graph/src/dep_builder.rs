@@ -140,47 +140,11 @@ impl<'ws> DepGraphBuilder<'ws> {
     }
 
     pub fn install_project_deps(&mut self, runtime: &Runtime, project_id: &Id) -> NodeIndex {
-        let node = ActionNode::InstallProjectDeps(runtime.clone(), project_id.to_owned());
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
-        }
-
-        trace!(
-            target: LOG_TARGET,
-            "Adding {} to graph",
-            color::muted_light(node.label())
-        );
-
-        // Before we install deps, we must ensure the language has been installed
-        let setup_tool_index = self.setup_tool(runtime);
-        let index = self.insert_node(&node);
-
-        self.graph.add_edge(index, setup_tool_index, ());
-
-        index
+        NodeIndex::new(0)
     }
 
     pub fn install_workspace_deps(&mut self, runtime: &Runtime) -> NodeIndex {
-        let node = ActionNode::InstallDeps(runtime.clone());
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
-        }
-
-        trace!(
-            target: LOG_TARGET,
-            "Adding {} to graph",
-            color::muted_light(node.label())
-        );
-
-        // Before we install deps, we must ensure the language has been installed
-        let setup_tool_index = self.setup_tool(runtime);
-        let index = self.insert_node(&node);
-
-        self.graph.add_edge(index, setup_tool_index, ());
-
-        index
+        NodeIndex::new(0)
     }
 
     pub fn run_dependents_for_target<T: AsRef<Target>>(&mut self, target: T) -> miette::Result<()> {
@@ -291,66 +255,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         project: &Project,
         touched_files: Option<&TouchedFilePaths>,
     ) -> miette::Result<Option<NodeIndex>> {
-        let target = target.as_ref();
-        let task = project.get_task(&target.task_id)?;
-        let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
-
-        let node = if task.is_persistent() {
-            ActionNode::RunPersistentTarget(runtime, target.clone())
-        } else if task.is_interactive() {
-            ActionNode::RunInteractiveTarget(runtime, target.clone())
-        } else {
-            ActionNode::RunTarget(runtime, target.clone())
-        };
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(Some(*index));
-        }
-
-        // Compare against touched files if provided
-        if let Some(touched) = touched_files {
-            if !task.is_affected(touched)? {
-                trace!(
-                    target: LOG_TARGET,
-                    "Target {} not affected based on touched files, skipping",
-                    color::label(target),
-                );
-
-                return Ok(None);
-            }
-        }
-
-        trace!(
-            target: LOG_TARGET,
-            "Adding {} to graph",
-            color::muted_light(node.label())
-        );
-
-        // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_deps(project, Some(task))?;
-        let sync_project_index = self.sync_project(project)?;
-        let index = self.insert_node(&node);
-
-        self.graph.add_edge(index, install_deps_index, ());
-        self.graph.add_edge(index, sync_project_index, ());
-
-        // And we also need to wait on all dependent targets
-        if !task.deps.is_empty() {
-            trace!(
-                target: LOG_TARGET,
-                "Adding dependencies {} for target {}",
-                map_list(&task.deps, |f| color::symbol(f)),
-                color::label(target),
-            );
-
-            // We don't pass touched files to dependencies, because if the parent
-            // task is affected/going to run, then so should all of these!
-            for dep_index in self.run_target_task_dependencies(task, None)? {
-                self.graph.add_edge(index, dep_index, ());
-            }
-        }
-
-        Ok(Some(index))
+        Ok(Some(NodeIndex::new(0)))
     }
 
     pub fn run_target_task_dependencies(
@@ -416,52 +321,11 @@ impl<'ws> DepGraphBuilder<'ws> {
     }
 
     pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
-        let node = ActionNode::SetupTool(runtime.clone());
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
-        }
-
-        trace!(
-            target: LOG_TARGET,
-            "Adding {} to graph",
-            color::muted_light(node.label())
-        );
-
-        self.insert_node(&node)
+        NodeIndex::new(0)
     }
 
     pub fn sync_project(&mut self, project: &Project) -> miette::Result<NodeIndex> {
-        let (runtime, _) = self.get_runtimes_from_project(project, None);
-        let node = ActionNode::SyncProject(runtime.clone(), project.id.clone());
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(*index);
-        }
-
-        trace!(
-            target: LOG_TARGET,
-            "Adding {} to graph",
-            color::muted_light(node.label())
-        );
-
-        // Syncing depends on the language's tool to be installed
-        let setup_tool_index = self.setup_tool(&runtime);
-        let index = self.insert_node(&node);
-
-        self.graph.add_edge(index, setup_tool_index, ());
-
-        // And we should also depend on other projects
-        for dep_project_id in self.project_graph.dependencies_of(project)? {
-            let dep_project = self.project_graph.get(dep_project_id)?;
-            let dep_index = self.sync_project(&dep_project)?;
-
-            if index != dep_index {
-                self.graph.add_edge(index, dep_index, ());
-            }
-        }
-
-        Ok(index)
+        Ok(NodeIndex::new(0))
     }
 
     // PRIVATE

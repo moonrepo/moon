@@ -216,6 +216,10 @@ const config = {
 						to: '/docs/how-it-works/action-graph',
 					},
 					{
+						from: '/docs/commands/dep-graph',
+						to: '/docs/commands/action-graph',
+					},
+					{
 						from: '/docs/config/global-project',
 						to: '/docs/config/tasks',
 					},
@@ -226,10 +230,6 @@ const config = {
 					{
 						from: '/docs/guides/git-hooks',
 						to: '/docs/guides/vcs-hooks',
-					},
-					{
-						from: '/docs/commands/dep-graph',
-						to: '/docs/commands/action-graph',
 					},
 				],
 			},

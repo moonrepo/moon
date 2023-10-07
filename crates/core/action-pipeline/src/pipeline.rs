@@ -113,95 +113,106 @@ impl Pipeline {
 
         let mut results: ActionResults = vec![];
         let mut action_handles = vec![];
-        let mut persistent_nodes = vec![];
+        // let mut persistent_nodes = vec![];
+        let mut action_graph_iter = action_graph.try_iter().unwrap();
 
-        action_graph.reset_iterator()?;
+        while let Some(node_index) = action_graph_iter.next() {
+            let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                continue;
+            };
 
-        for node in action_graph {
             dbg!(node.label(), semaphore.available_permits());
 
-            // Run these later
-            if node.is_persistent() {
-                persistent_nodes.push(node);
-                continue;
-            }
-
-            let context_clone = Arc::clone(&context);
-            let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&workspace);
-            let project_graph_clone = Arc::clone(&project_graph);
-            let cancel_token_clone = cancel_token.clone();
-            let action = Action::new(node.to_owned());
-
-            let Ok(permit) = semaphore.clone().acquire_owned().await else {
-                continue; // Should error?
-            };
-
-            action_handles.push(tokio::spawn(async move {
-                let result = tokio::select! {
-                    biased;
-
-                    _ = cancel_token_clone.cancelled() => {
-                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-                    }
-                    res = process_action(
-                        action,
-                        context_clone,
-                        emitter_clone,
-                        workspace_clone,
-                        project_graph_clone,
-                    ) => res
-                };
-
-                drop(permit);
-
-                result
-            }));
-
-            // Run this in isolation by exhausting the current list of handles
-            if node.is_interactive() || semaphore.available_permits() == 0 {
-                self.run_handles(
-                    action_handles.drain(0..).collect(),
-                    &mut results,
-                    &local_emitter,
-                )
-                .await?;
-            }
+            action_graph_iter.mark_completed(node_index);
         }
 
-        for node in persistent_nodes {
-            let context_clone = Arc::clone(&context);
-            let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&workspace);
-            let project_graph_clone = Arc::clone(&project_graph);
-            let cancel_token_clone = cancel_token.clone();
-            let mut action = Action::new(node.to_owned());
+        // action_graph.reset_iterator()?;
 
-            let Ok(permit) = semaphore.clone().acquire_owned().await else {
-                break; // Should error?
-            };
+        // for node in action_graph {
+        //     dbg!(node.label(), semaphore.available_permits());
 
-            action_handles.push(tokio::spawn(async move {
-                let result = tokio::select! {
-                    biased;
+        //     // Run these later
+        //     if node.is_persistent() {
+        //         persistent_nodes.push(node);
+        //         continue;
+        //     }
 
-                    _ = cancel_token_clone.cancelled() => {
-                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-                    }
-                    res = process_action(
-                        action,
-                        context_clone,
-                        emitter_clone,
-                        workspace_clone,
-                        project_graph_clone,
-                    ) => res
-                };
+        //     let context_clone = Arc::clone(&context);
+        //     let emitter_clone = Arc::clone(&emitter);
+        //     let workspace_clone = Arc::clone(&workspace);
+        //     let project_graph_clone = Arc::clone(&project_graph);
+        //     let cancel_token_clone = cancel_token.clone();
+        //     let action = Action::new(node.to_owned());
 
-                drop(permit);
+        //     let Ok(permit) = semaphore.clone().acquire_owned().await else {
+        //         continue; // Should error?
+        //     };
 
-                result
-            }));
-        }
+        //     action_handles.push(tokio::spawn(async move {
+        //         let result = tokio::select! {
+        //             biased;
+
+        //             _ = cancel_token_clone.cancelled() => {
+        //                 Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+        //             }
+        //             res = process_action(
+        //                 action,
+        //                 context_clone,
+        //                 emitter_clone,
+        //                 workspace_clone,
+        //                 project_graph_clone,
+        //             ) => res
+        //         };
+
+        //         drop(permit);
+
+        //         result
+        //     }));
+
+        //     // Run this in isolation by exhausting the current list of handles
+        //     if node.is_interactive() || semaphore.available_permits() == 0 {
+        //         self.run_handles(
+        //             action_handles.drain(0..).collect(),
+        //             &mut results,
+        //             &local_emitter,
+        //         )
+        //         .await?;
+        //     }
+        // }
+
+        // for node in persistent_nodes {
+        //     let context_clone = Arc::clone(&context);
+        //     let emitter_clone = Arc::clone(&emitter);
+        //     let workspace_clone = Arc::clone(&workspace);
+        //     let project_graph_clone = Arc::clone(&project_graph);
+        //     let cancel_token_clone = cancel_token.clone();
+        //     let mut action = Action::new(node.to_owned());
+
+        //     let Ok(permit) = semaphore.clone().acquire_owned().await else {
+        //         break; // Should error?
+        //     };
+
+        //     action_handles.push(tokio::spawn(async move {
+        //         let result = tokio::select! {
+        //             biased;
+
+        //             _ = cancel_token_clone.cancelled() => {
+        //                 Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+        //             }
+        //             res = process_action(
+        //                 action,
+        //                 context_clone,
+        //                 emitter_clone,
+        //                 workspace_clone,
+        //                 project_graph_clone,
+        //             ) => res
+        //         };
+
+        //         drop(permit);
+
+        //         result
+        //     }));
+        // }
 
         // Run any remaining actions
         self.run_handles(

@@ -3,11 +3,11 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use ci_env::CiOutput;
 use clap::Args;
 use itertools::Itertools;
-use moon::{build_dep_graph, generate_project_graph};
+use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
+use moon_action_graph::ActionGraph;
 use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_dep_graph::DepGraph;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
 use moon_terminal::safe_exit;
@@ -162,31 +162,31 @@ fn distribute_targets_across_jobs(
 }
 
 /// Generate a dependency graph with the runnable targets.
-fn generate_dep_graph(
+fn generate_action_graph(
     provider: &CiOutput,
     project_graph: &ProjectGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-) -> AppResult<DepGraph> {
-    print_header(provider, "Generating dependency graph");
+) -> AppResult<ActionGraph> {
+    print_header(provider, "Generating action graph");
 
-    let mut dep_builder = build_dep_graph(project_graph);
+    let mut action_graph_builder = build_action_graph(project_graph)?;
+
+    // And also run its dependents to ensure consumers still work correctly
+    action_graph_builder.include_dependents = true;
 
     for target in targets {
         // Run the target and its dependencies
-        dep_builder.run_target(target, Some(touched_files))?;
-
-        // And also run its dependents to ensure consumers still work correctly
-        dep_builder.run_dependents_for_target(target)?;
+        action_graph_builder.run_task_by_target(target, Some(touched_files))?;
     }
 
-    let dep_graph = dep_builder.build();
+    let action_graph = action_graph_builder.build()?;
 
     println!("Target count: {}", targets.len());
-    println!("Action count: {}", dep_graph.get_node_count());
+    println!("Action count: {}", action_graph.get_node_count());
     print_footer(provider);
 
-    Ok(dep_graph)
+    Ok(action_graph)
 }
 
 #[system]
@@ -210,9 +210,10 @@ pub async fn ci(
     }
 
     let targets = distribute_targets_across_jobs(&ci_provider, args, targets);
-    let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets, &touched_files)?;
+    let action_graph =
+        generate_action_graph(&ci_provider, &project_graph, &targets, &touched_files)?;
 
-    if dep_graph.is_empty() {
+    if action_graph.is_empty() {
         println!(
             "{}",
             color::invalid("No targets to run based on touched files")
@@ -239,7 +240,7 @@ pub async fn ci(
 
     let results = pipeline
         .generate_report("ciReport.json")
-        .run(dep_graph, Some(context))
+        .run(action_graph, Some(context))
         .await?;
 
     print_footer(&ci_provider);

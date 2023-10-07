@@ -4,13 +4,6 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-[lib]
-bench = false
-
-[[bench]]
-name = "pipeline_benchmark"
-harness = false
-
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }

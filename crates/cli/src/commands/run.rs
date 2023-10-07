@@ -4,7 +4,7 @@ use crate::helpers::map_list;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
 use miette::miette;
-use moon::{build_dep_graph, generate_project_graph};
+use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
@@ -136,21 +136,32 @@ pub async fn run_target(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_builder = build_dep_graph(&project_graph);
+    let mut action_graph_builder = build_action_graph(&project_graph)?;
+
+    // Run dependents for all primary targets
+    action_graph_builder.include_dependents = args.dependents;
 
     if let Some(query_input) = &args.query {
-        dep_builder.set_query(query_input)?;
+        action_graph_builder.set_query(query_input)?;
     }
 
     // Run targets, optionally based on affected files
-    let primary_targets = dep_builder.run_targets_by_locator(
-        target_locators,
-        if should_run_affected {
-            Some(&touched_files)
-        } else {
-            None
-        },
-    )?;
+    let mut primary_targets = vec![];
+
+    for locator in target_locators {
+        primary_targets.extend(
+            action_graph_builder
+                .run_task_by_target_locator(
+                    locator,
+                    if should_run_affected {
+                        Some(&touched_files)
+                    } else {
+                        None
+                    },
+                )?
+                .0,
+        );
+    }
 
     if primary_targets.is_empty() {
         let targets_list = map_list(target_locators, |id| color::label(id));
@@ -183,13 +194,6 @@ pub async fn run_target(
         ));
     }
 
-    // Run dependents for all primary targets
-    if args.dependents {
-        for target in &primary_targets {
-            dep_builder.run_dependents_for_target(target)?;
-        }
-    }
-
     // Process all tasks in the graph
     let context = ActionContext {
         affected_only: should_run_affected,
@@ -203,7 +207,7 @@ pub async fn run_target(
         ..ActionContext::default()
     };
 
-    let dep_graph = dep_builder.build();
+    let action_graph = action_graph_builder.build()?;
     let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
 
     if let Some(concurrency) = concurrency {
@@ -213,7 +217,7 @@ pub async fn run_target(
     let results = pipeline
         .bail_on_error()
         .generate_report("runReport.json")
-        .run(dep_graph, Some(context))
+        .run(action_graph, Some(context))
         .await?;
 
     pipeline.render_stats(&results, true)?;

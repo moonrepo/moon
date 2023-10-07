@@ -62,6 +62,10 @@ impl ActionGraph {
         self.graph.node_weight(*index)
     }
 
+    pub fn labeled_graph(&self) -> DiGraph<String, String> {
+        self.graph.map(|_, n| n.label(), |_, _| String::new())
+    }
+
     pub fn to_dot(&self) -> String {
         type DotGraph = DiGraph<String, ()>;
 
@@ -97,10 +101,6 @@ impl ActionGraph {
         );
 
         format!("{dot:?}")
-    }
-
-    pub fn to_labeled_graph(&self) -> DiGraph<String, String> {
-        self.graph.map(|_, n| n.label(), |_, _| String::new())
     }
 
     fn detect_cycle(&self) -> miette::Result<()> {

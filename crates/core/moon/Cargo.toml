@@ -8,7 +8,6 @@ publish = false
 moon_action_graph = { path = "../../../nextgen/action-graph" }
 moon_config = { path = "../../../nextgen/config" }
 moon_deno_platform = { path = "../../deno/platform" }
-moon_dep_graph = { path = "../dep-graph" }
 moon_node_platform = { path = "../../node/platform" }
 moon_platform = { path = "../platform" }
 moon_platform_detector = { path = "../platform-detector" }

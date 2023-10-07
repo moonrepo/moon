@@ -1,6 +1,6 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
-use moon_dep_graph::DepGraph;
+use moon_action_graph::ActionGraph;
 use moon_project_graph::ProjectGraph;
 use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
@@ -84,8 +84,8 @@ pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
 }
 
 /// Get a serialized representation of the dependency graph.
-pub async fn action_graph_repr(dep_graph: &DepGraph) -> GraphInfoDto {
-    let labeled_graph = dep_graph.labeled_graph();
+pub async fn action_graph_repr(action_graph: &ActionGraph) -> GraphInfoDto {
+    let labeled_graph = action_graph.labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, false)
 }
 

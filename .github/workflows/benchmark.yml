@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     # strategy:
     #   matrix:
-    #     bench: [dep_graph_benchmark, emitter_benchmark, pipeline_benchmark]
+    #     bench: [emitter_benchmark, pipeline_benchmark]
     #   fail-fast: false
     steps:
       - run: echo ${{ github.event.pull_request.head.sha }}
@@ -37,8 +37,8 @@ jobs:
       - name: Run benchmarks
         # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
         run:
-          cargo bench --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench
-          pipeline_benchmark --bench tar_benchmark -- --save-baseline head-sha
+          cargo bench --workspace --bench emitter_benchmark --bench pipeline_benchmark --bench
+          tar_benchmark -- --save-baseline head-sha
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
@@ -49,8 +49,8 @@ jobs:
       - name: Run benchmarks
         # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
         run:
-          cargo bench --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench
-          pipeline_benchmark --bench tar_benchmark -- --save-baseline base-sha
+          cargo bench --workspace --bench emitter_benchmark --bench pipeline_benchmark --bench
+          tar_benchmark -- --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp

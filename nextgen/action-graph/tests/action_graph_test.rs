@@ -46,7 +46,7 @@ fn topo(graph: ActionGraph) -> Vec<ActionNode> {
     while iter.has_pending() {
         if let Some(index) = iter.next() {
             nodes.push(graph.get_node_from_index(&index).unwrap().to_owned());
-            iter.mark_completed(index);
+            iter.mark_completed(index.index());
         }
     }
 

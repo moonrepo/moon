@@ -112,8 +112,8 @@ impl<'graph> ActionGraphIter<'graph> {
         self.completed.len() < self.graph.node_count()
     }
 
-    pub fn mark_completed(&mut self, index: NodeIndex) {
-        self.completed.insert(index);
+    pub fn mark_completed(&mut self, index: usize) {
+        self.completed.insert(NodeIndex::new(index));
     }
 }
 
@@ -123,7 +123,7 @@ impl<'graph> Iterator for ActionGraphIter<'graph> {
 
     fn next(&mut self) -> Option<Self::Item> {
         for idx in &self.indices {
-            if self.visited.contains(&idx) || self.completed.contains(&idx) {
+            if self.visited.contains(idx) || self.completed.contains(idx) {
                 continue;
             }
 

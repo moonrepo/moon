@@ -7,15 +7,16 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_action_graph::ActionGraph;
+use moon_action_graph::{ActionGraph, ActionGraphIter};
 use moon_emitter::{Emitter, Event};
-use moon_logger::{debug, error, trace};
+use moon_logger::{debug, error};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use starbase_styles::color;
+use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, RwLockReadGuard, Semaphore};
@@ -69,7 +70,7 @@ impl Pipeline {
 
     pub async fn run(
         &mut self,
-        mut action_graph: ActionGraph,
+        action_graph: ActionGraph,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
@@ -113,110 +114,122 @@ impl Pipeline {
 
         let mut results: ActionResults = vec![];
         let mut action_handles = vec![];
-        // let mut persistent_nodes = vec![];
-        let mut action_graph_iter = action_graph.try_iter().unwrap();
+        let mut persistent_nodes = vec![];
+        let mut action_graph_iter = action_graph.try_iter()?;
 
-        while let Some(node_index) = action_graph_iter.next() {
+        while action_graph_iter.has_pending() {
+            let Some(node_index) = action_graph_iter.next() else {
+                // Nothing to run since they're waiting on currently running
+                // actions, so exhause the current list
+                self.run_handles(
+                    mem::take(&mut action_handles),
+                    &mut action_graph_iter,
+                    &mut results,
+                    &local_emitter,
+                )
+                .await?;
+
+                continue;
+            };
+
             let Some(node) = action_graph.get_node_from_index(&node_index) else {
                 continue;
             };
 
-            dbg!(node.label(), semaphore.available_permits());
+            // Run these later as a parallel batch
+            if node.is_persistent() {
+                persistent_nodes.push(node_index);
+                continue;
+            }
 
-            action_graph_iter.mark_completed(node_index);
+            let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
+            let cancel_token_clone = cancel_token.clone();
+            let mut action = Action::new(node.to_owned());
+            action.node_index = node_index.index();
+
+            let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                continue; // Should error?
+            };
+
+            action_handles.push(tokio::spawn(async move {
+                let result = tokio::select! {
+                    biased;
+
+                    _ = cancel_token_clone.cancelled() => {
+                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+                    }
+                    res = process_action(
+                        action,
+                        context_clone,
+                        emitter_clone,
+                        workspace_clone,
+                        project_graph_clone,
+                    ) => res
+                };
+
+                drop(permit);
+
+                result
+            }));
+
+            // Run this in isolation by exhausting the current list of handles
+            if node.is_interactive() || semaphore.available_permits() == 0 {
+                self.run_handles(
+                    mem::take(&mut action_handles),
+                    &mut action_graph_iter,
+                    &mut results,
+                    &local_emitter,
+                )
+                .await?;
+            }
         }
 
-        // action_graph.reset_iterator()?;
+        for node_index in persistent_nodes {
+            let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                continue;
+            };
 
-        // for node in action_graph {
-        //     dbg!(node.label(), semaphore.available_permits());
+            let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
+            let cancel_token_clone = cancel_token.clone();
+            let mut action = Action::new(node.to_owned());
+            action.node_index = node_index.index();
 
-        //     // Run these later
-        //     if node.is_persistent() {
-        //         persistent_nodes.push(node);
-        //         continue;
-        //     }
+            let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                break; // Should error?
+            };
 
-        //     let context_clone = Arc::clone(&context);
-        //     let emitter_clone = Arc::clone(&emitter);
-        //     let workspace_clone = Arc::clone(&workspace);
-        //     let project_graph_clone = Arc::clone(&project_graph);
-        //     let cancel_token_clone = cancel_token.clone();
-        //     let action = Action::new(node.to_owned());
+            action_handles.push(tokio::spawn(async move {
+                let result = tokio::select! {
+                    biased;
 
-        //     let Ok(permit) = semaphore.clone().acquire_owned().await else {
-        //         continue; // Should error?
-        //     };
+                    _ = cancel_token_clone.cancelled() => {
+                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+                    }
+                    res = process_action(
+                        action,
+                        context_clone,
+                        emitter_clone,
+                        workspace_clone,
+                        project_graph_clone,
+                    ) => res
+                };
 
-        //     action_handles.push(tokio::spawn(async move {
-        //         let result = tokio::select! {
-        //             biased;
+                drop(permit);
 
-        //             _ = cancel_token_clone.cancelled() => {
-        //                 Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-        //             }
-        //             res = process_action(
-        //                 action,
-        //                 context_clone,
-        //                 emitter_clone,
-        //                 workspace_clone,
-        //                 project_graph_clone,
-        //             ) => res
-        //         };
-
-        //         drop(permit);
-
-        //         result
-        //     }));
-
-        //     // Run this in isolation by exhausting the current list of handles
-        //     if node.is_interactive() || semaphore.available_permits() == 0 {
-        //         self.run_handles(
-        //             action_handles.drain(0..).collect(),
-        //             &mut results,
-        //             &local_emitter,
-        //         )
-        //         .await?;
-        //     }
-        // }
-
-        // for node in persistent_nodes {
-        //     let context_clone = Arc::clone(&context);
-        //     let emitter_clone = Arc::clone(&emitter);
-        //     let workspace_clone = Arc::clone(&workspace);
-        //     let project_graph_clone = Arc::clone(&project_graph);
-        //     let cancel_token_clone = cancel_token.clone();
-        //     let mut action = Action::new(node.to_owned());
-
-        //     let Ok(permit) = semaphore.clone().acquire_owned().await else {
-        //         break; // Should error?
-        //     };
-
-        //     action_handles.push(tokio::spawn(async move {
-        //         let result = tokio::select! {
-        //             biased;
-
-        //             _ = cancel_token_clone.cancelled() => {
-        //                 Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-        //             }
-        //             res = process_action(
-        //                 action,
-        //                 context_clone,
-        //                 emitter_clone,
-        //                 workspace_clone,
-        //                 project_graph_clone,
-        //             ) => res
-        //         };
-
-        //         drop(permit);
-
-        //         result
-        //     }));
-        // }
+                result
+            }));
+        }
 
         // Run any remaining actions
         self.run_handles(
-            action_handles.drain(0..).collect(),
+            mem::take(&mut action_handles),
+            &mut action_graph_iter,
             &mut results,
             &local_emitter,
         )
@@ -229,18 +242,20 @@ impl Pipeline {
         let mut cached_count = 0;
         let mut failed_count = 0;
 
+        for result in &results {
+            if result.has_failed() {
+                failed_count += 1;
+            } else if result.was_cached() {
+                cached_count += 1;
+            } else {
+                passed_count += 1;
+            }
+        }
+
         debug!(
             target: LOG_TARGET,
             "Finished running {} actions in {:?}", total_actions_count, &duration
         );
-
-        // if result.has_failed() {
-        //     failed_count += 1;
-        // } else if result.was_cached() {
-        //     cached_count += 1;
-        // } else {
-        //     passed_count += 1;
-        // }
 
         local_emitter
             .emit(Event::PipelineFinished {
@@ -263,19 +278,14 @@ impl Pipeline {
     async fn run_handles(
         &self,
         handles: Vec<JoinHandle<miette::Result<Action>>>,
+        graph_iter: &mut ActionGraphIter<'_>,
         results: &mut ActionResults,
         emitter: &RwLockReadGuard<'_, Emitter>,
     ) -> miette::Result<()> {
-        dbg!("RUNNING HANDLES", handles.len());
-
         let mut abort_error: Option<miette::Report> = None;
         let mut show_abort_log = false;
-        let mut count = 0;
 
         for handle in handles {
-            dbg!(count);
-            count += 1;
-
             if abort_error.is_some() {
                 if !handle.is_finished() {
                     handle.abort();
@@ -283,6 +293,8 @@ impl Pipeline {
             } else {
                 match handle.await {
                     Ok(Ok(mut result)) => {
+                        graph_iter.mark_completed(result.node_index);
+
                         show_abort_log = result.should_abort();
 
                         if self.bail && result.should_bail() || result.should_abort() {

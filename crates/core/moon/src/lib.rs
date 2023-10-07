@@ -1,3 +1,4 @@
+use moon_action_graph::ActionGraphBuilder;
 use moon_config::LanguageType;
 use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
@@ -125,6 +126,10 @@ pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
     }
 
     Ok(workspace)
+}
+
+pub fn build_action_graph(project_graph: &ProjectGraph) -> miette::Result<ActionGraphBuilder> {
+    ActionGraphBuilder::new(project_graph)
 }
 
 pub fn build_dep_graph(project_graph: &ProjectGraph) -> DepGraphBuilder {

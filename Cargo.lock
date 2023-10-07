@@ -2987,6 +2987,7 @@ name = "moon"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_action_graph",
  "moon_config",
  "moon_deno_platform",
  "moon_dep_graph",

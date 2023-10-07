@@ -15,7 +15,7 @@ use crate::commands::clean::clean;
 use crate::commands::completions;
 use crate::commands::docker;
 use crate::commands::generate::generate;
-use crate::commands::graph::{dep::dep_graph, project::project_graph};
+use crate::commands::graph::{action::action_graph, dep::dep_graph, project::project_graph};
 use crate::commands::init::init;
 use crate::commands::migrate;
 use crate::commands::node;
@@ -138,6 +138,7 @@ pub async fn run_cli() -> AppResult {
     app.startup(systems::load_workspace);
 
     match cli.command {
+        Commands::ActionGraph(args) => app.execute_with_args(action_graph, args),
         Commands::Bin(args) => app.execute_with_args(bin, args),
         Commands::Ci(args) => {
             app.execute(systems::check_for_new_version);

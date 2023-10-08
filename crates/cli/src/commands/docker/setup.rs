@@ -1,6 +1,6 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
-use moon::{build_dep_graph, generate_project_graph};
+use moon::{build_action_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
@@ -18,17 +18,17 @@ pub async fn setup(workspace: ResourceMut<Workspace>) {
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let project_graph = generate_project_graph(workspace).await?;
-    let mut dep_builder = build_dep_graph(&project_graph);
+    let mut action_graph_builder = build_action_graph(&project_graph)?;
 
     for project_id in &manifest.focused_projects {
         let project = project_graph.get(project_id)?;
 
-        dep_builder.install_deps(&project, None)?;
+        action_graph_builder.install_deps(&project, None)?;
     }
 
-    let dep_graph = dep_builder.build();
+    let action_graph = action_graph_builder.build()?;
 
     Pipeline::new(workspace.to_owned(), project_graph)
-        .run(dep_graph, None)
+        .run(action_graph, None)
         .await?;
 }

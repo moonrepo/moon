@@ -7,18 +7,20 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_dep_graph::DepGraph;
+use moon_action_graph::ActionGraph;
 use moon_emitter::{Emitter, Event};
-use moon_logger::{debug, error, trace};
+use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use starbase_styles::color;
+use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, Semaphore};
+use tokio::sync::{RwLock, RwLockReadGuard, Semaphore};
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 const LOG_TARGET: &str = "moon:action-pipeline";
@@ -68,7 +70,7 @@ impl Pipeline {
 
     pub async fn run(
         &mut self,
-        dep_graph: DepGraph,
+        action_graph: ActionGraph,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
@@ -78,21 +80,14 @@ impl Pipeline {
         ));
         let workspace = Arc::clone(&self.workspace);
         let project_graph = Arc::clone(&self.project_graph);
-        let mut results: ActionResults = vec![];
-        let mut passed_count = 0;
-        let mut cached_count = 0;
-        let mut failed_count = 0;
 
-        // Queue actions in topological order that need to be processed,
-        // grouped into batches based on dependency requirements
-        let total_actions_count = dep_graph.get_node_count();
-        let batches = dep_graph.sort_batched_topological()?;
-        let batches_count = batches.len();
+        // Queue actions in topological order that need to be processed
+        let total_actions_count = action_graph.get_node_count();
         let local_emitter = emitter.read().await;
 
         debug!(
             target: LOG_TARGET,
-            "Running {} actions across {} batches", total_actions_count, batches_count
+            "Running {} actions", total_actions_count
         );
 
         local_emitter
@@ -117,121 +112,173 @@ impl Pipeline {
             self.concurrency.unwrap_or_else(num_cpus::get),
         ));
 
-        for (b, batch) in batches.into_iter().enumerate() {
-            let batch_index = b + 1;
-            let batch_target_name = format!("{LOG_TARGET}:batch:{batch_index}");
-            let actions_count = batch.len();
-            let mut action_handles = vec![];
+        let mut results: ActionResults = vec![];
+        let mut action_handles = vec![];
+        let mut persistent_nodes = vec![];
+        let mut action_graph_iter = action_graph.try_iter()?;
 
-            trace!(
-                target: &batch_target_name,
-                "Running {} actions in batch {}",
-                actions_count,
-                batch_index
-            );
+        action_graph_iter.monitor_completed();
 
-            for (i, node_index) in batch.into_iter().enumerate() {
-                let action_index = i + 1;
-
-                if let Some(node) = dep_graph.get_node_from_index(&node_index) {
-                    let context_clone = Arc::clone(&context);
-                    let emitter_clone = Arc::clone(&emitter);
-                    let workspace_clone = Arc::clone(&workspace);
-                    let project_graph_clone = Arc::clone(&project_graph);
-                    let cancel_token_clone = cancel_token.clone();
-
-                    let mut action = Action::new(node.to_owned());
-                    action.log_target = format!("{batch_target_name}:{action_index}");
-
-                    let Ok(permit) = semaphore.clone().acquire_owned().await else {
-                        break; // Should error?
-                    };
-
-                    action_handles.push(tokio::spawn(async move {
-                        let result = tokio::select! {
-                            biased;
-
-                            _ = cancel_token_clone.cancelled() => {
-                                Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-                            }
-                            res = process_action(
-                                action,
-                                context_clone,
-                                emitter_clone,
-                                workspace_clone,
-                                project_graph_clone,
-                            ) => res
-                        };
-
-                        drop(permit);
-
-                        result
-                    }));
-                } else {
-                    return Err(PipelineError::UnknownActionNode.into());
-                }
-            }
-
-            // Wait for all actions in this batch to complete
-            let mut abort_error: Option<miette::Report> = None;
-            let mut show_abort_log = false;
-
-            for handle in action_handles {
-                if abort_error.is_some() {
-                    if !handle.is_finished() {
-                        handle.abort();
-                    }
-                } else {
-                    match handle.await {
-                        Ok(Ok(mut result)) => {
-                            if result.has_failed() {
-                                failed_count += 1;
-                            } else if result.was_cached() {
-                                cached_count += 1;
-                            } else {
-                                passed_count += 1;
-                            }
-
-                            show_abort_log = result.should_abort();
-
-                            if self.bail && result.should_bail() || result.should_abort() {
-                                abort_error = Some(result.get_error());
-                            } else {
-                                results.push(result);
-                            }
-                        }
-                        Ok(Err(error)) => {
-                            abort_error = Some(error);
-                        }
-                        _ => {
-                            abort_error =
-                                Some(PipelineError::Aborted("Unknown error!".into()).into());
-                        }
-                    };
-                }
-            }
-
-            if let Some(abort_error) = abort_error {
-                if show_abort_log {
-                    error!(
-                        target: &batch_target_name,
-                        "Encountered a critical error, aborting the action pipeline"
-                    );
-                }
-
-                local_emitter
-                    .emit(Event::PipelineAborted {
-                        error: abort_error.to_string(),
-                    })
+        while action_graph_iter.has_pending() {
+            let Some(node_index) = action_graph_iter.next() else {
+                // Nothing new to run since they're waiting on currently
+                // running actions, so exhaust the current list
+                self.run_handles(mem::take(&mut action_handles), &mut results, &local_emitter)
                     .await?;
 
-                return Err(abort_error);
+                continue;
+            };
+
+            let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                warn!(
+                    target: LOG_TARGET,
+                    "Received a graph index {} with no associated node, unable to process",
+                    node_index.index()
+                );
+
+                continue;
+            };
+
+            // Run these later as a parallel batch
+            if node.is_persistent() {
+                trace!(
+                    target: LOG_TARGET,
+                    // index = node_index.index(),
+                    "Marking action {} as persistent, will defer run",
+                    node_index.index()
+                );
+
+                // Must mark as completed otherwise the loop hangs
+                action_graph_iter.mark_completed(node_index);
+
+                persistent_nodes.push(node_index);
+
+                continue;
+            }
+
+            let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
+            let cancel_token_clone = cancel_token.clone();
+            let sender = action_graph_iter.sender.clone();
+            let mut action = Action::new(node.to_owned());
+            action.node_index = node_index.index();
+
+            let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                continue; // Should error?
+            };
+
+            action_handles.push(tokio::spawn(async move {
+                let result = tokio::select! {
+                    biased;
+
+                    _ = cancel_token_clone.cancelled() => {
+                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+                    }
+                    res = process_action(
+                        action,
+                        context_clone,
+                        emitter_clone,
+                        workspace_clone,
+                        project_graph_clone,
+                    ) => res
+                };
+
+                if let Ok(action) = &result {
+                    let _ = sender.send(action.node_index);
+                }
+
+                drop(permit);
+
+                result
+            }));
+
+            // Run this in isolation by exhausting the current list of handles
+            if node.is_interactive() || semaphore.available_permits() == 0 {
+                self.run_handles(mem::take(&mut action_handles), &mut results, &local_emitter)
+                    .await?;
             }
         }
+
+        if !persistent_nodes.is_empty() {
+            trace!(
+                target: LOG_TARGET,
+                "Running {} persistent actions",
+                persistent_nodes.len(),
+            );
+        }
+
+        for node_index in persistent_nodes {
+            let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                warn!(
+                    target: LOG_TARGET,
+                    "Received a graph index {} with no associated node, unable to process",
+                    node_index.index()
+                );
+
+                continue;
+            };
+
+            let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
+            let cancel_token_clone = cancel_token.clone();
+            let sender = action_graph_iter.sender.clone();
+            let mut action = Action::new(node.to_owned());
+            action.node_index = node_index.index();
+
+            let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                continue; // Should error?
+            };
+
+            action_handles.push(tokio::spawn(async move {
+                let result = tokio::select! {
+                    biased;
+
+                    _ = cancel_token_clone.cancelled() => {
+                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+                    }
+                    res = process_action(
+                        action,
+                        context_clone,
+                        emitter_clone,
+                        workspace_clone,
+                        project_graph_clone,
+                    ) => res
+                };
+
+                if let Ok(action) = &result {
+                    let _ = sender.send(action.node_index);
+                }
+
+                drop(permit);
+
+                result
+            }));
+        }
+
+        // Run any remaining actions
+        self.run_handles(action_handles, &mut results, &local_emitter)
+            .await?;
 
         let duration = start.elapsed();
         let estimate = Estimator::calculate(&results, duration);
         let context = Arc::into_inner(context).unwrap().into_inner();
+        let mut passed_count = 0;
+        let mut cached_count = 0;
+        let mut failed_count = 0;
+
+        for result in &results {
+            if result.has_failed() {
+                failed_count += 1;
+            } else if result.was_cached() {
+                cached_count += 1;
+            } else {
+                passed_count += 1;
+            }
+        }
 
         debug!(
             target: LOG_TARGET,
@@ -256,6 +303,58 @@ impl Pipeline {
         Ok(results)
     }
 
+    async fn run_handles(
+        &self,
+        handles: Vec<JoinHandle<miette::Result<Action>>>,
+        results: &mut ActionResults,
+        emitter: &RwLockReadGuard<'_, Emitter>,
+    ) -> miette::Result<()> {
+        let mut abort_error: Option<miette::Report> = None;
+        let mut show_abort_log = false;
+
+        for handle in handles {
+            if abort_error.is_some() {
+                if !handle.is_finished() {
+                    handle.abort();
+                }
+            } else {
+                match handle.await {
+                    Ok(Ok(mut result)) => {
+                        show_abort_log = result.should_abort();
+
+                        if self.bail && result.should_bail() || result.should_abort() {
+                            abort_error = Some(result.get_error());
+                        } else {
+                            results.push(result);
+                        }
+                    }
+                    Ok(Err(error)) => {
+                        abort_error = Some(error);
+                    }
+                    _ => {
+                        abort_error = Some(PipelineError::Aborted("Unknown error!".into()).into());
+                    }
+                };
+            }
+        }
+
+        if let Some(abort_error) = abort_error {
+            if show_abort_log {
+                error!("Encountered a critical error, aborting the action pipeline");
+            }
+
+            emitter
+                .emit(Event::PipelineAborted {
+                    error: abort_error.to_string(),
+                })
+                .await?;
+
+            return Err(abort_error);
+        }
+
+        Ok(())
+    }
+
     pub fn render_summary(&self, results: &ActionResults) -> miette::Result<()> {
         let term = Term::buffered_stdout();
         term.line("")?;
@@ -269,9 +368,7 @@ impl Pipeline {
 
             term.line(label_checkpoint(
                 match &result.node {
-                    Some(ActionNode::RunTarget(_, target)) => target.as_str(),
-                    Some(ActionNode::RunInteractiveTarget(_, target)) => target.as_str(),
-                    Some(ActionNode::RunPersistentTarget(_, target)) => target.as_str(),
+                    Some(ActionNode::RunTask { target, .. }) => target.as_str(),
                     _ => &result.label,
                 },
                 Checkpoint::RunFailed,
@@ -373,14 +470,7 @@ impl Pipeline {
         let mut skipped_count = 0;
 
         for result in results {
-            if compact
-                && !matches!(
-                    result.node.as_ref().unwrap(),
-                    ActionNode::RunTarget(_, _)
-                        | ActionNode::RunInteractiveTarget(_, _)
-                        | ActionNode::RunPersistentTarget(_, _)
-                )
-            {
+            if compact && !matches!(result.node.as_ref().unwrap(), ActionNode::RunTask { .. }) {
                 continue;
             }
 

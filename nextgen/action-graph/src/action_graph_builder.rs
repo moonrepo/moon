@@ -13,9 +13,8 @@ use tracing::{debug, trace};
 type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
 pub struct ActionGraphBuilder<'app> {
-    pub include_dependents: bool,
-
     all_query: Option<Criteria>,
+    dependents: bool,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
@@ -31,10 +30,12 @@ impl<'app> ActionGraphBuilder<'app> {
         platform_manager: &'app PlatformManager,
         project_graph: &'app ProjectGraph,
     ) -> miette::Result<Self> {
+        debug!("Building action graph");
+
         Ok(ActionGraphBuilder {
             all_query: None,
             graph: DiGraph::new(),
-            include_dependents: false,
+            dependents: false,
             indices: FxHashMap::default(),
             platform_manager,
             project_graph,
@@ -42,7 +43,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn build(self) -> miette::Result<ActionGraph> {
-        Ok(ActionGraph::new(self.graph, self.indices))
+        Ok(ActionGraph::new(self.graph))
     }
 
     pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
@@ -67,6 +68,10 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         Runtime::system()
+    }
+
+    pub fn include_dependents(&mut self) {
+        self.dependents = true;
     }
 
     pub fn set_query(&mut self, input: &str) -> miette::Result<()> {
@@ -145,11 +150,6 @@ impl<'app> ActionGraphBuilder<'app> {
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
             if !task.is_affected(touched)? {
-                trace!(
-                    "Task {} not affected based on touched files, skipping",
-                    color::label(&task.target),
-                );
-
                 return Ok(None);
             }
         }
@@ -168,17 +168,18 @@ impl<'app> ActionGraphBuilder<'app> {
         // And we also need to create edges for task dependencies
         if !task.deps.is_empty() {
             trace!(
+                task = task.target.as_str(),
                 deps = ?task.deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
-                "Adding dependencies for task {}",
-                color::label(&task.target),
+                "Linking dependencies for task",
             );
+
             reqs.extend(self.run_task_dependencies(task)?);
         }
 
         self.link_requirements(index, reqs);
 
         // And possibly dependents
-        if self.include_dependents {
+        if self.dependents {
             self.run_task_dependents(task)?;
         }
 
@@ -226,6 +227,10 @@ impl<'app> ActionGraphBuilder<'app> {
             // From self project
             for dep_task in project.tasks.values() {
                 if dep_task.deps.contains(&task.target) {
+                    if dep_task.is_persistent() {
+                        continue;
+                    }
+
                     if let Some(index) = self.run_task(&project, dep_task, None)? {
                         indices.push(index);
                     }
@@ -237,6 +242,10 @@ impl<'app> ActionGraphBuilder<'app> {
                 let dep_project = self.project_graph.get(dependent_id)?;
 
                 for dep_task in dep_project.tasks.values() {
+                    if dep_task.is_persistent() {
+                        continue;
+                    }
+
                     if dep_task.deps.contains(&task.target) {
                         if let Some(index) = self.run_task(&dep_project, dep_task, None)? {
                             indices.push(index);
@@ -394,7 +403,7 @@ impl<'app> ActionGraphBuilder<'app> {
     fn link_requirements(&mut self, index: NodeIndex, reqs: Vec<NodeIndex>) {
         trace!(
             index = index.index(),
-            requires = ?reqs,
+            requires = ?reqs.iter().map(|i| i.index()).collect::<Vec<_>>(),
             "Linking requirements for index"
         );
 

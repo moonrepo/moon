@@ -53,7 +53,7 @@ pub async fn process_action(
 
     let result = match &node {
         // Setup and install the specific tool
-        ActionNode::SetupTool(runtime) => {
+        ActionNode::SetupTool { runtime } => {
             local_emitter
                 .emit(Event::ToolInstalling { runtime })
                 .await?;
@@ -71,7 +71,7 @@ pub async fn process_action(
         }
 
         // Install dependencies in the workspace root
-        ActionNode::InstallDeps(runtime) => {
+        ActionNode::InstallDeps { runtime } => {
             local_emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
@@ -93,7 +93,10 @@ pub async fn process_action(
         }
 
         // Install dependencies in the project root
-        ActionNode::InstallProjectDeps(runtime, project_id) => {
+        ActionNode::InstallProjectDeps {
+            runtime,
+            project: project_id,
+        } => {
             let project = local_project_graph.get(project_id)?;
 
             local_emitter
@@ -118,7 +121,10 @@ pub async fn process_action(
         }
 
         // Sync a project within the graph
-        ActionNode::SyncProject(runtime, project_id) => {
+        ActionNode::SyncProject {
+            runtime,
+            project: project_id,
+        } => {
             let project = local_project_graph.get(project_id)?;
 
             local_emitter
@@ -165,9 +171,9 @@ pub async fn process_action(
         }
 
         // Run a task within a project
-        ActionNode::RunTarget(runtime, target)
-        | ActionNode::RunInteractiveTarget(runtime, target)
-        | ActionNode::RunPersistentTarget(runtime, target) => {
+        ActionNode::RunTask {
+            runtime, target, ..
+        } => {
             let project = local_project_graph.get(target.get_project_id().unwrap())?;
 
             local_emitter.emit(Event::TargetRunning { target }).await?;
@@ -207,7 +213,10 @@ pub async fn process_action(
 
     if action.has_failed() {
         // If these fail, we should abort instead of trying to continue
-        if matches!(node, ActionNode::SetupTool(_)) || matches!(node, ActionNode::InstallDeps(_)) {
+        if matches!(
+            node,
+            ActionNode::SetupTool { .. } | ActionNode::InstallDeps { .. }
+        ) {
             action.abort();
         }
     }

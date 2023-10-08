@@ -1,7 +1,7 @@
 use crate::commands::graph::utils::{action_graph_repr, respond_to_request, setup_server};
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon::{build_dep_graph, generate_project_graph};
+use moon::{build_action_graph, generate_project_graph};
 use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::{system, SystemResult};
@@ -10,6 +10,9 @@ use starbase::{system, SystemResult};
 pub struct ActionGraphArgs {
     #[arg(help = "Target to *only* graph")]
     target: Option<TargetLocator>,
+
+    #[arg(long, help = "Include dependents of the focused target")]
+    dependents: bool,
 
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
@@ -23,24 +26,26 @@ pub async fn internal_action_graph(
     workspace: &mut Workspace,
 ) -> SystemResult {
     let project_graph = generate_project_graph(workspace).await?;
-    let mut action_graph_builder = build_dep_graph(&project_graph);
+    let mut action_graph_builder = build_action_graph(&project_graph)?;
 
     // Focus a target and its dependencies/dependents
     if let Some(locator) = args.target.clone() {
-        for target in action_graph_builder.run_targets_by_locator(&[locator], None)? {
-            action_graph_builder.run_dependents_for_target(&target)?;
+        if args.dependents {
+            action_graph_builder.include_dependents();
         }
+
+        action_graph_builder.run_task_by_target_locator(locator, None)?;
 
         // Show all targets and actions
     } else {
-        for project in project_graph.get_all_unexpanded() {
+        for project in project_graph.get_all()? {
             for task in project.tasks.values() {
-                action_graph_builder.run_target(&task.target, None)?;
+                action_graph_builder.run_task(&project, task, None)?;
             }
         }
     }
 
-    let action_graph = action_graph_builder.build();
+    let action_graph = action_graph_builder.build()?;
 
     if args.dot {
         println!("{}", action_graph.to_dot());

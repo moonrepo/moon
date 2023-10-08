@@ -3,24 +3,16 @@ source: crates/cli/tests/action_graph_test.rs
 expression: assert.output()
 ---
 digraph {
-    0 [ label="SyncWorkspace" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    1 [ label="SetupNodeTool(18.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 [ label="InstallNodeDeps(18.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    3 [ label="SyncNodeProject(nodeNameScope)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    4 [ label="RunTarget(nodeNameScope:test)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    5 [ label="SyncNodeProject(node)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    6 [ label="SyncNodeProject(nodeNameOnly)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    7 [ label="RunTarget(node:test)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 -> 1 [ arrowhead=box, arrowtail=box]
-    3 -> 1 [ arrowhead=box, arrowtail=box]
-    4 -> 2 [ arrowhead=box, arrowtail=box]
-    4 -> 3 [ arrowhead=box, arrowtail=box]
-    5 -> 1 [ arrowhead=box, arrowtail=box]
-    5 -> 3 [ arrowhead=box, arrowtail=box]
-    6 -> 1 [ arrowhead=box, arrowtail=box]
-    5 -> 6 [ arrowhead=box, arrowtail=box]
-    7 -> 2 [ arrowhead=box, arrowtail=box]
-    7 -> 5 [ arrowhead=box, arrowtail=box]
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SetupNodeTool(18.0.0)" ]
+    2 [ label="InstallNodeDeps(18.0.0)" ]
+    3 [ label="SyncNodeProject(nodeNameScope)" ]
+    4 [ label="RunTask(nodeNameScope:test)" ]
+    1 -> 0 [ ]
+    2 -> 1 [ ]
+    3 -> 1 [ ]
+    4 -> 2 [ ]
+    4 -> 3 [ ]
 }
 
 

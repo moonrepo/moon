@@ -2,7 +2,7 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
-Error:   × A dependency cycle has been detected for RunTarget(depsC:taskCycle).
+Error:   × A dependency cycle has been detected for RunTask(depsC:taskCycle).
 
 
 

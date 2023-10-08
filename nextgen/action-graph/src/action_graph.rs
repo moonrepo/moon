@@ -5,6 +5,7 @@ use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use rustc_hash::{FxHashMap, FxHashSet};
+use tracing::{debug, trace};
 
 pub type GraphType = DiGraph<ActionNode, ()>;
 pub type IndicesMap = FxHashMap<ActionNode, NodeIndex>;
@@ -16,6 +17,8 @@ pub struct ActionGraph {
 
 impl ActionGraph {
     pub fn new(graph: GraphType, indices: IndicesMap) -> Self {
+        debug!("Creating action graph");
+
         ActionGraph { graph, indices }
     }
 
@@ -92,12 +95,19 @@ pub struct ActionGraphIter<'graph> {
 impl<'graph> ActionGraphIter<'graph> {
     pub fn new(graph: &'graph GraphType) -> miette::Result<Self> {
         match petgraph::algo::toposort(graph, None) {
-            Ok(indices) => Ok(Self {
-                graph,
-                indices,
-                visited: FxHashSet::default(),
-                completed: FxHashSet::default(),
-            }),
+            Ok(indices) => {
+                debug!(
+                    order = ?indices.iter().map(|i| i.index()).collect::<Vec<_>>(),
+                    "Creating topological iterator for action graph",
+                );
+
+                return Ok(Self {
+                    graph,
+                    indices,
+                    visited: FxHashSet::default(),
+                    completed: FxHashSet::default(),
+                });
+            }
             Err(cycle) => Err(ActionGraphError::CycleDetected(
                 graph
                     .node_weight(cycle.node_id())
@@ -113,7 +123,13 @@ impl<'graph> ActionGraphIter<'graph> {
     }
 
     pub fn mark_completed(&mut self, index: usize) {
-        self.completed.insert(NodeIndex::new(index));
+        let index = NodeIndex::new(index);
+
+        if !self.completed.contains(&index) {
+            trace!(index = index.index(), "Marking action as complete");
+
+            self.completed.insert(index);
+        }
     }
 }
 
@@ -134,6 +150,11 @@ impl<'graph> Iterator for ActionGraphIter<'graph> {
                 .all(|dep| self.completed.contains(&dep))
             {
                 self.visited.insert(*idx);
+
+                trace!(
+                    index = idx.index(),
+                    "Action ready and dependencies have been met, running",
+                );
 
                 return Some(*idx);
             }

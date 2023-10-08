@@ -9,7 +9,7 @@ use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphIter};
 use moon_emitter::{Emitter, Event};
-use moon_logger::{debug, error};
+use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
@@ -138,7 +138,18 @@ impl Pipeline {
 
             // Run these later as a parallel batch
             if node.is_persistent() {
+                trace!(
+                    target: LOG_TARGET,
+                    // index = node_index.index(),
+                    "Marking action {} as persistent, will defer run",
+                    node_index.index()
+                );
+
+                // Must mark as completed otherwise the loop hangs
+                action_graph_iter.mark_completed(node_index.index());
+
                 persistent_nodes.push(node_index);
+
                 continue;
             }
 
@@ -187,6 +198,14 @@ impl Pipeline {
             }
         }
 
+        if !persistent_nodes.is_empty() {
+            trace!(
+                target: LOG_TARGET,
+                "Running {} persistent actions",
+                persistent_nodes.len(),
+            );
+        }
+
         for node_index in persistent_nodes {
             let Some(node) = action_graph.get_node_from_index(&node_index) else {
                 continue;
@@ -228,7 +247,7 @@ impl Pipeline {
 
         // Run any remaining actions
         self.run_handles(
-            mem::take(&mut action_handles),
+            action_handles,
             &mut action_graph_iter,
             &mut results,
             &local_emitter,

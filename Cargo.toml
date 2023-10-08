@@ -28,8 +28,8 @@ cached = "0.46.0"
 chrono = { version = "0.4.31", features = ["serde"] }
 cd_env = "0.1.2"
 ci_env = "0.2.1"
-clap = { version = "4.4.4", features = ["derive", "env", "wrap_help"] }
-clap_complete = "4.4.1"
+clap = { version = "4.4.6", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.4.3"
 console = "0.15.7"
 criterion = { version = "0.5.1", features = ["async_tokio"] }
 miette = "5.10.0"
@@ -39,10 +39,10 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.19.2"
+proto_core = "0.19.3"
 relative-path = { version = "1.9.0", features = ["serde"] }
-regex = "1.9.5"
-reqwest = { version = "0.11.20", default-features = false, features = [
+regex = "1.9.6"
+reqwest = { version = "0.11.22", default-features = false, features = [
 	"rustls-tls-native-roots",
 	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
@@ -75,7 +75,7 @@ starbase_utils = { version = "0.3.4", default-features = false, features = [
 	"yaml",
 ] }
 tera = { version = "1.19.1", features = ["preserve_order"] }
-thiserror = "1.0.48"
+thiserror = "1.0.49"
 tokio = { version = "1.32.0", default-features = false, features = [
 	"process",
 	"rt",

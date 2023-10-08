@@ -44,7 +44,7 @@
     arbitrarily.
   - Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
   - Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
-- Updated the action graph to iterate using a topological queue, which executes actions on-demand in
+- Updated the action graph to process using a topological queue, which executes actions on-demand in
   the thread pool when they are ready (dependencies have been met). Previously, we would sort
   topologically _into batches_, which worked, but resulted in many threads uselessly waiting for an
   action to run, which was blocked waiting for the current batch to complete.
@@ -56,8 +56,9 @@
 
 #### 🚀 Updates
 
-- Added a `moon action-graph` command and deprecated `moon dep-graph`.
+- Added a `moon action-graph` command.
 - Added a `--dependents` argument to `moon action-graph`.
+- Deprecated the `moon dep-graph` command.
 
 #### 🐞 Fixes
 
@@ -67,6 +68,7 @@
 #### ⚙️ Internal
 
 - Added in-memory caching to project graph file system lookup operations.
+- Updated Rust to v1.72.
 
 ## 1.14.5
 

@@ -150,11 +150,6 @@ impl<'app> ActionGraphBuilder<'app> {
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
             if !task.is_affected(touched)? {
-                trace!(
-                    "Task {} not affected based on touched files, skipping",
-                    color::label(&task.target),
-                );
-
                 return Ok(None);
             }
         }

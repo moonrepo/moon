@@ -1,5 +1,5 @@
 use crate::actions::install_deps::install_deps;
-use crate::actions::run_target::run_target;
+use crate::actions::run_task::run_task;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
@@ -178,7 +178,7 @@ pub async fn process_action(
 
             local_emitter.emit(Event::TargetRunning { target }).await?;
 
-            let run_result = run_target(
+            let run_result = run_task(
                 &mut action,
                 context,
                 emitter,

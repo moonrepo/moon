@@ -8,6 +8,7 @@ export interface Duration {
 }
 
 export interface Runtime {
-	platform: Capitalize<PlatformType>;
-	version?: string;
+	platform: PlatformType;
+	requirement?: string;
+	overridden?: boolean;
 }

@@ -51,6 +51,13 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				},
 			},
 			{
+				selector: 'node[type="run-task"], node[type="sm"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',
+				},
+			},
+			{
 				selector: 'node[type="run-target"], node[type="sm"]',
 				style: {
 					// @ts-expect-error Types incorrect

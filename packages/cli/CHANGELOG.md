@@ -58,6 +58,7 @@
 
 - Added a `moon action-graph` command.
 - Added a `--dependents` argument to `moon action-graph`.
+- Added the ability to skip non-`RunTask` actions using environment variables.
 - Deprecated the `moon dep-graph` command.
 
 #### 🐞 Fixes

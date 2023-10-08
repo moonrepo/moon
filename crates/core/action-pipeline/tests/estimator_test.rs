@@ -7,6 +7,15 @@ use std::time::Duration;
 const NANOS_PER_MILLI: u32 = 1_000_000;
 const HALF_SECOND: u32 = NANOS_PER_MILLI * 500;
 
+fn create_run_task_action(runtime: Runtime, target: &str) -> ActionNode {
+    ActionNode::RunTask {
+        interactive: false,
+        persistent: false,
+        runtime,
+        target: target.into(),
+    }
+}
+
 mod estimator {
     use super::*;
 
@@ -31,7 +40,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(10, 0)),
-                node: Some(ActionNode::RunTarget(Runtime::system(), "proj:task".into())),
+                node: Some(create_run_task_action(Runtime::system(), "proj:task")),
                 ..Action::default()
             }],
             Duration::new(5, 0),
@@ -58,27 +67,27 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "b:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "c:test".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "d:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
                     ..Action::default()
                 },
             ],
@@ -113,17 +122,21 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool(Runtime::system())),
+                    node: Some(ActionNode::SetupTool {
+                        runtime: Runtime::system(),
+                    }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps(Runtime::system())),
+                    node: Some(ActionNode::InstallDeps {
+                        runtime: Runtime::system(),
+                    }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "proj:task".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "proj:task")),
                     ..Action::default()
                 },
             ],
@@ -153,7 +166,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(3, 0)),
-                node: Some(ActionNode::RunTarget(Runtime::system(), "proj:task".into())),
+                node: Some(create_run_task_action(Runtime::system(), "proj:task")),
                 status: ActionStatus::Cached,
                 ..Action::default()
             }],
@@ -181,37 +194,41 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool(Runtime::system())),
+                    node: Some(ActionNode::SetupTool {
+                        runtime: Runtime::system(),
+                    }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps(Runtime::system())),
+                    node: Some(ActionNode::InstallDeps {
+                        runtime: Runtime::system(),
+                    }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "b:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "c:test".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "d:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
                     ..Action::default()
                 },
             ],
@@ -250,37 +267,41 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool(Runtime::system())),
+                    node: Some(ActionNode::SetupTool {
+                        runtime: Runtime::system(),
+                    }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps(Runtime::system())),
+                    node: Some(ActionNode::InstallDeps {
+                        runtime: Runtime::system(),
+                    }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "a:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "b:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "c:test".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(ActionNode::RunTarget(Runtime::system(), "d:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
                     ..Action::default()
                 },
             ],

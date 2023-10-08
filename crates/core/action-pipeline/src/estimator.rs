@@ -67,12 +67,12 @@ impl Estimator {
             }
 
             match node {
-                ActionNode::SetupTool(_)
-                | ActionNode::InstallDeps(_)
-                | ActionNode::InstallProjectDeps(_, _) => {
+                ActionNode::SetupTool { .. }
+                | ActionNode::InstallDeps { .. }
+                | ActionNode::InstallProjectDeps { .. } => {
                     install_duration += task_duration;
                 }
-                ActionNode::RunTarget(_, target) => {
+                ActionNode::RunTask { target, .. } => {
                     let task_id = target.task_id.to_string();
 
                     if let Some(task) = tasks.get_mut(&task_id) {

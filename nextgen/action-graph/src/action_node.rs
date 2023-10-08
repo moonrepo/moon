@@ -1,9 +1,10 @@
 use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use moon_task::Target;
+use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
     InstallDeps { runtime: Runtime },

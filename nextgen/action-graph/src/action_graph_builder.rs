@@ -232,6 +232,10 @@ impl<'app> ActionGraphBuilder<'app> {
             // From self project
             for dep_task in project.tasks.values() {
                 if dep_task.deps.contains(&task.target) {
+                    if dep_task.is_persistent() {
+                        continue;
+                    }
+
                     if let Some(index) = self.run_task(&project, dep_task, None)? {
                         indices.push(index);
                     }
@@ -243,6 +247,10 @@ impl<'app> ActionGraphBuilder<'app> {
                 let dep_project = self.project_graph.get(dependent_id)?;
 
                 for dep_task in dep_project.tasks.values() {
+                    if dep_task.is_persistent() {
+                        continue;
+                    }
+
                     if dep_task.deps.contains(&task.target) {
                         if let Some(index) = self.run_task(&dep_project, dep_task, None)? {
                             indices.push(index);

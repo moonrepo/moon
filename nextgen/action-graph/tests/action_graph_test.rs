@@ -153,11 +153,11 @@ mod action_graph {
                     ActionNode::SetupTool {
                         runtime: create_node_runtime()
                     },
-                    ActionNode::InstallProjectDeps {
-                        project: Id::raw("out"),
+                    ActionNode::InstallDeps {
                         runtime: create_node_runtime()
                     },
-                    ActionNode::InstallDeps {
+                    ActionNode::InstallProjectDeps {
+                        project: Id::raw("out"),
                         runtime: create_node_runtime()
                     },
                 ]
@@ -191,11 +191,11 @@ mod action_graph {
                     ActionNode::SetupTool {
                         runtime: create_node_runtime()
                     },
-                    ActionNode::SyncProject {
-                        project: Id::raw("bar"),
+                    ActionNode::InstallDeps {
                         runtime: create_node_runtime()
                     },
-                    ActionNode::InstallDeps {
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
@@ -232,11 +232,11 @@ mod action_graph {
                     ActionNode::SetupTool {
                         runtime: create_node_runtime()
                     },
-                    ActionNode::SyncProject {
-                        project: Id::raw("bar"),
+                    ActionNode::InstallDeps {
                         runtime: create_node_runtime()
                     },
-                    ActionNode::InstallDeps {
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
@@ -315,17 +315,17 @@ mod action_graph {
                 vec![
                     ActionNode::SyncWorkspace,
                     ActionNode::SetupTool {
+                        runtime: create_rust_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_rust_runtime()
+                    },
+                    ActionNode::SetupTool {
                         runtime: create_node_runtime()
                     },
                     ActionNode::SyncProject {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SetupTool {
-                        runtime: create_rust_runtime()
-                    },
-                    ActionNode::InstallDeps {
-                        runtime: create_rust_runtime()
                     },
                     ActionNode::RunTask {
                         interactive: false,
@@ -704,8 +704,8 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool { runtime: node },
                     ActionNode::SetupTool { runtime: system },
+                    ActionNode::SetupTool { runtime: node },
                 ]
             );
         }
@@ -736,9 +736,9 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool { runtime: node3 },
-                    ActionNode::SetupTool { runtime: node2 },
                     ActionNode::SetupTool { runtime: node1 },
+                    ActionNode::SetupTool { runtime: node2 },
+                    ActionNode::SetupTool { runtime: node3 },
                 ]
             );
         }
@@ -848,15 +848,15 @@ mod action_graph {
                         runtime: Runtime::system()
                     },
                     ActionNode::SyncProject {
-                        project: Id::raw("qux"),
-                        runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
                     },
                     ActionNode::SyncProject {
                         project: Id::raw("foo"),
+                        runtime: Runtime::system()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("qux"),
                         runtime: Runtime::system()
                     },
                 ]
@@ -915,19 +915,19 @@ mod action_graph {
                 vec![
                     ActionNode::SyncWorkspace,
                     ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SetupTool {
                         runtime: create_rust_runtime()
                     },
                     ActionNode::SyncProject {
                         project: Id::raw("qux"),
                         runtime: create_rust_runtime()
                     },
-                    ActionNode::SetupTool {
-                        runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
-                        project: Id::raw("bar"),
-                        runtime: create_node_runtime()
-                    }
                 ]
             );
         }
@@ -952,6 +952,13 @@ mod action_graph {
                 vec![
                     ActionNode::SyncWorkspace,
                     ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SetupTool {
                         runtime: Runtime::new_override(
                             PlatformType::Node,
                             RuntimeReq::with_version(Version::new(18, 0, 0))
@@ -963,13 +970,6 @@ mod action_graph {
                             PlatformType::Node,
                             RuntimeReq::with_version(Version::new(18, 0, 0))
                         )
-                    },
-                    ActionNode::SetupTool {
-                        runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
-                        project: Id::raw("bar"),
-                        runtime: create_node_runtime()
                     },
                 ]
             );

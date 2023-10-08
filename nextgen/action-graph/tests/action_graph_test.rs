@@ -463,7 +463,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            builder.include_dependents = true;
+            builder.include_dependents();
 
             let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("base").unwrap();

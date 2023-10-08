@@ -136,7 +136,9 @@ pub async fn run_target(
     let mut action_graph_builder = build_action_graph(&project_graph)?;
 
     // Run dependents for all primary targets
-    action_graph_builder.include_dependents = args.dependents;
+    if args.dependents {
+        action_graph_builder.include_dependents();
+    }
 
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;

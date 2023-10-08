@@ -30,7 +30,10 @@ pub async fn internal_action_graph(
 
     // Focus a target and its dependencies/dependents
     if let Some(locator) = args.target.clone() {
-        action_graph_builder.include_dependents = args.dependents;
+        if args.dependents {
+            action_graph_builder.include_dependents();
+        }
+
         action_graph_builder.run_task_by_target_locator(locator, None)?;
 
         // Show all targets and actions

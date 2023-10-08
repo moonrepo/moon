@@ -172,8 +172,8 @@ fn generate_action_graph(
 
     let mut action_graph_builder = build_action_graph(project_graph)?;
 
-    // And also run its dependents to ensure consumers still work correctly
-    action_graph_builder.include_dependents = true;
+    // Run dependents to ensure consumers still work correctly
+    action_graph_builder.include_dependents();
 
     for target in targets {
         // Run the target and its dependencies

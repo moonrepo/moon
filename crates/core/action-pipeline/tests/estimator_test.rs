@@ -42,7 +42,7 @@ mod estimator {
                 duration: Some(Duration::new(10, 0)),
                 node: Some(create_run_task_action(
                     Runtime::system(),
-                    "proj:task".into(),
+                    "proj:task",
                 )),
                 ..Action::default()
             }],
@@ -70,27 +70,27 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "b:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "c:test".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "d:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
                     ..Action::default()
                 },
             ],
@@ -141,7 +141,7 @@ mod estimator {
                     duration: Some(Duration::new(10, 0)),
                     node: Some(create_run_task_action(
                         Runtime::system(),
-                        "proj:task".into(),
+                        "proj:task",
                     )),
                     ..Action::default()
                 },
@@ -174,7 +174,7 @@ mod estimator {
                 duration: Some(Duration::new(3, 0)),
                 node: Some(create_run_task_action(
                     Runtime::system(),
-                    "proj:task".into(),
+                    "proj:task",
                 )),
                 status: ActionStatus::Cached,
                 ..Action::default()
@@ -217,27 +217,27 @@ mod estimator {
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "b:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "c:test".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "d:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
                     ..Action::default()
                 },
             ],
@@ -290,27 +290,27 @@ mod estimator {
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "b:build".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "c:test".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "d:lint".into())),
+                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
                     ..Action::default()
                 },
             ],

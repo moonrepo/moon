@@ -101,12 +101,12 @@ impl<'graph> ActionGraphIter<'graph> {
                     "Creating topological iterator for action graph",
                 );
 
-                return Ok(Self {
+                Ok(Self {
                     graph,
                     indices,
                     visited: FxHashSet::default(),
                     completed: FxHashSet::default(),
-                });
+                })
             }
             Err(cycle) => Err(ActionGraphError::CycleDetected(
                 graph

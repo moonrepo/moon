@@ -4,6 +4,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum RuntimeReq {
     // Use tool available on PATH
     Global,

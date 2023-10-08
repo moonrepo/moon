@@ -19,6 +19,7 @@ export interface Attempt {
 }
 
 export interface Action {
+	allowFailure?: boolean;
 	attempts: Attempt[] | null;
 	createdAt: string;
 	duration: Duration | null;
@@ -75,37 +76,52 @@ export interface RunReport {
 export type ActionNode =
 	| ActionNodeInstallDeps
 	| ActionNodeInstallProjectDeps
-	| ActionNodeRunPersistentTarget
-	| ActionNodeRunTarget
+	| ActionNodeRunTask
 	| ActionNodeSetupTool
-	| ActionNodeSyncProject;
+	| ActionNodeSyncProject
+	| ActionNodeSyncWorkspace;
 
 export interface ActionNodeInstallDeps {
 	action: 'InstallDeps';
-	params: Runtime;
+	params: {
+		runtime: Runtime;
+	};
 }
 
 export interface ActionNodeInstallProjectDeps {
 	action: 'InstallProjectDeps';
-	params: [Runtime, string];
+	params: {
+		runtime: Runtime;
+		project: string;
+	};
 }
 
-export interface ActionNodeRunTarget {
-	action: 'RunTarget';
-	params: [Runtime, string];
-}
-
-export interface ActionNodeRunPersistentTarget {
-	action: 'RunPersistentTarget';
-	params: [Runtime, string];
+export interface ActionNodeRunTask {
+	action: 'RunTask';
+	params: {
+		interactive: boolean;
+		persistent: boolean;
+		runtime: Runtime;
+		target: string;
+	};
 }
 
 export interface ActionNodeSetupTool {
 	action: 'SetupTool';
-	params: Runtime;
+	params: {
+		runtime: Runtime;
+	};
 }
 
 export interface ActionNodeSyncProject {
 	action: 'SyncProject';
-	params: [Runtime, string];
+	params: {
+		runtime: Runtime;
+		project: string;
+	};
+}
+
+export interface ActionNodeSyncWorkspace {
+	action: 'SyncWorkspace';
+	params: {};
 }

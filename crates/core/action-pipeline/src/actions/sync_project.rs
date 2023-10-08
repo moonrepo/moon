@@ -1,3 +1,4 @@
+use super::should_skip_action_matching;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::debug;
@@ -33,6 +34,15 @@ pub async fn sync_project(
         "Syncing project {}",
         color::id(&project.id)
     );
+
+    if should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", &project.id) {
+        debug!(
+            target: LOG_TARGET,
+            "Skipping sync project action because MOON_SKIP_SYNC_PROJECT is set",
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
 
     // Create a snapshot for tasks to reference
     workspace

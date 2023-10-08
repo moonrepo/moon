@@ -1,3 +1,4 @@
+use super::should_skip_action_matching;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_cache_item::cache_item;
@@ -37,6 +38,18 @@ pub async fn setup_tool(
         "Setting up {} toolchain",
         runtime.label()
     );
+
+    if should_skip_action_matching(
+        "MOON_SKIP_SETUP_TOOL",
+        format!("{}:{}", runtime, runtime.requirement),
+    ) {
+        debug!(
+            target: LOG_TARGET,
+            "Skipping setup tool action because MOON_SKIP_SETUP_TOOL is set",
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
 
     let workspace = workspace.write().await;
     let context = context.read().await;

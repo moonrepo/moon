@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(tag = "action", content = "params")]
 pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
     InstallDeps { runtime: Runtime },

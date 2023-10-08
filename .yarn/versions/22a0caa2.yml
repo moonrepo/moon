@@ -8,3 +8,9 @@ releases:
   '@moonrepo/core-macos-x64': minor
   '@moonrepo/core-windows-x64-msvc': minor
   '@moonrepo/visualizer': minor
+  '@moonrepo/types': minor
+  '@moonrepo/report': minor
+
+declined:
+  - '@moonrepo/runtime'
+  - website

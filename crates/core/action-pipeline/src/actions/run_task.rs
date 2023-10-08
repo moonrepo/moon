@@ -13,9 +13,9 @@ use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:run-target";
+const LOG_TARGET: &str = "moon:action:run-task";
 
-pub async fn run_target(
+pub async fn run_task(
     action: &mut Action,
     context: Arc<RwLock<ActionContext>>,
     emitter: Arc<RwLock<Emitter>>,
@@ -24,7 +24,7 @@ pub async fn run_target(
     target: &Target,
     runtime: &Runtime,
 ) -> miette::Result<ActionStatus> {
-    env::set_var("MOON_RUNNING_ACTION", "run-target");
+    env::set_var("MOON_RUNNING_ACTION", "run-task");
 
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
@@ -33,7 +33,7 @@ pub async fn run_target(
 
     debug!(
         target: LOG_TARGET,
-        "Running target {}",
+        "Running task {}",
         color::label(&task.target)
     );
 

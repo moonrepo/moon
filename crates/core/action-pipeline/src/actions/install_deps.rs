@@ -1,3 +1,4 @@
+use super::should_skip_action_matching;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
@@ -58,6 +59,15 @@ pub async fn install_deps(
         warn!(
             target: LOG_TARGET,
             "No internet connection, skipping install"
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
+
+    if should_skip_action_matching("MOON_SKIP_INSTALL_DEPS", &install_key) {
+        debug!(
+            target: LOG_TARGET,
+            "Skipping install deps action because MOON_SKIP_INSTALL_DEPS is set",
         );
 
         return Ok(ActionStatus::Skipped);

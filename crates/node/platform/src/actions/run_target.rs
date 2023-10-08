@@ -16,7 +16,7 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::path::Path;
 
-const LOG_TARGET: &str = "moon:node-platform:run-target";
+const LOG_TARGET: &str = "moon:node-platform:run-task";
 
 fn create_node_options(
     node_config: &NodeConfig,

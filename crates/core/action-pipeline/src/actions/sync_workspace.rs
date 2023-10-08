@@ -1,3 +1,4 @@
+use super::should_skip_action;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
@@ -27,6 +28,15 @@ pub async fn sync_workspace(
     let project_graph = project_graph.read().await;
 
     debug!(target: LOG_TARGET, "Syncing workspace");
+
+    if should_skip_action("MOON_SKIP_SYNC_WORKSPACE") {
+        debug!(
+            target: LOG_TARGET,
+            "Skipping sync workspace action because MOON_SKIP_SYNC_WORKSPACE is set",
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
 
     if workspace.config.codeowners.sync_on_run {
         debug!(

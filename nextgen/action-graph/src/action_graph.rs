@@ -4,22 +4,22 @@ use moon_common::is_test_env;
 use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
+use std::sync::{mpsc, Arc, RwLock};
+use std::thread::spawn;
 use tracing::{debug, trace};
 
 pub type GraphType = DiGraph<ActionNode, ()>;
-pub type IndicesMap = FxHashMap<ActionNode, NodeIndex>;
 
 pub struct ActionGraph {
     graph: GraphType,
-    indices: IndicesMap,
 }
 
 impl ActionGraph {
-    pub fn new(graph: GraphType, indices: IndicesMap) -> Self {
+    pub fn new(graph: GraphType) -> Self {
         debug!("Creating action graph");
 
-        ActionGraph { graph, indices }
+        ActionGraph { graph }
     }
 
     pub fn try_iter(&self) -> miette::Result<ActionGraphIter> {
@@ -28,10 +28,6 @@ impl ActionGraph {
 
     pub fn is_empty(&self) -> bool {
         self.get_node_count() == 0
-    }
-
-    pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
-        self.indices.get(node)
     }
 
     pub fn get_node_count(&self) -> usize {
@@ -84,28 +80,36 @@ impl ActionGraph {
     }
 }
 
-#[derive(Debug)]
 pub struct ActionGraphIter<'graph> {
     graph: &'graph GraphType,
     indices: Vec<NodeIndex>,
     visited: FxHashSet<NodeIndex>,
-    completed: FxHashSet<NodeIndex>,
+    completed: Arc<RwLock<FxHashSet<NodeIndex>>>,
+
+    pub receiver: Option<mpsc::Receiver<usize>>,
+    pub sender: mpsc::Sender<usize>,
 }
 
 impl<'graph> ActionGraphIter<'graph> {
     pub fn new(graph: &'graph GraphType) -> miette::Result<Self> {
         match petgraph::algo::toposort(graph, None) {
-            Ok(indices) => {
+            Ok(mut indices) => {
+                indices.reverse();
+
                 debug!(
                     order = ?indices.iter().map(|i| i.index()).collect::<Vec<_>>(),
-                    "Creating topological iterator for action graph",
+                    "Iterating action graph topologically",
                 );
+
+                let (sender, receiver) = mpsc::channel();
 
                 Ok(Self {
                     graph,
                     indices,
                     visited: FxHashSet::default(),
-                    completed: FxHashSet::default(),
+                    completed: Arc::new(RwLock::new(FxHashSet::default())),
+                    receiver: Some(receiver),
+                    sender,
                 })
             }
             Err(cycle) => Err(ActionGraphError::CycleDetected(
@@ -119,17 +123,26 @@ impl<'graph> ActionGraphIter<'graph> {
     }
 
     pub fn has_pending(&self) -> bool {
-        self.completed.len() < self.graph.node_count()
+        self.completed.read().unwrap().len() < self.graph.node_count()
     }
 
-    pub fn mark_completed(&mut self, index: usize) {
-        let index = NodeIndex::new(index);
+    pub fn mark_completed(&mut self, index: NodeIndex) {
+        self.completed.write().unwrap().insert(index);
+    }
 
-        if !self.completed.contains(&index) {
-            trace!(index = index.index(), "Marking action as complete");
+    pub fn monitor_completed(&mut self) {
+        let completed = Arc::clone(&self.completed);
+        let receiver = self.receiver.take().unwrap();
 
-            self.completed.insert(index);
-        }
+        spawn(move || {
+            while let Ok(idx) = receiver.recv() {
+                let index = NodeIndex::new(idx);
+
+                trace!(index = index.index(), "Marking action as complete");
+
+                completed.write().unwrap().insert(index);
+            }
+        });
     }
 }
 
@@ -138,22 +151,30 @@ impl<'graph> Iterator for ActionGraphIter<'graph> {
     type Item = NodeIndex;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let completed = self.completed.read().unwrap();
+
         for idx in &self.indices {
-            if self.visited.contains(idx) || self.completed.contains(idx) {
+            if self.visited.contains(idx) || completed.contains(idx) {
                 continue;
             }
 
             // Ensure all dependencies of the index have completed
+            let mut deps = vec![];
+
             if self
                 .graph
                 .neighbors_directed(*idx, Direction::Outgoing)
-                .all(|dep| self.completed.contains(&dep))
+                .all(|dep| {
+                    deps.push(dep.index());
+                    completed.contains(&dep)
+                })
             {
                 self.visited.insert(*idx);
 
                 trace!(
                     index = idx.index(),
-                    "Action ready and dependencies have been met, running",
+                    deps = ?deps,
+                    "Running action",
                 );
 
                 return Some(*idx);

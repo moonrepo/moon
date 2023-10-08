@@ -43,7 +43,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn build(self) -> miette::Result<ActionGraph> {
-        Ok(ActionGraph::new(self.graph, self.indices))
+        Ok(ActionGraph::new(self.graph))
     }
 
     pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {

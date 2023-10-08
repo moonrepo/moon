@@ -40,10 +40,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(10, 0)),
-                node: Some(create_run_task_action(
-                    Runtime::system(),
-                    "proj:task",
-                )),
+                node: Some(create_run_task_action(Runtime::system(), "proj:task")),
                 ..Action::default()
             }],
             Duration::new(5, 0),
@@ -139,10 +136,7 @@ mod estimator {
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(
-                        Runtime::system(),
-                        "proj:task",
-                    )),
+                    node: Some(create_run_task_action(Runtime::system(), "proj:task")),
                     ..Action::default()
                 },
             ],
@@ -172,10 +166,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(3, 0)),
-                node: Some(create_run_task_action(
-                    Runtime::system(),
-                    "proj:task",
-                )),
+                node: Some(create_run_task_action(Runtime::system(), "proj:task")),
                 status: ActionStatus::Cached,
                 ..Action::default()
             }],

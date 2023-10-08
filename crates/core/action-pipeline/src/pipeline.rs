@@ -7,9 +7,9 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_action_graph::{ActionGraph, ActionGraphIter};
+use moon_action_graph::ActionGraph;
 use moon_emitter::{Emitter, Event};
-use moon_logger::{debug, error, trace};
+use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
@@ -117,22 +117,25 @@ impl Pipeline {
         let mut persistent_nodes = vec![];
         let mut action_graph_iter = action_graph.try_iter()?;
 
+        action_graph_iter.monitor_completed();
+
         while action_graph_iter.has_pending() {
             let Some(node_index) = action_graph_iter.next() else {
-                // Nothing to run since they're waiting on currently running
-                // actions, so exhause the current list
-                self.run_handles(
-                    mem::take(&mut action_handles),
-                    &mut action_graph_iter,
-                    &mut results,
-                    &local_emitter,
-                )
-                .await?;
+                // Nothing new to run since they're waiting on currently
+                // running actions, so exhaust the current list
+                self.run_handles(mem::take(&mut action_handles), &mut results, &local_emitter)
+                    .await?;
 
                 continue;
             };
 
             let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                warn!(
+                    target: LOG_TARGET,
+                    "Received a graph index {} with no associated node, unable to process",
+                    node_index.index()
+                );
+
                 continue;
             };
 
@@ -146,7 +149,7 @@ impl Pipeline {
                 );
 
                 // Must mark as completed otherwise the loop hangs
-                action_graph_iter.mark_completed(node_index.index());
+                action_graph_iter.mark_completed(node_index);
 
                 persistent_nodes.push(node_index);
 
@@ -158,6 +161,7 @@ impl Pipeline {
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let cancel_token_clone = cancel_token.clone();
+            let sender = action_graph_iter.sender.clone();
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
@@ -181,6 +185,10 @@ impl Pipeline {
                     ) => res
                 };
 
+                if let Ok(action) = &result {
+                    let _ = sender.send(action.node_index);
+                }
+
                 drop(permit);
 
                 result
@@ -188,13 +196,8 @@ impl Pipeline {
 
             // Run this in isolation by exhausting the current list of handles
             if node.is_interactive() || semaphore.available_permits() == 0 {
-                self.run_handles(
-                    mem::take(&mut action_handles),
-                    &mut action_graph_iter,
-                    &mut results,
-                    &local_emitter,
-                )
-                .await?;
+                self.run_handles(mem::take(&mut action_handles), &mut results, &local_emitter)
+                    .await?;
             }
         }
 
@@ -208,6 +211,12 @@ impl Pipeline {
 
         for node_index in persistent_nodes {
             let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                warn!(
+                    target: LOG_TARGET,
+                    "Received a graph index {} with no associated node, unable to process",
+                    node_index.index()
+                );
+
                 continue;
             };
 
@@ -216,11 +225,12 @@ impl Pipeline {
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let cancel_token_clone = cancel_token.clone();
+            let sender = action_graph_iter.sender.clone();
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
             let Ok(permit) = semaphore.clone().acquire_owned().await else {
-                break; // Should error?
+                continue; // Should error?
             };
 
             action_handles.push(tokio::spawn(async move {
@@ -239,6 +249,10 @@ impl Pipeline {
                     ) => res
                 };
 
+                if let Ok(action) = &result {
+                    let _ = sender.send(action.node_index);
+                }
+
                 drop(permit);
 
                 result
@@ -246,13 +260,8 @@ impl Pipeline {
         }
 
         // Run any remaining actions
-        self.run_handles(
-            action_handles,
-            &mut action_graph_iter,
-            &mut results,
-            &local_emitter,
-        )
-        .await?;
+        self.run_handles(action_handles, &mut results, &local_emitter)
+            .await?;
 
         let duration = start.elapsed();
         let estimate = Estimator::calculate(&results, duration);
@@ -297,7 +306,6 @@ impl Pipeline {
     async fn run_handles(
         &self,
         handles: Vec<JoinHandle<miette::Result<Action>>>,
-        graph_iter: &mut ActionGraphIter<'_>,
         results: &mut ActionResults,
         emitter: &RwLockReadGuard<'_, Emitter>,
     ) -> miette::Result<()> {
@@ -312,8 +320,6 @@ impl Pipeline {
             } else {
                 match handle.await {
                     Ok(Ok(mut result)) => {
-                        graph_iter.mark_completed(result.node_index);
-
                         show_abort_log = result.should_abort();
 
                         if self.bail && result.should_bail() || result.should_abort() {

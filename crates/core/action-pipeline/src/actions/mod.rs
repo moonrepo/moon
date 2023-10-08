@@ -1,7 +1,7 @@
 use std::env;
 
 pub mod install_deps;
-pub mod run_target;
+pub mod run_task;
 pub mod setup_tool;
 pub mod sync_project;
 pub mod sync_workspace;
@@ -30,13 +30,14 @@ fn matches_pattern(value: &str, pattern: &str) -> bool {
         let mut right = value.split(':');
 
         return match ((left.next(), left.next()), (right.next(), right.next())) {
+            #[allow(clippy::nonminimal_bool)]
             ((Some(a1), Some(a2)), (Some(b1), Some(b2))) => {
                 // foo:bar == foo:bar
                 a1 == b1 && a2 == b2 ||
-								// foo:bar == foo:*
-								a1 == b1 && b2 == "*" ||
-								// foo:bar == *:bar
-								a2 == b2 && b1 == "*"
+                // foo:bar == foo:*
+                a1 == b1 && b2 == "*" ||
+                // foo:bar == *:bar
+                a2 == b2 && b1 == "*"
             }
             ((Some(a1), Some(_)), (Some(b1), None)) => {
                 // foo:bar == foo
@@ -66,8 +67,8 @@ mod tests {
         assert!(!matches_pattern("rust", "node:20.0.0"));
         assert!(!matches_pattern("node:19.0.0", "node:20.0.0"));
 
-        assert!(matches_pattern("foo", "foo,bar"));
-        assert!(matches_pattern("bar", "foo,bar"));
-        assert!(!matches_pattern("baz", "foo,bar"));
+        assert!(matches_pattern("foo,bar", "foo"));
+        assert!(matches_pattern("foo,bar", "bar"));
+        assert!(!matches_pattern("foo,bar", "baz"));
     }
 }

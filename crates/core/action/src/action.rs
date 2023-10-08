@@ -1,4 +1,4 @@
-use crate::node::ActionNode;
+use moon_action_graph::ActionNode;
 use moon_common::color;
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use serde::{Deserialize, Serialize};
@@ -102,6 +102,9 @@ pub struct Action {
     #[serde(skip)]
     pub node: Option<ActionNode>,
 
+    #[serde(skip)]
+    pub node_index: usize,
+
     pub started_at: Option<NaiveDateTime>,
 
     #[serde(skip)]
@@ -124,6 +127,7 @@ impl Action {
             label: node.label(),
             log_target: String::new(),
             node: Some(node),
+            node_index: 0,
             started_at: None,
             start_time: None,
             status: ActionStatus::Running,

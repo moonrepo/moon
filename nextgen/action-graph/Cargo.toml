@@ -19,11 +19,12 @@ moon_query = { path = "../query" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
 moon_config = { path = "../config" }
 moon_test_utils2 = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
-tokio = { workspace = true }

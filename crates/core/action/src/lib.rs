@@ -1,5 +1,4 @@
 mod action;
-mod node;
 
 pub use action::*;
-pub use node::*;
+pub use moon_action_graph::ActionNode;

@@ -44,11 +44,11 @@
     arbitrarily.
   - Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
   - Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
-- Updated the action graph to iterate using a topological queue, which executes ready-to-run actions
-  in the thread pool. Previously, we would sort topologically _into batches_, which worked, but
-  resulted in many threads uselessly waiting for an action to run, which was blocked waiting for the
-  current batch to complete.
-  - For large graphs, this should result in a significant performance improvement, upwards of 10x.
+- Updated the action graph to iterate using a topological queue, which executes actions on-demand in
+  the thread pool when they are ready (dependencies have been met). Previously, we would sort
+  topologically _into batches_, which worked, but resulted in many threads uselessly waiting for an
+  action to run, which was blocked waiting for the current batch to complete.
+  - For large graphs, this should result in a significant performance improvement.
   - Persistent tasks will still be ran as a batch, but since it's the last operation, it's fine.
 - Released a new GitHub action,
   [`moonrepo/setup-toolchain`](https://github.com/marketplace/actions/setup-proto-and-moon-toolchains),
@@ -57,6 +57,7 @@
 #### 🚀 Updates
 
 - Added a `moon action-graph` command and deprecated `moon dep-graph`.
+- Added a `--dependents` argument to `moon action-graph`.
 
 #### 🐞 Fixes
 

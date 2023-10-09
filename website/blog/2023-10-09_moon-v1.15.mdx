@@ -2,21 +2,116 @@
 slug: moon-v1.15
 title: moon v1.15 - Next-generation action graph
 authors: [milesj]
-tags: [action, dependency, graph]
-# image: ./img/moon/v1.14.png
+tags: [action, dependency, graph, pipeline, railway]
+image: ./img/moon/v1.15.png
 ---
 
-???
+In this release, we've taken the new step in modernizing our action pipeline, by rewriting the
+dependency graph.
 
 <!--truncate-->
 
 ## Hello action graph, goodbye dependency graph
 
-???
+For the past few months, we've been working on a rewrite of our action pipeline, which consists of
+the project graph, dependency graph, task executor, process pipeline, and more. It's a slow process,
+with many different pieces that must land in sequence, but we're almost done. The next step in this
+process is the [introduction of the new action graph](/docs/how-it-works/action-graph), which
+replaces the previous dependency graph.
+
+For the most part, the graphs work in a similar fashion, but since we rewrote it from the ground up,
+we were able to resolve any discrepancies and performance issues. The biggest changes between the
+new and old graphs are:
+
+- All actions now depend on the `SyncWorkspace` action, instead of this action running arbitrarily.
+- Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
+- Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
+- And lastly, we ditched our batched task approach for a ready queue. Continue reading for more
+  information!
+
+### A new performant thread pool
+
+In the old dependency graph, when we'd execute a task, we'd order the graph topologically and then
+group actions into batches (or buckets) based on their dependency chains. Batches would then be
+executed in order within the thread pool. This approach worked well, but had one major flaw: it
+wasn't as performant as could be. For example, if our thread pool size was 12, and a batch only had
+2 tasks in it, what were the other 10 threads doing? Absolutely nothing. They were sitting idly,
+waiting for a task.
+
+And now with the new action graph, we take full advantage of all threads in the pool. Instead of the
+batched approach above, we now use a topological task-ready queue, where a thread without work (or
+is waiting for work) can poll the graph for a new task to run. A task is considered ready to run if
+it either has no dependencies, or all of its dependencies (in the chain) have been ran.
+
+For large graphs, this should result in a significant performance improvement!
+
+### Automatic peer dependencies (breaking)
+
+Because of these graph changes, we do have a minor "breaking change". Tasks that depend (via `deps`)
+on other tasks from arbitrary projects (the parent project doesn't implicitly or explicitly depend
+on the other project) will now automatically mark that other project as a "peer" dependency. For
+example, "b" becomes a peer dependency for "a".
+
+```yaml title="a/moon.yml"
+tasks:
+  build:
+    deps: ['b:build']
+```
+
+Now internally becomes:
+
+```yaml title="a/moon.yml"
+dependsOn:
+  - id: 'b'
+    scope: 'peer'
+
+tasks:
+  build:
+    deps: ['b:build']
+```
+
+We're marking this as a breaking change as this could subtly introduce cycles in the project graph
+that weren't present before, and for Node.js projects, this may inject `peerDependencies`. However,
+this change was necessary to ensure accurate dependency chains in the graph.
 
 ## New `moonrepo/setup-toolchain` GitHub action
 
-???
+We've begun a process to deprecate the
+[moonrepo/setup-moon-action](https://github.com/moonrepo/setup-moon-action) and
+[moonrepo/setup-proto](https://github.com/moonrepo/setup-proto) GitHub actions, and instead, combine
+and replace them with a new [moonrepo/setup-toolchain](https://github.com/moonrepo/setup-toolchain)
+action. Why a new action instead of fixing the others?
+
+The biggest problem was that both previous actions shared about 90% of the same code, but were
+slightly different in how they installed the binaries and cached the toolchain. It was was also
+confusing for consumers to understand and know which action to use (because they shouldn't be used
+together).
+
+To remedy this, we're prototyping the new
+[moonrepo/setup-toolchain](https://github.com/moonrepo/setup-toolchain) action, which has been
+working quite well. It aims to solve the following:
+
+- Installs `proto` globally so that installed tools can also be executed globally.
+- Conditionally installs `moon` globally if the repository is using moon (attempts to detect a
+  `.moon` directory).
+- Caches the toolchain (`~/.proto`) so subsequent runs are faster.
+- Hashes `.prototools` and `.moon/toolchain.yml` files to generate a unique cache key.
+- Cleans the toolchain before caching to remove unused or stale tools.
+- Can auto-install tools when used.
+
+```diff
+# ...
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+-      - uses: moonrepo/setup-moon-action@v1
++      - uses: moonrepo/setup-toolchain@v0
+```
 
 ## Now supported in Railway
 

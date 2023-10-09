@@ -1,0 +1,48 @@
+---
+slug: moon-v1.15
+title: moon v1.15 - Next-generation action graph
+authors: [milesj]
+tags: [action, dependency, graph]
+# image: ./img/moon/v1.14.png
+---
+
+???
+
+<!--truncate-->
+
+## Hello action graph, goodbye dependency graph
+
+???
+
+## New `moonrepo/setup-toolchain` GitHub action
+
+???
+
+## Now supported in Railway
+
+If you're a big fan of [Railway](https://railway.app/) (like we are), and you're deploying a Node.js
+backed application, then you'll be happy to hear that Railway now officially and natively supports
+moon! We spent some time over the past month
+[integrating moon support into their Nixpacks architecture](https://nixpacks.com/docs/providers/node).
+
+To make use of this, set the `NIXPACKS_MOON_APP_NAME` environment variable to the name of your moon
+project that you want to be deployed. This will then automatically run `moon run <app>:build` and
+`moon run <app>:start` respectively. To customize the task names, you can set the
+`NIXPACKS_MOON_BUILD_TASK` and `NIXPACKS_MOON_START_TASK` environment variables.
+
+:::info
+
+This is currently only supported for Node.js projects, but will be expanded to other languages in
+the future!
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.15.0) for a full list
+of changes.
+
+- Added a `moon action-graph` command.
+- Added a `--dependents` argument to `moon action-graph`.
+- Added the ability to skip non-`RunTask` actions using environment variables.
+- Deprecated the `moon dep-graph` command.

@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/visualizer",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "A project graph and dependency graph visualizer for moon.",
   "keywords": [
     "moon",

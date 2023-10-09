@@ -50,12 +50,8 @@ current session. To persist across sessions, update `PATH` manually.
 moon can be installed and managed in [proto's toolchain](/proto) using a TOML plugin. This will
 install moon to `~/.proto/tools/moon` and make the binary available at `~/.proto/bin`.
 
-```toml title=".prototools"
-[plugins]
-moon = "source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"
-```
-
 ```shell
+proto add-plugin moon "source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"
 proto install moon
 ```
 

@@ -18,24 +18,6 @@
   implicitly or explicitly depend on the other project) will now automatically mark that other
   project as a "peer" dependency. For example, "b" becomes a peer dependency for "a".
 
-  ```yaml
-  tasks:
-    build:
-      deps: ['b:build']
-
-  # Now internally becomes:
-  dependsOn:
-    - id: 'b'
-      scope: 'peer'
-
-  tasks:
-    build:
-      deps: ['b:build']
-  ```
-
-  We're marking this as a breaking change as this could subtly introduce cycles in the project graph
-  that weren't present before, and for Node.js projects, this may inject `peerDependencies`.
-
 #### 🎉 Release
 
 - Rewrote the dependency graph from the ground-up:
@@ -44,7 +26,7 @@
     arbitrarily.
   - Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.
   - Renamed `RunTarget` to `RunTask`, including interactive and persistent variants.
-- Updated the action graph to iterate using a topological queue, which executes actions on-demand in
+- Updated the action graph to process using a topological queue, which executes actions on-demand in
   the thread pool when they are ready (dependencies have been met). Previously, we would sort
   topologically _into batches_, which worked, but resulted in many threads uselessly waiting for an
   action to run, which was blocked waiting for the current batch to complete.
@@ -56,8 +38,10 @@
 
 #### 🚀 Updates
 
-- Added a `moon action-graph` command and deprecated `moon dep-graph`.
+- Added a `moon action-graph` command.
 - Added a `--dependents` argument to `moon action-graph`.
+- Added the ability to skip non-`RunTask` actions using environment variables.
+- Deprecated the `moon dep-graph` command.
 
 #### 🐞 Fixes
 
@@ -67,6 +51,7 @@
 #### ⚙️ Internal
 
 - Added in-memory caching to project graph file system lookup operations.
+- Updated Rust to v1.72.
 
 ## 1.14.5
 

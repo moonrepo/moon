@@ -13,10 +13,10 @@ if [[ -z "${NPM_TOKEN}" ]]; then
 else
 	echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
 	echo "npmAuthToken: $NPM_TOKEN" >> ./.yarnrc.yml
-
-	# Update env var in GitHub actions
-	echo "NPM_CHANNEL=$channel" >> $GITHUB_ENV
 fi
+
+# Update env var in GitHub actions
+echo "NPM_CHANNEL=$channel" >> "$GITHUB_ENV"
 
 # And make it available to other scripts
 export NPM_CHANNEL="$channel"

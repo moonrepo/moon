@@ -12,14 +12,30 @@ on:
       - master
       - develop-*
       - release-*
+  # Every day at midnight (nightly)
+  schedule:
+    - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
-  # pull_request:
+  pull_request:
 
 permissions:
   contents: write
   id-token: write
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+      nightly:
+        ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
+        github.event_name == 'pull_request' }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash ./scripts/release/setupNpm.sh
+
   build:
     strategy:
       fail-fast: false
@@ -68,6 +84,8 @@ jobs:
           - target: x86_64-pc-windows-msvc
             host: windows-2022
             binary: moon.exe
+    needs:
+      - plan
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
@@ -145,14 +163,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
-        with:
-          cache: yarn
-          check-latest: true
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
-      - name: Install dependencies
-        run: yarn install --immutable
       - uses: actions/download-artifact@v3
         name: Download artifacts
         with:
@@ -176,13 +189,12 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
+      - plan
       - test
-    env:
-      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -206,20 +218,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - uses: softprops/action-gh-release@v1
+      - if: ${{ needs.plan.outputs.nightly == 'false' }}
+        uses: softprops/action-gh-release@v1
         name: Create GitHub release
         with:
           fail_on_unmatched_files: true
           files: artifacts/release/*
           tag_name: ${{ env.NPM_TAG_NAME }}
-          prerelease: ${{ env.NPM_CHANNEL == 'next' }}
+          prerelease: ${{ env.NPM_CHANNEL != 'latest' }}
 
   publish-npm:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.plan.outputs.publish == 'true' }}
+    needs:
+      - plan
     name: Publish npm packages
     runs-on: ubuntu-20.04
-    env:
-      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3

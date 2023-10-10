@@ -19,7 +19,7 @@ for package in packages/cli packages/core-*; do
 	else
 		cd "./$package" || exit
 		# We can't use npm because of: https://github.com/npm/cli/issues/2610
-		# yarn npm publish --tag "$tag" --access public
+		yarn npm publish --tag "$tag" --access public
 		cd ../..
 	fi
 done

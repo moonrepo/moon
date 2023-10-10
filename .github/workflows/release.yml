@@ -27,7 +27,9 @@ jobs:
     name: Plan release
     runs-on: ubuntu-latest
     outputs:
-      publish: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+      publish:
+        ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
+        github.event_name == 'pull_request' }}
       nightly: ${{ steps.plan-step.outputs.nightly }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
     env:
@@ -70,25 +72,25 @@ jobs:
             docker-target: bin-musl
             docker-platform: linux/arm64
 
-          # - target: x86_64-apple-darwin
-          #   host: macos-12
-          #   binary: moon
-          #   setup: |
-          #     export MACOSX_DEPLOYMENT_TARGET="10.13";
+          - target: x86_64-apple-darwin
+            host: macos-12
+            binary: moon
+            setup: |
+              export MACOSX_DEPLOYMENT_TARGET="10.13";
 
-          # - target: aarch64-apple-darwin
-          #   host: macos-12
-          #   binary: moon
-          #   setup: |
-          #     export CC=$(xcrun -f clang);
-          #     export CXX=$(xcrun -f clang++);
-          #     export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
-          #     export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
-          #     export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
+          - target: aarch64-apple-darwin
+            host: macos-12
+            binary: moon
+            setup: |
+              export CC=$(xcrun -f clang);
+              export CXX=$(xcrun -f clang++);
+              export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
+              export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
+              export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
 
-          # - target: x86_64-pc-windows-msvc
-          #   host: windows-2022
-          #   binary: moon.exe
+          - target: x86_64-pc-windows-msvc
+            host: windows-2022
+            binary: moon.exe
     needs:
       - plan
     name: Stable - ${{ matrix.target }}
@@ -149,18 +151,18 @@ jobs:
             image: clux/muslrust:stable
             setup: yarn config set supportedArchitectures.libc "musl"
 
-          # - target: x86_64-apple-darwin
-          #   host: macos-12
+          - target: x86_64-apple-darwin
+            host: macos-12
 
-          # - target: aarch64-apple-darwin
-          #   host: ubuntu-20.04
-          #   image: arm64v8/node
-          #   setup: |
-          #     sudo apt-get install binfmt-support qemu qemu-user-static
-          #     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          - target: aarch64-apple-darwin
+            host: ubuntu-20.04
+            image: arm64v8/node
+            setup: |
+              sudo apt-get install binfmt-support qemu qemu-user-static
+              docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-          # - target: x86_64-pc-windows-msvc
-          #   host: windows-2022
+          - target: x86_64-pc-windows-msvc
+            host: windows-2022
     needs:
       - build
     name: Test - ${{ matrix.target }}
@@ -194,6 +196,7 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
@@ -216,8 +219,7 @@ jobs:
       - name: List binaries
         run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
-      - # if: ${{ needs.plan.outputs.publish == 'true' }}
-        id: publish-step
+      - id: publish-step
         name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh
         shell: bash
@@ -226,14 +228,28 @@ jobs:
           NIGHTLY: ${{ needs.plan.outputs.nightly }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
-        uses: softprops/action-gh-release@v1
+      - if: ${{ needs.plan.outputs.nightly == 'false' }}
+        uses: ncipollo/release-action@v1
         name: Create GitHub release
         with:
-          fail_on_unmatched_files: true
-          files: artifacts/release/*
-          tag_name: ${{ steps.publish-step.outputs.npm-tag-name }}
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          tag: ${{ steps.publish-step.outputs.npm-tag-name }}
           prerelease: ${{ needs.plan.outputs.npm-channel != 'latest' }}
+          skipIfReleaseExists: true
+      - if: ${{ needs.plan.outputs.nightly == 'true' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
+          name: 'Nightly (${{ github.sha }})'
+          tag: 'nightly'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
 
   publish-npm:
     if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}

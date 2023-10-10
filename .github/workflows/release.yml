@@ -35,7 +35,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - run: bash ./scripts/release/setupNpm.sh
+      - run: bash ./scripts/release/planRelease.sh
 
   build:
     strategy:

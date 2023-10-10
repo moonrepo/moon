@@ -27,6 +27,7 @@ impl Event for DetectLanguageEvent {
 pub struct ProjectBuilderContext<'app> {
     pub detect_language: &'app Emitter<DetectLanguageEvent>,
     pub detect_platform: &'app Emitter<DetectPlatformEvent>,
+    pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
     pub workspace_root: &'app Path,
 }
@@ -268,7 +269,11 @@ impl<'app> ProjectBuilder<'app> {
                         dep_id.to_owned(),
                         DependencyConfig {
                             id: dep_id.to_owned(),
-                            scope: DependencyScope::Peer,
+                            scope: if self.context.root_project_id.is_some_and(|id| id == dep_id) {
+                                DependencyScope::Root
+                            } else {
+                                DependencyScope::Peer
+                            },
                             source: DependencySource::Implicit,
                             via: Some(task_config.target.to_string()),
                         },

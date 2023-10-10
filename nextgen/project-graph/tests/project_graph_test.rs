@@ -719,6 +719,27 @@ mod project_graph {
                     .await;
 
                 assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
+
+                let deps = &graph.get("from-task-deps").unwrap().dependencies;
+
+                assert_eq!(deps.get("b").unwrap().scope, DependencyScope::Peer);
+                assert_eq!(deps.get("c").unwrap().scope, DependencyScope::Peer);
+            }
+
+            #[tokio::test]
+            async fn from_root_task_deps() {
+                let sandbox = create_sandbox("dependency-types");
+                let container = ProjectGraphContainer::new(sandbox.path());
+                let context = container.create_context();
+                let graph = container
+                    .build_graph_for(context, &["from-root-task-deps"])
+                    .await;
+
+                assert_eq!(map_ids(graph.ids()), ["root", "from-root-task-deps"]);
+
+                let deps = &graph.get("from-root-task-deps").unwrap().dependencies;
+
+                assert_eq!(deps.get("root").unwrap().scope, DependencyScope::Root);
             }
 
             #[tokio::test]

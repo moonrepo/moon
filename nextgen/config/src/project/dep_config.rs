@@ -9,6 +9,9 @@ derive_enum!(
         Peer,
         #[default]
         Production,
+
+        // Special case when depending on the root-level project
+        Root,
     }
 );
 

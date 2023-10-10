@@ -32,7 +32,6 @@ jobs:
         ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
         github.event_name == 'pull_request' }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
-      npm-tag-name: ''
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -216,11 +215,13 @@ jobs:
         run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
       - # if: ${{ needs.plan.outputs.publish == 'true' }}
+        id: publish-step
         name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIGHTLY: ${{ needs.plan.outputs.nightly }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
@@ -229,7 +230,7 @@ jobs:
         with:
           fail_on_unmatched_files: true
           files: artifacts/release/*
-          tag_name: ${{ needs.plan.outputs.npm-tag-name }}
+          tag_name: ${{ steps.publish-step.outputs.npm-tag-name }}
           prerelease: ${{ needs.plan.outputs.npm-channel != 'latest' }}
 
   publish-npm:
@@ -253,5 +254,6 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIGHTLY: ${{ needs.plan.outputs.nightly }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

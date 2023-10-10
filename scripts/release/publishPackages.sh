@@ -3,8 +3,6 @@
 dir=$(dirname $0)
 tag="${NPM_CHANNEL:-latest}"
 
-echo $tag;
-
 # Setup npm for publishing
 source "$dir/setupNpm.sh"
 

@@ -60,7 +60,8 @@ pub struct ProjectGraphBuilder<'app> {
     nodes: FxHashMap<Id, NodeIndex>,
 
     /// The root project ID.
-    root_id: Option<Id>,
+    #[serde(skip)]
+    root_project_id: Option<Id>,
 
     /// Mapping of project IDs to file system sources,
     /// derived from the `workspace.projects` setting.
@@ -80,7 +81,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
-            root_id: None,
+            root_project_id: None,
             sources: FxHashMap::default(),
         };
 
@@ -297,7 +298,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             ProjectBuilderContext {
                 detect_language: &context.detect_language,
                 detect_platform: &context.detect_platform,
-                root_id: self.root_id.as_ref(),
+                root_project_id: self.root_project_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,
             },
@@ -465,7 +466,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             .await?;
 
         // Find the root project
-        self.root_id = sources.iter().find_map(|(id, source)| {
+        self.root_project_id = sources.iter().find_map(|(id, source)| {
             if source.as_str().is_empty() || source.as_str() == "." {
                 Some(id.to_owned())
             } else {

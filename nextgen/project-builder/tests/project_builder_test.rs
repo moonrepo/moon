@@ -56,7 +56,7 @@ impl Stub {
             ProjectBuilderContext {
                 detect_language: &self.detect_language,
                 detect_platform: &self.detect_platform,
-                root_id: None,
+                root_project_id: None,
                 toolchain_config: &self.toolchain_config,
                 workspace_root: &self.workspace_root,
             },

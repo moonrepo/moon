@@ -10,7 +10,7 @@ derive_enum!(
         #[default]
         Production,
 
-        // Special case when dependening on the root-level project
+        // Special case when depending on the root-level project
         Root,
     }
 );

@@ -53,9 +53,10 @@ impl ProjectGraphContainer {
         }
 
         // Use folders as project names
-        let mut projects = WorkspaceProjectsConfig::default();
-
-        projects.globs = vec!["*".into()];
+        let mut projects = WorkspaceProjectsConfig {
+            globs: vec!["*".into()],
+            ..WorkspaceProjectsConfig::default()
+        };
 
         if root.join("moon.yml").exists() {
             projects.sources.insert("root".into(), ".".into());

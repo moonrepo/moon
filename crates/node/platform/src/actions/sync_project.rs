@@ -66,9 +66,8 @@ pub async fn sync_project(
                     };
 
                     match dep_cfg.scope {
-                        DependencyScope::Build => {
+                        DependencyScope::Build | DependencyScope::Root => {
                             // Not supported by Node.js
-                            unimplemented!();
                         }
                         DependencyScope::Production => {
                             package_prod_deps.insert(dep_package_name.to_owned(), dep_version);

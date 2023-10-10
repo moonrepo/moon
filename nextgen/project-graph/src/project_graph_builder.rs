@@ -8,7 +8,9 @@ use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
-use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{
+    DependencyScope, InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+};
 use moon_hash::HashEngine;
 use moon_project::Project;
 use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
@@ -57,6 +59,9 @@ pub struct ProjectGraphBuilder<'app> {
     /// Nodes (projects) inserted into the graph.
     nodes: FxHashMap<Id, NodeIndex>,
 
+    /// The root project ID.
+    root_id: Option<Id>,
+
     /// Mapping of project IDs to file system sources,
     /// derived from the `workspace.projects` setting.
     sources: FxHashMap<Id, WorkspaceRelativePathBuf>,
@@ -75,6 +80,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
+            root_id: None,
             sources: FxHashMap::default(),
         };
 
@@ -246,6 +252,12 @@ impl<'app> ProjectGraphBuilder<'app> {
                     dependency_id = dep_id.as_str(),
                     "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
                 );
+
+                // Don't link the root project to any project, but still load it
+            } else if matches!(dep_config.scope, DependencyScope::Root) {
+                self.internal_load(dep_id, cycle).await?;
+
+                // Otherwise link projects
             } else {
                 edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
             }
@@ -285,6 +297,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             ProjectBuilderContext {
                 detect_language: &context.detect_language,
                 detect_platform: &context.detect_platform,
+                root_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,
             },
@@ -450,6 +463,15 @@ impl<'app> ProjectGraphBuilder<'app> {
                 workspace_root: context.workspace_root.to_owned(),
             })
             .await?;
+
+        // Find the root project
+        self.root_id = sources.iter().find_map(|(id, source)| {
+            if source.as_str().is_empty() || source.as_str() == "." {
+                Some(id.to_owned())
+            } else {
+                None
+            }
+        });
 
         self.sources = sources;
         self.aliases = extended_data.aliases;

@@ -1,0 +1,4 @@
+tasks:
+  build:
+    command: 'build'
+    deps: ['root:noop']

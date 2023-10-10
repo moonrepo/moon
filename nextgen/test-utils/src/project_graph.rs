@@ -1,6 +1,7 @@
 use moon_config::{
     InheritedTasksEntry, InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig,
     PartialTaskConfig, ToolchainConfig, ToolsConfig, WorkspaceConfig, WorkspaceProjects,
+    WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
     DetectLanguageEvent, DetectPlatformEvent, ExtendProjectEvent, ExtendProjectGraphEvent,
@@ -52,7 +53,15 @@ impl ProjectGraphContainer {
         }
 
         // Use folders as project names
-        graph.workspace_config.projects = WorkspaceProjects::Globs(vec!["*".into()]);
+        let mut projects = WorkspaceProjectsConfig::default();
+
+        projects.globs = vec!["*".into()];
+
+        if root.join("moon.yml").exists() {
+            projects.sources.insert("root".into(), ".".into());
+        }
+
+        graph.workspace_config.projects = WorkspaceProjects::Both(projects);
 
         graph
     }

@@ -27,5 +27,5 @@ done
 version=$(cat packages/cli/package.json | jq -r '.version')
 tag="v$version"
 
-echo "NPM_TAG_NAME=$tag" >> $GITHUB_ENV
-export NPM_TAG_NAME="$tag"
+echo "Setting tag name to $tag"
+echo "npm-tag-name=$tag" >> "$GITHUB_OUTPUT"

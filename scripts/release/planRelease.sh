@@ -9,9 +9,4 @@ if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc"; then
 fi
 
 echo "Setting npm channel to $channel"
-
-# Update env var in GitHub actions
-echo "NPM_CHANNEL=$channel" >> "$GITHUB_ENV"
-
-# And make it available to other scripts
-export NPM_CHANNEL="$channel"
+echo "npm-channel=$channel" >> "$GITHUB_OUTPUT"

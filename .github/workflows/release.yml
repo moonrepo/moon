@@ -31,6 +31,8 @@ jobs:
       nightly:
         ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
         github.event_name == 'pull_request' }}
+      npm-channel: 'latest'
+      npm-tag-name: ''
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -218,6 +220,7 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
         uses: softprops/action-gh-release@v1
@@ -225,8 +228,8 @@ jobs:
         with:
           fail_on_unmatched_files: true
           files: artifacts/release/*
-          tag_name: ${{ env.NPM_TAG_NAME }}
-          prerelease: ${{ env.NPM_CHANNEL != 'latest' }}
+          tag_name: ${{ needs.plan.outputs.npm-tag-name }}
+          prerelease: ${{ needs.plan.outputs.npm-channel != 'latest' }}
 
   publish-npm:
     if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
@@ -249,4 +252,5 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

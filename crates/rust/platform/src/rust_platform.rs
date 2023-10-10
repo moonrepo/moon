@@ -59,6 +59,18 @@ impl RustPlatform {
             workspace_root: workspace_root.to_path_buf(),
         }
     }
+
+    fn get_globals_dir(&self, tool: Option<&RustTool>) -> PathBuf {
+        let mut globals_dir = get_cargo_home().join("bin");
+
+        if let Some(tool) = tool {
+            if let Some(new_globals_dir) = tool.tool.get_globals_bin_dir() {
+                globals_dir = new_globals_dir.to_path_buf();
+            }
+        }
+
+        globals_dir
+    }
 }
 
 #[async_trait]
@@ -234,12 +246,10 @@ impl Platform for RustPlatform {
         if !self.config.bins.is_empty() {
             print_checkpoint("cargo binstall", Checkpoint::Setup);
 
-            let globals_dir = tool.tool.get_globals_bin_dir();
+            let globals_dir = self.get_globals_dir(Some(tool));
 
             // Install cargo-binstall if it does not exist
-            if globals_dir.is_none()
-                || globals_dir.is_some_and(|p| !p.join("cargo-binstall").exists())
-            {
+            if !globals_dir.join("cargo-binstall").exists() {
                 debug!(
                     target: LOG_TARGET,
                     "{} does not exist, installing",
@@ -478,21 +488,10 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let mut globals_dir = get_cargo_home().join("bin");
-
-                if let Ok(tool) = self.toolchain.get() {
-                    if let Some(new_globals_dir) = tool.tool.get_globals_bin_dir() {
-                        globals_dir = new_globals_dir.to_path_buf();
-                    }
-                }
-
+                let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
                 let global_bin_path = globals_dir.join(&task.command);
 
-                let cargo_bin = if task.command.starts_with("cargo-") {
-                    &task.command[6..]
-                } else {
-                    &task.command
-                };
+                let cargo_bin = task.command.strip_prefix("cargo-").unwrap_or(&task.command);
                 let cargo_bin_path = globals_dir.join(format!("cargo-{}", cargo_bin));
 
                 // Must run through cargo

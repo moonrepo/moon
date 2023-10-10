@@ -37,8 +37,9 @@ jobs:
       - id: plan-step
         run: bash ./scripts/release/planRelease.sh
         env:
-          NIGHTLY: ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
-        github.event_name == 'pull_request' }}
+          NIGHTLY:
+            ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
+            github.event_name == 'pull_request' }}
 
   build:
     strategy:

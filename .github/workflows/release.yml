@@ -31,14 +31,14 @@ jobs:
       nightly:
         ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
         github.event_name == 'pull_request' }}
-      # These are set by plan release script
-      # npm-channel: 'latest'
-      # npm-tag-name: ''
+      npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
+      npm-tag-name: ''
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - run: bash ./scripts/release/planRelease.sh
+      - id: plan-step
+        run: bash ./scripts/release/planRelease.sh
 
   build:
     strategy:

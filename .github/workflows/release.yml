@@ -31,8 +31,9 @@ jobs:
       nightly:
         ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
         github.event_name == 'pull_request' }}
-      npm-channel: 'latest'
-      npm-tag-name: ''
+      # These are set by plan release script
+      # npm-channel: 'latest'
+      # npm-tag-name: ''
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:

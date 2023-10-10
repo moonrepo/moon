@@ -720,7 +720,7 @@ mod project_graph {
 
                 assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
 
-                let deps = &graph.get("from-root-task-deps").unwrap().dependencies;
+                let deps = &graph.get("from-task-deps").unwrap().dependencies;
 
                 assert_eq!(deps.get("b").unwrap().scope, DependencyScope::Peer);
                 assert_eq!(deps.get("c").unwrap().scope, DependencyScope::Peer);

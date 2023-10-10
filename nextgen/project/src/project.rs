@@ -106,6 +106,11 @@ impl Project {
             .any(|file| file.starts_with(&self.source))
     }
 
+    /// Return true if the root-level project.
+    pub fn is_root_level(&self) -> bool {
+        self.source.as_str().is_empty() || self.source.as_str() == "."
+    }
+
     /// Return true if the provided locator string (an ID or alias) matches the
     /// current project.
     pub fn matches_locator(&self, locator: &str) -> bool {

@@ -35,6 +35,10 @@ pub async fn sync_project(
             continue;
         };
 
+        if dep_project.is_root_level() || matches!(dep_cfg.scope, DependencyScope::Root) {
+            continue;
+        }
+
         let dep_relative_path =
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
         let is_dep_typescript_enabled = dep_project.config.toolchain.is_typescript_enabled();

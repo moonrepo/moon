@@ -10,6 +10,18 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Based on feedback, we've updated the automatic dependency linking to _not apply_ when the target
+  is the root-level project. This should alleviate all unwanted cycles.
+
+#### 🐞 Fixes
+
+- Fixed an issue where Node.js dependency syncing would fail on `build` dependencies, and be over
+  zealous with root-level projects.
+
 ## 1.15.0
 
 #### 💥 Breaking

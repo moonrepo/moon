@@ -21,6 +21,7 @@
 
 - Fixed an issue where Node.js dependency syncing would fail on `build` dependencies, and be over
   zealous with root-level projects.
+- Improved detection of Rust `cargo-binstall` package.
 
 ## 1.15.0
 

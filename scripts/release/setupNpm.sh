@@ -13,13 +13,16 @@ if [ -d ".yarn/versions" ]; then
 fi
 
 if [[ "${NIGHTLY}" == "true" ]]; then
-	echo "Nightly build detected, appending timestamp to versions"
 	timestamp=$(date +%Y%m%d.%H)
+	preid="-nightly.$timestamp"
+
+	echo "Nightly build detected, appending timestamp to versions"
+	echo "Prerelease: $preid"
 
 	for package in packages/*; do
 		echo "$package"
 		cd "./$package" || exit
-		pkg=$(jq ".version += \"-nightly.$timestamp\"" package.json)
+		pkg=$(jq ".version += \"$preid\"" package.json)
 		echo "$pkg" > package.json
 		cd ../..
 	done

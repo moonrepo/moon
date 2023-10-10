@@ -28,9 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
-      nightly:
-        ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
-        github.event_name == 'pull_request' }}
+      nightly: ${{ steps.plan-step.outputs.nightly }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,6 +36,9 @@ jobs:
       - uses: actions/checkout@v4
       - id: plan-step
         run: bash ./scripts/release/planRelease.sh
+        env:
+          NIGHTLY: ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
+        github.event_name == 'pull_request' }}
 
   build:
     strategy:

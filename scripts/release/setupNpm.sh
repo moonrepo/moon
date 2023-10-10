@@ -14,13 +14,12 @@ fi
 
 if [[ "${NIGHTLY}" == "true" ]]; then
 	echo "Nightly build detected, appending timestamp to versions"
-	timestamp=$(date +%Y%m%d)
+	timestamp=$(date +%Y%m%d.%H)
 
 	for package in packages/*; do
 		echo "$package"
 		cd "./$package" || exit
 		pkg=$(jq ".version += \"-nightly.$timestamp\"" package.json)
-		echo "$pkg"
 		echo "$pkg" > package.json
 		cd ../..
 	done

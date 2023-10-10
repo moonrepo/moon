@@ -32,6 +32,7 @@ schematic = { workspace = true, features = [
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+system_env = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

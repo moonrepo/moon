@@ -190,7 +190,6 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
-    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
@@ -213,13 +212,14 @@ jobs:
       - name: List binaries
         run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
-      - name: Publish npm packages
+      - # if: ${{ needs.plan.outputs.publish == 'true' }}
+        name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - if: ${{ needs.plan.outputs.nightly == 'false' }}
+      - if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
         uses: softprops/action-gh-release@v1
         name: Create GitHub release
         with:
@@ -229,7 +229,7 @@ jobs:
           prerelease: ${{ env.NPM_CHANNEL != 'latest' }}
 
   publish-npm:
-    if: ${{ needs.plan.outputs.publish == 'true' }}
+    if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
     needs:
       - plan
     name: Publish npm packages

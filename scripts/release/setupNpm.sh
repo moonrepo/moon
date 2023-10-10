@@ -19,8 +19,9 @@ if [[ "${NIGHTLY}" == "true" ]]; then
 	for package in packages/*; do
 		echo "$package"
 		cd "./$package" || exit
-		jq ".version += '-nightly.$timestamp'" package.json
-		echo $(cat package.json)
+		pkg=$(jq ".version += \"-nightly.$timestamp\"" package.json)
+		echo "$pkg"
+		echo "$pkg" > package.json
 		cd ../..
 	done
 fi

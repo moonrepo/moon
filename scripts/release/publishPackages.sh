@@ -4,7 +4,7 @@ dir=$(dirname $0)
 tag="${NPM_CHANNEL:-latest}"
 
 # Setup npm for publishing
-# source "$dir/setupNpm.sh"
+source "$dir/setupNpm.sh"
 
 # We only want to publish packages NOT relating to the Rust binary
 for package in packages/*; do

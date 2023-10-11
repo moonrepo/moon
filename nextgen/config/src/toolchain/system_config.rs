@@ -1,5 +1,3 @@
-use super::bin_config::BinEntry;
-use proto_core::{PluginLocator, UnresolvedVersionSpec};
 use schematic::Config;
 use system_env::SystemDependency;
 

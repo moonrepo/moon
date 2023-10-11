@@ -40,6 +40,7 @@ jobs:
           NIGHTLY: ${{ github.event_name != 'workflow_dispatch' }}
 
   build:
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -192,7 +193,6 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
-    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
@@ -248,7 +248,7 @@ jobs:
           skipIfReleaseExists: false
 
   publish-npm:
-    if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
+    if: ${{ needs.plan.outputs.nightly == 'false' }}
     needs:
       - plan
     name: Publish npm packages

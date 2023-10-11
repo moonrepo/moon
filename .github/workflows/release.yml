@@ -29,7 +29,7 @@ jobs:
     outputs:
       publish:
         ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
-        github.event_name == 'pull_request' }}
+        contains(github.ref, 'develop-') || github.ref == 'master' }}
       nightly: ${{ steps.plan-step.outputs.nightly }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
     env:
@@ -39,9 +39,7 @@ jobs:
       - id: plan-step
         run: bash ./scripts/release/planRelease.sh
         env:
-          NIGHTLY:
-            ${{ github.event_name == 'schedule' || contains(github.head_ref, 'develop-') ||
-            github.event_name == 'pull_request' }}
+          NIGHTLY: ${{ github.event_name != 'workflow_dispatch' }}
 
   build:
     strategy:
@@ -245,7 +243,7 @@ jobs:
           artifactErrorsFailBuild: true
           artifacts: artifacts/release/*
           body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
-          name: 'Nightly (${{ github.sha }})'
+          name: 'Nightly'
           tag: 'nightly'
           prerelease: true
           replacesArtifacts: true

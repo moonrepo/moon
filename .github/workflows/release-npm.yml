@@ -6,8 +6,6 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' }}
     name: Publish npm packages
     runs-on: ubuntu-latest
-    env:
-      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -23,4 +21,6 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIGHTLY: false
+          NPM_CHANNEL: latest
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

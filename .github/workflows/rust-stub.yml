@@ -35,7 +35,7 @@ jobs:
     steps:
       - run: 'echo "Not affected, skipping"'
   coverage:
-    if: ${{ contains(github.ref, 'develop-') || endsWith(github.ref, 'master') }}
+    if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

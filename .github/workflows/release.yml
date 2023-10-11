@@ -16,7 +16,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
-  pull_request:
+  # pull_request:
 
 permissions:
   contents: write
@@ -29,7 +29,7 @@ jobs:
     outputs:
       publish:
         ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
-        contains(github.ref, 'develop-') || github.ref == 'master' }}
+        contains(github.ref, 'develop-') || github.ref_name == 'master' }}
       nightly: ${{ steps.plan-step.outputs.nightly }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
     env:

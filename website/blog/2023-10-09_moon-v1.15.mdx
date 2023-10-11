@@ -6,7 +6,7 @@ tags: [action, dependency, graph, pipeline, railway]
 image: ./img/moon/v1.15.png
 ---
 
-In this release, we've taken the new step in modernizing our action pipeline, by rewriting the
+In this release, we've taken the next step in modernizing our action pipeline, by rewriting the
 dependency graph.
 
 <!--truncate-->
@@ -45,12 +45,13 @@ it either has no dependencies, or all of its dependencies (in the chain) have be
 
 For large graphs, this should result in a significant performance improvement!
 
-### Automatic peer dependencies (breaking)
+### Automatic dependency linking (breaking)
 
 Because of these graph changes, we do have a minor "breaking change". Tasks that depend (via `deps`)
 on other tasks from arbitrary projects (the parent project doesn't implicitly or explicitly depend
-on the other project) will now automatically mark that other project as a "peer" dependency. For
-example, "b" becomes a peer dependency for "a".
+on the other project), not including the root-level project, will now automatically mark that other
+project as a "peer" dependency (if not already configured with `dependsOn`). For example, "b"
+becomes a peer dependency for "a".
 
 ```yaml title="a/moon.yml"
 tasks:
@@ -64,6 +65,19 @@ Now internally becomes:
 dependsOn:
   - id: 'b'
     scope: 'peer'
+
+tasks:
+  build:
+    deps: ['b:build']
+```
+
+If you'd prefer this dependency to _not be_ a peer, you can explicitly configure it with a different
+scope. For Node.js projects, the "build" scope can be used as a no-op replacement.
+
+```yaml title="a/moon.yml"
+dependsOn:
+  - id: 'b'
+    scope: 'build' # production, development
 
 tasks:
   build:

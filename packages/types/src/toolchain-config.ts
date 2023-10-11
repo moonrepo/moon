@@ -79,6 +79,62 @@ export interface PartialRustConfig {
 	version?: string | null;
 }
 
+export type SystemArch =
+	| 'x86'
+	| 'x64'
+	| 'arm'
+	| 'arm64'
+	| 'longarm64'
+	| 'm68k'
+	| 'mips'
+	| 'mips64'
+	| 'powerpc'
+	| 'powerpc64'
+	| 'riscv64'
+	| 's390x'
+	| 'sparc64';
+
+export type DependencyName = string | Record<string, string> | string[];
+
+export type SystemPackageManager =
+	| 'pkg'
+	| 'pkgin'
+	| 'apk'
+	| 'apt'
+	| 'dnf'
+	| 'pacman'
+	| 'yum'
+	| 'brew'
+	| 'choco'
+	| 'scoop';
+
+export type SystemOS =
+	| 'android'
+	| 'dragonfly'
+	| 'freebsd'
+	| 'ios'
+	| 'linux'
+	| 'macos'
+	| 'netbsd'
+	| 'openbsd'
+	| 'solaris'
+	| 'windows';
+
+export interface DependencyConfig {
+	arch: SystemArch | null;
+	dep: DependencyName;
+	manager: SystemPackageManager | null;
+	os: SystemOS | null;
+	sudo: boolean;
+	version: string | null;
+}
+
+export type SystemDependency = string | string[] | DependencyConfig | Record<string, string>;
+
+export interface PartialSystemConfig {
+	requirements?: SystemDependency[] | null;
+}
+
 export interface PartialTypeScriptConfig {
 	/** @default true */
 	createMissingConfig?: boolean | null;
@@ -101,6 +157,7 @@ export interface PartialToolchainConfig {
 	extends?: string | null;
 	node?: PartialNodeConfig | null;
 	rust?: PartialRustConfig | null;
+	system?: PartialSystemConfig | null;
 	typescript?: PartialTypeScriptConfig | null;
 }
 
@@ -164,6 +221,10 @@ export interface RustConfig {
 	version: string | null;
 }
 
+export interface SystemConfig {
+	requirements: SystemDependency[];
+}
+
 export interface TypeScriptConfig {
 	/** @default true */
 	createMissingConfig: boolean;
@@ -186,5 +247,6 @@ export interface ToolchainConfig {
 	extends: string | null;
 	node: NodeConfig | null;
 	rust: RustConfig | null;
+	system: SystemConfig;
 	typescript: TypeScriptConfig | null;
 }

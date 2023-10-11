@@ -31,6 +31,9 @@ pub struct ToolchainConfig {
     pub rust: Option<RustConfig>,
 
     #[setting(nested)]
+    pub system: SystemConfig,
+
+    #[setting(nested)]
     pub typescript: Option<TypeScriptConfig>,
 }
 

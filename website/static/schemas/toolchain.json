@@ -55,6 +55,16 @@
         }
       ]
     },
+    "system": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialSystemConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "typescript": {
       "anyOf": [
         {
@@ -68,7 +78,96 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "DependencyConfig": {
+      "title": "DependencyConfig",
+      "type": "object",
+      "required": [
+        "arch",
+        "dep",
+        "manager",
+        "os",
+        "sudo",
+        "version"
+      ],
+      "properties": {
+        "arch": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SystemArch"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dep": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencyName"
+            }
+          ]
+        },
+        "manager": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SystemPackageManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "os": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SystemOS"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sudo": {
+          "type": "boolean"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DependencyName": {
+      "title": "DependencyName",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "NodePackageManager": {
+      "title": "NodePackageManager",
       "type": "string",
       "enum": [
         "npm",
@@ -77,6 +176,7 @@
       ]
     },
     "NodeProjectAliasFormat": {
+      "title": "NodeProjectAliasFormat",
       "type": "string",
       "enum": [
         "name-and-scope",
@@ -84,6 +184,7 @@
       ]
     },
     "NodeVersionFormat": {
+      "title": "NodeVersionFormat",
       "type": "string",
       "enum": [
         "file",
@@ -98,6 +199,7 @@
       ]
     },
     "NodeVersionManager": {
+      "title": "NodeVersionManager",
       "type": "string",
       "enum": [
         "nodenv",
@@ -474,6 +576,27 @@
       },
       "additionalProperties": false
     },
+    "PartialSystemConfig": {
+      "title": "PartialSystemConfig",
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#system",
+      "type": "object",
+      "properties": {
+        "requirements": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SystemDependency"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PartialTypeScriptConfig": {
       "title": "PartialTypeScriptConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
@@ -596,6 +719,85 @@
         }
       },
       "additionalProperties": false
+    },
+    "SystemArch": {
+      "title": "SystemArch",
+      "description": "Architecture of the host environment.",
+      "type": "string",
+      "enum": [
+        "x86",
+        "x64",
+        "arm",
+        "arm64",
+        "longarm64",
+        "m68k",
+        "mips",
+        "mips64",
+        "powerpc",
+        "powerpc64",
+        "riscv64",
+        "s390x",
+        "sparc64"
+      ]
+    },
+    "SystemDependency": {
+      "title": "SystemDependency",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "$ref": "#/definitions/DependencyConfig"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "SystemOS": {
+      "title": "SystemOS",
+      "description": "Operating system of the host environment.",
+      "type": "string",
+      "enum": [
+        "android",
+        "dragonfly",
+        "freebsd",
+        "ios",
+        "linux",
+        "macos",
+        "netbsd",
+        "openbsd",
+        "solaris",
+        "windows"
+      ]
+    },
+    "SystemPackageManager": {
+      "title": "SystemPackageManager",
+      "type": "string",
+      "enum": [
+        "pkg",
+        "pkgin",
+        "apk",
+        "apt",
+        "dnf",
+        "pacman",
+        "yum",
+        "brew",
+        "choco",
+        "scoop"
+      ]
     }
   }
 }

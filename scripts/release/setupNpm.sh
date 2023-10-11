@@ -12,7 +12,7 @@ if [ -d ".yarn/versions" ]; then
 	yarn version apply --all
 fi
 
-if [[ "${NIGHTLY}" == "true" ]]; then
+if [[ "$NIGHTLY" == "true" ]]; then
 	timestamp=$(date +%Y%m%d.%H)
 	preid="-nightly.$timestamp"
 

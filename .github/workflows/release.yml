@@ -32,8 +32,6 @@ jobs:
         contains(github.ref, 'develop-') || github.ref_name == 'master' }}
       nightly: ${{ steps.plan-step.outputs.nightly }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - id: plan-step

@@ -2,7 +2,7 @@
 
 # Determine release channel. If contains "alpha", "beta", or "rc",
 # then publish to next, otherwise latest.
-channel=unknown
+channel=latest
 
 if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc"; then
 	channel=next

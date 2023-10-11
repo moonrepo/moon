@@ -15,7 +15,7 @@ on:
       - Makefile.toml
       - rust-toolchain.toml
 env:
-  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -80,7 +80,7 @@ jobs:
           path: ./report.txt
           if-no-files-found: error
   coverage:
-    if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+    if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

@@ -12,6 +12,9 @@ on:
       - master
       - develop-*
       - release-*
+  # Every day at midnight (nightly)
+  schedule:
+    - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
   # pull_request:
 
@@ -20,6 +23,22 @@ permissions:
   id-token: write
 
 jobs:
+  plan:
+    name: Plan release
+    runs-on: ubuntu-latest
+    outputs:
+      publish:
+        ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
+        contains(github.ref, 'develop-') }}
+      nightly: ${{ steps.plan-step.outputs.nightly }}
+      npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan-step
+        run: bash ./scripts/release/planRelease.sh
+        env:
+          NIGHTLY: ${{ github.event_name != 'workflow_dispatch' }}
+
   build:
     strategy:
       fail-fast: false
@@ -68,6 +87,8 @@ jobs:
           - target: x86_64-pc-windows-msvc
             host: windows-2022
             binary: moon.exe
+    needs:
+      - plan
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
@@ -145,14 +166,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
-        with:
-          cache: yarn
-          check-latest: true
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
-      - name: Install dependencies
-        run: yarn install --immutable
       - uses: actions/download-artifact@v3
         name: Download artifacts
         with:
@@ -176,13 +192,12 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
+      - plan
       - test
-    env:
-      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -200,26 +215,44 @@ jobs:
       - name: List binaries
         run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
-      - name: Publish npm packages
+      - id: publish-step
+        name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIGHTLY: ${{ needs.plan.outputs.nightly }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - uses: softprops/action-gh-release@v1
+      - if: ${{ needs.plan.outputs.nightly == 'false' }}
+        uses: ncipollo/release-action@v1
         name: Create GitHub release
         with:
-          fail_on_unmatched_files: true
-          files: artifacts/release/*
-          tag_name: ${{ env.NPM_TAG_NAME }}
-          prerelease: ${{ env.NPM_CHANNEL == 'next' }}
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          tag: ${{ steps.publish-step.outputs.npm-tag-name }}
+          prerelease: ${{ needs.plan.outputs.npm-channel != 'latest' }}
+          skipIfReleaseExists: true
+      - if: ${{ needs.plan.outputs.nightly == 'true' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
+          name: 'Nightly'
+          tag: 'nightly'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
 
   publish-npm:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ needs.plan.outputs.publish == 'true' && needs.plan.outputs.nightly == 'false' }}
+    needs:
+      - plan
     name: Publish npm packages
     runs-on: ubuntu-20.04
-    env:
-      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -235,4 +268,6 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIGHTLY: ${{ needs.plan.outputs.nightly }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

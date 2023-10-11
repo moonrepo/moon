@@ -7,6 +7,9 @@ tag="${NPM_CHANNEL:-latest}"
 source "$dir/setupNpm.sh"
 
 # We only want to publish packages NOT relating to the Rust binary
+echo "Publishing secondary packages"
+echo "Channel: $tag"
+
 for package in packages/*; do
 	echo "$package"
 

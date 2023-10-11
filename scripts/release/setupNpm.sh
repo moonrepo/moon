@@ -13,7 +13,7 @@ if [ -d ".yarn/versions" ]; then
 fi
 
 if [[ "$NIGHTLY" == "true" ]]; then
-	timestamp=$(date +%Y%m%d.%H)
+	timestamp=$(date +%Y%m%d+%H%M)
 	preid="-nightly.$timestamp"
 
 	echo "Nightly build detected, appending timestamp to versions"

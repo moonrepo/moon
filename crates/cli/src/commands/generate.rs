@@ -11,7 +11,7 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::{system, AppResult};
 use starbase_styles::color;
-use std::fmt::Display;
+use std::fmt::Debug;
 use tracing::{debug, warn};
 
 #[derive(Args, Clone, Debug)]
@@ -45,8 +45,8 @@ pub struct GenerateArgs {
     vars: Vec<String>,
 }
 
-fn log_var<T: Display>(name: &str, value: &T, comment: Option<&str>) {
-    debug!(name, value = %value, comment, "Setting variable");
+fn log_var<T: Debug>(name: &str, value: &T, comment: Option<&str>) {
+    debug!(name, value = ?value, comment, "Setting variable");
 }
 
 fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {

@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where "raw" codegen files were sometimes being rendered, and failing with invalid
+  syntax.
+
 ## 1.15.1
 
 #### 🚀 Updates

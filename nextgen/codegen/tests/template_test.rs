@@ -71,7 +71,6 @@ mod template {
             assert_eq!(
                 files,
                 vec![
-                    "file.raw.txt",
                     "file.ts",
                     "file.txt",
                     "folder/nested-file.ts",

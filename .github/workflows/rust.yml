@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest4, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
+        os: [ubuntu-latest, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4

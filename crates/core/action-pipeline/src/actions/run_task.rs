@@ -37,6 +37,7 @@ pub async fn run_task(
         color::label(&task.target)
     );
 
+    runner.node = action.node.clone();
     action.allow_failure = task.options.allow_failure;
 
     // If a dependency failed, we should skip this target

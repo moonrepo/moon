@@ -26,7 +26,7 @@ use starbase_events::Emitter;
 use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
 use std::path::Path;
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
@@ -240,38 +240,37 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Create the project
         let project = self.build_project(&id, source).await?;
+        let dependencies = project
+            .dependencies
+            .values()
+            .map(|v| v.to_owned())
+            .collect::<Vec<_>>(); // How to avoid cloning???
+
+        let index = self.graph.add_node(project);
 
         cycle.insert(id.clone());
+        self.nodes.insert(id.clone(), index);
 
         // Create dependent projects
-        let mut edges = vec![];
-
-        for (dep_id, dep_config) in &project.dependencies {
-            if cycle.contains(dep_id) {
-                warn!(
+        for dep_config in dependencies {
+            if cycle.contains(&dep_config.id) {
+                debug!(
                     id = id.as_str(),
-                    dependency_id = dep_id.as_str(),
+                    dependency_id = dep_config.id.as_str(),
                     "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
                 );
 
                 // Don't link the root project to any project, but still load it
             } else if matches!(dep_config.scope, DependencyScope::Root) {
-                self.internal_load(dep_id, cycle).await?;
+                self.internal_load(&dep_config.id, cycle).await?;
 
                 // Otherwise link projects
             } else {
-                edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
+                let dep_index = self.internal_load(&dep_config.id, cycle).await?;
+
+                self.graph.add_edge(index, dep_index, dep_config.scope);
             }
         }
-
-        // Insert into the graph and connect edges
-        let index = self.graph.add_node(project);
-
-        for edge in edges {
-            self.graph.add_edge(index, edge.0, edge.1);
-        }
-
-        self.nodes.insert(id, index);
 
         cycle.clear();
 

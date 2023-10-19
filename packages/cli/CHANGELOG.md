@@ -22,6 +22,9 @@
   syntax.
 - Fixed an issue where task dependents for the non-primary targets were being included in the action
   graph.
+- Fixed an issue with the project graph that would create duplicate nodes for deeply nested cycles.
+- Fixed an issue where a cycle would be created in the action graph for the `SyncProject` action
+  type.
 
 ## 1.15.1
 

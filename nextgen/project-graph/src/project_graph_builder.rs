@@ -240,29 +240,33 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Create the project
         let project = self.build_project(&id, source).await?;
-        let dependencies = project.dependencies.clone();
+        let dependencies = project
+            .dependencies
+            .values()
+            .map(|v| v.to_owned())
+            .collect::<Vec<_>>(); // How to avoid cloning???
+
         let index = self.graph.add_node(project);
 
         cycle.insert(id.clone());
         self.nodes.insert(id.clone(), index);
 
         // Create dependent projects
-
-        for (dep_id, dep_config) in dependencies {
-            if cycle.contains(&dep_id) {
+        for dep_config in dependencies {
+            if cycle.contains(&dep_config.id) {
                 debug!(
                     id = id.as_str(),
-                    dependency_id = dep_id.as_str(),
+                    dependency_id = dep_config.id.as_str(),
                     "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
                 );
 
                 // Don't link the root project to any project, but still load it
             } else if matches!(dep_config.scope, DependencyScope::Root) {
-                self.internal_load(&dep_id, cycle).await?;
+                self.internal_load(&dep_config.id, cycle).await?;
 
                 // Otherwise link projects
             } else {
-                let dep_index = self.internal_load(&dep_id, cycle).await?;
+                let dep_index = self.internal_load(&dep_config.id, cycle).await?;
 
                 self.graph.add_edge(index, dep_index, dep_config.scope);
             }

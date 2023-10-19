@@ -5,6 +5,7 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use clap::Args;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
+use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
 use moon_project_graph::ProjectGraph;
@@ -114,7 +115,7 @@ pub async fn run_target(
     let should_run_affected = !args.force && args.affected;
 
     // Always query for a touched files list as it'll be used by many actions
-    let touched_files = if !args.force && (args.affected || workspace.vcs.is_enabled()) {
+    let touched_files = if should_run_affected || workspace.vcs.is_enabled() {
         let local = is_local(args);
 
         query_touched_files(
@@ -134,33 +135,26 @@ pub async fn run_target(
     // Generate a dependency graph for all the targets that need to be ran
     let mut action_graph_builder = build_action_graph(&project_graph)?;
 
-    // Run dependents for all primary targets
-    if args.dependents {
-        action_graph_builder.include_dependents();
-    }
-
-    if args.interactive {
-        action_graph_builder.force_interactive();
-    }
-
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;
     }
 
     // Run targets, optionally based on affected files
     let mut primary_targets = vec![];
+    let requirements = RunRequirements {
+        dependents: args.dependents,
+        interactive: args.interactive,
+        touched_files: if should_run_affected {
+            Some(&touched_files)
+        } else {
+            None
+        },
+    };
 
     for locator in target_locators {
         primary_targets.extend(
             action_graph_builder
-                .run_task_by_target_locator(
-                    locator,
-                    if should_run_affected {
-                        Some(&touched_files)
-                    } else {
-                        None
-                    },
-                )?
+                .run_task_by_target_locator(locator, &requirements)?
                 .0,
         );
     }
@@ -196,7 +190,7 @@ pub async fn run_target(
         passthrough_args: args.passthrough.to_owned(),
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: args.profile.to_owned(),
-        touched_files,
+        touched_files: touched_files.clone(),
         workspace_root: workspace.root.clone(),
         ..ActionContext::default()
     };

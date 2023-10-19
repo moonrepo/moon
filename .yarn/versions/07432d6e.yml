@@ -7,9 +7,3 @@ releases:
   '@moonrepo/core-macos-arm64': patch
   '@moonrepo/core-macos-x64': patch
   '@moonrepo/core-windows-x64-msvc': patch
-  '@moonrepo/types': patch
-
-declined:
-  - '@moonrepo/report'
-  - '@moonrepo/runtime'
-  - website

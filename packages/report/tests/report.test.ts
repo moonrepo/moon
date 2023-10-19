@@ -68,7 +68,6 @@ function mockReport(): RunReport {
 		context: {
 			affectedOnly: false,
 			initialTargets: [],
-			interactive: false,
 			passthroughArgs: [],
 			primaryTargets: [],
 			profile: null,

@@ -93,15 +93,15 @@ impl Template {
 
             let content = unsafe { String::from_utf8_unchecked(source_content) };
 
-            self.engine
-                .add_raw_template(name.as_str(), &content)
-                .map_err(|error| CodegenError::LoadTemplateFileFailed {
-                    path: source_path.clone(),
-                    error,
-                })?;
-
-            // Add partials to Tera, but skip copying them
+            // Add partial templates to Tera, but skip including them as a file
             if name.as_str().contains("partial") {
+                self.engine
+                    .add_raw_template(name.as_str(), &content)
+                    .map_err(|error| CodegenError::LoadTemplateFileFailed {
+                        path: source_path.clone(),
+                        error,
+                    })?;
+
                 debug!(
                     template = self.id.as_str(),
                     file = name.as_str(),
@@ -123,6 +123,13 @@ impl Template {
 
             if file.raw {
                 file.content = content;
+            } else {
+                self.engine
+                    .add_raw_template(file.name.as_str(), &content)
+                    .map_err(|error| CodegenError::LoadTemplateFileFailed {
+                        path: file.source_path.clone(),
+                        error,
+                    })?;
             }
 
             files.push(file);

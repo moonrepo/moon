@@ -22,6 +22,7 @@
   syntax.
 - Fixed an issue where task dependents for the non-primary targets were being included in the action
   graph.
+- Fixed an issue with the project graph that would create duplicate nodes for deeply nested cycles.
 
 ## 1.15.1
 

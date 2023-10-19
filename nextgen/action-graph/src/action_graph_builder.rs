@@ -1,5 +1,6 @@
 use crate::action_graph::ActionGraph;
 use crate::action_node::ActionNode;
+use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
@@ -362,6 +363,14 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn sync_project(&mut self, project: &Project) -> miette::Result<NodeIndex> {
+        self.internal_sync_project(project, &mut FxHashSet::default())
+    }
+
+    fn internal_sync_project(
+        &mut self,
+        project: &Project,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<NodeIndex> {
         let node = ActionNode::SyncProject {
             project: project.id.clone(),
             runtime: self.get_runtime(project, None, true),
@@ -371,6 +380,8 @@ impl<'app> ActionGraphBuilder<'app> {
             return Ok(*index);
         }
 
+        cycle.insert(project.id.clone());
+
         // Syncing requires the language's tool to be installed
         let setup_tool_index = self.setup_tool(node.get_runtime());
         let index = self.insert_node(node);
@@ -378,8 +389,12 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // And we should also depend on other projects
         for dep_project_id in self.project_graph.dependencies_of(project)? {
+            if cycle.contains(dep_project_id) {
+                continue;
+            }
+
             let dep_project = self.project_graph.get(dep_project_id)?;
-            let dep_project_index = self.sync_project(&dep_project)?;
+            let dep_project_index = self.internal_sync_project(&dep_project, cycle)?;
 
             if index != dep_project_index {
                 edges.push(dep_project_index);

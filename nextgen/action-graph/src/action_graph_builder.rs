@@ -17,6 +17,7 @@ pub struct ActionGraphBuilder<'app> {
     dependents: bool,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
+    interactive: bool,
     platform_manager: &'app PlatformManager,
     project_graph: &'app ProjectGraph,
 }
@@ -37,6 +38,7 @@ impl<'app> ActionGraphBuilder<'app> {
             graph: DiGraph::new(),
             dependents: false,
             indices: FxHashMap::default(),
+            interactive: false,
             platform_manager,
             project_graph,
         })
@@ -68,6 +70,10 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         Runtime::system()
+    }
+
+    pub fn force_interactive(&mut self) {
+        self.interactive = true;
     }
 
     pub fn include_dependents(&mut self) {

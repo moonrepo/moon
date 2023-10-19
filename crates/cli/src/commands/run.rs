@@ -3,7 +3,6 @@ use crate::enums::{CacheMode, TouchedStatus};
 use crate::helpers::map_list;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
-use miette::miette;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
@@ -140,6 +139,10 @@ pub async fn run_target(
         action_graph_builder.include_dependents();
     }
 
+    if args.interactive {
+        action_graph_builder.force_interactive();
+    }
+
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;
     }
@@ -186,18 +189,10 @@ pub async fn run_target(
         return Ok(());
     }
 
-    // Interactive can only run against 1 task
-    if args.interactive && primary_targets.len() > 1 {
-        return Err(miette!(
-            "Only 1 target can be ran as interactive. Requires a fully qualified project target."
-        ));
-    }
-
     // Process all tasks in the graph
     let context = ActionContext {
         affected_only: should_run_affected,
         initial_targets: FxHashSet::from_iter(target_locators.to_owned()),
-        interactive: args.interactive,
         passthrough_args: args.passthrough.to_owned(),
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: args.profile.to_owned(),

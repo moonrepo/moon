@@ -23,6 +23,7 @@ if [[ "$NIGHTLY" == "true" ]]; then
 		echo "$package"
 		cd "./$package" || exit
 		pkg=$(jq ".version += \"$preid\"" package.json)
+		echo "$pkg"
 		echo "$pkg" > package.json
 		cd ../..
 	done

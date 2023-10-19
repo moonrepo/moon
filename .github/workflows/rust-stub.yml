@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
+        os: [ubuntu-latest, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
     steps:
       - run: 'echo "Not affected, skipping"'
   coverage:

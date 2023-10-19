@@ -77,6 +77,7 @@ export interface PartialVcsConfig {
 	syncHooks?: boolean | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/workspace */
 export interface PartialWorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema?: string | null;
@@ -157,6 +158,7 @@ export interface VcsConfig {
 	syncHooks: boolean;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/workspace */
 export interface WorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema: string;

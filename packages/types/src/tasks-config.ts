@@ -50,6 +50,7 @@ export interface PartialTaskConfig {
 	type?: TaskType | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/tasks */
 export interface PartialInheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
@@ -96,6 +97,7 @@ export interface TaskConfig {
 	type: TaskType | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/tasks */
 export interface InheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema: string;

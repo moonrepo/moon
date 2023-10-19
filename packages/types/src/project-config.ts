@@ -4,7 +4,7 @@
 
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
-export type DependencyScope = 'build' | 'development' | 'peer' | 'production';
+export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
 
 export type DependencySource = 'explicit' | 'implicit';
 
@@ -77,6 +77,7 @@ export interface PartialProjectWorkspaceConfig {
 	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/project */
 export interface PartialProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
@@ -149,6 +150,7 @@ export interface ProjectWorkspaceConfig {
 	inheritedTasks: ProjectWorkspaceInheritedTasksConfig;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/project */
 export interface ProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema: string;

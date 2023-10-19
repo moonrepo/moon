@@ -416,6 +416,7 @@
       "additionalProperties": false
     },
     "PlatformType": {
+      "title": "PlatformType",
       "type": "string",
       "enum": [
         "deno",
@@ -426,6 +427,7 @@
       ]
     },
     "TaskMergeStrategy": {
+      "title": "TaskMergeStrategy",
       "type": "string",
       "enum": [
         "append",
@@ -460,6 +462,7 @@
       ]
     },
     "TaskOutputStyle": {
+      "title": "TaskOutputStyle",
       "type": "string",
       "enum": [
         "buffer",
@@ -470,6 +473,7 @@
       ]
     },
     "TaskType": {
+      "title": "TaskType",
       "type": "string",
       "enum": [
         "build",

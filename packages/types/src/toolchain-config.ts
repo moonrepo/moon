@@ -11,6 +11,7 @@ export interface PartialBinConfig {
 
 export type PartialBinEntry = string | PartialBinConfig;
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#deno */
 export interface PartialDenoConfig {
 	bins?: PartialBinEntry[] | null;
 	/** @default 'deps.ts' */
@@ -52,6 +53,7 @@ export interface PartialYarnConfig {
 	version?: string | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#node */
 export interface PartialNodeConfig {
 	/** @default true */
 	addEnginesConstraint?: boolean | null;
@@ -72,6 +74,7 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#rust */
 export interface PartialRustConfig {
 	bins?: PartialBinEntry[] | null;
 	plugin?: string | null;
@@ -79,6 +82,7 @@ export interface PartialRustConfig {
 	version?: string | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#typescript */
 export interface PartialTypeScriptConfig {
 	/** @default true */
 	createMissingConfig?: boolean | null;
@@ -94,6 +98,7 @@ export interface PartialTypeScriptConfig {
 	syncProjectReferencesToPaths?: boolean | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain */
 export interface PartialToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string | null;
@@ -113,6 +118,7 @@ export interface BinConfig {
 
 export type BinEntry = string | BinConfig;
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#deno */
 export interface DenoConfig {
 	bins: BinEntry[];
 	/** @default 'deps.ts' */
@@ -137,6 +143,7 @@ export interface YarnConfig {
 	version: string | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#node */
 export interface NodeConfig {
 	/** @default true */
 	addEnginesConstraint: boolean;
@@ -157,6 +164,7 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#rust */
 export interface RustConfig {
 	bins: BinEntry[];
 	plugin: string | null;
@@ -164,6 +172,7 @@ export interface RustConfig {
 	version: string | null;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#typescript */
 export interface TypeScriptConfig {
 	/** @default true */
 	createMissingConfig: boolean;
@@ -179,6 +188,7 @@ export interface TypeScriptConfig {
 	syncProjectReferencesToPaths: boolean;
 }
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain */
 export interface ToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema: string;

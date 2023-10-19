@@ -2,6 +2,7 @@ use crate::commands::graph::utils::{action_graph_repr, respond_to_request, setup
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon::{build_action_graph, generate_project_graph};
+use moon_action_graph::RunRequirements;
 use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::{system, SystemResult};
@@ -28,19 +29,20 @@ pub async fn internal_action_graph(
     let project_graph = generate_project_graph(workspace).await?;
     let mut action_graph_builder = build_action_graph(&project_graph)?;
 
+    let requirements = RunRequirements {
+        dependents: args.dependents,
+        ..Default::default()
+    };
+
     // Focus a target and its dependencies/dependents
     if let Some(locator) = args.target.clone() {
-        if args.dependents {
-            action_graph_builder.include_dependents();
-        }
-
-        action_graph_builder.run_task_by_target_locator(locator, None)?;
+        action_graph_builder.run_task_by_target_locator(locator, &requirements)?;
 
         // Show all targets and actions
     } else {
         for project in project_graph.get_all()? {
             for task in project.tasks.values() {
-                action_graph_builder.run_task(&project, task, None)?;
+                action_graph_builder.run_task(&project, task, &requirements)?;
             }
         }
     }

@@ -66,10 +66,18 @@ mod action_graph {
         let project = container.project_graph.get("deps").unwrap();
 
         builder
-            .run_task(&project, project.get_task("cycle1").unwrap(), None)
+            .run_task(
+                &project,
+                project.get_task("cycle1").unwrap(),
+                &RunRequirements::default(),
+            )
             .unwrap();
         builder
-            .run_task(&project, project.get_task("cycle2").unwrap(), None)
+            .run_task(
+                &project,
+                project.get_task("cycle2").unwrap(),
+                &RunRequirements::default(),
+            )
             .unwrap();
 
         builder.build().unwrap().try_iter().unwrap();
@@ -179,7 +187,9 @@ mod action_graph {
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
-            builder.run_task(&project, &task, None).unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -219,9 +229,15 @@ mod action_graph {
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
-            builder.run_task(&project, &task, None).unwrap();
-            builder.run_task(&project, &task, None).unwrap();
-            builder.run_task(&project, &task, None).unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -260,9 +276,18 @@ mod action_graph {
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
+            // Empty set works fine, just needs to be some
+            let touched_files = FxHashSet::default();
+
             builder
-                // Empty set works fine, just needs to be some
-                .run_task(&project, &task, Some(&FxHashSet::default()))
+                .run_task(
+                    &project,
+                    &task,
+                    &RunRequirements {
+                        touched_files: Some(&touched_files),
+                        ..Default::default()
+                    },
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -284,8 +309,17 @@ mod action_graph {
             task.platform = PlatformType::Node;
             task.input_files.insert(file.clone());
 
+            let touched_files = FxHashSet::from_iter([file]);
+
             builder
-                .run_task(&project, &task, Some(&FxHashSet::from_iter([file])))
+                .run_task(
+                    &project,
+                    &task,
+                    &RunRequirements {
+                        touched_files: Some(&touched_files),
+                        ..Default::default()
+                    },
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -305,7 +339,9 @@ mod action_graph {
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Rust;
 
-            builder.run_task(&project, &task, None).unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -348,7 +384,42 @@ mod action_graph {
             let mut task = create_task("build", "bar");
             task.options.interactive = true;
 
-            builder.run_task(&project, &task, None).unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph).last().unwrap(),
+                &ActionNode::RunTask {
+                    interactive: true,
+                    persistent: false,
+                    runtime: Runtime::system(),
+                    target: task.target
+                }
+            );
+        }
+
+        #[tokio::test]
+        async fn sets_interactive_from_requirement() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let task = create_task("build", "bar");
+
+            builder
+                .run_task(
+                    &project,
+                    &task,
+                    &RunRequirements {
+                        interactive: true,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -374,7 +445,9 @@ mod action_graph {
             let mut task = create_task("build", "bar");
             task.options.persistent = true;
 
-            builder.run_task(&project, &task, None).unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -402,7 +475,9 @@ mod action_graph {
             let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("parallel").unwrap();
 
-            builder.run_task(&project, task, None).unwrap();
+            builder
+                .run_task(&project, task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -418,7 +493,9 @@ mod action_graph {
             let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("serial").unwrap();
 
-            builder.run_task(&project, task, None).unwrap();
+            builder
+                .run_task(&project, task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -434,7 +511,9 @@ mod action_graph {
             let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("chain1").unwrap();
 
-            builder.run_task(&project, task, None).unwrap();
+            builder
+                .run_task(&project, task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -450,7 +529,9 @@ mod action_graph {
             let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("base").unwrap();
 
-            builder.run_task(&project, task, None).unwrap();
+            builder
+                .run_task(&project, task, &RunRequirements::default())
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -463,12 +544,19 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            builder.include_dependents();
-
             let project = container.project_graph.get("deps").unwrap();
             let task = project.get_task("base").unwrap();
 
-            builder.run_task(&project, task, None).unwrap();
+            builder
+                .run_task(
+                    &project,
+                    task,
+                    &RunRequirements {
+                        dependents: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .unwrap();
 
             let graph = builder.build().unwrap();
 
@@ -487,7 +575,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("^:build").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("^:build").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
         }
 
@@ -499,7 +590,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("~:build").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("~:build").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
         }
 
@@ -510,7 +604,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse(":build").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse(":build").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -527,7 +624,10 @@ mod action_graph {
             builder.set_query("language=rust").unwrap();
 
             builder
-                .run_task_by_target(Target::parse(":build").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse(":build").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -542,7 +642,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse(":unknown").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse(":unknown").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -557,7 +660,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("client:lint").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("client:lint").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -573,7 +679,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("unknown:build").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("unknown:build").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
         }
 
@@ -585,7 +694,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("server:unknown").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("server:unknown").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
         }
 
@@ -596,7 +708,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("#frontend:lint").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("#frontend:lint").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -611,7 +726,10 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target(Target::parse("#unknown:lint").unwrap(), None)
+                .run_task_by_target(
+                    Target::parse("#unknown:lint").unwrap(),
+                    &RunRequirements::default(),
+                )
                 .unwrap();
 
             let graph = builder.build().unwrap();
@@ -632,7 +750,7 @@ mod action_graph {
             builder
                 .run_task_by_target_locator(
                     TargetLocator::Qualified(Target::parse("server:build").unwrap()),
-                    None,
+                    &RunRequirements::default(),
                 )
                 .unwrap();
 
@@ -653,7 +771,7 @@ mod action_graph {
             builder
                 .run_task_by_target_locator(
                     TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    None,
+                    &RunRequirements::default(),
                 )
                 .unwrap();
 
@@ -675,7 +793,7 @@ mod action_graph {
             builder
                 .run_task_by_target_locator(
                     TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    None,
+                    &RunRequirements::default(),
                 )
                 .unwrap();
         }

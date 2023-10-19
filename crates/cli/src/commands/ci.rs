@@ -5,7 +5,7 @@ use clap::Args;
 use itertools::Itertools;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
-use moon_action_graph::ActionGraph;
+use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project_graph::ProjectGraph;
@@ -173,11 +173,15 @@ fn generate_action_graph(
     let mut action_graph_builder = build_action_graph(project_graph)?;
 
     // Run dependents to ensure consumers still work correctly
-    action_graph_builder.include_dependents();
+    let requirements = RunRequirements {
+        dependents: true,
+        touched_files: Some(touched_files),
+        ..Default::default()
+    };
 
     for target in targets {
         // Run the target and its dependencies
-        action_graph_builder.run_task_by_target(target, Some(touched_files))?;
+        action_graph_builder.run_task_by_target(target, &requirements)?;
     }
 
     let action_graph = action_graph_builder.build()?;

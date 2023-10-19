@@ -12,10 +12,16 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `moon run --interactive` to allow more than 1 target.
+
 #### 🐞 Fixes
 
 - Fixed an issue where "raw" codegen files were sometimes being rendered, and failing with invalid
   syntax.
+- Fixed an issue where task dependents for the non-primary targets were being included in the action
+  graph.
 
 ## 1.15.1
 

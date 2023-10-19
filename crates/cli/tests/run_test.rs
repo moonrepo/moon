@@ -1805,20 +1805,6 @@ mod interactive {
     use super::*;
 
     #[test]
-    fn errors_if_more_than_1_target() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg(":noop").arg("--interactive");
-        });
-
-        assert.failure().stderr(predicate::str::contains(
-            "Only 1 target can be ran as interactive",
-        ));
-    }
-
-    #[test]
     fn interacts_with_cli_arg() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();

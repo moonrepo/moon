@@ -12,9 +12,15 @@ use tracing::{debug, trace};
 
 type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
+#[derive(Default)]
+pub struct RunRequirements<'app> {
+    pub dependents: bool,
+    pub interactive: bool,
+    pub touched_files: Option<&'app TouchedFilePaths>,
+}
+
 pub struct ActionGraphBuilder<'app> {
     all_query: Option<Criteria>,
-    dependents: bool,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
@@ -35,7 +41,6 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok(ActionGraphBuilder {
             all_query: None,
             graph: DiGraph::new(),
-            dependents: false,
             indices: FxHashMap::default(),
             platform_manager,
             project_graph,
@@ -68,10 +73,6 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         Runtime::system()
-    }
-
-    pub fn include_dependents(&mut self) {
-        self.dependents = true;
     }
 
     pub fn set_query(&mut self, input: &str) -> miette::Result<()> {
@@ -134,10 +135,10 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         project: &Project,
         task: &Task,
-        touched_files: Option<&TouchedFilePaths>,
+        reqs: &RunRequirements<'app>,
     ) -> miette::Result<Option<NodeIndex>> {
         let node = ActionNode::RunTask {
-            interactive: task.is_interactive(),
+            interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             runtime: self.get_runtime(project, Some(task), true),
             target: task.target.to_owned(),
@@ -148,20 +149,20 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Compare against touched files if provided
-        if let Some(touched) = touched_files {
+        if let Some(touched) = &reqs.touched_files {
             if !task.is_affected(touched)? {
                 return Ok(None);
             }
         }
 
         // We should install deps & sync projects *before* running targets
-        let mut reqs = vec![];
+        let mut edges = vec![];
 
         if let Some(install_deps_index) = self.install_deps(project, Some(task))? {
-            reqs.push(install_deps_index);
+            edges.push(install_deps_index);
         }
 
-        reqs.push(self.sync_project(project)?);
+        edges.push(self.sync_project(project)?);
 
         let index = self.insert_node(node);
 
@@ -173,13 +174,13 @@ impl<'app> ActionGraphBuilder<'app> {
                 "Linking dependencies for task",
             );
 
-            reqs.extend(self.run_task_dependencies(task)?);
+            edges.extend(self.run_task_dependencies(task)?);
         }
 
-        self.link_requirements(index, reqs);
+        self.link_requirements(index, edges);
 
         // And possibly dependents
-        if self.dependents {
+        if reqs.dependents {
             self.run_task_dependents(task)?;
         }
 
@@ -190,11 +191,12 @@ impl<'app> ActionGraphBuilder<'app> {
     // task is affected/going to run, then so should all of these!
     pub fn run_task_dependencies(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
+        let reqs = RunRequirements::default();
         let mut indices = vec![];
         let mut previous_target_index = None;
 
         for dep_target in &task.deps {
-            let (_, dep_indices) = self.run_task_by_target(dep_target, None)?;
+            let (_, dep_indices) = self.run_task_by_target(dep_target, &reqs)?;
 
             for dep_index in dep_indices {
                 // When parallel, parent depends on child
@@ -220,6 +222,7 @@ impl<'app> ActionGraphBuilder<'app> {
     // This is costly, is there a better way to do this?
     pub fn run_task_dependents(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
+        let reqs = RunRequirements::default();
 
         if let TargetScope::Project(project_locator) = &task.target.scope {
             let project = self.project_graph.get(project_locator)?;
@@ -231,7 +234,7 @@ impl<'app> ActionGraphBuilder<'app> {
                         continue;
                     }
 
-                    if let Some(index) = self.run_task(&project, dep_task, None)? {
+                    if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
                         indices.push(index);
                     }
                 }
@@ -247,7 +250,7 @@ impl<'app> ActionGraphBuilder<'app> {
                     }
 
                     if dep_task.deps.contains(&task.target) {
-                        if let Some(index) = self.run_task(&dep_project, dep_task, None)? {
+                        if let Some(index) = self.run_task(&dep_project, dep_task, &reqs)? {
                             indices.push(index);
                         }
                     }
@@ -261,7 +264,7 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_by_target<T: AsRef<Target>>(
         &mut self,
         target: T,
-        touched_files: Option<&TouchedFilePaths>,
+        reqs: &RunRequirements<'app>,
     ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         let target = target.as_ref();
         let mut inserted_targets = FxHashSet::default();
@@ -281,7 +284,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if let Some(index) = self.run_task(&project, task, touched_files)? {
+                        if let Some(index) = self.run_task(&project, task, reqs)? {
                             inserted_targets.insert(task.target.clone());
                             inserted_indices.insert(index);
                         }
@@ -297,7 +300,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 let project = self.project_graph.get(project_locator)?;
                 let task = project.get_task(&target.task_id)?;
 
-                if let Some(index) = self.run_task(&project, task, touched_files)? {
+                if let Some(index) = self.run_task(&project, task, reqs)? {
                     inserted_targets.insert(task.target.to_owned());
                     inserted_indices.insert(index);
                 }
@@ -311,7 +314,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if let Some(index) = self.run_task(&project, task, touched_files)? {
+                        if let Some(index) = self.run_task(&project, task, reqs)? {
                             inserted_targets.insert(task.target.clone());
                             inserted_indices.insert(index);
                         }
@@ -330,13 +333,13 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
         &mut self,
         target_locator: T,
-        touched_files: Option<&TouchedFilePaths>,
+        reqs: &RunRequirements<'app>,
     ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         match target_locator.as_ref() {
-            TargetLocator::Qualified(target) => self.run_task_by_target(target, touched_files),
+            TargetLocator::Qualified(target) => self.run_task_by_target(target, reqs),
             TargetLocator::TaskFromWorkingDir(task_id) => self.run_task_by_target(
                 Target::new(&self.project_graph.get_from_path(None)?.id, task_id)?,
-                touched_files,
+                reqs,
             ),
         }
     }
@@ -371,7 +374,7 @@ impl<'app> ActionGraphBuilder<'app> {
         // Syncing requires the language's tool to be installed
         let setup_tool_index = self.setup_tool(node.get_runtime());
         let index = self.insert_node(node);
-        let mut reqs = vec![setup_tool_index];
+        let mut edges = vec![setup_tool_index];
 
         // And we should also depend on other projects
         for dep_project_id in self.project_graph.dependencies_of(project)? {
@@ -379,11 +382,11 @@ impl<'app> ActionGraphBuilder<'app> {
             let dep_project_index = self.sync_project(&dep_project)?;
 
             if index != dep_project_index {
-                reqs.push(dep_project_index);
+                edges.push(dep_project_index);
             }
         }
 
-        self.link_requirements(index, reqs);
+        self.link_requirements(index, edges);
 
         Ok(index)
     }
@@ -400,15 +403,15 @@ impl<'app> ActionGraphBuilder<'app> {
 
     // PRIVATE
 
-    fn link_requirements(&mut self, index: NodeIndex, reqs: Vec<NodeIndex>) {
+    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) {
         trace!(
             index = index.index(),
-            requires = ?reqs.iter().map(|i| i.index()).collect::<Vec<_>>(),
+            requires = ?edges.iter().map(|i| i.index()).collect::<Vec<_>>(),
             "Linking requirements for index"
         );
 
-        for req in reqs {
-            self.graph.add_edge(index, req, ());
+        for edge in edges {
+            self.graph.add_edge(index, edge, ());
         }
     }
 

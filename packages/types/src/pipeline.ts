@@ -40,7 +40,6 @@ export interface TargetState {
 export interface ActionContext {
 	affectedOnly: boolean;
 	initialTargets: string[];
-	interactive: boolean;
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;

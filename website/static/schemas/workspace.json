@@ -140,6 +140,7 @@
   "additionalProperties": false,
   "definitions": {
     "CodeownersOrderBy": {
+      "title": "CodeownersOrderBy",
       "type": "string",
       "enum": [
         "file-source",
@@ -147,6 +148,7 @@
       ]
     },
     "HasherOptimization": {
+      "title": "HasherOptimization",
       "type": "string",
       "enum": [
         "accuracy",
@@ -154,6 +156,7 @@
       ]
     },
     "HasherWalkStrategy": {
+      "title": "HasherWalkStrategy",
       "type": "string",
       "enum": [
         "glob",
@@ -565,12 +568,14 @@
       "additionalProperties": false
     },
     "VcsManager": {
+      "title": "VcsManager",
       "type": "string",
       "enum": [
         "git"
       ]
     },
     "VcsProvider": {
+      "title": "VcsProvider",
       "type": "string",
       "enum": [
         "bitbucket",

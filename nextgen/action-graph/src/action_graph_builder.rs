@@ -149,7 +149,7 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Compare against touched files if provided
-        if let Some(touched) = reqs.touched_files.as_deref() {
+        if let Some(touched) = &reqs.touched_files {
             if !task.is_affected(touched)? {
                 return Ok(None);
             }

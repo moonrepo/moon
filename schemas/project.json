@@ -166,15 +166,18 @@
   "additionalProperties": false,
   "definitions": {
     "DependencyScope": {
+      "title": "DependencyScope",
       "type": "string",
       "enum": [
         "build",
         "development",
         "peer",
-        "production"
+        "production",
+        "root"
       ]
     },
     "DependencySource": {
+      "title": "DependencySource",
       "type": "string",
       "enum": [
         "explicit",
@@ -182,6 +185,7 @@
       ]
     },
     "LanguageType": {
+      "title": "LanguageType",
       "type": "string",
       "enum": [
         "bash",
@@ -898,6 +902,7 @@
       "additionalProperties": false
     },
     "PlatformType": {
+      "title": "PlatformType",
       "type": "string",
       "enum": [
         "deno",
@@ -908,6 +913,7 @@
       ]
     },
     "ProjectType": {
+      "title": "ProjectType",
       "type": "string",
       "enum": [
         "application",
@@ -917,6 +923,7 @@
       ]
     },
     "TaskMergeStrategy": {
+      "title": "TaskMergeStrategy",
       "type": "string",
       "enum": [
         "append",
@@ -951,6 +958,7 @@
       ]
     },
     "TaskOutputStyle": {
+      "title": "TaskOutputStyle",
       "type": "string",
       "enum": [
         "buffer",
@@ -961,6 +969,7 @@
       ]
     },
     "TaskType": {
+      "title": "TaskType",
       "type": "string",
       "enum": [
         "build",

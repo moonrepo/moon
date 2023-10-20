@@ -15,7 +15,9 @@ download-file = "moon-{arch}-pc-windows-msvc.exe"
 
 [install]
 download-url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
-unpack = false
 
 [resolve]
 git-url = "https://github.com/moonrepo/moon"
+
+[metadata]
+self-upgrade-commands = ["upgrade"]

@@ -2953,6 +2953,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
+name = "minisign-verify"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "933dca44d65cdd53b355d0b73d380a2ff5da71f87f036053188bf1eab6a19881"
+
+[[package]]
 name = "miniz_oxide"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4661,14 +4667,15 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.19.4"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01d869626fe7c126fee3ad194ff6e275c69097c7329cf9cb5b233df99dc7206d"
+checksum = "ac3ec2a09d2419150c2a05f4a02a0db67daa01bdf7579b9109772d0861327b8b"
 dependencies = [
  "cached",
  "extism",
  "human-sort",
  "miette",
+ "minisign-verify",
  "once_cell",
  "proto_pdk_api",
  "proto_wasm_plugin",
@@ -4692,9 +4699,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.7.6"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d69998a2bdf573616730119828c7d6775a2a098b97fe9ed2973c25f3b2aa8ff"
+checksum = "8c05662171d4984a9fd57e7fc33a071e0822bb2e993b7a1d06ce9dc5847698b6"
 dependencies = [
  "anyhow",
  "semver",
@@ -4707,9 +4714,9 @@ dependencies = [
 
 [[package]]
 name = "proto_wasm_plugin"
-version = "0.6.10"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ebaad7908984fc92cc4391ac5a85617b26d14cab9bca94133cb93838ea09c12"
+checksum = "2f4ff89bb77f5f4ce5dd9536200c73140acaef632d33cacb59e12a2a8c8f3d7d"
 dependencies = [
  "extism",
  "proto_pdk_api",
@@ -5732,9 +5739,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.0.2"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96f6684a5639ae55e0454ad7dd9e09a1a488c9d1648fba2f4b4b1af3c93256d8"
+checksum = "e1a5b2f67543171658346f56eba6978221227dd79541a6b1fdb2b2f9116ed640"
 dependencies = [
  "serde",
  "serde_json",
@@ -5868,18 +5875,18 @@ checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
-version = "1.0.49"
+version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1177e8c6d7ede7afde3585fd2513e611227efd6481bd78d2e82ba1ce16557ed4"
+checksum = "f9a7210f5c9a7156bb50aa36aed4c95afb51df0df00713949448cf9e97d382d2"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.49"
+version = "1.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10712f02019e9288794769fba95cd6847df9874d49d871d062172f9dd41bc4cc"
+checksum = "266b2e40bc00e5a6c09c3584011e08b06f123c00362c92b975ba9843aaaa14b8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6501,9 +6508,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.9"
+version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b86b10e880209a6cf820f5c33101a4c7e98f5121ff8466ab0f2ba517e656d514"
+checksum = "52eeb90e962c1310c0bfe7d066f4a7fe032f01dd94f6ee3d983167c90596a7f7"
 dependencies = [
  "extism",
  "miette",

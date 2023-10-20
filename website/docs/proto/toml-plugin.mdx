@@ -12,8 +12,8 @@ like CLIs.
 ## Create a plugin
 
 Let's start by creating a new plugin, and defining the `name` and `type` fields. The type can either
-be `language`, `dependency-manager`, or `cli`. For this example, we'll create a plugin for our fake
-product called Protostar, a CLI tool.
+be `language`, `dependency-manager`, `package-manager`, or `cli`. For this example, we'll create a
+plugin for our fake product called Protostar, a CLI tool.
 
 ```toml title="protostar.toml"
 name = "Protostar"
@@ -87,6 +87,7 @@ be downloaded and installed into the toolchain. The following settings are avail
 - `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 - `checksum-url-canary` - A URL for canary releases.
+- `checksum-public-key` - Public key used for verifying checksums. Only used for `.minisig` files.
 - `download-url` (required) - A secure URL to download the tool/archive.
 - `download-url-canary` - A URL for canary releases.
 

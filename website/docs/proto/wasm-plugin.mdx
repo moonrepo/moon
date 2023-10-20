@@ -273,6 +273,7 @@ The following fields are available:
   it from the URL.
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
+- `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig` files.
 
 ```rust
 #[plugin_fn]

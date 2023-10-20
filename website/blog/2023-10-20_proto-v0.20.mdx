@@ -1,0 +1,87 @@
+---
+slug: proto-v0.20
+title: proto v0.20 - New shims and binaries management
+authors: [milesj]
+tags: [proto, bin, shim, checksum]
+# image: ./img/proto/v0.19.png
+---
+
+In this release, we're reworking how shims and binaries work.
+
+<!--truncate-->
+
+## Shims _and_ Binaries (breaking)
+
+Since proto's inception, we've used shims as a way to execute installed tools. This allowed us to
+wrap the underlying tool binary to provide additional functionality, such as automatic version
+detection, runtime hooks, and more. However, this approach has some limitations, such as:
+
+- Shims are forced onto you and there's no way to use proto without shims.
+- Shims are slower than executing the native binary, upwards of 10x slower. While this equates in
+  milliseconds, it can be noticeable dependending on the tool.
+- For Windows, our shim files are `.cmd` _and not_ `.exe`. This causes a lot of weird and unexpected
+  problems when an environment expects a real executable, or uses a hard-coded `.exe` extension.
+
+To remedy this, we're introducing both a shim and non-shim approach, which has resulted in a pretty
+big breaking change. Shims are now generated in `~/.proto/shims` (instead of `~/.proto/bin`), while
+`~/.proto/bin` will now store symlinks to native binaries. To migrate to this new pattern, we're
+introducing a new `proto migrate` command (this only needs to be ran once).
+
+```shell
+$ proto upgrade
+$ proto migrate v0.20 --log debug
+```
+
+### How it works
+
+When installing proto for the first time, or running the `proto migrate` command, we prepend `PATH`
+with `$PROTO_HOME/shims:$PROTO_HOME/bin`. This allows shims to be executed _first_ and fallthrough
+to native binaries if a shim does not exist (for example, `.exe` on Windows).
+
+Furthermore, if you'd prefer to _only use_ shims, or _only use_ binaries, you can update `PATH` and
+remove the unwanted directory path.
+
+And lastly, if shims are causing problems, you can now easily reference the native binaries
+directly. This was rather complicated before.
+
+### Comparison
+
+|                      | Shims                      | Binaries                                 |
+| -------------------- | -------------------------- | ---------------------------------------- |
+| **Location**         | `~/.proto/shims`           | `~/.proto/bin`                           |
+| **Created by**       | Automatically generated    | Symlinked to the native binary           |
+| **Version executed** | Detects version at runtime | Last version that was installed + pinned |
+| **Supported for**    | All tools                  | Only tools that support native execution |
+
+## Support for minisign checksums
+
+When proto installs a tool, it runs a process known as checksum verification, where we ensure the
+download hasn't been modified maliciously in anyway. Historically we only supported SHA256
+checksums, but now, we also support the new [minisign](https://jedisct1.github.io/minisign/) tool,
+used by popular tools like [Zig](https://ziglang.org/).
+
+If you're building a plugin for a tool that uses minisign, you can use the new
+[`checksum_public_key`](/docs/proto/wasm-plugin#downloading-pre-builts) (WASM) or
+[`install.checksum-public-key`](/docs/proto/toml-plugin#downloading-and-installing) (TOML) field to
+provide the public key for use in verification.
+
+When the checksum URL ends in a `.minisig` extension, proto will automatically use minisign for
+checksum verification!
+
+```toml
+[install]
+checksum-url = "https://domain.com/some/path/to/checksum.minisig"
+checksum-public-key = "untrusted comment: ..."
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.20.0) for a full list
+of changes.
+
+- Updated `proto use` to install tools in parallel.
+- Updated `proto plugins` and `proto tools` to load plugins in parallel.
+- Updated `proto run` to error when the tool attempts to self-upgrade outside of proto.
+- Rust plugin
+  - Will now attempt to install `rustup` if it does not exist on the current machine.
+  - Will now respect the `RUSTUP_HOME` environment variable when locating the `.rustup` store.

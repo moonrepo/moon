@@ -46,12 +46,12 @@ directly. This was rather complicated before.
 
 ### Comparison
 
-|                      | Shims                      | Binaries                                 |
-| -------------------- | -------------------------- | ---------------------------------------- |
-| **Location**         | `~/.proto/shims`           | `~/.proto/bin`                           |
-| **Created by**       | Automatically generated    | Symlinked to the native binary           |
-| **Version executed** | Detects version at runtime | Last version that was installed + pinned |
-| **Supported for**    | All tools                  | Only tools that support native execution |
+|                      | Shims                        | Binaries                                                                |
+| -------------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| **Location**         | `~/.proto/shims`             | `~/.proto/bin`                                                          |
+| **Created as**       | Scripts that run `proto run` | Symlinks to the native binary                                           |
+| **Version executed** | Detects version at runtime   | Last version that was installed + pinned                                |
+| **Supported for**    | All tools                    | Only tools that support native execution (may not work for `.js` files) |
 
 ## Support for minisign checksums
 
@@ -85,3 +85,7 @@ of changes.
 - Rust plugin
   - Will now attempt to install `rustup` if it does not exist on the current machine.
   - Will now respect the `RUSTUP_HOME` environment variable when locating the `.rustup` store.
+- Schema plugin
+  - Added `install.checksum_public_key` for defining the public key used to verify checksums.
+  - Added `metadata.self_upgrade_commands` for defining which sub-commands should be blocked for
+    self-upgrades.

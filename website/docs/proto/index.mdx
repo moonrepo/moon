@@ -7,13 +7,12 @@ import ToolsGrid from '@site/src/components/Products/Proto/ToolsGrid';
 
 <HeaderLabel text="3 min" />
 
-proto is a pluggable toolchain manager.
+proto is a pluggable version manager, a unified toolchain.
 
 If you're unfamiliar with the concept of a toolchain, a toolchain is a collection of tools that are
 downloaded, installed, and managed by version through a single interface. In the context of proto's
-toolchain, a tool is either a programming language, or a dependency/package manager for a language,
-or a custom implementation provided by a plugin. It's the next step in the version manager
-evolution.
+toolchain, a tool is either a programming language, a dependency/package manager for a language, or
+a custom implementation provided by a plugin. It's the next step in the version manager evolution.
 
 ## Why proto?
 
@@ -52,22 +51,31 @@ After a successful verification, the last step in the tool's life-cycle can begi
 Depending on the type of download, the installation process may differ. For archives, we unpack the
 tool to `~/.proto/tools/<name>/<version>`. In the future, we'll support building from source.
 
-From here, we make these tools globally available by prepending `~/.proto/bin` to `PATH` (typically
-as part of your shell profile). Continue reading for more about this bin folder.
+From here, we make these tools globally available by prepending `~/.proto/shims` and `~/.proto/bin`
+to `PATH` (typically as part of your shell profile). Continue reading for more about these folders.
 
 ### Shims
 
 proto is powered the by industry standard concept of shims. For each tool installed in proto, a shim
-file will exist at `~/.proto/bin/<tool>`. Shims _are not_ symlinks to the tool's binary, but are
+file will exist at `~/.proto/shims/<tool>`. Shims _are not_ symlinks to the tool's binary, but are
 thin wrappers around [`proto run`](./proto/commands/run), enabling
 [automatic version detection](./proto/detection) on every invocation!
 
 :::info
 
-The `~/.proto/bin` directory _should_ be in your `PATH` if proto was setup correctly. If not, run
-the [`proto setup`](./proto/commands/setup) command, or add the path manually.
+If you'd prefer to _not use_ shims, remove the `~/.proto/shims` directory from `PATH` in your shell
+profile.
 
 :::
+
+### Binaries
+
+Alternatively, we also support a non-shim based approach, which creates symlinks to a tool's primary
+executable. For each tool installed in proto, a symlink will exist at `~/.proto/bin/<tool>`.
+
+The version of a tool that's symlinked _is not_ dynamic, and is manually created by pinning the
+chosen version with [`proto install --pin`](./proto/commands/install). This also happens
+automatically the first time a tool is installed.
 
 ## Supported tools
 

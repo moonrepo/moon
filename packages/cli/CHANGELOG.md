@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated to proto v0.20.
+
 ## 1.15.2
 
 #### 🚀 Updates

@@ -92,8 +92,12 @@ provide a mechanism known as host functions, which are functions that are implem
 
 - [`exec_command`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.exec_command.html) - Execute a
   system command on the host machine, with a provided list of arguments or environment variables.
+- [`get_env_var`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_env.html) - Get an
+  environment variable value from the host environment.
 - [`host_log`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_log.html) - Log a message to
   the host's stderr. This acts like tracing logs, and is not a general purpose stdout logger.
+- [`set_env_var`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_env.html) - Set an
+  environment variable to the host environment.
 
 To use host functions, you'll need to make them available by registering them at the top of your
 Rust file (only add the functions you want to use).
@@ -102,17 +106,33 @@ Rust file (only add the functions you want to use).
 #[host_fn]
 extern "ExtismHost" {
     fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
+    fn get_env_var(key: &str) -> String;
     fn host_log(input: Json<HostLogInput>);
+    fn set_env_var(key: &str, value: &str);
 }
 ```
 
-And then calling the provided `exec_command!` or `host_log!` macros. Each macro supports shorthand
-variants, and an explicit variant that accepts the input struct.
+#### Environment variables
 
 ```rust
-exec_command!("which", ["node"]);
-exec_command!(pipe, "npm", ["install"]); // Pipe stdout/stderr
-exec_command!(inherit, "npm", ["install"]); // Inherit stdout/stderr
+// Set a value
+host_env!("ENV_VAR", "value");
+
+// Get a value (returns an `Option`)
+let value = host_env!("ENV_VAR");
+```
+
+#### Executing commands
+
+```rust
+// Pipe stdout/stderr
+let result = exec_command!("which", ["node"]);
+let result = exec_command!(pipe, "npm", ["install"]);
+
+// Inherit stdout/stderr
+exec_command!(inherit, "npm", ["install"]);
+
+// Full control
 exec_command!(ExecCommandInput {
     command: "npm".into(),
     args: vec!["install".into()],
@@ -121,9 +141,13 @@ exec_command!(ExecCommandInput {
 });
 ```
 
+#### Logging
+
 ```rust
 host_log!("Some message");
 host_log!("Some message with {}", "args");
+
+// With data
 host_log!(HostLogInput::Fields {
     message: "Some message with data".into(),
     data: HashMap::from_iter([
@@ -158,8 +182,6 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
 The following fields are available on the
 [context object](https://docs.rs/proto_pdk/latest/proto_pdk/struct.ToolContext.html):
 
-- `env_vars` - A map of environment variables requested by the
-  [`register_tool`](#registering-metadata) function.
 - `tool_dir` - A virtual path to the tool's directory for the current version.
 - `version` - The current version or alias. If not resolved, will be "latest".
 
@@ -197,7 +219,10 @@ crate-type = ['cdylib']
 
 [profile.release]
 codegen-units = 1
+debug = false
 lto = true
+opt-level = "s"
+panic = "abort"
 ```
 
 Our Rust plugins are powered by [Extism](https://extism.org/), so lets add their PDK and ours as a
@@ -273,6 +298,7 @@ The following fields are available:
   it from the URL.
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
+- `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig` files.
 
 ```rust
 #[plugin_fn]
@@ -687,6 +713,35 @@ At this point, you should have a fully working WASM plugin, but to make it avail
 proto users, you'll still need to build and make the `.wasm` file available. The easiest solution is
 to publish a GitHub release and include the `.wasm` file as an asset.
 
+### Building, optimizing, and stripping
+
+WASM files are pretty fat, even when compiling in release mode. To reduce the size of these files,
+we can use `wasm-opt` and `wasm-strip`, both of which are provided by
+[WebAssembly](https://github.com/WebAssembly). The following script is what we use to build our own
+plugins.
+
+```bash title="build-wasm"
+#!/usr/bin/env bash
+
+target="${CARGO_TARGET_DIR:-target}"
+input="$target/wasm32-wasi/release/$1.wasm"
+output="$target/wasm32-wasi/$1.wasm"
+
+echo "Building"
+
+cargo build --target wasm32-wasi --release
+
+echo "Optimizing"
+
+# https://github.com/WebAssembly/binaryen
+~/binaryen/bin/wasm-opt -Os "$input" --output "$output"
+
+echo "Stripping"
+
+# https://github.com/WebAssembly/wabt
+~/wabt/bin/wasm-strip "$output"
+```
+
 ### Manually create releases
 
 When your plugin is ready to be published, you can create a release on GitHub using the following
@@ -699,11 +754,11 @@ git tag v0.0.1
 git push --tags
 ```
 
-2. Build a release version of the plugin. The file will be available at
-   `target/wasm32-wasi/release/<name>.wasm`.
+2. Build a release version of the plugin using the `build-wasm` script above. The file will be
+   available at `target/wasm32-wasi/<name>.wasm`.
 
 ```shell
-cargo wasi build --release
+build-wasm <name>
 ```
 
 3. In GitHub, navigate to the tags page, find the new tag, create a new release, and attach the

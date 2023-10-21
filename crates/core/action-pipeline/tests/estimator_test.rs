@@ -2,18 +2,19 @@ use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_pipeline::estimator::{Estimator, TaskEstimate};
 use moon_platform::Runtime;
 use rustc_hash::FxHashMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 const NANOS_PER_MILLI: u32 = 1_000_000;
 const HALF_SECOND: u32 = NANOS_PER_MILLI * 500;
 
-fn create_run_task_action(runtime: Runtime, target: &str) -> ActionNode {
-    ActionNode::RunTask {
+fn create_run_task_action(runtime: Runtime, target: &str) -> Arc<ActionNode> {
+    Arc::new(ActionNode::RunTask {
         interactive: false,
         persistent: false,
         runtime,
         target: target.into(),
-    }
+    })
 }
 
 mod estimator {
@@ -40,7 +41,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(10, 0)),
-                node: Some(create_run_task_action(Runtime::system(), "proj:task")),
+                node: create_run_task_action(Runtime::system(), "proj:task"),
                 ..Action::default()
             }],
             Duration::new(5, 0),
@@ -67,27 +68,27 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
+                    node: create_run_task_action(Runtime::system(), "a:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
+                    node: create_run_task_action(Runtime::system(), "a:lint"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
+                    node: create_run_task_action(Runtime::system(), "b:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
+                    node: create_run_task_action(Runtime::system(), "c:test"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
+                    node: create_run_task_action(Runtime::system(), "d:lint"),
                     ..Action::default()
                 },
             ],
@@ -122,21 +123,21 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool {
+                    node: Arc::new(ActionNode::SetupTool {
                         runtime: Runtime::system(),
                     }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps {
+                    node: Arc::new(ActionNode::InstallDeps {
                         runtime: Runtime::system(),
                     }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "proj:task")),
+                    node: create_run_task_action(Runtime::system(), "proj:task"),
                     ..Action::default()
                 },
             ],
@@ -166,7 +167,7 @@ mod estimator {
         let est = Estimator::calculate(
             &[Action {
                 duration: Some(Duration::new(3, 0)),
-                node: Some(create_run_task_action(Runtime::system(), "proj:task")),
+                node: create_run_task_action(Runtime::system(), "proj:task"),
                 status: ActionStatus::Cached,
                 ..Action::default()
             }],
@@ -194,41 +195,41 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool {
+                    node: Arc::new(ActionNode::SetupTool {
                         runtime: Runtime::system(),
                     }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps {
+                    node: Arc::new(ActionNode::InstallDeps {
                         runtime: Runtime::system(),
                     }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
+                    node: create_run_task_action(Runtime::system(), "a:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
+                    node: create_run_task_action(Runtime::system(), "a:lint"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
+                    node: create_run_task_action(Runtime::system(), "b:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
+                    node: create_run_task_action(Runtime::system(), "c:test"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
+                    node: create_run_task_action(Runtime::system(), "d:lint"),
                     ..Action::default()
                 },
             ],
@@ -267,41 +268,41 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(ActionNode::SetupTool {
+                    node: Arc::new(ActionNode::SetupTool {
                         runtime: Runtime::system(),
                     }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Some(ActionNode::InstallDeps {
+                    node: Arc::new(ActionNode::InstallDeps {
                         runtime: Runtime::system(),
                     }),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:build")),
+                    node: create_run_task_action(Runtime::system(), "a:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(5, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "a:lint")),
+                    node: create_run_task_action(Runtime::system(), "a:lint"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(15, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "b:build")),
+                    node: create_run_task_action(Runtime::system(), "b:build"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(8, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "c:test")),
+                    node: create_run_task_action(Runtime::system(), "c:test"),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(12, 0)),
-                    node: Some(create_run_task_action(Runtime::system(), "d:lint")),
+                    node: create_run_task_action(Runtime::system(), "d:lint"),
                     ..Action::default()
                 },
             ],

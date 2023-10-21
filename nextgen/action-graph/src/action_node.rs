@@ -4,9 +4,12 @@ use moon_task::Target;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(tag = "action", content = "params")]
 pub enum ActionNode {
+    #[default]
+    None,
+
     /// Install tool dependencies in the workspace root.
     InstallDeps { runtime: Runtime },
 
@@ -40,7 +43,7 @@ impl ActionNode {
             Self::RunTask { runtime, .. } => runtime,
             Self::SetupTool { runtime } => runtime,
             Self::SyncProject { runtime, .. } => runtime,
-            Self::SyncWorkspace => unreachable!(),
+            _ => unreachable!(),
         }
     }
 
@@ -97,6 +100,7 @@ impl ActionNode {
                 format!("Sync{runtime}Project({project})")
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
+            Self::None => "None".into(),
         }
     }
 }

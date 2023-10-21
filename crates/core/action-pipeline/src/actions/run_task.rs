@@ -37,7 +37,7 @@ pub async fn run_task(
         color::label(&task.target)
     );
 
-    runner.node = action.node.clone();
+    runner.node = Arc::clone(&action.node);
     action.allow_failure = task.options.allow_failure;
 
     // If a dependency failed, we should skip this target

@@ -3,7 +3,7 @@ use crate::actions::run_task::run_task;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
-use moon_action::{Action, ActionNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
@@ -29,7 +29,7 @@ pub async fn process_action(
 ) -> miette::Result<Action> {
     action.start();
 
-    let node = action.node.take().unwrap();
+    let node = Arc::clone(&action.node);
     let log_action_label = color::muted_light(&action.label);
 
     trace!(
@@ -51,7 +51,9 @@ pub async fn process_action(
         })
         .await?;
 
-    let result = match &node {
+    let result = match &*node {
+        ActionNode::None => Ok(ActionStatus::Skipped),
+
         // Setup and install the specific tool
         ActionNode::SetupTool { runtime } => {
             local_emitter
@@ -214,7 +216,7 @@ pub async fn process_action(
     if action.has_failed() {
         // If these fail, we should abort instead of trying to continue
         if matches!(
-            node,
+            *node,
             ActionNode::SetupTool { .. } | ActionNode::InstallDeps { .. }
         ) {
             action.abort();
@@ -244,9 +246,6 @@ pub async fn process_action(
             action.duration.unwrap()
         );
     }
-
-    // Reassign the node for reuse
-    action.node = Some(node);
 
     Ok(action)
 }

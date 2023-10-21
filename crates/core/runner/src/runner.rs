@@ -22,6 +22,7 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob;
+use std::sync::Arc;
 use tokio::{
     task,
     time::{sleep, Duration},
@@ -38,7 +39,7 @@ pub enum HydrateFrom {
 pub struct Runner<'a> {
     pub cache: CacheItem<RunTargetState>,
 
-    pub node: Option<ActionNode>,
+    pub node: Arc<ActionNode>,
 
     emitter: &'a Emitter,
 
@@ -70,7 +71,7 @@ impl<'a> Runner<'a> {
 
         Ok(Runner {
             cache,
-            node: None,
+            node: Arc::new(ActionNode::None),
             emitter,
             project,
             stderr: Term::buffered_stderr(),
@@ -545,15 +546,14 @@ impl<'a> Runner<'a> {
         let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
-        let is_persistent =
-            self.node.as_ref().is_some_and(|n| n.is_persistent()) || self.task.is_persistent();
+        let is_persistent = self.node.is_persistent() || self.task.is_persistent();
         let output;
         let error;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
         let is_interactive = (!self.task.options.cache && context.primary_targets.len() == 1)
-            || self.node.as_ref().is_some_and(|n| n.is_interactive())
+            || self.node.is_interactive()
             || self.task.is_interactive();
 
         // When the primary target, always stream the output for a better developer experience.

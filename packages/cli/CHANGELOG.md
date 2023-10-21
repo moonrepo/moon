@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where pnpm would fail to dedupe when its toolchain version is not using a
+  fully-qualified version.
+
 ## 1.15.3
 
 #### 🐞 Fixes

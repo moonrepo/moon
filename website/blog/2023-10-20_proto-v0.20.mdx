@@ -46,12 +46,13 @@ directly. This was rather complicated before.
 
 ### Comparison
 
-|                      | Shims                        | Binaries                                                                |
-| -------------------- | ---------------------------- | ----------------------------------------------------------------------- |
-| **Location**         | `~/.proto/shims`             | `~/.proto/bin`                                                          |
-| **Created as**       | Scripts that run `proto run` | Symlinks to the native binary                                           |
-| **Version executed** | Detects version at runtime   | Last version that was installed + pinned                                |
-| **Supported for**    | All tools                    | Only tools that support native execution (may not work for `.js` files) |
+|                      | Shims                                              | Binaries                                                                |
+| -------------------- | -------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Location**         | `~/.proto/shims`                                   | `~/.proto/bin`                                                          |
+| **Created as**       | Scripts that run `proto run`                       | Symlinks to the native binary                                           |
+| **Version executed** | Detects version at runtime                         | Last version that was installed + pinned                                |
+| **Supported for**    | All tools                                          | Only tools that support native execution (may not work for `.js` files) |
+| **Additional files** | Creates extra files (like `bunx`, `node-gyp`, etc) | Only links the primary binary                                           |
 
 ## Support for minisign checksums
 

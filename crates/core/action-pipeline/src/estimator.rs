@@ -47,10 +47,6 @@ impl Estimator {
         // Bucket every ran target based on task name,
         // and aggregate all tasks of the same name.
         for result in results {
-            let Some(node) = &result.node else {
-                continue;
-            };
-
             let Some(duration) = &result.duration else {
                 continue;
             };
@@ -66,7 +62,7 @@ impl Estimator {
                 task_duration *= 10;
             }
 
-            match node {
+            match &*result.node {
                 ActionNode::SetupTool { .. }
                 | ActionNode::InstallDeps { .. }
                 | ActionNode::InstallProjectDeps { .. } => {

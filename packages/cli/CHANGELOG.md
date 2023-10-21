@@ -12,6 +12,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where interactive/persistent flags weren't always bubbled up the the task runner.
+
 #### ⚙️ Internal
 
 - Updated to proto v0.20.

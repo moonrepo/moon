@@ -2,6 +2,7 @@ use moon_action_graph::ActionNode;
 use moon_common::color;
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 fn has_failed(status: &ActionStatus) -> bool {
@@ -100,7 +101,7 @@ pub struct Action {
     pub log_target: String,
 
     #[serde(skip)]
-    pub node: Option<ActionNode>,
+    pub node: Arc<ActionNode>,
 
     #[serde(skip)]
     pub node_index: usize,
@@ -126,7 +127,7 @@ impl Action {
             flaky: false,
             label: node.label(),
             log_target: String::new(),
-            node: Some(node),
+            node: Arc::new(node),
             node_index: 0,
             started_at: None,
             start_time: None,

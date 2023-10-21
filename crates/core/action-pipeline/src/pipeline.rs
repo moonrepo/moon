@@ -367,8 +367,8 @@ impl Pipeline {
             }
 
             term.line(label_checkpoint(
-                match &result.node {
-                    Some(ActionNode::RunTask { target, .. }) => target.as_str(),
+                match &*result.node {
+                    ActionNode::RunTask { target, .. } => target.as_str(),
                     _ => &result.label,
                 },
                 Checkpoint::RunFailed,
@@ -470,7 +470,7 @@ impl Pipeline {
         let mut skipped_count = 0;
 
         for result in results {
-            if compact && !matches!(result.node.as_ref().unwrap(), ActionNode::RunTask { .. }) {
+            if compact && !matches!(*result.node, ActionNode::RunTask { .. }) {
                 continue;
             }
 

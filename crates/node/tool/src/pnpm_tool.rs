@@ -6,7 +6,9 @@ use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool};
 use moon_utils::is_ci;
-use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq};
+use proto_core::{
+    Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq, VersionSpec,
+};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -143,28 +145,34 @@ impl DependencyManager<NodeTool> for PnpmTool {
         working_dir: &Path,
         log: bool,
     ) -> miette::Result<()> {
-        let Some(version) = self.config.version.as_ref() else {
+        let Some(version_spec) = self.config.version.as_ref() else {
             return Ok(());
         };
 
         if working_dir.join(self.get_lock_filename()).exists() {
+            let version = match version_spec {
+                UnresolvedVersionSpec::Version(v) => v.to_owned(),
+                _ => match self.tool.get_resolved_version() {
+                    VersionSpec::Version(v) => v,
+                    _ => return Ok(()),
+                },
+            };
+
             // https://github.com/pnpm/pnpm/releases/tag/v7.26.0
-            if let UnresolvedVersionSpec::Version(ver) = version {
-                if VersionReq::parse(">=7.26.0").unwrap().matches(ver) {
-                    self.create_command(node)?
-                        .arg("dedupe")
-                        .cwd(working_dir)
-                        .set_print_command(log)
-                        .create_async()
-                        .exec_capture_output()
-                        .await?;
+            if VersionReq::parse(">=7.26.0").unwrap().matches(&version) {
+                self.create_command(node)?
+                    .arg("dedupe")
+                    .cwd(working_dir)
+                    .set_print_command(log)
+                    .create_async()
+                    .exec_capture_output()
+                    .await?;
 
-                    return Ok(());
-                }
+                return Ok(());
+            } else {
+                node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
+                    .await?;
             }
-
-            node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
-                .await?;
         }
 
         Ok(())

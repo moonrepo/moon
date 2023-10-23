@@ -39,17 +39,11 @@ impl YarnTool {
     }
 
     pub fn is_berry(&self) -> bool {
-        self.config
-            .version
-            .as_ref()
-            .map(|v| match v {
-                UnresolvedVersionSpec::Canary => false,
-                UnresolvedVersionSpec::Alias(alias) => alias == "berry",
-                UnresolvedVersionSpec::Req(req) => req.comparators.iter().any(|c| c.major != 1),
-                UnresolvedVersionSpec::Version(version) => version.major != 1,
-                _ => false,
-            })
-            .unwrap_or(false)
+        self.check_version(2)
+    }
+
+    pub fn is_berry_v4(&self) -> bool {
+        self.check_version(4)
     }
 
     pub async fn set_version(&mut self, node: &NodeTool) -> miette::Result<()> {
@@ -89,6 +83,22 @@ impl YarnTool {
         }
 
         Ok(())
+    }
+
+    fn check_version(&self, min_major: u64) -> bool {
+        self.config
+            .version
+            .as_ref()
+            .map(|v| match v {
+                UnresolvedVersionSpec::Canary => false,
+                UnresolvedVersionSpec::Alias(alias) => alias == "berry",
+                UnresolvedVersionSpec::Req(req) => {
+                    req.comparators.iter().any(|c| c.major >= min_major)
+                }
+                UnresolvedVersionSpec::Version(version) => version.major >= min_major,
+                _ => false,
+            })
+            .unwrap_or(false)
     }
 }
 
@@ -298,13 +308,16 @@ impl DependencyManager<NodeTool> for YarnTool {
             cmd.args(["workspaces", "focus"]);
             cmd.args(packages);
 
-            let workspace_plugin =
-                get_workspace_root().join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
+            if !self.is_berry_v4() {
+                let workspace_plugin =
+                    get_workspace_root().join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
 
-            if !workspace_plugin.exists() {
-                return Err(
-                    ToolError::RequiresPlugin("yarn plugin import workspace-tools".into()).into(),
-                );
+                if !workspace_plugin.exists() {
+                    return Err(ToolError::RequiresPlugin(
+                        "yarn plugin import workspace-tools".into(),
+                    )
+                    .into());
+                }
             }
         } else {
             cmd.arg("install");

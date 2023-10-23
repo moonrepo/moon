@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated to support Yarn v4.
+
 ## 1.15.4
 
 #### 🐞 Fixes

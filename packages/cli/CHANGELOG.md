@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated to support Yarn v4.
+
 ## 1.15.4
 
 #### 🐞 Fixes
@@ -17,6 +23,10 @@
 - Fixed an issue where pnpm would fail to dedupe when its toolchain version is not using a
   fully-qualified version.
 - Fixed an issue where `PROTO_OFFLINE` wouldn't use global binaries when available.
+
+#### ⚙️ Internal
+
+- Updated to proto v0.20.3.
 
 ## 1.15.3
 

@@ -5,6 +5,9 @@ module.exports = {
 		project: 'tsconfig.eslint.json',
 		tsconfigRootDir: __dirname,
 	},
+	rules: {
+		'unicorn/prefer-node-protocol': 'off',
+	},
 	overrides: [
 		{
 			files: ['scripts/**/*'],

@@ -8,8 +8,8 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 		container: element,
 		elements: graph,
 		layout: {
-			fit: true,
 			// @ts-expect-error Types incorrect
+			fit: true,
 			name: 'dagre',
 			nodeDimensionsIncludeLabels: true,
 			spacingFactor: 1,

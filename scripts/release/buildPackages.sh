@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-args="--addFiles --addExports --declaration"
+args="--addFiles --addEngines --addExports --declaration"
 
 export NODE_ENV=production
 

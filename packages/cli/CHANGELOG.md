@@ -24,6 +24,10 @@
   fully-qualified version.
 - Fixed an issue where `PROTO_OFFLINE` wouldn't use global binaries when available.
 
+#### ⚙️ Internal
+
+- Updated to proto v0.20.3.
+
 ## 1.15.3
 
 #### 🐞 Fixes

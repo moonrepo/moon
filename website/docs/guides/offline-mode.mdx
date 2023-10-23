@@ -24,3 +24,12 @@ When offline, moon will skip or disable the following:
 While we automatically check for an internet connection, both online and offline modes can be forced
 with the `PROTO_OFFLINE` environment variable. Setting the variable to `1` or `true` will force
 offline mode, while `0` and `false` will force online mode.
+
+## Environment variables
+
+Some additional variables to interact with offline checks.
+
+- `PROTO_OFFLINE_TIMEOUT` - Customize the timeout for offline checks (in milliseconds). Defaults to
+  `750`.
+- `PROTO_OFFLINE_HOSTS` - Customize additional hosts/IPs to check for offline status. Separate
+  multiple hosts with a `,`.

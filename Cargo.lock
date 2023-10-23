@@ -531,7 +531,7 @@ dependencies = [
  "ahash 0.8.3",
  "cached_proc_macro",
  "cached_proc_macro_types",
- "hashbrown 0.14.1",
+ "hashbrown 0.14.2",
  "instant",
  "once_cell",
  "thiserror",
@@ -2184,9 +2184,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dfda62a12f55daeae5015f81b0baea145391cb4520f86c248fc615d72640d12"
+checksum = "f93e7192158dbcda357bdec5fb5788eebf8bbac027f3f33e719d29135ae84156"
 dependencies = [
  "ahash 0.8.3",
  "allocator-api2",
@@ -2433,7 +2433,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8adf3ddd720272c6ea8bf59463c04e0f93d0bbf7c5439b691bca2987e0270897"
 dependencies = [
  "equivalent",
- "hashbrown 0.14.1",
+ "hashbrown 0.14.2",
 ]
 
 [[package]]
@@ -4219,12 +4219,12 @@ checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "once_map"
-version = "0.4.8"
+version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "169e72192bc84493725bfca5d47da4ee2abc8acf155586d8127eb17f022497f4"
+checksum = "3388ad2ab0b17d90355995011856a3337e0a98147950f076ee9a73ad5d4a553e"
 dependencies = [
  "ahash 0.8.3",
- "hashbrown 0.14.1",
+ "hashbrown 0.14.2",
  "parking_lot",
  "stable_deref_trait",
 ]
@@ -4667,9 +4667,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.20.0"
+version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac3ec2a09d2419150c2a05f4a02a0db67daa01bdf7579b9109772d0861327b8b"
+checksum = "a0afa0b01c71dfbc4374af3dc0a62d710eea3dd655f1b249241cbe2046459f05"
 dependencies = [
  "cached",
  "extism",
@@ -4699,9 +4699,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.8.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c05662171d4984a9fd57e7fc33a071e0822bb2e993b7a1d06ce9dc5847698b6"
+checksum = "f531307cf8b78abc24dd04a2a9365f3d1e6821f5d5ff7d1882d8898969b6644e"
 dependencies = [
  "anyhow",
  "semver",
@@ -4714,9 +4714,9 @@ dependencies = [
 
 [[package]]
 name = "proto_wasm_plugin"
-version = "0.7.0"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f4ff89bb77f5f4ce5dd9536200c73140acaef632d33cacb59e12a2a8c8f3d7d"
+checksum = "12243f17f1bff9993e9f597e7124941de67f964adb771923971fcc717faaca25"
 dependencies = [
  "extism",
  "proto_pdk_api",
@@ -5739,9 +5739,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.0.3"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1a5b2f67543171658346f56eba6978221227dd79541a6b1fdb2b2f9116ed640"
+checksum = "11d80839b892a1c48cd74f975914cd2070df5b0afed5574e2af7e8866290939b"
 dependencies = [
  "serde",
  "serde_json",
@@ -6508,9 +6508,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.10"
+version = "0.5.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52eeb90e962c1310c0bfe7d066f4a7fe032f01dd94f6ee3d983167c90596a7f7"
+checksum = "d0cbc004160b593e8d8231b877d7b11fc142d57cc65d68e9c8416f99b6df6612"
 dependencies = [
  "extism",
  "miette",

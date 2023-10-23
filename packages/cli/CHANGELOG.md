@@ -16,6 +16,7 @@
 
 - Fixed an issue where pnpm would fail to dedupe when its toolchain version is not using a
   fully-qualified version.
+- Fixed an issue where `PROTO_OFFLINE` wouldn't use global binaries when available.
 
 ## 1.15.3
 

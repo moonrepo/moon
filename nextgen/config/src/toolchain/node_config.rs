@@ -46,6 +46,7 @@ impl NodeVersionFormat {
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
     pub enum NodePackageManager {
+        Bun,
         #[default]
         Npm,
         Pnpm,
@@ -61,6 +62,14 @@ derive_enum!(
         Nvm,
     }
 );
+
+#[derive(Clone, Config, Debug)]
+pub struct BunpmConfig {
+    pub plugin: Option<PluginLocator>,
+
+    #[setting(env = "MOON_BUN_VERSION")]
+    pub version: Option<UnresolvedVersionSpec>,
+}
 
 #[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
@@ -99,6 +108,9 @@ pub struct NodeConfig {
 
     pub bin_exec_args: Vec<String>,
 
+    #[setting(nested)]
+    pub bun: Option<BunpmConfig>,
+
     #[setting(default = true)]
     pub dedupe_on_lockfile_change: bool,
 
@@ -130,6 +142,7 @@ pub struct NodeConfig {
 
 impl NodeConfig {
     inherit_tool_required!(NpmConfig, npm, "npm", inherit_proto_npm);
+    inherit_tool!(BunpmConfig, bun, "bun", inherit_proto_bun);
     inherit_tool!(PnpmConfig, pnpm, "pnpm", inherit_proto_pnpm);
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
@@ -137,6 +150,13 @@ impl NodeConfig {
         match &self.package_manager {
             NodePackageManager::Npm => {
                 self.inherit_proto_npm(proto_tools)?;
+            }
+            NodePackageManager::Bun => {
+                if self.bun.is_none() {
+                    self.bun = Some(BunpmConfig::default());
+                }
+
+                self.inherit_proto_bun(proto_tools)?;
             }
             NodePackageManager::Pnpm => {
                 if self.pnpm.is_none() {

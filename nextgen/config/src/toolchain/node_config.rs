@@ -148,15 +148,15 @@ impl NodeConfig {
 
     pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         match &self.package_manager {
-            NodePackageManager::Npm => {
-                self.inherit_proto_npm(proto_tools)?;
-            }
             NodePackageManager::Bun => {
                 if self.bun.is_none() {
                     self.bun = Some(BunpmConfig::default());
                 }
 
                 self.inherit_proto_bun(proto_tools)?;
+            }
+            NodePackageManager::Npm => {
+                self.inherit_proto_npm(proto_tools)?;
             }
             NodePackageManager::Pnpm => {
                 if self.pnpm.is_none() {

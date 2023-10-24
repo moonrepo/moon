@@ -29,6 +29,7 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> miette::Result
 
         print_checkpoint(
             match node.config.package_manager {
+                NodePackageManager::Bun => "bun install",
                 NodePackageManager::Npm => "npm install",
                 NodePackageManager::Pnpm => "pnpm install",
                 NodePackageManager::Yarn => "yarn install",
@@ -42,11 +43,15 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> miette::Result
     }
 
     // Dedupe dependencies
-    if !is_ci() && node.config.dedupe_on_lockfile_change {
+    if !is_ci()
+        && node.config.dedupe_on_lockfile_change
+        && !matches!(node.config.package_manager, NodePackageManager::Bun)
+    {
         debug!(target: LOG_TARGET, "Deduping dependencies");
 
         print_checkpoint(
             match node.config.package_manager {
+                NodePackageManager::Bun => "bun dedupe",
                 NodePackageManager::Npm => "npm dedupe",
                 NodePackageManager::Pnpm => "pnpm dedupe",
                 NodePackageManager::Yarn => "yarn dedupe",

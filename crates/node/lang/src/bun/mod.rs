@@ -10,6 +10,15 @@ pub fn load_lockfile_dependencies(
 ) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
+    // Lockfile barfs on the Bun comments: https://github.com/robertohuertasm/yarn-lock-parser/issues/15
+    let mut lockfile_text = lockfile_text
+        .lines()
+        .filter(|line| !line.starts_with("# bun"))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    lockfile_text.push_str("\n");
+
     // Bun lockfiles are binary, but can be represented as text in Yarn v1 format!
     let entries: Vec<Entry> = parse_str(&lockfile_text).into_diagnostic()?;
 

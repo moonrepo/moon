@@ -1037,6 +1037,81 @@ mod yarn {
     }
 }
 
+mod bun {
+    use super::*;
+
+    #[test]
+    fn installs_correct_version() {
+        let sandbox = depman_sandbox("bun");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:version");
+        });
+
+        assert.debug();
+
+        assert!(predicate::str::contains("1.0.0").eval(&assert.output()));
+    }
+
+    #[test]
+    fn can_install_a_dep() {
+        let sandbox = depman_sandbox("bun");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:installDep");
+        });
+
+        assert.success();
+    }
+
+    #[test]
+    fn can_run_a_script() {
+        let sandbox = depman_sandbox("bun");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:runScript");
+        });
+
+        assert!(predicate::str::contains("test").eval(&assert.output()));
+
+        assert.success();
+    }
+
+    #[test]
+    fn installs_deps_in_non_workspace_project() {
+        let sandbox = depman_sandbox("bun");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("notInWorkspace:noop")
+                // Run other package so we can see both working
+                .arg("bun:noop");
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert!(sandbox.path().join("bun.lockb").exists());
+        assert!(sandbox.path().join("not-in-workspace/bun.lockb").exists());
+        assert!(sandbox
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
+
+        assert.success();
+    }
+
+    #[test]
+    fn works_in_non_workspaces_project() {
+        let sandbox = depman_non_workspaces_sandbox("pnpm");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:version");
+        });
+
+        assert!(predicate::str::contains("7.5.0").eval(&assert.output()));
+    }
+}
+
 mod profile {
     use super::*;
 

@@ -181,6 +181,27 @@ mod scaffold_workspace {
     }
 
     #[test]
+    fn copies_node_bun_files() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("bun");
+
+        let sandbox = create_sandbox_with_config(
+            "node-bun/workspaces",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("bun");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
+
+        assert!(docker.join("bun.lockb").exists());
+    }
+
+    #[test]
     fn copies_cargo_files() {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
@@ -494,6 +515,36 @@ mod prune_node {
         // yarn 1 does not support focusing
         // assert!(!sandbox.path().join("node_modules/react").exists());
     }
+
+    // #[test]
+    // fn focuses_for_node_bun() {
+    //     let (workspace_config, toolchain_config, tasks_config) =
+    //         get_node_depman_fixture_configs("bun");
+
+    //     let sandbox = create_sandbox_with_config(
+    //         "node-bun/workspaces",
+    //         Some(workspace_config),
+    //         Some(toolchain_config),
+    //         Some(tasks_config),
+    //     );
+
+    //     write_manifest(sandbox.path(), "other");
+
+    //     sandbox.run_moon(|cmd| {
+    //         cmd.arg("docker").arg("prune");
+    //     });
+
+    //     // should exist
+    //     assert!(sandbox.path().join("other/node_modules/solid-js").exists());
+
+    //     // should not exist
+    //     assert!(!sandbox.path().join("pnpm/node_modules").exists());
+    //     assert!(!sandbox
+    //         .path()
+    //         .join("node_modules/babel-preset-solid")
+    //         .exists());
+    //     assert!(!sandbox.path().join("node_modules/react").exists());
+    // }
 }
 
 mod setup {
@@ -597,6 +648,28 @@ mod setup_node {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1/workspaces",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("setup");
+        });
+
+        // only check root because of workspaces
+        assert!(sandbox.path().join("node_modules").exists());
+    }
+
+    #[test]
+    fn installs_node_bun() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("bun");
+
+        let sandbox = create_sandbox_with_config(
+            "node-bun/workspaces",
             Some(workspace_config),
             Some(toolchain_config),
             Some(tasks_config),

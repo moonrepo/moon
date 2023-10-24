@@ -199,14 +199,15 @@ impl DependencyManager<NodeTool> for BunTool {
         &self,
         node: &NodeTool,
         _package_names: &[String], // Not supporetd
-        production_only: bool,
+        _production_only: bool,
     ) -> miette::Result<()> {
         let mut cmd = self.create_command(node)?;
         cmd.args(["install"]);
 
-        if production_only {
-            cmd.arg("--production");
-        }
+        // NOTE: This seems to *not* install any dependencies
+        // if production_only {
+        //     cmd.arg("--production");
+        // }
 
         cmd.create_async().exec_stream_output().await?;
 

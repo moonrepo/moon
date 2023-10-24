@@ -14,6 +14,9 @@
 
 #### 🚀 Updates
 
+- Added Bun as a supported Node.js package manager: `node.packageManager: 'bun'`
+- Updated all npx calls to use a package manager equivalent, for example: `yarn dlx`, `pnpm dlx`,
+  `bunx`.
 - Updated to support Yarn v4.
 
 ## 1.15.4

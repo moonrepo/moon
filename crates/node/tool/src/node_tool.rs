@@ -79,19 +79,39 @@ impl NodeTool {
         args: &[&str],
         working_dir: &Path,
     ) -> miette::Result<()> {
-        let mut exec_args = vec!["--silent", "--package", package, "--"];
-        exec_args.extend(args);
+        let mut cmd = match &self.config.package_manager {
+            NodePackageManager::Bun => {
+                let mut cmd = self.get_bun()?.create_command(&self)?;
+                cmd.args(["x", "--bun", package]);
+                cmd
+            }
+            NodePackageManager::Pnpm => {
+                let mut cmd = self.get_pnpm()?.create_command(&self)?;
+                cmd.args(["--silent", "dlx", package]);
+                cmd
+            }
+            NodePackageManager::Yarn if self.get_yarn()?.is_berry() => {
+                let mut cmd = self.get_yarn()?.create_command(&self)?;
+                cmd.args(["dlx", "--quiet", package]);
+                cmd
+            }
+            // Fallthrough to npx
+            _ => {
+                let mut cmd = Command::new(self.get_npx_path()?);
+                cmd.args(["--silent", "--", package]);
 
-        let mut cmd = Command::new(self.get_npx_path()?);
+                if !self.global {
+                    cmd.env(
+                        "PATH",
+                        prepend_path_env_var([self.tool.get_bin_path()?.parent().unwrap()]),
+                    );
+                }
 
-        if !self.global {
-            cmd.env(
-                "PATH",
-                prepend_path_env_var([self.tool.get_bin_path()?.parent().unwrap()]),
-            );
-        }
+                cmd
+            }
+        };
 
-        cmd.args(exec_args)
+        cmd.args(args)
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()

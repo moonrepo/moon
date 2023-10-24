@@ -11,7 +11,7 @@ node:
   version: '16.0.0'
 
   # The package manager to use when managing dependencies.
-  # Accepts "npm" (default), "pnpm", or "yarn".
+  # Accepts "npm" (default), "pnpm", "yarn", or "bun".
   packageManager: 'pnpm'
 
   # The version of the package manager (above) to use.

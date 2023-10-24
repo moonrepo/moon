@@ -22,6 +22,11 @@ export interface PartialDenoConfig {
 
 export type NodeProjectAliasFormat = 'name-and-scope' | 'name-only';
 
+export interface PartialBunpmConfig {
+	plugin?: string | null;
+	version?: string | null;
+}
+
 export type NodeVersionFormat =
 	| 'file'
 	| 'link'
@@ -38,7 +43,7 @@ export interface PartialNpmConfig {
 	version?: string | null;
 }
 
-export type NodePackageManager = 'npm' | 'pnpm' | 'yarn';
+export type NodePackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
 
 export interface PartialPnpmConfig {
 	plugin?: string | null;
@@ -59,6 +64,7 @@ export interface PartialNodeConfig {
 	addEnginesConstraint?: boolean | null;
 	aliasPackageNames?: NodeProjectAliasFormat | null;
 	binExecArgs?: string[] | null;
+	bun?: PartialBunpmConfig | null;
 	/** @default true */
 	dedupeOnLockfileChange?: boolean | null;
 	dependencyVersionFormat?: NodeVersionFormat | null;
@@ -127,6 +133,11 @@ export interface DenoConfig {
 	plugin: string | null;
 }
 
+export interface BunpmConfig {
+	plugin: string | null;
+	version: string | null;
+}
+
 export interface NpmConfig {
 	plugin: string | null;
 	version: string | null;
@@ -149,6 +160,7 @@ export interface NodeConfig {
 	addEnginesConstraint: boolean;
 	aliasPackageNames: NodeProjectAliasFormat;
 	binExecArgs: string[];
+	bun: BunpmConfig | null;
 	/** @default true */
 	dedupeOnLockfileChange: boolean;
 	dependencyVersionFormat: NodeVersionFormat;

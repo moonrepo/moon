@@ -1,6 +1,7 @@
 use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
+use crate::BunTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
 use moon_logger::debug;
 use moon_node_lang::node;
@@ -21,6 +22,8 @@ pub struct NodeTool {
 
     pub tool: ProtoTool,
 
+    bun: Option<BunTool>,
+
     npm: Option<NpmTool>,
 
     pnpm: Option<PnpmTool>,
@@ -39,6 +42,7 @@ impl NodeTool {
             config: config.to_owned(),
             tool: load_tool_plugin(&Id::raw("node"), proto, config.plugin.as_ref().unwrap())
                 .await?,
+            bun: None,
             npm: None,
             pnpm: None,
             yarn: None,
@@ -52,6 +56,9 @@ impl NodeTool {
         };
 
         match config.package_manager {
+            NodePackageManager::Bun => {
+                node.bun = Some(BunTool::new(proto, &config.bun).await?);
+            }
             NodePackageManager::Npm => {
                 node.npm = Some(NpmTool::new(proto, &config.npm).await?);
             }
@@ -93,6 +100,14 @@ impl NodeTool {
         Ok(())
     }
 
+    /// Return the `bun` package manager.
+    pub fn get_bun(&self) -> miette::Result<&BunTool> {
+        match &self.bun {
+            Some(bun) => Ok(bun),
+            None => Err(ToolError::UnknownTool("bun".into()).into()),
+        }
+    }
+
     /// Return the `npm` package manager.
     pub fn get_npm(&self) -> miette::Result<&NpmTool> {
         match &self.npm {
@@ -129,6 +144,10 @@ impl NodeTool {
     }
 
     pub fn get_package_manager(&self) -> &(dyn DependencyManager<Self> + Send + Sync) {
+        if self.bun.is_some() {
+            return self.get_bun().unwrap();
+        }
+
         if self.pnpm.is_some() {
             return self.get_pnpm().unwrap();
         }
@@ -200,6 +219,10 @@ impl Tool for NodeTool {
 
         if let Some(npm) = &mut self.npm {
             installed += npm.setup(last_versions).await?;
+        }
+
+        if let Some(bun) = &mut self.bun {
+            installed += bun.setup(last_versions).await?;
         }
 
         if let Some(pnpm) = &mut self.pnpm {

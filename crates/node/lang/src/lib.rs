@@ -1,3 +1,4 @@
+pub mod bun;
 pub mod node;
 pub mod npm;
 pub mod package_json;
@@ -36,6 +37,13 @@ pub const YARN: DependencyManager = DependencyManager {
     binary: "yarn",
     config_files: &[".yarn", ".yarnrc", ".yarnrc.yml"],
     lockfile: "yarn.lock",
+    manifest: "package.json",
+};
+
+pub const BUN: DependencyManager = DependencyManager {
+    binary: "bun",
+    config_files: &["bunfig.toml"],
+    lockfile: "bun.lockb",
     manifest: "package.json",
 };
 

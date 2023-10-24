@@ -1,34 +1,22 @@
-{%- if minimal -%}
-
-node:
-  version: '{{ node_version }}'
-  packageManager: '{{ package_manager }}'
-{%- if package_manager_version != "" %}
-  {{ package_manager }}:
-    version: '{{ package_manager_version }}'
-{%- endif %}
-
-{%- else -%}
-
+---
+source: crates/cli/src/commands/init/node.rs
+expression: render_template(context).unwrap()
+---
 # Configures Node.js within the toolchain. moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic
 # and reproducible builds across any machine.
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-  version: '{{ node_version }}'
+  version: '16.0.0'
 
   # The package manager to use when managing dependencies.
   # Accepts "npm" (default), "pnpm", "yarn", or "bun".
-  packageManager: '{{ package_manager }}'
+  packageManager: 'bun'
 
   # The version of the package manager (above) to use.
-{%- if package_manager_version != "" %}
-  {{ package_manager }}:
-    version: '{{ package_manager_version }}'
-{%- else %}
-  {{ package_manager }}: {}
-{%- endif %}
+  bun:
+    version: '1.0.0'
 
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
@@ -41,19 +29,12 @@ node:
 
   # Infer and automatically create moon tasks from `package.json` scripts, per project.
   # BEWARE: Tasks and scripts are not 1:1 in functionality, so please refer to the documentation.
-  inferTasksFromScripts: {{ infer_tasks }}
+  inferTasksFromScripts: false
 
   # Sync a project's `dependsOn` as dependencies within the project's `package.json`.
   syncProjectWorkspaceDependencies: true
 
   # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
-{%- if node_version_manager == "nvm" %}
-  syncVersionManagerConfig: 'nvm'
-{%- elif node_version_manager == "nodenv" %}
-  syncVersionManagerConfig: 'nodenv'
-{%- else %}
   # syncVersionManagerConfig: 'nvm'
-{%- endif %}
 
-{%- endif %}

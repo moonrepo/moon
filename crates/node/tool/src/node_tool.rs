@@ -1,7 +1,7 @@
+use crate::bun_tool::BunTool;
 use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
-use crate::BunTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
 use moon_logger::debug;
 use moon_node_lang::node;

@@ -12,7 +12,7 @@ const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
     let manager_version = match node_config.package_manager {
         // Not supported by corepack, so remove field
-        NodePackageManager::Bun => Some("".to_string()),
+        NodePackageManager::Bun => Some(String::new()),
         NodePackageManager::Npm => node_config.npm.version.as_ref().map(|v| format!("npm@{v}")),
         NodePackageManager::Pnpm => node_config.pnpm.as_ref().map(|cfg| {
             cfg.version

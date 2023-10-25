@@ -33,7 +33,8 @@ static DEV_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
 });
 
 static DEV_COMMAND_SOLO: Lazy<regex::Regex> = Lazy::new(|| {
-    regex::create_regex(r#"^(npx |yarn dlx |pnpm dlx )?(parcel|vite|webpack)$"#).unwrap()
+    regex::create_regex(r#"^(npx |yarn dlx |pnpm dlx |bun x |bunx )?(parcel|vite|webpack)$"#)
+        .unwrap()
 });
 
 static DEV_ONLY_NAME: Lazy<regex::Regex> = Lazy::new(|| {
@@ -45,7 +46,7 @@ static DEV_ONLY_NAME: Lazy<regex::Regex> = Lazy::new(|| {
 
 // Special package manager handling
 static PM_RUN_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
-    regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)([^&]+)?"#).unwrap()
+    regex::create_regex(r#"(?:npm|pnpm|yarn|bun) run ([a-zA-Z0-9:-_]+)([^&]+)?"#).unwrap()
 });
 
 static PM_LIFE_CYCLES: Lazy<regex::Regex> = Lazy::new(|| {

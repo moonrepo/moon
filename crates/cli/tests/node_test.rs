@@ -153,4 +153,26 @@ mod run_script {
 
         assert.success().stdout(predicate::str::contains("build"));
     }
+
+    // TODO: Bun doesn't support Windows yet!
+    #[cfg(not(windows))]
+    #[test]
+    #[serial]
+    fn works_with_node_bun() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("bun");
+
+        let sandbox = create_sandbox_with_config(
+            "node-bun/workspaces",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "test", "--project", "bun"]);
+        });
+
+        assert.success().stdout(predicate::str::contains("test"));
+    }
 }

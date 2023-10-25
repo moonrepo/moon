@@ -1,8 +1,8 @@
 use crate::create_input_paths;
 use moon_config::{
-    InputPath, NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig,
-    PartialNpmConfig, PartialPnpmConfig, PartialTaskCommandArgs, PartialTaskConfig,
-    PartialToolchainConfig, PartialTypeScriptConfig, PartialWorkspaceConfig,
+    InputPath, NodePackageManager, PartialBunpmConfig, PartialInheritedTasksConfig,
+    PartialNodeConfig, PartialNpmConfig, PartialPnpmConfig, PartialTaskCommandArgs,
+    PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig, PartialWorkspaceConfig,
     PartialWorkspaceProjects, PartialWorkspaceProjectsConfig, PartialYarnConfig,
     UnresolvedVersionSpec,
 };
@@ -347,6 +347,13 @@ pub fn get_node_depman_fixture_configs(
 
     if let Some(node_config) = &mut toolchain_config.node {
         match depman {
+            "bun" => {
+                node_config.package_manager = Some(NodePackageManager::Bun);
+                node_config.bun = Some(PartialBunpmConfig {
+                    version: Some(UnresolvedVersionSpec::parse("1.0.0").unwrap()),
+                    ..PartialBunpmConfig::default()
+                });
+            }
             "npm" => {
                 node_config.package_manager = Some(NodePackageManager::Npm);
                 node_config.npm = Some(PartialNpmConfig {

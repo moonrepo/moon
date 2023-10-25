@@ -1597,8 +1597,6 @@ mod affected {
                 .arg("modified");
         });
 
-        assert.debug();
-
         assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
 
         // Then test added

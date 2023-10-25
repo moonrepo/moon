@@ -1,3 +1,4 @@
+use crate::bun_tool::BunTool;
 use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
@@ -21,6 +22,8 @@ pub struct NodeTool {
 
     pub tool: ProtoTool,
 
+    bun: Option<BunTool>,
+
     npm: Option<NpmTool>,
 
     pnpm: Option<PnpmTool>,
@@ -39,6 +42,7 @@ impl NodeTool {
             config: config.to_owned(),
             tool: load_tool_plugin(&Id::raw("node"), proto, config.plugin.as_ref().unwrap())
                 .await?,
+            bun: None,
             npm: None,
             pnpm: None,
             yarn: None,
@@ -52,6 +56,9 @@ impl NodeTool {
         };
 
         match config.package_manager {
+            NodePackageManager::Bun => {
+                node.bun = Some(BunTool::new(proto, &config.bun).await?);
+            }
             NodePackageManager::Npm => {
                 node.npm = Some(NpmTool::new(proto, &config.npm).await?);
             }
@@ -72,25 +79,53 @@ impl NodeTool {
         args: &[&str],
         working_dir: &Path,
     ) -> miette::Result<()> {
-        let mut exec_args = vec!["--silent", "--package", package, "--"];
-        exec_args.extend(args);
+        let mut cmd = match &self.config.package_manager {
+            NodePackageManager::Bun => {
+                let mut cmd = self.get_bun()?.create_command(self)?;
+                cmd.args(["x", "--bun", package]);
+                cmd
+            }
+            NodePackageManager::Pnpm => {
+                let mut cmd = self.get_pnpm()?.create_command(self)?;
+                cmd.args(["--silent", "dlx", package]);
+                cmd
+            }
+            NodePackageManager::Yarn if self.get_yarn()?.is_berry() => {
+                let mut cmd = self.get_yarn()?.create_command(self)?;
+                cmd.args(["dlx", "--quiet", package]);
+                cmd
+            }
+            // Fallthrough to npx
+            _ => {
+                let mut cmd = Command::new(self.get_npx_path()?);
+                cmd.args(["--silent", "--", package]);
 
-        let mut cmd = Command::new(self.get_npx_path()?);
+                if !self.global {
+                    cmd.env(
+                        "PATH",
+                        prepend_path_env_var([self.tool.get_bin_path()?.parent().unwrap()]),
+                    );
+                }
 
-        if !self.global {
-            cmd.env(
-                "PATH",
-                prepend_path_env_var([self.tool.get_bin_path()?.parent().unwrap()]),
-            );
-        }
+                cmd
+            }
+        };
 
-        cmd.args(exec_args)
+        cmd.args(args)
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
             .await?;
 
         Ok(())
+    }
+
+    /// Return the `bun` package manager.
+    pub fn get_bun(&self) -> miette::Result<&BunTool> {
+        match &self.bun {
+            Some(bun) => Ok(bun),
+            None => Err(ToolError::UnknownTool("bun".into()).into()),
+        }
     }
 
     /// Return the `npm` package manager.
@@ -129,6 +164,10 @@ impl NodeTool {
     }
 
     pub fn get_package_manager(&self) -> &(dyn DependencyManager<Self> + Send + Sync) {
+        if self.bun.is_some() {
+            return self.get_bun().unwrap();
+        }
+
         if self.pnpm.is_some() {
             return self.get_pnpm().unwrap();
         }
@@ -200,6 +239,10 @@ impl Tool for NodeTool {
 
         if let Some(npm) = &mut self.npm {
             installed += npm.setup(last_versions).await?;
+        }
+
+        if let Some(bun) = &mut self.bun {
+            installed += bun.setup(last_versions).await?;
         }
 
         if let Some(pnpm) = &mut self.pnpm {

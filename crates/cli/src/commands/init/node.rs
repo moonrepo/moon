@@ -6,7 +6,7 @@ use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
-use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
+use moon_node_lang::{BUN, NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::locate_projects_with_globs;
 use moon_terminal::label_header;
 use rustc_hash::FxHashMap;
@@ -71,6 +71,8 @@ fn detect_package_manager(
             pm_type = YARN.binary.to_owned();
         } else if is_using_dependency_manager(dest_dir, &PNPM, false) {
             pm_type = PNPM.binary.to_owned();
+        } else if is_using_dependency_manager(dest_dir, &BUN, false) {
+            pm_type = BUN.binary.to_owned();
         } else if is_using_dependency_manager(dest_dir, &NPM, false) {
             pm_type = NPM.binary.to_owned();
         }
@@ -78,7 +80,7 @@ fn detect_package_manager(
 
     // If no value again, ask for explicit input
     if pm_type.is_empty() {
-        let items = vec![NPM.binary, PNPM.binary, YARN.binary];
+        let items = vec![NPM.binary, PNPM.binary, YARN.binary, BUN.binary];
         let default_index = 0;
 
         let index = if options.yes {
@@ -291,6 +293,18 @@ mod tests {
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"yarn");
         context.insert("package_manager_version", &"3.2.0");
+        context.insert("infer_tasks", &false);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
+    fn renders_bun() {
+        let mut context = Context::new();
+        context.insert("node_version", &"16.0.0");
+        context.insert("node_version_manager", &"");
+        context.insert("package_manager", &"bun");
+        context.insert("package_manager_version", &"1.0.0");
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());

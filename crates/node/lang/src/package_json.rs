@@ -148,12 +148,17 @@ impl PackageJson {
     pub fn set_package_manager<T: AsRef<str>>(&mut self, value: T) -> bool {
         let value = value.as_ref();
 
-        if self.package_manager.is_some() && self.package_manager.as_ref().unwrap() == value {
+        if self.package_manager.as_ref().is_some_and(|v| v == value) {
             return false;
         }
 
         self.dirty.push("packageManager".into());
-        self.package_manager = Some(value.to_owned());
+
+        if value.is_empty() {
+            self.package_manager = None;
+        } else {
+            self.package_manager = Some(value.to_owned());
+        }
 
         true
     }
@@ -269,11 +274,15 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> miette::Result<()
             "engines" => {
                 if let Some(engines) = &package.engines {
                     data[field] = JsonValue::from_iter(engines.clone());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
                 }
             }
             "packageManager" => {
                 if let Some(package_manager) = &package.package_manager {
                     data[field] = JsonValue::from(package_manager.clone());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
                 }
             }
             "scripts" => {

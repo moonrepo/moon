@@ -1,0 +1,11 @@
+{
+  "name": "test-node-bun",
+  "private": true,
+  "devDependencies": {
+    "prettier": "2.7.0"
+  },
+  "workspaces": [
+    "other",
+    "base"
+  ]
+}

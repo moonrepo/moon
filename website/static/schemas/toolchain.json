@@ -72,6 +72,7 @@
       "title": "NodePackageManager",
       "type": "string",
       "enum": [
+        "bun",
         "npm",
         "pnpm",
         "yarn"
@@ -166,6 +167,33 @@
         }
       ]
     },
+    "PartialBunpmConfig": {
+      "title": "PartialBunpmConfig",
+      "type": "object",
+      "properties": {
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PartialDenoConfig": {
       "title": "PartialDenoConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
@@ -252,6 +280,16 @@
               "items": {
                 "type": "string"
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bun": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialBunpmConfig"
             },
             {
               "type": "null"

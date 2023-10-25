@@ -3,7 +3,7 @@ use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, load_tool_plugin, Tool};
+use moon_tool::{async_trait, load_tool_plugin, use_global_tool_on_path, Tool};
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::{
@@ -32,7 +32,7 @@ impl RustTool {
                 .await?,
         };
 
-        if req.is_global() {
+        if use_global_tool_on_path() || req.is_global() {
             rust.global = true;
             rust.config.version = None;
         } else {
@@ -78,7 +78,9 @@ impl Tool for RustTool {
             return Ok(installed);
         };
 
-        if self.tool.is_setup(version).await? {
+        if self.global {
+            debug!("Using global binary in PATH");
+        } else if self.tool.is_setup(version).await? {
             debug!("Rust has already been setup");
 
             // When offline and the tool doesn't exist, fallback to the global binary

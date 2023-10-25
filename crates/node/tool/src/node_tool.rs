@@ -9,7 +9,8 @@ use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool, ToolError,
+    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
+    DependencyManager, Tool, ToolError,
 };
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
@@ -48,7 +49,7 @@ impl NodeTool {
             yarn: None,
         };
 
-        if req.is_global() {
+        if use_global_tool_on_path() || req.is_global() {
             node.global = true;
             node.config.version = None;
         } else {
@@ -206,7 +207,9 @@ impl Tool for NodeTool {
 
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
-            if self.tool.is_setup(version).await? {
+            if self.global {
+                debug!("Using global binary in PATH");
+            } else if self.tool.is_setup(version).await? {
                 debug!("Node.js has already been setup");
 
                 // When offline and the tool doesn't exist, fallback to the global binary

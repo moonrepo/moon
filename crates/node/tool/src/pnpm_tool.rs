@@ -4,7 +4,10 @@ use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool};
+use moon_tool::{
+    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
+    DependencyManager, Tool,
+};
 use moon_utils::is_ci;
 use proto_core::{
     Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq, VersionSpec,
@@ -30,7 +33,7 @@ impl PnpmTool {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(PnpmTool {
-            global: config.version.is_none(),
+            global: use_global_tool_on_path() || config.version.is_none(),
             tool: load_tool_plugin(&Id::raw("pnpm"), proto, config.plugin.as_ref().unwrap())
                 .await?,
             config,
@@ -66,6 +69,12 @@ impl Tool for PnpmTool {
         let Some(version) = version else {
             return Ok(count);
         };
+
+        if self.global {
+            debug!("Using global binary in PATH");
+
+            return Ok(count);
+        }
 
         if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;

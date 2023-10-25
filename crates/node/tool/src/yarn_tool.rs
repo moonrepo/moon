@@ -5,7 +5,8 @@ use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool, ToolError,
+    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
+    DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
@@ -31,7 +32,7 @@ impl YarnTool {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(YarnTool {
-            global: config.version.is_none(),
+            global: use_global_tool_on_path() || config.version.is_none(),
             tool: load_tool_plugin(&Id::raw("yarn"), proto, config.plugin.as_ref().unwrap())
                 .await?,
             config,
@@ -130,6 +131,12 @@ impl Tool for YarnTool {
         let Some(version) = version else {
             return Ok(count);
         };
+
+        if self.global {
+            debug!("Using global binary in PATH");
+
+            return Ok(count);
+        }
 
         if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;

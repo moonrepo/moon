@@ -4,7 +4,10 @@ use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, load_tool_plugin, prepend_path_env_var, DependencyManager, Tool};
+use moon_tool::{
+    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
+    DependencyManager, Tool,
+};
 use moon_utils::is_ci;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
@@ -23,7 +26,7 @@ pub struct NpmTool {
 impl NpmTool {
     pub async fn new(proto: &ProtoEnvironment, config: &NpmConfig) -> miette::Result<NpmTool> {
         Ok(NpmTool {
-            global: config.version.is_none(),
+            global: use_global_tool_on_path() || config.version.is_none(),
             config: config.to_owned(),
             tool: load_tool_plugin(&Id::raw("npm"), proto, config.plugin.as_ref().unwrap()).await?,
         })
@@ -58,6 +61,12 @@ impl Tool for NpmTool {
         let Some(version) = version else {
             return Ok(count);
         };
+
+        if self.global {
+            debug!("Using global binary in PATH");
+
+            return Ok(count);
+        }
 
         if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;

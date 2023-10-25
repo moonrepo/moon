@@ -52,11 +52,13 @@ jobs:
       matrix:
         os: [buildjet-8vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
+    env:
+      RUSTC_WRAPPER: '$CARGO_HOME/bin/sccache'
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          bins: cargo-make, cargo-nextest, cargo-llvm-cov
+          bins: cargo-make, cargo-nextest, cargo-llvm-cov, sccache
           components: llvm-tools-preview
           cache: false # ${{ runner.os == 'Linux' }}
       - name: Check disk utilization

@@ -126,6 +126,56 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 };
 
 export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
+	buf: {
+		bins: ['buf'],
+		description: 'A new way of working with Protocol Buffers.',
+		homepageUrl: 'https://buf.build',
+		name: 'buf',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/buf.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/buf.toml',
+	},
+	gojq: {
+		bins: ['gojq'],
+		description: 'Pure Go implementation of jq.',
+		homepageUrl: 'https://github.com/itchyny/gojq',
+		name: 'gojq',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/gojq.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/gojq.toml',
+	},
+	helm: {
+		bins: ['helm'],
+		description: 'The Kubernetes Package Manager',
+		homepageUrl: 'https://helm.sh',
+		name: 'helm',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/helm.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/helm.toml',
+	},
+	helmfile: {
+		bins: ['helmfile'],
+		description: 'Deploy Kubernetes Helm Charts',
+		homepageUrl: 'https://helmfile.readthedocs.io/en/latest',
+		name: 'helmfile',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/helmfile.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/helmfile.toml',
+	},
+	kubectl: {
+		bins: ['kubectl'],
+		description: 'Kubernetes command line tool.',
+		homepageUrl: 'https://kubernetes.io',
+		name: 'kubectl',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/kubectl.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/kubectl.toml',
+	},
 	moon: {
 		bins: ['moon'],
 		description: 'moon is a multi-language build system and codebase management tool.',
@@ -135,5 +185,36 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 			'source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
+	},
+	sops: {
+		bins: ['sops'],
+		description: 'Simple and flexible tool for managing secrets.',
+		homepageUrl: 'https://github.com/getsops/sops',
+		name: 'sops',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/sops.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/sops.toml',
+	},
+	terragrunt: {
+		bins: ['terragrunt'],
+		description:
+			'Thin wrapper that provides extra tools for keeping your terraform configurations DRY.',
+		homepageUrl: 'https://terragrunt.gruntwork.io',
+		name: 'terragrunt',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/terragrunt.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/terragrunt.toml',
+	},
+	zig: {
+		bins: ['zig'],
+		description: 'Zig is a general-purpose programming language and toolchain.',
+		homepageUrl: 'https://ziglang.org',
+		name: 'zig',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/zig.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/zig.toml',
 	},
 };

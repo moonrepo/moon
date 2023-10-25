@@ -48,6 +48,10 @@ impl Tool for NpmTool {
     }
 
     fn get_shim_path(&self) -> Option<PathBuf> {
+        if self.global {
+            return None;
+        }
+
         self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
@@ -135,7 +139,9 @@ impl DependencyManager<NodeTool> for NpmTool {
             );
         }
 
-        cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
+        if !node.global {
+            cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
+        }
 
         Ok(cmd)
     }

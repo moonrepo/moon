@@ -62,6 +62,10 @@ impl Tool for BunTool {
     }
 
     fn get_shim_path(&self) -> Option<PathBuf> {
+        if self.global {
+            return None;
+        }
+
         self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 

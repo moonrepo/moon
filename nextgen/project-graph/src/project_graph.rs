@@ -310,14 +310,21 @@ impl ProjectGraph {
                 let project = &node.weight;
 
                 if project.matches_criteria(query)? {
-                    debug!("{} did match the criteria", color::id(&project.id));
-
                     project_ids.push(project.id.clone());
                 }
             }
 
             // Sort so that the order is deterministic
             project_ids.sort();
+
+            debug!(
+                projects = ?project_ids
+                    .iter()
+                    .map(|id| id.as_str())
+                    .collect::<Vec<_>>(),
+                "Found {} matches",
+                project_ids.len(),
+            );
 
             Ok(project_ids)
         })

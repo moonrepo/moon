@@ -52,28 +52,27 @@ jobs:
       matrix:
         os: [buildjet-8vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
-    env:
-      RUSTC_WRAPPER: 'sccache'
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov, sccache
           components: llvm-tools-preview
-          cache: false # ${{ runner.os == 'Linux' }}
-      - name: Check disk utilization
-        run: df
-        if: always()
+          cache: false
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
+          RUSTC_WRAPPER: 'sccache'
+          SCCACHE_REDIS: ${{ secrets.SCCACHE_REDIS }}
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}
         run: cargo make test-ci
         env:
           NEXTEST_PROFILE: ci
+          RUSTC_WRAPPER: 'sccache'
+          SCCACHE_REDIS: ${{ secrets.SCCACHE_REDIS }}
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
@@ -84,11 +83,6 @@ jobs:
           name: coverage-${{ runner.os }}
           path: ./report.txt
           if-no-files-found: error
-      - name: Check disk utilization
-        run: df
-        if: always()
-      - run: ls -r ~/.proto
-        if: always()
   coverage:
     if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
     name: Code coverage

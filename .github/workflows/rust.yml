@@ -59,6 +59,9 @@ jobs:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
           components: llvm-tools-preview
           cache: false # ${{ runner.os == 'Linux' }}
+      - name: Check disk utilization
+        run: df
+        if: always()
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
@@ -79,6 +82,9 @@ jobs:
           name: coverage-${{ runner.os }}
           path: ./report.txt
           if-no-files-found: error
+      - name: Check disk utilization
+        run: df
+        if: always()
   coverage:
     if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
     name: Code coverage

@@ -59,6 +59,7 @@ jobs:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
           components: llvm-tools-preview
           cache: false # ${{ runner.os == 'Linux' }}
+      - run: ls -r ~/.proto
       - name: Check disk utilization
         run: df
         if: always()

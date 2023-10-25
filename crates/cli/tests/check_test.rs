@@ -67,6 +67,8 @@ fn runs_tasks_from_multiple_project() {
         cmd.arg("check").arg("base").arg("noop");
     });
 
+    assert.debug();
+
     let output = assert.output();
 
     assert!(predicate::str::contains("base:standard").eval(&output));

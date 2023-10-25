@@ -8,15 +8,15 @@ expression: render_template(context).unwrap()
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-  version: '18.1.0'
+  version: '16.0.0'
 
   # The package manager to use when managing dependencies.
   # Accepts "npm" (default), "pnpm", "yarn", or "bun".
-  packageManager: 'npm'
+  packageManager: 'bun'
 
   # The version of the package manager (above) to use.
-  npm:
-    version: '8.0.0'
+  bun:
+    version: '1.0.0'
 
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
@@ -36,5 +36,5 @@ node:
 
   # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
-  syncVersionManagerConfig: 'nodenv'
+  # syncVersionManagerConfig: 'nvm'
 

@@ -118,14 +118,14 @@ node:
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#packageManager" />
 
-Defines which package manager to utilize. Supports `npm` (default), `pnpm`, or `yarn`.
+Defines which package manager to utilize. Supports `npm` (default), `pnpm`, `yarn`, or `bun`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 node:
   packageManager: 'yarn'
 ```
 
-### `npm`, `pnpm`, `yarn`
+### `npm`, `pnpm`, `yarn`, `bun`
 
 <HeadingApiLink to="/api/types/interface/NodePackageManagerConfig" />
 
@@ -139,7 +139,7 @@ latest version of the active package manager will be used (when applicable).
 
 The `version` setting defines the explicit package manager
 [version specification](../concepts/toolchain#version-specification) to use. If this field is _not
-defined_, the global `npm`, `pnpm`, and `yarn` binaries will be used.
+defined_, the global `npm`, `pnpm`, `yarn`, and `bun` binaries will be used.
 
 ```yaml title=".moon/toolchain.yml" {4}
 node:
@@ -149,7 +149,7 @@ node:
 ```
 
 > Version can also be defined with [`.prototools`](../proto/config) or with the `MOON_NPM_VERSION`,
-> `MOON_PNPM_VERSION`, or `MOON_YARN_VERSION` environment variables.
+> `MOON_PNPM_VERSION`, `MOON_YARN_VERSION`, or `MOON_BUN_VERSION` environment variables.
 
 ### `yarn`
 

@@ -622,6 +622,130 @@ node:
                 );
             }
         }
+
+        mod bun {
+            use super::*;
+
+            #[test]
+            fn enables_when_defined() {
+                let config = test_load_config(FILENAME, "node: {}", |path| {
+                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                });
+
+                assert!(config.node.unwrap().bun.is_none());
+
+                let config = test_load_config(FILENAME, "node:\n  bun: {}", |path| {
+                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                });
+
+                assert!(config.node.unwrap().bun.is_some());
+            }
+
+            #[test]
+            fn inherits_plugin_locator() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: bun
+  bun: {}
+",
+                    |path| {
+                        let mut tools = ToolsConfig::default();
+                        tools.inherit_builtin_plugins();
+
+                        ToolchainConfig::load_from(path, &tools)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().bun.unwrap().plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/bun-plugin/releases/latest/download/bun_plugin.wasm".into()
+                    }
+                );
+            }
+
+            #[test]
+            fn inherits_plugin_locator_when_none() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: bun
+",
+                    |path| {
+                        let mut tools = ToolsConfig::default();
+                        tools.inherit_builtin_plugins();
+
+                        ToolchainConfig::load_from(path, &tools)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().bun.unwrap().plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/bun-plugin/releases/latest/download/bun_plugin.wasm".into()
+                    }
+                );
+            }
+
+            #[test]
+            fn proto_version_doesnt_override() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  bun:
+    version: 1.0.0
+",
+                    |path| {
+                        let mut proto = ToolsConfig::default();
+                        proto.tools.insert(
+                            Id::raw("bun"),
+                            UnresolvedVersionSpec::parse("0.0.1").unwrap(),
+                        );
+
+                        ToolchainConfig::load_from(path, &proto)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().bun.unwrap().version.unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap()
+                );
+            }
+
+            #[test]
+            fn inherits_version_from_env_var() {
+                env::set_var("MOON_BUN_VERSION", "1.0.0");
+
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  bun:
+    version: 0.0.1
+",
+                    |path| {
+                        let mut proto = ToolsConfig::default();
+                        proto.tools.insert(
+                            Id::raw("bun"),
+                            UnresolvedVersionSpec::parse("0.1.0").unwrap(),
+                        );
+
+                        ToolchainConfig::load_from(path, &proto)
+                    },
+                );
+
+                env::remove_var("MOON_BUN_VERSION");
+
+                assert_eq!(
+                    config.node.unwrap().bun.unwrap().version.unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap()
+                );
+            }
+        }
     }
 
     mod rust {

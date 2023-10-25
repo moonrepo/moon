@@ -1,6 +1,6 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_logger::debug;
-use moon_node_lang::{PackageJson, NODENV, NPM, NVM, PNPM, YARN};
+use moon_node_lang::{PackageJson, BUN, NODENV, NPM, NVM, PNPM, YARN};
 use moon_node_tool::NodeTool;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -11,6 +11,8 @@ const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 /// Add `packageManager` to `package.json`.
 fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
     let manager_version = match node_config.package_manager {
+        // Not supported by corepack, so remove field
+        NodePackageManager::Bun => Some(String::new()),
         NodePackageManager::Npm => node_config.npm.version.as_ref().map(|v| format!("npm@{v}")),
         NodePackageManager::Pnpm => node_config.pnpm.as_ref().map(|cfg| {
             cfg.version
@@ -63,6 +65,7 @@ fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJs
 pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Result<()> {
     // Find the `package.json` workspaces root
     let lockfile = match node.config.package_manager {
+        NodePackageManager::Bun => BUN.lockfile,
         NodePackageManager::Npm => NPM.lockfile,
         NodePackageManager::Pnpm => PNPM.lockfile,
         NodePackageManager::Yarn => YARN.lockfile,

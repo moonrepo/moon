@@ -1,0 +1,60 @@
+---
+slug: moon-v1.16
+title: moon v1.16 - ???
+authors: [milesj]
+tags: [bun]
+# image: ./img/moon/v1.15.png
+---
+
+In this release, we've taken the next step in modernizing our action pipeline, by rewriting the
+dependency graph.
+
+<!--truncate-->
+
+## Bun as a package manager
+
+Now that [Bun v1 has officially released](https://bun.sh/blog/bun-v1.0) and our
+[bun-plugin](https://github.com/moonrepo/bun-plugin) for proto has stabilized, we can start slowly
+integrating Bun support into moon. The first step in this series is adding Bun as a supported
+package manager for Node.js. Seems odd as they are conflicting runtimes... right? While true, a lot
+of users are interested in using Bun purely as a package manager, as it can install dependencies
+incredibly fast. So why not support it?
+
+In this release, you can now install dependencies with Bun by configuring
+[`node.packageManager`](/docs/config/toolchain#packagemanager) and
+[`node.bun`](/docs/config/toolchain#npm-pnpm-yarn) in your toolchain.
+
+```yaml title=".moon/toolchain.yml"
+node:
+  packageManager: 'bun'
+  bun:
+    version: '1.0.0'
+```
+
+Additionally, you can now execute Bun commands within tasks! However, ensure the task's platform is
+still set to `node` though, as this is using Bun as a package manager within Node.js, not as a
+separate runtime.
+
+```yaml title="moon.yml"
+tasks:
+  test:
+    command: 'bun test'
+    platform: 'node'
+```
+
+When using Bun, the following integrations are applied:
+
+- Will automatically download and install Bun for the configured version.
+- Will install dependencies using `bun install` (deduping currently not supported).
+- Will parse `bun.lockb` for dependency resolution and task hashing.
+- Will use `bunx` instead of `npx` for one-off package executions.
+- Can execute `bun` commands within tasks.
+
+> This change _only_ adds support for Bun as a package manager for Node.js. It does not add Bun as a
+> supported language/platform in the toolchain, but it does pave the way for this to happen! Also
+> note that Bun _is not supported on Windows_!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.16.0) for a full list
+of changes.

@@ -19,7 +19,7 @@ node:
   version: '{{ node_version }}'
 
   # The package manager to use when managing dependencies.
-  # Accepts "npm" (default), "pnpm", or "yarn".
+  # Accepts "npm" (default), "pnpm", "yarn", or "bun".
   packageManager: '{{ package_manager }}'
 
   # The version of the package manager (above) to use.

@@ -176,13 +176,25 @@ pub fn create_target_command(
             is_package_manager = true;
             command = node.get_npm()?.create_command(node)?;
         }
-        "pnpm" => {
+        "pnpm" | "pnpx" => {
             is_package_manager = true;
             command = node.get_pnpm()?.create_command(node)?;
+
+            if task.command == "pnpx" {
+                command.arg("dlx");
+            }
         }
         "yarn" | "yarnpkg" => {
             is_package_manager = true;
             command = node.get_yarn()?.create_command(node)?;
+        }
+        "bun" | "bunx" => {
+            is_package_manager = true;
+            command = node.get_bun()?.create_command(node)?;
+
+            if task.command == "bunx" {
+                command.arg("x");
+            }
         }
         bin => {
             if let Some(new_command) =
@@ -222,7 +234,7 @@ pub fn create_target_command_without_tool(
         "node" | "nodejs" => {
             command.args(&node_options);
         }
-        "npx" | "npm" | "pnpm" | "yarn" | "yarnpkg" => {
+        "npx" | "npm" | "pnpm" | "pnpx" | "yarn" | "yarnpkg" | "bun" | "bunx" => {
             command = Command::new(&task.command);
         }
         bin => {

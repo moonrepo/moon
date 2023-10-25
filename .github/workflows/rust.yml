@@ -56,22 +56,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          bins: cargo-make, cargo-nextest, cargo-llvm-cov, sccache
+          bins: cargo-make, cargo-nextest, cargo-llvm-cov
           components: llvm-tools-preview
           cache: false
+      - uses: mozilla-actions/sccache-action@v0
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
-          RUSTC_WRAPPER: 'sccache'
+          RUSTC_WRAPPER: sccache
+          SCCACHE_LOG: debug
           SCCACHE_REDIS: ${{ secrets.SCCACHE_REDIS }}
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}
         run: cargo make test-ci
         env:
           NEXTEST_PROFILE: ci
-          RUSTC_WRAPPER: 'sccache'
+          RUSTC_WRAPPER: sccache
+          SCCACHE_LOG: debug
           SCCACHE_REDIS: ${{ secrets.SCCACHE_REDIS }}
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}

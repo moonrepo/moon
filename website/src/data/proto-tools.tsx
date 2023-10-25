@@ -126,16 +126,6 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 };
 
 export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
-	moon: {
-		bins: ['moon'],
-		description: 'moon is a multi-language build system and codebase management tool.',
-		homepageUrl: 'https://moonrepo.dev/moon',
-		name: 'moon',
-		pluginLocator:
-			'source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml',
-		pluginType: 'toml',
-		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
-	},
 	buf: {
 		bins: ['buf'],
 		description: 'A new way of working with Protocol Buffers.',
@@ -186,6 +176,16 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/kubectl.toml',
 	},
+	moon: {
+		bins: ['moon'],
+		description: 'moon is a multi-language build system and codebase management tool.',
+		homepageUrl: 'https://moonrepo.dev/moon',
+		name: 'moon',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
+	},
 	sops: {
 		bins: ['sops'],
 		description: 'Simple and flexible tool for managing secrets.',
@@ -198,7 +198,8 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 	},
 	terragrunt: {
 		bins: ['terragrunt'],
-		description: 'Thin wrapper that provides extra tools for keeping your terraform configurations DRY.',
+		description:
+			'Thin wrapper that provides extra tools for keeping your terraform configurations DRY.',
 		homepageUrl: 'https://terragrunt.gruntwork.io',
 		name: 'terragrunt',
 		pluginLocator:

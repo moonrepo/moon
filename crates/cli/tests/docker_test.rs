@@ -180,6 +180,8 @@ mod scaffold_workspace {
         assert!(docker.join("yarn.lock").exists());
     }
 
+    // TODO: Bun doesn't support Windows yet!
+    #[cfg(not(windows))]
     #[test]
     fn copies_node_bun_files() {
         let (workspace_config, toolchain_config, tasks_config) =
@@ -192,13 +194,9 @@ mod scaffold_workspace {
             Some(tasks_config),
         );
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("docker").arg("scaffold").arg("bun");
         });
-
-        sandbox.debug_files();
-
-        assert.debug();
 
         let docker = sandbox.path().join(".moon/docker/workspace");
 

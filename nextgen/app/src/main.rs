@@ -19,7 +19,7 @@ async fn main() -> MainResult {
 
     App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
-        log_env: "STARBASE_LOG".into(),
+        log_env: "MOON_APP_LOG".into(),
         // log_file: args.log_file,
         test_env: "MOON_TEST".into(),
         ..TracingOptions::default()

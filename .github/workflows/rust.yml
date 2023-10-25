@@ -57,10 +57,10 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       NEXTEST_PROFILE: ci
       RUSTC_WRAPPER: sccache
-      RUST_LOG: trace
+      # RUST_LOG: trace
       SCCACHE_BUCKET: moon-ci-sccache
-      SCCACHE_LOG: debug
-      SCCACHE_NO_DAEMON: 1
+      # SCCACHE_LOG: debug
+      # SCCACHE_NO_DAEMON: 1
       SCCACHE_REGION: us-east-2
       SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
     steps:
@@ -71,12 +71,12 @@ jobs:
           components: llvm-tools-preview
           cache: false
       - uses: mozilla-actions/sccache-action@v0.0.3
-      - name: Run tests with coverage
-        if: ${{ env.WITH_COVERAGE == 'true' }}
-        run: cargo make test-coverage
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}
         run: cargo make test-ci
+      - name: Run tests with coverage
+        if: ${{ env.WITH_COVERAGE == 'true' }}
+        run: cargo make test-coverage
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report

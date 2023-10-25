@@ -34,7 +34,7 @@ pub fn load_lockfile_dependencies(
         .collect::<Vec<_>>()
         .join("\n");
 
-    lockfile_text.push_str("\n");
+    lockfile_text.push('\n');
 
     // Bun lockfiles are binary, but can be represented as text in Yarn v1 format!
     let entries: Vec<Entry> = parse_str(&lockfile_text).into_diagnostic()?;

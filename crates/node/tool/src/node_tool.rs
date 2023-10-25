@@ -81,17 +81,17 @@ impl NodeTool {
     ) -> miette::Result<()> {
         let mut cmd = match &self.config.package_manager {
             NodePackageManager::Bun => {
-                let mut cmd = self.get_bun()?.create_command(&self)?;
+                let mut cmd = self.get_bun()?.create_command(self)?;
                 cmd.args(["x", "--bun", package]);
                 cmd
             }
             NodePackageManager::Pnpm => {
-                let mut cmd = self.get_pnpm()?.create_command(&self)?;
+                let mut cmd = self.get_pnpm()?.create_command(self)?;
                 cmd.args(["--silent", "dlx", package]);
                 cmd
             }
             NodePackageManager::Yarn if self.get_yarn()?.is_berry() => {
-                let mut cmd = self.get_yarn()?.create_command(&self)?;
+                let mut cmd = self.get_yarn()?.create_command(self)?;
                 cmd.args(["dlx", "--quiet", package]);
                 cmd
             }

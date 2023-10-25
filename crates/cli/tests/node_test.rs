@@ -154,6 +154,8 @@ mod run_script {
         assert.success().stdout(predicate::str::contains("build"));
     }
 
+    // TODO: Bun doesn't support Windows yet!
+    #[cfg(not(windows))]
     #[test]
     #[serial]
     fn works_with_node_bun() {

@@ -1037,6 +1037,8 @@ mod yarn {
     }
 }
 
+// TODO: Bun doesn't support Windows yet!
+#[cfg(not(windows))]
 mod bun {
     use super::*;
 
@@ -1188,6 +1190,8 @@ mod non_js_bins {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("esbuild:build");
         });
+
+        assert.debug();
 
         assert_eq!(
             fs::read_to_string(sandbox.path().join("esbuild/output.js")).unwrap(),

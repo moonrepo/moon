@@ -663,6 +663,8 @@ mod setup_node {
         assert!(sandbox.path().join("node_modules").exists());
     }
 
+    // TODO: Bun doesn't support Windows yet!
+    #[cfg(not(windows))]
     #[test]
     fn installs_node_bun() {
         let (workspace_config, toolchain_config, tasks_config) =

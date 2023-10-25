@@ -68,6 +68,7 @@ jobs:
           RUSTC_WRAPPER: sccache
           RUST_LOG: trace
           SCCACHE_LOG: debug
+          SCCACHE_NO_DAEMON: 1
           SCCACHE_REDIS: ${{ secrets.SCCACHE_REDIS }}
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}
@@ -77,6 +78,7 @@ jobs:
           RUSTC_WRAPPER: sccache
           RUST_LOG: trace
           SCCACHE_LOG: debug
+          SCCACHE_NO_DAEMON: 1
           SCCACHE_REDIS: ${{ secrets.SCCACHE_REDIS }}
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}

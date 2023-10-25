@@ -2,12 +2,12 @@ language: javascript
 
 tasks:
   version:
-    command: npm
+    command: bun
   installDep:
-    command: npm
+    command: bun
     args: install react@17.0.0
   runDep:
     command: prettier
     args: --check *.yml
   runScript:
-    command: npm run test
+    command: bun run test

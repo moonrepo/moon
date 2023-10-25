@@ -1048,8 +1048,6 @@ mod bun {
             cmd.arg("run").arg("bun:version");
         });
 
-        assert.debug();
-
         assert!(predicate::str::contains("1.0.0").eval(&assert.output()));
     }
 
@@ -1085,7 +1083,10 @@ mod bun {
             cmd.arg("run")
                 .arg("notInWorkspace:noop")
                 // Run other package so we can see both working
-                .arg("bun:noop");
+                .arg("bun:noop")
+                // Makes output deterministic
+                .arg("--concurrency")
+                .arg("1");
         });
 
         assert_snapshot!(assert.output());

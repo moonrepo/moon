@@ -192,9 +192,13 @@ mod scaffold_workspace {
             Some(tasks_config),
         );
 
-        sandbox.run_moon(|cmd| {
+        let assert = sandbox.run_moon(|cmd| {
             cmd.arg("docker").arg("scaffold").arg("bun");
         });
+
+        sandbox.debug_files();
+
+        assert.debug();
 
         let docker = sandbox.path().join(".moon/docker/workspace");
 

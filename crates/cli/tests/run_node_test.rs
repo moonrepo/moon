@@ -339,8 +339,6 @@ fn can_run_many_targets() {
         cmd.arg("run").arg("node:cjs").arg("node:mjs");
     });
 
-    assert.debug();
-
     let output = assert.output();
 
     assert!(predicate::str::contains("node:cjs | stdout").eval(&output));
@@ -1190,8 +1188,6 @@ mod non_js_bins {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("esbuild:build");
         });
-
-        assert.debug();
 
         assert_eq!(
             fs::read_to_string(sandbox.path().join("esbuild/output.js")).unwrap(),

@@ -1250,9 +1250,9 @@ mod community_issues {
                 .arg("1");
         });
 
-        assert.debug();
-
         let output = assert.output();
+
+        println!("{}", output);
 
         assert!(false);
     }

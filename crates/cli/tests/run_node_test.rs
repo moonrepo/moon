@@ -1236,7 +1236,6 @@ mod affected_files {
 }
 
 mod community_issues {
-    use super::*;
     use moon_test_utils::create_sandbox;
 
     #[test]
@@ -1247,7 +1246,9 @@ mod community_issues {
             cmd.arg("run")
                 .arg("project:build")
                 .arg("--concurrency")
-                .arg("1");
+                .arg("1")
+                .arg("--log")
+                .arg("trace");
         });
 
         let output = assert.output();

@@ -1,0 +1,32 @@
+type: application
+tags:
+  - 'vue2'
+  - 'typescript'
+  - 'module'
+  - 'entityview'
+dependsOn:
+  - vue-lasso-apps-core
+  - vue-lasso-core
+tasks:
+  build:
+    command:
+      - vue-cli-service
+      - build
+    platform: node
+  dev:
+    command:
+      - vue-cli-service
+      - serve
+    local: true
+    platform: node
+  lint:
+    command:
+      - vue-cli-service
+      - lint
+    platform: node
+  serve:
+    command:
+      - vue-cli-service
+      - serve
+    local: true
+    platform: node

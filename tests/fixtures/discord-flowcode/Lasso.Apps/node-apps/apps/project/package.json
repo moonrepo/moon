@@ -1,0 +1,42 @@
+{
+  "name": "project",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.21.8",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-plugin-typescript": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "@vue/eslint-config-typescript": "^9.1.0",
+    "eslint": "^7.5.0",
+    "eslint-plugin-vue": "^8.0.3",
+    "less": "^3.0.4",
+    "less-loader": "^7.0.0",
+    "pug": "^3.0.0",
+    "pug-plain-loader": "^1.0.0",
+    "raw-loader": "^4.0.1",
+    "sass": "^1.39.2",
+    "sass-loader": "^12.0.0",
+    "typescript": "~5.0.0",
+    "vue-template-compiler": "~2.6.11"
+  },
+  "dependencies": {
+    "chartist": "^0.11.0",
+    "clipboard": "^2.0.0",
+    "core-js": "^3.6.5",
+    "es6-promise": "^4.2.4",
+    "lodash": "^4.17.5",
+    "vue": "~2.6.14",
+    "vue-class-component": "^7.2.3",
+    "vue-dynamic": "0.0.6",
+    "vue-filter": "^0.2.5",
+    "vue-lasso-apps-core": "file:../../../../Lasso.WebDependencies/vue-lasso-apps-core",
+    "vue-lasso-core": "file:../../../../Lasso.WebDependencies/vue-lasso-core",
+    "vue-property-decorator": "^8.4.2",
+    "vue-resource": "^1.5.0",
+    "whatwg-fetch": "^3.6.2"
+  }
+}

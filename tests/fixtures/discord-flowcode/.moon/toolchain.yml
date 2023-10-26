@@ -1,0 +1,4 @@
+node:
+  version: '20.0.0'
+  npm:
+    version: '9.8.1'

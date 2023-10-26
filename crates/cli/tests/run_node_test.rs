@@ -1234,3 +1234,26 @@ mod affected_files {
         assert!(predicate::str::contains("Env: input1.js,input2.js\n").eval(&output));
     }
 }
+
+mod community_issues {
+    use super::*;
+    use moon_test_utils::create_sandbox;
+
+    #[test]
+    fn flowcode() {
+        let sandbox = create_sandbox("discord-flowcode");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("project:build")
+                .arg("--concurrency")
+                .arg("1");
+        });
+
+        assert.debug();
+
+        let output = assert.output();
+
+        assert!(false);
+    }
+}

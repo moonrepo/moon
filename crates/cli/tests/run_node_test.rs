@@ -1248,7 +1248,8 @@ mod community_issues {
                 .arg("--concurrency")
                 .arg("1")
                 .arg("--log")
-                .arg("trace");
+                .arg("trace")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
         });
 
         // let output = assert.output();

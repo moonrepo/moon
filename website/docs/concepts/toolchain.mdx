@@ -20,6 +20,12 @@ The toolchain is built around [proto](/proto), our stand-alone multi-language ve
 will piggyback of proto's toolchain found at `~/.proto` and reuse any tools available, or download
 and install them if they're missing.
 
+### Force disabling
+
+The `MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable can be set to `true` to force moon to use
+tool binaries available on `PATH`, instead of downloading and installing them. This is useful for
+pre-configured environments, like CI and Docker.
+
 ## Configuration
 
 The tools that are managed by the toolchain are configured through the

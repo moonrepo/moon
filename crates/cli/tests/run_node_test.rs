@@ -1251,9 +1251,16 @@ mod community_issues {
                 .arg("trace");
         });
 
-        let output = assert.output();
+        // let output = assert.output();
 
-        println!("{}", output);
+        println!(
+            "{}",
+            String::from_utf8_lossy(&assert.inner.get_output().stderr)
+        );
+        println!(
+            "{}",
+            String::from_utf8_lossy(&assert.inner.get_output().stdout)
+        );
 
         assert!(false);
     }

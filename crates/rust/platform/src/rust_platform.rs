@@ -415,6 +415,7 @@ impl Platform for RustPlatform {
             bins: &self.config.bins,
             components: &self.config.components,
             targets: &self.config.targets,
+            version: self.config.version.as_ref(),
         })?;
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!

@@ -83,8 +83,10 @@ export interface PartialNodeConfig {
 /** Docs: https://moonrepo.dev/docs/config/toolchain#rust */
 export interface PartialRustConfig {
 	bins?: PartialBinEntry[] | null;
+	components?: string[] | null;
 	plugin?: string | null;
 	syncToolchainConfig?: boolean | null;
+	targets?: string[] | null;
 	version?: string | null;
 }
 
@@ -179,8 +181,10 @@ export interface NodeConfig {
 /** Docs: https://moonrepo.dev/docs/config/toolchain#rust */
 export interface RustConfig {
 	bins: BinEntry[];
+	components: string[];
 	plugin: string | null;
 	syncToolchainConfig: boolean;
+	targets: string[];
 	version: string | null;
 }
 

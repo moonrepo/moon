@@ -1,5 +1,5 @@
 use crate::{
-    bins_hash::RustBinsHash, find_cargo_lock, get_cargo_home, target_hash::RustTargetHash,
+    find_cargo_lock, get_cargo_home, target_hash::RustTargetHash, toolchain_hash::RustToolchainHash,
 };
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
@@ -237,6 +237,36 @@ impl Platform for RustPlatform {
     ) -> miette::Result<()> {
         let tool = self.toolchain.get_for_version(&runtime.requirement)?;
 
+        if !self.config.components.is_empty() {
+            print_checkpoint("rustup component", Checkpoint::Setup);
+
+            debug!(
+                target: LOG_TARGET,
+                "Installing rustup components: {}",
+                map_list(&self.config.components, |c| color::label(c))
+            );
+
+            let mut args = vec!["component", "add"];
+            args.extend(self.config.components.iter().map(|c| c.as_str()));
+
+            tool.exec_rustup(args, working_dir).await?;
+        }
+
+        if !self.config.targets.is_empty() {
+            print_checkpoint("rustup target", Checkpoint::Setup);
+
+            debug!(
+                target: LOG_TARGET,
+                "Installing rustup targets: {}",
+                map_list(&self.config.targets, |c| color::label(c))
+            );
+
+            let mut args = vec!["target", "add"];
+            args.extend(self.config.targets.iter().map(|c| c.as_str()));
+
+            tool.exec_rustup(args, working_dir).await?;
+        }
+
         if find_cargo_lock(working_dir).is_none() {
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 
@@ -381,11 +411,12 @@ impl Platform for RustPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        if !self.config.bins.is_empty() {
-            hasher.hash_content(RustBinsHash {
-                bins: &self.config.bins,
-            })?;
-        }
+        hasher.hash_content(RustToolchainHash {
+            bins: &self.config.bins,
+            components: &self.config.components,
+            targets: &self.config.targets,
+            version: self.config.version.as_ref(),
+        })?;
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
         // However, will leave it around incase a new cargo command is added in the future.

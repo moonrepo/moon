@@ -23,6 +23,10 @@
   `bunx`.
 - Updated to support Yarn v4.
 
+#### 🐞 Fixes
+
+- Fixed an issue where `moon ci` and `git` would fail if there's only 1 commit on the base branch.
+
 #### ⚙️ Internal
 
 - Updated to proto v0.21.0.

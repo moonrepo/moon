@@ -47,6 +47,13 @@ pub fn enforce_project_type_relationships(
                 ProjectType::Library | ProjectType::Tool | ProjectType::Unknown
             )
         }
+        ProjectType::Automation => {
+            allowed.push(ProjectType::Application.to_string());
+            allowed.push(ProjectType::Library.to_string());
+            allowed.push(ProjectType::Tool.to_string());
+
+            !matches!(dependency.type_of, ProjectType::Automation)
+        }
         ProjectType::Library | ProjectType::Tool => {
             allowed.push(ProjectType::Library.to_string());
 

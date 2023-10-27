@@ -23,6 +23,7 @@ derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
     pub enum ProjectType {
         Application,
+        Automation,
         Library,
         Tool,
         #[default]

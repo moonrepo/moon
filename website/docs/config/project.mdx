@@ -255,6 +255,8 @@ tags:
 The type of project. Supports the following values:
 
 - `application` - A backend, frontend, or CLI application.
+- `automation` - Automated testing suite, like E2E, integration, or visual tests.
+  <VersionLabel version="1.16.0" />
 - `library` - A self-contained, shareable, and publishable set of code.
 - `tool` - An internal tool, one-off script, etc.
 - `unknown` (default) - When not configured.
@@ -263,7 +265,12 @@ The type of project. Supports the following values:
 type: 'application'
 ```
 
-> Project type is used in task inheritance, constraints and boundaries, editor extensions, and more!
+:::info
+
+The project type is used in [task inheritance](../concepts/task-inheritance),
+[constraints and boundaries](./workspace#constraints), editor extensions, and more!
+
+:::
 
 ## Tasks
 

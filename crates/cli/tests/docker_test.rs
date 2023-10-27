@@ -384,8 +384,6 @@ mod prune {
             cmd.arg("docker").arg("prune");
         });
 
-        assert.debug();
-
         assert!(
             predicate::str::contains("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?")
                 .eval(&assert.output())
@@ -502,11 +500,9 @@ mod prune_node {
 
         write_manifest(sandbox.path(), "other");
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("docker").arg("prune");
         });
-
-        assert.debug();
 
         // should exist
         assert!(sandbox.path().join("node_modules/solid-js").exists());

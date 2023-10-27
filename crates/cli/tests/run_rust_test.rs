@@ -147,3 +147,71 @@ fn retries_on_failure_till_count() {
 
     assert!(predicate::str::contains("1 exit code").eval(&output));
 }
+
+mod rustup_toolchain {
+    use super::*;
+
+    fn rust_toolchain_sandbox() -> Sandbox {
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
+                "rust".into(),
+                ".".into(),
+            )]))),
+            ..PartialWorkspaceConfig::default()
+        };
+
+        let toolchain_config = PartialToolchainConfig {
+            rust: Some(PartialRustConfig {
+                components: Some(vec!["clippy".into()]),
+                targets: Some(vec!["wasm32-wasi".into()]),
+                ..PartialRustConfig::default()
+            }),
+            ..PartialToolchainConfig::default()
+        };
+
+        let sandbox = create_sandbox_with_config(
+            "rust/toolchain",
+            Some(workspace_config),
+            Some(toolchain_config),
+            None,
+        );
+        sandbox.enable_git();
+        sandbox
+    }
+
+    #[test]
+    fn installs_components_and_targets() {
+        let sandbox = rust_toolchain_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("rust:noop");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("rustup component").eval(&output));
+        assert!(predicate::str::contains("rustup target").eval(&output));
+    }
+
+    #[test]
+    fn doesnt_install_again() {
+        let sandbox = rust_toolchain_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("rust:noop");
+        });
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("rust:noop");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("rustup component")
+            .not()
+            .eval(&output));
+        assert!(predicate::str::contains("rustup target")
+            .not()
+            .eval(&output));
+    }
+}

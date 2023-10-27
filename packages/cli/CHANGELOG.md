@@ -15,6 +15,7 @@
 #### 🚀 Updates
 
 - Added Bun as a supported Node.js package manager: `node.packageManager: 'bun'`
+- Added a new project type `automation`, for systems like E2E and integration testing.
 - Updated all npx calls to use a package manager equivalent, for example: `yarn dlx`, `pnpm dlx`,
   `bunx`.
 - Updated to support Yarn v4.

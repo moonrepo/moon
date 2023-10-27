@@ -11,7 +11,7 @@ repository = "https://github.com/moonrepo/moon"
 moon_common = { version = "0.1.0", path = "../common" }
 moon_config = { version = "0.1.0", path = "../config" }
 miette = { workspace = true }
-pest = "2.7.4"
-pest_derive = "2.7.4"
+pest = "2.7.5"
+pest_derive = "2.7.5"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

@@ -97,6 +97,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         if: ${{ !matrix.docker-target }}
         with:
+          cache: false
           targets: ${{ matrix.target }}
       - name: Generate lockfile
         if: ${{ !matrix.docker-target }}

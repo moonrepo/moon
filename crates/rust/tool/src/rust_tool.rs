@@ -56,6 +56,21 @@ impl RustTool {
 
         Ok(())
     }
+
+    pub async fn exec_rustup<I, S>(&self, args: I, working_dir: &Path) -> miette::Result<()>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        Command::new("rustup")
+            .args(args)
+            .cwd(working_dir)
+            .create_async()
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
+    }
 }
 
 #[async_trait]

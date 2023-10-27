@@ -237,6 +237,36 @@ impl Platform for RustPlatform {
     ) -> miette::Result<()> {
         let tool = self.toolchain.get_for_version(&runtime.requirement)?;
 
+        if !self.config.components.is_empty() {
+            print_checkpoint("rustup component", Checkpoint::Setup);
+
+            debug!(
+                target: LOG_TARGET,
+                "Installing rustup components: {}",
+                map_list(&self.config.components, |c| color::label(c))
+            );
+
+            let mut args = vec!["component", "add"];
+            args.extend(self.config.components.iter().map(|c| c.as_str()));
+
+            tool.exec_rustup(args, working_dir).await?;
+        }
+
+        if !self.config.targets.is_empty() {
+            print_checkpoint("rustup target", Checkpoint::Setup);
+
+            debug!(
+                target: LOG_TARGET,
+                "Installing rustup targets: {}",
+                map_list(&self.config.targets, |c| color::label(c))
+            );
+
+            let mut args = vec!["target", "add"];
+            args.extend(self.config.targets.iter().map(|c| c.as_str()));
+
+            tool.exec_rustup(args, working_dir).await?;
+        }
+
         if find_cargo_lock(working_dir).is_none() {
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 

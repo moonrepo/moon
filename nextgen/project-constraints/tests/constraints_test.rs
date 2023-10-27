@@ -62,6 +62,16 @@ mod by_type {
     }
 
     #[test]
+    #[should_panic(expected = "Invalid project relationship. Project foo of type application")]
+    fn app_cant_use_e2e() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Application),
+            &create_project("bar", ProjectType::Automation),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn lib_use_lib() {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
@@ -100,6 +110,16 @@ mod by_type {
     }
 
     #[test]
+    #[should_panic(expected = "Invalid project relationship. Project foo of type library")]
+    fn lib_cant_use_e2e() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Library),
+            &create_project("bar", ProjectType::Automation),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn tool_use_lib() {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
@@ -133,6 +153,62 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Application),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid project relationship. Project foo of type tool")]
+    fn tool_cant_use_e2e() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Tool),
+            &create_project("bar", ProjectType::Automation),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn e2e_use_app() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Application),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn e2e_use_lib() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Library),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn e2e_use_tool() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Tool),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn e2e_use_unknown() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Unknown),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid project relationship. Project foo of type automation")]
+    fn e2e_cant_use_e2e() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Automation),
         )
         .unwrap();
     }

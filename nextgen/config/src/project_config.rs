@@ -23,8 +23,7 @@ derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
     pub enum ProjectType {
         Application,
-        #[variant(value = "e2e")]
-        E2E,
+        Automation,
         Library,
         Tool,
         #[default]

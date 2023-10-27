@@ -1,12 +1,13 @@
 ---
 slug: moon-v1.16
-title: moon v1.16 - ???
+title: moon v1.16 - Bun support, Rust improvements, and more!
 authors: [milesj]
-tags: [bun]
+tags: [bun, rust, toolchain]
 # image: ./img/moon/v1.15.png
 ---
 
-???
+With this release, we've focused on requests from the community, instead of migration work or new
+features.
 
 <!--truncate-->
 
@@ -53,6 +54,30 @@ When using Bun, the following integrations are applied:
 > supported language/platform in the toolchain, but it does pave the way for this to happen! Also
 > note that Bun _is not supported on Windows_!
 
+## Configure Rust components and targets
+
+We've had Rust tier 2 and 3 support for quite a while now, but there was a big missing piece: the
+ability to configure and install additional
+[components](https://rust-lang.github.io/rustup/concepts/components.html) and
+[targets](https://doc.rust-lang.org/nightly/rustc/platform-support.html) for the current toolchain.
+In this release, we've added support for both!
+
+Simply configure the [`rust.components`](/docs/config/toolchain#components) or
+[`rust.targets`](/docs/config/toolchain#targets) settings in
+[`.moon/toolchain.yml`](/docs/config/toolchain), and moon will automatically install them when the
+pipeline is ran. This functionality uses the same hashing implementation as `rust.bins`, so will
+only install the first time, and again if the configuration changes (or the cache is removed).
+
+```yaml title=".moon/toolchain.yml"
+rust:
+  version: '1.73.0'
+  components:
+    - 'clippy'
+    - 'rust-analyzer'
+  targets:
+    - 'wasm32-wasi'
+```
+
 ## Force toolchain to use global binaries
 
 Our [toolchain](/docs/concepts/toolchain) is great for local development, as it ensures all
@@ -77,8 +102,8 @@ MOON_TOOLCHAIN_FORCE_GLOBALS=true moon ci
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.16.0) for a full list
 of changes.
 
-- Added a new [project type `automation`](/docs/config/project#type), for systems like E2E and
+- Added a new [project type `automation`](/docs/config/project#type), for projects like E2E and
   integration testing.
-- Updated all npx calls to use a package manager equivalent, for example: `yarn dlx`, `pnpm dlx`,
+- Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,
   `bunx`.
 - Updated to support Yarn v4.

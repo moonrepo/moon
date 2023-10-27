@@ -65,7 +65,7 @@ export interface PartialProjectToolchainConfig {
 	typescript?: PartialProjectToolchainTypeScriptConfig | null;
 }
 
-export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
+export type ProjectType = 'application' | 'e2e' | 'library' | 'tool' | 'unknown';
 
 export interface PartialProjectWorkspaceInheritedTasksConfig {
 	exclude?: string[] | null;

@@ -22,8 +22,21 @@ if [[ "$NIGHTLY" == "true" ]]; then
 	for package in packages/*; do
 		echo "$package"
 		cd "./$package" || exit
-		pkg=$(jq ".version += \"$preid\"" package.json)
-		echo "$pkg" > package.json
+
+		# For the cli package, replace itself and all dep versions
+		if [[ "$package" == *"cli"* ]]; then
+			baseVersion=$(jq -r ".version" package.json)
+			version="$baseVersion$preid"
+
+			pkg=$(jq ".version += \"$preid\"" package.json)
+			echo "${pkg//^$baseVersion/$version}" > package.json
+
+		# For core packages, append the preid to the version
+		else
+			pkg=$(jq ".version += \"$preid\"" package.json)
+			echo "$pkg" > package.json
+		fi
+
 		cd ../..
 	done
 fi

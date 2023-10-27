@@ -14,6 +14,10 @@ use proto_core::{
 use std::env;
 use std::path::Path;
 
+pub fn use_global_tool_on_path() -> bool {
+    env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|v| v == "1" || v == "true" || v == "on")
+}
+
 /// We need to ensure that our toolchain binaries are executed instead of
 /// other binaries of the same name. Otherwise, tooling like nvm will
 /// intercept execution and break our processes. We can work around this

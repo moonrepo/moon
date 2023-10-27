@@ -503,7 +503,7 @@ impl Platform for RustPlatform {
                 } else if global_bin_path.exists() {
                     command = Command::new(&global_bin_path);
 
-                    // Not found so error!
+                    // Not found, so error!
                 } else {
                     return Err(ToolError::MissingBinary(
                         "Cargo binary".into(),

@@ -53,6 +53,7 @@ jobs:
         with:
           bins: cargo-make
           components: clippy
+      - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run linter
         run: cargo make lint
   test:

@@ -20,4 +20,3 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-criterion = { workspace = true }

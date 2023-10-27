@@ -4,12 +4,7 @@ use regex::Regex;
 use schematic::{SchemaType, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
-use std::{
-    borrow::Borrow,
-    fmt::{self, Display},
-    ops::Deref,
-    str::FromStr,
-};
+use std::{borrow::Borrow, fmt, ops::Deref, str::FromStr};
 use thiserror::Error;
 
 pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
@@ -26,7 +21,7 @@ pub static ID_CLEAN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^0-9A-Za-z/\._-]+"
 #[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.), and must start with an alpha character.", .0.style(Style::Id))]
 pub struct IdError(String);
 
-#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Id(String);
 
 impl Id {
@@ -53,7 +48,13 @@ impl Id {
     }
 }
 
-impl Display for Id {
+impl fmt::Debug for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for Id {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }

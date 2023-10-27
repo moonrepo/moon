@@ -16,7 +16,7 @@ use serde::Serialize;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use tracing::{debug, trace};
+use tracing::debug;
 
 pub type GraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
@@ -310,20 +310,21 @@ impl ProjectGraph {
                 let project = &node.weight;
 
                 if project.matches_criteria(query)? {
-                    debug!("{} did match the criteria", color::id(&project.id));
-
                     project_ids.push(project.id.clone());
-                } else {
-                    trace!(
-                        "{} did {} match the criteria",
-                        color::id(&project.id),
-                        color::failure("NOT"),
-                    );
                 }
             }
 
             // Sort so that the order is deterministic
             project_ids.sort();
+
+            debug!(
+                projects = ?project_ids
+                    .iter()
+                    .map(|id| id.as_str())
+                    .collect::<Vec<_>>(),
+                "Found {} matches",
+                project_ids.len(),
+            );
 
             Ok(project_ids)
         })

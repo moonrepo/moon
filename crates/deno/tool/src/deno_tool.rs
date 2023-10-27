@@ -1,6 +1,6 @@
 use moon_config::DenoConfig;
 use moon_platform_runtime::RuntimeReq;
-use moon_tool::{async_trait, Tool};
+use moon_tool::{async_trait, use_global_tool_on_path, Tool};
 use proto_core::ProtoEnvironment;
 use std::path::PathBuf;
 
@@ -22,7 +22,7 @@ impl DenoTool {
             global: true,
         };
 
-        if req.is_global() {
+        if use_global_tool_on_path() || req.is_global() {
             deno.global = true;
             // node.config.version = None;
         } else {

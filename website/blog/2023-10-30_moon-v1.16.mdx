@@ -6,8 +6,7 @@ tags: [bun]
 # image: ./img/moon/v1.15.png
 ---
 
-In this release, we've taken the next step in modernizing our action pipeline, by rewriting the
-dependency graph.
+???
 
 <!--truncate-->
 
@@ -53,6 +52,25 @@ When using Bun, the following integrations are applied:
 > This change _only_ adds support for Bun as a package manager for Node.js. It does not add Bun as a
 > supported language/platform in the toolchain, but it does pave the way for this to happen! Also
 > note that Bun _is not supported on Windows_!
+
+## Force toolchain to use global binaries
+
+Our [toolchain](/docs/concepts/toolchain) is great for local development, as it ensures all
+developers and machines are running the exact versions of tools required for the workspace. However,
+it becomes overkill for other environments like CI and Docker where the environment has been
+pre-configured.
+
+To avoid the unnecessary overhead of download and installing tools in the toolchain, we're
+introducing the `MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable. When provided, this will:
+
+- Disable downloading and installing tools (will still download the WASM plugins).
+- Execute all tool commands using the global binary available on `PATH`.
+
+```shell
+MOON_TOOLCHAIN_FORCE_GLOBALS=true moon ci
+```
+
+> We're looking into ways to automate this process, but for now, this is the best solution.
 
 ## Other changes
 

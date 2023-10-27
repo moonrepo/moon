@@ -1,5 +1,5 @@
 use crate::{
-    bins_hash::RustBinsHash, find_cargo_lock, get_cargo_home, target_hash::RustTargetHash,
+    find_cargo_lock, get_cargo_home, target_hash::RustTargetHash, toolchain_hash::RustToolchainHash,
 };
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
@@ -381,11 +381,11 @@ impl Platform for RustPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        if !self.config.bins.is_empty() {
-            hasher.hash_content(RustBinsHash {
-                bins: &self.config.bins,
-            })?;
-        }
+        hasher.hash_content(RustToolchainHash {
+            bins: &self.config.bins,
+            components: &self.config.components,
+            targets: &self.config.targets,
+        })?;
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
         // However, will leave it around incase a new cargo command is added in the future.

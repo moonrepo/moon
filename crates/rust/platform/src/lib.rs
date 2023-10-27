@@ -1,7 +1,7 @@
-mod bins_hash;
 mod manifest_hash;
 mod rust_platform;
 mod target_hash;
+mod toolchain_hash;
 
 pub use rust_platform::*;
 

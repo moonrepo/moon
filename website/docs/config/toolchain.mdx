@@ -518,7 +518,7 @@ is _not defined_, the global `cargo`, `rustc`, and other binaries will be used.
 
 ```yaml title=".moon/toolchain.yml" {2}
 rust:
-  version: '1.69'
+  version: '1.69.0'
 ```
 
 > Version can also be defined with [`.prototools`](../proto/config).
@@ -555,6 +555,21 @@ tasks:
     command: 'nextest run --workspace'
 ```
 
+### `components`<VersionLabel version="1.16.0" />
+
+<HeadingApiLink to="/api/types/interface/RustConfig#components" />
+
+A list of additional [components](https://rust-lang.github.io/rustup/concepts/components.html) to
+automatically install with `rustup` for the current toolchain. Will be installed when the pipeline
+is first ran, and subsequently when configuration changes.
+
+```yaml title=".moon/toolchain.yml" {2-4}
+rust:
+  components:
+    - 'rust-docs'
+    - 'rust-analyzer'
+```
+
 ### `syncToolchainConfig`
 
 <HeadingApiLink to="/api/types/interface/RustConfig#syncToolchainConfig" />
@@ -578,3 +593,21 @@ To demonstrate this, the settings above would sync the following file:
 [toolchain]
 channel = "1.69.0"
 ```
+
+### `targets`<VersionLabel version="1.16.0" />
+
+<HeadingApiLink to="/api/types/interface/RustConfig#targets" />
+
+A list of additional [targets](https://rust-lang.github.io/rustup/cross-compilation.html) to
+automatically install with `rustup` for the current toolchain. Will be installed when the pipeline
+is first ran, and subsequently when configuration changes.
+
+```yaml title=".moon/toolchain.yml" {2-4}
+rust:
+  targets:
+    - 'aarch64-unknown-linux-gnu'
+    - 'wasm32-wasi'
+```
+
+> Targets are currently _not scoped_ based on operating system, and will be installed for all
+> machines.

@@ -483,6 +483,19 @@
             }
           ]
         },
+        "components": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "plugin": {
           "anyOf": [
             {
@@ -497,6 +510,19 @@
           "anyOf": [
             {
               "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "targets": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             {
               "type": "null"

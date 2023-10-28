@@ -1,0 +1,30 @@
+---
+slug: proto-v0.21
+title: proto v0.21 - Linux x64 musl support
+authors: [milesj]
+tags: [proto, linux, musl]
+# image: ./img/proto/v0.19.png
+---
+
+This is a very small release that primarily adds support for the Linux x64 musl target.
+
+<!--truncate-->
+
+Thanks to [cargo-dist](https://github.com/axodotdev/cargo-dist), we can now build and distribute
+musl binaries with relative ease. When building the binary, libraries are statically linked to
+ensure that the binary can run on any Linux distribution.
+
+You can download the binary from the official
+[GitHub release](https://github.com/moonrepo/proto/releases/tag/v0.21.0) or by running the
+[Bash installation script](/docs/proto/install#linux-macos-wsl). In the future, we plan to support
+arm64 builds for both Linux gnu and musl.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.21.0) for a full list
+of changes.
+
+- Improved file and directory locking. Will now work correctly across processes and signals,
+  especially for those killed/dropped.
+- Updated WASM functions to use explicit Rust enum types for versions to properly handle all
+  variations (version, alias, requirement, range).

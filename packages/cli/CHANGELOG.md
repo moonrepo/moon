@@ -34,8 +34,9 @@
 
 #### ⚙️ Internal
 
-- Updated to proto v0.21.0.
 - Updated dependencies.
+- Updated to proto v0.21.0.
+- Pinned proto plugins to a fixed version instead of using latest.
 
 ## 1.15.4
 

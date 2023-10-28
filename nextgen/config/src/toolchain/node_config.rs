@@ -141,10 +141,37 @@ pub struct NodeConfig {
 }
 
 impl NodeConfig {
-    inherit_tool_required!(NpmConfig, npm, "npm", inherit_proto_npm);
-    inherit_tool!(BunpmConfig, bun, "bun", inherit_proto_bun);
-    inherit_tool!(PnpmConfig, pnpm, "pnpm", inherit_proto_pnpm);
-    inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
+    inherit_tool_required!(
+        NpmConfig,
+        npm,
+        "npm",
+        inherit_proto_npm,
+        "https://github.com/moonrepo/node-plugin/releases/download/v0.4.3/node_depman_plugin.wasm"
+    );
+
+    inherit_tool!(
+        BunpmConfig,
+        bun,
+        "bun",
+        inherit_proto_bun,
+        "https://github.com/moonrepo/bun-plugin/releases/download/v0.4.0/bun_plugin.wasm"
+    );
+
+    inherit_tool!(
+        PnpmConfig,
+        pnpm,
+        "pnpm",
+        inherit_proto_pnpm,
+        "https://github.com/moonrepo/node-plugin/releases/download/v0.4.3/node_depman_plugin.wasm"
+    );
+
+    inherit_tool!(
+        YarnConfig,
+        yarn,
+        "yarn",
+        inherit_proto_yarn,
+        "https://github.com/moonrepo/node-plugin/releases/download/v0.4.3/node_depman_plugin.wasm"
+    );
 
     pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         match &self.package_manager {
@@ -175,7 +202,9 @@ impl NodeConfig {
         };
 
         if self.plugin.is_none() {
-            self.plugin = proto_tools.plugins.get("node").cloned();
+            self.plugin = Some(PluginLocator::SourceUrl {
+                url: "https://github.com/moonrepo/node-plugin/releases/download/v0.4.3/node_plugin.wasm".into()
+            });
         }
 
         Ok(())

@@ -23,6 +23,11 @@
   `bunx`.
 - Updated to support Yarn v4.
 
+#### ⚙️ Internal
+
+- Updated to proto v0.21.0.
+- Updated dependencies.
+
 ## 1.15.4
 
 #### 🐞 Fixes

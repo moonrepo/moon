@@ -651,7 +651,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into()),]
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
             );
             assert!(task.flags.empty_inputs);
 
@@ -699,7 +699,7 @@ mod tasks_builder {
 
             assert_eq!(
                 task.inputs,
-                vec![InputPath::WorkspaceGlob(".moon/*.yml".into()),]
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
             );
             assert!(task.flags.empty_inputs);
         }
@@ -825,7 +825,7 @@ mod tasks_builder {
 
             let task = tasks.get("deps").unwrap();
 
-            assert_eq!(task.deps, vec![Target::parse("local:build").unwrap(),]);
+            assert_eq!(task.deps, vec![Target::parse("local:build").unwrap()]);
 
             let task = tasks.get("env").unwrap();
 
@@ -850,7 +850,35 @@ mod tasks_builder {
 
             let task = tasks.get("outputs").unwrap();
 
-            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("local".into()),]);
+            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("local".into())]);
+        }
+
+        #[tokio::test]
+        async fn replace_empty() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "merge-replace-empty/moon.yml").await;
+
+            let task = tasks.get("args").unwrap();
+
+            assert!(task.args.is_empty());
+
+            let task = tasks.get("deps").unwrap();
+
+            assert!(task.deps.is_empty());
+
+            let task = tasks.get("env").unwrap();
+
+            assert!(task.env.is_empty());
+
+            let task = tasks.get("inputs").unwrap();
+
+            // inherited
+            assert_eq!(task.inputs.len(), 2);
+            assert!(task.flags.empty_inputs);
+
+            let task = tasks.get("outputs").unwrap();
+
+            assert!(task.outputs.is_empty());
         }
     }
 

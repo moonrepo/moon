@@ -30,6 +30,7 @@
 
 - Fixed an issue where `moon ci` and `git` would fail if there's only 1 commit on the base branch.
 - Fixed an issue where `runInCI` was not respected when a task is a dependency of an affected task.
+- Fixed an issue where the task `replace` merge strategy would not apply for empty values.
 
 #### ⚙️ Internal
 

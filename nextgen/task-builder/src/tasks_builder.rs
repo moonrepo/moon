@@ -352,9 +352,7 @@ impl<'proj> TasksBuilder<'proj> {
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
         for args in args_sets {
-            if !args.is_empty() {
-                task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
-            }
+            task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
         }
 
         task.env = self.build_env(&target)?;
@@ -366,22 +364,18 @@ impl<'proj> TasksBuilder<'proj> {
         for link in &chain {
             let config = link.config;
 
-            if !config.deps.is_empty() {
-                task.deps = self.merge_vec(
-                    task.deps,
-                    if link.inherited {
-                        self.apply_filters_to_deps(config.deps.to_owned())
-                    } else {
-                        config.deps.to_owned()
-                    },
-                    task.options.merge_deps,
-                    true,
-                );
-            }
+            task.deps = self.merge_vec(
+                task.deps,
+                if link.inherited {
+                    self.apply_filters_to_deps(config.deps.to_owned())
+                } else {
+                    config.deps.to_owned()
+                },
+                task.options.merge_deps,
+                true,
+            );
 
-            if !config.env.is_empty() {
-                task.env = self.merge_map(task.env, config.env.to_owned(), task.options.merge_env);
-            }
+            task.env = self.merge_map(task.env, config.env.to_owned(), task.options.merge_env);
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
             if !config.global_inputs.is_empty() {
@@ -390,8 +384,15 @@ impl<'proj> TasksBuilder<'proj> {
 
             // Inherit local inputs, which are user configured, and keep track of the total
             if let Some(inputs) = &config.inputs {
-                configured_inputs += inputs.len();
                 has_configured_inputs = true;
+
+                if inputs.is_empty()
+                    && matches!(task.options.merge_inputs, TaskMergeStrategy::Replace)
+                {
+                    configured_inputs = 0;
+                } else {
+                    configured_inputs += inputs.len();
+                }
 
                 task.inputs = self.merge_vec(
                     task.inputs,
@@ -742,12 +743,20 @@ impl<'proj> TasksBuilder<'proj> {
     {
         match strategy {
             TaskMergeStrategy::Append => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 let mut map = FxHashMap::default();
                 map.extend(base);
                 map.extend(next);
                 map
             }
             TaskMergeStrategy::Prepend => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 let mut map = FxHashMap::default();
                 map.extend(next);
                 map.extend(base);
@@ -779,10 +788,18 @@ impl<'proj> TasksBuilder<'proj> {
 
         match strategy {
             TaskMergeStrategy::Append => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 append(base, true);
                 append(next, false);
             }
             TaskMergeStrategy::Prepend => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 append(next, true);
                 append(base, false);
             }

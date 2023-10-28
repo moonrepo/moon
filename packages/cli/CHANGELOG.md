@@ -14,10 +14,13 @@
 
 #### 🚀 Updates
 
-- Added Bun as a supported Node.js package manager: `packageManager: 'bun'`.
+- Added Bun as a supported Node.js package manager: `node.packageManager: 'bun'`.
 - Added components and targets support for the Rust toolchain.
   - Added `rust.components` and `rust.targets` settings to `.moon/toolchain.yml`.
   - Will automatically be installed with `rustup` when the pipeline is ran.
+- Added an improved task inheritance chain resolver.
+  - To fallback to the previous behavior, set `experiments.interweavedTaskInheritance: false` in
+    `.moon/workspace.yml`.
 - Added a new project type `automation`, for projects like E2E and integration testing.
 - Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,
   `bunx`.

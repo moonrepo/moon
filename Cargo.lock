@@ -3565,6 +3565,7 @@ dependencies = [
  "moon_common",
  "once_cell",
  "rustc-hash",
+ "system_env",
  "thiserror",
  "tokio",
  "tracing",
@@ -4025,6 +4026,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
+ "system_env",
  "tokio",
  "tracing",
 ]

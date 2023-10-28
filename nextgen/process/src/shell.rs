@@ -3,19 +3,8 @@ use std::{env, ffi::OsStr};
 
 #[cached]
 #[inline]
-fn is_program_on_path(program_name: String) -> bool {
-    let Some(system_path) = env::var_os("PATH") else {
-        return false;
-    };
-
-    for path_dir in env::split_paths(&system_path) {
-        #[allow(clippy::needless_borrow)]
-        if path_dir.join(&program_name).exists() {
-            return true;
-        }
-    }
-
-    false
+fn is_command_on_path(name: String) -> bool {
+    system_env::is_command_on_path(&name)
 }
 
 #[inline]
@@ -42,13 +31,12 @@ pub struct Shell {
 #[inline]
 pub fn create_shell() -> Shell {
     Shell {
-        bin: if is_program_on_path("pwsh.exe".into()) {
+        bin: if is_command_on_path("pwsh".into()) {
             "pwsh.exe".into()
         } else {
             "powershell.exe".into()
         },
         args: vec![
-            "-NonInteractive".into(),
             "-NoLogo".into(),
             "-Command".into(),
             // We'll pass the command args via stdin, so that paths with special

@@ -74,6 +74,7 @@ starbase_utils = { version = "0.3.6", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
+system_env = "0.1.2"
 tera = { version = "1.19.1", features = ["preserve_order"] }
 thiserror = "1.0.50"
 tokio = { version = "1.33.0", default-features = false, features = [

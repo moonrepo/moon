@@ -3,7 +3,6 @@ use moon_config::VcsConfig;
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
-use std::env;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -17,19 +16,15 @@ impl ShellType {
     // Determine whether we should use Bash or PowerShell as the hook file format.
     // On Unix machines, always use Bash. On Windows, scan PATH for applicable PowerShell.
     pub fn detect() -> Self {
-        if cfg!(unix) {
-            return ShellType::Bash;
-        }
+        #[cfg(not(windows))]
+        return ShellType::Bash;
 
-        if let Some(path_list) = env::var_os("PATH") {
-            for path_dir in env::split_paths(&path_list) {
-                if path_dir.join("pwsh").exists() || path_dir.join("pwsh.exe").exists() {
-                    return ShellType::Pwsh;
-                }
-            }
+        #[cfg(windows)]
+        if system_env::is_command_on_path("pwsh") {
+            ShellType::Pwsh
+        } else {
+            ShellType::PowerShell
         }
-
-        ShellType::PowerShell
     }
 }
 
@@ -141,7 +136,7 @@ impl<'app> HooksGenerator<'app> {
                 self.create_file(
                     &external_path,
                     format!(
-                        "#!/bin/sh\n{} -NoProfile -ExecutionPolicy Bypass -File \"{} $1 $2 $3\"",
+                        "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{} $1 $2 $3\"",
                         powershell_exe, external_command
                     ),
                 )?;

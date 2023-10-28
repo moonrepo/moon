@@ -4,10 +4,29 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Fri, 20 Oct 2023 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 27 Oct 2023 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[proto v0.21 - Linux x64 musl support]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.21</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.21</guid>
+            <pubDate>Fri, 27 Oct 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[This is a very small release that primarily adds support for the Linux x64 musl target.]]></description>
+            <content:encoded><![CDATA[<p>This is a very small release that primarily adds support for the Linux x64 musl target.</p><p>Thanks to <a href="https://github.com/axodotdev/cargo-dist" target="_blank" rel="noopener noreferrer">cargo-dist</a>, we can now build and distribute
+musl binaries with relative ease. When building the binary, libraries are statically linked to
+ensure that the binary can run on any Linux distribution.</p><p>You can download the binary from the official
+<a href="https://github.com/moonrepo/proto/releases/tag/v0.21.0" target="_blank" rel="noopener noreferrer">GitHub release</a> or by running the
+<a href="/docs/proto/install#linux-macos-wsl">Bash installation script</a>. In the future, we plan to support
+arm64 builds for both Linux gnu and musl.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2><p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.21.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p><ul><li>Improved file and directory locking. Will now work correctly across processes and signals,
+especially for those killed/dropped.</li><li>Updated WASM functions to use explicit Rust enum types for versions to properly handle all
+variations (version, alias, requirement, range).</li></ul>]]></content:encoded>
+            <category>proto</category>
+            <category>linux</category>
+            <category>musl</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.20 - New shims and binaries management]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.20</link>

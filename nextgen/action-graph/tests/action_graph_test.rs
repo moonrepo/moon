@@ -57,7 +57,7 @@ mod action_graph {
     use super::*;
 
     #[tokio::test]
-    #[should_panic(expected = "A dependency cycle has been detected for RunTask(deps:cycle2).")]
+    #[should_panic(expected = "A dependency cycle has been detected for RunTask(deps:cycle2) →")]
     async fn errors_on_cycle() {
         let sandbox = create_sandbox("tasks");
         let container = ActionGraphContainer::new(sandbox.path()).await;

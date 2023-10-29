@@ -18,10 +18,15 @@
 - Added components and targets support for the Rust toolchain.
   - Added `rust.components` and `rust.targets` settings to `.moon/toolchain.yml`.
   - Will automatically be installed with `rustup` when the pipeline is ran.
+- Added a `MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable, that will force all toolchain tools
+  to use the global binary available on `PATH`, instead of downloading and installing.
 - Added an improved task inheritance chain resolver.
+  - Global and local tasks are now interweaved within the chain, where as previously global was
+    built first, then local.
   - To fallback to the previous behavior, set `experiments.interweavedTaskInheritance: false` in
     `.moon/workspace.yml`.
 - Added a new project type `automation`, for projects like E2E and integration testing.
+- Updated action graph cycle detection to list all nodes in the cycle (when detectable).
 - Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,
   `bunx`.
 - Updated to support Yarn v4.

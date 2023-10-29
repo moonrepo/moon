@@ -1,0 +1,10 @@
+tasks:
+  parent:
+    command: 'global-parent'
+    env:
+      VAR1: 'global-parent'
+
+  child:
+    extends: 'parent'
+    env:
+      VAR2: 'global-child'

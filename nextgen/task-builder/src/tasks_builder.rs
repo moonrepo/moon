@@ -67,16 +67,17 @@ fn extract_config<'builder, 'proj>(
     task_id: &'builder Id,
     local_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
     global_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-    global_only: bool,
 ) -> miette::Result<Vec<ConfigChain<'proj>>> {
-    let mut local_stack = vec![];
-    let mut global_stack = vec![];
+    let mut stack = vec![];
 
-    if !global_only {
-        if let Some(config) = local_tasks.get(task_id) {
+    let mut extract = |tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+                       inherited: bool|
+     -> miette::Result<()> {
+        if let Some(config) = tasks.get(task_id) {
+            stack.push(ConfigChain { config, inherited });
+
             if let Some(extend_task_id) = &config.extends {
-                let extended_stack =
-                    extract_config(extend_task_id, local_tasks, global_tasks, false)?;
+                let extended_stack = extract_config(extend_task_id, local_tasks, global_tasks)?;
 
                 if extended_stack.is_empty() {
                     return Err(TasksBuilderError::UnknownExtendsSource {
@@ -85,43 +86,18 @@ fn extract_config<'builder, 'proj>(
                     }
                     .into());
                 } else {
-                    local_stack.extend(extended_stack);
+                    stack.extend(extended_stack);
                 }
-            }
-
-            local_stack.push(ConfigChain {
-                config,
-                inherited: false,
-            });
-        }
-    }
-
-    if let Some(config) = global_tasks.get(task_id) {
-        if let Some(extend_task_id) = &config.extends {
-            let extended_stack = extract_config(extend_task_id, local_tasks, global_tasks, true)?;
-
-            if extended_stack.is_empty() {
-                return Err(TasksBuilderError::UnknownExtendsSource {
-                    source_id: task_id.to_owned(),
-                    target_id: extend_task_id.to_owned(),
-                }
-                .into());
-            } else {
-                global_stack.extend(extended_stack);
             }
         }
 
-        global_stack.push(ConfigChain {
-            config,
-            inherited: true,
-        });
-    }
+        Ok(())
+    };
 
-    let mut configs = vec![];
-    configs.extend(global_stack);
-    configs.extend(local_stack);
+    extract(local_tasks, false)?;
+    extract(global_tasks, true)?;
 
-    Ok(configs)
+    Ok(stack)
 }
 
 #[derive(Debug)]
@@ -315,7 +291,7 @@ impl<'proj> TasksBuilder<'proj> {
         );
 
         let mut task = Task::default();
-        let chain = self.get_config_inherit_chain(id)?;
+        let chain = self.get_config_inherit_chain(id, true)?;
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -499,7 +475,7 @@ impl<'proj> TasksBuilder<'proj> {
         };
 
         let configs = self
-            .get_config_inherit_chain(id)?
+            .get_config_inherit_chain(id, false)?
             .iter()
             .map(|link| &link.config.options)
             .collect::<Vec<_>>();
@@ -675,7 +651,11 @@ impl<'proj> TasksBuilder<'proj> {
         Ok((command, args))
     }
 
-    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
+    fn get_config_inherit_chain(
+        &self,
+        id: &Id,
+        _inspect: bool,
+    ) -> miette::Result<Vec<ConfigChain>> {
         let mut configs = vec![];
 
         if self.context.legacy_task_inheritance {
@@ -703,12 +683,10 @@ impl<'proj> TasksBuilder<'proj> {
                 false,
             )?;
         } else {
-            configs.extend(extract_config(
-                id,
-                &self.local_tasks,
-                &self.global_tasks,
-                false,
-            )?);
+            let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
+            stack.reverse();
+
+            configs.extend(stack);
         }
 
         Ok(configs)

@@ -215,8 +215,9 @@ Enable or disable experiments that alter core functionality.
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#interweavedTaskInheritance" />
 
-Enables legacy task inheritance behavior where global and local tasks were built separately before
-merging. The modern behavior builds them in sequence as an interweaved chain.
+Enables the new interweaved task inheritance behavior where global and local tasks are interweaved
+throughout the inheritance and extends chain. The legacy behavior would build global and local tasks
+separately, then merge them. Defaults to `true`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:

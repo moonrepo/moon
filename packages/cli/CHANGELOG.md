@@ -21,6 +21,8 @@
 - Added a `MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable, that will force all toolchain tools
   to use the global binary available on `PATH`, instead of downloading and installing.
 - Added an improved task inheritance chain resolver.
+  - Global and local tasks are now interweaved within the chain, where as previously global was
+    built first, then local.
   - To fallback to the previous behavior, set `experiments.interweavedTaskInheritance: false` in
     `.moon/workspace.yml`.
 - Added a new project type `automation`, for projects like E2E and integration testing.

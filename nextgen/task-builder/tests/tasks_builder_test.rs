@@ -1351,5 +1351,33 @@ mod tasks_builder {
             assert_eq!(task.command, "lint");
             assert_eq!(task.args, vec!["./src", "--fix", "--bail"]);
         }
+
+        #[tokio::test]
+        async fn can_interweave_global_and_local_extends() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_config(
+                sandbox.path(),
+                "extends-interweave",
+                ProjectConfig::load(
+                    sandbox.path(),
+                    sandbox.path().join("extends-interweave/moon.yml"),
+                )
+                .unwrap(),
+                ToolchainConfig::default(),
+                Some("global-interweave"),
+            )
+            .await;
+            let task = tasks.get("child").unwrap();
+
+            assert_eq!(task.command, "global-parent");
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("VAR2".into(), "global-child".into()),
+                    ("VAR3".into(), "local-child".into()),
+                    ("VAR1".into(), "local-parent".into()),
+                ])
+            )
+        }
     }
 }

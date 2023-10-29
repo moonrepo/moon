@@ -562,6 +562,32 @@ mod action_graph {
 
             assert_snapshot!(graph.to_dot());
         }
+
+        #[tokio::test]
+        async fn includes_dependents_for_ci() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("deps").unwrap();
+            let task = project.get_task("base").unwrap();
+
+            builder
+                .run_task(
+                    &project,
+                    task,
+                    &RunRequirements {
+                        ci: true,
+                        dependents: true,
+                        ..RunRequirements::default()
+                    },
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
     }
 
     mod run_task_by_target {

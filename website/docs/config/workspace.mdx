@@ -211,6 +211,18 @@ tags: ['react']
 
 Enable or disable experiments that alter core functionality.
 
+### `interweavedTaskInheritance`
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#interweavedTaskInheritance" />
+
+Enables legacy task inheritance behavior where global and local tasks were built separately before
+merging. The modern behavior builds them in sequence as an interweaved chain.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  interweavedTaskInheritance: false
+```
+
 ### `taskOutputBoundaries`
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#taskOutputBoundaries" />

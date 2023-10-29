@@ -16,6 +16,7 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
+system_env = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

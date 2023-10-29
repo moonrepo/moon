@@ -524,7 +524,21 @@ impl Vcs for Git {
             revision
         };
 
-        self.get_touched_files_between_revisions(format!("{revision}~1").as_str(), revision)
+        // If there's only 1 commit on the revision,
+        // then the diff command will error. So let's
+        // extract the commit count and handle accordingly.
+        let output = self
+            .process
+            .run(["rev-list", "--count", revision], true)
+            .await?;
+
+        let prev_revision = if output == "0" || output.is_empty() {
+            revision.to_owned()
+        } else {
+            format!("{revision}~1")
+        };
+
+        self.get_touched_files_between_revisions(&prev_revision, revision)
             .await
     }
 

@@ -23,7 +23,7 @@ struct ConfigChain<'proj> {
 }
 
 // This is a standalone function as recursive closures are not possible!
-fn extract_config<'builder, 'proj>(
+fn legacy_extract_config<'builder, 'proj>(
     configs: &'builder mut Vec<ConfigChain<'proj>>,
     task_id: &'builder Id,
     tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
@@ -47,7 +47,7 @@ fn extract_config<'builder, 'proj>(
                 .into());
             }
 
-            extract_config(
+            legacy_extract_config(
                 configs,
                 extend_task_id,
                 tasks,
@@ -63,6 +63,67 @@ fn extract_config<'builder, 'proj>(
     Ok(())
 }
 
+fn extract_config<'builder, 'proj>(
+    task_id: &'builder Id,
+    local_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    global_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    global_only: bool,
+) -> miette::Result<Vec<ConfigChain<'proj>>> {
+    let mut local_stack = vec![];
+    let mut global_stack = vec![];
+
+    if !global_only {
+        if let Some(config) = local_tasks.get(task_id) {
+            if let Some(extend_task_id) = &config.extends {
+                let extended_stack =
+                    extract_config(extend_task_id, local_tasks, global_tasks, false)?;
+
+                if extended_stack.is_empty() {
+                    return Err(TasksBuilderError::UnknownExtendsSource {
+                        source_id: task_id.to_owned(),
+                        target_id: extend_task_id.to_owned(),
+                    }
+                    .into());
+                } else {
+                    local_stack.extend(extended_stack);
+                }
+            }
+
+            local_stack.push(ConfigChain {
+                config,
+                inherited: false,
+            });
+        }
+    }
+
+    if let Some(config) = global_tasks.get(task_id) {
+        if let Some(extend_task_id) = &config.extends {
+            let extended_stack = extract_config(extend_task_id, local_tasks, global_tasks, true)?;
+
+            if extended_stack.is_empty() {
+                return Err(TasksBuilderError::UnknownExtendsSource {
+                    source_id: task_id.to_owned(),
+                    target_id: extend_task_id.to_owned(),
+                }
+                .into());
+            } else {
+                global_stack.extend(extended_stack);
+            }
+        }
+
+        global_stack.push(ConfigChain {
+            config,
+            inherited: true,
+        });
+    }
+
+    let mut configs = vec![];
+    configs.extend(global_stack);
+    configs.extend(local_stack);
+
+    Ok(configs)
+}
+
 #[derive(Debug)]
 pub struct DetectPlatformEvent {
     pub enabled_platforms: Vec<PlatformType>,
@@ -75,6 +136,7 @@ impl Event for DetectPlatformEvent {
 
 pub struct TasksBuilderContext<'proj> {
     pub detect_platform: &'proj Emitter<DetectPlatformEvent>,
+    pub legacy_task_inheritance: bool,
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
 }
@@ -290,9 +352,7 @@ impl<'proj> TasksBuilder<'proj> {
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
         for args in args_sets {
-            if !args.is_empty() {
-                task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
-            }
+            task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
         }
 
         task.env = self.build_env(&target)?;
@@ -304,22 +364,18 @@ impl<'proj> TasksBuilder<'proj> {
         for link in &chain {
             let config = link.config;
 
-            if !config.deps.is_empty() {
-                task.deps = self.merge_vec(
-                    task.deps,
-                    if link.inherited {
-                        self.apply_filters_to_deps(config.deps.to_owned())
-                    } else {
-                        config.deps.to_owned()
-                    },
-                    task.options.merge_deps,
-                    true,
-                );
-            }
+            task.deps = self.merge_vec(
+                task.deps,
+                if link.inherited {
+                    self.apply_filters_to_deps(config.deps.to_owned())
+                } else {
+                    config.deps.to_owned()
+                },
+                task.options.merge_deps,
+                true,
+            );
 
-            if !config.env.is_empty() {
-                task.env = self.merge_map(task.env, config.env.to_owned(), task.options.merge_env);
-            }
+            task.env = self.merge_map(task.env, config.env.to_owned(), task.options.merge_env);
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
             if !config.global_inputs.is_empty() {
@@ -328,8 +384,15 @@ impl<'proj> TasksBuilder<'proj> {
 
             // Inherit local inputs, which are user configured, and keep track of the total
             if let Some(inputs) = &config.inputs {
-                configured_inputs += inputs.len();
                 has_configured_inputs = true;
+
+                if inputs.is_empty()
+                    && matches!(task.options.merge_inputs, TaskMergeStrategy::Replace)
+                {
+                    configured_inputs = 0;
+                } else {
+                    configured_inputs += inputs.len();
+                }
 
                 task.inputs = self.merge_vec(
                     task.inputs,
@@ -615,29 +678,38 @@ impl<'proj> TasksBuilder<'proj> {
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
         let mut configs = vec![];
 
-        let mut extendable_tasks = FxHashMap::default();
-        extendable_tasks.extend(&self.global_tasks);
-        extendable_tasks.extend(&self.local_tasks);
+        if self.context.legacy_task_inheritance {
+            let mut extendable_tasks = FxHashMap::default();
+            extendable_tasks.extend(&self.global_tasks);
+            extendable_tasks.extend(&self.local_tasks);
 
-        // Inherit all global first
-        extract_config(
-            &mut configs,
-            id,
-            &self.global_tasks,
-            &extendable_tasks,
-            true,
-            false,
-        )?;
+            // Inherit all global first
+            legacy_extract_config(
+                &mut configs,
+                id,
+                &self.global_tasks,
+                &extendable_tasks,
+                true,
+                false,
+            )?;
 
-        // Then all local
-        extract_config(
-            &mut configs,
-            id,
-            &self.local_tasks,
-            &extendable_tasks,
-            false,
-            false,
-        )?;
+            // Then all local
+            legacy_extract_config(
+                &mut configs,
+                id,
+                &self.local_tasks,
+                &extendable_tasks,
+                false,
+                false,
+            )?;
+        } else {
+            configs.extend(extract_config(
+                id,
+                &self.local_tasks,
+                &self.global_tasks,
+                false,
+            )?);
+        }
 
         Ok(configs)
     }
@@ -671,12 +743,20 @@ impl<'proj> TasksBuilder<'proj> {
     {
         match strategy {
             TaskMergeStrategy::Append => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 let mut map = FxHashMap::default();
                 map.extend(base);
                 map.extend(next);
                 map
             }
             TaskMergeStrategy::Prepend => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 let mut map = FxHashMap::default();
                 map.extend(next);
                 map.extend(base);
@@ -708,10 +788,18 @@ impl<'proj> TasksBuilder<'proj> {
 
         match strategy {
             TaskMergeStrategy::Append => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 append(base, true);
                 append(next, false);
             }
             TaskMergeStrategy::Prepend => {
+                if next.is_empty() {
+                    return base;
+                }
+
                 append(next, true);
                 append(base, false);
             }

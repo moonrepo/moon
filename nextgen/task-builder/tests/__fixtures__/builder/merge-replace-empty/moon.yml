@@ -1,0 +1,27 @@
+tags: [merge]
+
+tasks:
+  args:
+    args: []
+    options:
+      mergeArgs: replace
+
+  deps:
+    deps: []
+    options:
+      mergeDeps: replace
+
+  env:
+    env: {}
+    options:
+      mergeEnv: replace
+
+  inputs:
+    inputs: []
+    options:
+      mergeInputs: replace
+
+  outputs:
+    outputs: []
+    options:
+      mergeOutputs: replace

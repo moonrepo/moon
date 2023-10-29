@@ -297,6 +297,10 @@ impl<'app> ProjectGraphBuilder<'app> {
             ProjectBuilderContext {
                 detect_language: &context.detect_language,
                 detect_platform: &context.detect_platform,
+                legacy_task_inheritance: !context
+                    .workspace_config
+                    .experiments
+                    .interweaved_task_inheritance,
                 root_project_id: self.root_project_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,

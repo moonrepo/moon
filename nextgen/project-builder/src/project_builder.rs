@@ -27,6 +27,7 @@ impl Event for DetectLanguageEvent {
 pub struct ProjectBuilderContext<'app> {
     pub detect_language: &'app Emitter<DetectLanguageEvent>,
     pub detect_platform: &'app Emitter<DetectPlatformEvent>,
+    pub legacy_task_inheritance: bool,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
     pub workspace_root: &'app Path,
@@ -353,6 +354,7 @@ impl<'app> ProjectBuilder<'app> {
             &self.platform,
             TasksBuilderContext {
                 detect_platform: self.context.detect_platform,
+                legacy_task_inheritance: self.context.legacy_task_inheritance,
                 toolchain_config: self.context.toolchain_config,
                 workspace_root: self.context.workspace_root,
             },

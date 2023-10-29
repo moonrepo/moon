@@ -18,6 +18,8 @@ export interface PartialConstraintsConfig {
 
 export interface PartialExperimentsConfig {
 	/** @default true */
+	interweavedTaskInheritance?: boolean | null;
+	/** @default true */
 	taskOutputBoundaries?: boolean | null;
 }
 
@@ -109,6 +111,8 @@ export interface ConstraintsConfig {
 }
 
 export interface ExperimentsConfig {
+	/** @default true */
+	interweavedTaskInheritance: boolean;
 	/** @default true */
 	taskOutputBoundaries: boolean;
 }

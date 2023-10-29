@@ -22,6 +22,7 @@
   - To fallback to the previous behavior, set `experiments.interweavedTaskInheritance: false` in
     `.moon/workspace.yml`.
 - Added a new project type `automation`, for projects like E2E and integration testing.
+- Updated action graph cycle detection to list all nodes in the cycle (when detectable).
 - Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,
   `bunx`.
 - Updated to support Yarn v4.

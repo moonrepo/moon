@@ -12,7 +12,7 @@ pub use typescript_config::*;
 
 #[macro_export]
 macro_rules! inherit_tool {
-    ($config:ident, $tool:ident, $key:expr, $method:ident) => {
+    ($config:ident, $tool:ident, $key:expr, $method:ident, $plugin:literal) => {
         pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
             if let Some(version) = proto_tools.tools.get($key) {
                 let config = self.$tool.get_or_insert_with($config::default);
@@ -24,7 +24,10 @@ macro_rules! inherit_tool {
 
             if let Some(config) = &mut self.$tool {
                 if config.plugin.is_none() {
-                    config.plugin = proto_tools.plugins.get($key).cloned();
+                    // config.plugin = proto_tools.plugins.get($key).cloned();
+                    config.plugin = Some(PluginLocator::SourceUrl {
+                        url: $plugin.into(),
+                    });
                 }
             }
 
@@ -35,7 +38,7 @@ macro_rules! inherit_tool {
 
 #[macro_export]
 macro_rules! inherit_tool_required {
-    ($config:ident, $tool:ident, $key:expr, $method:ident) => {
+    ($config:ident, $tool:ident, $key:expr, $method:ident, $plugin:literal) => {
         pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
             if let Some(version) = proto_tools.tools.get($key) {
                 if self.$tool.version.is_none() {
@@ -44,7 +47,10 @@ macro_rules! inherit_tool_required {
             }
 
             if self.$tool.plugin.is_none() {
-                self.$tool.plugin = proto_tools.plugins.get($key).cloned();
+                // self.$tool.plugin = proto_tools.plugins.get($key).cloned();
+                self.$tool.plugin = Some(PluginLocator::SourceUrl {
+                    url: $plugin.into(),
+                });
             }
 
             Ok(())
@@ -60,11 +66,12 @@ macro_rules! inherit_tool_without_version {
                 self.$tool = Some($config::default());
             }
 
-            if let Some(config) = self.$tool.as_mut() {
-                if config.plugin.is_none() {
-                    config.plugin = proto_tools.plugins.get($key).cloned();
-                }
-            }
+            // Not used yet!
+            // if let Some(config) = self.$tool.as_mut() {
+            //     if config.plugin.is_none() {
+            //         config.plugin = proto_tools.plugins.get($key).cloned();
+            //     }
+            // }
 
             Ok(())
         }

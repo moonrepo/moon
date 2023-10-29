@@ -102,6 +102,8 @@ MOON_TOOLCHAIN_FORCE_GLOBALS=true moon ci
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.16.0) for a full list
 of changes.
 
+- Added an improved task inheritance chain resolver. To fallback to the previous behavior, set
+  `experiments.interweavedTaskInheritance: false` in `.moon/workspace.yml`.
 - Added a new [project type `automation`](/docs/config/project#type), for projects like E2E and
   integration testing.
 - Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,

@@ -15,6 +15,7 @@ type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
 #[derive(Default)]
 pub struct RunRequirements<'app> {
+    pub ci: bool,
     pub dependents: bool,
     pub interactive: bool,
     pub touched_files: Option<&'app TouchedFilePaths>,
@@ -182,7 +183,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // And possibly dependents
         if reqs.dependents {
-            self.run_task_dependents(task)?;
+            self.run_task_dependents(task, reqs)?;
         }
 
         Ok(Some(index))
@@ -221,8 +222,15 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     // This is costly, is there a better way to do this?
-    pub fn run_task_dependents(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
+    pub fn run_task_dependents(
+        &mut self,
+        task: &Task,
+        parent_reqs: &RunRequirements<'app>,
+    ) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
+
+        // Create a new requirements object as we only want direct
+        // dependents, and shouldn't recursively create.
         let reqs = RunRequirements::default();
 
         if let TargetScope::Project(project_locator) = &task.target.scope {
@@ -230,11 +238,11 @@ impl<'app> ActionGraphBuilder<'app> {
 
             // From self project
             for dep_task in project.tasks.values() {
-                if dep_task.deps.contains(&task.target) {
-                    if dep_task.is_persistent() {
-                        continue;
-                    }
+                if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
+                    continue;
+                }
 
+                if dep_task.deps.contains(&task.target) {
                     if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
                         indices.push(index);
                     }
@@ -246,7 +254,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 let dep_project = self.project_graph.get(dependent_id)?;
 
                 for dep_task in dep_project.tasks.values() {
-                    if dep_task.is_persistent() {
+                    if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
                         continue;
                     }
 

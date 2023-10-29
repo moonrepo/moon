@@ -5,7 +5,7 @@ use crate::toolchain::*;
 use crate::validate::check_yml_extension;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
-use proto_core::ToolsConfig;
+use proto_core::{PluginLocator, ToolsConfig};
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
@@ -37,9 +37,21 @@ pub struct ToolchainConfig {
 impl ToolchainConfig {
     inherit_tool_without_version!(DenoConfig, deno, "deno", inherit_proto_deno);
 
-    inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
+    inherit_tool!(
+        RustConfig,
+        rust,
+        "rust",
+        inherit_proto_rust,
+        "https://github.com/moonrepo/rust-plugin/releases/download/v0.3.1/rust_plugin.wasm"
+    );
 
-    inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
+    inherit_tool!(
+        NodeConfig,
+        node,
+        "node",
+        inherit_proto_node,
+        "https://github.com/moonrepo/node-plugin/releases/download/v0.4.3/node_plugin.wasm"
+    );
 
     inherit_tool_without_version!(
         TypeScriptConfig,

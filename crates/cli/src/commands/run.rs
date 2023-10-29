@@ -142,6 +142,7 @@ pub async fn run_target(
     // Run targets, optionally based on affected files
     let mut primary_targets = vec![];
     let requirements = RunRequirements {
+        ci: is_ci(),
         dependents: args.dependents,
         interactive: args.interactive,
         touched_files: if should_run_affected {

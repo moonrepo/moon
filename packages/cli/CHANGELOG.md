@@ -14,19 +14,29 @@
 
 #### 🚀 Updates
 
-- Added Bun as a supported Node.js package manager: `packageManager: 'bun'`.
+- Added Bun as a supported Node.js package manager: `node.packageManager: 'bun'`.
 - Added components and targets support for the Rust toolchain.
   - Added `rust.components` and `rust.targets` settings to `.moon/toolchain.yml`.
   - Will automatically be installed with `rustup` when the pipeline is ran.
+- Added an improved task inheritance chain resolver.
+  - To fallback to the previous behavior, set `experiments.interweavedTaskInheritance: false` in
+    `.moon/workspace.yml`.
 - Added a new project type `automation`, for projects like E2E and integration testing.
 - Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,
   `bunx`.
 - Updated to support Yarn v4.
 
+#### 🐞 Fixes
+
+- Fixed an issue where `moon ci` and `git` would fail if there's only 1 commit on the base branch.
+- Fixed an issue where `runInCI` was not respected when a task is a dependency of an affected task.
+- Fixed an issue where the task `replace` merge strategy would not apply for empty values.
+
 #### ⚙️ Internal
 
-- Updated to proto v0.21.0.
 - Updated dependencies.
+- Updated to proto v0.21.0.
+- Pinned proto plugins to a fixed version instead of using latest.
 
 ## 1.15.4
 

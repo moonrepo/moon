@@ -250,6 +250,17 @@
       "title": "PartialExperimentsConfig",
       "type": "object",
       "properties": {
+        "interweavedTaskInheritance": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "taskOutputBoundaries": {
           "default": true,
           "anyOf": [

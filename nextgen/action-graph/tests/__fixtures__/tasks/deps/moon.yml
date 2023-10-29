@@ -1,6 +1,5 @@
 tasks:
   base: {}
-
   a:
     command: 'a'
   b:
@@ -8,24 +7,33 @@ tasks:
   c:
     command: 'd'
 
+  # Parallel deps
   parallel:
     deps: [c, a, b]
 
+  # Serial deps
   serial:
     deps: [b, c, a]
     options:
       runDepsInParallel: false
 
+  # Directed chain
   chain1:
     deps: ['chain2']
   chain2:
     deps: ['chain3']
   chain3: {}
 
-  internal:
-    deps: ['base']
-
+  # Cycle detection
   cycle1:
     deps: ['cycle2']
   cycle2:
     deps: ['cycle1']
+
+  # Dependents
+  parent1:
+    deps: ['base']
+  parent2:
+    deps: ['base']
+    options:
+      runInCI: false

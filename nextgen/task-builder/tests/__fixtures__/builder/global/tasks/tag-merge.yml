@@ -1,5 +1,6 @@
 tasks:
   args:
+    command: noop
     args: 'a b c'
   deps:
     deps: ['global:build']

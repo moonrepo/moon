@@ -1,5 +1,6 @@
 use crate::action_graph_error::ActionGraphError;
 use crate::action_node::ActionNode;
+use graph_cycles::Cycles;
 use moon_common::is_test_env;
 use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
@@ -92,6 +93,31 @@ pub struct ActionGraphIter<'graph> {
 
 impl<'graph> ActionGraphIter<'graph> {
     pub fn new(graph: &'graph GraphType) -> miette::Result<Self> {
+        // Detect any cycles first
+        let mut cycle: Vec<NodeIndex> = vec![];
+
+        graph.visit_cycles(|_, c| {
+            cycle.extend(c);
+            std::ops::ControlFlow::Break(())
+        });
+
+        if !cycle.is_empty() {
+            return Err(ActionGraphError::CycleDetected(
+                cycle
+                    .into_iter()
+                    .map(|index| {
+                        graph
+                            .node_weight(index)
+                            .map(|n| n.label())
+                            .unwrap_or_else(|| "(unknown)".into())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" → "),
+            )
+            .into());
+        }
+
+        // Then sort topologically
         match petgraph::algo::toposort(graph, None) {
             Ok(mut indices) => {
                 indices.reverse();
@@ -112,6 +138,8 @@ impl<'graph> ActionGraphIter<'graph> {
                     sender,
                 })
             }
+            // For some reason the topo sort can detect a cycle,
+            // that wasn't previously detected, so error...
             Err(cycle) => Err(ActionGraphError::CycleDetected(
                 graph
                     .node_weight(cycle.node_id())

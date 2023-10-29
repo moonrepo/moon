@@ -2004,6 +2004,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "graph-cycles"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a6ad932c6dd3cfaf16b66754a42f87bbeefd591530c4b6a8334270a7df3e853"
+dependencies = [
+ "ahash 0.8.3",
+ "petgraph",
+ "thiserror",
+]
+
+[[package]]
 name = "graphql-introspection-query"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2954,6 +2965,7 @@ dependencies = [
 name = "moon_action_graph"
 version = "0.1.0"
 dependencies = [
+ "graph-cycles",
  "miette",
  "moon_common",
  "moon_config",

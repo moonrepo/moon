@@ -18,6 +18,8 @@
 - Added components and targets support for the Rust toolchain.
   - Added `rust.components` and `rust.targets` settings to `.moon/toolchain.yml`.
   - Will automatically be installed with `rustup` when the pipeline is ran.
+- Added a `MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable, that will force all toolchain tools
+  to use the global binary available on `PATH`, instead of downloading and installing.
 - Added an improved task inheritance chain resolver.
   - To fallback to the previous behavior, set `experiments.interweavedTaskInheritance: false` in
     `.moon/workspace.yml`.

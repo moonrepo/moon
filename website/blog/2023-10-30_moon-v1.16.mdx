@@ -3,11 +3,11 @@ slug: moon-v1.16
 title: moon v1.16 - Bun support, Rust improvements, and more!
 authors: [milesj]
 tags: [bun, rust, toolchain]
-# image: ./img/moon/v1.15.png
+image: ./img/moon/v1.15.png
 ---
 
-With this release, we've focused on requests from the community, instead of migration work or new
-features.
+With this release, we've focused on requests from the community, instead of internal migration work
+or new features.
 
 <!--truncate-->
 
@@ -65,8 +65,9 @@ In this release, we've added support for both!
 Simply configure the [`rust.components`](/docs/config/toolchain#components) or
 [`rust.targets`](/docs/config/toolchain#targets) settings in
 [`.moon/toolchain.yml`](/docs/config/toolchain), and moon will automatically install them when the
-pipeline is ran. This functionality uses the same hashing implementation as `rust.bins`, so will
-only install the first time, and again if the configuration changes (or the cache is removed).
+pipeline is ran. This functionality uses the same hashing implementation as
+[`rust.bins`](/docs/config/toolchain#bins-1), so will only install the first time, and again if the
+configuration changes (or the cache is removed).
 
 ```yaml title=".moon/toolchain.yml"
 rust:
@@ -106,6 +107,7 @@ of changes.
   `experiments.interweavedTaskInheritance: false` in `.moon/workspace.yml`.
 - Added a new [project type `automation`](/docs/config/project#type), for projects like E2E and
   integration testing.
+- Updated action graph cycle detection to list all nodes in the cycle (when detectable).
 - Updated all npx calls to use a package manager equivalent. For example: `yarn dlx`, `pnpm dlx`,
   `bunx`.
 - Updated to support Yarn v4.

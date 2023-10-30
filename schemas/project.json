@@ -917,6 +917,7 @@
       "type": "string",
       "enum": [
         "application",
+        "automation",
         "library",
         "tool",
         "unknown"

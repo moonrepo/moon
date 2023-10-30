@@ -50,6 +50,9 @@ integration testing.</li><li>Updated action graph cycle detection to list all no
         <category label="bun" term="bun"/>
         <category label="rust" term="rust"/>
         <category label="toolchain" term="toolchain"/>
+        <category label="automation" term="automation"/>
+        <category label="package" term="package"/>
+        <category label="manager" term="manager"/>
     </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.21 - Linux x64 musl support]]></title>

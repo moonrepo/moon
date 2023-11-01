@@ -1,4 +1,4 @@
-use moon_bun_lang::BUN_INSTALL;
+use moon_bun_lang::BUNPM;
 use moon_config::LanguageType;
 use moon_deno_lang::{DENO_DEPS, DVM};
 use moon_go_lang::{G, GOENV, GOMOD, GVM};
@@ -34,7 +34,7 @@ pub fn detect_language_files(language: &LanguageType) -> Vec<String> {
         }
         LanguageType::JavaScript | LanguageType::TypeScript => {
             // Bun
-            extract_depman_files(&BUN_INSTALL, &mut files);
+            extract_depman_files(&BUNPM, &mut files);
 
             // Deno
             extract_depman_files(&DENO_DEPS, &mut files);

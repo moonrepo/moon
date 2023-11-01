@@ -123,7 +123,8 @@ pub struct ToolchainConfig {
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
 - [ ] Ran `cargo make schemas` and updated the JSON schemas
-- [ ] Add `.prototools` support in `crates/core/config/src/toolchain/config.rs`
+- [ ] Add `.prototools` support in `nextgen/config/src/toolchain_config.rs`
+- [ ] Add tests to `nextgen/config/tests/toolchain_config_test.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
 
@@ -150,21 +151,6 @@ ProjectLanguage::Kotlin => PlatformType::Kotlin,
 
 - [ ] Updated enum
 
-### Add variant to `Runtime` enum in `moon_platform_runtime`
-
-This determines the language + version of a tool to run within the platform.
-
-```rust
-pub enum Runtime {
-	// ...
-	Kotlin(Version),
-}
-```
-
-- [ ] Updated enum
-- [ ] Updated TypeScript types at `packages/types/src/common.ts`
-- [ ] Verified all `match` callsites handle the new variant
-
 ### Update `moon_platform_detector` crate
 
 Tasks run against the platform, so we can now attempt to detect this.
@@ -175,7 +161,7 @@ Tasks run against the platform, so we can now attempt to detect this.
 
 Every language will have a "tool" crate that implements the moon `Tool` trait (and eventually the
 proto `Tool` trait). This trait defines a handful of methods for how to install and execute the
-toon.
+tool.
 
 ```rust
 #[derive(Debug)]

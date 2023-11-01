@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+▪▪▪▪ bun install
+▪▪▪▪ bun:runFromProject
+<WORKSPACE>/base
+▪▪▪▪ bun:runFromProject (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

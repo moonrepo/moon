@@ -1,0 +1,5 @@
+language: javascript
+
+toolchain:
+  bun:
+    version: '0.6.0'

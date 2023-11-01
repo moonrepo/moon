@@ -1,0 +1,86 @@
+language: javascript
+platform: bun
+
+tasks:
+  bun:
+    command: bun --version
+  standard:
+    command: bun
+    args: ./standard.js
+  cjs:
+    command: bun
+    args: ./cjsFile.cjs
+  mjs:
+    command: bun
+    args: ./mjsFile.mjs
+  execBinSelf:
+    command: bun
+    args: ./execBin.js
+
+  # Runner cases
+  exitCodeNonZero:
+    command: bun
+    args: ./exitCodeNonZero.js
+  exitCodeZero:
+    command: bun
+    args: ./exitCodeZero.js
+  processExitNonZero:
+    command: bun
+    args: ./processExitNonZero.js
+  processExitZero:
+    command: bun
+    args: ./processExitZero.js
+  throwError:
+    command: bun
+    args: ./throwError.js
+  unhandledPromise:
+    command: bun
+    args: ./unhandledPromise.js
+  topLevelAwait:
+    command: bun
+    args: ./topLevelAwait.mjs
+  passthroughArgs:
+    command: bun
+    args: ./args.js
+  envVars:
+    command: bun
+    args: ./envVars.js
+    env:
+      MOON_FOO: abc
+      MOON_BAR: '123'
+      MOON_BAZ: 'true'
+  envVarsMoon:
+    command: bun
+    args: ./envVarsMoon.js
+  runFromProject:
+    command: bun
+    args: ./cwd.js
+  runFromWorkspace:
+    command: bun
+    args: ./base/cwd.js
+    options:
+      runFromWorkspaceRoot: true
+  runFromWorkspaceBin:
+    command: prettier --check '*.json'
+    options:
+      runFromWorkspaceRoot: true
+  retryCount:
+    command: bun
+    args: ./processExitNonZero.js
+    options:
+      retryCount: 3
+  binExecArgs:
+    command: bun
+    args: ./binExecArgs.js
+  affectedFiles:
+    command: bun ./affectedFiles.js
+    options:
+      affectedFiles: true
+  affectedFilesArgs:
+    command: bun ./affectedFiles.js
+    options:
+      affectedFiles: 'args'
+  affectedFilesEnvVar:
+    command: bun ./affectedFiles.js
+    options:
+      affectedFiles: 'env'

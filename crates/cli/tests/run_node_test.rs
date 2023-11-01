@@ -10,17 +10,7 @@ use rustc_hash::FxHashMap;
 use std::fs::read_to_string;
 
 fn node_sandbox() -> Sandbox {
-    let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
-
-    let sandbox = create_sandbox_with_config(
-        "node",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    sandbox.enable_git();
-    sandbox
+    node_sandbox_with_config(|_| {})
 }
 
 fn node_sandbox_with_config<C>(callback: C) -> Sandbox

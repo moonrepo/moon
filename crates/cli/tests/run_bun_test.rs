@@ -1,0 +1,332 @@
+use moon_config::PartialBunConfig;
+use moon_test_utils::{
+    assert_snapshot, create_sandbox_with_config, get_bun_fixture_configs, predicates::prelude::*,
+    Sandbox,
+};
+
+fn bun_sandbox() -> Sandbox {
+    bun_sandbox_with_config(|_| {})
+}
+
+fn bun_sandbox_with_config<C>(callback: C) -> Sandbox
+where
+    C: FnOnce(&mut PartialBunConfig),
+{
+    let (workspace_config, mut toolchain_config, tasks_config) = get_bun_fixture_configs();
+
+    if let Some(bun_config) = &mut toolchain_config.bun {
+        callback(bun_config);
+    }
+
+    let sandbox = create_sandbox_with_config(
+        "bun",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
+// TODO: Bun doesn't support Windows yet!
+#[cfg(not(windows))]
+mod bun {
+    use super::*;
+
+    #[test]
+    fn runs_self() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:bun");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn runs_standard_script() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:standard");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn runs_cjs_files() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:cjs");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn runs_mjs_files() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:mjs");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn supports_top_level_await() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:topLevelAwait");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn handles_process_exit_zero() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:processExitZero");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn handles_process_exit_nonzero() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:processExitNonZero");
+        });
+
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
+
+    #[test]
+    fn handles_process_exit_code_zero() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:exitCodeZero");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn handles_process_exit_code_nonzero() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:exitCodeNonZero");
+        });
+
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
+
+    #[test]
+    fn handles_throw_error() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:throwError");
+        });
+
+        let output = assert.output();
+
+        // Output contains file paths that we cant snapshot
+        assert!(predicate::str::contains("error: Oops").eval(&output));
+    }
+
+    #[test]
+    fn handles_unhandled_promise() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:unhandledPromise");
+        });
+
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
+
+    #[test]
+    fn passes_args_through() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("bun:passthroughArgs")
+                .arg("--")
+                .arg("-aBc")
+                .arg("--opt")
+                .arg("value")
+                .arg("--optCamel=value")
+                .arg("foo")
+                .arg("'bar baz'")
+                .arg("--opt-kebab")
+                .arg("123");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn sets_env_vars() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:envVars");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn inherits_moon_env_vars() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:envVarsMoon");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn forces_cache_to_write_only() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:envVarsMoon").arg("--updateCache");
+        });
+
+        assert!(predicate::str::contains("MOON_CACHE=write").eval(&assert.output()));
+    }
+
+    #[test]
+    fn runs_from_project_root() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:runFromProject");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn runs_from_workspace_root() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:runFromWorkspace");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn runs_node_module_bin_from_workspace_root() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:runFromWorkspaceBin");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn retries_on_failure_till_count() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:retryCount");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("1 exit code").eval(&output));
+    }
+
+    #[test]
+    fn can_run_many_targets() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:cjs").arg("bun:mjs");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("bun:cjs | stdout").eval(&output));
+        assert!(predicate::str::contains("bun:mjs | stdout").eval(&output));
+        assert!(predicate::str::contains("bun:cjs | stderr").eval(&output));
+        assert!(predicate::str::contains("bun:mjs | stderr").eval(&output));
+    }
+
+    mod package_manager {
+        use super::*;
+
+        #[test]
+        fn can_install_a_dep() {
+            let sandbox = bun_sandbox();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("packageManager:installDep");
+            });
+
+            assert.success();
+        }
+
+        #[test]
+        fn can_run_a_deps_bin() {
+            let sandbox = bun_sandbox();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("packageManager:runDep");
+            });
+
+            assert!(
+                predicate::str::contains("All matched files use Prettier code style!")
+                    .eval(&assert.output())
+            );
+
+            assert.success();
+        }
+
+        #[test]
+        fn can_run_a_script() {
+            let sandbox = bun_sandbox();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("packageManager:runScript");
+            });
+
+            assert!(predicate::str::contains("test").eval(&assert.output()));
+
+            assert.success();
+        }
+    }
+}

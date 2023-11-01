@@ -1,0 +1,35 @@
+[package]
+name = "moon_bun_platform"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_action_context = { path = "../../core/action-context" }
+moon_bun_lang = { path = "../lang" }
+moon_bun_tool = { path = "../tool" }
+moon_common = { path = "../../../nextgen/common" }
+moon_config = { path = "../../../nextgen/config" }
+moon_hash = { path = "../../../nextgen/hash" }
+moon_lang = { path = "../../core/lang" }
+moon_logger = { path = "../../core/logger" }
+moon_platform = { path = "../../core/platform" }
+moon_process = { path = "../../../nextgen/process" }
+moon_project = { path = "../../../nextgen/project" }
+moon_task = { path = "../../../nextgen/task" }
+moon_terminal = { path = "../../core/terminal" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+moon = { path = "../../core/moon" }
+moon_project_graph = { path = "../../../nextgen/project-graph" }
+moon_test_utils = { path = "../../core/test-utils" }

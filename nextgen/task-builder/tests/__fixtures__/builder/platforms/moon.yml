@@ -3,6 +3,10 @@ platform: rust
 tasks:
   system:
     platform: system
+  bun:
+    platform: bun
+  bun-via-cmd:
+    command: bun
   deno-via-cmd:
     command: deno
   node:

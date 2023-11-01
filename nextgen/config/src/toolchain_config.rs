@@ -22,6 +22,9 @@ pub struct ToolchainConfig {
     pub extends: Option<String>,
 
     #[setting(nested)]
+    pub bun: Option<BunConfig>,
+
+    #[setting(nested)]
     pub deno: Option<DenoConfig>,
 
     #[setting(nested)]
@@ -35,11 +38,13 @@ pub struct ToolchainConfig {
 }
 
 impl ToolchainConfig {
+    inherit_tool!(BunConfig, bun, "bun", inherit_proto_bun);
+
     inherit_tool_without_version!(DenoConfig, deno, "deno", inherit_proto_deno);
 
-    inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
-
     inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
+
+    inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
 
     inherit_tool_without_version!(
         TypeScriptConfig,
@@ -50,6 +55,10 @@ impl ToolchainConfig {
 
     pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
         let mut tools = vec![];
+
+        if self.bun.is_some() {
+            tools.push(PlatformType::Bun);
+        }
 
         if self.deno.is_some() {
             tools.push(PlatformType::Deno);
@@ -67,9 +76,10 @@ impl ToolchainConfig {
     }
 
     pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
+        self.inherit_proto_bun(proto_tools)?;
         self.inherit_proto_deno(proto_tools)?;
-        self.inherit_proto_rust(proto_tools)?;
         self.inherit_proto_node(proto_tools)?;
+        self.inherit_proto_rust(proto_tools)?;
         self.inherit_proto_typescript(proto_tools)?;
 
         if let Some(node_config) = &mut self.node {

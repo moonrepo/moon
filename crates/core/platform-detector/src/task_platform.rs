@@ -2,6 +2,9 @@ use moon_config::PlatformType;
 use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use once_cell::sync::Lazy;
 
+static BUN_COMMANDS: Lazy<regex::Regex> =
+    Lazy::new(|| regex::create_regex("^(bun|bunx)$").unwrap());
+
 static DENO_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex("^(deno)$").unwrap());
 
 static RUST_COMMANDS: Lazy<regex::Regex> =
@@ -16,6 +19,7 @@ fn use_platform_if_enabled(
     enabled_platforms: &[PlatformType],
 ) -> PlatformType {
     match platform {
+        PlatformType::Bun if enabled_platforms.contains(&PlatformType::Bun) => return platform,
         PlatformType::Deno if enabled_platforms.contains(&PlatformType::Deno) => return platform,
         PlatformType::Node if enabled_platforms.contains(&PlatformType::Node) => return platform,
         PlatformType::Rust if enabled_platforms.contains(&PlatformType::Rust) => return platform,
@@ -30,6 +34,10 @@ pub fn detect_task_platform(
     // language: &LanguageType,
     enabled_platforms: &[PlatformType],
 ) -> PlatformType {
+    if BUN_COMMANDS.is_match(command) {
+        return use_platform_if_enabled(PlatformType::Bun, enabled_platforms);
+    }
+
     if DENO_COMMANDS.is_match(command) {
         return use_platform_if_enabled(PlatformType::Deno, enabled_platforms);
     }

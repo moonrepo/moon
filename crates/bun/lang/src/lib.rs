@@ -1,4 +1,8 @@
+mod bun_lockb;
+
 use moon_lang::{DependencyManager, Language};
+
+pub use bun_lockb::*;
 
 pub const BUN: Language = Language {
     binary: "bun",

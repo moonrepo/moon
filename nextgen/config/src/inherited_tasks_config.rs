@@ -77,7 +77,10 @@ impl InheritedTasksConfig {
 }
 
 fn is_js_platform(platform: &PlatformType) -> bool {
-    matches!(platform, PlatformType::Deno | PlatformType::Node)
+    matches!(
+        platform,
+        PlatformType::Bun | PlatformType::Deno | PlatformType::Node
+    )
 }
 
 cacheable!(

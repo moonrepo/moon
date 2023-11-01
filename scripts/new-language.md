@@ -75,10 +75,11 @@ language.
 
 Of course this should all be tested.
 
-- [ ] Added fixture to `tests/fixtures/config-inheritance`
-- [ ] Added fixture to `tests/fixtures/project-graph/langs`
-- [ ] Updated `crates/core/config/tests/task_inheritance_test.rs`
-- [ ] Updated `crates/core/project-graph/tests/projects_test.rs`
+- [ ] Added fixture to `nextgen/config/tests/__fixtures__/inheritance`
+- [ ] Added fixture to `nextgen/project-builder/tests/__fixtures__/langs`
+- [ ] Added fixture to `nextgen/task-builder/tests/__fixtures__/builder/platforms`
+- [ ] Updated `nextgen/config/tests/inherited_tasks_config_test.rs`
+- [ ] Updated `nextgen/project-builder/tests/__fixtures__/langs/ts-config`
 
 ### Create a pull request
 

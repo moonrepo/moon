@@ -272,7 +272,7 @@ outputs:
 
         #[test]
         #[should_panic(
-            expected = "unknown variant `perl`, expected one of `deno`, `node`, `rust`, `system`, `unknown`"
+            expected = "unknown variant `perl`, expected one of `bun`, `deno`, `node`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
             test_parse_config("platform: perl", |code| TaskConfig::parse(code));

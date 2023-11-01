@@ -14,9 +14,10 @@
 
 #### 🚀 Updates
 
-- Added full Bun support (tier 1-3).
+- Integrated full Bun support (tier 1-3).
   - Added a `bun` setting to `.moon/toolchain.yml`.
   - Added a `toolchain.bun` setting to `moon.yml`.
+  - Updated `moon bin` and `moon docker` commands to support Bun.
 
 ## 1.16.0
 

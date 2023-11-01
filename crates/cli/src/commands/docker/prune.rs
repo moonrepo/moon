@@ -10,6 +10,7 @@ use moon_project_graph::ProjectGraph;
 use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
+use moon_tool::DependencyManager;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::system;
@@ -19,12 +20,36 @@ use starbase_utils::json;
 use std::path::Path;
 
 pub async fn prune_bun(
-    _bun: &BunTool,
-    _workspace_root: &Path,
-    _project_graph: &ProjectGraph,
-    _manifest: &DockerManifest,
+    bun: &BunTool,
+    workspace_root: &Path,
+    project_graph: &ProjectGraph,
+    manifest: &DockerManifest,
 ) -> AppResult {
-    // TODO
+    let mut package_names = vec![];
+
+    for project_id in &manifest.focused_projects {
+        if let Some(source) = project_graph.sources().get(project_id) {
+            if let Some(package_json) = PackageJson::read(source.to_path(workspace_root))? {
+                if let Some(package_name) = package_json.name {
+                    package_names.push(package_name);
+                }
+            }
+        }
+    }
+
+    // Some package managers do not delete stale node modules
+    if let Some(vendor_dir) = NODE.vendor_dir {
+        fs::remove_dir_all(workspace_root.join(vendor_dir))?;
+
+        for source in project_graph.sources().values() {
+            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
+        }
+    }
+
+    // Install production only dependencies for focused projects
+    bun.install_focused_dependencies(&(), &package_names, true)
+        .await?;
+
     Ok(())
 }
 

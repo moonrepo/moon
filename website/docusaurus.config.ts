@@ -3,7 +3,7 @@
 import path from 'path';
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
-// import prismTheme from './prism.config';
+import prismTheme from './prism.config';
 
 const social = [
 	{
@@ -197,9 +197,19 @@ const config: Config = {
 			copyright: `Copyright © ${new Date().getFullYear()}, moonrepo, Inc.`,
 		},
 		prism: {
-			// theme: prismTheme,
-			// darkTheme: prismTheme,
-			additionalLanguages: ['docker', 'twig', 'toml', 'rust', 'bash', 'diff', 'json', 'typescript'],
+			theme: prismTheme,
+			darkTheme: prismTheme,
+			additionalLanguages: [
+				'bash',
+				'diff',
+				'docker',
+				'json',
+				'markup-templating',
+				'rust',
+				'toml',
+				'twig',
+				'typescript',
+			],
 		},
 	} satisfies Preset.ThemeConfig,
 

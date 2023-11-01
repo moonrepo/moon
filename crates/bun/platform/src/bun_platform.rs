@@ -1,24 +1,26 @@
+use crate::actions;
 use moon_action_context::ActionContext;
-use moon_bun_lang::{load_lockfile_dependencies, BUN, BUNPM};
+use moon_bun_lang::BUNPM;
 use moon_bun_tool::BunTool;
-use moon_common::{is_ci, Id};
+use moon_common::Id;
 use moon_config::{
-    BunConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
-    TypeScriptConfig, UnresolvedVersionSpec,
+    BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
+    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TypeScriptConfig, UnresolvedVersionSpec,
 };
-use moon_hash::ContentHasher;
-use moon_logger::{debug, map_list};
+use moon_hash::{ContentHasher, DepsHash};
+use moon_logger::{debug, warn};
+use moon_node_lang::{node::get_package_manager_workspaces, PackageJson};
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolError, ToolManager};
+use moon_tool::{Tool, ToolManager};
+use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::{fs, glob::GlobSet};
+use starbase_utils::glob::GlobSet;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -29,6 +31,8 @@ const LOG_TARGET: &str = "moon:bun-platform";
 
 pub struct BunPlatform {
     pub config: BunConfig,
+
+    package_names: FxHashMap<String, Id>,
 
     proto_env: Arc<ProtoEnvironment>,
 
@@ -49,6 +53,7 @@ impl BunPlatform {
     ) -> Self {
         BunPlatform {
             config: config.to_owned(),
+            package_names: FxHashMap::default(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(PlatformType::Bun, RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
@@ -97,9 +102,18 @@ impl Platform for BunPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
-        // TODO
+        let mut in_workspace = false;
 
-        Ok(false)
+        // Root package is always considered within the workspace
+        if project_source.is_empty() || project_source == "." {
+            return Ok(true);
+        }
+
+        if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
+            in_workspace = GlobSet::new(&globs)?.matches(project_source);
+        }
+
+        Ok(in_workspace)
     }
 
     fn load_project_graph_aliases(
@@ -107,7 +121,92 @@ impl Platform for BunPlatform {
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> miette::Result<()> {
+        debug!(
+            target: LOG_TARGET,
+            "Loading names (aliases) from project {}'s",
+            color::file(BUNPM.manifest)
+        );
+
+        for (project_id, project_source) in projects_map {
+            if let Some(package_json) =
+                PackageJson::read(project_source.to_path(&self.workspace_root))?
+            {
+                if let Some(package_name) = package_json.name {
+                    let alias = package_name.clone();
+
+                    self.package_names
+                        .insert(package_name.clone(), project_id.to_owned());
+
+                    if let Some(existing_source) = projects_map.get(&alias) {
+                        if existing_source != project_source {
+                            warn!(
+                                target: LOG_TARGET,
+                                "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
+                                color::id(&alias),
+                                color::file(existing_source),
+                                color::file(project_source)
+                            );
+
+                            continue;
+                        }
+                    }
+
+                    if aliases_map.contains_key(&alias) {
+                        // Ignore warning here since the duplicate may have come
+                        // from the Node.js platform!
+                        continue;
+                    }
+
+                    aliases_map.insert(alias, project_id.to_owned());
+                }
+            }
+        }
+
         Ok(())
+    }
+
+    fn load_project_implicit_dependencies(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<Vec<DependencyConfig>> {
+        let mut implicit_deps = vec![];
+
+        debug!(
+            target: LOG_TARGET,
+            "Scanning {} for implicit dependency relations",
+            color::id(project_id),
+        );
+
+        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
+            let mut find_implicit_relations =
+                |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
+                    for dep_name in package_deps.keys() {
+                        if let Some(dep_project_id) = self.package_names.get(dep_name) {
+                            implicit_deps.push(DependencyConfig {
+                                id: dep_project_id.to_owned(),
+                                scope: *scope,
+                                source: DependencySource::Implicit,
+                                via: Some(dep_name.clone()),
+                            });
+                        }
+                    }
+                };
+
+            if let Some(dependencies) = &package_json.dependencies {
+                find_implicit_relations(dependencies, &DependencyScope::Production);
+            }
+
+            if let Some(dev_dependencies) = &package_json.dev_dependencies {
+                find_implicit_relations(dev_dependencies, &DependencyScope::Development);
+            }
+
+            if let Some(peer_dependencies) = &package_json.peer_dependencies {
+                find_implicit_relations(peer_dependencies, &DependencyScope::Peer);
+            }
+        }
+
+        Ok(implicit_deps)
     }
 
     // TOOLCHAIN
@@ -182,9 +281,11 @@ impl Platform for BunPlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<()> {
-        let tool = self.toolchain.get_for_version(&runtime.requirement)?;
-
-        // TODO
+        actions::install_deps(
+            self.toolchain.get_for_version(&runtime.requirement)?,
+            working_dir,
+        )
+        .await?;
 
         Ok(())
     }
@@ -192,7 +293,7 @@ impl Platform for BunPlatform {
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        project: &Project,
+        _project: &Project,
         _dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         Ok(false)
@@ -200,11 +301,28 @@ impl Platform for BunPlatform {
 
     async fn hash_manifest_deps(
         &self,
-        _manifest_path: &Path,
+        manifest_path: &Path,
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        // TODO
+        if let Ok(Some(package)) = PackageJson::read(manifest_path) {
+            let name = package.name.unwrap_or_else(|| "unknown".into());
+            let mut hash = DepsHash::new(name);
+
+            if let Some(peer_deps) = &package.peer_dependencies {
+                hash.add_deps(peer_deps);
+            }
+
+            if let Some(dev_deps) = &package.dev_dependencies {
+                hash.add_deps(dev_deps);
+            }
+
+            if let Some(deps) = &package.dependencies {
+                hash.add_deps(deps);
+            }
+
+            hasher.hash_content(hash)?;
+        }
 
         Ok(())
     }
@@ -212,26 +330,50 @@ impl Platform for BunPlatform {
     async fn hash_run_target(
         &self,
         project: &Project,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         hasher: &mut ContentHasher,
-        _hasher_config: &HasherConfig,
+        hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        // TODO
+        let node_hash = actions::create_target_hasher(
+            self.toolchain.get_for_version(&runtime.requirement).ok(),
+            project,
+            &self.workspace_root,
+            hasher_config,
+        )
+        .await?;
 
+        hasher.hash_content(node_hash)?;
+
+        if let Some(typescript_config) = &self.typescript_config {
+            let ts_hash = TypeScriptTargetHash::generate(
+                typescript_config,
+                &self.workspace_root,
+                &project.root,
+            )?;
+
+            hasher.hash_content(ts_hash)?;
+        }
         Ok(())
     }
 
     async fn create_run_target_command(
         &self,
         _context: &ActionContext,
-        _project: &Project,
+        project: &Project,
         task: &Task,
         runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
-        let mut command = Command::new(&task.command);
-
-        command.args(&task.args).envs(&task.env).cwd(working_dir);
+        let command = if self.is_toolchain_enabled()? {
+            actions::create_target_command(
+                self.toolchain.get_for_version(&runtime.requirement)?,
+                project,
+                task,
+                working_dir,
+            )?
+        } else {
+            actions::create_target_command_without_tool(project, task, working_dir)?
+        };
 
         Ok(command)
     }

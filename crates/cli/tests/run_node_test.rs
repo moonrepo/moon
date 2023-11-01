@@ -1048,8 +1048,6 @@ mod bun {
             cmd.arg("run").arg("bun:version");
         });
 
-        assert.debug();
-
         assert!(predicate::str::contains("1.0.0").eval(&assert.output()));
     }
 

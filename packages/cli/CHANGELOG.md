@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added full Bun support (tier 1-3).
+  - Added a `bun` setting to `.moon/toolchain.yml`.
+  - Added a `toolchain.bun` setting to `moon.yml`.
+
 ## 1.16.0
 
 #### 🚀 Updates

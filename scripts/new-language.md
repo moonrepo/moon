@@ -237,9 +237,8 @@ Furthermore, when applicable, also add version support from `.prototools`.
 kotlin = "1.2.3"
 ```
 
-- [ ] Updated config struct: `crates/core/config/src/toolchain/<lang>.rs`
-- [ ] Supported proto version in `crates/core/config/src/toolchain/config.rs`
-- [ ] Added tests: `crates/core/config/tests/toolchain_test.rs`
+- [ ] Updated config struct: `nextgen/config/src/toolchain/<lang>.rs`
+- [ ] Supported proto version in `nextgen/config/src/toolchain_config.rs`
 - [ ] Ran `cargo make schemas` and updated the JSON schemas
 
 ### Integrate proto tool into moon tool crate
@@ -276,9 +275,8 @@ Refer to the Node.js implementation for examples (it can mostly be copied).
 Different projects may have different version requirements, so we need to support this through
 project-level toolchain overrides.
 
-- [ ] Updated `crates/core/config/src/project/toolchain.rs`
+- [ ] Updated `nextgen/config/src/project/overrides_config.rs`
 - [ ] Updated `get_runtime_from_config` in platform crate
-- [ ] Updated `packages/types/src/project-config.ts`
 
 ### Integrate `--profile` option
 

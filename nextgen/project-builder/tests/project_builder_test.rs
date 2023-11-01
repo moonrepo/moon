@@ -256,6 +256,19 @@ mod project_builder {
         }
 
         #[tokio::test]
+        async fn detects_bun() {
+            let project = build_lang_project("bun").await;
+
+            assert_eq!(project.language, LanguageType::JavaScript);
+            assert_eq!(project.platform, PlatformType::Bun);
+
+            let project = build_lang_project("bun-config").await;
+
+            assert_eq!(project.language, LanguageType::JavaScript);
+            // assert_eq!(project.platform, PlatformType::Bun);
+        }
+
+        #[tokio::test]
         async fn detects_deno() {
             let project = build_lang_project("deno").await;
 

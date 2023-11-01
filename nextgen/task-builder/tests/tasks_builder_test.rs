@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::{
-    DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
+    BunConfig, DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
     ProjectConfig, ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, RustConfig,
     TaskCommandArgs, TaskConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
     ToolchainConfig,
@@ -89,6 +89,7 @@ async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<
         &config_path.replace("/moon.yml", ""),
         ProjectConfig::load(root, root.join(config_path)).unwrap(),
         ToolchainConfig {
+            bun: Some(BunConfig::default()),
             deno: Some(DenoConfig::default()),
             node: Some(NodeConfig::default()),
             rust: Some(RustConfig::default()),
@@ -378,6 +379,10 @@ mod tasks_builder {
 
             assert_eq!(task.platform, PlatformType::System);
 
+            let task = tasks.get("bun").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Bun);
+
             let task = tasks.get("node").unwrap();
 
             assert_eq!(task.platform, PlatformType::Node);
@@ -387,6 +392,10 @@ mod tasks_builder {
         async fn detects_from_command_name() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml").await;
+
+            let task = tasks.get("bun-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Bun);
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
@@ -405,6 +414,10 @@ mod tasks_builder {
         async fn doesnt_detect_from_command_if_not_toolchain_enabled() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks(sandbox.path(), "platforms/moon.yml").await;
+
+            let task = tasks.get("bun-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::System);
 
             let task = tasks.get("deno-via-cmd").unwrap();
 

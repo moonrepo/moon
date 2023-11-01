@@ -15,6 +15,16 @@
         }
       ]
     },
+    "bun": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialBunConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "deno": {
       "anyOf": [
         {
@@ -166,6 +176,34 @@
           "$ref": "#/definitions/PartialBinConfig"
         }
       ]
+    },
+    "PartialBunConfig": {
+      "title": "PartialBunConfig",
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#bun",
+      "type": "object",
+      "properties": {
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "PartialBunpmConfig": {
       "title": "PartialBunpmConfig",

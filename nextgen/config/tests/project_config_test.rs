@@ -280,7 +280,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "unknown variant `perl`, expected one of `deno`, `node`, `rust`, `system`, `unknown`"
+            expected = "unknown variant `perl`, expected one of `bun`, `deno`, `node`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
             test_load_config(CONFIG_PROJECT_FILENAME, "platform: perl", |path| {

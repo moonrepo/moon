@@ -59,6 +59,7 @@ impl Serialize for LanguageType {
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default, Hash)]
     pub enum PlatformType {
+        Bun,
         Deno,
         Node,
         Rust,

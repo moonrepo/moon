@@ -10,6 +10,7 @@ use starbase::system;
 #[value(rename_all = "lowercase")]
 pub enum BinTool {
     // JavaScript
+    Bun,
     Node,
     Npm,
     Pnpm,
@@ -51,6 +52,11 @@ fn not_configured() -> ! {
 #[system]
 pub async fn bin(args: ArgsRef<BinArgs>) {
     match &args.tool {
+        BinTool::Bun => {
+            let bun = PlatformManager::read().get(PlatformType::Bun)?.get_tool()?;
+
+            is_installed(*bun);
+        }
         BinTool::Node => {
             let node = PlatformManager::read()
                 .get(PlatformType::Node)?

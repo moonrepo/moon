@@ -2524,7 +2524,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@docusaurus/tsconfig@npm:3.0.0":
+"@docusaurus/tsconfig@npm:^3.0.0":
   version: 3.0.0
   resolution: "@docusaurus/tsconfig@npm:3.0.0"
   checksum: 06a9b33b438c482057a1e4f1654cc350dd1a838a81510e7564f7b1eab6615c63465d39859592a89394e7070d8d523421a80dee6ffb625bb71c158c3c9f4c8098
@@ -4077,13 +4077,6 @@ __metadata:
   version: 0.2.0
   resolution: "@trysound/sax@npm:0.2.0"
   checksum: 7379713eca480ac0d9b6c7b063e06b00a7eac57092354556c81027066eb65b61ea141a69d0cc2e15d32e05b2834d4c9c2184793a5e36bbf5daf05ee5676af18c
-  languageName: node
-  linkType: hard
-
-"@tsconfig/docusaurus@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "@tsconfig/docusaurus@npm:2.0.2"
-  checksum: 129f2532172496c108f53a15082e410b418e664c1761902664558059541a6cf7faff2b3d2953e2d507a7e3688afacf2479e17adcb35b89cae04ddb0415d0397a
   languageName: node
   linkType: hard
 
@@ -17909,7 +17902,7 @@ __metadata:
     "@docusaurus/plugin-client-redirects": "npm:^3.0.0"
     "@docusaurus/preset-classic": "npm:^3.0.0"
     "@docusaurus/theme-common": "npm:^3.0.0"
-    "@docusaurus/tsconfig": "npm:3.0.0"
+    "@docusaurus/tsconfig": "npm:^3.0.0"
     "@fortawesome/fontawesome-svg-core": "npm:^6.4.2"
     "@fortawesome/free-brands-svg-icons": "npm:^6.4.2"
     "@fortawesome/pro-duotone-svg-icons": "npm:^6.4.2"
@@ -17918,7 +17911,6 @@ __metadata:
     "@mdx-js/react": "npm:^3.0.0"
     "@moonrepo/runtime": "workspace:^"
     "@moonrepo/types": "workspace:^"
-    "@tsconfig/docusaurus": "npm:^2.0.2"
     "@types/cytoscape": "npm:^3.19.13"
     "@types/cytoscape-dagre": "npm:^2.3.2"
     clsx: "npm:^2.0.0"

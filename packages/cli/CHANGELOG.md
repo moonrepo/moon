@@ -15,9 +15,13 @@
 #### 🚀 Updates
 
 - Integrated full Bun support (tier 1-3).
+  - Will download and install Bun into the toolchain when a `version` is configured.
+  - Will parse the `bun.lockb` lockfile to extract and resolve dependencies.
+  - Will hash manifests and inputs for Bun specific caching.
   - Added a `bun` setting to `.moon/toolchain.yml`.
   - Added a `toolchain.bun` setting to `moon.yml`.
   - Updated `moon bin` and `moon docker` commands to support Bun.
+  - Updated task `platform` to support "bun".
 
 ## 1.16.0
 

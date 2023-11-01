@@ -40,6 +40,27 @@ taking precedence over those defined in the extended configuration.
 
 ## JavaScript
 
+## `bun`<VersionLabel version="1.17.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#bun" />
+
+Enables and configures [Bun](../guides/bun/handbook).
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/BunConfig#version" />
+
+Defines the explicit Bun toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `bun` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+bun:
+  version: '1.0.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
 ## `deno`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#deno" />

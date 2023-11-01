@@ -1,4 +1,3 @@
-import React from 'react';
 import { faCheck } from '@fortawesome/pro-regular-svg-icons';
 import Button, { ButtonProps } from '@site/src/ui/Button';
 import Icon from '@site/src/ui/iconography/Icon';

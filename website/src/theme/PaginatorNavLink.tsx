@@ -1,4 +1,3 @@
-import React from 'react';
 import cx from 'clsx';
 import { faChevronLeft, faChevronRight } from '@fortawesome/pro-regular-svg-icons';
 import type { Props } from '@theme/PaginatorNavLink';

@@ -1,4 +1,4 @@
-import React from 'react';
+import { Fragment } from 'react';
 
 const LANGS = ['bun', 'deno', 'node', 'go', 'rust'];
 
@@ -28,27 +28,27 @@ export default function HeroTerminal() {
 			</li>
 
 			{lang === 'bun' && (
-				<React.Fragment key="bun">
+				<Fragment key="bun">
 					<li className="text-gray-800 pt-2"># Install Bun</li>
-					<li>proto install bun 0.5</li>
+					<li>proto install bun </li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>bun run index.ts</li>
-				</React.Fragment>
+				</Fragment>
 			)}
 
 			{lang === 'deno' && (
-				<React.Fragment key="deno">
+				<Fragment key="deno">
 					<li className="text-gray-800 pt-2"># Install Deno</li>
 					<li>proto install deno 1.31</li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>deno run index.ts</li>
-				</React.Fragment>
+				</Fragment>
 			)}
 
 			{lang === 'node' && (
-				<React.Fragment key="node">
+				<Fragment key="node">
 					<li className="text-gray-800 pt-2"># Install Node.js</li>
 					<li>proto install node 18</li>
 					<li>proto install pnpm</li>
@@ -56,27 +56,27 @@ export default function HeroTerminal() {
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>pnpm install</li>
 					<li>pnpm run dev</li>
-				</React.Fragment>
+				</Fragment>
 			)}
 
 			{lang === 'go' && (
-				<React.Fragment key="go">
+				<Fragment key="go">
 					<li className="text-gray-800 pt-2"># Install Go</li>
 					<li>proto install go 1.20</li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>go run .</li>
-				</React.Fragment>
+				</Fragment>
 			)}
 
 			{lang === 'rust' && (
-				<React.Fragment key="rust">
+				<Fragment key="rust">
 					<li className="text-gray-800 pt-2"># Install Rust (requires rustup)</li>
 					<li>proto install rust 1.68</li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>cargo build</li>
-				</React.Fragment>
+				</Fragment>
 			)}
 		</ul>
 	);

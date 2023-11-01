@@ -1,4 +1,3 @@
-import React from 'react';
 import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import Icon from '../../../ui/iconography/Icon';
 import Heading from '../../../ui/typography/Heading';

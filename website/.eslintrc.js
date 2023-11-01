@@ -1,5 +1,5 @@
 module.exports = {
-	ignorePatterns: ['prism.config.js', 'tailwind.config.js'],
+	ignorePatterns: ['tailwind.config.js'],
 	rules: {
 		// This fails on windows for some reason
 		'import/named': 'off',

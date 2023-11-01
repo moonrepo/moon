@@ -1,4 +1,3 @@
-import React from 'react';
 import Link from '@docusaurus/Link';
 import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';

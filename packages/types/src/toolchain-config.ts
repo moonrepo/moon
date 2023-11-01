@@ -2,6 +2,12 @@
 
 /* eslint-disable */
 
+/** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
+export interface PartialBunConfig {
+	plugin?: string | null;
+	version?: string | null;
+}
+
 export interface PartialBinConfig {
 	bin?: string | null;
 	force?: boolean | null;
@@ -110,11 +116,18 @@ export interface PartialTypeScriptConfig {
 export interface PartialToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string | null;
+	bun?: PartialBunConfig | null;
 	deno?: PartialDenoConfig | null;
 	extends?: string | null;
 	node?: PartialNodeConfig | null;
 	rust?: PartialRustConfig | null;
 	typescript?: PartialTypeScriptConfig | null;
+}
+
+/** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
+export interface BunConfig {
+	plugin: string | null;
+	version: string | null;
 }
 
 export interface BinConfig {
@@ -208,6 +221,7 @@ export interface TypeScriptConfig {
 export interface ToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema: string;
+	bun: BunConfig | null;
 	deno: DenoConfig | null;
 	extends: string | null;
 	node: NodeConfig | null;

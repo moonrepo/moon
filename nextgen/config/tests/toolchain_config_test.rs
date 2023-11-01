@@ -13,7 +13,7 @@ mod toolchain_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `extends`, `deno`, `node`, `rust`, `typescript`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `extends`, `bun`, `deno`, `node`, `rust`, `typescript`"
     )]
     fn error_unknown_field() {
         test_load_config(FILENAME, "unknown: 123", |path| {

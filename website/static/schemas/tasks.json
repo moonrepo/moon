@@ -419,6 +419,7 @@
       "title": "PlatformType",
       "type": "string",
       "enum": [
+        "bun",
         "deno",
         "node",
         "rust",

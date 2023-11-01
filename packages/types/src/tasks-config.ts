@@ -32,7 +32,7 @@ export interface PartialTaskOptionsConfig {
 	shell?: boolean | null;
 }
 
-export type PlatformType = 'deno' | 'node' | 'rust' | 'system' | 'unknown';
+export type PlatformType = 'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown';
 
 export type TaskType = 'build' | 'run' | 'test';
 

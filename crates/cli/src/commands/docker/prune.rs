@@ -1,6 +1,7 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
 use moon::generate_project_graph;
+use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
@@ -16,6 +17,16 @@ use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::json;
 use std::path::Path;
+
+pub async fn prune_bun(
+    _bun: &BunTool,
+    _workspace_root: &Path,
+    _project_graph: &ProjectGraph,
+    _manifest: &DockerManifest,
+) -> AppResult {
+    // TODO
+    Ok(())
+}
 
 pub async fn prune_node(
     node: &NodeTool,
@@ -87,6 +98,19 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
         let platform = PlatformManager::read().get(platform_type)?;
 
         match platform.get_type() {
+            PlatformType::Bun => {
+                prune_bun(
+                    platform
+                        .get_tool()?
+                        .as_any()
+                        .downcast_ref::<BunTool>()
+                        .unwrap(),
+                    &workspace.root,
+                    &project_graph,
+                    &manifest,
+                )
+                .await?;
+            }
             PlatformType::Node => {
                 prune_node(
                     platform

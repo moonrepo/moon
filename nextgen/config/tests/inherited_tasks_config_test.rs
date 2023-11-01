@@ -415,6 +415,7 @@ mod task_manager {
             keys,
             vec![
                 "*",
+                "bun",
                 "deno",
                 "javascript",
                 "javascript-library",
@@ -617,6 +618,40 @@ mod task_manager {
                     "tasks/node-application.yml",
                     "tasks/node.yml",
                 ]
+            );
+        }
+
+        #[test]
+        fn creates_js_config_via_bun() {
+            use starbase_sandbox::pretty_assertions::assert_eq;
+
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Bun,
+                    &LanguageType::JavaScript,
+                    &ProjectType::Application,
+                    &[],
+                )
+                .unwrap();
+
+            assert_eq!(
+                config.config.tasks,
+                BTreeMap::from_iter([
+                    ("global".into(), stub_task("global", PlatformType::Unknown)),
+                    ("bun".into(), stub_task("bun", PlatformType::Bun)),
+                    (
+                        "javascript".into(),
+                        stub_task("javascript", PlatformType::Bun)
+                    ),
+                ]),
+            );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec!["tasks.yml", "tasks/bun.yml", "tasks/javascript.yml",]
             );
         }
 

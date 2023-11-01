@@ -2,8 +2,6 @@ language: javascript
 platform: bun
 
 tasks:
-  bun:
-    command: bun --version
   standard:
     command: bun
     args: ./standard.js

@@ -39,7 +39,7 @@ mod bun {
         let sandbox = bun_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("bun:bun");
+            cmd.arg("run").arg("bun:version");
         });
 
         assert_snapshot!(assert.output());
@@ -327,6 +327,101 @@ mod bun {
             assert!(predicate::str::contains("test").eval(&assert.output()));
 
             assert.success();
+        }
+    }
+
+    mod workspace_overrides {
+        use super::*;
+
+        #[test]
+        fn can_override_version() {
+            let sandbox = bun_sandbox();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run")
+                    .arg("bun:version")
+                    .arg("versionOverride:version");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("1.0.0").eval(&output));
+            assert!(predicate::str::contains("0.8.0").eval(&output));
+
+            assert.success();
+        }
+    }
+
+    mod affected_files {
+        use super::*;
+
+        #[test]
+        fn uses_dot_when_not_affected() {
+            let sandbox = bun_sandbox();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("bun:affectedFiles");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Args: .\n").eval(&output));
+            assert!(predicate::str::contains("Env: .\n").eval(&output));
+        }
+
+        #[test]
+        fn uses_rel_paths_when_affected() {
+            let sandbox = bun_sandbox();
+
+            sandbox.create_file("base/input1.js", "");
+            sandbox.create_file("base/input2.js", "");
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("bun:affectedFiles").arg("--affected");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
+            assert!(predicate::str::contains("Env: input1.js,input2.js\n").eval(&output));
+        }
+
+        #[test]
+        fn sets_args_only() {
+            let sandbox = bun_sandbox();
+
+            sandbox.create_file("base/input1.js", "");
+            sandbox.create_file("base/input2.js", "");
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run")
+                    .arg("bun:affectedFilesArgs")
+                    .arg("--affected");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
+            assert!(predicate::str::contains("Env: \n").eval(&output));
+        }
+
+        #[test]
+        fn sets_env_var_only() {
+            let sandbox = bun_sandbox();
+
+            sandbox.create_file("base/input1.js", "");
+            sandbox.create_file("base/input2.js", "");
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run")
+                    .arg("bun:affectedFilesEnvVar")
+                    .arg("--affected");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Args: \n").eval(&output));
+            assert!(predicate::str::contains("Env: input1.js,input2.js\n").eval(&output));
         }
     }
 }

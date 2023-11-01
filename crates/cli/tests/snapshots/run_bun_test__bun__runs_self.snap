@@ -3,9 +3,9 @@ source: crates/cli/tests/run_bun_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ bun install
-▪▪▪▪ bun:bun
+▪▪▪▪ bun:version
 1.0.0
-▪▪▪▪ bun:bun (100ms)
+▪▪▪▪ bun:version (100ms)
 
 Tasks: 1 completed
  Time: 100ms

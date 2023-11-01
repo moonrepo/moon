@@ -12,6 +12,8 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
     let config = ToolchainConfig::load_from(root, &ToolsConfig::default()).unwrap();
     let mut manager = PlatformManager::default();
 
+    // TODO bun
+
     if let Some(node_config) = &config.node {
         manager.register(
             PlatformType::Node,

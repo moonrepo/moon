@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_bun_lang = { path = "../../bun/lang" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }

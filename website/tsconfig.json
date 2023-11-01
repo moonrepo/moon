@@ -1,25 +1,7 @@
 {
-  "extends": "../tsconfig.options.json",
-  // "extends": "@tsconfig/docusaurus/tsconfig.json",
+  "extends": ["../tsconfig.options.json", "@docusaurus/tsconfig"],
   "compilerOptions": {
     "outDir": "../.moon/cache/types/website",
-    "types": [
-      "node",
-      "@docusaurus/module-type-aliases",
-      "@docusaurus/theme-classic"
-    ],
-    "baseUrl": ".",
-    "jsx": "react",
-    "lib": [
-      "dom"
-    ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "paths": {
-      "@site/*": [
-        "./*"
-      ]
-    },
     "verbatimModuleSyntax": false
   },
   "include": [

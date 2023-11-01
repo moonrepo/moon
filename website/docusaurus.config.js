@@ -202,7 +202,16 @@ const config = {
 			prism: {
 				theme: prismTheme,
 				darkTheme: prismTheme,
-				additionalLanguages: ['docker', 'twig', 'toml', 'rust'],
+				additionalLanguages: [
+					'docker',
+					'twig',
+					'toml',
+					'rust',
+					'bash',
+					'diff',
+					'json',
+					'typescript',
+				],
 			},
 		}),
 

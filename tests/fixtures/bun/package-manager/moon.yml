@@ -1,0 +1,12 @@
+language: javascript
+platform: bun
+
+tasks:
+  installDep:
+    command: bun
+    args: install react@17.0.0
+  runDep:
+    command: prettier
+    args: --check *.yml
+  runScript:
+    command: bun run test

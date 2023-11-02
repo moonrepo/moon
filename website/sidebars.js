@@ -211,6 +211,7 @@ const sidebars = {
 			label: 'JavaScript',
 			collapsed: false,
 			items: [
+				'guides/javascript/bun-handbook',
 				'guides/javascript/deno-handbook',
 				'guides/javascript/node-handbook',
 				'guides/profile',

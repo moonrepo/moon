@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+Error: project::task::unknown
+
+  × Unknown task npm for project bun.
+  help: Has this task been configured?
+
+
+

@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+▪▪▪▪ bun install
+▪▪▪▪ bun:processExitNonZero
+stdout
+▪▪▪▪ bun:processExitNonZero (100ms)
+stderr
+Error: target_runner::run_failed
+
+  × Task bun:processExitNonZero failed to run. View hash details with moon
+  │ query hash hash1234.
+  ╰─▶ Process bun failed with a 1 exit code.
+
+
+

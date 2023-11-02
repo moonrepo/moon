@@ -1,0 +1,15 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+▪▪▪▪ bun install
+▪▪▪▪ bun:runFromWorkspaceBin
+Checking formatting...
+All matched files use Prettier code style!
+▪▪▪▪ bun:runFromWorkspaceBin (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

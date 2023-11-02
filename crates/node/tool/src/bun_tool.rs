@@ -39,8 +39,6 @@ impl BunTool {
     fn internal_create_command(&self) -> miette::Result<Command> {
         Ok(if self.global {
             Command::new("bun")
-        } else if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
         } else {
             Command::new(self.get_bin_path()?)
         })
@@ -59,14 +57,6 @@ impl Tool for BunTool {
         } else {
             self.tool.get_bin_path()?.to_path_buf()
         })
-    }
-
-    fn get_shim_path(&self) -> Option<PathBuf> {
-        if self.global {
-            return None;
-        }
-
-        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(

@@ -2922,6 +2922,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_action_graph",
+ "moon_bun_platform",
  "moon_config",
  "moon_deno_platform",
  "moon_node_platform",
@@ -3114,17 +3115,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_bun_platform"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon",
+ "moon_action_context",
+ "moon_bun_lang",
+ "moon_bun_tool",
+ "moon_common",
+ "moon_config",
+ "moon_hash",
+ "moon_lang",
+ "moon_logger",
+ "moon_node_lang",
+ "moon_platform",
+ "moon_process",
+ "moon_project",
+ "moon_project_graph",
+ "moon_task",
+ "moon_terminal",
+ "moon_test_utils",
+ "moon_tool",
+ "moon_typescript_platform",
+ "moon_utils",
+ "proto_core",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_styles",
+ "starbase_utils",
+ "tokio",
+]
+
+[[package]]
 name = "moon_bun_tool"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_bun_lang",
  "moon_config",
  "moon_logger",
  "moon_platform_runtime",
+ "moon_process",
  "moon_terminal",
  "moon_tool",
  "proto_core",
  "rustc-hash",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -3929,6 +3967,7 @@ name = "moon_test_utils2"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_bun_platform",
  "moon_config",
  "moon_node_platform",
  "moon_platform",

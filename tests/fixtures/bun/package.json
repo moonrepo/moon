@@ -1,0 +1,9 @@
+{
+  "name": "test-bun",
+  "private": true,
+  "workspaces": [
+    "base",
+    "package-manager",
+    "version-override"
+  ]
+}

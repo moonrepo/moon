@@ -18,6 +18,7 @@ starbase_sandbox = { workspace = true }
 
 # TODO
 moon_platform = { path = "../../crates/core/platform" }
+moon_bun_platform = { path = "../../crates/bun/platform" }
 moon_node_platform = { path = "../../crates/node/platform" }
 moon_rust_platform = { path = "../../crates/rust/platform" }
 moon_system_platform = { path = "../../crates/system/platform" }

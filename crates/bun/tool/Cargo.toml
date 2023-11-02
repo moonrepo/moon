@@ -5,11 +5,15 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_bun_lang = { path = "../lang" }
 moon_config = { path = "../../../nextgen/config" }
 moon_logger = { path = "../../core/logger" }
 moon_platform_runtime = { path = "../../../nextgen/platform-runtime" }
+moon_process = { path = "../../../nextgen/process" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_utils = { workspace = true }

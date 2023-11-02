@@ -30,6 +30,7 @@ a project using [`moon.yml`](./config/project).
 Begin by creating the `moon.yml` file at the root of a project and add `build` to the
 [`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
 
+import BaseBun from './__partials__/create-task/bun/base.mdx';
 import BaseDeno from './__partials__/create-task/deno/base.mdx';
 import BaseGo from './__partials__/create-task/go/base.mdx';
 import BaseNode from './__partials__/create-task/node/base.mdx';
@@ -39,6 +40,7 @@ import BaseRuby from './__partials__/create-task/ruby/base.mdx';
 import BaseRust from './__partials__/create-task/rust/base.mdx';
 
 <LangPartials>
+  <BaseBun key="bun" />
   <BaseDeno key="deno" />
   <BaseGo key="go" />
   <BaseNode key="node" />
@@ -51,6 +53,7 @@ import BaseRust from './__partials__/create-task/rust/base.mdx';
 By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
 the [`args`](./config/project#args) setting.
 
+import ArgsBun from './__partials__/create-task/bun/args.mdx';
 import ArgsDeno from './__partials__/create-task/deno/args.mdx';
 import ArgsGo from './__partials__/create-task/go/args.mdx';
 import ArgsNode from './__partials__/create-task/node/args.mdx';
@@ -60,6 +63,7 @@ import ArgsRuby from './__partials__/create-task/ruby/args.mdx';
 import ArgsRust from './__partials__/create-task/rust/args.mdx';
 
 <LangPartials>
+  <ArgsBun key="bun" />
   <ArgsDeno key="deno" />
   <ArgsGo key="go" />
   <ArgsNode key="node" />
@@ -86,6 +90,7 @@ inputs to calculate whether to run, or to return the previous run state from the
 If you're a bit confused, let's demonstrate this by expanding the task with the
 [`inputs`](./config/project#inputs) setting.
 
+import InputsBun from './__partials__/create-task/bun/inputs.mdx';
 import InputsDeno from './__partials__/create-task/deno/inputs.mdx';
 import InputsGo from './__partials__/create-task/go/inputs.mdx';
 import InputsNode from './__partials__/create-task/node/inputs.mdx';
@@ -95,6 +100,7 @@ import InputsRuby from './__partials__/create-task/ruby/inputs.mdx';
 import InputsRust from './__partials__/create-task/rust/inputs.mdx';
 
 <LangPartials>
+  <InputsBun key="bun" />
   <InputsDeno key="deno" />
   <InputsGo key="go" />
   <InputsNode key="node" />
@@ -134,6 +140,7 @@ then immediately exits. No more waiting for long builds!
 Continuing our example, let's route the built files and expand our task with the
 [`outputs`](./config/project#outputs) setting.
 
+import OutputsBun from './__partials__/create-task/bun/outputs.mdx';
 import OutputsDeno from './__partials__/create-task/deno/outputs.mdx';
 import OutputsGo from './__partials__/create-task/go/outputs.mdx';
 import OutputsNode from './__partials__/create-task/node/outputs.mdx';
@@ -143,6 +150,7 @@ import OutputsRuby from './__partials__/create-task/ruby/outputs.mdx';
 import OutputsRust from './__partials__/create-task/rust/outputs.mdx';
 
 <LangPartials>
+  <OutputsBun key="bun" />
   <OutputsDeno key="deno" />
   <OutputsGo key="go" />
   <OutputsNode key="node" />
@@ -200,6 +208,7 @@ We can then replace the inputs in our task above with these new file groups usin
 [`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
 to their documentation for more information!
 
+import FilegroupsBun from './__partials__/create-task/bun/filegroups.mdx';
 import FilegroupsDeno from './__partials__/create-task/deno/filegroups.mdx';
 import FilegroupsGo from './__partials__/create-task/go/filegroups.mdx';
 import FilegroupsNode from './__partials__/create-task/node/filegroups.mdx';
@@ -209,6 +218,7 @@ import FilegroupsRuby from './__partials__/create-task/ruby/filegroups.mdx';
 import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
 
 <LangPartials>
+  <FilegroupsBun key="bun" />
   <FilegroupsDeno key="deno" />
   <FilegroupsGo key="go" />
   <FilegroupsNode key="node" />

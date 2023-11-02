@@ -418,6 +418,8 @@ For interoperability reasons, the following command names have special handling.
 
 - `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
   action pipeline but can define dependencies.
+- When `platform` is "bun":
+  - `bun`, `bunx` - Uses the binaries from the toolchain.
 - When `platform` is "deno":
   - Will execute with `deno` binary.
 - When `platform` is "node":
@@ -626,6 +628,8 @@ The `platform` field defines the platform (language runtime) the command runs on
 its executable, and which tool to execute it with. By default moon will set to a value based on the
 project's [`language`](#language) or default [`platform`](#platform).
 
+- `bun` - Command is a binary within `node_modules` and will be executed with Bun.
+  <VersionLabel version="1.17.0" />
 - `deno` - Command is executed with Deno, or is a Deno binary located in `~/.deno/bin`.
 - `node` - Command is a binary within `node_modules` and will be executed with Node.js.
 - `rust` - Command is executed with Cargo, or is a Cargo binary located in `~/.cargo/bin`.
@@ -963,6 +967,23 @@ Dictates how a project interacts with settings defined at the top-level.
 ## `toolchain`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#toolchain" />
+
+### `bun`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#bun" />
+
+Configures Bun for this project and overrides the top-level [`bun`](./toolchain#bun) setting.
+
+#### `version`
+
+Defines the explicit Bun [version specification](../concepts/toolchain#version-specification) to use
+when _running tasks_ for this project.
+
+```yaml title="moon.yml" {2,3}
+toolchain:
+  bun:
+    version: '1.0.0'
+```
 
 ### `node`
 

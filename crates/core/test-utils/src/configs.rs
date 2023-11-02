@@ -1,10 +1,10 @@
 use crate::create_input_paths;
 use moon_config::{
-    InputPath, NodePackageManager, PartialBunpmConfig, PartialInheritedTasksConfig,
-    PartialNodeConfig, PartialNpmConfig, PartialPnpmConfig, PartialTaskCommandArgs,
-    PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig, PartialWorkspaceConfig,
-    PartialWorkspaceProjects, PartialWorkspaceProjectsConfig, PartialYarnConfig,
-    UnresolvedVersionSpec,
+    InputPath, NodePackageManager, PartialBunConfig, PartialBunpmConfig,
+    PartialInheritedTasksConfig, PartialNodeConfig, PartialNpmConfig, PartialPnpmConfig,
+    PartialTaskCommandArgs, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
+    PartialWorkspaceConfig, PartialWorkspaceProjects, PartialWorkspaceProjectsConfig,
+    PartialYarnConfig, UnresolvedVersionSpec,
 };
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -273,7 +273,52 @@ pub fn get_tasks_fixture_configs() -> (
     (workspace_config, toolchain_config, tasks_config)
 }
 
-// NODE.JS
+// JAVASCRIPT
+
+pub fn get_bun_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("bun".into(), "base".to_owned()),
+            ("packageManager".into(), "package-manager".to_owned()),
+            ("versionOverride".into(), "version-override".to_owned()),
+        ]))),
+        ..PartialWorkspaceConfig::default()
+    };
+
+    let mut toolchain_config = get_default_toolchain();
+    toolchain_config.node = None;
+    toolchain_config.bun = Some(PartialBunConfig {
+        version: Some(UnresolvedVersionSpec::parse("1.0.0").unwrap()),
+        ..PartialBunConfig::default()
+    });
+
+    let tasks_config = PartialInheritedTasksConfig {
+        tasks: Some(BTreeMap::from_iter([
+            (
+                "version".into(),
+                PartialTaskConfig {
+                    command: Some(PartialTaskCommandArgs::String("bun".into())),
+                    args: Some(PartialTaskCommandArgs::String("--version".into())),
+                    ..PartialTaskConfig::default()
+                },
+            ),
+            (
+                "noop".into(),
+                PartialTaskConfig {
+                    command: Some(PartialTaskCommandArgs::String("noop".into())),
+                    ..PartialTaskConfig::default()
+                },
+            ),
+        ])),
+        ..PartialInheritedTasksConfig::default()
+    };
+
+    (workspace_config, toolchain_config, tasks_config)
+}
 
 pub fn get_node_fixture_configs() -> (
     PartialWorkspaceConfig,

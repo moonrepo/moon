@@ -40,8 +40,6 @@ impl BunTool {
     fn internal_create_command(&self) -> miette::Result<Command> {
         Ok(if self.global {
             Command::new("bun")
-        } else if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
         } else {
             Command::new(self.get_bin_path()?)
         })

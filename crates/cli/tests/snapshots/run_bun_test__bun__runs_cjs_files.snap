@@ -1,0 +1,15 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+▪▪▪▪ bun install
+▪▪▪▪ bun:cjs
+stdout
+▪▪▪▪ bun:cjs (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+
+

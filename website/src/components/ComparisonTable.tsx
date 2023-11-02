@@ -105,7 +105,7 @@ const toolchainRows: Comparison[] = [
 	{
 		feature: 'Supported dependency managers',
 		support: {
-			moon: 'npm, pnpm, yarn',
+			moon: 'npm, pnpm, yarn, bun',
 			nx: 'npm, pnpm, yarn',
 			turborepo: 'npm, pnpm, yarn',
 		},

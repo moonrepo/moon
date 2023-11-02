@@ -1,0 +1,7 @@
+{
+  "name": "test-bun-base",
+  "version": "1.0.0",
+  "dependencies": {
+    "prettier": "2.7.0"
+  }
+}

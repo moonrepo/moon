@@ -1,9 +1,9 @@
 pub mod actions;
-mod platform;
+mod node_platform;
 mod target_hash;
 pub mod task;
 
-pub use platform::NodePlatform;
+pub use node_platform::NodePlatform;
 pub use target_hash::NodeTargetHash;
 
 use moon_common::Id;

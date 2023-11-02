@@ -1,4 +1,5 @@
 use moon_action_graph::ActionGraphBuilder;
+use moon_bun_platform::BunPlatform;
 use moon_config::LanguageType;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
@@ -74,7 +75,17 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
     // Primarily for testing
     registry.reset();
 
-    // TODO bun
+    if let Some(bun_config) = &workspace.toolchain_config.bun {
+        registry.register(
+            PlatformType::Bun,
+            Box::new(BunPlatform::new(
+                bun_config,
+                &workspace.toolchain_config.typescript,
+                &workspace.root,
+                Arc::clone(&workspace.proto_env),
+            )),
+        );
+    }
 
     if let Some(deno_config) = &workspace.toolchain_config.deno {
         registry.register(

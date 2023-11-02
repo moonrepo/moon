@@ -1,0 +1,21 @@
+Bun provides a built-in script runner through the [`bun run` command](https://bun.sh/docs/cli/run).
+While Bun scripts are great, they're not as efficient as moon. They _do not_ support granular
+inputs, smart hashing, incremental caching, and all the other performance benefits that moon
+provides.
+
+With that being said, you _do not_ have to migrate away from Bun scripts. Instead, you can simply
+run them from within moon tasks. This gives you the best of both worlds.
+
+```yaml title="<project>/moon.yml"
+language: 'typescript'
+
+tasks:
+	analyze:
+		command: 'bun run analyze'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+```
+
+> When Bun scripts are ran through moon tasks, the current working directory is set to the project
+> root.

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface HeroIconProps {
 	icon: React.ReactNode;
 	text: React.ReactNode;

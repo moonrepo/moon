@@ -1,4 +1,3 @@
-import React from 'react';
 import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from '../iconography/Icon';

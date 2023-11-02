@@ -1,4 +1,3 @@
-import React from 'react';
 import { faPuzzle } from '@fortawesome/pro-regular-svg-icons';
 import Label from '../../ui/typography/Label';
 

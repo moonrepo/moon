@@ -1,4 +1,3 @@
-import React from 'react';
 import cx from 'clsx';
 import BaseLink, { Props as BaseLinkProps } from '@docusaurus/Link';
 import { sizes, TextSize, transforms, weights } from './Text';

@@ -1,4 +1,3 @@
-import React from 'react';
 import Label from '../../ui/typography/Label';
 
 export interface RequiredLabelProps {

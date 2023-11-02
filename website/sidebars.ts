@@ -1,8 +1,7 @@
 /* eslint-disable sort-keys */
-// @ts-check
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
-/** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
-const sidebars = {
+const sidebars: SidebarsConfig = {
 	docs: [
 		'intro',
 		{
@@ -325,5 +324,4 @@ const sidebars = {
 	],
 };
 
-// eslint-disable-next-line import/no-commonjs
-module.exports = sidebars;
+export default sidebars;

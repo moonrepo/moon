@@ -1,4 +1,3 @@
-import React from 'react';
 import { Markdown } from 'docusaurus-plugin-typedoc-api/lib/components/Markdown';
 
 const SUPPORTED = '🟩';

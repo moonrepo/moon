@@ -1,4 +1,3 @@
-import React from 'react';
 import { FooterLinkItem } from '@docusaurus/theme-common';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import type { Props } from '@theme/Footer/Links/MultiColumn';

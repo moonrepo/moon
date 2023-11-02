@@ -1,4 +1,3 @@
-import React from 'react';
 import { faClock } from '@fortawesome/pro-regular-svg-icons';
 import Label, { LabelProps } from '../../ui/typography/Label';
 

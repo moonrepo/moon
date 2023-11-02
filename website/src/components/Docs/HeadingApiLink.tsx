@@ -1,4 +1,3 @@
-import React from 'react';
 import { faCode } from '@fortawesome/pro-regular-svg-icons';
 import Icon from '../../ui/iconography/Icon';
 

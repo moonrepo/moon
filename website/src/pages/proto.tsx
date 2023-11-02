@@ -1,6 +1,5 @@
 /* eslint-disable sort-keys */
 
-import React from 'react';
 import {
 	faPuzzle,
 	faRadar,

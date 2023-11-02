@@ -1,4 +1,3 @@
-import React from 'react';
 import { ProtoTool } from '../../../data/proto-tools';
 import ToolCard from './ToolCard';
 

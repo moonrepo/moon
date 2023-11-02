@@ -15,6 +15,7 @@
     "packages/*/*",
     "scripts/**/*",
     "website/src/**/*",
-    "website/*.js"
+    "website/*.js",
+    "website/*.ts",
   ]
 }

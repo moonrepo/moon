@@ -1,4 +1,3 @@
-import React from 'react';
 import { faSpaceStationMoon } from '@fortawesome/pro-duotone-svg-icons';
 import LogoIcon from '../../../../static/brand/moonbase/icon.svg';
 import TextVector from '../../../../static/brand/moonbase/text-vector.svg';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { faCirclePlus } from '@fortawesome/pro-duotone-svg-icons';
 import DepotSvg from '../../../static/brands/depot.svg';
 import GallerySvg from '../../../static/brands/gallery.svg';

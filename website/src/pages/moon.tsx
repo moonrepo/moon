@@ -1,6 +1,5 @@
 /* eslint-disable sort-keys */
 
-import React from 'react';
 import Link from '@docusaurus/Link';
 import {
 	faAperture,

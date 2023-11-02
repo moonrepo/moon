@@ -1,8 +1,11 @@
-const tailwind = require('./tailwind.config');
+/* eslint-disable sort-keys */
 
-const { colors } = tailwind.theme;
+import type { PrismTheme } from 'prism-react-renderer';
+import tailwind from './tailwind.config';
 
-module.exports = {
+const colors = tailwind.theme!.colors as Record<string, string>;
+
+const theme: PrismTheme = {
 	plain: {
 		backgroundColor: colors.slate['900'],
 		color: colors.gray['100'],
@@ -84,3 +87,5 @@ module.exports = {
 		},
 	],
 };
+
+export default theme;

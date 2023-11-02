@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface ComparisonColumnProps {
 	left: React.ReactNode;
 	right: React.ReactNode;

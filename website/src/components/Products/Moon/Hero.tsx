@@ -1,4 +1,3 @@
-import React from 'react';
 import Link from '@docusaurus/Link';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
 import Text from '@site/src/ui/typography/Text';

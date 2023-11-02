@@ -1,0 +1,113 @@
+---
+title: Bun handbook
+toc_max_heading_level: 6
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Utilizing JavaScript (and TypeScript) in a monorepo can be a daunting task, especially when using
+Bun (or Node.js), as there are many ways to structure your code and to configure your tools. With
+this handbook, we'll help guide you through this process.
+
+:::info
+
+This guide is a living document and will continue to be updated over time!
+
+:::
+
+## moon setup
+
+For this part of the handbook, we'll be focusing on [moon](/moon), our task runner. To start,
+languages in moon act like plugins, where their functionality and support _is not_ enabled unless
+explicitly configured. We follow this approach to avoid unnecessary overhead.
+
+### Enabling the language
+
+To enable JavaScript support via Bun, define the [`bun`](../../config/toolchain#bun) setting in
+[`.moon/toolchain.yml`](../../config/toolchain), even if an empty object.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Bun
+bun: {}
+```
+
+Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the workspace root.
+
+```toml title=".prototools"
+bun = "1.0.0"
+```
+
+This will enable the Bun platform and provide the following automations around its ecosystem:
+
+- Node modules will automatically be installed if dependencies in `package.json` have changed, or
+  the lockfile has changed, since the last time a task has ran.
+  - We'll also take `package.json` workspaces into account and install modules in the correct
+    location; either the workspace root, in a project, or both.
+- Relationships between projects will automatically be discovered based on `dependencies`,
+  `devDependencies`, and `peerDependencies` in `package.json`.
+
+### Utilizing the toolchain
+
+When a language is enabled, moon by default will assume that the language's binary is available
+within the current environment (typically on `PATH`). This has the downside of requiring all
+developers and machines to manually install the correct version of the language, _and to stay in
+sync_.
+
+Instead, you can utilize [moon's toolchain](../../concepts/toolchain), which will download and
+install the language in the background, and ensure every task is executed using the exact version
+across all machines.
+
+Enabling the toolchain is as simple as defining the [`bun.version`](../../config/toolchain#version)
+setting.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Bun toolchain with an explicit version
+bun:
+	version: '1.0.0'
+```
+
+> Versions can also be defined with [`.prototools`](../../proto/config).
+
+### Configuring the `platform`
+
+Since the JavaScript ecosystem supports multiple runtimes, moon is unable to automatically detect
+the correct runtime for all scenarios. Does the existence of a `package.json` mean Node.js or Bun?
+We don't know, and default to Node.js because of its popularity.
+
+To work around this, you can set `platform` to "bun" at the task-level or project-level.
+
+```yaml title="moon.yml"
+# For all tasks in the project
+platform: 'bun'
+
+tasks:
+	build:
+		command: 'webpack'
+		# For this specific task
+		platform: 'bun'
+```
+
+> The task-level `platform` only needs to be set if executing a `node_modules` binary! The `bun`
+> binary automatically sets the platform to Bun.
+
+### Using `package.json` scripts
+
+If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
+moon tasks to execute `package.json` scripts using `bun run`, instead of migrating everything.
+
+```yaml title="moon.yml"
+tasks:
+	build:
+		command: 'bun run build'
+```
+
+## Handbook
+
+:::info
+
+Refer to the [Node.js handbook](./node-handbook) for more information on repository structure,
+dependency management, and more. Since both runtimes are extremely similar, the information in that
+handbook also applies to Bun!
+
+:::

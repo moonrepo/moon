@@ -429,6 +429,16 @@
       "title": "PartialProjectToolchainConfig",
       "type": "object",
       "properties": {
+        "bun": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "node": {
           "anyOf": [
             {

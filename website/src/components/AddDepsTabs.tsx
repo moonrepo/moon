@@ -66,6 +66,24 @@ function getPnpm(props: AddDepsTabsProps, workspaces: boolean) {
 	return cmd;
 }
 
+function getBun(props: AddDepsTabsProps) {
+	let cmd = `bun install `;
+
+	if (props.dev) {
+		cmd += '--dev ';
+	} else if (props.peer) {
+		cmd += '--peer ';
+	}
+
+	// if (props.package) {
+	// 	cmd += `--workspace ${props.package} `;
+	// }
+
+	cmd += props.dep;
+
+	return cmd;
+}
+
 export default function AddDepsTabs(props: AddDepsTabsProps) {
 	let yarn1 = getYarn(props, false, true);
 	let pnpm = getPnpm(props, false);
@@ -87,6 +105,7 @@ export default function AddDepsTabs(props: AddDepsTabsProps) {
 				{ label: 'Yarn (classic)', value: 'yarn1' },
 				{ label: 'npm', value: 'npm' },
 				{ label: 'pnpm', value: 'pnpm' },
+				{ label: 'Bun', value: 'bun' },
 			]}
 		>
 			<TabItem value="yarn">
@@ -100,6 +119,9 @@ export default function AddDepsTabs(props: AddDepsTabsProps) {
 			</TabItem>
 			<TabItem value="pnpm">
 				<CodeBlock language="shell">{pnpm}</CodeBlock>
+			</TabItem>
+			<TabItem value="bun">
+				<CodeBlock language="shell">{getBun(props)}</CodeBlock>
 			</TabItem>
 		</Tabs>
 	);

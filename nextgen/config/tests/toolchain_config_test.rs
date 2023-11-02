@@ -76,6 +76,112 @@ mod toolchain_config {
         }
     }
 
+    mod bun {
+        use super::*;
+
+        #[test]
+        fn uses_defaults() {
+            let config = test_load_config(FILENAME, "bun: {}", |path| {
+                ToolchainConfig::load_from(path, &ToolsConfig::default())
+            });
+
+            let cfg = config.bun.unwrap();
+
+            assert!(cfg.plugin.is_some());
+        }
+
+        #[test]
+        fn enables_via_proto() {
+            let config = test_load_config(FILENAME, "{}", |path| {
+                let mut proto = ToolsConfig::default();
+                proto.tools.insert(
+                    Id::raw("bun"),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap(),
+                );
+
+                ToolchainConfig::load_from(path, &proto)
+            });
+
+            assert!(config.bun.is_some());
+            assert_eq!(
+                config.bun.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn inherits_plugin_locator() {
+            let config = test_load_config(FILENAME, "bun: {}", |path| {
+                let mut tools = ToolsConfig::default();
+                tools.inherit_builtin_plugins();
+
+                ToolchainConfig::load_from(path, &tools)
+            });
+
+            assert_eq!(
+                config.bun.unwrap().plugin.unwrap(),
+                PluginLocator::SourceUrl {
+                    url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.4.0/bun_plugin.wasm".into()
+                }
+            );
+        }
+
+        #[test]
+        fn proto_version_doesnt_override() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+bun:
+  version: 1.0.0
+",
+                |path| {
+                    let mut proto = ToolsConfig::default();
+                    proto.tools.insert(
+                        Id::raw("bun"),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                    );
+
+                    ToolchainConfig::load_from(path, &proto)
+                },
+            );
+
+            assert!(config.bun.is_some());
+            assert_eq!(
+                config.bun.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn inherits_version_from_env_var() {
+            env::set_var("MOON_BUN_VERSION", "1.0.0");
+
+            let config = test_load_config(
+                FILENAME,
+                r"
+bun:
+    version: 3.0.0
+",
+                |path| {
+                    let mut proto = ToolsConfig::default();
+                    proto.tools.insert(
+                        Id::raw("bun"),
+                        UnresolvedVersionSpec::parse("2.0.0").unwrap(),
+                    );
+
+                    ToolchainConfig::load_from(path, &proto)
+                },
+            );
+
+            env::remove_var("MOON_BUN_VERSION");
+
+            assert_eq!(
+                config.bun.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+    }
+
     mod deno {
         use super::*;
 

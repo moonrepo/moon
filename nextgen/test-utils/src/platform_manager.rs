@@ -1,3 +1,4 @@
+use moon_bun_platform::BunPlatform;
 use moon_config::{PlatformType, ToolchainConfig, ToolsConfig};
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
@@ -12,7 +13,12 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
     let config = ToolchainConfig::load_from(root, &ToolsConfig::default()).unwrap();
     let mut manager = PlatformManager::default();
 
-    // TODO bun
+    if let Some(bun_config) = &config.bun {
+        manager.register(
+            PlatformType::Bun,
+            Box::new(BunPlatform::new(bun_config, &None, root, proto.clone())),
+        );
+    }
 
     if let Some(node_config) = &config.node {
         manager.register(

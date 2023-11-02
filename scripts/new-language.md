@@ -123,7 +123,8 @@ pub struct ToolchainConfig {
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
 - [ ] Ran `cargo make schemas` and updated the JSON schemas
-- [ ] Add `.prototools` support in `crates/core/config/src/toolchain/config.rs`
+- [ ] Add `.prototools` support in `nextgen/config/src/toolchain_config.rs`
+- [ ] Add tests to `nextgen/config/tests/toolchain_config_test.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
 
@@ -150,21 +151,6 @@ ProjectLanguage::Kotlin => PlatformType::Kotlin,
 
 - [ ] Updated enum
 
-### Add variant to `Runtime` enum in `moon_platform_runtime`
-
-This determines the language + version of a tool to run within the platform.
-
-```rust
-pub enum Runtime {
-	// ...
-	Kotlin(Version),
-}
-```
-
-- [ ] Updated enum
-- [ ] Updated TypeScript types at `packages/types/src/common.ts`
-- [ ] Verified all `match` callsites handle the new variant
-
 ### Update `moon_platform_detector` crate
 
 Tasks run against the platform, so we can now attempt to detect this.
@@ -175,7 +161,7 @@ Tasks run against the platform, so we can now attempt to detect this.
 
 Every language will have a "tool" crate that implements the moon `Tool` trait (and eventually the
 proto `Tool` trait). This trait defines a handful of methods for how to install and execute the
-toon.
+tool.
 
 ```rust
 #[derive(Debug)]
@@ -251,9 +237,8 @@ Furthermore, when applicable, also add version support from `.prototools`.
 kotlin = "1.2.3"
 ```
 
-- [ ] Updated config struct: `crates/core/config/src/toolchain/<lang>.rs`
-- [ ] Supported proto version in `crates/core/config/src/toolchain/config.rs`
-- [ ] Added tests: `crates/core/config/tests/toolchain_test.rs`
+- [ ] Updated config struct: `nextgen/config/src/toolchain/<lang>.rs`
+- [ ] Supported proto version in `nextgen/config/src/toolchain_config.rs`
 - [ ] Ran `cargo make schemas` and updated the JSON schemas
 
 ### Integrate proto tool into moon tool crate
@@ -290,9 +275,8 @@ Refer to the Node.js implementation for examples (it can mostly be copied).
 Different projects may have different version requirements, so we need to support this through
 project-level toolchain overrides.
 
-- [ ] Updated `crates/core/config/src/project/toolchain.rs`
+- [ ] Updated `nextgen/config/src/project/overrides_config.rs`
 - [ ] Updated `get_runtime_from_config` in platform crate
-- [ ] Updated `packages/types/src/project-config.ts`
 
 ### Integrate `--profile` option
 

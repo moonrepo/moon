@@ -3,6 +3,7 @@ mod bun_lockb;
 use moon_lang::{DependencyManager, Language};
 
 pub use bun_lockb::*;
+pub use moon_lang::LockfileDependencyVersions;
 
 pub const BUN: Language = Language {
     binary: "bun",
@@ -13,7 +14,7 @@ pub const BUN: Language = Language {
 
 // Dependency managers
 
-pub const BUN_INSTALL: DependencyManager = DependencyManager {
+pub const BUNPM: DependencyManager = DependencyManager {
     binary: "bun install",
     config_files: &["bunfig.toml"],
     lockfile: "bun.lockb",

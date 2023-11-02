@@ -1,4 +1,4 @@
-use moon_bun_lang::BUN_INSTALL;
+use moon_bun_lang::BUNPM;
 use moon_config::LanguageType;
 use moon_deno_lang::{DENO_DEPS, DVM};
 use moon_go_lang::{G, GOENV, GOMOD, GVM};
@@ -69,7 +69,7 @@ pub fn detect_project_language(root: &Path) -> LanguageType {
         || is_using_version_manager(root, &NVM)
         || is_using_version_manager(root, &NODENV)
         // Bun
-        || is_using_dependency_manager(root, &BUN_INSTALL, true)
+        || is_using_dependency_manager(root, &BUNPM, true)
     {
         return LanguageType::JavaScript;
     }

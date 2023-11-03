@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed `moon ci` not treating dependents as "CI only" when running locally.
+- Fixed the MQL parser failing on projects that contain a `.`.
 
 ## 1.16.0
 

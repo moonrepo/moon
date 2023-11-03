@@ -7,7 +7,6 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
-use moon_common::is_ci;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
@@ -175,7 +174,7 @@ fn generate_action_graph(
 
     // Run dependents to ensure consumers still work correctly
     let requirements = RunRequirements {
-        ci: is_ci(),
+        ci: true,
         dependents: true,
         touched_files: Some(touched_files),
         ..Default::default()

@@ -2560,9 +2560,9 @@ dependencies = [
 
 [[package]]
 name = "json_comments"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41ee439ee368ba4a77ac70d04f14015415af8600d6c894dc1f11bd79758c57d5"
+checksum = "9dbbfed4e59ba9750e15ba154fdfd9329cee16ff3df539c2666b70f58cc32105"
 
 [[package]]
 name = "kv-log-macro"
@@ -5465,9 +5465,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9faf731068b919569efae7f6c7c6c3d2e29411c1cba666ef0c6fe20b82f50a1"
+checksum = "d948dcd63f1dd11f2b7a9ab15c53e7866faa11ccd31377dca1625c106d40fcee"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",

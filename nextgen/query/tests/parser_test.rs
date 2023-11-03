@@ -342,6 +342,15 @@ mod mql_parse {
     }
 
     #[test]
+    fn id_patterns() {
+        assert!(parse_query("key=id").is_ok());
+        assert!(parse_query("key=id-dash").is_ok());
+        assert!(parse_query("key=id_underscore").is_ok());
+        assert!(parse_query("key=id/slash").is_ok());
+        assert!(parse_query("key=id.period").is_ok());
+    }
+
+    #[test]
     fn like_glob_patterns() {
         assert_eq!(
             parse_query("key~value{foo,bar}").unwrap(),

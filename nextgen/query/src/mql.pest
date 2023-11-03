@@ -1,9 +1,13 @@
 WHITESPACE = _{ " " }
 
-key        = @{ ASCII_ALPHANUMERIC+ }
-value      = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "/" | "@")+ }
+key = @{ ASCII_ALPHANUMERIC+ }
+
+// Other characters are required for IDs
+value = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "/" | "." | "@")+ }
+
 value_glob = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "*" | "!" | "." | "," | "/" | "\\" | "{" | "}" | "<" | ">" | "[" | "]" | "?" | "$" | ":" | "@")+ }
-value_list =  { "[" ~ value ~ ("," ~ value)* ~ "]" }
+
+value_list = { "[" ~ value ~ ("," ~ value)* ~ "]" }
 
 // Operators
 

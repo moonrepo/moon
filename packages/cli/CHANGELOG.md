@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `moon ci` not treating dependents as "CI only" when running locally.
+
 ## 1.16.0
 
 #### 🚀 Updates

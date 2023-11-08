@@ -94,7 +94,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/node-plugin',
 	},
 	node_depman: {
-		bins: ['node-gyp', 'npm', 'npx', 'pnpm', 'pnpx', 'yarn', 'node-gyp'],
+		bins: ['npm', 'npx', 'pnpm', 'pnpx', 'yarn', 'node-gyp'],
 		description: 'proto supports all popular Node.js package managers.',
 		detectionSources: [{ file: 'package.json', label: 'engines / package manager' }],
 		globalsDirs: ['~/.proto/tools/node/globals/bin'],

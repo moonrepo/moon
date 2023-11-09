@@ -80,7 +80,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/go-plugin',
 	},
 	node: {
-		bins: ['node', 'npx'],
+		bins: ['node'],
 		description: "Node.js is a JavaScript runtime built on Chrome's V8 engine.",
 		detectionSources: [
 			{ file: '.nvmrc', url: 'https://github.com/nvm-sh/nvm' },
@@ -94,7 +94,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/node-plugin',
 	},
 	node_depman: {
-		bins: ['npm', 'pnpm', 'yarn', 'node-gyp'],
+		bins: ['npm', 'npx', 'pnpm', 'pnpx', 'yarn', 'node-gyp'],
 		description: 'proto supports all popular Node.js package managers.',
 		detectionSources: [{ file: 'package.json', label: 'engines / package manager' }],
 		globalsDirs: ['~/.proto/tools/node/globals/bin'],

@@ -233,7 +233,7 @@ When [syncing project dependencies](#syncprojectworkspacedependencies), customiz
 will be used for the dependency version range. The following formats are supported (but use the one
 most applicable to your chosen package manager):
 
-- `file` - Uses `file:../relative/path` and copies package contents.
+- `file` (npm default) - Uses `file:../relative/path` and copies package contents.
 - `link` - Uses `link:../relative/path` and symlinks package contents.
 - `star` - Uses an explicit `*`.
 - `version` - Uses the explicit version from the dependent project's `package.json`, e.g., "1.2.3".
@@ -241,7 +241,7 @@ most applicable to your chosen package manager):
   e.g., "^1.2.3".
 - `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
   e.g., "~1.2.3".
-- `workspace` (default) - Uses `workspace:*`, which resolves to "1.2.3". Requires package
+- `workspace` (pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires package
   workspaces.
 - `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
 - `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
@@ -252,7 +252,8 @@ node:
 ```
 
 > This setting does not apply to peer dependencies, as they will always use a format of
-> `^<major>.0.0`.
+> `^<major>.0.0`. Furthermore, if a package manager does not support a chosen format, it will
+> fallback to another format!
 
 ### `inferTasksFromScripts`
 

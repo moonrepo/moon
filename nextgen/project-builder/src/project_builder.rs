@@ -263,7 +263,7 @@ impl<'app> ProjectBuilder<'app> {
                         id = self.id.as_str(),
                         dep = dep_id.as_str(),
                         task = task_config.target.as_str(),
-                        "Marking arbitrary project as a peer dependency because of a task dependency"
+                        "Marking arbitrary project as an implicit dependency because of a task dependency"
                     );
 
                     deps.insert(

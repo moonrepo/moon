@@ -10,7 +10,7 @@ tasks:
     # command: 'node ../../scripts/build-component.js .'
     command: 'echo $project'
     deps:
-      - '^:build'
+      - '^:buildComponent'
       - '~:buildComponentTypes'
     inputs:
       - '@globs(sources)'

@@ -1,11 +1,13 @@
 use moon_config::{
-    NodeVersionFormat, NodeVersionManager, PartialNodeConfig, PartialWorkspaceProjects,
+    NodePackageManager, NodeVersionFormat, NodeVersionManager, PartialNodeConfig,
+    PartialWorkspaceProjects, PartialYarnConfig,
 };
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
 };
 use moon_utils::string_vec;
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::fs::read_to_string;
 
@@ -569,6 +571,12 @@ mod sync_depends_on {
 
     fn test_depends_on_format(format: NodeVersionFormat) {
         let sandbox = node_sandbox_with_config(|cfg| {
+            // Other pm's don't support all formats
+            cfg.package_manager = Some(NodePackageManager::Yarn);
+            cfg.yarn = Some(PartialYarnConfig {
+                version: Some(UnresolvedVersionSpec::parse("1.22.0").unwrap()),
+                ..PartialYarnConfig::default()
+            });
             cfg.sync_project_workspace_dependencies = Some(true);
             cfg.dependency_version_format = Some(format);
         });
@@ -632,6 +640,12 @@ mod sync_depends_on {
     #[test]
     fn syncs_depends_on_with_scopes() {
         let sandbox = node_sandbox_with_config(|cfg| {
+            // Other pm's don't support all formats
+            cfg.package_manager = Some(NodePackageManager::Yarn);
+            cfg.yarn = Some(PartialYarnConfig {
+                version: Some(UnresolvedVersionSpec::parse("1.22.0").unwrap()),
+                ..PartialYarnConfig::default()
+            });
             cfg.sync_project_workspace_dependencies = Some(true);
         });
 

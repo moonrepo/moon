@@ -2,5 +2,7 @@ tags: [component]
 
 workspace:
   inheritedTasks:
+    exclude:
+      - 'build'
     rename:
       buildComponent: build

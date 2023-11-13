@@ -5,6 +5,10 @@
     "container": "^1.0.0",
     "base": "^1.0.0"
   },
+  "devDependencies": {
+    "container": "workspace:1.0.0",
+    "base": "workspace:1.0.0"
+  },
   "dependencies": {
     "typescript": "^5.2.2"
   }

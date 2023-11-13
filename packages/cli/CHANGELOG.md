@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Updated `node.dependencyVersionFormat` to fallback to a supported format when the chosen
+  `node.packageManager` does not support the configured (or default) version format.
+
 ## 1.16.1
 
 #### 🐞 Fixes

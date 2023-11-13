@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config::{BinConfig, BinEntry, NodePackageManager, ToolchainConfig};
+use moon_config::{BinConfig, BinEntry, NodePackageManager, NodeVersionFormat, ToolchainConfig};
 use proto_core::{Id, PluginLocator, ToolsConfig, UnresolvedVersionSpec};
 use starbase_sandbox::create_sandbox;
 use std::env;
@@ -355,6 +355,23 @@ node:
                     config.node.unwrap().npm.version.unwrap(),
                     UnresolvedVersionSpec::parse("10.0.0").unwrap()
                 );
+            }
+
+            #[test]
+            fn fallsback_version_format() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: npm
+  dependencyVersionFormat: workspace
+",
+                    |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                );
+
+                let cfg = config.node.unwrap();
+
+                assert_eq!(cfg.dependency_version_format, NodeVersionFormat::File);
             }
         }
 
@@ -727,6 +744,23 @@ node:
                     config.node.unwrap().bun.unwrap().version.unwrap(),
                     UnresolvedVersionSpec::parse("1.0.0").unwrap()
                 );
+            }
+
+            #[test]
+            fn fallsback_version_format() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: bun
+  dependencyVersionFormat: workspace-tilde
+",
+                    |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                );
+
+                let cfg = config.node.unwrap();
+
+                assert_eq!(cfg.dependency_version_format, NodeVersionFormat::Workspace);
             }
         }
     }

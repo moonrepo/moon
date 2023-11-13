@@ -1,6 +1,8 @@
 use crate::{inherit_tool, inherit_tool_required};
+use moon_common::color;
 use proto_core::{PluginLocator, ToolsConfig, UnresolvedVersionSpec};
 use schematic::{derive_enum, Config, ConfigEnum};
+use tracing::debug;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -28,6 +30,13 @@ derive_enum!(
 );
 
 impl NodeVersionFormat {
+    pub fn get_default_for(&self, pm: &NodePackageManager) -> Self {
+        match pm {
+            NodePackageManager::Npm => Self::File,
+            _ => Self::Workspace,
+        }
+    }
+
     pub fn get_prefix(&self) -> String {
         match self {
             NodeVersionFormat::File => "file:".into(),
@@ -39,6 +48,18 @@ impl NodeVersionFormat {
             NodeVersionFormat::Workspace => "workspace:*".into(),
             NodeVersionFormat::WorkspaceCaret => "workspace:^".into(),
             NodeVersionFormat::WorkspaceTilde => "workspace:~".into(),
+        }
+    }
+
+    pub fn is_supported_by(&self, pm: &NodePackageManager) -> bool {
+        match pm {
+            NodePackageManager::Bun => !matches!(self, Self::WorkspaceCaret | Self::WorkspaceTilde),
+            NodePackageManager::Npm => !matches!(
+                self,
+                Self::Link | Self::Workspace | Self::WorkspaceCaret | Self::WorkspaceTilde
+            ),
+            NodePackageManager::Pnpm => true,
+            NodePackageManager::Yarn => true,
         }
     }
 }
@@ -200,6 +221,25 @@ impl NodeConfig {
                 self.inherit_proto_yarn(proto_tools)?;
             }
         };
+
+        if !self
+            .dependency_version_format
+            .is_supported_by(&self.package_manager)
+        {
+            let new_format = self
+                .dependency_version_format
+                .get_default_for(&self.package_manager);
+
+            debug!(
+                "{} for {} is not supported by {}, changing to {}",
+                color::symbol(self.dependency_version_format.to_string()),
+                color::property("node.dependencyVersionFormat"),
+                self.package_manager.to_string(),
+                color::symbol(new_format.to_string()),
+            );
+
+            self.dependency_version_format = new_format;
+        }
 
         if self.plugin.is_none() {
             self.plugin = Some(PluginLocator::SourceUrl {

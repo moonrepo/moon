@@ -1,35 +1,6 @@
-fileGroups:
-  sources:
-    - '**/*'
-  projectConfigs:
-    - '*.json'
-    - '*.js'
+tags: [component]
 
-tasks:
-  build:
-    # command: 'node ../../scripts/build-component.js .'
-    command: 'echo chat'
-    deps:
-      - '^:build'
-      - '~:buildComponentTypes'
-    inputs:
-      - '@globs(sources)'
-      - '@group(projectConfigs)'
-    # outputs:
-    #   - 'dist/index.js'
-    #   - 'dist/index.js.map'
-    #   - 'dist/index.mjs'
-    #   - 'dist/index.mjs.map'
-    platform: 'system'
-  buildComponentTypes:
-    command: 'tsc --build'
-    deps:
-      - '^:build'
-    inputs:
-      - '@globs(sources)'
-      - '@group(projectConfigs)'
-    outputs:
-      # - 'dist/src'
-      # - 'dist/test'
-      # - 'dist/tsconfig.tsbuildinfo'
-      - 'dist'
+workspace:
+  inheritedTasks:
+    rename:
+      buildComponent: build

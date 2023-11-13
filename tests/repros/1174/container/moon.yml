@@ -1,4 +1,1 @@
-tasks:
-  build:
-    command: 'echo container'
-    platform: system
+tags: [component]

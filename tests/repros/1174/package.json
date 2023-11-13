@@ -1,0 +1,3 @@
+{
+  "workspaces": ["base", "chat", "container"]
+}

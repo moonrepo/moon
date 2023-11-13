@@ -1,0 +1,4 @@
+tasks:
+  build:
+    command: 'echo base'
+    platform: system

@@ -1,0 +1,11 @@
+{
+  "name": "chat",
+  "version": "1.0.0",
+  "peerDependencies": {
+    "container": "^1.0.0",
+    "base": "^1.0.0"
+  },
+  "dependencies": {
+    "typescript": "^5.2.2"
+  }
+}

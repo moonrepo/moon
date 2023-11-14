@@ -12,6 +12,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Update project graph hashing to include git ignored `moon.yml` files.
+
 #### 🐞 Fixes
 
 - Fixed Yarn v1.22.x download not unpacking correctly.

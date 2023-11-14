@@ -12,6 +12,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `projects` globs to support ending in `moon.yml`.
+
 #### 🐞 Fixes
 
 - Updated `node.dependencyVersionFormat` to fallback to a supported format when the chosen

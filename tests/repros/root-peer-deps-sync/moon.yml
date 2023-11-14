@@ -1,0 +1,7 @@
+language: javascript
+
+tasks:
+  test:
+    command: noop
+    deps:
+      - project:noop

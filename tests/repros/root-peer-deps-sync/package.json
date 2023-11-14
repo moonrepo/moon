@@ -1,0 +1,9 @@
+{
+  "name": "root",
+  "workspaces": [
+    "project"
+  ],
+  "peerDependencies": {
+    "project": "^0.0.0"
+  }
+}

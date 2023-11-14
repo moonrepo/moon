@@ -409,7 +409,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             .vcs
             .as_ref()
             .unwrap()
-            .get_file_hashes(&configs, false, 500)
+            .get_file_hashes(&configs, true, 500)
             .await
     }
 

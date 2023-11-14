@@ -10,14 +10,28 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
-## 1.16.2
+## Unreleased
+
+#### 🚀 Updates
+
+- Update project graph hashing to include git ignored `moon.yml` files.
+
+#### 🐞 Fixes
+
+- Fixed Yarn v1.22.x download not unpacking correctly.
+
+#### 🧩 Plugins
+
+- Updated Yarn `node_depman_plugin` to v0.5.1.
+
+## 1.16.2/3
 
 #### 🚀 Updates
 
 - Updated `projects` globs to support ending in `moon.yml`.
 - Updated `node.dependencyVersionFormat` to fallback to a supported format when the chosen
   `node.packageManager` does not support the configured (or default) version format.
-- Updated to proto v0.21.0.
+- Updated to proto v0.22.0.
 
 #### 🐞 Fixes
 

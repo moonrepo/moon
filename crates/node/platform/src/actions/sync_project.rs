@@ -46,7 +46,7 @@ pub async fn sync_project(
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
-        if node_config.sync_project_workspace_dependencies {
+        if node_config.sync_project_workspace_dependencies && !project.is_root_level() {
             let format = &node_config.dependency_version_format;
 
             if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {

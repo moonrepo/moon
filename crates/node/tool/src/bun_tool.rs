@@ -57,16 +57,8 @@ impl Tool for BunTool {
         Ok(if self.global {
             "bun".into()
         } else {
-            self.tool.get_bin_path()?.to_path_buf()
+            self.tool.get_exe_path()?.to_path_buf()
         })
-    }
-
-    fn get_shim_path(&self) -> Option<PathBuf> {
-        if self.global {
-            return None;
-        }
-
-        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -138,7 +130,7 @@ impl DependencyManager<NodeTool> for BunTool {
         if !self.global {
             cmd.env(
                 "PATH",
-                prepend_path_env_var([self.tool.get_bin_path()?.parent().unwrap()]),
+                prepend_path_env_var([self.tool.get_exe_path()?.parent().unwrap()]),
             );
         }
 

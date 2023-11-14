@@ -113,16 +113,8 @@ impl Tool for YarnTool {
         Ok(if self.global {
             "yarn".into()
         } else {
-            self.tool.get_bin_path()?.to_path_buf()
+            self.tool.get_exe_path()?.to_path_buf()
         })
-    }
-
-    fn get_shim_path(&self) -> Option<PathBuf> {
-        if self.global {
-            return None;
-        }
-
-        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -204,7 +196,7 @@ impl DependencyManager<NodeTool> for YarnTool {
                 "PATH",
                 prepend_path_env_var([
                     node.get_bin_path()?.parent().unwrap(),
-                    self.tool.get_bin_path()?.parent().unwrap(),
+                    self.tool.get_exe_path()?.parent().unwrap(),
                 ]),
             );
         }

@@ -208,7 +208,7 @@ pub fn create_target_command(
     if !is_package_manager && !node.global {
         command.env(
             "PATH",
-            prepend_path_env_var([node.tool.get_bin_path()?.parent().unwrap()]),
+            prepend_path_env_var([node.tool.get_exe_path()?.parent().unwrap()]),
         );
     }
 

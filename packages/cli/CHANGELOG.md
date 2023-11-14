@@ -17,11 +17,22 @@
 - Updated `projects` globs to support ending in `moon.yml`.
 - Updated `node.dependencyVersionFormat` to fallback to a supported format when the chosen
   `node.packageManager` does not support the configured (or default) version format.
+- Updated to proto v0.21.0.
 
 #### 🐞 Fixes
 
 - Fixed an issue where dependencies were being injected into the root `package.json`, when a
   root-level project was dependending on non-root project tasks.
+
+#### 🧩 Plugins
+
+- Updated `bun_plugin` to v0.5.
+- Updated `deno_plugin` to v0.5.
+- Updated `go_plugin` to v0.5.
+- Updated `node_plugin` and `node_depman_plugin` to v0.5.
+- Updated `python_plugin` to v0.2.
+- Updated `rust_plugin` to v0.4.
+- Updated `schema_plugin` (TOML) to v0.5.
 
 ## 1.16.1
 

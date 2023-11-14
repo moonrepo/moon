@@ -122,6 +122,20 @@ mod project_graph {
         }
 
         #[tokio::test]
+        async fn globs_with_config() {
+            let sandbox = create_sandbox("locate-configs");
+            let mut container = ProjectGraphContainer::new(sandbox.path());
+
+            container.workspace_config.projects =
+                WorkspaceProjects::Globs(string_vec!["*/moon.yml"]);
+
+            let context = container.create_context();
+            let graph = container.build_graph(context).await;
+
+            assert_eq!(get_ids_from_projects(graph.get_all().unwrap()), ["a", "c"]);
+        }
+
+        #[tokio::test]
         async fn paths() {
             let sandbox = create_sandbox("dependencies");
             let mut container = ProjectGraphContainer::new(sandbox.path());

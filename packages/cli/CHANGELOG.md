@@ -12,10 +12,16 @@
 
 ## Unreleased
 
-#### 🐞 Fixes
+#### 🚀 Updates
 
+- Updated `projects` globs to support ending in `moon.yml`.
 - Updated `node.dependencyVersionFormat` to fallback to a supported format when the chosen
   `node.packageManager` does not support the configured (or default) version format.
+
+#### 🐞 Fixes
+
+- Fixed an issue where dependencies were being injected into the root `package.json`, when a
+  root-level project was dependending on non-root project tasks.
 
 ## 1.16.1
 

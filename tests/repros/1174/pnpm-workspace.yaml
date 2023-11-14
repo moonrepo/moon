@@ -1,0 +1,4 @@
+packages:
+  - 'base'
+  - 'chat'
+  - 'container'

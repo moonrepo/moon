@@ -1,0 +1,10 @@
+{
+  "workspaces": [
+    "base",
+    "chat",
+    "container"
+  ],
+  "engines": {
+    "node": "18.17.0"
+  }
+}

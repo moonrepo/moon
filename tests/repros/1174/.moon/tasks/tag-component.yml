@@ -1,0 +1,35 @@
+fileGroups:
+  sources:
+    - '**/*'
+  projectConfigs:
+    - '*.json'
+    - '*.js'
+
+tasks:
+  buildComponent:
+    # command: 'node ../../scripts/build-component.js .'
+    command: 'echo $project'
+    deps:
+      - '^:buildComponent'
+      - '~:buildComponentTypes'
+    inputs:
+      - '@globs(sources)'
+      - '@group(projectConfigs)'
+    # outputs:
+    #   - 'dist/index.js'
+    #   - 'dist/index.js.map'
+    #   - 'dist/index.mjs'
+    #   - 'dist/index.mjs.map'
+    platform: 'system'
+  buildComponentTypes:
+    command: 'tsc --build'
+    deps:
+      - '^:build'
+    inputs:
+      - '@globs(sources)'
+      - '@group(projectConfigs)'
+    outputs:
+      # - 'dist/src'
+      # - 'dist/test'
+      # - 'dist/tsconfig.tsbuildinfo'
+      - 'dist'

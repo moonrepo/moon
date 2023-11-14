@@ -485,6 +485,10 @@ tasks:
       - 'codegen'
 ```
 
+> Dependencies of inherited tasks will be excluded and renamed according to the
+> [`workspace.inheritedTasks`](#inheritedtasks) setting. This process _only_ uses filters from the
+> current project, and not filters from dependent projects.
+
 ### `env`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#env" />

@@ -104,7 +104,7 @@ impl NodeTool {
                 if !self.global {
                     cmd.env(
                         "PATH",
-                        prepend_path_env_var([self.tool.get_bin_path()?.parent().unwrap()]),
+                        prepend_path_env_var([self.tool.get_exe_path()?.parent().unwrap()]),
                     );
                 }
 
@@ -195,7 +195,7 @@ impl Tool for NodeTool {
         Ok(if self.global {
             "node".into()
         } else {
-            self.tool.get_bin_path()?.to_path_buf()
+            self.tool.get_exe_path()?.to_path_buf()
         })
     }
 

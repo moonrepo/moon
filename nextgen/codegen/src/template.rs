@@ -231,7 +231,7 @@ impl Template {
                 match file.is_mergeable() {
                     Some("json") => {
                         let prev: json::JsonValue = json::read_file(&file.dest_path)?;
-                        let next: json::JsonValue = json::read_file(&file.source_path)?;
+                        let next: json::JsonValue = json::JsonValue::String(file.content.to_owned());
 
                         json::write_file_with_config(
                             &file.dest_path,
@@ -241,7 +241,7 @@ impl Template {
                     }
                     Some("yaml") => {
                         let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
-                        let next: yaml::YamlValue = yaml::read_file(&file.source_path)?;
+                        let next: yaml::YamlValue = yaml::YamlValue::String(file.content.to_owned());
 
                         yaml::write_file_with_config(&file.dest_path, &yaml::merge(&prev, &next))?;
                     }

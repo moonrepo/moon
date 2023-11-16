@@ -22,11 +22,11 @@ export default function ToolCard({ id, tool }: ToolCardProps) {
 	let usage = `proto install ${usageId}`;
 
 	if (tool.pluginLocator) {
-		usage = `proto add-plugin ${usageId} "${tool.pluginLocator}"\n${usage}`;
+		usage = `proto tool add ${usageId} "${tool.pluginLocator}"\n${usage}`;
 	}
 
 	return (
-		<div className="relative rounded-lg px-2 py-2 text-black border-solid border border-t-0 border-b-2 bg-gray-50 border-gray-200/75 dark:bg-slate-700 dark:border-slate-900/75">
+		<div className="relative rounded-lg px-2 py-2 border-solid border border-t-0 border-b-2 bg-gray-50 border-gray-200/75 dark:bg-slate-700 dark:border-slate-900/75">
 			{tool.pluginType === 'toml' && <TomlLink to={tool.repoUrl} noMargin />}
 			{tool.pluginType === 'wasm' && <WasmLink to={tool.repoUrl} noMargin />}
 

@@ -140,9 +140,9 @@ resolve with: Git tags or a JSON manifest.
 
 To resolve a list of available versions using Git tags, the following settings are available:
 
-- `git-url` - The remote URL to fetch tags from.
-- `git-tag-pattern` - A regular expression to filter and match with. Defaults to
-  `^v?((\\d+)\\.(\\d+)\\.(\\d+))`. The capture group `1` will be extracted as the version.
+- `git-url` (required) - The remote URL to fetch tags from.
+- `git-tag-pattern` - A regular expression to filter and match with. The capture group `1` will be
+  extracted as the version.
 
 ```toml title="protostar.toml"
 # ...
@@ -156,8 +156,8 @@ git-tag-pattern = "^@protostar/cli@((\\d+)\\.(\\d+)\\.(\\d+))"
 
 To resolve a list of available versions using a JSON manifest, the following settings are available:
 
-- `manifest-url` - A URL that returns a JSON response of all versions. This response _must be_ an
-  array of strings, or an array of objects.
+- `manifest-url` (required) - A URL that returns a JSON response of all versions. This response
+  _must be_ an array of strings, or an array of objects.
 - `manifest-version-key` - If the response is an array of objects, this is the key to extract the
   version from. If the response is an array of strings, this setting can be omitted. Defaults to
   `version`.

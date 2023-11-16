@@ -30,7 +30,8 @@ $ PROTO_NODE_VERSION=18.0.0 proto run node
 #### 3. Version is located by traversing the file system
 
 This step will attempt to find a configuration or manifest file in the current working directory,
-and traverse upwards through parent directories until a file is found.
+and traverse upwards through parent directories (stops at the user's home directory) until a file is
+found.
 
 ##### 3.1. Version is defined locally in `.prototools`
 

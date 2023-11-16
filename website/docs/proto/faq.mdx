@@ -22,6 +22,24 @@ letters are circle shaped. Double points for proto having two o's like the other
 
 Nah.
 
+### What is a tool?
+
+A tool in the context of proto is either a language, dependency/package manager (typically for a
+language), or third-party CLI. The tool is something that can be downloaded and installed _by
+version_ onto a machine.
+
+Furthermore, a tool should have a primary executable file that can be executed with `proto run` or
+through proto's shims. Additionally, a tool can also provide secondary executable files. For
+example, `npm` (the primary) also provides `npx` and `node-gyp` (secondaries).
+
+### What is a plugin?
+
+A plugin is a WASM (or TOML) file for a tool.
+
+The terms tool and plugin are often used interchangeably, but plugin primarily refers to the WASM
+portion of a tool, while tool refers to the entire package: metadata, business logic, branding, so
+on an so forth.
+
 ### Will you support more languages?
 
 Yes! We'd love to support as many as possible, and if you'd like to help, join our Discord

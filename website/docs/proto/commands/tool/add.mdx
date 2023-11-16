@@ -1,0 +1,27 @@
+---
+title: tool add
+sidebar_label: add
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.23.0" header />
+
+The `proto tool add <id> <plugin>` command (formerly `proto add-plugin`) will add the provided ID
+and plugin locator string to the `[plugins]` section of the local (`.prototools`) or global
+(`~/.proto/config.toml`) config file.
+
+```shell
+$ proto tool add node "source:https://github.com/moonrepo/node-plugin/releases/latest/download/node_plugin.wasm"
+```
+
+> Learn more about [plugin locator strings](../../plugins#enabling-plugins).
+
+### Arguments
+
+- `<id>` - ID of the tool.
+- `<plugin>` - How to locate the plugin.
+
+### Options
+
+- `--global` - Add to the global config instead of local.

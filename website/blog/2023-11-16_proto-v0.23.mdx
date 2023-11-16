@@ -1,0 +1,81 @@
+---
+slug: proto-v0.23
+title: proto v0.23 - New detection strategy, tool commands, and more
+authors: [milesj]
+tags: [proto]
+image: ./img/proto/v0.23.png
+---
+
+With this release, we've reorganized our commands, improved version detection, and Windows support.
+
+<!--truncate-->
+
+## New `detect-strategy` setting
+
+Up until now, when proto would attempt to detect a version, it would use a version from the closest
+`.prototools` file, or tool specific file (`package.json`, `.nvmrc`, etc), which ever matched first.
+For the most part, this works great, but what if you wanted `.prototools` to take precedence over
+other files, even if found in a higher parent directory? You unfortunately couldn't.
+
+To support this new flow, we're introducing a new
+[`~/.proto/config.toml`](/docs/proto/config#user-configuration) setting called
+[`detect-strategy`](/docs/proto/config#detect-strategy). This setting supports the following values,
+with more possibly in the future!
+
+- `first-available` (default) - Will use the first available version that is found. Either from
+  `.prototools` or a tool specific file.
+- `prefer-prototools` - Prefer a `.prototools` version, even if found in a parent directory. If none
+  found, falls back to tool specific file.
+
+```toml title="~/.proto/config.toml"
+detect-strategy = "prefer-prototools"
+```
+
+## New `proto tool` command group (breaking)
+
+Our CLI surface area has been growing and we felt it was time to start grouping commands, starting
+with the new [`proto tool`](/docs/proto/commands/tool) command. This command will contain "not used
+very often" subcommands in relation to tools and their plugins, primarily for managing plugins, and
+viewing tool information and inventory. As such, we've deprecated and moved the following top-level
+commands:
+
+- Moved `proto add-plugin` to `proto tool add`.
+- Moved `proto remove-plugin` to `proto tool remove`.
+- Moved `proto plugins` to `proto tool list-plugins`.
+- Moved `proto tools` to `proto tool list`.
+
+## New `proto tool info` command
+
+Continuing with the changes above, we're also introducing a new command,
+[`proto tool info`](/docs/proto/commands/tool/info), which displays detailed information about a
+tool and its backing plugin. For example:
+
+```
+$ proto tool info node
+
+node - Node.js
+
+Inventory
+  Store: ~/.proto/tools/node
+  Executable: ~/.proto/tools/node/20.0.0/bin/node
+  Globals directory: ~/.proto/tools/node/globals/bin
+  Binaries:
+    - ~/.proto/bin/node (primary)
+  Shims:
+    - ~/.proto/shims/node (primary)
+
+Plugin
+  Version: 0.5.2
+  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_plugin.wasm
+```
+
+> This command also supports JSON output via `--json`.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.23.0) for a full list
+of changes.
+
+- Added support to plugins to ignore certain paths when detecting a version.
+- Updated Windows to create 3 shim files for each tool: `.cmd` (cmd.exe), `.ps1` (powershell), and
+  no extension (bash).

@@ -73,6 +73,19 @@ Defaults to `false`.
 auto-clean = true
 ```
 
+### `detect-strategy`<VersionLabel version="0.23.0" />
+
+The strategy to use when [detecting versions](./detection). Defaults to `first-available`.
+
+- `first-available` - Will use the first available version that is found. Either from `.prototools`
+  or a tool specific file (`.nvmrc`, etc).
+- `prefer-prototools` - Prefer a `.prototools` version, even if found in a parent directory. If none
+  found, falls back to tool specific file.
+
+```toml title="~/.proto/config.toml"
+detect-strategy = "prefer-prototools"
+```
+
 ### `node-intercept-globals`
 
 When enabled, will intercept global package installs for node/npm/pnpm/yarn and suggest using

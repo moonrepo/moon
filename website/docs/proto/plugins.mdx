@@ -10,10 +10,10 @@ their needs.
 ## Enabling plugins
 
 Plugins can be enabled by configuring them in
-[`.prototools` or `~/.proto/config.toml`](./config#plugins) files, within the `[plugins]` section,
-which maps a plugin to a locator string. The map key is the plugin name _in kebab-case_, which is
-used as the binary/tool name in proto, and also the name for configuration and cache purposes. The
-map value is a locator string that defines a scope and source location.
+[`.prototools` or `~/.proto/config.toml`](./config#plugins) files, within the `[plugins]` section.
+The map key is the plugin name _in kebab-case_, which is used as the binary/tool name in proto, and
+also the name for configuration and cache purposes. The map value is a plugin locator string that
+defines a scope and source location.
 
 ```toml title=".prototools"
 [plugins]

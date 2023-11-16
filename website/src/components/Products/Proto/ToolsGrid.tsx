@@ -2,6 +2,12 @@ import React from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Text from '@site/src/ui/typography/Text';
+import Bun from '@site/static/img/tools/bun.svg';
+import Deno from '@site/static/img/tools/deno.svg';
+import Go from '@site/static/img/tools/go.svg';
+import Node from '@site/static/img/tools/node.svg';
+import Python from '@site/static/img/tools/python.svg';
+import Rust from '@site/static/img/tools/rust.svg';
 
 export interface ToolsGridProps {
 	cols?: number;
@@ -12,25 +18,25 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 		<div className={clsx('grid gap-4 px-4', cols === 6 ? 'grid-cols-6' : 'grid-cols-3')}>
 			<div className="text-center">
 				<Link href="/docs/proto/tools#bun">
-					<img src="/img/tools/bun.svg" width="100%" className="inline-block" />
+					<Bun width="100%" className="inline-block" />
 				</Link>
 			</div>
 
 			<div className="text-center">
 				<Link href="/docs/proto/tools#deno">
-					<img src="/img/tools/deno.svg" width="100%" className="inline-block" />
+					<Deno width="100%" className="inline-block" />
 				</Link>
 			</div>
 
 			<div className="text-center">
 				<Link href="/docs/proto/tools#go">
-					<img src="/img/tools/go.svg" width="100%" className="inline-block" />
+					<Go width="100%" className="inline-block" />
 				</Link>
 			</div>
 
 			<div className="text-center">
 				<Link href="/docs/proto/tools#node">
-					<img src="/img/tools/node.svg" width="100%" className="inline-block" />
+					<Node width="100%" className="inline-block" />
 				</Link>
 
 				<Text className="m-0" variant="muted">
@@ -40,13 +46,13 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 
 			<div className="text-center">
 				<Link href="/docs/proto/tools#python">
-					<img src="/img/tools/python.svg" width="100%" className="inline-block" />
+					<Python width="100%" className="inline-block" />
 				</Link>
 			</div>
 
 			<div className="text-center">
 				<Link href="/docs/proto/tools#rust">
-					<img src="/img/tools/rust.svg" width="100%" className="inline-block" />
+					<Rust width="100%" className="inline-block" />
 				</Link>
 			</div>
 		</div>

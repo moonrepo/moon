@@ -148,7 +148,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 	},
 	helm: {
 		bins: ['helm'],
-		description: 'The Kubernetes Package Manager',
+		description: 'The Kubernetes Package Manager.',
 		homepageUrl: 'https://helm.sh',
 		name: 'helm',
 		pluginLocator:
@@ -158,7 +158,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 	},
 	helmfile: {
 		bins: ['helmfile'],
-		description: 'Deploy Kubernetes Helm Charts',
+		description: 'Deploy Kubernetes Helm Charts.',
 		homepageUrl: 'https://helmfile.readthedocs.io/en/latest',
 		name: 'helmfile',
 		pluginLocator:

@@ -1,16 +1,18 @@
 ---
-title: plugins
+title: tool list-plugins
+sidebar_label: list-plugins
 ---
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-<VersionLabel version="0.14.0" header />
+<VersionLabel version="0.23.0" header />
 
-The `proto plugins` command will list all available and configured plugins. Will load all
-`.prototools` traversing upwards, and the `~/.proto/config.toml` file.
+The `proto tool list-plugins` command (formerly `proto plugins`) will list all available and
+configured plugins, for both third-party and built-in tools. Will load all `.prototools` traversing
+upwards, and the `~/.proto/config.toml` file.
 
 ```
-$ proto plugins
+$ proto tool list-plugins
 
 bun - Bun v1.2
   Source: https://github.com/moonrepo/bun-plugin/releases/latest/download/bun_plugin.wasm

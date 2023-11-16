@@ -365,42 +365,48 @@ pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
 }
 ```
 
-### Locating binaries
+### Locating executables
 
 Even though a tool has been installed, we must inform proto of where to find the binary to execute.
-This can be achieved with the optional `locate_bins` function. If this function is not defined,
-proto will assume the binary is named `<id>` (`<id>.exe` on Windows), relative from the installation
-directory.
+This can be achieved with the required `locate_executables` function. The `primary` field defines
+the location of the executable, relative from the installation directory.
 
 ```rust
 #[plugin_fn]
-pub fn locate_bins(Json(_): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+pub fn locate_executables(
+    Json(_): Json<LocateExecutablesInput>,
+) -> FnResult<Json<LocateExecutablesOutput>> {
     let env = get_proto_environment()?;
 
-    Ok(Json(LocateBinsOutput {
-        bin_path: Some(if env.os == HostOS::Windows {
-            "node.exe".into()
-        } else {
-            "bin/node".into()
-        }),
-        ..LocateBinsOutput::default()
+    Ok(Json(LocateExecutablesOutput {
+         primary: Some(ExecutableConfig::new(
+            // Helper that chooses between distinct Unix or Windows values
+            env.os.for_native("bin/node", "node.exe"),
+            // Or the same value with optional Windows extension
+            // env.os.get_file_name("node", "exe")
+        )),
+        ..LocateExecutablesOutput::default()
     }))
 }
 ```
 
-Furthermore, the `locate_bins` function can define a list of lookups for the globals installation
-directory. proto will loop through each lookup, and return the first directory that exists on the
-current file system. proto will also expand environment variables in the format of `$VAR_NAME`. If a
-variable is not defined, or has an empty value, the lookup will be skipped. To demonstrate this,
-we'll use [Deno](https://deno.land/manual@v1.35.0/tools/script_installer).
+Furthermore, the `locate_executables` function can define a list of lookups for the globals
+installation directory. proto will loop through each lookup, and return the first directory that
+exists on the current file system. proto will also expand environment variables in the format of
+`$VAR_NAME`. If a variable is not defined, or has an empty value, the lookup will be skipped. To
+demonstrate this, we'll use [Deno](https://deno.land/manual@v1.35.0/tools/script_installer).
 
 ```rust
 #[plugin_fn]
-pub fn locate_bins(Json(_): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
-    Ok(Json(LocateBinsOutput {
-        fallback_last_globals_dir: true,
+pub fn locate_executables(
+    Json(_): Json<LocateExecutablesInput>,
+) -> FnResult<Json<LocateExecutablesOutput>> {
+    let env = get_proto_environment()?;
+
+    Ok(Json(LocateExecutablesOutput {
         globals_lookup_dirs: vec!["$DENO_INSTALL_ROOT/bin".into(), "$HOME/.deno/bin".into()],
-        ..LocateBinsOutput::default()
+        // ...
+        ..LocateExecutablesOutput::default()
     }))
 }
 ```
@@ -443,18 +449,23 @@ pub fn resolve_version(
 ) -> FnResult<Json<ResolveVersionOutput>> {
     let mut output = ResolveVersionOutput::default();
 
-    if input.initial == "node" {
-        output.candidate = Some("latest".into());
+    if let UnresolvedVersionSpec::Alias(alias) = input.initial {
+        let candidate = if alias == "node" {
+            "latest"
+        } else if alias == "lts-*" || alias == "lts/*" {
+            "stable"
+        } else if alias.starts_with("lts-") || alias.starts_with("lts/") {
+            &alias[4..]
+        } else {
+            return Ok(Json(output));
+        };
 
-    } else if input.initial == "lts-*" || input.initial == "lts/*" {
-        output.candidate = Some("stable".into());
-
-    } else if input.initial.starts_with("lts-") || input.initial.starts_with("lts/") {
-        output.candidate = Some(input.initial[4..].to_owned());
+        output.candidate = Some(UnresolvedVersionSpec::Alias(candidate.to_owned()));
     }
 
     Ok(Json(output))
 }
+
 ```
 
 ### Detecting versions
@@ -493,61 +504,14 @@ pub fn parse_version_file(Json(input): Json<ParseVersionFileInput>) -> FnResult<
 
         if let Some(engines) = json.engines {
             if let Some(constraint) = engines.get("node") {
-                version = Some(constraint.to_owned());
+                version = Some(UnresolvedVersionSpec::parse(constraint)?);
             }
         }
     } else {
-        version = Some(input.content.trim().to_owned());
+        version = Some(UnresolvedVersionSpec::parse(input.content.trim())?);
     }
 
     Ok(Json(ParseVersionFileOutput { version }))
-}
-```
-
-### Creating shims
-
-Tools within proto wouldn't function without shims, and as such, plugins can register their own
-shims to be created. By default, proto _will always_ create a global shim of the plugin at
-`~/.proto/bin/<id>`, but you can also register additional shims with the `create_shims` function.
-
-#### Global shims
-
-Global shims are optional scripts that are available on `PATH` as they are generated in the
-`~/.proto/bin` directory, and can be defined with the `global_shims` parameter. This param is a hash
-map, where the key is the shim file name, and the value is a configuration object.
-
-```rust
-#[plugin_fn]
-pub fn create_shims(Json(_): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
-    let env = get_proto_environment()?;
-    let mut global_shims = HashMap::new();
-
-    global_shims.insert(
-        "npx".into(),
-        ShimConfig::global_with_alt_bin(if env.os == HostOS::Windows {
-            "npx.cmd".into()
-        } else {
-            "bin/npx".into()
-        }),
-    );
-
-    Ok(Json(CreateShimsOutput {
-        global_shims,
-        ..CreateShimsOutput::default()
-    }))
-}
-```
-
-Furthermore, if you'd prefer to _not_ create a primary global shim at all, enable the
-`no_primary_global` field.
-
-```rust
-#[plugin_fn]
-pub fn create_shims(Json(_): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
-    Ok(Json(CreateShimsOutput {
-        no_primary_global: true,
-        ..CreateShimsOutput::default()
-    }))
 }
 ```
 
@@ -692,19 +656,16 @@ plugin ID, the dependency to install, and an optional environment variable to th
 generate_globals_test!("id", "dependency", "GLOBAL_INSTALL_ROOT");
 ```
 
-And lastly, to test shims, use `generate_global_shims_test!` or `generate_local_shims_test!`. Both
-macros require a plugin ID, but also support additional arguments when creating more than 1 shim.
-These macros generate snapshots using [Insta](https://insta.rs/).
+And lastly, to test shims, use `generate_shims_test!`. This requires a plugin ID, but also supports
+additional arguments when creating more than 1 shim. This macro generates snapshots using
+[Insta](https://insta.rs/).
 
 ```rust
 // Only the single binary
-generate_global_shims_test!("id");
+generate_shims_test!("id");
 
 // When creating alternate/additional globals
-generate_global_shims_test!("id", ["other", "another"]);
-
-// When creating local shims, each file required in the list
-generate_local_shims_test!("id", ["a", "b", "c"]);
+generate_shims_test!("id", ["other", "another"]);
 ```
 
 ## Building and publishing
@@ -716,9 +677,16 @@ to publish a GitHub release and include the `.wasm` file as an asset.
 ### Building, optimizing, and stripping
 
 WASM files are pretty fat, even when compiling in release mode. To reduce the size of these files,
-we can use `wasm-opt` and `wasm-strip`, both of which are provided by
-[WebAssembly](https://github.com/WebAssembly). The following script is what we use to build our own
-plugins.
+we can use `wasm-opt` and `wasm-strip`, both of which are provided by the
+[WebAssembly](https://github.com/WebAssembly) group. The following script is what we use to build
+our own plugins.
+
+:::info
+
+This functionality is natively supported in our
+[build-proto-plugin](https://github.com/moonrepo/build-proto-plugin) GitHub Action!
+
+:::
 
 ```bash title="build-wasm"
 #!/usr/bin/env bash
@@ -766,25 +734,21 @@ build-wasm <name>
 
 ### Automate releases
 
-Coming soon!
+If you're using GitHub Actions, you can automate the release process with our official
+[build-proto-plugin](https://github.com/moonrepo/build-proto-plugin) action.
 
-<!--
-If you'd prefer to automate all releases, we suggest using
-[`cargo-dist`](https://crates.io/crates/cargo-dist) for Rust based plugins. The `cargo-dist` crate
-will scaffold a GitHub workflow that automatically builds the project and creates a GitHub release
-everytime a tag is created.
+1. Create a new workflow file at `.github/workflows/release.yml`. Refer to the link above for a
+   working example.
 
-We won't guide you through the process of setting up `cargo-dist`, but you can see an example of the
-`Cargo.toml` configuration below.
+2. Tag the release and push to GitHub.
 
-```toml
-[workspace.metadata.dist]
-cargo-dist-version = "0.0.7"
-ci = ["github"]
-targets = ["wasm32-wasi"]
-installers = []
+```shell
+git tag v0.0.1
+git push --tags
 ```
--->
+
+3. The action will automatically build the plugin, create a release, and attach the built file as an
+   asset.
 
 ## Resources
 

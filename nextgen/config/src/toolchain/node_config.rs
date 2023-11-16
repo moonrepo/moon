@@ -195,12 +195,6 @@ impl NodeConfig {
                 }
 
                 self.inherit_proto_yarn(proto_tools)?;
-
-                if let Some(yarn) = &mut self.yarn {
-                    yarn.plugin = Some(PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.1/node_depman_plugin.wasm".into()
-                    });
-                }
             }
         };
 
@@ -225,7 +219,7 @@ impl NodeConfig {
 
         if self.plugin.is_none() {
             self.plugin = Some(PluginLocator::SourceUrl {
-                url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.0/node_plugin.wasm".into()
+                url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_plugin.wasm".into()
             });
         }
 

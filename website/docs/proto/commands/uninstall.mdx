@@ -6,10 +6,14 @@ The `proto uninstall <tool>` (or `proto ui`) command will uninstall and remove a
 `~/.proto/tools/<tool>`. If the tool has not been installed, the command will exit early.
 
 ```shell
+# Remove a specific version
 $ proto uninstall deno 1.31
+
+# Remove all versions
+$ proto uninstall deno
 ```
 
 ### Arguments
 
 - `<tool>` - Type of tool.
-- `[version]` - Version of tool. Defaults to "latest".
+- `[version]` - Version of tool.

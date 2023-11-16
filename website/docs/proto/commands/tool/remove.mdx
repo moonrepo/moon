@@ -1,0 +1,26 @@
+---
+title: tool remove
+sidebar_label: remove
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.23.0" header />
+
+The `proto tool remove <id>` command (formerly `proto remove-plugin`) will remove the provided tool
+ID from the `[plugins]` section of the local (`.prototools`) or global (`~/.proto/config.toml`)
+config file.
+
+```shell
+$ proto tool remove node
+```
+
+> Built-in plugins _cannot_ be removed!
+
+### Arguments
+
+- `<id>` - ID of the tool.
+
+### Options
+
+- `--global` - Remove from the global config instead of local.

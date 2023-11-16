@@ -1,0 +1,37 @@
+---
+title: tool info
+sidebar_label: info
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.23.0" header />
+
+The `proto tool info <id>` command will display information about a tool and its plugin.
+
+```
+$ proto tool info node
+
+node - Node.js
+
+Inventory
+  Store: ~/.proto/tools/node
+  Executable: ~/.proto/tools/node/20.0.0/bin/node
+  Globals directory: ~/.proto/tools/node/globals/bin
+  Binaries:
+    - ~/.proto/bin/node (primary)
+  Shims:
+    - ~/.proto/shims/node (primary)
+
+Plugin
+  Version: 0.5.2
+  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_plugin.wasm
+```
+
+### Arguments
+
+- `<id>` - ID of tool.
+
+### Options
+
+- `--json` - Print the info in JSON format.

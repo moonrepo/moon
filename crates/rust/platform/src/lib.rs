@@ -10,8 +10,8 @@ use starbase_utils::{dirs, fs};
 use std::env;
 use std::path::{Path, PathBuf};
 
-fn find_cargo_lock(starting_dir: &Path) -> Option<PathBuf> {
-    fs::find_upwards(CARGO.lockfile, starting_dir)
+fn find_cargo_lock(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
+    fs::find_upwards_until(CARGO.lockfile, starting_dir, workspace_root)
 }
 
 fn get_cargo_home() -> PathBuf {

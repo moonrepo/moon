@@ -8,7 +8,7 @@ use moon_tool::{
     async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
     DependencyManager, Tool,
 };
-use moon_utils::is_ci;
+use moon_utils::{get_workspace_root, is_ci};
 use proto_core::{
     Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq, VersionSpec,
 };
@@ -197,7 +197,9 @@ impl DependencyManager<NodeTool> for PnpmTool {
         &self,
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
-        let Some(lockfile_path) = fs::find_upwards(PNPM.lockfile, project_root) else {
+        let Some(lockfile_path) =
+            fs::find_upwards_until(PNPM.lockfile, project_root, get_workspace_root())
+        else {
             return Ok(FxHashMap::default());
         };
 

@@ -8,6 +8,7 @@ use moon_tool::{
     async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
     DependencyManager, Tool,
 };
+use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
@@ -160,7 +161,9 @@ impl DependencyManager<NodeTool> for BunTool {
         &self,
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
-        let Some(lockfile_path) = fs::find_upwards(BUN.lockfile, project_root) else {
+        let Some(lockfile_path) =
+            fs::find_upwards_until(BUN.lockfile, project_root, get_workspace_root())
+        else {
             return Ok(FxHashMap::default());
         };
 

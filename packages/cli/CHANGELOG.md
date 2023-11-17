@@ -12,10 +12,16 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Updated file traversal to not walk outside of the workspace root.
+
 #### ⚙️ Internal
 
-- Updated to proto v0.22.0.
 - Updated Rust to v1.74.
+- Updated proto to v0.22.0.
+- Updated dependencies.
+- Updated logs to now include nanoseconds.
 
 ## 1.16.4
 

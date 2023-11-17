@@ -255,7 +255,9 @@ impl DependencyManager<NodeTool> for YarnTool {
         &self,
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
-        let Some(lockfile_path) = fs::find_upwards(YARN.lockfile, project_root) else {
+        let Some(lockfile_path) =
+            fs::find_upwards_until(YARN.lockfile, project_root, get_workspace_root())
+        else {
             return Ok(FxHashMap::default());
         };
 

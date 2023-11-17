@@ -24,19 +24,20 @@ fn find_workspace_root<P: AsRef<Path>>(working_dir: P) -> miette::Result<PathBuf
     }
 
     let working_dir = working_dir.as_ref();
+    let home_dir = dirs::home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
 
     debug!(
         working_dir = ?working_dir,
         "Attempting to find workspace root",
     );
 
-    let Some(possible_root) = fs::find_upwards_root(consts::CONFIG_DIRNAME, working_dir) else {
+    let Some(possible_root) =
+        fs::find_upwards_root_until(consts::CONFIG_DIRNAME, working_dir, &home_dir)
+    else {
         return Err(WorkspaceError::MissingConfigDir.into());
     };
 
     // Avoid finding the ~/.moon directory
-    let home_dir = dirs::home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
-
     if home_dir == possible_root {
         return Err(WorkspaceError::MissingConfigDir.into());
     }

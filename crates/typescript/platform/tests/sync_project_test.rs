@@ -1,9 +1,9 @@
 use moon_common::Id;
 use moon_project::Project;
-use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
-use moon_typescript_lang::tsconfig::TsConfigExtends;
+use moon_test_utils::{create_sandbox, create_sandbox_with_config, get_node_fixture_configs};
+use moon_typescript_lang::tsconfig::{Reference, TsConfigExtends};
 use moon_typescript_lang::TsConfigJson;
-use moon_typescript_platform::create_missing_tsconfig;
+use moon_typescript_platform::{create_missing_tsconfig, sync_project_as_root_tsconfig_reference};
 use moon_utils::string_vec;
 
 mod missing_tsconfig {
@@ -120,5 +120,155 @@ mod missing_tsconfig {
         .unwrap();
 
         assert!(!created);
+    }
+}
+
+mod sync_root {
+    use super::*;
+
+    #[test]
+    fn adds_standard() {
+        let sandbox = create_sandbox("empty");
+        sandbox.create_file("tsconfig.json", "{}");
+        sandbox.create_file("project/tsconfig.json", "{}");
+
+        let project = Project {
+            id: Id::raw("project"),
+            root: sandbox.path().join("project"),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.json",
+            "tsconfig.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            tsconfig.references.unwrap(),
+            vec![Reference {
+                path: "project".into(),
+                prepend: None
+            }]
+        );
+    }
+
+    #[test]
+    fn root_in_sibling_dir() {
+        let sandbox = create_sandbox("empty");
+        sandbox.create_file("root/tsconfig.json", "{}");
+        sandbox.create_file("project/tsconfig.json", "{}");
+
+        let project = Project {
+            id: Id::raw("project"),
+            root: sandbox.path().join("project"),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.json",
+            "root/tsconfig.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "root/tsconfig.json")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            tsconfig.references.unwrap(),
+            vec![Reference {
+                path: "../project".into(),
+                prepend: None
+            }]
+        );
+    }
+
+    #[test]
+    fn different_names() {
+        let sandbox = create_sandbox("empty");
+        sandbox.create_file("root/tsconfig.projects.json", "{}");
+        sandbox.create_file("a/tsconfig.json", "{}");
+        sandbox.create_file("b/tsconfig.build.json", "{}");
+
+        let project = Project {
+            id: Id::raw("a"),
+            root: sandbox.path().join("a"),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.json",
+            "root/tsconfig.projects.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let project = Project {
+            id: Id::raw("b"),
+            root: sandbox.path().join("b"),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.build.json",
+            "root/tsconfig.projects.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "root/tsconfig.projects.json")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            tsconfig.references.unwrap(),
+            vec![
+                Reference {
+                    path: "../a".into(),
+                    prepend: None
+                },
+                Reference {
+                    path: "../b/tsconfig.build.json".into(),
+                    prepend: None
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn ignores_root_self() {
+        let sandbox = create_sandbox("empty");
+        sandbox.create_file("tsconfig.json", "{}");
+
+        let project = Project {
+            id: Id::raw("root"),
+            root: sandbox.path().to_path_buf(),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.json",
+            "tsconfig.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(tsconfig.references, None);
     }
 }

@@ -9,12 +9,15 @@ use moon_utils::{get_cache_dir, path, string_vec};
 use rustc_hash::FxHashSet;
 use starbase_styles::color;
 use starbase_utils::json;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 
+fn path_to_string(from: &Path, to: &Path) -> miette::Result<String> {
+    path::to_virtual_string(path::relative_from(from, to).unwrap_or_else(|| PathBuf::from(".")))
+}
+
 // Automatically create a missing `tsconfig.json` when we are syncing project references.
-#[track_caller]
 pub fn create_missing_tsconfig(
     project: &Project,
     tsconfig_project_name: &str,
@@ -27,11 +30,10 @@ pub fn create_missing_tsconfig(
         return Ok(false);
     }
 
-    let tsconfig_options_path = workspace_root.join(tsconfig_options_name);
-
     let json = TsConfigJson {
-        extends: Some(TsConfigExtends::String(path::to_virtual_string(
-            path::relative_from(tsconfig_options_path, &project.root).unwrap(),
+        extends: Some(TsConfigExtends::String(path_to_string(
+            &workspace_root.join(tsconfig_options_name),
+            &project.root,
         )?)),
         include: Some(string_vec!["**/*"]),
         references: Some(vec![]),
@@ -45,7 +47,7 @@ pub fn create_missing_tsconfig(
 }
 
 // Sync projects references to the root `tsconfig.json`.
-pub fn sync_root_tsconfig_references(
+pub fn sync_project_as_root_tsconfig_reference(
     project: &Project,
     tsconfig_project_name: &str,
     tsconfig_root_name: &str,
@@ -53,12 +55,19 @@ pub fn sync_root_tsconfig_references(
 ) -> miette::Result<bool> {
     TsConfigJson::sync_with_name(workspace_root, tsconfig_root_name, |tsconfig_json| {
         // Don't sync a root project to itself
-        if tsconfig_root_name == "tsconfig.json" && project.source == "." {
+        if tsconfig_root_name == "tsconfig.json"
+            && (project.source == "." || project.root == workspace_root)
+        {
             return Ok(false);
         }
 
+        let tsconfig_root = workspace_root.join(tsconfig_root_name);
+
         if project.root.join(tsconfig_project_name).exists()
-            && tsconfig_json.add_project_ref(&project.source, tsconfig_project_name)
+            && tsconfig_json.add_project_ref(
+                path_to_string(&project.root, tsconfig_root.parent().unwrap())?,
+                tsconfig_project_name,
+            )
         {
             debug!(
                 target: LOG_TARGET,
@@ -78,7 +87,7 @@ pub fn sync_root_tsconfig_references(
 pub fn sync_project_tsconfig_compiler_options(
     project: &Project,
     tsconfig_project_name: &str,
-    tsconfig_paths: CompilerOptionsPaths,
+    tsconfig_compiler_paths: CompilerOptionsPaths,
     tsconfig_project_refs: FxHashSet<String>,
     setting_route_to_cache: bool,
     setting_sync_project_refs: bool,
@@ -99,8 +108,8 @@ pub fn sync_project_tsconfig_compiler_options(
         // Out dir
         if setting_route_to_cache {
             let cache_route = get_cache_dir().join("types").join(project.source.as_str());
-            let out_dir =
-                path::to_virtual_string(path::relative_from(cache_route, &project.root).unwrap())?;
+            let out_dir = path_to_string(&cache_route, &project.root)?;
+
             let updated_options = tsconfig_json.update_compiler_options(|options| {
                 if options.out_dir.is_none() || options.out_dir.as_ref() != Some(&out_dir) {
                     options.out_dir = Some(out_dir);
@@ -118,8 +127,9 @@ pub fn sync_project_tsconfig_compiler_options(
 
         // Paths
         if setting_sync_path_aliases
-            && !tsconfig_paths.is_empty()
-            && tsconfig_json.update_compiler_options(|options| options.update_paths(tsconfig_paths))
+            && !tsconfig_compiler_paths.is_empty()
+            && tsconfig_json
+                .update_compiler_options(|options| options.update_paths(tsconfig_compiler_paths))
         {
             mutated_tsconfig = true;
         }
@@ -132,7 +142,7 @@ pub fn sync_project(
     project: &Project,
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,
-    tsconfig_paths: CompilerOptionsPaths,
+    tsconfig_compiler_paths: CompilerOptionsPaths,
     tsconfig_project_refs: FxHashSet<String>,
 ) -> miette::Result<bool> {
     let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
@@ -180,7 +190,7 @@ pub fn sync_project(
         && sync_project_tsconfig_compiler_options(
             project,
             &typescript_config.project_config_file_name,
-            tsconfig_paths,
+            tsconfig_compiler_paths,
             tsconfig_project_refs,
             setting_route_to_cache,
             setting_sync_project_refs,
@@ -193,7 +203,7 @@ pub fn sync_project(
     // Sync project references to the root `tsconfig.json`
     if is_project_typescript_enabled
         && setting_sync_project_refs
-        && sync_root_tsconfig_references(
+        && sync_project_as_root_tsconfig_reference(
             project,
             &typescript_config.project_config_file_name,
             &typescript_config.root_config_file_name,

@@ -22,6 +22,8 @@
   - Added a `toolchain.bun` setting to `moon.yml`.
   - Updated `moon bin` and `moon docker` commands to support Bun.
   - Updated task `platform` to support "bun".
+- Improved TypeScript support.
+  - Updated the `typescript.rootConfigFileName` setting to support directories.
 
 ## 1.16.5
 

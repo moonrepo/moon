@@ -8,7 +8,7 @@ use moon_utils::{path, semver};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 const LOG_TARGET: &str = "moon:node-platform:sync-project";
@@ -27,7 +27,7 @@ pub async fn sync_project(
     let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut package_peer_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut package_dev_deps: BTreeMap<String, String> = BTreeMap::new();
-    let mut tsconfig_project_refs: FxHashSet<String> = FxHashSet::default();
+    let mut tsconfig_project_refs: FxHashSet<PathBuf> = FxHashSet::default();
     let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {
@@ -114,7 +114,7 @@ pub async fn sync_project(
                     .join(&typescript_config.project_config_file_name)
                     .exists()
             {
-                tsconfig_project_refs.insert(path::to_virtual_string(&dep_relative_path)?);
+                tsconfig_project_refs.insert(dep_project.root.clone());
 
                 debug!(
                     target: LOG_TARGET,

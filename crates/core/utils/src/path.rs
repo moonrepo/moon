@@ -1,4 +1,6 @@
 use clean_path::Clean;
+use miette::IntoDiagnostic;
+use relative_path::PathExt;
 use std::path::{Path, PathBuf};
 
 pub use pathdiff::diff_paths as relative_from;
@@ -87,4 +89,18 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
 #[inline]
 pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
     Ok(standardize_separators(to_string(path)?))
+}
+
+#[inline]
+pub fn to_relative_virtual_string<F: AsRef<Path>, T: AsRef<Path>>(
+    from: F,
+    to: T,
+) -> miette::Result<String> {
+    let value = from
+        .as_ref()
+        .relative_to(to.as_ref())
+        .into_diagnostic()?
+        .to_string();
+
+    Ok(if value.is_empty() { ".".into() } else { value })
 }

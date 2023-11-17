@@ -13,14 +13,6 @@ use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 
-fn path_to_string(from: &Path, to: &Path) -> miette::Result<String> {
-    let value = path::to_virtual_string(
-        path::relative_from(from, to).unwrap_or_else(|| PathBuf::from(".")),
-    )?;
-
-    Ok(if value.is_empty() { ".".into() } else { value })
-}
-
 // Automatically create a missing `tsconfig.json` when we are syncing project references.
 pub fn create_missing_tsconfig(
     project: &Project,
@@ -35,7 +27,7 @@ pub fn create_missing_tsconfig(
     }
 
     let json = TsConfigJson {
-        extends: Some(TsConfigExtends::String(path_to_string(
+        extends: Some(TsConfigExtends::String(path::to_relative_virtual_string(
             &workspace_root.join(tsconfig_options_name),
             &project.root,
         )?)),
@@ -57,20 +49,16 @@ pub fn sync_project_as_root_tsconfig_reference(
     tsconfig_root_name: &str,
     workspace_root: &Path,
 ) -> miette::Result<bool> {
-    let tsconfig_root = workspace_root.join(tsconfig_root_name);
-    let tsconfig_root = tsconfig_root.parent().unwrap();
-
     TsConfigJson::sync_with_name(workspace_root, tsconfig_root_name, |tsconfig_json| {
         // Don't sync a root project to itself
-        if project.root == tsconfig_root && tsconfig_project_name == tsconfig_root_name {
+        if project.root == tsconfig_json.path.parent().unwrap()
+            && tsconfig_project_name == tsconfig_root_name
+        {
             return Ok(false);
         }
 
         if project.root.join(tsconfig_project_name).exists()
-            && tsconfig_json.add_project_ref(
-                path_to_string(&project.root, tsconfig_root)?,
-                tsconfig_project_name,
-            )
+            && tsconfig_json.add_project_ref(&project.root, tsconfig_project_name)?
         {
             debug!(
                 target: LOG_TARGET,
@@ -91,7 +79,7 @@ pub fn sync_project_tsconfig_compiler_options(
     project: &Project,
     tsconfig_project_name: &str,
     tsconfig_compiler_paths: CompilerOptionsPaths,
-    tsconfig_project_refs: FxHashSet<String>,
+    tsconfig_project_refs: FxHashSet<PathBuf>,
     setting_route_to_cache: bool,
     setting_sync_project_refs: bool,
     setting_sync_path_aliases: bool,
@@ -102,7 +90,7 @@ pub fn sync_project_tsconfig_compiler_options(
         // Project references
         if setting_sync_project_refs && !tsconfig_project_refs.is_empty() {
             for ref_path in tsconfig_project_refs {
-                if tsconfig_json.add_project_ref(&ref_path, tsconfig_project_name) {
+                if tsconfig_json.add_project_ref(ref_path, tsconfig_project_name)? {
                     mutated_tsconfig = true;
                 }
             }
@@ -111,7 +99,7 @@ pub fn sync_project_tsconfig_compiler_options(
         // Out dir
         if setting_route_to_cache {
             let cache_route = get_cache_dir().join("types").join(project.source.as_str());
-            let out_dir = path_to_string(&cache_route, &project.root)?;
+            let out_dir = path::to_relative_virtual_string(cache_route, &project.root)?;
 
             let updated_options = tsconfig_json.update_compiler_options(|options| {
                 if options.out_dir.is_none() || options.out_dir.as_ref() != Some(&out_dir) {
@@ -146,7 +134,7 @@ pub fn sync_project(
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,
     tsconfig_compiler_paths: CompilerOptionsPaths,
-    tsconfig_project_refs: FxHashSet<String>,
+    tsconfig_project_refs: FxHashSet<PathBuf>,
 ) -> miette::Result<bool> {
     let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
     let mut mutated_tsconfig = false;

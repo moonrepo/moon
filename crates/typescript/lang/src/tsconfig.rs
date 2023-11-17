@@ -3,7 +3,7 @@
 use cached::proc_macro::cached;
 use miette::IntoDiagnostic;
 use moon_lang::config_cache;
-use moon_utils::path::standardize_separators;
+use moon_utils::path::to_relative_virtual_string;
 use serde::{Deserialize, Deserializer, Serialize};
 use starbase_utils::json::{self, read_file as read_json, JsonMap, JsonValue};
 use std::collections::BTreeMap;
@@ -84,19 +84,20 @@ impl TsConfigJson {
     /// Add a project reference to the `references` field with the defined
     /// path and tsconfig file name, and sort the list based on path.
     /// Return true if the new value is different from the old value.
-    pub fn add_project_ref<T: AsRef<str>, C: AsRef<str>>(
+    pub fn add_project_ref<T: AsRef<Path>, C: AsRef<str>>(
         &mut self,
         base_path: T,
         tsconfig_name: C,
-    ) -> bool {
-        let base_path = base_path.as_ref();
+    ) -> miette::Result<bool> {
+        let mut base_path = base_path.as_ref().to_path_buf();
         let tsconfig_name = tsconfig_name.as_ref();
-        let mut path = standardize_separators(base_path);
 
         // File name is optional when using standard naming
         if tsconfig_name != "tsconfig.json" {
-            path = format!("{path}/{tsconfig_name}")
+            base_path = base_path.join(tsconfig_name);
         };
+
+        let path = to_relative_virtual_string(base_path, self.path.parent().unwrap())?;
 
         let mut references = match &self.references {
             Some(refs) => refs.clone(),
@@ -104,11 +105,8 @@ impl TsConfigJson {
         };
 
         // Check if the reference already exists
-        if references
-            .iter()
-            .any(|r| r.path == path || r.path == base_path)
-        {
-            return false;
+        if references.iter().any(|r| r.path == path) {
+            return Ok(false);
         }
 
         // Add and sort the references
@@ -122,7 +120,7 @@ impl TsConfigJson {
         self.dirty.push("references".into());
         self.references = Some(references);
 
-        true
+        Ok(true)
     }
 
     pub fn update_compiler_options<F>(&mut self, updater: F) -> bool

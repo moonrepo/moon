@@ -3,6 +3,7 @@ use moon_typescript_lang::tsconfig::*;
 use moon_utils::string_vec;
 use starbase_utils::json::{self, JsonValue};
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 #[test]
 fn preserves_when_saving() {
@@ -225,11 +226,16 @@ mod add_project_ref {
 
     #[test]
     fn adds_if_not_set() {
-        let mut tsc = TsConfigJson::default();
+        let mut tsc = TsConfigJson {
+            path: PathBuf::from("/base/tsconfig.json"),
+            ..TsConfigJson::default()
+        };
 
         assert_eq!(tsc.references, None);
 
-        assert!(tsc.add_project_ref("../sibling", "tsconfig.json"));
+        assert!(tsc
+            .add_project_ref(PathBuf::from("/sibling"), "tsconfig.json")
+            .unwrap());
 
         assert_eq!(
             tsc.references.unwrap(),
@@ -247,10 +253,13 @@ mod add_project_ref {
                 path: "../sibling".to_owned(),
                 prepend: None,
             }]),
+            path: PathBuf::from("/base/tsconfig.json"),
             ..TsConfigJson::default()
         };
 
-        assert!(!tsc.add_project_ref("../sibling", "tsconfig.json"));
+        assert!(!tsc
+            .add_project_ref(PathBuf::from("/sibling"), "tsconfig.json")
+            .unwrap());
 
         assert_eq!(
             tsc.references.unwrap(),
@@ -263,11 +272,16 @@ mod add_project_ref {
 
     #[test]
     fn includes_custom_config_name() {
-        let mut tsc = TsConfigJson::default();
+        let mut tsc = TsConfigJson {
+            path: PathBuf::from("/base/tsconfig.json"),
+            ..TsConfigJson::default()
+        };
 
         assert_eq!(tsc.references, None);
 
-        assert!(tsc.add_project_ref("../sibling", "tsconfig.ref.json"));
+        assert!(tsc
+            .add_project_ref(PathBuf::from("/sibling"), "tsconfig.ref.json")
+            .unwrap());
 
         assert_eq!(
             tsc.references.unwrap(),
@@ -278,13 +292,19 @@ mod add_project_ref {
         );
     }
 
+    #[cfg(windows)]
     #[test]
     fn forces_forward_slash() {
-        let mut tsc = TsConfigJson::default();
+        let mut tsc = TsConfigJson {
+            path: PathBuf::from("C:\\base\\dir\\tsconfig.json"),
+            ..TsConfigJson::default()
+        };
 
         assert_eq!(tsc.references, None);
 
-        assert!(tsc.add_project_ref("..\\sibling", "tsconfig.json"));
+        assert!(tsc
+            .add_project_ref(PathBuf::from("C:\\base\\sibling"), "tsconfig.json")
+            .unwrap());
 
         assert_eq!(
             tsc.references.unwrap(),
@@ -302,10 +322,13 @@ mod add_project_ref {
                 path: "../sister".to_owned(),
                 prepend: None,
             }]),
+            path: PathBuf::from("/base/tsconfig.json"),
             ..TsConfigJson::default()
         };
 
-        assert!(tsc.add_project_ref("../brother", "tsconfig.json"));
+        assert!(tsc
+            .add_project_ref(PathBuf::from("/brother"), "tsconfig.json")
+            .unwrap());
 
         assert_eq!(
             tsc.references.unwrap(),

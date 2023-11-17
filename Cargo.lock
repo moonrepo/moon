@@ -4058,6 +4058,7 @@ dependencies = [
  "once_cell",
  "pathdiff",
  "regex",
+ "relative-path",
  "rustc-hash",
  "semver",
  "serde",

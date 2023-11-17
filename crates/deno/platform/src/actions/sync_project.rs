@@ -4,7 +4,7 @@ use moon_project::Project;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 // const LOG_TARGET: &str = "moon:deno-platform:sync-project";
@@ -17,7 +17,7 @@ pub async fn sync_project(
     typescript_config: &Option<TypeScriptConfig>,
 ) -> miette::Result<bool> {
     let mut mutated_project_files = false;
-    let tsconfig_project_refs: FxHashSet<String> = FxHashSet::default();
+    let tsconfig_project_refs: FxHashSet<PathBuf> = FxHashSet::default();
     let tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     // Sync the project and root `tsconfig.json`

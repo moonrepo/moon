@@ -273,7 +273,7 @@ mod sync_root {
         assert_eq!(
             tsconfig.references.unwrap(),
             vec![Reference {
-                path: "./tsconfig.project.json".into(),
+                path: "tsconfig.project.json".into(),
                 prepend: None
             }]
         );

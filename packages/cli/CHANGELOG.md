@@ -14,6 +14,7 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where codegen would merge JSON/YAML files with the incorrect source.
 - Updated file traversal to not walk outside of the workspace root.
 
 #### ⚙️ Internal

@@ -37,6 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
+          cache: false
           components: rustfmt
       - name: Check formatting
         run: cargo fmt --all --check
@@ -52,6 +53,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-make
+          cache-base: '^(master|develop-)'
           components: clippy
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run linter
@@ -70,8 +72,8 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
+          cache-base: '^(master|develop-)'
           components: llvm-tools-preview
-          cache: false
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}

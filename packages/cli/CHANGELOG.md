@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated to proto v0.22.0.
+- Updated Rust to v1.74.
+
 ## 1.16.4
 
 #### 🚀 Updates

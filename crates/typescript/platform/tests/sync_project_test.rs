@@ -247,6 +247,72 @@ mod sync_root {
     }
 
     #[test]
+    fn supports_root_project() {
+        let sandbox = create_sandbox("empty");
+        sandbox.create_file("tsconfig.json", "{}");
+        sandbox.create_file("tsconfig.project.json", "{}");
+
+        let project = Project {
+            id: Id::raw("root"),
+            root: sandbox.path().to_path_buf(),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.project.json",
+            "tsconfig.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            tsconfig.references.unwrap(),
+            vec![Reference {
+                path: "./tsconfig.project.json".into(),
+                prepend: None
+            }]
+        );
+    }
+
+    #[test]
+    fn supports_root_project_reversed_config() {
+        let sandbox = create_sandbox("empty");
+        sandbox.create_file("tsconfig.root.json", "{}");
+        sandbox.create_file("tsconfig.json", "{}");
+
+        let project = Project {
+            id: Id::raw("root"),
+            root: sandbox.path().to_path_buf(),
+            ..Project::default()
+        };
+
+        sync_project_as_root_tsconfig_reference(
+            &project,
+            "tsconfig.json",
+            "tsconfig.root.json",
+            sandbox.path(),
+        )
+        .unwrap();
+
+        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.root.json")
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            tsconfig.references.unwrap(),
+            vec![Reference {
+                path: ".".into(),
+                prepend: None
+            }]
+        );
+    }
+
+    #[test]
     fn ignores_root_self() {
         let sandbox = create_sandbox("empty");
         sandbox.create_file("tsconfig.json", "{}");

@@ -14,7 +14,11 @@ use std::path::{Path, PathBuf};
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 
 fn path_to_string(from: &Path, to: &Path) -> miette::Result<String> {
-    path::to_virtual_string(path::relative_from(from, to).unwrap_or_else(|| PathBuf::from(".")))
+    let value = path::to_virtual_string(
+        path::relative_from(from, to).unwrap_or_else(|| PathBuf::from(".")),
+    )?;
+
+    Ok(if value.is_empty() { ".".into() } else { value })
 }
 
 // Automatically create a missing `tsconfig.json` when we are syncing project references.
@@ -53,19 +57,18 @@ pub fn sync_project_as_root_tsconfig_reference(
     tsconfig_root_name: &str,
     workspace_root: &Path,
 ) -> miette::Result<bool> {
+    let tsconfig_root = workspace_root.join(tsconfig_root_name);
+    let tsconfig_root = tsconfig_root.parent().unwrap();
+
     TsConfigJson::sync_with_name(workspace_root, tsconfig_root_name, |tsconfig_json| {
         // Don't sync a root project to itself
-        if tsconfig_root_name == "tsconfig.json"
-            && (project.source == "." || project.root == workspace_root)
-        {
+        if project.root == tsconfig_root && tsconfig_project_name == tsconfig_root_name {
             return Ok(false);
         }
 
-        let tsconfig_root = workspace_root.join(tsconfig_root_name);
-
         if project.root.join(tsconfig_project_name).exists()
             && tsconfig_json.add_project_ref(
-                path_to_string(&project.root, tsconfig_root.parent().unwrap())?,
+                path_to_string(&project.root, tsconfig_root)?,
                 tsconfig_project_name,
             )
         {

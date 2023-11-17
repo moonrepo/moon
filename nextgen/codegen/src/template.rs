@@ -1,6 +1,7 @@
 use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, TemplateFile};
 use crate::{filters, CodegenError};
+use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
 use moon_common::path::{to_virtual_string, RelativePathBuf};
 use moon_common::Id;
@@ -231,7 +232,8 @@ impl Template {
                 match file.is_mergeable() {
                     Some("json") => {
                         let prev: json::JsonValue = json::read_file(&file.dest_path)?;
-                        let next: json::JsonValue = json::read_file(&file.source_path)?;
+                        let next: json::JsonValue =
+                            json::from_str(&file.content).into_diagnostic()?;
 
                         json::write_file_with_config(
                             &file.dest_path,
@@ -241,7 +243,8 @@ impl Template {
                     }
                     Some("yaml") => {
                         let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
-                        let next: yaml::YamlValue = yaml::read_file(&file.source_path)?;
+                        let next: yaml::YamlValue =
+                            yaml::from_str(&file.content).into_diagnostic()?;
 
                         yaml::write_file_with_config(&file.dest_path, &yaml::merge(&prev, &next))?;
                     }

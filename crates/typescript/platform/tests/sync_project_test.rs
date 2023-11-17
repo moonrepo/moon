@@ -1,10 +1,15 @@
 use moon_common::Id;
+use moon_config::TypeScriptConfig;
 use moon_project::Project;
 use moon_test_utils::{create_sandbox, create_sandbox_with_config, get_node_fixture_configs};
 use moon_typescript_lang::tsconfig::{Reference, TsConfigExtends};
 use moon_typescript_lang::TsConfigJson;
-use moon_typescript_platform::{create_missing_tsconfig, sync_project_as_root_tsconfig_reference};
+use moon_typescript_platform::{
+    create_missing_tsconfig, sync_project_as_root_tsconfig_reference, sync_project_tsconfig,
+};
 use moon_utils::string_vec;
+use rustc_hash::FxHashSet;
+use std::collections::BTreeMap;
 
 mod missing_tsconfig {
     use super::*;
@@ -336,5 +341,162 @@ mod sync_root {
             .unwrap();
 
         assert_eq!(tsconfig.references, None);
+    }
+}
+
+mod sync_config {
+    use super::*;
+
+    mod shared_types {
+        use super::*;
+
+        #[test]
+        fn adds_when_enabled() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/project/tsconfig.json", "{}");
+            sandbox.create_file("types/index.d.ts", "");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/project"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_shared_types: true,
+                ..TypeScriptConfig::default()
+            };
+
+            sync_project_tsconfig(
+                &project,
+                &config,
+                sandbox.path(),
+                BTreeMap::new(),
+                FxHashSet::default(),
+                false,
+                false,
+                false,
+            )
+            .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include.unwrap(), vec!["../../types/**/*"]);
+        }
+
+        #[test]
+        fn doesnt_add_when_enabled_but_already_exists() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "");
+            sandbox.create_file(
+                "packages/project/tsconfig.json",
+                r#"{ "include": ["../../types/**/*"] }"#,
+            );
+            sandbox.create_file("types/index.d.ts", "");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/project"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_shared_types: true,
+                ..TypeScriptConfig::default()
+            };
+
+            sync_project_tsconfig(
+                &project,
+                &config,
+                sandbox.path(),
+                BTreeMap::new(),
+                FxHashSet::default(),
+                false,
+                false,
+                false,
+            )
+            .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include.unwrap(), vec!["../../types/**/*"]);
+        }
+
+        #[test]
+        fn doesnt_add_when_enabled_but_no_types_dir() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/project/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/project"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_shared_types: true,
+                ..TypeScriptConfig::default()
+            };
+
+            sync_project_tsconfig(
+                &project,
+                &config,
+                sandbox.path(),
+                BTreeMap::new(),
+                FxHashSet::default(),
+                false,
+                false,
+                false,
+            )
+            .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include, None);
+        }
+
+        #[test]
+        fn doesnt_add_when_disabled() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/project/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/project"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_shared_types: false,
+                ..TypeScriptConfig::default()
+            };
+
+            sync_project_tsconfig(
+                &project,
+                &config,
+                sandbox.path(),
+                BTreeMap::new(),
+                FxHashSet::default(),
+                false,
+                false,
+                false,
+            )
+            .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include, None);
+        }
     }
 }

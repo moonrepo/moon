@@ -7,6 +7,10 @@ pub struct TypeScriptConfig {
     #[setting(default = true)]
     pub create_missing_config: bool,
 
+    pub include_shared_types: bool,
+
+    pub include_project_reference_sources: bool,
+
     // Not used but required by the toolchain macros!
     #[setting(skip)]
     pub plugin: Option<PluginLocator>,

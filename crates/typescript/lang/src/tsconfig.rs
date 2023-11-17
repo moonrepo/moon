@@ -81,6 +81,31 @@ impl TsConfigJson {
         Ok(cfg)
     }
 
+    pub fn add_include<T: AsRef<str>>(&mut self, pattern: T) -> bool {
+        let pattern = pattern.as_ref();
+        let mut include = match &self.include {
+            Some(refs) => refs.clone(),
+            None => Vec::<String>::new(),
+        };
+
+        if include.iter().any(|p| p == pattern) {
+            return false;
+        }
+
+        include.push(pattern.to_owned());
+
+        self.dirty.push("include".into());
+        self.include = Some(include);
+
+        true
+    }
+
+    pub fn add_include_path<T: AsRef<Path>>(&mut self, path: T) -> miette::Result<bool> {
+        let path = to_relative_virtual_string(path.as_ref(), self.path.parent().unwrap())?;
+
+        Ok(self.add_include(path.as_str()))
+    }
+
     /// Add a project reference to the `references` field with the defined
     /// path and tsconfig file name, and sort the list based on path.
     /// Return true if the new value is different from the old value.
@@ -793,6 +818,13 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> miette::Result<
     // otherwise it's a ton of overhead and maintenance!
     for field in &tsconfig.dirty {
         match field.as_ref() {
+            "include" => {
+                if let Some(include) = &tsconfig.include {
+                    data[field] = JsonValue::from_iter(include.to_owned());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
+                }
+            }
             "references" => {
                 if let Some(references) = &tsconfig.references {
                     let mut list = vec![];
@@ -809,6 +841,8 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> miette::Result<
                     }
 
                     data[field] = JsonValue::Array(list);
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
                 }
             }
             "compilerOptions" => {
@@ -826,6 +860,8 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> miette::Result<
                     if let Some(paths) = &options.paths {
                         data[field]["paths"] = JsonValue::from_iter(paths.to_owned());
                     }
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
                 }
             }
             _ => {}

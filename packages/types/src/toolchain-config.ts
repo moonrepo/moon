@@ -100,6 +100,8 @@ export interface PartialRustConfig {
 export interface PartialTypeScriptConfig {
 	/** @default true */
 	createMissingConfig?: boolean | null;
+	includeProjectReferenceSources?: boolean | null;
+	includeSharedTypes?: boolean | null;
 	/** @default 'tsconfig.json' */
 	projectConfigFileName?: string | null;
 	/** @default 'tsconfig.json' */
@@ -205,6 +207,8 @@ export interface RustConfig {
 export interface TypeScriptConfig {
 	/** @default true */
 	createMissingConfig: boolean;
+	includeProjectReferenceSources: boolean;
+	includeSharedTypes: boolean;
 	/** @default 'tsconfig.json' */
 	projectConfigFileName: string;
 	/** @default 'tsconfig.json' */

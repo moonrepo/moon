@@ -19,7 +19,7 @@
 #### ⚙️ Internal
 
 - Updated Rust to v1.74.
-- Updated proto to v0.22.0.
+- Updated proto to v0.23.0.
 - Updated dependencies.
 - Updated logs to now include nanoseconds.
 

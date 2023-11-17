@@ -116,7 +116,10 @@ impl Platform for RustPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
-        let Some(lockfile_path) = find_cargo_lock(&self.workspace_root.join(project_source)) else {
+        let Some(lockfile_path) = find_cargo_lock(
+            &self.workspace_root.join(project_source),
+            &self.workspace_root,
+        ) else {
             return Ok(false);
         };
 
@@ -267,7 +270,7 @@ impl Platform for RustPlatform {
             tool.exec_rustup(args, working_dir).await?;
         }
 
-        if find_cargo_lock(working_dir).is_none() {
+        if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
@@ -330,7 +333,7 @@ impl Platform for RustPlatform {
     ) -> miette::Result<bool> {
         let mut mutated_files = false;
 
-        let lockfile_path = find_cargo_lock(&project.root);
+        let lockfile_path = find_cargo_lock(&project.root, &self.workspace_root);
         let cargo_root = match lockfile_path {
             Some(path) => path.parent().unwrap().to_owned(),
             None => project.root.to_owned(),

@@ -1,15 +1,20 @@
 use moon_config::TypeScriptConfig;
 use moon_logger::debug;
+use moon_node_lang::PackageJson;
 use moon_project::Project;
-use moon_typescript_lang::{
-    tsconfig::{CompilerOptionsPaths, TsConfigExtends},
-    TsConfigJson,
+use moon_typescript_lang::{tsconfig::TsConfigExtends, TsConfigJson};
+use moon_utils::{
+    get_cache_dir,
+    path::{self, to_relative_virtual_string},
+    string_vec,
 };
-use moon_utils::{get_cache_dir, path, string_vec};
 use rustc_hash::FxHashSet;
 use starbase_styles::color;
 use starbase_utils::json;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 
@@ -147,7 +152,6 @@ impl<'app> TypeScriptSyncer<'app> {
     // Sync a project's `tsconfig.json`.
     pub fn sync_project_tsconfig(
         &self,
-        tsconfig_compiler_paths: CompilerOptionsPaths,
         tsconfig_project_refs: FxHashSet<PathBuf>,
     ) -> miette::Result<bool> {
         TsConfigJson::sync_with_name(
@@ -166,6 +170,10 @@ impl<'app> TypeScriptSyncer<'app> {
 
                 // Project references
                 if self.should_sync_project_references() && !tsconfig_project_refs.is_empty() {
+                    let mut tsconfig_compiler_paths = BTreeMap::default();
+                    let should_include_sources = self.should_include_project_reference_sources();
+                    let should_sync_paths = self.should_sync_project_references_to_paths();
+
                     for ref_path in tsconfig_project_refs {
                         if tsconfig_json.add_project_ref(
                             &ref_path,
@@ -175,11 +183,55 @@ impl<'app> TypeScriptSyncer<'app> {
                         }
 
                         // Include
-                        if self.should_include_project_reference_sources()
+                        if should_include_sources
                             && tsconfig_json.add_include_path(ref_path.join("**/*"))?
                         {
                             mutated_tsconfig = true;
                         }
+
+                        // Paths
+                        if should_sync_paths {
+                            if let Some(dep_package_json) = PackageJson::read(&ref_path)? {
+                                if let Some(dep_package_name) = &dep_package_json.name {
+                                    for index in
+                                        ["src/index.ts", "src/index.tsx", "index.ts", "index.tsx"]
+                                    {
+                                        if ref_path.join(index).exists() {
+                                            tsconfig_compiler_paths.insert(
+                                                dep_package_name.clone(),
+                                                vec![to_relative_virtual_string(
+                                                    ref_path.join(index),
+                                                    &self.project.root,
+                                                )?],
+                                            );
+
+                                            tsconfig_compiler_paths.insert(
+                                                format!("{dep_package_name}/*"),
+                                                vec![to_relative_virtual_string(
+                                                    ref_path.join(if index.starts_with("src") {
+                                                        "src/*"
+                                                    } else {
+                                                        "*"
+                                                    }),
+                                                    &self.project.root,
+                                                )?],
+                                            );
+
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Paths
+                    if should_sync_paths
+                        && tsconfig_json.update_compiler_options(|options| {
+                            options.update_paths(tsconfig_compiler_paths)
+                        })
+                    {
+                        mutated_tsconfig = true;
                     }
                 }
 
@@ -206,26 +258,12 @@ impl<'app> TypeScriptSyncer<'app> {
                     }
                 }
 
-                // Paths
-                if self.should_sync_project_references_to_paths()
-                    && !tsconfig_compiler_paths.is_empty()
-                    && tsconfig_json.update_compiler_options(|options| {
-                        options.update_paths(tsconfig_compiler_paths)
-                    })
-                {
-                    mutated_tsconfig = true;
-                }
-
                 Ok(mutated_tsconfig)
             },
         )
     }
 
-    pub fn sync(
-        &self,
-        tsconfig_compiler_paths: CompilerOptionsPaths,
-        tsconfig_project_refs: FxHashSet<PathBuf>,
-    ) -> miette::Result<bool> {
+    pub fn sync(&self, tsconfig_project_refs: FxHashSet<PathBuf>) -> miette::Result<bool> {
         let mut mutated_tsconfig = false;
 
         if !self.project.config.toolchain.is_typescript_enabled() {
@@ -245,7 +283,7 @@ impl<'app> TypeScriptSyncer<'app> {
         }
 
         // Sync compiler options to the project's `tsconfig.json`
-        if self.sync_project_tsconfig(tsconfig_compiler_paths, tsconfig_project_refs)? {
+        if self.sync_project_tsconfig(tsconfig_project_refs)? {
             mutated_tsconfig = true;
         }
 
@@ -257,9 +295,7 @@ pub fn sync_project(
     project: &Project,
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,
-    tsconfig_compiler_paths: CompilerOptionsPaths,
     tsconfig_project_refs: FxHashSet<PathBuf>,
 ) -> miette::Result<bool> {
-    TypeScriptSyncer::new(project, typescript_config, workspace_root)
-        .sync(tsconfig_compiler_paths, tsconfig_project_refs)
+    TypeScriptSyncer::new(project, typescript_config, workspace_root).sync(tsconfig_project_refs)
 }

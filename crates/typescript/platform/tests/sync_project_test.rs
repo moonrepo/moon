@@ -7,7 +7,6 @@ use moon_typescript_lang::TsConfigJson;
 use moon_typescript_platform::TypeScriptSyncer;
 use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
-use std::collections::BTreeMap;
 
 mod missing_tsconfig {
     use super::*;
@@ -367,7 +366,7 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -399,7 +398,7 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -427,7 +426,7 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -455,7 +454,7 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -489,13 +488,10 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(
-                    BTreeMap::new(),
-                    FxHashSet::from_iter([
-                        sandbox.path().join("packages/b"),
-                        sandbox.path().join("common/c"),
-                    ]),
-                )
+                .sync_project_tsconfig(FxHashSet::from_iter([
+                    sandbox.path().join("packages/b"),
+                    sandbox.path().join("common/c"),
+                ]))
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -538,13 +534,10 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(
-                    BTreeMap::new(),
-                    FxHashSet::from_iter([
-                        sandbox.path().join("packages/b"),
-                        sandbox.path().join("common/c"),
-                    ]),
-                )
+                .sync_project_tsconfig(FxHashSet::from_iter([
+                    sandbox.path().join("packages/b"),
+                    sandbox.path().join("common/c"),
+                ]))
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -576,13 +569,10 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(
-                    BTreeMap::new(),
-                    FxHashSet::from_iter([
-                        sandbox.path().join("packages/b"),
-                        sandbox.path().join("common/c"),
-                    ]),
-                )
+                .sync_project_tsconfig(FxHashSet::from_iter([
+                    sandbox.path().join("packages/b"),
+                    sandbox.path().join("common/c"),
+                ]))
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
@@ -629,13 +619,10 @@ mod sync_config {
             };
 
             TypeScriptSyncer::new(&project, &config, sandbox.path())
-                .sync_project_tsconfig(
-                    BTreeMap::new(),
-                    FxHashSet::from_iter([
-                        sandbox.path().join("packages/b"),
-                        sandbox.path().join("common/c"),
-                    ]),
-                )
+                .sync_project_tsconfig(FxHashSet::from_iter([
+                    sandbox.path().join("packages/b"),
+                    sandbox.path().join("common/c"),
+                ]))
                 .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")

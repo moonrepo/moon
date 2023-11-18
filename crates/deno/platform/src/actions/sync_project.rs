@@ -1,9 +1,7 @@
 use moon_common::Id;
 use moon_config::{DenoConfig, TypeScriptConfig};
 use moon_project::Project;
-use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -18,7 +16,6 @@ pub async fn sync_project(
 ) -> miette::Result<bool> {
     let mut mutated_project_files = false;
     let tsconfig_project_refs: FxHashSet<PathBuf> = FxHashSet::default();
-    let tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     // Sync the project and root `tsconfig.json`
     if let Some(typescript_config) = &typescript_config {
@@ -26,7 +23,6 @@ pub async fn sync_project(
             project,
             typescript_config,
             workspace_root,
-            tsconfig_paths,
             tsconfig_project_refs,
         )? {
             mutated_project_files = true;

@@ -48,7 +48,7 @@ typescript:
 ```
 
 When enabled, we'll automatically sync the shared types path to the `include` field of all relevant
-project `tsconfig.json`'s. However, for this to work correctly, the shared types _must_ exist in a
+project `tsconfig.json`s. However, for this to work correctly, the shared types _must_ exist in a
 `types` folder relative from the [TypeScript root](#configure-the-root-directory).
 
 For example, if the TypeScript root is `/`, and shared types is `/types`, then all packages in
@@ -63,6 +63,47 @@ For example, if the TypeScript root is `/`, and shared types is `/types`, then a
 > This setting can be overridden on a per-project basis.
 
 ### Include sources of project references
+
+Continuing with `include` related functionality, we've introducing yet another new setting,
+[`typescript.includeProjectReferenceSources`](/docs/config/toolchain#includeprojectreferencesources),
+which does exactly as its name implies. It automatically appends the sources (`**/*`) of all project
+references to the `include` field of all relevant project `tsconfig.json`s.
+
+This is useful (and sometimes required) for the following reasons:
+
+- It makes files within a referenced project available for import into the consuming project. This
+  is required for "press tab to auto-import" nested/deep files, otherwise only index imports will
+  work (and barrel files are costly).
+- It also improves the editor experience by making the source files available for intellisense,
+  autocomplete, and other features.
+
+```yaml title=".moon/toolchain.yml"
+typescript:
+  includeProjectReferenceSources: true
+```
+
+To understand this functionality, say you have a project with the following `tsconfig.json`, and
+this project depends on 2 other projects: ui and utils.
+
+```json title="packages/example/tsconfig.json"
+{
+  "compilerOptions": {},
+  "include": ["src/**/*"]
+}
+```
+
+When our syncing process occurs, we'll automatically sync project references, and include referenced
+sources, like so.
+
+```json title="packages/example/tsconfig.json"
+{
+  "compilerOptions": {},
+  "include": ["src/**/*", "../ui/**/*", "../utils/**/*"],
+  "references": [{ "path": "../ui" }, { "path": "../utils" }]
+}
+```
+
+> This setting can also be overridden on a per-project basis.
 
 ## Other changes
 

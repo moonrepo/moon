@@ -379,29 +379,6 @@ typescript:
   createMissingConfig: true
 ```
 
-### `includeSharedTypes`<VersionLabel version="1.17.0" />
-
-<HeadingApiLink to="/api/types/interface/TypeScriptConfig#includeSharedTypes" />
-
-When enabled, will automatically inject shared types (`types/**/*`) into the `include` field of each
-project's `tsconfig.json`. The shared types folder _must_ be named `types` and must exist relative
-to the [`rootConfigFileName`](#rootconfigfilename) setting. Defaults to `false`.
-
-```yaml title=".moon/toolchain.yml" {2}
-typescript:
-  includeSharedTypes: true
-```
-
-As a demonstration, if we had a package located at "packages/components", the `include` setting will
-be appended with:
-
-```json title="<project>/tsconfig.json"
-{
-  // ...
-  "include": ["../../types/**/*"]
-}
-```
-
 ### `includeProjectReferenceSources`<VersionLabel version="1.17.0" />
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#includeProjectReferenceSources" />
@@ -427,6 +404,29 @@ When this setting is enabled, the `include` field will also be populated.
     { "path": "../../design-system" },
     { "path": "../../react-hooks" }
   ]
+}
+```
+
+### `includeSharedTypes`<VersionLabel version="1.17.0" />
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#includeSharedTypes" />
+
+When enabled, will automatically inject shared types (`types/**/*`) into the `include` field of each
+project's `tsconfig.json`. The shared types folder _must_ be named `types` and must exist relative
+to the [`rootConfigFileName`](#rootconfigfilename) setting. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  includeSharedTypes: true
+```
+
+As a demonstration, if we had a package located at "packages/components", the `include` setting will
+be appended with:
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "include": ["../../types/**/*"]
 }
 ```
 

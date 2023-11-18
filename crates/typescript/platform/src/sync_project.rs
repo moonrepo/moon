@@ -36,6 +36,16 @@ impl<'app> TypeScriptSyncer<'app> {
         }
     }
 
+    pub fn should_include_project_reference_sources(&self) -> bool {
+        self.project
+            .config
+            .toolchain
+            .typescript
+            .as_ref()
+            .and_then(|cfg| cfg.include_project_reference_sources)
+            .unwrap_or(self.typescript_config.include_project_reference_sources)
+    }
+
     pub fn should_include_shared_types(&self) -> bool {
         self.project
             .config
@@ -165,7 +175,7 @@ impl<'app> TypeScriptSyncer<'app> {
                         }
 
                         // Include
-                        if self.typescript_config.include_project_reference_sources
+                        if self.should_include_project_reference_sources()
                             && tsconfig_json.add_include_path(ref_path.join("**/*"))?
                         {
                             mutated_tsconfig = true;

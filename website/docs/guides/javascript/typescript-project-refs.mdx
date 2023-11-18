@@ -119,12 +119,17 @@ root, and typically should not be disabled in each project.
   projects. If declarations do not exist, TypeScript will generate them on demand.
 - `declarationMap` - Generate sourcemaps for declarations, so that language server integrations in
   editors like "Go to" resolve correctly.
-- `emitDeclarationOnly` - Project references only require declarations, so avoid compiling to
-  JavaScript.
 - `incremental` - Enables incremental compilation, greatly improving performance.
 - `noEmitOnError` - If the typechecker fails, avoid generating invalid or partial declarations.
 - `skipLibCheck` - Avoids eager loading and analyzing all declarations, greatly improving
   performance.
+
+Furthermore, we have 2 settings that should be enabled _per project_, depending on the project type.
+
+- `emitDeclarationOnly` - For packages: Emit declarations, as they're required for references, but
+  avoid compiling to JavaScript.
+- `noEmit` - For applications: Don't emit declarations, as others _should not_ be depending on the
+  project.
 
 For convenience, we provide the
 [`tsconfig-moon`](https://github.com/moonrepo/dev/tree/master/packages/tsconfig) package, which
@@ -161,7 +166,7 @@ support with interoperability with the ecosystem.
     "esModuleInterop": true,
     "isolatedModules": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "target": "esnext"
     // ... others
@@ -214,7 +219,6 @@ importing files from an application. If this use case ever arises, move those fi
 {
   "extends": "../../../../tsconfig.options.json",
   "compilerOptions": {
-    "emitDeclarationOnly": false,
     "noEmit": true
   },
   "include": [],
@@ -233,6 +237,7 @@ declarations that external projects would reference. This location is typically
 {
   "extends": "../../../../tsconfig.options.json",
   "compilerOptions": {
+    "emitDeclarationOnly": true,
     "outDir": "./lib"
   },
   "include": [],
@@ -290,9 +295,27 @@ boundary.
 }
 ```
 
+To make use of editor intellisense and auto-imports of deeply nested files, you'll most likely need
+to add includes for referenced projects as well.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "include": [
+    // ...
+    "src/**/*",
+    "../../foo/src/**/*",
+    "../../bar/src/**/*",
+    "../../../../baz/src/**/*"
+  ]
+}
+```
+
 > When using moon, the
 > [`typescript.syncProjectReferences`](../../config/toolchain#syncprojectreferences) setting will
-> keep this `references` list automatically in sync.
+> keep this `references` list automatically in sync, and
+> [`typescript.includeProjectReferenceSources`](../../config/toolchain#syncprojectreferences) for
+> `include`.
 
 #### `tsconfig.*.json`
 
@@ -528,8 +551,8 @@ repeating all of its implementation details, we suggest reading
 With that being said, TypeScript completely ignored the `exports` field until
 [v4.7](https://devblogs.microsoft.com/typescript/announcing-typescript-4-7/#esm-nodejs), and
 respecting `exports` is _still ignored unless_ the `moduleResolution` compiler option is set to
-"nodenext" or "node16". If `moduleResolution` is set to "node", then your integration is resolving
-based on the `main` and `types` field, which are basically "legacy".
+"nodenext", "node16", or "bundler". If `moduleResolution` is set to "node", then your integration is
+resolving based on the `main` and `types` field, which are basically "legacy".
 
 :::warning
 
@@ -555,8 +578,8 @@ possible, if you dare!
 
 ### Enabling imports/exports resolution
 
-To start, set the `moduleResolution` compiler option to "nodenext" in the
-[`tsconfig.options.json`](#tsconfigoptionsjson) file.
+To start, set the `moduleResolution` compiler option to "nodenext" (for packages) or "bundler" (for
+apps) in the [`tsconfig.options.json`](#tsconfigoptionsjson) file.
 
 ```json file="tsconfig.options.json"
 {

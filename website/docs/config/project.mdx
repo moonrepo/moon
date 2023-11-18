@@ -1038,7 +1038,21 @@ toolchain:
     disabled: true
 ```
 
-#### `includeSharedTypes`
+#### `includeProjectReferenceSources`<VersionLabel version="1.17.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#includeProjectReferenceSources" />
+
+Overrides the workspace-level
+[`includeProjectReferenceSources`](./toolchain#includeprojectreferencesources) setting. Defaults to
+undefined.
+
+```yaml title="moon.yml" {3}
+toolchain:
+  typescript:
+    includeProjectReferenceSources: false
+```
+
+#### `includeSharedTypes`<VersionLabel version="1.17.0" />
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#includeSharedTypes" />
 

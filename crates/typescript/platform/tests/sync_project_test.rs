@@ -4,9 +4,7 @@ use moon_project::Project;
 use moon_test_utils::{create_sandbox, create_sandbox_with_config, get_node_fixture_configs};
 use moon_typescript_lang::tsconfig::{Reference, TsConfigExtends};
 use moon_typescript_lang::TsConfigJson;
-use moon_typescript_platform::{
-    create_missing_tsconfig, sync_project_as_root_tsconfig_reference, sync_project_tsconfig,
-};
+use moon_typescript_platform::TypeScriptSyncer;
 use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
@@ -30,17 +28,15 @@ mod missing_tsconfig {
             ..Project::default()
         };
 
+        let config = TypeScriptConfig::default();
+
         let tsconfig_path = project.root.join("tsconfig.json");
 
         assert!(!tsconfig_path.exists());
 
-        create_missing_tsconfig(
-            &project,
-            "tsconfig.json",
-            "tsconfig.options.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .create_missing_tsconfig()
+            .unwrap();
 
         assert!(tsconfig_path.exists());
 
@@ -71,17 +67,19 @@ mod missing_tsconfig {
             ..Project::default()
         };
 
+        let config = TypeScriptConfig {
+            project_config_file_name: "tsconfig.ref.json".into(),
+            root_options_config_file_name: "tsconfig.base.json".into(),
+            ..TypeScriptConfig::default()
+        };
+
         let tsconfig_path = project.root.join("tsconfig.ref.json");
 
         assert!(!tsconfig_path.exists());
 
-        create_missing_tsconfig(
-            &project,
-            "tsconfig.ref.json",
-            "tsconfig.base.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .create_missing_tsconfig()
+            .unwrap();
 
         assert!(tsconfig_path.exists());
 
@@ -112,17 +110,15 @@ mod missing_tsconfig {
             ..Project::default()
         };
 
+        let config = TypeScriptConfig::default();
+
         let tsconfig_path = project.root.join("tsconfig.json");
 
         assert!(tsconfig_path.exists());
 
-        let created = create_missing_tsconfig(
-            &project,
-            "tsconfig.json",
-            "tsconfig.options.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let created = TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .create_missing_tsconfig()
+            .unwrap();
 
         assert!(!created);
     }
@@ -143,13 +139,11 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.json",
-            "tsconfig.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig::default();
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
             .unwrap()
@@ -176,13 +170,14 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.json",
-            "root/tsconfig.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig {
+            root_config_file_name: "root/tsconfig.json".into(),
+            ..TypeScriptConfig::default()
+        };
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "root/tsconfig.json")
             .unwrap()
@@ -210,13 +205,14 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.json",
-            "root/tsconfig.projects.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig {
+            root_config_file_name: "root/tsconfig.projects.json".into(),
+            ..TypeScriptConfig::default()
+        };
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let project = Project {
             id: Id::raw("b"),
@@ -224,13 +220,15 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.build.json",
-            "root/tsconfig.projects.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig {
+            project_config_file_name: "tsconfig.build.json".into(),
+            root_config_file_name: "root/tsconfig.projects.json".into(),
+            ..TypeScriptConfig::default()
+        };
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "root/tsconfig.projects.json")
             .unwrap()
@@ -263,13 +261,14 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.project.json",
-            "tsconfig.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig {
+            project_config_file_name: "tsconfig.project.json".into(),
+            ..TypeScriptConfig::default()
+        };
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
             .unwrap()
@@ -296,13 +295,14 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.json",
-            "tsconfig.root.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig {
+            root_config_file_name: "tsconfig.root.json".into(),
+            ..TypeScriptConfig::default()
+        };
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.root.json")
             .unwrap()
@@ -328,13 +328,11 @@ mod sync_root {
             ..Project::default()
         };
 
-        sync_project_as_root_tsconfig_reference(
-            &project,
-            "tsconfig.json",
-            "tsconfig.json",
-            sandbox.path(),
-        )
-        .unwrap();
+        let config = TypeScriptConfig::default();
+
+        TypeScriptSyncer::new(&project, &config, sandbox.path())
+            .sync_as_root_project_reference()
+            .unwrap();
 
         let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
             .unwrap()
@@ -368,17 +366,9 @@ mod sync_config {
                 ..TypeScriptConfig::default()
             };
 
-            sync_project_tsconfig(
-                &project,
-                &config,
-                sandbox.path(),
-                BTreeMap::new(),
-                FxHashSet::default(),
-                false,
-                false,
-                false,
-            )
-            .unwrap();
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
@@ -408,17 +398,9 @@ mod sync_config {
                 ..TypeScriptConfig::default()
             };
 
-            sync_project_tsconfig(
-                &project,
-                &config,
-                sandbox.path(),
-                BTreeMap::new(),
-                FxHashSet::default(),
-                false,
-                false,
-                false,
-            )
-            .unwrap();
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
@@ -444,17 +426,9 @@ mod sync_config {
                 ..TypeScriptConfig::default()
             };
 
-            sync_project_tsconfig(
-                &project,
-                &config,
-                sandbox.path(),
-                BTreeMap::new(),
-                FxHashSet::default(),
-                false,
-                false,
-                false,
-            )
-            .unwrap();
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
@@ -480,17 +454,9 @@ mod sync_config {
                 ..TypeScriptConfig::default()
             };
 
-            sync_project_tsconfig(
-                &project,
-                &config,
-                sandbox.path(),
-                BTreeMap::new(),
-                FxHashSet::default(),
-                false,
-                false,
-                false,
-            )
-            .unwrap();
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(BTreeMap::new(), FxHashSet::default())
+                .unwrap();
 
             let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
                 .unwrap()

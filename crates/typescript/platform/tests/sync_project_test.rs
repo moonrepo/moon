@@ -465,4 +465,185 @@ mod sync_config {
             assert_eq!(tsconfig.include, None);
         }
     }
+
+    mod project_refs {
+        use super::*;
+
+        #[test]
+        fn adds_when_enabled() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", "{}");
+            sandbox.create_file("packages/b/tsconfig.json", "{}");
+            sandbox.create_file("common/c/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/a"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                sync_project_references: true,
+                ..TypeScriptConfig::default()
+            };
+
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(
+                    BTreeMap::new(),
+                    FxHashSet::from_iter([
+                        sandbox.path().join("packages/b"),
+                        sandbox.path().join("common/c"),
+                    ]),
+                )
+                .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include, None);
+            assert_eq!(
+                tsconfig.references.unwrap(),
+                vec![
+                    Reference {
+                        path: "../../common/c".into(),
+                        prepend: None
+                    },
+                    Reference {
+                        path: "../b".into(),
+                        prepend: None
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        fn doesnt_add_when_disabled() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", "{}");
+            sandbox.create_file("packages/b/tsconfig.json", "{}");
+            sandbox.create_file("common/c/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/a"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                sync_project_references: false,
+                ..TypeScriptConfig::default()
+            };
+
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(
+                    BTreeMap::new(),
+                    FxHashSet::from_iter([
+                        sandbox.path().join("packages/b"),
+                        sandbox.path().join("common/c"),
+                    ]),
+                )
+                .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include, None);
+            assert_eq!(tsconfig.references, None);
+        }
+
+        #[test]
+        fn includes_sources_when_enabled() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", "{}");
+            sandbox.create_file("packages/b/tsconfig.json", "{}");
+            sandbox.create_file("common/c/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/a"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_project_reference_sources: true,
+                sync_project_references: true,
+                ..TypeScriptConfig::default()
+            };
+
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(
+                    BTreeMap::new(),
+                    FxHashSet::from_iter([
+                        sandbox.path().join("packages/b"),
+                        sandbox.path().join("common/c"),
+                    ]),
+                )
+                .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(
+                tsconfig.include.unwrap(),
+                vec!["../../common/c/**/*", "../b/**/*"]
+            );
+            assert_eq!(
+                tsconfig.references.unwrap(),
+                vec![
+                    Reference {
+                        path: "../../common/c".into(),
+                        prepend: None
+                    },
+                    Reference {
+                        path: "../b".into(),
+                        prepend: None
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        fn doesnt_include_sources_when_sync_disabled() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", "{}");
+            sandbox.create_file("packages/b/tsconfig.json", "{}");
+            sandbox.create_file("common/c/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/a"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_project_reference_sources: true,
+                sync_project_references: false,
+                ..TypeScriptConfig::default()
+            };
+
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(
+                    BTreeMap::new(),
+                    FxHashSet::from_iter([
+                        sandbox.path().join("packages/b"),
+                        sandbox.path().join("common/c"),
+                    ]),
+                )
+                .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(tsconfig.include, None);
+            assert_eq!(tsconfig.references, None);
+        }
+    }
 }

@@ -381,7 +381,7 @@ typescript:
 
 ### `includeSharedTypes`<VersionLabel version="1.17.0" />
 
-<HeadingApiLink to="/api/types/interface/TypeScriptConfig#createMissingConfig" />
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#includeSharedTypes" />
 
 When enabled, will automatically inject shared types (`types/**/*`) into the `include` field of each
 project's `tsconfig.json`. The shared types folder _must_ be named `types` and must exist relative
@@ -399,6 +399,34 @@ be appended with:
 {
   // ...
   "include": ["../../types/**/*"]
+}
+```
+
+### `includeProjectReferenceSources`<VersionLabel version="1.17.0" />
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#includeProjectReferenceSources" />
+
+When enabled and [syncing project references](#syncprojectreferences), will inject each project
+reference as an entry in the `include` field of the respective project's `tsconfig.json`. These
+includes are sometimes required by editors for auto-completion, intellisense, and automatic imports.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  includeProjectReferenceSources: true
+```
+
+To demonstrate this, we'll use the example from [`syncProjectReferences`](#syncprojectreferences).
+When this setting is enabled, the `include` field will also be populated.
+
+```json title="tsconfig.json"
+{
+  // ...
+  "include": ["../../design-system/**/*", "../../react-hooks/**/*"],
+  "references": [
+    // ...
+    { "path": "../../design-system" },
+    { "path": "../../react-hooks" }
+  ]
 }
 ```
 

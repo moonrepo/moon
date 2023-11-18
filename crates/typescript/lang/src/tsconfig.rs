@@ -93,6 +93,7 @@ impl TsConfigJson {
         }
 
         include.push(pattern.to_owned());
+        include.sort();
 
         self.dirty.push("include".into());
         self.include = Some(include);

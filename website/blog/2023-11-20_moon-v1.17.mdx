@@ -1,0 +1,70 @@
+---
+slug: moon-v1.17
+title: moon v1.17 - Full Bun support, TypeScript improvements, and more!
+authors: [milesj]
+tags: [bun, typescript]
+# image: ./img/moon/v1.17.png
+---
+
+<!--truncate-->
+
+## Bun tier 1, 2, and 3 support
+
+## TypeScript improvements
+
+### Configure the root directory
+
+When moon was first designed, it was designed for JavaScript based monorepos. Because of this, there
+were a handful of assumptions that still exist today, one of which is that the moon workspace root
+was assumed to be the JavaScript and TypeScript root. The root is extremely important in resolving
+relative paths for project references and other path based functionality, so using the workspace
+root made the most sense.
+
+However, what if your TypeScript root isn't the workspace root? Or the TypeScript root and
+JavaScript root are different? Well, you were out of luck, until now! We've updated the
+[`typescript.rootConfigFileName`](/docs/config/toolchain#rootconfigfilename) and
+[`typescript.rootOptionsConfigFileName`](/docs/config/toolchain#rootoptionsconfigfilename) settings
+to support directory prefixes.
+
+When we detect a directory prefix, we'll use that as the root directory for TypeScript paths. For
+example, let's organize all TypeScript related functionality and configs in a `typescript` folder.
+
+```yaml title=".moon/toolchain.yml"
+typescript:
+  rootConfigFileName: 'typescript/tsconfig.json'
+  rootOptionsConfigFileName: 'typescript/tsconfig.options.json'
+```
+
+### Include shared types
+
+Another common TypeScript practice is to have shared `.d.ts` types that are used across multiple
+projects, or to augment third-party types. This is so common that we felt obligated to support it in
+some capacity within moon. With that said, we're introducing a new setting,
+[`typescript.includeSharedTypes`](/docs/config/toolchain#includesharedtypes).
+
+```yaml title=".moon/toolchain.yml"
+typescript:
+  includeSharedTypes: true
+```
+
+When enabled, we'll automatically sync the shared types path to the `include` field of all relevant
+project `tsconfig.json`'s. However, for this to work correctly, the shared types _must_ exist in a
+`types` folder relative from the [TypeScript root](#configure-the-root-directory).
+
+For example, if the TypeScript root is `/`, and shared types is `/types`, then all packages in
+`/packages/*` will be updated with the following:
+
+```json title="packages/example/tsconfig.json"
+{
+  "include": ["../../types/**/*"]
+}
+```
+
+> This setting can be overridden on a per-project basis.
+
+### Include sources of project references
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.17.0) for a full list
+of changes.

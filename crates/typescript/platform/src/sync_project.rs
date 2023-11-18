@@ -36,6 +36,16 @@ impl<'app> TypeScriptSyncer<'app> {
         }
     }
 
+    pub fn should_include_shared_types(&self) -> bool {
+        self.project
+            .config
+            .toolchain
+            .typescript
+            .as_ref()
+            .and_then(|cfg| cfg.include_shared_types)
+            .unwrap_or(self.typescript_config.include_shared_types)
+    }
+
     pub fn should_route_out_dir_to_cache(&self) -> bool {
         self.project
             .config
@@ -137,7 +147,7 @@ impl<'app> TypeScriptSyncer<'app> {
                 let mut mutated_tsconfig = false;
 
                 // Include
-                if self.typescript_config.include_shared_types
+                if self.should_include_shared_types()
                     && self.typescript_root.join("types").exists()
                     && tsconfig_json.add_include_path(self.typescript_root.join("types/**/*"))?
                 {

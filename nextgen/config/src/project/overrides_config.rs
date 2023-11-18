@@ -15,6 +15,7 @@ cacheable!(
     #[derive(Clone, Config, Debug)]
     pub struct ProjectToolchainTypeScriptConfig {
         pub disabled: bool,
+        pub include_shared_types: Option<bool>,
         pub route_out_dir_to_cache: Option<bool>,
         pub sync_project_references: Option<bool>,
         pub sync_project_references_to_paths: Option<bool>,

@@ -7,6 +7,8 @@ use moon_typescript_lang::TsConfigJson;
 use moon_typescript_platform::TypeScriptSyncer;
 use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
+use std::collections::BTreeMap;
+use std::path::Path;
 
 mod missing_tsconfig {
     use super::*;
@@ -631,6 +633,81 @@ mod sync_config {
 
             assert_eq!(tsconfig.include, None);
             assert_eq!(tsconfig.references, None);
+        }
+    }
+
+    mod paths {
+        use super::*;
+
+        fn run_for_a(root: &Path) -> TsConfigJson {
+            let project = Project {
+                id: Id::raw("project"),
+                root: root.join("packages/a"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                create_missing_config: true,
+                sync_project_references: true,
+                sync_project_references_to_paths: true,
+                ..TypeScriptConfig::default()
+            };
+
+            TypeScriptSyncer::new(&project, &config, root)
+                .sync_project_tsconfig(FxHashSet::from_iter([
+                    root.join("packages/b"),
+                    root.join("common/c"),
+                ]))
+                .unwrap();
+
+            TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap()
+        }
+
+        #[test]
+        fn adds_wildcards() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", "{}");
+            sandbox.create_file("packages/a/package.json", r#"{ "name": "a" }"#);
+            sandbox.create_file("packages/b/package.json", r#"{ "name": "b" }"#);
+            sandbox.create_file("packages/b/src/file.ts", ""); // Not index on purpose
+            sandbox.create_file("common/c/package.json", r#"{ "name": "c" }"#);
+
+            let tsconfig = run_for_a(sandbox.path());
+
+            assert_eq!(
+                tsconfig.compiler_options.unwrap().paths.unwrap(),
+                BTreeMap::from_iter([
+                    ("b/*".into(), vec!["../b/src/*".into()]),
+                    ("c/*".into(), vec!["../../common/c/*".into()]),
+                ])
+            );
+        }
+
+        #[test]
+        fn adds_indexes() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", "{}");
+            sandbox.create_file("packages/a/package.json", r#"{ "name": "a" }"#);
+            sandbox.create_file("packages/b/package.json", r#"{ "name": "b" }"#);
+            sandbox.create_file("packages/b/src/index.ts", "");
+            sandbox.create_file("common/c/package.json", r#"{ "name": "c" }"#);
+            sandbox.create_file("common/c/index.ts", "");
+
+            let tsconfig = run_for_a(sandbox.path());
+
+            assert_eq!(
+                tsconfig.compiler_options.unwrap().paths.unwrap(),
+                BTreeMap::from_iter([
+                    ("b".into(), vec!["../b/src/index.ts".into()]),
+                    ("b/*".into(), vec!["../b/src/*".into()]),
+                    ("c".into(), vec!["../../common/c/index.ts".into()]),
+                    ("c/*".into(), vec!["../../common/c/*".into()]),
+                ])
+            );
         }
     }
 }

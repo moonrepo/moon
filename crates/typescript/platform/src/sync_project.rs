@@ -205,21 +205,21 @@ impl<'app> TypeScriptSyncer<'app> {
                                                 )?],
                                             );
 
-                                            tsconfig_compiler_paths.insert(
-                                                format!("{dep_package_name}/*"),
-                                                vec![to_relative_virtual_string(
-                                                    ref_path.join(if index.starts_with("src") {
-                                                        "src/*"
-                                                    } else {
-                                                        "*"
-                                                    }),
-                                                    &self.project.root,
-                                                )?],
-                                            );
-
                                             break;
                                         }
                                     }
+
+                                    tsconfig_compiler_paths.insert(
+                                        format!("{dep_package_name}/*"),
+                                        vec![to_relative_virtual_string(
+                                            ref_path.join(if ref_path.join("src").exists() {
+                                                "src/*"
+                                            } else {
+                                                "*"
+                                            }),
+                                            &self.project.root,
+                                        )?],
+                                    );
                                 }
                             }
                         }

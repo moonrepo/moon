@@ -1032,10 +1032,37 @@ toolchain:
 Disables [TypeScript support](./toolchain#typescript) entirely for this project. Defaults to
 `false`.
 
-```yaml title="moon.yml" {2}
+```yaml title="moon.yml" {3}
 toolchain:
   typescript:
     disabled: true
+```
+
+#### `includeProjectReferenceSources`<VersionLabel version="1.17.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#includeProjectReferenceSources" />
+
+Overrides the workspace-level
+[`includeProjectReferenceSources`](./toolchain#includeprojectreferencesources) setting. Defaults to
+undefined.
+
+```yaml title="moon.yml" {3}
+toolchain:
+  typescript:
+    includeProjectReferenceSources: false
+```
+
+#### `includeSharedTypes`<VersionLabel version="1.17.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#includeSharedTypes" />
+
+Overrides the workspace-level [`includeSharedTypes`](./toolchain#includesharedtypes) setting.
+Defaults to undefined.
+
+```yaml title="moon.yml" {3}
+toolchain:
+  typescript:
+    includeSharedTypes: false
 ```
 
 #### `routeOutDirToCache`
@@ -1045,7 +1072,7 @@ toolchain:
 Overrides the workspace-level [`routeOutDirToCache`](./toolchain#routeoutdirtocache) setting.
 Defaults to undefined.
 
-```yaml title="moon.yml" {2}
+```yaml title="moon.yml" {3}
 toolchain:
   typescript:
     routeOutDirToCache: false
@@ -1058,7 +1085,7 @@ toolchain:
 Overrides the workspace-level [`syncProjectReferences`](./toolchain#syncprojectreferences) setting.
 Defaults to undefined.
 
-```yaml title="moon.yml" {2}
+```yaml title="moon.yml" {3}
 toolchain:
   typescript:
     syncProjectReferences: false
@@ -1072,7 +1099,7 @@ Overrides the workspace-level
 [`syncProjectReferencesToPaths`](./toolchain#syncprojectreferencestopaths) setting. Defaults to
 undefined.
 
-```yaml title="moon.yml" {2}
+```yaml title="moon.yml" {3}
 toolchain:
   typescript:
     syncProjectReferencesToPaths: false

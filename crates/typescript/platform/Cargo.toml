@@ -8,6 +8,7 @@ publish = false
 moon_config = { path = "../../../nextgen/config" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../../core/logger" }
+moon_node_lang = { path = "../../node/lang" }
 moon_project = { path = "../../../nextgen/project" }
 moon_utils = { path = "../../core/utils" }
 moon_typescript_lang = { path = "../lang" }

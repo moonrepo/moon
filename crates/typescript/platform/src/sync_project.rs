@@ -32,7 +32,7 @@ impl<'app> TypeScriptSyncer<'app> {
         workspace_root: &'app Path,
     ) -> Self {
         Self {
-            types_root: path::normalize(workspace_root.join(&typescript_config.types_root)),
+            types_root: path::normalize(workspace_root.join(&typescript_config.root)),
             project,
             typescript_config,
             // workspace_root,

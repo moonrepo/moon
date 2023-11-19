@@ -413,7 +413,7 @@ When this setting is enabled, the `include` field will also be populated.
 
 When enabled, will automatically inject shared types (`types/**/*`) into the `include` field of each
 project's `tsconfig.json`. The shared types folder _must_ be named `types` and must exist relative
-to the [`typesRoot`](#typesRoot) setting. Defaults to `false`.
+to the [`root`](#root) setting. Defaults to `false`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 typescript:
@@ -440,6 +440,18 @@ syncing project references between projects. Defaults to `tsconfig.json`.
 ```yaml title=".moon/toolchain.yml" {2}
 typescript:
   projectConfigFileName: 'tsconfig.build.json'
+```
+
+### `root`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#root" />
+
+Defines the TypeScript root (relative from moon's workspace root), where project reference
+composition, common compiler options, and shared types will be located. Defaults to `.`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  root: './types'
 ```
 
 ### `rootConfigFileName`
@@ -574,18 +586,6 @@ Both imports can optionally be nested within a `src` directory.
 
 > This setting runs _after_ [`syncProjectReferences`](#syncprojectreferences) and will inherit any
 > synced references from that setting.
-
-### `typesRoot`
-
-<HeadingApiLink to="/api/types/interface/TypeScriptConfig#typesRoot" />
-
-Defines the TypeScript root (relative from moon's workspace root), where project reference
-composition, common compiler options, and shared types will be located. Defaults to `.`.
-
-```yaml title=".moon/toolchain.yml" {2}
-typescript:
-  typesRoot: './types'
-```
 
 ## Rust
 

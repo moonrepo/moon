@@ -20,7 +20,7 @@ impl TypeScriptTargetHash {
         let mut hasher = TypeScriptTargetHash::default();
 
         if let Some(root_tsconfig) = TsConfigJson::read_with_name(
-            workspace_root.join(&config.types_root),
+            workspace_root.join(&config.root),
             &config.root_config_file_name,
         )? {
             if let Some(compiler_options) = &root_tsconfig.compiler_options {

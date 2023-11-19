@@ -172,7 +172,7 @@ mod sync_root {
         };
 
         let config = TypeScriptConfig {
-            types_root: "root".into(),
+            root: "root".into(),
             ..TypeScriptConfig::default()
         };
 
@@ -208,7 +208,7 @@ mod sync_root {
 
         let config = TypeScriptConfig {
             root_config_file_name: "tsconfig.projects.json".into(),
-            types_root: "root".into(),
+            root: "root".into(),
             ..TypeScriptConfig::default()
         };
 
@@ -225,7 +225,7 @@ mod sync_root {
         let config = TypeScriptConfig {
             project_config_file_name: "tsconfig.build.json".into(),
             root_config_file_name: "tsconfig.projects.json".into(),
-            types_root: "root".into(),
+            root: "root".into(),
             ..TypeScriptConfig::default()
         };
 

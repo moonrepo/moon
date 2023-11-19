@@ -22,12 +22,12 @@ root made the most sense.
 
 However, what if your TypeScript root isn't the workspace root? Or the TypeScript root and
 JavaScript root are different? Well, you were out of luck... until now! We're introducing a new
-setting called [`typescript.typesRoot`](/docs/config/toolchain#typesroot), that denotes the root
-directory for TypeScript related functionality (relative from moon's workspace root).
+setting called [`typescript.root`](/docs/config/toolchain#root), that denotes the root directory for
+TypeScript related functionality (relative from moon's workspace root).
 
 ```yaml title=".moon/toolchain.yml"
 typescript:
-  typesRoot: './typescript'
+  root: './typescript'
 ```
 
 ### Include shared types

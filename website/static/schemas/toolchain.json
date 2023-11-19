@@ -385,17 +385,6 @@
             }
           ]
         },
-        "packagesRoot": {
-          "default": ".",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "plugin": {
           "anyOf": [
             {
@@ -638,6 +627,17 @@
             }
           ]
         },
+        "root": {
+          "default": ".",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "rootConfigFileName": {
           "default": "tsconfig.json",
           "anyOf": [
@@ -685,17 +685,6 @@
           "anyOf": [
             {
               "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "typesRoot": {
-          "default": ".",
-          "anyOf": [
-            {
-              "type": "string"
             },
             {
               "type": "null"

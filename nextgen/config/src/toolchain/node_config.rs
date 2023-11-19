@@ -144,7 +144,7 @@ pub struct NodeConfig {
 
     pub package_manager: NodePackageManager,
 
-    #[setting(default = ".")]
+    #[setting(default = ".", skip)]
     pub packages_root: String,
 
     pub plugin: Option<PluginLocator>,

@@ -77,8 +77,6 @@ export interface PartialNodeConfig {
 	inferTasksFromScripts?: boolean | null;
 	npm?: PartialNpmConfig | null;
 	packageManager?: NodePackageManager | null;
-	/** @default '.' */
-	packagesRoot?: string | null;
 	plugin?: string | null;
 	pnpm?: PartialPnpmConfig | null;
 	/** @default true */
@@ -106,6 +104,8 @@ export interface PartialTypeScriptConfig {
 	includeSharedTypes?: boolean | null;
 	/** @default 'tsconfig.json' */
 	projectConfigFileName?: string | null;
+	/** @default '.' */
+	root?: string | null;
 	/** @default 'tsconfig.json' */
 	rootConfigFileName?: string | null;
 	/** @default 'tsconfig.options.json' */
@@ -114,8 +114,6 @@ export interface PartialTypeScriptConfig {
 	/** @default true */
 	syncProjectReferences?: boolean | null;
 	syncProjectReferencesToPaths?: boolean | null;
-	/** @default '.' */
-	typesRoot?: string | null;
 }
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain */
@@ -188,8 +186,6 @@ export interface NodeConfig {
 	inferTasksFromScripts: boolean;
 	npm: NpmConfig;
 	packageManager: NodePackageManager;
-	/** @default '.' */
-	packagesRoot: string;
 	plugin: string | null;
 	pnpm: PnpmConfig | null;
 	/** @default true */
@@ -217,6 +213,8 @@ export interface TypeScriptConfig {
 	includeSharedTypes: boolean;
 	/** @default 'tsconfig.json' */
 	projectConfigFileName: string;
+	/** @default '.' */
+	root: string;
 	/** @default 'tsconfig.json' */
 	rootConfigFileName: string;
 	/** @default 'tsconfig.options.json' */
@@ -225,8 +223,6 @@ export interface TypeScriptConfig {
 	/** @default true */
 	syncProjectReferences: boolean;
 	syncProjectReferencesToPaths: boolean;
-	/** @default '.' */
-	typesRoot: string;
 }
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain */

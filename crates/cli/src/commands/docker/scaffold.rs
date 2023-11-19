@@ -78,7 +78,7 @@ fn scaffold_workspace(
                 }
                 LanguageType::TypeScript => {
                     if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                        let root = PathBuf::from(&typescript_config.types_root);
+                        let root = PathBuf::from(&typescript_config.root);
 
                         files.push(
                             root.join(&typescript_config.project_config_file_name)

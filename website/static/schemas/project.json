@@ -486,6 +486,26 @@
             }
           ]
         },
+        "includeProjectReferenceSources": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "includeSharedTypes": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "routeOutDirToCache": {
           "anyOf": [
             {

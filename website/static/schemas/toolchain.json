@@ -596,6 +596,26 @@
             }
           ]
         },
+        "includeProjectReferenceSources": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "includeSharedTypes": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "projectConfigFileName": {
           "default": "tsconfig.json",
           "anyOf": [

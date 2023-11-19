@@ -54,6 +54,8 @@ export interface PartialProjectToolchainCommonToolConfig {
 
 export interface PartialProjectToolchainTypeScriptConfig {
 	disabled?: boolean | null;
+	includeProjectReferenceSources?: boolean | null;
+	includeSharedTypes?: boolean | null;
 	routeOutDirToCache?: boolean | null;
 	syncProjectReferences?: boolean | null;
 	syncProjectReferencesToPaths?: boolean | null;
@@ -130,6 +132,8 @@ export interface ProjectToolchainCommonToolConfig {
 
 export interface ProjectToolchainTypeScriptConfig {
 	disabled: boolean;
+	includeProjectReferenceSources: boolean | null;
+	includeSharedTypes: boolean | null;
 	routeOutDirToCache: boolean | null;
 	syncProjectReferences: boolean | null;
 	syncProjectReferencesToPaths: boolean | null;

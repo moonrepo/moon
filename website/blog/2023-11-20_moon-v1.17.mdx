@@ -21,18 +21,13 @@ relative paths for project references and other path based functionality, so usi
 root made the most sense.
 
 However, what if your TypeScript root isn't the workspace root? Or the TypeScript root and
-JavaScript root are different? Well, you were out of luck, until now! We've updated the
-[`typescript.rootConfigFileName`](/docs/config/toolchain#rootconfigfilename) and
-[`typescript.rootOptionsConfigFileName`](/docs/config/toolchain#rootoptionsconfigfilename) settings
-to support directory prefixes.
-
-When we detect a directory prefix, we'll use that as the root directory for TypeScript paths. For
-example, let's organize all TypeScript related functionality and configs in a `typescript` folder.
+JavaScript root are different? Well, you were out of luck... until now! We're introducing a new
+setting called [`typescript.typesRoot`](/docs/config/toolchain#typesroot), that denotes the root
+directory for TypeScript related functionality (relative from moon's workspace root).
 
 ```yaml title=".moon/toolchain.yml"
 typescript:
-  rootConfigFileName: 'typescript/tsconfig.json'
-  rootOptionsConfigFileName: 'typescript/tsconfig.options.json'
+  typesRoot: './typescript'
 ```
 
 ### Include shared types

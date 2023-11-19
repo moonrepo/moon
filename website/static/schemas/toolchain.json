@@ -385,6 +385,17 @@
             }
           ]
         },
+        "packagesRoot": {
+          "default": ".",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "plugin": {
           "anyOf": [
             {
@@ -674,6 +685,17 @@
           "anyOf": [
             {
               "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "typesRoot": {
+          "default": ".",
+          "anyOf": [
+            {
+              "type": "string"
             },
             {
               "type": "null"

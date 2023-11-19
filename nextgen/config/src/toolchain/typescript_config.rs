@@ -30,4 +30,7 @@ pub struct TypeScriptConfig {
     pub sync_project_references: bool,
 
     pub sync_project_references_to_paths: bool,
+
+    #[setting(default = ".")]
+    pub types_root: String,
 }

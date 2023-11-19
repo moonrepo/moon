@@ -21,8 +21,8 @@ const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 pub struct TypeScriptSyncer<'app> {
     project: &'app Project,
     typescript_config: &'app TypeScriptConfig,
-    typescript_root: PathBuf,
-    workspace_root: &'app Path,
+    types_root: PathBuf,
+    // workspace_root: &'app Path,
 }
 
 impl<'app> TypeScriptSyncer<'app> {
@@ -31,13 +31,11 @@ impl<'app> TypeScriptSyncer<'app> {
         typescript_config: &'app TypeScriptConfig,
         workspace_root: &'app Path,
     ) -> Self {
-        let root_file = workspace_root.join(&typescript_config.root_config_file_name);
-
         Self {
-            typescript_root: root_file.parent().unwrap().to_path_buf(),
+            types_root: path::normalize(workspace_root.join(&typescript_config.types_root)),
             project,
             typescript_config,
-            workspace_root,
+            // workspace_root,
         }
     }
 
@@ -104,7 +102,7 @@ impl<'app> TypeScriptSyncer<'app> {
 
         let json = TsConfigJson {
             extends: Some(TsConfigExtends::String(path::to_relative_virtual_string(
-                self.workspace_root
+                self.types_root
                     .join(&self.typescript_config.root_options_config_file_name),
                 &self.project.root,
             )?)),
@@ -124,11 +122,9 @@ impl<'app> TypeScriptSyncer<'app> {
         let tsconfig_root_name = &self.typescript_config.root_config_file_name;
         let tsconfig_project_name = &self.typescript_config.project_config_file_name;
 
-        TsConfigJson::sync_with_name(self.workspace_root, tsconfig_root_name, |tsconfig_json| {
+        TsConfigJson::sync_with_name(&self.types_root, tsconfig_root_name, |tsconfig_json| {
             // Don't sync a root project to itself
-            if self.project.root == self.typescript_root
-                && tsconfig_project_name == tsconfig_root_name
-            {
+            if self.project.root == self.types_root && tsconfig_project_name == tsconfig_root_name {
                 return Ok(false);
             }
 
@@ -162,8 +158,8 @@ impl<'app> TypeScriptSyncer<'app> {
 
                 // Include
                 if self.should_include_shared_types()
-                    && self.typescript_root.join("types").exists()
-                    && tsconfig_json.add_include_path(self.typescript_root.join("types/**/*"))?
+                    && self.types_root.join("types").exists()
+                    && tsconfig_json.add_include_path(self.types_root.join("types/**/*"))?
                 {
                     mutated_tsconfig = true;
                 }

@@ -134,6 +134,7 @@ fn prepare_target_command(
             node::extend_node_path(path::to_string(
                 context
                     .workspace_root
+                    .join(&node_config.packages_root)
                     .join("node_modules")
                     .join(".pnpm")
                     .join("node_modules"),
@@ -162,7 +163,7 @@ pub fn create_target_command(
 ) -> miette::Result<Command> {
     let node_bin = node.get_bin_path()?;
     let node_options = create_node_options(&node.config, context, task)?;
-    let mut command = Command::new(node.get_shim_path().unwrap_or(node_bin));
+    let mut command = Command::new(node_bin);
     let mut is_package_manager = false;
 
     match task.command.as_str() {
@@ -272,7 +273,9 @@ pub async fn create_target_hasher(
             FxHashMap::default()
         };
 
-    if let Some(root_package) = PackageJson::read(workspace_root)? {
+    if let Some(root_package) = PackageJson::read(
+        workspace_root.join(node.map(|n| n.config.packages_root.as_str()).unwrap_or(".")),
+    )? {
         hasher.hash_package_json(&root_package, &resolved_dependencies);
     }
 

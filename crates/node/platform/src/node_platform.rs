@@ -18,7 +18,7 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
-use moon_utils::async_trait;
+use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -33,6 +33,8 @@ pub struct NodePlatform {
     config: NodeConfig,
 
     package_names: FxHashMap<String, Id>,
+
+    packages_root: PathBuf,
 
     proto_env: Arc<ProtoEnvironment>,
 
@@ -51,6 +53,7 @@ impl NodePlatform {
         proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
         NodePlatform {
+            packages_root: path::normalize(workspace_root.join(&config.packages_root)),
             config: config.to_owned(),
             package_names: FxHashMap::default(),
             proto_env,
@@ -108,11 +111,13 @@ impl Platform for NodePlatform {
         let mut in_workspace = false;
 
         // Root package is always considered within the workspace
-        if project_source.is_empty() || project_source == "." {
+        if (project_source.is_empty() || project_source == ".")
+            && self.packages_root == self.workspace_root
+        {
             return Ok(true);
         }
 
-        if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
+        if let Some(globs) = get_package_manager_workspaces(self.packages_root.clone())? {
             in_workspace = GlobSet::new(&globs)?.matches(project_source);
         }
 

@@ -143,15 +143,15 @@ pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool
 /// Furthermore, if the list is found, but is empty, return none.
 #[cached(result)]
 pub fn get_package_manager_workspaces(
-    workspace_root: PathBuf,
+    packages_root: PathBuf,
 ) -> miette::Result<Option<Vec<String>>> {
-    if let Some(pnpm_workspace) = PnpmWorkspace::read(workspace_root.clone())? {
+    if let Some(pnpm_workspace) = PnpmWorkspace::read(packages_root.clone())? {
         if !pnpm_workspace.packages.is_empty() {
             return Ok(Some(pnpm_workspace.packages));
         }
     }
 
-    if let Some(package_json) = PackageJson::read(workspace_root)? {
+    if let Some(package_json) = PackageJson::read(packages_root)? {
         if let Some(workspaces) = package_json.workspaces {
             match workspaces {
                 PackageWorkspaces::Array(globs) => {

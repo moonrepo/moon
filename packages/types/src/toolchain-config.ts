@@ -77,6 +77,8 @@ export interface PartialNodeConfig {
 	inferTasksFromScripts?: boolean | null;
 	npm?: PartialNpmConfig | null;
 	packageManager?: NodePackageManager | null;
+	/** @default '.' */
+	packagesRoot?: string | null;
 	plugin?: string | null;
 	pnpm?: PartialPnpmConfig | null;
 	/** @default true */
@@ -112,6 +114,8 @@ export interface PartialTypeScriptConfig {
 	/** @default true */
 	syncProjectReferences?: boolean | null;
 	syncProjectReferencesToPaths?: boolean | null;
+	/** @default '.' */
+	typesRoot?: string | null;
 }
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain */
@@ -184,6 +188,8 @@ export interface NodeConfig {
 	inferTasksFromScripts: boolean;
 	npm: NpmConfig;
 	packageManager: NodePackageManager;
+	/** @default '.' */
+	packagesRoot: string;
 	plugin: string | null;
 	pnpm: PnpmConfig | null;
 	/** @default true */
@@ -219,6 +225,8 @@ export interface TypeScriptConfig {
 	/** @default true */
 	syncProjectReferences: boolean;
 	syncProjectReferencesToPaths: boolean;
+	/** @default '.' */
+	typesRoot: string;
 }
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain */

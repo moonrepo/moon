@@ -13,7 +13,7 @@ use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::{system, AppResult};
 use starbase_utils::{fs, glob, json};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Args, Clone, Debug)]
 pub struct DockerScaffoldArgs {
@@ -78,9 +78,23 @@ fn scaffold_workspace(
                 }
                 LanguageType::TypeScript => {
                     if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                        files.push(typescript_config.project_config_file_name.to_owned());
-                        files.push(typescript_config.root_config_file_name.to_owned());
-                        files.push(typescript_config.root_options_config_file_name.to_owned());
+                        let root = PathBuf::from(&typescript_config.types_root);
+
+                        files.push(
+                            root.join(&typescript_config.project_config_file_name)
+                                .to_string_lossy()
+                                .to_string(),
+                        );
+                        files.push(
+                            root.join(&typescript_config.root_config_file_name)
+                                .to_string_lossy()
+                                .to_string(),
+                        );
+                        files.push(
+                            root.join(&typescript_config.root_options_config_file_name)
+                                .to_string_lossy()
+                                .to_string(),
+                        );
                     }
                 }
                 _ => {}

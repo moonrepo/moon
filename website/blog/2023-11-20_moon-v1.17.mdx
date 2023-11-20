@@ -2,13 +2,57 @@
 slug: moon-v1.17
 title: moon v1.17 - Full Bun support, TypeScript improvements, and more!
 authors: [milesj]
-tags: [bun, typescript]
+tags: [bun, typescript, javascript]
 # image: ./img/moon/v1.17.png
 ---
+
+In this release, we've focused heavily on the JavaScript and TypeScript ecosystems, by improving our
+implementations, and providing full Bun support.
 
 <!--truncate-->
 
 ## Bun tier 1, 2, and 3 support
+
+Yes you read that right! Not just 1 tier, not just 2 tiers, but all 3 language tiers have been
+implemented for Bun, providing [full language support](/docs/how-it-works/languages), and parity
+with Node.js. Thanks to the Bun work in [proto](/proto) and the previous
+[v1.16 release](./moon-v1.16), we were able to add full Bun support with relative easy.
+
+So what does Bun support look like? To start, you can now configure a
+[`bun`](/docs/config/toolchain#bun) setting in [`.moon/toolchain.yml`](/docs/config/toolchain),
+including an optional `version` to download and install, and settings similar to Node.js.
+
+```yaml title=".moon/toolchain.yml"
+bun:
+  version: '1.0.13'
+  syncProjectWorkspaceDependencies: true
+```
+
+This will enable the `bun` platform and the following integrations are applied:
+
+- Will automatically download and install Bun for the configured version.
+- Will install dependencies using `bun install` (deduping currently not supported).
+- Will parse `bun.lockb` for dependency resolution and task hashing.
+- Will use `bunx` instead of `npx` for one-off package executions.
+- Can execute `bun` commands within tasks.
+
+With the `bun` platform enabled, you can now configure the platform for projects and tasks (is
+automatically detected when running the `bun` or `bunx` commands).
+
+```yaml title="<project>/moon.yml"
+# Default platform for all tasks (optional)
+platform: 'bun'
+
+tasks:
+  dev:
+    command: 'bun run dev'
+  test:
+    command: 'bun test'
+  lint:
+    command: 'eslint .'
+    # Only required for npm packages (if not defined above)
+    platform: 'bun'
+```
 
 ## TypeScript improvements
 

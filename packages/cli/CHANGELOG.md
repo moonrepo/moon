@@ -23,9 +23,11 @@
   - Updated `moon bin` and `moon docker` commands to support Bun.
   - Updated task `platform` to support "bun".
 - Improved TypeScript support.
+  - Added a `typescript.root` setting to denote the TypeScript root.
   - Added a `typescript.includeSharedTypes` setting, for syncing a shared types path to all
     project's `include`.
-  - Updated `typescript.rootConfigFileName` setting to support directories.
+  - Added a `typescript.includeProjectReferenceSources` setting, for syncing project reference files
+    to all project's `include`.
   - Updated `typescript.syncProjectReferencesToPaths` setting to always include the wildcard, and
     not require an index file.
   - Improved project reference syncing and edge case handling.

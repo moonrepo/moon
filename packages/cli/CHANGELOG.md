@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed the wrong version being reported by the CLI.
+
 ## 1.17.0
 
 #### 🚀 Updates

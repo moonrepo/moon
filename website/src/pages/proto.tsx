@@ -26,7 +26,8 @@ const toolchainFeatures: Feature[] = [
 	{
 		title: 'Universal toolchain',
 		icon: faSolarSystem,
-		description: 'Manage multiple languages and dependency managers through a single interface.',
+		description:
+			'Manage multiple languages, dependency managers, or CLIs through a single interface.',
 	},
 	{
 		title: 'Version detection',
@@ -37,7 +38,7 @@ const toolchainFeatures: Feature[] = [
 	{
 		title: 'Granular configuration',
 		icon: faScrewdriverWrench,
-		description: 'Configure tools and their versions per directory, or per project.',
+		description: 'Configure tools and their versions per directory, per project, or per user.',
 	},
 	{
 		title: 'Pluggable architecture',

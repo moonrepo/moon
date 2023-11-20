@@ -1,8 +1,8 @@
 pub use semver::*;
 
 #[inline]
-pub fn extract_major_version(version: &str) -> u64 {
-    match semver::Version::parse(version) {
+pub fn extract_major_version<T: AsRef<str>>(version: T) -> u64 {
+    match semver::Version::parse(version.as_ref()) {
         Ok(v) => v.major,
         Err(_) => 0,
     }

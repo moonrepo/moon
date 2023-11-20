@@ -2,9 +2,24 @@
 
 /* eslint-disable */
 
+export type NodeVersionFormat =
+	| 'file'
+	| 'link'
+	| 'star'
+	| 'version'
+	| 'version-caret'
+	| 'version-tilde'
+	| 'workspace'
+	| 'workspace-caret'
+	| 'workspace-tilde';
+
 /** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
 export interface PartialBunConfig {
+	dependencyVersionFormat?: NodeVersionFormat | null;
 	plugin?: string | null;
+	rootPackageOnly?: boolean | null;
+	/** @default true */
+	syncProjectWorkspaceDependencies?: boolean | null;
 	version?: string | null;
 }
 
@@ -26,23 +41,10 @@ export interface PartialDenoConfig {
 	plugin?: string | null;
 }
 
-export type NodeProjectAliasFormat = 'name-and-scope' | 'name-only';
-
 export interface PartialBunpmConfig {
 	plugin?: string | null;
 	version?: string | null;
 }
-
-export type NodeVersionFormat =
-	| 'file'
-	| 'link'
-	| 'star'
-	| 'version'
-	| 'version-caret'
-	| 'version-tilde'
-	| 'workspace'
-	| 'workspace-caret'
-	| 'workspace-tilde';
 
 export interface PartialNpmConfig {
 	plugin?: string | null;
@@ -68,7 +70,6 @@ export interface PartialYarnConfig {
 export interface PartialNodeConfig {
 	/** @default true */
 	addEnginesConstraint?: boolean | null;
-	aliasPackageNames?: NodeProjectAliasFormat | null;
 	binExecArgs?: string[] | null;
 	bun?: PartialBunpmConfig | null;
 	/** @default true */
@@ -79,6 +80,7 @@ export interface PartialNodeConfig {
 	packageManager?: NodePackageManager | null;
 	plugin?: string | null;
 	pnpm?: PartialPnpmConfig | null;
+	rootPackageOnly?: boolean | null;
 	/** @default true */
 	syncProjectWorkspaceDependencies?: boolean | null;
 	syncVersionManagerConfig?: NodeVersionManager | null;
@@ -104,6 +106,8 @@ export interface PartialTypeScriptConfig {
 	includeSharedTypes?: boolean | null;
 	/** @default 'tsconfig.json' */
 	projectConfigFileName?: string | null;
+	/** @default '.' */
+	root?: string | null;
 	/** @default 'tsconfig.json' */
 	rootConfigFileName?: string | null;
 	/** @default 'tsconfig.options.json' */
@@ -128,7 +132,11 @@ export interface PartialToolchainConfig {
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
 export interface BunConfig {
+	dependencyVersionFormat: NodeVersionFormat;
 	plugin: string | null;
+	rootPackageOnly: boolean;
+	/** @default true */
+	syncProjectWorkspaceDependencies: boolean;
 	version: string | null;
 }
 
@@ -175,7 +183,6 @@ export interface YarnConfig {
 export interface NodeConfig {
 	/** @default true */
 	addEnginesConstraint: boolean;
-	aliasPackageNames: NodeProjectAliasFormat;
 	binExecArgs: string[];
 	bun: BunpmConfig | null;
 	/** @default true */
@@ -186,6 +193,7 @@ export interface NodeConfig {
 	packageManager: NodePackageManager;
 	plugin: string | null;
 	pnpm: PnpmConfig | null;
+	rootPackageOnly: boolean;
 	/** @default true */
 	syncProjectWorkspaceDependencies: boolean;
 	syncVersionManagerConfig: NodeVersionManager | null;
@@ -211,6 +219,8 @@ export interface TypeScriptConfig {
 	includeSharedTypes: boolean;
 	/** @default 'tsconfig.json' */
 	projectConfigFileName: string;
+	/** @default '.' */
+	root: string;
 	/** @default 'tsconfig.json' */
 	rootConfigFileName: string;
 	/** @default 'tsconfig.options.json' */

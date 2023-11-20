@@ -8,6 +8,7 @@ members = [
 	"crates/bun/*",
 	"crates/deno/*",
 	"crates/go/*",
+	"crates/javascript/*",
 	"crates/node/*",
 	"crates/php/*",
 	"crates/python/*",

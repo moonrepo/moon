@@ -133,7 +133,9 @@ pub async fn create_target_hasher(
             FxHashMap::default()
         };
 
-    if let Some(root_package) = PackageJson::read(workspace_root)? {
+    if let Some(root_package) = PackageJson::read(
+        workspace_root.join(bun.map(|n| n.config.packages_root.as_str()).unwrap_or(".")),
+    )? {
         hasher.hash_package_json(&root_package, &resolved_dependencies);
     }
 

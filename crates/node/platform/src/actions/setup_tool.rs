@@ -71,14 +71,12 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Resul
         NodePackageManager::Yarn => YARN.lockfile,
     };
 
-    let lockfile_path = fs::find_upwards(lockfile, workspace_root);
-    let packages_root = lockfile_path
-        .as_ref()
-        .map(|p| p.parent().unwrap())
-        .unwrap_or(workspace_root);
+    let packages_root = workspace_root.join(&node.config.packages_root);
+    let packages_root = fs::find_upwards_root_until(lockfile, &packages_root, workspace_root)
+        .unwrap_or(packages_root);
 
     // Sync values to root `package.json`
-    PackageJson::sync(packages_root, |package_json| {
+    PackageJson::sync(&packages_root, |package_json| {
         let added_manager = add_package_manager(&node.config, package_json);
         let added_constraint = add_engines_constraint(&node.config, package_json);
 

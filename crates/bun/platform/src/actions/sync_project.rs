@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::{NodeConfig, TypeScriptConfig};
+use moon_config::{BunConfig, TypeScriptConfig};
 use moon_javascript_platform::JavaScriptSyncer;
 use moon_project::Project;
 use moon_typescript_platform::TypeScriptSyncer;
@@ -11,12 +11,12 @@ pub async fn sync_project(
     project: &Project,
     dependencies: &FxHashMap<Id, Arc<Project>>,
     workspace_root: &Path,
-    node_config: &NodeConfig,
+    bun_config: &BunConfig,
     typescript_config: &Option<TypeScriptConfig>,
 ) -> miette::Result<bool> {
     let mut mutated = false;
 
-    if JavaScriptSyncer::for_node(project, node_config).sync(dependencies)? {
+    if JavaScriptSyncer::for_bun(project, bun_config).sync(dependencies)? {
         mutated = true;
     }
 

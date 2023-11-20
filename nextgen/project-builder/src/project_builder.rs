@@ -273,7 +273,7 @@ impl<'app> ProjectBuilder<'app> {
                             scope: if self.context.root_project_id.is_some_and(|id| id == dep_id) {
                                 DependencyScope::Root
                             } else {
-                                DependencyScope::Peer
+                                DependencyScope::Build
                             },
                             source: DependencySource::Implicit,
                             via: Some(task_config.target.to_string()),

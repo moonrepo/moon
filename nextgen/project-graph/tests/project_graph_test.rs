@@ -736,8 +736,8 @@ mod project_graph {
 
                 let deps = &graph.get("from-task-deps").unwrap().dependencies;
 
-                assert_eq!(deps.get("b").unwrap().scope, DependencyScope::Peer);
-                assert_eq!(deps.get("c").unwrap().scope, DependencyScope::Peer);
+                assert_eq!(deps.get("b").unwrap().scope, DependencyScope::Build);
+                assert_eq!(deps.get("c").unwrap().scope, DependencyScope::Build);
             }
 
             #[tokio::test]

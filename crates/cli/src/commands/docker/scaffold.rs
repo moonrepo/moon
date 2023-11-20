@@ -13,7 +13,7 @@ use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::{system, AppResult};
 use starbase_utils::{fs, glob, json};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[derive(Args, Clone, Debug)]
 pub struct DockerScaffoldArgs {
@@ -78,23 +78,9 @@ fn scaffold_workspace(
                 }
                 LanguageType::TypeScript => {
                     if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                        let root = PathBuf::from(&typescript_config.root);
-
-                        files.push(
-                            root.join(&typescript_config.project_config_file_name)
-                                .to_string_lossy()
-                                .to_string(),
-                        );
-                        files.push(
-                            root.join(&typescript_config.root_config_file_name)
-                                .to_string_lossy()
-                                .to_string(),
-                        );
-                        files.push(
-                            root.join(&typescript_config.root_options_config_file_name)
-                                .to_string_lossy()
-                                .to_string(),
-                        );
+                        files.push(typescript_config.project_config_file_name.to_owned());
+                        files.push(typescript_config.root_config_file_name.to_owned());
+                        files.push(typescript_config.root_options_config_file_name.to_owned());
                     }
                 }
                 _ => {}
@@ -119,6 +105,33 @@ fn scaffold_workspace(
 
     // Copy root lockfiles and configurations
     copy_from_dir(&workspace.root, &docker_workspace_root)?;
+
+    if let Some(js_config) = &workspace.toolchain_config.bun {
+        if js_config.packages_root != "." {
+            copy_from_dir(
+                &workspace.root.join(&js_config.packages_root),
+                &docker_workspace_root.join(&js_config.packages_root),
+            )?;
+        }
+    }
+
+    if let Some(js_config) = &workspace.toolchain_config.node {
+        if js_config.packages_root != "." {
+            copy_from_dir(
+                &workspace.root.join(&js_config.packages_root),
+                &docker_workspace_root.join(&js_config.packages_root),
+            )?;
+        }
+    }
+
+    if let Some(typescript_config) = &workspace.toolchain_config.typescript {
+        if typescript_config.root != "." {
+            copy_from_dir(
+                &workspace.root.join(&typescript_config.root),
+                &docker_workspace_root.join(&typescript_config.root),
+            )?;
+        }
+    }
 
     // Copy moon configuration
     let moon_configs = glob::walk(

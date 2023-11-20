@@ -4048,7 +4048,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_logger",
  "moon_node_lang",
  "moon_project",
  "moon_test_utils",
@@ -4059,6 +4058,7 @@ dependencies = [
  "serde_json",
  "starbase_styles",
  "starbase_utils",
+ "tracing",
 ]
 
 [[package]]

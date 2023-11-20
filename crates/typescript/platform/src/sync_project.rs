@@ -1,6 +1,5 @@
 use moon_common::Id;
 use moon_config::{DependencyScope, TypeScriptConfig};
-use moon_logger::debug;
 use moon_node_lang::PackageJson;
 use moon_project::Project;
 use moon_typescript_lang::{tsconfig::TsConfigExtends, TsConfigJson};
@@ -17,12 +16,12 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tracing::debug;
 
 pub struct TypeScriptSyncer<'app> {
     project: &'app Project,
     typescript_config: &'app TypeScriptConfig,
     types_root: PathBuf,
-    // workspace_root: &'app Path,
 }
 
 impl<'app> TypeScriptSyncer<'app> {
@@ -35,7 +34,6 @@ impl<'app> TypeScriptSyncer<'app> {
             types_root: path::normalize(workspace_root.join(&typescript_config.root)),
             project,
             typescript_config,
-            // workspace_root,
         }
     }
 

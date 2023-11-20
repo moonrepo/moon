@@ -21,18 +21,13 @@ relative paths for project references and other path based functionality, so usi
 root made the most sense.
 
 However, what if your TypeScript root isn't the workspace root? Or the TypeScript root and
-JavaScript root are different? Well, you were out of luck, until now! We've updated the
-[`typescript.rootConfigFileName`](/docs/config/toolchain#rootconfigfilename) and
-[`typescript.rootOptionsConfigFileName`](/docs/config/toolchain#rootoptionsconfigfilename) settings
-to support directory prefixes.
-
-When we detect a directory prefix, we'll use that as the root directory for TypeScript paths. For
-example, let's organize all TypeScript related functionality and configs in a `typescript` folder.
+JavaScript root are different? Well, you were out of luck... until now! We're introducing a new
+setting called [`typescript.root`](/docs/config/toolchain#root), that denotes the root directory for
+TypeScript related functionality (relative from moon's workspace root).
 
 ```yaml title=".moon/toolchain.yml"
 typescript:
-  rootConfigFileName: 'typescript/tsconfig.json'
-  rootOptionsConfigFileName: 'typescript/tsconfig.options.json'
+  root: './typescript'
 ```
 
 ### Include shared types
@@ -105,7 +100,36 @@ sources, like so.
 
 > This setting can also be overridden on a per-project basis.
 
+## JavaScript improvements
+
+### Supporting the "single version policy" pattern
+
+If you're unfamiliar with the single version policy, or the one version rule, it's a pattern that
+only allows dependencies to be configured in a single location, typically the root `package.json`.
+This pattern forces _all_ projects in a monorepo to use the same dependencies, and avoid the package
+`workspaces` functionality.
+
+This pattern was previously not possible in moon, as our automatic dependency installation process
+did not account for it, and it would either install in the root if using `workspaces`, or in a
+project otherwise. To support this pattern, we're introducing the new setting
+[`node.rootPackageOnly`](/docs/config/toolchain#rootpackageonly) for Node.js, and
+`bun.rootPackageOnly` for Bun.
+
+```yaml title=".moon/toolchain.yml"
+node:
+  rootPackageOnly: true
+```
+
+When enabled, we'll only install dependencies in the workspace root, regardless of other settings or
+how `package.json`s are configured. However, this setting _does not_ verify that other
+`package.json`s _do not_ have dependencies. It's up to you to ensure that other `package.json`s do
+not have dependencies.
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.17.0) for a full list
 of changes.
+
+- Updated automatic dependency linking to use the `build` scope instead of `peer` scope. This should
+  alleviate some of the pain points with `package.json` syncing.
+- Improved project reference syncing and edge case handling.

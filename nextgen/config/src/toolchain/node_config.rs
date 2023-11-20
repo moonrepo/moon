@@ -6,15 +6,6 @@ use tracing::debug;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
-    pub enum NodeProjectAliasFormat {
-        #[default]
-        NameAndScope, // @scope/name
-        NameOnly, // name
-    }
-);
-
-derive_enum!(
-    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionFormat {
         File,         // file:..
         Link,         // link:..
@@ -124,9 +115,6 @@ pub struct NodeConfig {
     #[setting(default = true)]
     pub add_engines_constraint: bool,
 
-    #[deprecated]
-    pub alias_package_names: NodeProjectAliasFormat,
-
     pub bin_exec_args: Vec<String>,
 
     #[setting(nested)]
@@ -144,10 +132,15 @@ pub struct NodeConfig {
 
     pub package_manager: NodePackageManager,
 
+    #[setting(default = ".", skip)]
+    pub packages_root: String,
+
     pub plugin: Option<PluginLocator>,
 
     #[setting(nested)]
     pub pnpm: Option<PnpmConfig>,
+
+    pub root_package_only: bool,
 
     #[setting(default = true)]
     pub sync_project_workspace_dependencies: bool,
@@ -215,12 +208,6 @@ impl NodeConfig {
             );
 
             self.dependency_version_format = new_format;
-        }
-
-        if self.plugin.is_none() {
-            self.plugin = Some(PluginLocator::SourceUrl {
-                url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_plugin.wasm".into()
-            });
         }
 
         Ok(())

@@ -61,6 +61,22 @@ bun:
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
+### Inherited from `node`
+
+Since Bun and Node.js have a lot of overlap in functionality, the following [`node`](#node) settings
+can also be configured within `bun`:
+
+- [`dependencyVersionFormat`](#dependencyversionformat)
+- [`rootPackageOnly`](#rootPackageOnly)
+- [`syncProjectWorkspaceDependencies`](#syncprojectworkspacedependencies)
+
+```yaml title=".moon/toolchain.yml" {2-4}
+bun:
+  dependencyVersionFormat: 'workspace'
+  rootPackageOnly: true
+  syncProjectWorkspaceDependencies: true
+```
+
 ## `deno`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#deno" />
@@ -262,8 +278,8 @@ most applicable to your chosen package manager):
   e.g., "^1.2.3".
 - `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
   e.g., "~1.2.3".
-- `workspace` (pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires package
-  workspaces.
+- `workspace` (bun/pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires
+  package workspaces.
 - `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
 - `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
 
@@ -305,6 +321,28 @@ This implementation shares functionality with
 [`moon migrate from-package-json`](../commands/migrate/from-package-json), and will attempt to
 determine environment variables, outputs, CI options, and more! Be aware of these when utilizing
 this feature, especially in regards to `runInCI`, as it may be inaccurate!
+
+:::
+
+### `rootPackageOnly`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#rootPackageOnly" />
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `package.json`, and only installing dependencies in the workspace root, and not within
+individual projects. It also bypasses all `workspaces` checks to determine package locations.
+Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  rootPackageOnly: true
+```
+
+:::info
+
+This setting _does not_ verify that other `package.json`s _do not_ have dependencies, it merely runs
+"install dependency" commands in the root. It's up to you to ensure that other `package.json`s do
+not have dependencies.
 
 :::
 
@@ -413,7 +451,7 @@ When this setting is enabled, the `include` field will also be populated.
 
 When enabled, will automatically inject shared types (`types/**/*`) into the `include` field of each
 project's `tsconfig.json`. The shared types folder _must_ be named `types` and must exist relative
-to the [`rootConfigFileName`](#rootconfigfilename) setting. Defaults to `false`.
+to the [`root`](#root) setting. Defaults to `false`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 typescript:
@@ -442,13 +480,24 @@ typescript:
   projectConfigFileName: 'tsconfig.build.json'
 ```
 
+### `root`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#root" />
+
+Defines the TypeScript root (relative from moon's workspace root), where project reference
+composition, common compiler options, and shared types will be located. Defaults to `.`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  root: './types'
+```
+
 ### `rootConfigFileName`
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#rootConfigFileName" />
 
 Defines the file name of the `tsconfig.json` found in the root of all projects. We utilize this
-setting when syncing projects as references. Defaults to `tsconfig.json`, and supports nesting in
-directories.
+setting when syncing projects as references. Defaults to `tsconfig.json`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 typescript:
@@ -460,8 +509,7 @@ typescript:
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#rootOptionsConfigFileName" />
 
 Defines the file name of the config file found in the root that houses shared compiler options.
-Defaults to `tsconfig.options.json`, and supports nesting in directories. This setting is used in
-the following scenarios:
+Defaults to `tsconfig.options.json`. This setting is used in the following scenarios:
 
 - When [creating a `tsconfig.json` for a project](#), sets the `extends` field to this value.
 
@@ -551,8 +599,10 @@ typescript:
 ```
 
 As a demonstration, if we had a reference to a shared package with the name `@brand/components`, the
-`paths` compiler option would be updated to the following when syncing. The index file may exist in
-a `src` folder, or the root of the package.
+`paths` compiler option would be updated to the following when syncing.
+
+If an index file exists, we'll map a default import. Otherwise, we'll always map a wildcard import.
+Both imports can optionally be nested within a `src` directory.
 
 ```json title="<project>/tsconfig.json"
 {

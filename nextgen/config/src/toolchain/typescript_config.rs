@@ -18,6 +18,9 @@ pub struct TypeScriptConfig {
     #[setting(default = "tsconfig.json")]
     pub project_config_file_name: String,
 
+    #[setting(default = ".")]
+    pub root: String,
+
     #[setting(default = "tsconfig.json")]
     pub root_config_file_name: String,
 

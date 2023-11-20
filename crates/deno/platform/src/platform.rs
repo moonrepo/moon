@@ -1,6 +1,6 @@
+use crate::bins_hash::DenoBinsHash;
 use crate::deps_hash::DenoDepsHash;
 use crate::target_hash::DenoTargetHash;
-use crate::{actions, bins_hash::DenoBinsHash};
 use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, Id};
 use moon_config::{
@@ -244,19 +244,10 @@ impl Platform for DenoPlatform {
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        project: &Project,
-        dependencies: &FxHashMap<Id, Arc<Project>>,
+        _project: &Project,
+        _dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
-        let modified = actions::sync_project(
-            project,
-            dependencies,
-            &self.workspace_root,
-            &self.config,
-            &self.typescript_config,
-        )
-        .await?;
-
-        Ok(modified)
+        Ok(false)
     }
 
     async fn hash_manifest_deps(

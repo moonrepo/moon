@@ -106,6 +106,33 @@ fn scaffold_workspace(
     // Copy root lockfiles and configurations
     copy_from_dir(&workspace.root, &docker_workspace_root)?;
 
+    if let Some(js_config) = &workspace.toolchain_config.bun {
+        if js_config.packages_root != "." {
+            copy_from_dir(
+                &workspace.root.join(&js_config.packages_root),
+                &docker_workspace_root.join(&js_config.packages_root),
+            )?;
+        }
+    }
+
+    if let Some(js_config) = &workspace.toolchain_config.node {
+        if js_config.packages_root != "." {
+            copy_from_dir(
+                &workspace.root.join(&js_config.packages_root),
+                &docker_workspace_root.join(&js_config.packages_root),
+            )?;
+        }
+    }
+
+    if let Some(typescript_config) = &workspace.toolchain_config.typescript {
+        if typescript_config.root != "." {
+            copy_from_dir(
+                &workspace.root.join(&typescript_config.root),
+                &docker_workspace_root.join(&typescript_config.root),
+            )?;
+        }
+    }
+
     // Copy moon configuration
     let moon_configs = glob::walk(
         workspace.root.join(CONFIG_DIRNAME),

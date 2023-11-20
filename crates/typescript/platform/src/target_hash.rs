@@ -19,9 +19,10 @@ impl TypeScriptTargetHash {
     ) -> miette::Result<TypeScriptTargetHash> {
         let mut hasher = TypeScriptTargetHash::default();
 
-        if let Some(root_tsconfig) =
-            TsConfigJson::read_with_name(workspace_root, &config.root_config_file_name)?
-        {
+        if let Some(root_tsconfig) = TsConfigJson::read_with_name(
+            workspace_root.join(&config.root),
+            &config.root_config_file_name,
+        )? {
             if let Some(compiler_options) = &root_tsconfig.compiler_options {
                 hasher.hash_compiler_options(compiler_options);
             }

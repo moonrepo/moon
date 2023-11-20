@@ -28,11 +28,11 @@ can define tasks that can be ran using this new root-level project name, for exa
 
 ```yaml title="moon.yml"
 tasks:
-	versionCheck:
-		command: 'yarn version check'
-		inputs: []
-		options:
-			cache: false
+  versionCheck:
+    command: 'yarn version check'
+    inputs: []
+    options:
+      cache: false
 ```
 
 And that's it, but there are a few caveats to be aware of...
@@ -47,9 +47,9 @@ restricting inputs to a very succinct whitelist, or disabling inputs entirely.
 
 ```yaml title="moon.yml"
 tasks:
-	oneOff:
-		# ...
-		inputs: []
+  oneOff:
+    # ...
+    inputs: []
 ```
 
 ### Inherited tasks
@@ -61,6 +61,6 @@ some or all of these tasks in the root config with
 
 ```yaml title="moon.yml"
 workspace:
-	inheritedTasks:
-		include: []
+  inheritedTasks:
+    include: []
 ```

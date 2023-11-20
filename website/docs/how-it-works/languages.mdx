@@ -31,7 +31,7 @@ node: {}
 
 # Enable Node.js with custom settings
 node:
-	packageManager: 'pnpm'
+  packageManager: 'pnpm'
 
 # Enable Deno
 deno: {}
@@ -55,9 +55,9 @@ To run system commands, set a task's [`platform`](../config/project#platform-1) 
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		command: 'git status'
-		platform: 'system'
+  example:
+    command: 'git status'
+    platform: 'system'
 ```
 
 ## Tier structure and responsibilities
@@ -76,9 +76,9 @@ a mechanism for running non-supported language binaries via the
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		command: 'ruby'
-		platform: 'system'
+  example:
+    command: 'ruby'
+    platform: 'system'
 ```
 
 ### Tier 1 = Language
@@ -120,9 +120,9 @@ complex of all tiers, and the tier is in charge of:
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		command: 'webpack'
-		platform: 'node'
+  example:
+    command: 'webpack'
+    platform: 'node'
 ```
 
 ```yaml title=".moon/toolchain.yml"
@@ -144,5 +144,5 @@ tier. This tier handles:
 
 ```yaml title=".moon/toolchain.yml"
 node:
-	version: '18.0.0'
+  version: '18.0.0'
 ```

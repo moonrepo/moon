@@ -76,7 +76,6 @@ const organizationFeatures: Feature[] = [
 		title: 'Code ownership',
 		icon: faRectangleBarcode,
 		description: 'Declare owners, maintainers, support channels, and more. Generate CODEOWNERS.',
-		status: 'new',
 	},
 ];
 
@@ -130,7 +129,6 @@ const notificationFeatures: Feature[] = [
 		title: 'Git hooks',
 		icon: faScroll,
 		description: 'Manage Git hooks to enforce workflows and requirements for contributors.',
-		status: 'new',
 	},
 ];
 

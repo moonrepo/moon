@@ -104,9 +104,9 @@ moon project foo --json | jq ...
 
 ```yaml title="moon.yml"
 tasks:
-	pipe:
-		command: 'bash ./scripts/pipe.sh'
-		platform: 'system'
+  pipe:
+    command: 'bash ./scripts/pipe.sh'
+    platform: 'system'
 ```
 
 :::caution
@@ -125,9 +125,9 @@ these commands within a shell, and not directly with the toolchain.
 
 ```yaml title="moon.yml"
 tasks:
-	multiple:
-		command: 'mkdir test && cd test'
-		platform: 'system'
+  multiple:
+    command: 'mkdir test && cd test'
+    platform: 'system'
 ```
 
 Non system-tasks cannot run multiple commands for the following reasons:

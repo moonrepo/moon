@@ -66,26 +66,26 @@ utilize this command instead.
 
 ```yaml title="<project>/moon.yml"
 workspace:
-	inheritedTasks:
-		exclude: ['typecheck']
+  inheritedTasks:
+    exclude: ['typecheck']
 
 tasks:
-	typecheck:
-		command:
-			- 'vue-tsc'
-			- '--noEmit'
-			# Always use pretty output
-			- '--pretty'
-		inputs:
-			- 'env.d.ts'
-			# Source and test files
-			- 'src/**/*'
-			- 'tests/**/*'
-			# Project configs
-			- 'tsconfig.json'
-			- 'tsconfig.*.json'
-			# Root configs (extended from only)
-			- '/tsconfig.options.json'
+  typecheck:
+    command:
+      - 'vue-tsc'
+      - '--noEmit'
+      # Always use pretty output
+      - '--pretty'
+    inputs:
+      - 'env.d.ts'
+      # Source and test files
+      - 'src/**/*'
+      - 'tests/**/*'
+      # Project configs
+      - 'tsconfig.json'
+      - 'tsconfig.*.json'
+      # Root configs (extended from only)
+      - '/tsconfig.options.json'
 ```
 
 > Be sure `tsconfig.json` compiler options are based on

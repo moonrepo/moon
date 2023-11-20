@@ -2,15 +2,15 @@
 language: 'python'
 
 fileGroups:
-	# ...
+  # ...
 
 tasks:
-	build:
-		command: 'python -m build'
-		inputs:
-			- '@globs(sources)'
-			- 'pyproject.toml'
-			- '/.python-version'
-		outputs:
-			- 'dist'
+  build:
+    command: 'python -m build'
+    inputs:
+      - '@globs(sources)'
+      - 'pyproject.toml'
+      - '/.python-version'
+    outputs:
+      - 'dist'
 ```

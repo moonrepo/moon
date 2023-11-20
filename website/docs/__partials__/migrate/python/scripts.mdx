@@ -10,10 +10,10 @@ run their commands from within moon tasks. This gives you the best of both world
 language: 'python'
 
 tasks:
-	test:
-		command: 'doit test'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'pyproject.toml'
+  test:
+    command: 'doit test'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'pyproject.toml'
 ```

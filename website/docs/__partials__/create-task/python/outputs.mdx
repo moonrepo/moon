@@ -2,12 +2,12 @@
 language: 'python'
 
 tasks:
-	build:
-		command: 'python -m build'
-		inputs:
-			- 'src/**/*'
-			- 'pyproject.toml'
-			- '/.python-version'
-		outputs:
-			- 'dist'
+  build:
+    command: 'python -m build'
+    inputs:
+      - 'src/**/*'
+      - 'pyproject.toml'
+      - '/.python-version'
+    outputs:
+      - 'dist'
 ```

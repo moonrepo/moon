@@ -104,8 +104,8 @@ to handle, and yet to be discovered functionality.
 
 ```yaml title=".moon/tasks/node.yml"
 tasks:
-	format:
-		command: 'prettier --write .'
+  format:
+    command: 'prettier --write .'
 ```
 
 </TabItem>
@@ -113,8 +113,8 @@ tasks:
 
 ```yaml title=".moon/tasks/go.yml"
 tasks:
-	format:
-		command: 'go fmt'
+  format:
+    command: 'go fmt'
 ```
 
 </TabItem>
@@ -122,8 +122,8 @@ tasks:
 
 ```yaml title=".moon/tasks/php.yml"
 tasks:
-	format:
-		command: 'phpcbf .'
+  format:
+    command: 'phpcbf .'
 ```
 
 </TabItem>
@@ -131,8 +131,8 @@ tasks:
 
 ```yaml title=".moon/tasks/python.yml"
 tasks:
-	format:
-		command: 'pylint .'
+  format:
+    command: 'pylint .'
 ```
 
 </TabItem>
@@ -140,8 +140,8 @@ tasks:
 
 ```yaml title=".moon/tasks/ruby.yml"
 tasks:
-	format:
-		command: 'rubocop -l'
+  format:
+    command: 'rubocop -l'
 ```
 
 </TabItem>
@@ -149,8 +149,8 @@ tasks:
 
 ```yaml title=".moon/tasks/rust.yml"
 tasks:
-	format:
-		command: 'cargo fmt --all --check'
+  format:
+    command: 'cargo fmt --all --check'
 ```
 
 </TabItem>
@@ -182,7 +182,7 @@ now inherit dependency manager related files as implicit inputs on a per-languag
 
 ```yaml title=".moon/tasks/node.yml"
 implicitInputs:
-	- 'package.json'
+  - 'package.json'
 ```
 
 </TabItem>
@@ -190,7 +190,7 @@ implicitInputs:
 
 ```yaml title=".moon/tasks/go.yml"
 implicitInputs:
-	- 'go.mod'
+  - 'go.mod'
 ```
 
 </TabItem>
@@ -198,7 +198,7 @@ implicitInputs:
 
 ```yaml title=".moon/tasks/php.yml"
 implicitInputs:
-	- 'composer.json'
+  - 'composer.json'
 ```
 
 </TabItem>
@@ -206,7 +206,7 @@ implicitInputs:
 
 ```yaml title=".moon/tasks/python.yml"
 implicitInputs:
-	- 'pyproject.toml'
+  - 'pyproject.toml'
 ```
 
 </TabItem>
@@ -214,7 +214,7 @@ implicitInputs:
 
 ```yaml title=".moon/tasks/ruby.yml"
 implicitInputs:
-	- 'Gemfile'
+  - 'Gemfile'
 ```
 
 </TabItem>
@@ -222,7 +222,7 @@ implicitInputs:
 
 ```yaml title=".moon/tasks/rust.yml"
 implicitInputs:
-	- 'Cargo.toml'
+  - 'Cargo.toml'
 ```
 
 </TabItem>

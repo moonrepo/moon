@@ -32,39 +32,39 @@ contents:
 
 ```yaml title=".moon/tasks/tag-astro.yml"
 fileGroups:
-	astro:
-		- 'public/**/*'
-		- 'src/**/*'
-		- 'astro.config.*'
-		- 'tsconfig.json'
+  astro:
+    - 'public/**/*'
+    - 'src/**/*'
+    - 'astro.config.*'
+    - 'tsconfig.json'
 
 tasks:
-	astro:
-		command: 'astro'
-		local: true
+  astro:
+    command: 'astro'
+    local: true
 
-	# Development server
-	dev:
-		command: 'astro dev'
-		local: true
+  # Development server
+  dev:
+    command: 'astro dev'
+    local: true
 
-	# Production build
-	build:
-		command: 'astro build'
-		inputs: ['@group(astro)']
-		outputs: ['dist']
+  # Production build
+  build:
+    command: 'astro build'
+    inputs: ['@group(astro)']
+    outputs: ['dist']
 
-	# Check .astro files
-	check:
-		command: 'astro check'
-		inputs: ['@group(astro)']
-		deps: ['typecheck']
+  # Check .astro files
+  check:
+    command: 'astro check'
+    inputs: ['@group(astro)']
+    deps: ['typecheck']
 
-	# Preview production build locally
-	preview:
-		command: 'astro preview'
-		deps: ['build']
-		local: true
+  # Preview production build locally
+  preview:
+    command: 'astro preview'
+    deps: ['build']
+    local: true
 ```
 
 Each of these Astro applications will now inherit all 5 tasks and the file group automatically! This

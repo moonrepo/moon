@@ -172,13 +172,13 @@ requires a list of [targets](./concepts/target):
 
 ```yaml title="<project>/moon.yml" {1,7,8}
 dependsOn:
-	# ...
+  # ...
 
 tasks:
-	build:
-		# ...
-		deps:
-			- '^:build'
+  build:
+    # ...
+    deps:
+      - '^:build'
 ```
 
 ## Using file groups
@@ -194,13 +194,13 @@ list of file paths/globs to a group, like so.
 
 ```yaml title="<project>/moon.yml"
 fileGroups:
-	configs:
-		- '*.config.js'
-	sources:
-		- 'src/**/*'
-		- 'types/**/*'
-	tests:
-		- 'tests/**/*'
+  configs:
+    - '*.config.js'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*'
 ```
 
 We can then replace the inputs in our task above with these new file groups using a syntax known as

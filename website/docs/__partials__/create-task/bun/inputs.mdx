@@ -3,10 +3,10 @@ language: 'javascript'
 platform: 'bun'
 
 tasks:
-	build:
-		command: 'webpack build --mode production --no-stats'
-		inputs:
-			- 'src/**/*'
-			- 'webpack.config.js'
-			- '/webpack-shared.config.js'
+  build:
+    command: 'webpack build --mode production --no-stats'
+    inputs:
+      - 'src/**/*'
+      - 'webpack.config.js'
+      - '/webpack-shared.config.js'
 ```

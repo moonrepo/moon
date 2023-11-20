@@ -2,38 +2,38 @@
 language: 'ruby'
 
 fileGroups:
-	sources:
-		- 'lib/**/*'
-		- 'view/**/*'
-	tests:
-		- 'spec/**/*'
+  sources:
+    - 'lib/**/*'
+    - 'view/**/*'
+  tests:
+    - 'spec/**/*'
 
 tasks:
-	dev:
-		command: './bin/rails server'
-		local: true
-	format:
-		command: 'rubocop -x'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- '.rubocop.yml'
-	lint:
-		command: 'rubocop -l'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- '.rubocop.yml'
-	test:
-		command: 'rspec'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- '.rspec'
-	typecheck:
-		command: 'srb tc'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'sorbet/config'
+  dev:
+    command: './bin/rails server'
+    local: true
+  format:
+    command: 'rubocop -x'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '.rubocop.yml'
+  lint:
+    command: 'rubocop -l'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '.rubocop.yml'
+  test:
+    command: 'rspec'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '.rspec'
+  typecheck:
+    command: 'srb tc'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'sorbet/config'
 ```

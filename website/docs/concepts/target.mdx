@@ -81,23 +81,23 @@ want all projects, then you'll need to explicitly define them.
 
 ```yaml title="moon.yml"
 dependsOn:
-	- 'apiClients'
-	- 'designSystem'
+  - 'apiClients'
+  - 'designSystem'
 
 # Configured as
 tasks:
-	build:
-		command: 'webpack'
-		deps:
-			- '^:build'
+  build:
+    command: 'webpack'
+    deps:
+      - '^:build'
 
 # Resolves to
 tasks:
-	build:
-		command: 'webpack'
-		deps:
-			- 'apiClients:build'
-			- 'designSystem:build'
+  build:
+    command: 'webpack'
+    deps:
+      - 'apiClients:build'
+      - 'designSystem:build'
 ```
 
 ### Self `~`
@@ -110,21 +110,21 @@ situations where the name is unknown, for example, when configuring
 ```yaml title=".moon/tasks.yml"
 # Configured as
 tasks:
-	lint:
-		command: 'eslint'
-		deps:
-			- '~:typecheck'
-			# OR
-			- 'typecheck'
-	typecheck:
-		command: 'tsc'
+  lint:
+    command: 'eslint'
+    deps:
+      - '~:typecheck'
+      # OR
+      - 'typecheck'
+  typecheck:
+    command: 'tsc'
 
 # Resolves to (assuming project is "foo")
 tasks:
-	lint:
-		command: 'eslint'
-		deps:
-			- 'foo:typecheck'
-	typecheck:
-		command: 'tsc'
+  lint:
+    command: 'eslint'
+    deps:
+      - 'foo:typecheck'
+  typecheck:
+    command: 'tsc'
 ```

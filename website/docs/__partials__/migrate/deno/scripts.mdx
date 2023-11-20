@@ -10,12 +10,12 @@ them from within moon tasks. This gives you the best of both worlds.
 language: 'typescript'
 
 tasks:
-	analyze:
-		command: 'deno task analyze'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'Rakefile'
+  analyze:
+    command: 'deno task analyze'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'Rakefile'
 ```
 
 > When Deno tasks are ran through moon tasks, the current working directory is set to the project

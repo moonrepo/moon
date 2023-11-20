@@ -22,28 +22,28 @@ Since code formatting is a universal workflow, add a `format` task to
 
 ```yaml title=".moon/tasks/node.yml"
 tasks:
-	format:
-		command:
-			- 'prettier'
-			# Use the same config for the entire repo
-			- '--config'
-			- '@in(4)'
-			# Use the same ignore patterns as well
-			- '--ignore-path'
-			- '@in(3)'
-			# Fail for unformatted code
-			- '--check'
-			# Run in current dir
-			- '.'
-		inputs:
-			# Source and test files
-			- 'src/**/*'
-			- 'tests/**/*'
-			# Config and other files
-			- '**/*.{md,mdx,yml,yaml,json}'
-			# Root configs, any format
-			- '/.prettierignore'
-			- '/.prettierrc.*'
+  format:
+    command:
+      - 'prettier'
+      # Use the same config for the entire repo
+      - '--config'
+      - '@in(4)'
+      # Use the same ignore patterns as well
+      - '--ignore-path'
+      - '@in(3)'
+      # Fail for unformatted code
+      - '--check'
+      # Run in current dir
+      - '.'
+    inputs:
+      # Source and test files
+      - 'src/**/*'
+      - 'tests/**/*'
+      # Config and other files
+      - '**/*.{md,mdx,yml,yaml,json}'
+      # Root configs, any format
+      - '/.prettierignore'
+      - '/.prettierrc.*'
 ```
 
 ## Configuration

@@ -2,14 +2,14 @@
 language: 'typescript'
 
 fileGroups:
-	# ...
+  # ...
 
 tasks:
-	build:
-		command: 'deno compile ./src/main.ts -o ./out.js'
-		inputs:
-			- '@globs(sources)'
-			- 'deno.*'
-		outputs:
-			- 'out.js'
+  build:
+    command: 'deno compile ./src/main.ts -o ./out.js'
+    inputs:
+      - '@globs(sources)'
+      - 'deno.*'
+    outputs:
+      - 'out.js'
 ```

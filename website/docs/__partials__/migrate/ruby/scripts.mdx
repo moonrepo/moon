@@ -10,10 +10,10 @@ commands from within moon tasks. This gives you the best of both worlds.
 language: 'ruby'
 
 tasks:
-	test:
-		command: 'rake test'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'Rakefile'
+  test:
+    command: 'rake test'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'Rakefile'
 ```

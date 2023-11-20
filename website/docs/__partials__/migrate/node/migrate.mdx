@@ -2,52 +2,52 @@
 language: 'javascript'
 
 fileGroups:
-	sources:
-		- 'src/**/*'
-	tests:
-		- 'tests/**/*'
+  sources:
+    - 'src/**/*'
+  tests:
+    - 'tests/**/*'
 
 tasks:
-	build:
-		command: 'webpack build --output-path @out(0)'
-		inputs:
-			- '@globs(sources)'
-			- 'webpack.config.js'
-		outputs:
-			- 'build'
-	dev:
-		command: 'webpack server'
-		inputs:
-			- '@globs(sources)'
-			- 'webpack.config.js'
-		local: true
-	format:
-		command: 'prettier --check .'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- '/prettier.config.js'
-	lint:
-		command: 'eslint .'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- '.eslintignore'
-			- '.eslintrc.js'
-			- '/.eslintrc.js'
-	test:
-		command: 'jest .'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'jest.config.js'
-	typecheck:
-		command: 'tsc --build'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'tsconfig.json'
-			- '/tsconfig.json'
+  build:
+    command: 'webpack build --output-path @out(0)'
+    inputs:
+      - '@globs(sources)'
+      - 'webpack.config.js'
+    outputs:
+      - 'build'
+  dev:
+    command: 'webpack server'
+    inputs:
+      - '@globs(sources)'
+      - 'webpack.config.js'
+    local: true
+  format:
+    command: 'prettier --check .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '/prettier.config.js'
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '.eslintignore'
+      - '.eslintrc.js'
+      - '/.eslintrc.js'
+  test:
+    command: 'jest .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'jest.config.js'
+  typecheck:
+    command: 'tsc --build'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'tsconfig.json'
+      - '/tsconfig.json'
 ```
 
 To ease the migration process, we offer the

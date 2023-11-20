@@ -64,7 +64,7 @@ setting.
 ```yaml title=".moon/toolchain.yml"
 # Enable Bun toolchain with an explicit version
 bun:
-	version: '1.0.0'
+  version: '1.0.0'
 ```
 
 > Versions can also be defined with [`.prototools`](../../proto/config).
@@ -82,10 +82,10 @@ To work around this, you can set `platform` to "bun" at the task-level or projec
 platform: 'bun'
 
 tasks:
-	build:
-		command: 'webpack'
-		# For this specific task
-		platform: 'bun'
+  build:
+    command: 'webpack'
+    # For this specific task
+    platform: 'bun'
 ```
 
 > The task-level `platform` only needs to be set if executing a `node_modules` binary! The `bun`
@@ -98,8 +98,8 @@ moon tasks to execute `package.json` scripts using `bun run`, instead of migrati
 
 ```yaml title="moon.yml"
 tasks:
-	build:
-		command: 'bun run build'
+  build:
+    command: 'bun run build'
 ```
 
 ## Handbook

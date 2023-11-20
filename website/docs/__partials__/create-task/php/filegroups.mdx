@@ -2,15 +2,15 @@
 language: 'php'
 
 fileGroups:
-	# ...
+  # ...
 
 tasks:
-	build:
-		command: 'phar pack -h sha256'
-		inputs:
-			- '@globs(sources)'
-			- 'composer.json'
-			- '/composer.json'
-		outputs:
-			- 'file.phar' # Just an example!
+  build:
+    command: 'phar pack -h sha256'
+    inputs:
+      - '@globs(sources)'
+      - 'composer.json'
+      - '/composer.json'
+    outputs:
+      - 'file.phar' # Just an example!
 ```

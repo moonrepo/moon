@@ -11,12 +11,12 @@ these scripts from within moon tasks. This gives you the best of both worlds.
 language: 'php'
 
 tasks:
-	test:
-		command: 'php composer.phar run-script test'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'composer.json'
+  test:
+    command: 'php composer.phar run-script test'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'composer.json'
 ```
 
 In the future, we aim to infer these scripts automatically, and provide migration scripts.

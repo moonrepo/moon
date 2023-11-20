@@ -14,8 +14,8 @@ This allows projects to configure their primary language, and is utilized by edi
 
 ```rust
 enum ProjectLanguage {
-	// ...
-	Kotlin,
+  // ...
+  Kotlin,
 }
 ```
 
@@ -112,10 +112,10 @@ When ready, add a new field to the `ToolchainConfig` struct.
 
 ```rust
 pub struct ToolchainConfig {
-	// ...
+  // ...
 
-	#[setting(nested)]
-	pub kotlin: Option<KotlinConfig>,
+  #[setting(nested)]
+  pub kotlin: Option<KotlinConfig>,
 }
 ```
 
@@ -132,8 +132,8 @@ This enum is the backbone of supporting language specific platforms.
 
 ```rust
 enum PlatformType {
-	// ...
-	Kotlin,
+  // ...
+  Kotlin,
 }
 ```
 
@@ -226,8 +226,8 @@ toolchain to be disabled.
 ```rust
 #[derive(Config)]
 pub struct KotlinConfig {
-	// ...
-	pub version: Option<String>,
+  // ...
+  pub version: Option<String>,
 }
 ```
 

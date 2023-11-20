@@ -26,8 +26,8 @@ Let's say we have a frontend web application called "client", and a backend appl
 
 ```yaml title=".moon/workspace.yml"
 projects:
-	client: 'apps/client'
-	server: 'apps/server'
+  client: 'apps/client'
+  server: 'apps/server'
 ```
 
 We can now run [`moon project client`](./commands/project) and
@@ -70,12 +70,12 @@ following:
 
 ```yaml title="apps/client/moon.yml"
 tasks:
-	build:
-		command: 'webpack build --mode production --entry src/index.tsx --output-path build'
-		inputs:
-			- 'src/**/*'
-		outputs:
-			- 'build'
+  build:
+    command: 'webpack build --mode production --entry src/index.tsx --output-path build'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'build'
 ```
 
 </TabItem>
@@ -83,12 +83,12 @@ tasks:
 
 ```yaml title="apps/server/moon.yml"
 tasks:
-	build:
-		command: 'babel src --out-dir build'
-		inputs:
-			- 'src/**/*'
-		outputs:
-			- 'build'
+  build:
+    command: 'babel src --out-dir build'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'build'
 ```
 
 </TabItem>
@@ -96,14 +96,14 @@ tasks:
 
 ```yaml title=".moon/tasks.yml"
 tasks:
-	format:
-		command: 'prettier --check .'
-	lint:
-		command: 'eslint --no-error-on-unmatched-pattern .'
-	test:
-		command: 'jest --passWithNoTests .'
-	typecheck:
-		command: 'tsc --build'
+  format:
+    command: 'prettier --check .'
+  lint:
+    command: 'eslint --no-error-on-unmatched-pattern .'
+  test:
+    command: 'jest --passWithNoTests .'
+  typecheck:
+    command: 'tsc --build'
 ```
 
 </TabItem>

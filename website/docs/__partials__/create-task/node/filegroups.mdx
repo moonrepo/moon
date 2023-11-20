@@ -2,15 +2,15 @@
 language: 'javascript'
 
 fileGroups:
-	# ...
+  # ...
 
 tasks:
-	build:
-		command: 'webpack build --mode production --no-stats --output-path @out(0)'
-		inputs:
-			- '@globs(sources)'
-			- 'webpack.config.js'
-			- '/webpack-shared.config.js'
-		outputs:
-			- 'build'
+  build:
+    command: 'webpack build --mode production --no-stats --output-path @out(0)'
+    inputs:
+      - '@globs(sources)'
+      - 'webpack.config.js'
+      - '/webpack-shared.config.js'
+    outputs:
+      - 'build'
 ```

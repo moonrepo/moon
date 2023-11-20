@@ -3,39 +3,39 @@ language: 'typescript'
 platform: 'bun'
 
 fileGroups:
-	sources:
-		- 'src/**/*'
-		- '*.ts'
-		- 'bunfig.toml'
-	tests:
-		- 'tests/**/*'
+  sources:
+    - 'src/**/*'
+    - '*.ts'
+    - 'bunfig.toml'
+  tests:
+    - 'tests/**/*'
 
 tasks:
-	dev:
-		command: 'bun run dev'
-		inputs:
-			- '@globs(sources)'
-		local: true
-	format:
-		command: 'bun run format'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	lint:
-		command: 'bun run lint'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	test:
-		command: 'bun test --bail'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	typecheck:
-		command: 'bun run typecheck'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-			- 'tsconfig.json'
-			- '/tsconfig.json'
+  dev:
+    command: 'bun run dev'
+    inputs:
+      - '@globs(sources)'
+    local: true
+  format:
+    command: 'bun run format'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  lint:
+    command: 'bun run lint'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  test:
+    command: 'bun test --bail'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  typecheck:
+    command: 'bun run typecheck'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'tsconfig.json'
+      - '/tsconfig.json'
 ```

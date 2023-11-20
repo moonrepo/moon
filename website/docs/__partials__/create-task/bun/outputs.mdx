@@ -3,12 +3,12 @@ language: 'javascript'
 platform: 'bun'
 
 tasks:
-	build:
-		command: 'webpack build --mode production --no-stats --output-path @out(0)'
-		inputs:
-			- 'src/**/*'
-			- 'webpack.config.js'
-			- '/webpack-shared.config.js'
-		outputs:
-			- 'build'
+  build:
+    command: 'webpack build --mode production --no-stats --output-path @out(0)'
+    inputs:
+      - 'src/**/*'
+      - 'webpack.config.js'
+      - '/webpack-shared.config.js'
+    outputs:
+      - 'build'
 ```

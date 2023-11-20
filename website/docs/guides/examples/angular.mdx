@@ -145,10 +145,10 @@ If you'd prefer to use the `ng lint` command, add it as a task to the project's
 
 ```yaml title="<project>/moon.yml"
 tasks:
-	lint:
-		command: 'ng lint'
-		inputs:
-			- '@group(angular)'
+  lint:
+    command: 'ng lint'
+    inputs:
+      - '@group(angular)'
 ```
 
 Furthermore, if a global `lint` task exists, be sure to exclude it from being inherited.

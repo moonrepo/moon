@@ -32,8 +32,8 @@ A description of why the template exists, what its purpose is, and any other rel
 
 ```yaml title="template.yml"
 description: |
-	Scaffolds the initial structure for an npm package,
-	including source and test folders, a package.json, and more.
+  Scaffolds the initial structure for an npm package,
+  including source and test folders, a package.json, and more.
 ```
 
 ## `variables`
@@ -47,11 +47,11 @@ settings below.
 
 ```yaml title="template.yml"
 variables:
-	name:
-		type: 'string'
-		default: ''
-		required: true
-		prompt: 'Package name?'
+  name:
+    type: 'string'
+    default: ''
+    required: true
+    prompt: 'Package name?'
 ```
 
 ### `default`<RequiredLabel />
@@ -87,11 +87,11 @@ Marks the variable as required during _prompting only_. For strings, will error 
 
 ```yaml title="template.yml"
 variables:
-	age:
-		type: 'number'
-		default: 0
-		required: true
-		prompt: 'Age?'
+  age:
+    type: 'number'
+    default: 0
+    required: true
+    prompt: 'Age?'
 ```
 
 ### Enums
@@ -100,11 +100,11 @@ An enum is an explicit list of string values that a user can choose from.
 
 ```yaml title="template.yml"
 variables:
-	color:
-		type: 'enum'
-		values: ['red', 'green', 'blue', 'purple']
-		default: 'purple'
-		prompt: 'Favorite color?'
+  color:
+    type: 'enum'
+    values: ['red', 'green', 'blue', 'purple']
+    default: 'purple'
+    prompt: 'Favorite color?'
 ```
 
 ### `multiple`
@@ -123,14 +123,14 @@ and label, or as an object, which defines an explicit value and label.
 
 ```yaml title="template.yml"
 variables:
-	color:
-		type: 'enum'
-		values:
-			- 'red'
-			# OR
-			- value: 'red'
-			  label: 'Red 🔴'
-		# ...
+  color:
+    type: 'enum'
+    values:
+      - 'red'
+      # OR
+      - value: 'red'
+        label: 'Red 🔴'
+    # ...
 ```
 
 ## Frontmatter
@@ -170,7 +170,7 @@ to: components/{{ component_name }}.tsx
 ---
 
 export function {{ component_name }}() {
-	return <div />;
+  return <div />;
 }
 ```
 

@@ -1,4 +1,5 @@
-use moon_config::TypeScriptConfig;
+use moon_common::Id;
+use moon_config::{DependencyScope, TypeScriptConfig};
 use moon_logger::debug;
 use moon_node_lang::PackageJson;
 use moon_project::Project;
@@ -8,15 +9,14 @@ use moon_utils::{
     path::{self, to_relative_virtual_string},
     string_vec,
 };
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
 use starbase_utils::json;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
 };
-
-const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 
 pub struct TypeScriptSyncer<'app> {
     project: &'app Project,
@@ -132,10 +132,9 @@ impl<'app> TypeScriptSyncer<'app> {
                 && tsconfig_json.add_project_ref(&self.project.root, tsconfig_project_name)?
             {
                 debug!(
-                    target: LOG_TARGET,
                     "Syncing {} as a project reference to the root {}",
                     color::id(&self.project.id),
-                    color::file(tsconfig_root_name)
+                    tsconfig_root_name
                 );
 
                 return Ok(true);
@@ -259,39 +258,62 @@ impl<'app> TypeScriptSyncer<'app> {
         )
     }
 
-    pub fn sync(&self, tsconfig_project_refs: FxHashSet<PathBuf>) -> miette::Result<bool> {
-        let mut mutated_tsconfig = false;
+    pub fn sync(&self, dependencies: &FxHashMap<Id, Arc<Project>>) -> miette::Result<bool> {
+        let mut mutated = false;
 
         if !self.project.config.toolchain.is_typescript_enabled() {
-            return Ok(mutated_tsconfig);
+            return Ok(mutated);
+        }
+
+        // Sync each dependency to `tsconfig.json` and `package.json`
+        let mut tsconfig_project_refs: FxHashSet<PathBuf> = FxHashSet::default();
+
+        for (dep_id, dep_cfg) in &self.project.dependencies {
+            let Some(dep_project) = dependencies.get(dep_id) else {
+                continue;
+            };
+
+            if dep_project.is_root_level() || matches!(dep_cfg.scope, DependencyScope::Root) {
+                continue;
+            }
+
+            // Update `references` within this project's `tsconfig.json`.
+            // Only add if the dependent project has a `tsconfig.json`,
+            // and this `tsconfig.json` has not already declared the dep.
+            if dep_project.config.toolchain.is_typescript_enabled()
+                && dep_project
+                    .root
+                    .join(&self.typescript_config.project_config_file_name)
+                    .exists()
+            {
+                tsconfig_project_refs.insert(dep_project.root.clone());
+
+                debug!(
+                    "Syncing {} as a project reference to {}'s {}",
+                    color::id(&dep_project.id),
+                    color::id(&self.project.id),
+                    self.typescript_config.project_config_file_name
+                );
+            }
         }
 
         if self.should_sync_project_references() {
             // Auto-create a `tsconfig.json` if configured and applicable
             if self.typescript_config.create_missing_config && self.create_missing_tsconfig()? {
-                mutated_tsconfig = true;
+                mutated = true;
             }
 
             // Sync project reference to the root `tsconfig.json`
             if self.sync_as_root_project_reference()? {
-                mutated_tsconfig = true;
+                mutated = true;
             }
         }
 
         // Sync compiler options to the project's `tsconfig.json`
         if self.sync_project_tsconfig(tsconfig_project_refs)? {
-            mutated_tsconfig = true;
+            mutated = true;
         }
 
-        Ok(mutated_tsconfig)
+        Ok(mutated)
     }
-}
-
-pub fn sync_project(
-    project: &Project,
-    typescript_config: &TypeScriptConfig,
-    workspace_root: &Path,
-    tsconfig_project_refs: FxHashSet<PathBuf>,
-) -> miette::Result<bool> {
-    TypeScriptSyncer::new(project, typescript_config, workspace_root).sync(tsconfig_project_refs)
 }

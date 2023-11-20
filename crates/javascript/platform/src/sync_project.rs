@@ -34,10 +34,10 @@ impl<'app> JavaScriptSyncer<'app> {
     }
 
     pub fn sync(&self, dependencies: &FxHashMap<Id, Arc<Project>>) -> miette::Result<bool> {
-        let mut mutated_project_files = false;
+        let mut mutated = false;
 
         if !self.sync_project_workspace_dependencies || self.project.is_root_level() {
-            return Ok(mutated_project_files);
+            return Ok(mutated);
         }
 
         // Sync each dependency to `package.json`
@@ -140,13 +140,13 @@ impl<'app> JavaScriptSyncer<'app> {
                 }
 
                 if mutated_package {
-                    mutated_project_files = true;
+                    mutated = true;
                 }
 
                 Ok(mutated_package)
             })?;
         }
 
-        Ok(mutated_project_files)
+        Ok(mutated)
     }
 }

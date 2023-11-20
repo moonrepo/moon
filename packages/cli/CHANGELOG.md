@@ -29,6 +29,9 @@
   - Updated `typescript.syncProjectReferencesToPaths` setting to always include the wildcard, and
     not require an index file.
   - Improved project reference syncing and edge case handling.
+- Improved JavaScript support.
+  - Added `bun.rootPackageOnly` and `node.rootPackageOnly` settings to support the "one version
+    rule" pattern.
 
 ## 1.16.5
 

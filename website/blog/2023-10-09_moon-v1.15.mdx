@@ -47,6 +47,8 @@ For large graphs, this should result in a significant performance improvement!
 
 ### Automatic dependency linking (breaking)
 
+> In v1.17, we changed the scope from "peer" to "build" to reduce friction.
+
 Because of these graph changes, we do have a minor "breaking change". Tasks that depend (via `deps`)
 on other tasks from arbitrary projects (the parent project doesn't implicitly or explicitly depend
 on the other project), not including the root-level project, will now automatically mark that other

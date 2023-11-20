@@ -32,6 +32,8 @@
 - Improved JavaScript support.
   - Added `bun.rootPackageOnly` and `node.rootPackageOnly` settings to support the "one version
     rule" pattern.
+  - Updated automatic dependency linking to use the `build` scope instead of `peer` scope. This
+    should alleviate some of the pain points with `package.json` syncing.
 
 ## 1.16.5
 

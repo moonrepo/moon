@@ -9,6 +9,7 @@ moon_action_context = { path = "../../core/action-context" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_hash = { path = "../../../nextgen/hash" }
+moon_javascript_platform = { path = "../../javascript/platform" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_node_lang = { path = "../lang" }

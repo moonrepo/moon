@@ -3125,6 +3125,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "moon_javascript_platform",
  "moon_lang",
  "moon_logger",
  "moon_node_lang",
@@ -3443,6 +3444,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_javascript_platform"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_hash",
+ "moon_node_lang",
+ "moon_project",
+ "moon_utils",
+ "rustc-hash",
+ "serde",
+ "starbase_styles",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
@@ -3494,6 +3513,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "moon_javascript_platform",
  "moon_lang",
  "moon_logger",
  "moon_node_lang",

@@ -61,6 +61,22 @@ bun:
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
+### Inherited from `node`
+
+Since Bun and Node.js have a lot of overlap in functionality, the following [`node`](#node) settings
+can also be configured within `bun`:
+
+- [`dependencyVersionFormat`](#dependencyversionformat)
+- [`rootPackageOnly`](#rootPackageOnly)
+- [`syncProjectWorkspaceDependencies`](#syncprojectworkspacedependencies)
+
+```yaml title=".moon/toolchain.yml" {2-4}
+bun:
+  dependencyVersionFormat: 'workspace'
+  rootPackageOnly: true
+  syncProjectWorkspaceDependencies: true
+```
+
 ## `deno`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#deno" />
@@ -262,8 +278,8 @@ most applicable to your chosen package manager):
   e.g., "^1.2.3".
 - `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
   e.g., "~1.2.3".
-- `workspace` (pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires package
-  workspaces.
+- `workspace` (bun/pnpm/yarn default) - Uses `workspace:*`, which resolves to "1.2.3". Requires
+  package workspaces.
 - `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
 - `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
 
@@ -305,6 +321,28 @@ This implementation shares functionality with
 [`moon migrate from-package-json`](../commands/migrate/from-package-json), and will attempt to
 determine environment variables, outputs, CI options, and more! Be aware of these when utilizing
 this feature, especially in regards to `runInCI`, as it may be inaccurate!
+
+:::
+
+### `rootPackageOnly`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#rootPackageOnly" />
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `package.json`, and only installing dependencies in the workspace root, and not within
+individual projects. It also bypasses all `workspaces` checks to determine package locations.
+Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  rootPackageOnly: true
+```
+
+:::info
+
+This setting _does not_ verify that other `package.json`s _do not_ have dependencies, it merely runs
+"install dependency" commands in the root. It's up to you to ensure that other `package.json`s do
+not have dependencies.
 
 :::
 

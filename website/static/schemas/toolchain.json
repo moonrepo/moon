@@ -88,14 +88,6 @@
         "yarn"
       ]
     },
-    "NodeProjectAliasFormat": {
-      "title": "NodeProjectAliasFormat",
-      "type": "string",
-      "enum": [
-        "name-and-scope",
-        "name-only"
-      ]
-    },
     "NodeVersionFormat": {
       "title": "NodeVersionFormat",
       "type": "string",
@@ -182,10 +174,41 @@
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#bun",
       "type": "object",
       "properties": {
+        "dependencyVersionFormat": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "plugin": {
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootPackageOnly": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectWorkspaceDependencies": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -300,17 +323,6 @@
             }
           ]
         },
-        "aliasPackageNames": {
-          "deprecated": true,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeProjectAliasFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "binExecArgs": {
           "anyOf": [
             {
@@ -399,6 +411,16 @@
           "anyOf": [
             {
               "$ref": "#/definitions/PartialPnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootPackageOnly": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"

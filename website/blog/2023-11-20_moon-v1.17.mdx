@@ -100,6 +100,31 @@ sources, like so.
 
 > This setting can also be overridden on a per-project basis.
 
+## JavaScript improvements
+
+### Supporting the "single version policy" pattern
+
+If you're unfamiliar with the single version policy, or the one version rule, it's a pattern that
+only allows dependencies to be configured in a single location, typically the root `package.json`.
+This pattern forces _all_ projects in a monorepo to use the same dependencies, and avoid the package
+`workspaces` functionality.
+
+This pattern was previously not possible in moon, as our automatic dependency installation process
+did not account for it, and it would either install in the root if using `workspaces`, or in a
+project otherwise. To support this pattern, we're introducing the new setting
+[`node.rootPackageOnly`](/docs/config/toolchain#rootpackageonly) for Node.js, and
+`bun.rootPackageOnly` for Bun.
+
+```yaml title=".moon/toolchain.yml"
+node:
+  rootPackageOnly: true
+```
+
+When enabled, we'll only install dependencies in the workspace root, regardless of other settings or
+how `package.json`s are configured. However, this setting _does not_ verify that other
+`package.json`s _do not_ have dependencies. It's up to you to ensure that other `package.json`s do
+not have dependencies.
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.17.0) for a full list

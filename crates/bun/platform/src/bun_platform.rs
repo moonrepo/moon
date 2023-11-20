@@ -107,6 +107,11 @@ impl Platform for BunPlatform {
     fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
         let mut in_workspace = false;
 
+        // Single version policy / only a root package.json
+        if self.config.root_package_only {
+            return Ok(true);
+        }
+
         // Root package is always considered within the workspace
         if (project_source.is_empty() || project_source == ".")
             && self.packages_root == self.workspace_root
@@ -298,9 +303,18 @@ impl Platform for BunPlatform {
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        _project: &Project,
-        _dependencies: &FxHashMap<Id, Arc<Project>>,
+        project: &Project,
+        dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
+        actions::sync_project(
+            project,
+            dependencies,
+            &self.workspace_root,
+            &self.config,
+            &self.typescript_config,
+        )
+        .await?;
+
         Ok(false)
     }
 

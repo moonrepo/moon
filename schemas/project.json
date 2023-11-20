@@ -429,6 +429,16 @@
       "title": "PartialProjectToolchainConfig",
       "type": "object",
       "properties": {
+        "bun": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "node": {
           "anyOf": [
             {
@@ -467,6 +477,26 @@
       "type": "object",
       "properties": {
         "disabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "includeProjectReferenceSources": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "includeSharedTypes": {
           "anyOf": [
             {
               "type": "boolean"
@@ -905,6 +935,7 @@
       "title": "PlatformType",
       "type": "string",
       "enum": [
+        "bun",
         "deno",
         "node",
         "rust",

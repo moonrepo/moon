@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[28444],{81327:e=>{e.exports=JSON.parse('{"label":"remote-cache","permalink":"/blog/tags/remote-cache","allTagsPath":"/blog/tags","count":3}')}}]);

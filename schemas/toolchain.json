@@ -15,6 +15,16 @@
         }
       ]
     },
+    "bun": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialBunConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "deno": {
       "anyOf": [
         {
@@ -76,14 +86,6 @@
         "npm",
         "pnpm",
         "yarn"
-      ]
-    },
-    "NodeProjectAliasFormat": {
-      "title": "NodeProjectAliasFormat",
-      "type": "string",
-      "enum": [
-        "name-and-scope",
-        "name-only"
       ]
     },
     "NodeVersionFormat": {
@@ -166,6 +168,65 @@
           "$ref": "#/definitions/PartialBinConfig"
         }
       ]
+    },
+    "PartialBunConfig": {
+      "title": "PartialBunConfig",
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#bun",
+      "type": "object",
+      "properties": {
+        "dependencyVersionFormat": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootPackageOnly": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectWorkspaceDependencies": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "PartialBunpmConfig": {
       "title": "PartialBunpmConfig",
@@ -262,17 +323,6 @@
             }
           ]
         },
-        "aliasPackageNames": {
-          "deprecated": true,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeProjectAliasFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "binExecArgs": {
           "anyOf": [
             {
@@ -361,6 +411,16 @@
           "anyOf": [
             {
               "$ref": "#/definitions/PartialPnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootPackageOnly": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -558,8 +618,39 @@
             }
           ]
         },
+        "includeProjectReferenceSources": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "includeSharedTypes": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "projectConfigFileName": {
           "default": "tsconfig.json",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "root": {
+          "default": ".",
           "anyOf": [
             {
               "type": "string"

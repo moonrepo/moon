@@ -10,11 +10,11 @@ run them from within moon tasks. This gives you the best of both worlds.
 language: 'typescript'
 
 tasks:
-	analyze:
-		command: 'bun run analyze'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
+  analyze:
+    command: 'bun run analyze'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
 ```
 
 > When Bun scripts are ran through moon tasks, the current working directory is set to the project

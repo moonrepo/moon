@@ -131,7 +131,7 @@ to: components/{{ component_name }}.tsx
 ---
 
 export function {{ component_name }}() {
-	return <div />;
+  return <div />;
 }
 ```
 
@@ -161,17 +161,17 @@ following:
 
 ```twig
 {% if price < 10 or always_show %}
-	Price is {{ price }}.
+  Price is {{ price }}.
 {% elif price > 1000 and not rich %}
-	That's expensive!
+  That's expensive!
 {% else %}
-	N/A
+  N/A
 {% endif %}
 ```
 
 ```twig
 {% for item in items %}
-	{{ loop.index }} - {{ item.name }}
+  {{ loop.index }} - {{ item.name }}
 {% endfor %}
 ```
 
@@ -239,9 +239,9 @@ folder name).
 
 ```yaml title=".moon/workspace.yml"
 generator:
-	templates:
-		- './templates'
-		- './other/templates'
+  templates:
+    - './templates'
+    - './other/templates'
 ```
 
 ### Declaring variables with CLI arguments
@@ -277,10 +277,10 @@ locations:
 
 ```yaml title=".moon/workspace.yml"
 generator:
-	templates:
-		- './templates'
-		- './node_modules/@company/shared-templates'
-		- './path/to/submodules'
+  templates:
+    - './templates'
+    - './node_modules/@company/shared-templates'
+    - './path/to/submodules'
 ```
 
 [config]: ../config/template

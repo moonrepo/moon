@@ -39,7 +39,7 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.23.1"
+proto_core = "0.23.2"
 relative-path = { version = "1.9.0", features = ["serde"] }
 regex = "1.10.2"
 reqwest = { version = "0.11.22", default-features = false, features = [
@@ -68,7 +68,7 @@ starbase_archive = { version = "0.2.4", default-features = false, features = [
 starbase_events = { version = "0.2.2" }
 starbase_sandbox = "0.1.12"
 starbase_styles = { version = "0.1.16", features = ["relative-path"] }
-starbase_utils = { version = "0.3.8", default-features = false, features = [
+starbase_utils = { version = "0.3.11", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -90,4 +90,4 @@ tokio = { version = "1.34.0", default-features = false, features = [
 tokio-util = "0.7.10"
 tracing = "0.1.40"
 url = "2.4.1"
-uuid = { version = "1.5.0", features = ["v4"] }
+uuid = { version = "1.6.0", features = ["v4"] }

@@ -34,7 +34,7 @@ rust: {}
 
 # Enable Rust and override default settings
 rust:
-	syncToolchainConfig: true
+  syncToolchainConfig: true
 ```
 
 Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the workspace root.
@@ -68,7 +68,7 @@ Enabling the toolchain is as simple as defining the
 ```yaml title=".moon/toolchain.yml"
 # Enable Rust toolchain with an explicit version
 rust:
-	version: '1.69.0'
+  version: '1.69.0'
 ```
 
 > Versions can also be defined with [`.prototools`](../../proto/config).
@@ -162,41 +162,41 @@ language: 'rust'
 type: 'application'
 
 env:
-	CARGO_TERM_COLOR: 'always'
+  CARGO_TERM_COLOR: 'always'
 
 fileGroups:
-	sources:
-		- 'crates/*/src/**/*'
-		- 'crates/*/Cargo.toml'
-		- 'Cargo.toml'
-	tests:
-		- 'crates/*/benches/**/*'
-		- 'crates/*/tests/**/*'
+  sources:
+    - 'crates/*/src/**/*'
+    - 'crates/*/Cargo.toml'
+    - 'Cargo.toml'
+  tests:
+    - 'crates/*/benches/**/*'
+    - 'crates/*/tests/**/*'
 
 tasks:
-	build:
-		command: 'cargo build'
-		inputs:
-			- '@globs(sources)'
-	check:
-		command: 'cargo check --workspace'
-		inputs:
-			- '@globs(sources)'
-	format:
-		command: 'cargo fmt --all --check'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	lint:
-		command: 'cargo clippy --workspace'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	test:
-		command: 'cargo test --workspace'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
+  build:
+    command: 'cargo build'
+    inputs:
+      - '@globs(sources)'
+  check:
+    command: 'cargo check --workspace'
+    inputs:
+      - '@globs(sources)'
+  format:
+    command: 'cargo fmt --all --check'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  lint:
+    command: 'cargo clippy --workspace'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  test:
+    command: 'cargo test --workspace'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
 ```
 
 </TabItem>
@@ -207,40 +207,40 @@ language: 'rust'
 type: 'application'
 
 env:
-	CARGO_TERM_COLOR: 'always'
+  CARGO_TERM_COLOR: 'always'
 
 fileGroups:
-	sources:
-		- 'src/**/*'
-		- 'Cargo.toml'
-	tests:
-		- 'benches/**/*'
-		- 'tests/**/*'
+  sources:
+    - 'src/**/*'
+    - 'Cargo.toml'
+  tests:
+    - 'benches/**/*'
+    - 'tests/**/*'
 
 tasks:
-	build:
-		command: 'cargo build'
-		inputs:
-			- '@globs(sources)'
-	check:
-		command: 'cargo check'
-		inputs:
-			- '@globs(sources)'
-	format:
-		command: 'cargo fmt --check'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	lint:
-		command: 'cargo clippy'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
-	test:
-		command: 'cargo test'
-		inputs:
-			- '@globs(sources)'
-			- '@globs(tests)'
+  build:
+    command: 'cargo build'
+    inputs:
+      - '@globs(sources)'
+  check:
+    command: 'cargo check'
+    inputs:
+      - '@globs(sources)'
+  format:
+    command: 'cargo fmt --check'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  lint:
+    command: 'cargo clippy'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  test:
+    command: 'cargo test'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
 ```
 
 </TabItem>
@@ -317,9 +317,9 @@ entire target directory. Example:
 
 ```yaml title="moon.yml"
 tasks:
-	build:
-		command: 'cargo build --release'
-		outputs: ['target/release/moon']
+  build:
+    command: 'cargo build --release'
+    outputs: ['target/release/moon']
 ```
 
 ### How can we improve CI times?
@@ -341,8 +341,8 @@ caching `cargo check`, `cargo clippy`, and other Cargo tasks that _do not_ produ
 
 ```yaml title=".moon/workspace.yml"
 runner:
-	archivableTargets:
-		- 'rust:check'
-		- 'rust:lint'
-		- 'rust:test'
+  archivableTargets:
+    - 'rust:check'
+    - 'rust:lint'
+    - 'rust:test'
 ```

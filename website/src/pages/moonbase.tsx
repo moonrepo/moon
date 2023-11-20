@@ -3,9 +3,9 @@
 import {
 	faCloudArrowUp,
 	faDiagramSankey,
-	faMessageCode,
-	faNotesMedical,
-	faSquareKanban,
+	// faMessageCode,
+	// faNotesMedical,
+	// faSquareKanban,
 	faTimeline,
 } from '@fortawesome/pro-duotone-svg-icons';
 import Features, { Feature } from '@site/src/components/Products/Features';
@@ -24,7 +24,6 @@ const ciFeatures: Feature[] = [
 		icon: faTimeline,
 		description:
 			'Track CI runs to detect flakiness, regressions, and time spent on task execution.',
-		status: 'new',
 	},
 	{
 		title: 'Remote distribution',
@@ -34,28 +33,28 @@ const ciFeatures: Feature[] = [
 	},
 ];
 
-const ownershipFeatures: Feature[] = [
-	{
-		title: 'Project registry',
-		icon: faSquareKanban,
-		description:
-			'An aggregated registry of all projects, across all repositories, within an organization.',
-		status: 'in-development',
-	},
-	{
-		title: 'Code owners',
-		icon: faMessageCode,
-		description:
-			'A granular breakdown of which team or developer owns a portion of code within each project.',
-		status: 'coming-soon',
-	},
-	{
-		title: 'Health score',
-		icon: faNotesMedical,
-		description: 'Monitor the health of projects and avoid tech debt.',
-		status: 'coming-soon',
-	},
-];
+// const ownershipFeatures: Feature[] = [
+// 	{
+// 		title: 'Project registry',
+// 		icon: faSquareKanban,
+// 		description:
+// 			'An aggregated registry of all projects, across all repositories, within an organization.',
+// 		status: 'in-development',
+// 	},
+// 	{
+// 		title: 'Code owners',
+// 		icon: faMessageCode,
+// 		description:
+// 			'A granular breakdown of which team or developer owns a portion of code within each project.',
+// 		status: 'coming-soon',
+// 	},
+// 	{
+// 		title: 'Health score',
+// 		icon: faNotesMedical,
+// 		description: 'Monitor the health of projects and avoid tech debt.',
+// 		status: 'coming-soon',
+// 	},
+// ];
 
 export default function ProductMoonbase() {
 	return (
@@ -74,13 +73,13 @@ export default function ProductMoonbase() {
 						tier={3}
 					/>
 
-					<Features
+					{/* <Features
 						header="Ownership"
 						description="Everything in one place"
 						features={ownershipFeatures}
 						tier={1}
 						reversed
-					/>
+					/> */}
 				</div>
 
 				<Pricing />

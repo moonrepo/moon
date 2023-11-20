@@ -95,20 +95,20 @@ Learn more about [available options](./config/project#tasks).
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		# ...
-		options:
-			cache: false
+  example:
+    # ...
+    options:
+      cache: false
 ```
 
 #### Re-run flaky tasks
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		# ...
-		options:
-			retryCount: 3
+  example:
+    # ...
+    options:
+      retryCount: 3
 ```
 
 #### Depend on tasks from parent project's dependencies
@@ -116,51 +116,51 @@ tasks:
 ```yaml title="moon.yml"
 # Also inferred from the language's platform
 dependsOn:
-	- 'project-a'
-	- 'project-b'
+  - 'project-a'
+  - 'project-b'
 
 tasks:
-	example:
-		# ...
-		deps:
-			- '^:build'
+  example:
+    # ...
+    deps:
+      - '^:build'
 ```
 
 #### Depend on tasks from arbitrary projects
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		# ...
-		deps:
-			- 'other-project:task'
+  example:
+    # ...
+    deps:
+      - 'other-project:task'
 ```
 
 #### Run dependencies serially
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		# ...
-		deps:
-			- 'first'
-			- 'second'
-			- 'third'
-		options:
-			runDepsInParallel: false
+  example:
+    # ...
+    deps:
+      - 'first'
+      - 'second'
+      - 'third'
+    options:
+      runDepsInParallel: false
 ```
 
 #### Run multiple watchers/servers in parallel
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		command: 'noop'
-		deps:
-			- 'app:watch'
-			- 'backend:start'
-			- 'tailwind:watch'
-		local: true
+  example:
+    command: 'noop'
+    deps:
+      - 'app:watch'
+      - 'backend:start'
+      - 'tailwind:watch'
+    local: true
 ```
 
 > The `local` or `persistent` settings are required for this to work.
@@ -176,8 +176,8 @@ tasks:
 language: 'bash' # batch, etc
 
 tasks:
-	example:
-		command: 'printenv'
+  example:
+    command: 'printenv'
 ```
 
 </div>
@@ -185,9 +185,9 @@ tasks:
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		command: 'printenv'
-		platform: 'system'
+  example:
+    command: 'printenv'
+    platform: 'system'
 ```
 
 </div>
@@ -199,9 +199,9 @@ tasks:
 language: 'ruby'
 
 tasks:
-	example:
-		command: 'rubocop'
-		platform: 'system'
+  example:
+    command: 'rubocop'
+    platform: 'system'
 ```
 
 #### Run npm binaries (Node.js)
@@ -213,8 +213,8 @@ tasks:
 language: 'javascript' # typescript
 
 tasks:
-	example:
-		command: 'eslint'
+  example:
+    command: 'eslint'
 ```
 
 </div>
@@ -222,9 +222,9 @@ tasks:
 
 ```yaml title="moon.yml"
 tasks:
-	example:
-		command: 'eslint'
-		platform: 'node'
+  example:
+    command: 'eslint'
+    platform: 'node'
 ```
 
 </div>

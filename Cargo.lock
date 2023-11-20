@@ -626,9 +626,9 @@ dependencies = [
 
 [[package]]
 name = "cargo_toml"
-version = "0.16.3"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3f9629bc6c4388ea699781dc988c2b99766d7679b151c81990b4fa1208fafd3"
+checksum = "6ca592ad99e6a0fd4b95153406138b997cc26ccd3cd0aecdfd4fbdbf1519bd77"
 dependencies = [
  "serde",
  "toml 0.8.8",
@@ -2515,6 +2515,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25db6b064527c5d482d0423354fcd07a89a2dfe07b67892e62411946db7f07b0"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3206,7 +3215,7 @@ dependencies = [
  "diff",
  "httpmock",
  "indicatif",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "miette",
  "mimalloc",
  "moon",
@@ -4646,9 +4655,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.23.1"
+version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63710d7e61a6d1113dee8247dcf7feb046185e61a902b3ef1f10966540603d16"
+checksum = "44b64578ff10a1a39d3a3d94e0725c0ecdc5858ec6c42844289530dd15981b22"
 dependencies = [
  "cached",
  "extism",
@@ -5549,9 +5558,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.3.8"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6db5c15177ddbb9ddef8751911d8b75c02b5a9ea11d9a24a44951de97bd8a722"
+checksum = "9af464d976956393070880234f8d9f3509f04555266174abfd9b11386cdce4bc"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",
@@ -6382,9 +6391,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "uuid"
-version = "1.5.0"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88ad59a7560b41a70d191093a945f0b87bc1deeda46fb237479708a1d6b6cdfc"
+checksum = "c58fe91d841bc04822c9801002db4ea904b9e4b8e6bbad25127b46eff8dc516b"
 dependencies = [
  "getrandom",
 ]

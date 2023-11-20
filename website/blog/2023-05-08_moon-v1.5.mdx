@@ -34,7 +34,7 @@ Languages in
 
 ```yaml title=".moon/toolchain.yml"
 rust:
-	version: '1.69.0'
+  version: '1.69.0'
 ```
 
 When the `rust` setting is defined, it will enable the language and
@@ -49,8 +49,8 @@ in [`moon.yml`](/docs/config/project) to define project-level overrides.
 
 ```yaml title="<project>/moon.yml"
 toolchain:
-	rust:
-		version: '1.58.0'
+  rust:
+    version: '1.58.0'
 ```
 
 ## New `rust` task platform
@@ -73,9 +73,9 @@ can define `platform` on the task directly.
 
 ```yaml title="<project>/moon.yml"
 tasks:
-	build:
-		command: 'cargo build'
-		platform: 'rust'
+  build:
+    command: 'cargo build'
+    platform: 'rust'
 ```
 
 > We also attempt to detect this automatially by comparing command names and checking for the

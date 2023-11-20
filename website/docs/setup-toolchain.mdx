@@ -59,7 +59,7 @@ version with [`node.version`](./config/toolchain#version).
 
 ```yaml title=".moon/toolchain.yml"
 node:
-	version: '18.0.0'
+  version: '18.0.0'
 ```
 
 This setting can be a fully qualified semantic version (preferred), a partial version (missing patch
@@ -87,8 +87,8 @@ choice here by defining [`node.packageManager`](./config/toolchain#packagemanage
 
 ```yaml title=".moon/toolchain.yml"
 node:
-	version: '18.0.0'
-	packageManager: 'yarn'
+  version: '18.0.0'
+  packageManager: 'yarn'
 ```
 
 By default moon will install a stable version of the package manager, but this isn't consistently
@@ -98,10 +98,10 @@ through the [`node.<packageManager>.version`](./config/toolchain#version-1) sett
 
 ```yaml title=".moon/toolchain.yml"
 node:
-	version: '18.0.0'
-	packageManager: 'yarn'
-	yarn:
-		version: '3.2.0'
+  version: '18.0.0'
+  packageManager: 'yarn'
+  yarn:
+    version: '3.2.0'
 ```
 
 Once again, let's run [`moon setup --log debug`](./commands/setup) to verify the package manager is

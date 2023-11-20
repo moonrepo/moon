@@ -105,10 +105,10 @@ If you'd prefer to use the `next lint` command, add it as a task to the project'
 
 ```yaml title="<project>/moon.yml"
 tasks:
-	lint:
-		command: 'next lint'
-		inputs:
-			- '@group(next)'
+  lint:
+    command: 'next lint'
+    inputs:
+      - '@group(next)'
 ```
 
 Furthermore, if a global `lint` task exists, be sure to exclude it from being inherited.

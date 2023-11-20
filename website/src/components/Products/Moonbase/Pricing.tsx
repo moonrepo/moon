@@ -130,8 +130,8 @@ export default function Pricing() {
 									tooltip: 'Get instant replies to support questions.',
 								},
 								{
-									label: '15 free repositories',
-									tooltip: 'Increased cost for additional repositories.',
+									label: 'Self-hosted / On-prem solution',
+									tooltip: 'Run moonbase on your own servers, and own your artifact data.',
 								},
 								// {
 								// 	label: 'On-premise solution',
@@ -147,9 +147,9 @@ export default function Pricing() {
 									label: 'Unlimited cloud storage',
 									tooltip: 'Across all repositories.',
 								},
-								{
-									label: '+ previous tier',
-								},
+								// {
+								// 	label: '+ previous tier',
+								// },
 							]}
 							cta={{ disabled: true, label: 'Coming soon' }}
 						>

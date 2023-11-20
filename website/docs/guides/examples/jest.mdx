@@ -22,29 +22,29 @@ Since testing is a universal workflow, add a `test` task to
 
 ```yaml title=".moon/tasks/node.yml"
 tasks:
-	test:
-		command:
-			- 'jest'
-			# Always run code coverage
-			- '--coverage'
-			# Dont fail if a project has no tests
-			- '--passWithNoTests'
-		inputs:
-			# Source and test files
-			- 'src/**/*'
-			- 'tests/**/*'
-			# Project configs, any format
-			- 'jest.config.*'
+  test:
+    command:
+      - 'jest'
+      # Always run code coverage
+      - '--coverage'
+      # Dont fail if a project has no tests
+      - '--passWithNoTests'
+    inputs:
+      # Source and test files
+      - 'src/**/*'
+      - 'tests/**/*'
+      # Project configs, any format
+      - 'jest.config.*'
 ```
 
 Projects can extend this task and provide additional parameters if need be, for example.
 
 ```yaml title="<project>/moon.yml"
 tasks:
-	test:
-		args:
-			# Disable caching for this project
-			- '--no-cache'
+  test:
+    args:
+      # Disable caching for this project
+      - '--no-cache'
 ```
 
 ## Configuration

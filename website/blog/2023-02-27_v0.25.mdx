@@ -39,8 +39,8 @@ the [`platform`](/docs/config/project#platform-1) to "deno" when using a deno co
 
 ```yaml title="moon.yml"
 tasks:
-	format:
-		command: 'deno fmt'
+  format:
+    command: 'deno fmt'
 ```
 
 :::info
@@ -124,8 +124,8 @@ Well no more, projects can now override the workspace-level TypeScript settings
 
 ```yaml title="moon.yml"
 toolchain:
-	typescript:
-		routeOutDirToCache: false
+  typescript:
+    routeOutDirToCache: false
 ```
 
 Because this setting was changed from a boolean to an object, the old pattern of disabling
@@ -134,12 +134,12 @@ Typescript must now use the `disabled` setting.
 ```yaml title="moon.yml"
 # Old
 toolchain:
-	typescript: false
+  typescript: false
 
 # new
 toolchain:
-	typescript:
-		disabled: true
+  typescript:
+    disabled: true
 ```
 
 ## New `moonrepo/setup-moon-action` GitHub action

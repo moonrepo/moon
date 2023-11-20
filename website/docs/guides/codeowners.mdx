@@ -43,11 +43,11 @@ source (path from workspace root to project root) when the file is synced.
 
 ```yaml title="packages/components/moon.yml"
 owners:
-	requiredApprovals: 2
-	paths:
-		'src/': ['@frontend', '@design-system']
-		'*.config.js': ['@frontend-infra']
-		'*.json': ['@frontend-infra']
+  requiredApprovals: 2
+  paths:
+    'src/': ['@frontend', '@design-system']
+    '*.config.js': ['@frontend-infra']
+    '*.json': ['@frontend-infra']
 ```
 
 The configuration above would generate the following:
@@ -105,13 +105,13 @@ Paths configured here are used as-is, allowing for full control of what ownershi
 
 ```yaml title=".moon/workspace.yml"
 codeowners:
-	globalPaths:
-		# All files
-		'*': ['@admins']
-		# Config folder at any depth
-		'config/': ['@app-platform']
-		# GitHub folder at the root
-		'/.github/': ['@infra']
+  globalPaths:
+    # All files
+    '*': ['@admins']
+    # Config folder at any depth
+    'config/': ['@app-platform']
+    # GitHub folder at the root
+    '/.github/': ['@infra']
 ```
 
 The configuration above would generate the following at the top of the file (is the same for all
@@ -176,7 +176,7 @@ generate a `CODEOWNERS` file when a [target](../concepts/target) is ran.
 
 ```yaml title=".moon/workspace.yml"
 codeowners:
-	syncOnRun: true
+  syncOnRun: true
 ```
 
 > The format and location of the `CODEOWNERS` file is based on the

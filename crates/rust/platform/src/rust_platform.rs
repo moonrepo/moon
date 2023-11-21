@@ -2,7 +2,7 @@ use crate::{
     find_cargo_lock, get_cargo_home, target_hash::RustTargetHash, toolchain_hash::RustToolchainHash,
 };
 use moon_action_context::ActionContext;
-use moon_common::{is_ci, Id};
+use moon_common::{is_ci, path::exe_name, Id};
 use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
     RustConfig, UnresolvedVersionSpec,
@@ -282,9 +282,7 @@ impl Platform for RustPlatform {
             let globals_dir = self.get_globals_dir(Some(tool));
 
             // Install cargo-binstall if it does not exist
-            if !globals_dir.join("cargo-binstall").exists()
-                && !globals_dir.join("cargo-binstall.exe").exists()
-            {
+            if !globals_dir.join(exe_name("cargo-binstall")).exists() {
                 debug!(
                     target: LOG_TARGET,
                     "{} does not exist, installing",
@@ -525,10 +523,10 @@ impl Platform for RustPlatform {
             // Binary may be installed to ~/.cargo/bin
             _ => {
                 let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
-                let global_bin_path = globals_dir.join(&task.command);
+                let global_bin_path = globals_dir.join(exe_name(&task.command));
 
                 let cargo_bin = task.command.strip_prefix("cargo-").unwrap_or(&task.command);
-                let cargo_bin_path = globals_dir.join(format!("cargo-{}", cargo_bin));
+                let cargo_bin_path = globals_dir.join(exe_name(format!("cargo-{}", cargo_bin)));
 
                 // Must run through cargo
                 if cargo_bin_path.exists() {

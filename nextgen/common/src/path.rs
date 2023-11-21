@@ -74,3 +74,16 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
 pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
     Ok(standardize_separators(to_string(path)?))
 }
+
+#[inline]
+pub fn exe_name<T: AsRef<str>>(name: T) -> String {
+    #[cfg(windows)]
+    {
+        format!("{}.exe", name.as_ref())
+    }
+
+    #[cfg(not(windows))]
+    {
+        name.as_ref().into()
+    }
+}

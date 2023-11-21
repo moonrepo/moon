@@ -10,6 +10,16 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where we would fail to find Cargo binaries on Windows.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.23.3.
+
 ## 1.17.2
 
 #### 🐞 Fixes

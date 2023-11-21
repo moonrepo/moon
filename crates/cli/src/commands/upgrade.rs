@@ -1,10 +1,10 @@
-use crate::app::BIN_NAME;
 use crate::helpers::create_progress_bar;
 use bytes::Buf;
 use itertools::Itertools;
 use miette::{miette, IntoDiagnostic};
 use moon_api::Launchpad;
 use moon_cache::CacheEngine;
+use moon_common::consts::BIN_NAME;
 use moon_utils::{get_workspace_root, semver::Version};
 use starbase::system;
 use starbase_utils::{dirs, fs};

@@ -1,7 +1,7 @@
 use miette::IntoDiagnostic;
 use mimalloc::MiMalloc;
-use moon_cli::{run_cli, BIN_NAME};
-use moon_common::consts::CONFIG_DIRNAME;
+use moon_cli::run_cli;
+use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
 use moon_node_lang::{
     node::{extract_canonical_node_module_bin, BinFile},
     NODE,

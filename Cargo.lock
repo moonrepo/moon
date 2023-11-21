@@ -4655,9 +4655,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.23.2"
+version = "0.23.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44b64578ff10a1a39d3a3d94e0725c0ecdc5858ec6c42844289530dd15981b22"
+checksum = "0f7dbc476e051d23cfac2b1f284ffa8943d45dffe40113dcdf113667b3dd8b79"
 dependencies = [
  "cached",
  "extism",
@@ -4676,6 +4676,7 @@ dependencies = [
  "starbase_events",
  "starbase_styles",
  "starbase_utils",
+ "system_env",
  "thiserror",
  "tinytemplate",
  "tracing",
@@ -5714,12 +5715,13 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb5430c2b1d8315d22edaebbd40617f9110ccfd95e95684802d0d17907f44966"
+checksum = "63476c953552c18056a153eaabc04d2987bc64f07633acc80d6a65a8574f1a3b"
 dependencies = [
  "serde",
  "serde_json",
+ "shell-words",
  "thiserror",
 ]
 

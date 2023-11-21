@@ -33,14 +33,13 @@ use app::App as CLI;
 use clap::Parser;
 use commands::migrate::FromTurborepoArgs;
 use enums::{CacheMode, LogLevel};
+use moon_common::consts::BIN_NAME;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
 use std::ffi::OsString;
 use tracing::debug;
-
-pub use app::BIN_NAME;
 
 fn setup_logging(level: &LogLevel) {
     env::set_var("MOON_APP_LOG", level.to_string());

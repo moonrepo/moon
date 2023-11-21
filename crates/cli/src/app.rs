@@ -23,11 +23,10 @@ use crate::commands::task::TaskArgs;
 use crate::enums::{CacheMode, LogLevel};
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
+use moon_common::consts::BIN_NAME;
 use starbase::State;
 use starbase_styles::color::Color as ColorType;
 use std::path::PathBuf;
-
-pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DockerCommands {

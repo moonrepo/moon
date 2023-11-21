@@ -288,6 +288,7 @@ mod target_command {
     async fn uses_cargo_bin() {
         let sandbox = create_sandbox("rust/project");
         sandbox.create_file("bin/cargo-nextest", "");
+        sandbox.create_file("bin/cargo-nextest.exe", "");
 
         let mut task = create_task();
         task.command = "nextest".into();
@@ -307,6 +308,7 @@ mod target_command {
     async fn uses_cargo_bin_with_prefix() {
         let sandbox = create_sandbox("rust/project");
         sandbox.create_file("bin/cargo-nextest", "");
+        sandbox.create_file("bin/cargo-nextest.exe", "");
 
         let mut task = create_task();
         task.command = "cargo-nextest".into();
@@ -326,6 +328,7 @@ mod target_command {
     async fn uses_global_bin() {
         let sandbox = create_sandbox("rust/project");
         sandbox.create_file("bin/sea-orm", "");
+        sandbox.create_file("bin/sea-orm.exe", "");
 
         let mut task = create_task();
         task.command = "sea-orm".into();

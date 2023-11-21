@@ -282,14 +282,16 @@ impl Platform for RustPlatform {
             let globals_dir = self.get_globals_dir(Some(tool));
 
             // Install cargo-binstall if it does not exist
-            if !globals_dir.join("cargo-binstall").exists() {
+            if !globals_dir.join("cargo-binstall").exists()
+                && !globals_dir.join("cargo-binstall.exe").exists()
+            {
                 debug!(
                     target: LOG_TARGET,
                     "{} does not exist, installing",
                     color::shell("cargo-binstall")
                 );
 
-                tool.exec_cargo(["install", "cargo-binstall"], working_dir)
+                tool.exec_cargo(["install", "cargo-binstall", "--force"], working_dir)
                     .await?;
             }
 

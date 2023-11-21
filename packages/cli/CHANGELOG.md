@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `cargo-binstall` would error when trying to install it and it already exists.
+
 ## 1.17.1
 
 #### 🐞 Fixes

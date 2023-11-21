@@ -309,7 +309,11 @@ pub enum Commands {
     },
 
     // moon upgrade
-    #[command(name = "upgrade", about = "Upgrade to the latest version of moon.")]
+    #[command(
+        alias = "up",
+        name = "upgrade",
+        about = "Upgrade to the latest version of moon."
+    )]
     Upgrade,
 }
 

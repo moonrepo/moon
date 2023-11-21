@@ -342,7 +342,16 @@ mod target_command {
 
         assert_eq!(
             command.bin,
-            sandbox.path().join("bin").join("sea-orm").to_str().unwrap()
+            sandbox
+                .path()
+                .join("bin")
+                .join(if cfg!(windows) {
+                    "sea-orm.exe"
+                } else {
+                    "sea-orm"
+                })
+                .to_str()
+                .unwrap()
         );
         assert_eq!(command.args, &["migrate", "-u"]);
     }

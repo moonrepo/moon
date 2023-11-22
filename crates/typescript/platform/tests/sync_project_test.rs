@@ -603,6 +603,53 @@ mod sync_config {
         }
 
         #[test]
+        fn includes_sources_from_manual_refs() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file("packages/a/tsconfig.json", r#"{ "references": [{ "path": "../b/tsconfig.json" }, { "path": "../../common/c" }] }"#);
+            sandbox.create_file("packages/b/tsconfig.json", "{}");
+            sandbox.create_file("common/c/tsconfig.json", "{}");
+
+            let project = Project {
+                id: Id::raw("project"),
+                root: sandbox.path().join("packages/a"),
+                ..Project::default()
+            };
+
+            let config = TypeScriptConfig {
+                include_project_reference_sources: true,
+                sync_project_references: true,
+                ..TypeScriptConfig::default()
+            };
+
+            TypeScriptSyncer::new(&project, &config, sandbox.path())
+                .sync_project_tsconfig(FxHashSet::default())
+                .unwrap();
+
+            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+                .unwrap()
+                .unwrap();
+
+            assert_eq!(
+                tsconfig.include.unwrap(),
+                vec!["../../common/c/**/*", "../b/**/*"]
+            );
+            assert_eq!(
+                tsconfig.references.unwrap(),
+                vec![
+                    Reference {
+                        path: "../b/tsconfig.json".into(),
+                        prepend: None
+                    },
+                    Reference {
+                        path: "../../common/c".into(),
+                        prepend: None
+                    },
+                ]
+            );
+        }
+
+        #[test]
         fn doesnt_include_sources_when_sync_disabled() {
             let sandbox = create_sandbox("empty");
             sandbox.create_file("tsconfig.json", "{}");
@@ -708,6 +755,34 @@ mod sync_config {
                     ("b/*".into(), vec!["../b/src/*".into()]),
                     ("c".into(), vec!["../../common/c/index.ts".into()]),
                     ("c/*".into(), vec!["../../common/c/*".into()]),
+                ])
+            );
+        }
+
+        #[test]
+        fn adds_from_manual_refs() {
+            let sandbox = create_sandbox("empty");
+            sandbox.create_file("tsconfig.json", "{}");
+            sandbox.create_file(
+                "packages/a/tsconfig.json",
+                r#"{ "references": [{ "path": "../d" }] }"#,
+            );
+            sandbox.create_file("packages/a/package.json", r#"{ "name": "a" }"#);
+            sandbox.create_file("packages/b/package.json", r#"{ "name": "b" }"#);
+            sandbox.create_file("packages/b/src/file.ts", ""); // Not index on purpose
+            sandbox.create_file("common/c/package.json", r#"{ "name": "c" }"#);
+            sandbox.create_file("packages/d/package.json", r#"{ "name": "d" }"#);
+            sandbox.create_file("packages/d/index.ts", "");
+
+            let tsconfig = run_for_a(sandbox.path());
+
+            assert_eq!(
+                tsconfig.compiler_options.unwrap().paths.unwrap(),
+                BTreeMap::from_iter([
+                    ("b/*".into(), vec!["../b/src/*".into()]),
+                    ("c/*".into(), vec!["../../common/c/*".into()]),
+                    ("d".into(), vec!["../d/index.ts".into()]),
+                    ("d/*".into(), vec!["../d/*".into()]),
                 ])
             );
         }

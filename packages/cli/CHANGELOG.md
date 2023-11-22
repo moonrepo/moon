@@ -10,6 +10,19 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where executing moon (and indirectly proto) would run into privilege access issues
+  on Windows.
+- Fixed `typescript.includeProjectReferenceSources` and `typescript.syncProjectReferencesToPaths`
+  settings not including project references that were manually added (not auto-synced).
+
+#### ⚙️ Internal
+
+- Updated proto to v0.23.4.
+
 ## 1.17.3
 
 #### 🐞 Fixes

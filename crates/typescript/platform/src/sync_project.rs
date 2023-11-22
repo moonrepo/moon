@@ -152,8 +152,10 @@ impl<'app> TypeScriptSyncer<'app> {
             &self.typescript_config.project_config_file_name,
             |tsconfig_json| {
                 let mut mutated_tsconfig = false;
+                let should_include_sources = self.should_include_project_reference_sources();
+                let should_sync_paths = self.should_sync_project_references_to_paths();
 
-                // Include
+                // Add shared types to include
                 if self.should_include_shared_types()
                     && self.types_root.join("types").exists()
                     && tsconfig_json.add_include_path(self.types_root.join("types/**/*"))?
@@ -161,74 +163,90 @@ impl<'app> TypeScriptSyncer<'app> {
                     mutated_tsconfig = true;
                 }
 
-                // Project references
+                // Sync dependencies as project references
                 if self.should_sync_project_references() && !tsconfig_project_refs.is_empty() {
-                    let mut tsconfig_compiler_paths = BTreeMap::default();
-                    let should_include_sources = self.should_include_project_reference_sources();
-                    let should_sync_paths = self.should_sync_project_references_to_paths();
-
                     for ref_path in tsconfig_project_refs {
                         if tsconfig_json.add_project_ref(
-                            &ref_path,
+                            ref_path,
                             &self.typescript_config.project_config_file_name,
                         )? {
                             mutated_tsconfig = true;
                         }
-
-                        // Include
-                        if should_include_sources
-                            && tsconfig_json.add_include_path(ref_path.join("**/*"))?
-                        {
-                            mutated_tsconfig = true;
-                        }
-
-                        // Paths
-                        if should_sync_paths {
-                            if let Some(dep_package_json) = PackageJson::read(&ref_path)? {
-                                if let Some(dep_package_name) = &dep_package_json.name {
-                                    for index in
-                                        ["src/index.ts", "src/index.tsx", "index.ts", "index.tsx"]
-                                    {
-                                        if ref_path.join(index).exists() {
-                                            tsconfig_compiler_paths.insert(
-                                                dep_package_name.clone(),
-                                                vec![to_relative_virtual_string(
-                                                    ref_path.join(index),
-                                                    &self.project.root,
-                                                )?],
-                                            );
-
-                                            break;
-                                        }
-                                    }
-
-                                    tsconfig_compiler_paths.insert(
-                                        format!("{dep_package_name}/*"),
-                                        vec![to_relative_virtual_string(
-                                            ref_path.join(if ref_path.join("src").exists() {
-                                                "src/*"
-                                            } else {
-                                                "*"
-                                            }),
-                                            &self.project.root,
-                                        )?],
-                                    );
-                                }
-                            }
-                        }
-                    }
-
-                    // Paths
-                    if should_sync_paths
-                        && tsconfig_json.update_compiler_options(|options| {
-                            options.update_paths(tsconfig_compiler_paths)
-                        })
-                    {
-                        mutated_tsconfig = true;
                     }
                 }
 
-                // Out dir
+                // Map all project references (not just synced) to other fields
+                if should_include_sources || should_sync_paths {
+                    if let Some(local_project_refs) = tsconfig_json.references.clone() {
+                        let mut tsconfig_compiler_paths = BTreeMap::default();
+
+                        for project_ref in local_project_refs {
+                            let mut abs_ref =
+                                path::normalize(self.project.root.join(&project_ref.path));
+
+                            // Remove the tsconfig.json file name if it exists
+                            if project_ref.path.ends_with(".json") {
+                                abs_ref = abs_ref.parent().unwrap().to_path_buf();
+                            }
+
+                            // include
+                            if should_include_sources
+                                && tsconfig_json.add_include_path(abs_ref.join("**/*"))?
+                            {
+                                mutated_tsconfig = true;
+                            }
+
+                            // paths
+                            if should_sync_paths {
+                                if let Some(dep_package_json) = PackageJson::read(&abs_ref)? {
+                                    if let Some(dep_package_name) = &dep_package_json.name {
+                                        for index in [
+                                            "src/index.ts",
+                                            "src/index.tsx",
+                                            "index.ts",
+                                            "index.tsx",
+                                        ] {
+                                            if abs_ref.join(index).exists() {
+                                                tsconfig_compiler_paths.insert(
+                                                    dep_package_name.clone(),
+                                                    vec![to_relative_virtual_string(
+                                                        abs_ref.join(index),
+                                                        &self.project.root,
+                                                    )?],
+                                                );
+
+                                                break;
+                                            }
+                                        }
+
+                                        tsconfig_compiler_paths.insert(
+                                            format!("{dep_package_name}/*"),
+                                            vec![to_relative_virtual_string(
+                                                abs_ref.join(if abs_ref.join("src").exists() {
+                                                    "src/*"
+                                                } else {
+                                                    "*"
+                                                }),
+                                                &self.project.root,
+                                            )?],
+                                        );
+                                    }
+                                }
+                            }
+                        }
+
+                        // paths
+                        if should_sync_paths
+                            && tsconfig_json.update_compiler_options(|options| {
+                                options.update_paths(tsconfig_compiler_paths)
+                            })
+                        {
+                            mutated_tsconfig = true;
+                        }
+                    }
+                }
+
+                // Route outDir to moon's cache
                 if self.should_route_out_dir_to_cache() {
                     let cache_route = get_cache_dir()
                         .join("types")

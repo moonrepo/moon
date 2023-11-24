@@ -1,7 +1,9 @@
+mod bun;
 mod node;
 mod rust;
 mod typescript;
 
+use bun::init_bun;
 use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
@@ -27,7 +29,7 @@ use typescript::init_typescript;
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
 pub enum InitTool {
-    // Bun,
+    Bun,
     Node,
     Rust,
     TypeScript,
@@ -144,6 +146,7 @@ pub async fn init_tool(
     }
 
     let tool_config = match tool {
+        InitTool::Bun => init_bun(dest_dir, options, theme).await?,
         InitTool::Node => init_node(dest_dir, options, theme).await?,
         InitTool::Rust => init_rust(dest_dir, options, theme).await?,
         InitTool::TypeScript => init_typescript(dest_dir, options, theme).await?,

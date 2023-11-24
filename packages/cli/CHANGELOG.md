@@ -10,6 +10,17 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## NEXT
+
+#### 🚀 Updates
+
+- Reworked the `moon init` command.
+  - Will no longer scaffold the toolchain configuration by default.
+  - The tool to scaffold into a toolchain can be passed as an argument.
+  - The path to initialize in is now behined the `--to` option.
+  - Added support for the `bun` tool.
+  - Simplified the workflow overall.
+
 ## Unreleased
 
 #### 🐞 Fixes

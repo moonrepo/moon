@@ -24,14 +24,13 @@ fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
         }
     }
 
-    Ok("1.70.0".into())
+    Ok("1.74.0".into())
 }
 
 pub async fn init_rust(
     dest_dir: &Path,
     options: &InitOptions,
     _theme: &ColorfulTheme,
-    _parent_context: Option<&mut Context>,
 ) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("Rust"));

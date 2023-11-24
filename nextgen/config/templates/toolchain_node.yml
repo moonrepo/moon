@@ -43,7 +43,7 @@ node:
   # BEWARE: Tasks and scripts are not 1:1 in functionality, so please refer to the documentation.
   inferTasksFromScripts: {{ infer_tasks }}
 
-  # Enable the "one version policy" by only declaring dependencies in the root `package.json`.
+  # Support the "one version policy" by only declaring dependencies in the root `package.json`.
   # rootPackageOnly: true
 
   # Sync a project's dependencies as `dependencies` within the project's `package.json`.

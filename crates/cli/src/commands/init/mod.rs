@@ -7,6 +7,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
@@ -127,22 +128,24 @@ pub async fn init_tool(
     options: &InitOptions,
     theme: &ColorfulTheme,
 ) -> AppResult {
-    let workspace_config_path = dest_dir
-        .join(CONFIG_DIRNAME)
-        .join(CONFIG_WORKSPACE_FILENAME);
+    if !is_test_env() {
+        let workspace_config_path = dest_dir
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_WORKSPACE_FILENAME);
 
-    if !workspace_config_path.exists() {
-        eprintln!(
-            "moon has not been initialized! Try running {} first?",
-            color::shell("moon init")
-        );
+        if !workspace_config_path.exists() {
+            eprintln!(
+                "moon has not been initialized! Try running {} first?",
+                color::shell("moon init")
+            );
 
-        safe_exit(1);
+            safe_exit(1);
+        }
     }
 
     let tool_config = match tool {
-        InitTool::Node => init_node(dest_dir, options, theme, None).await?,
-        InitTool::Rust => init_rust(dest_dir, options, theme, None).await?,
+        InitTool::Node => init_node(dest_dir, options, theme).await?,
+        InitTool::Rust => init_rust(dest_dir, options, theme).await?,
         InitTool::TypeScript => init_typescript(dest_dir, options, theme).await?,
     };
 
@@ -157,7 +160,7 @@ pub async fn init_tool(
         )?;
     }
 
-    fs::append_file(toolchain_config_path, format!("\n{}\n", tool_config.trim()))?;
+    fs::append_file(toolchain_config_path, format!("\n\n{}", tool_config.trim()))?;
 
     println!("\nToolchain config has successfully been updated");
 

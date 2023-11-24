@@ -59,6 +59,11 @@ fn detect_package_manager(
 
                 pm_type = parts.next().unwrap_or_default().to_owned();
                 pm_version = parts.next().unwrap_or_default().to_owned();
+
+                // Remove corepack hash
+                if let Some(index) = pm_version.find('+') {
+                    pm_version = pm_version[0..index].to_owned();
+                }
             } else {
                 pm_type = pm;
             }

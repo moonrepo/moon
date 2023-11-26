@@ -12,11 +12,11 @@ if [ -d ".yarn/versions" ]; then
 	yarn version apply --all
 fi
 
-if [[ "$NIGHTLY" == "true" ]]; then
+if [[ "$NPM_CHANNEL" == "canary" || "$NPM_CHANNEL" == "nightly" ]]; then
 	timestamp=$(date +%Y%m%d%H%M)
-	preid="-nightly.$timestamp"
+	preid="-$NPM_CHANNEL.$timestamp"
 
-	echo "Nightly build detected, appending timestamp to versions"
+	echo "Detected \"$NPM_CHANNEL\" build, appending timestamp to versions"
 	echo "Prerelease: $preid"
 
 	for package in packages/*; do

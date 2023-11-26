@@ -327,7 +327,7 @@ node:
             assert_eq!(
                 config.node.unwrap().plugin.unwrap(),
                 PluginLocator::SourceUrl {
-                    url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_plugin.wasm".into()
+                    url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_plugin.wasm".into()
                 }
             );
         }
@@ -428,7 +428,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().npm.plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -519,7 +519,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -543,7 +543,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -643,7 +643,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -667,7 +667,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
                     }
                 );
             }

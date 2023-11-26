@@ -16,9 +16,10 @@ fn creates_files_in_dest() {
         cmd.arg("init").arg("--yes").arg("--to").arg(root);
     });
 
-    assert.success().code(0).stdout(predicate::str::contains(
-        "moon has successfully been initialized in",
-    ));
+    assert
+        .success()
+        .code(0)
+        .stdout(predicate::str::contains("Successfully initialized moon in"));
 
     assert!(workspace_config.exists());
     assert!(gitignore.exists());
@@ -128,9 +129,10 @@ fn does_overwrite_existing_config_if_force_passed() {
             .arg("--force");
     });
 
-    assert.success().code(0).stdout(predicate::str::contains(
-        "moon has successfully been initialized in",
-    ));
+    assert
+        .success()
+        .code(0)
+        .stdout(predicate::str::contains("Successfully initialized moon in"));
 }
 
 mod vcs {

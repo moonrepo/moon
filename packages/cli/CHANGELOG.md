@@ -21,7 +21,8 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.23.4.
+- Added canary release support.
+- Updated proto to v0.23.5.
 
 ## 1.17.3
 

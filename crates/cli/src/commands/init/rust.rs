@@ -15,7 +15,7 @@ fn render_template(context: Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_rust_config_template(), &context, false).into_diagnostic()
 }
 
-fn detect_rust_version(dest_dir: &Path, options: &InitOptions) -> AppResult<String> {
+fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
     if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
         if let Some(version) = toolchain_toml.toolchain.channel {
             let rust_version = if version == "stable"
@@ -28,9 +28,7 @@ fn detect_rust_version(dest_dir: &Path, options: &InitOptions) -> AppResult<Stri
                 fully_qualify_version(&version)
             };
 
-            if options.yes || options.minimal {
-                return Ok(rust_version);
-            }
+            return Ok(rust_version);
         }
     }
 
@@ -59,9 +57,7 @@ pub async fn init_rust(
         );
     }
 
-    let rust_version = prompt_version("Rust", options, theme, || {
-        detect_rust_version(dest_dir, options)
-    })?;
+    let rust_version = prompt_version("Rust", options, theme, || detect_rust_version(dest_dir))?;
 
     let mut context = Context::new();
     context.insert("rust_version", &rust_version);

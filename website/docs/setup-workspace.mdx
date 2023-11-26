@@ -2,15 +2,14 @@
 title: Setup workspace
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="2 min" />
 
-Once moon has been installed, we must setup the [workspace](./concepts/workspace), which is denoted
-by the `.moon` folder — this is known as the workspace root. The workspace is in charge of:
+Once moon has been [installed](./install), we must setup the [workspace](./concepts/workspace),
+which is denoted by the `.moon` folder — this is known as the workspace root. The workspace is in
+charge of:
 
 - Integrating with a version control system.
 - Defining configuration that applies to its entire tree.
@@ -28,11 +27,8 @@ $ moon init
 
 When executed, the following operations will be applied.
 
-- Creates a `.moon` folder with associated [`.moon/workspace.yml`](./config/workspace),
-  [`.moon/toolchain.yml`](./config/toolchain), and [`.moon/tasks.yml`](./config/tasks) configuration
-  files.
+- Creates a `.moon` folder with a [`.moon/workspace.yml`](./config/workspace) configuration file.
 - Appends necessary ignore patterns to the relative `.gitignore`.
-- Infers languages and dependency managers to register in the toolchain.
 - Infers the version control system from the environment.
 
 :::info
@@ -60,7 +56,7 @@ vcs:
 
 <NextSteps
   links={[
-    { icon: 'toolchain-config', label: 'Setup toolchain', url: './setup-toolchain' },
+    { icon: 'new-project', label: 'Create a project', url: './create-project' },
     {
       icon: 'workspace-config',
       label: (

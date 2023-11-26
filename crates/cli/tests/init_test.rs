@@ -13,12 +13,13 @@ fn creates_files_in_dest() {
     assert!(!gitignore.exists());
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(root);
+        cmd.arg("init").arg("--yes").arg("--to").arg(root);
     });
 
-    assert.success().code(0).stdout(predicate::str::contains(
-        "moon has successfully been initialized in",
-    ));
+    assert
+        .success()
+        .code(0)
+        .stdout(predicate::str::contains("Successfully initialized moon in"));
 
     assert!(workspace_config.exists());
     assert!(gitignore.exists());
@@ -33,7 +34,11 @@ fn doesnt_create_project_config_when_minimal() {
     assert!(!project_config.exists());
 
     sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg("--minimal").arg(root);
+        cmd.arg("init")
+            .arg("--yes")
+            .arg("--minimal")
+            .arg("--to")
+            .arg(root);
     });
 
     assert!(!project_config.exists());
@@ -46,7 +51,7 @@ fn creates_workspace_config_from_template() {
     let workspace_config = root.join(".moon").join("workspace.yml");
 
     sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(root);
+        cmd.arg("init").arg("--yes").arg("--to").arg(root);
     });
 
     assert!(
@@ -64,7 +69,7 @@ fn creates_workspace_config_from_template() {
 //         .join(moon_constants::CONFIG_TASKS_FILENAME);
 
 //     sandbox.run_moon(|cmd| {
-//         cmd.arg("init").arg("--yes").arg(root);
+//         cmd.arg("init").arg("--yes").arg("--to").arg(root);
 //     });
 
 //     assert!(
@@ -80,7 +85,7 @@ fn creates_gitignore_file() {
     let gitignore = root.join(".gitignore");
 
     sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(root);
+        cmd.arg("init").arg("--yes").arg("--to").arg(root);
     });
 
     assert_eq!(
@@ -97,7 +102,7 @@ fn appends_existing_gitignore_file() {
     sandbox.create_file(".gitignore", "*.js\n*.log");
 
     sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(&root);
+        cmd.arg("init").arg("--yes").arg("--to").arg(&root);
     });
 
     assert_eq!(
@@ -112,17 +117,22 @@ fn does_overwrite_existing_config_if_force_passed() {
     let root = sandbox.path().to_path_buf();
 
     sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(&root);
+        cmd.arg("init").arg("--yes").arg("--to").arg(&root);
     });
 
     // Run again
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(root).arg("--force");
+        cmd.arg("init")
+            .arg("--yes")
+            .arg("--to")
+            .arg(root)
+            .arg("--force");
     });
 
-    assert.success().code(0).stdout(predicate::str::contains(
-        "moon has successfully been initialized in",
-    ));
+    assert
+        .success()
+        .code(0)
+        .stdout(predicate::str::contains("Successfully initialized moon in"));
 }
 
 mod vcs {
@@ -142,7 +152,7 @@ mod vcs {
         });
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("init").arg("--yes").arg(root);
+            cmd.arg("init").arg("--yes").arg("--to").arg(root);
         });
 
         let content = fs::read_to_string(workspace_config).unwrap();

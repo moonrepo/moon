@@ -11,10 +11,21 @@ typescript:
   # *does not* have a `tsconfig.json`, automatically create one.
   createMissingConfig: {{ project_refs }}
 
+  # Append the sources of each project reference to the `include` field
+  # of each applicable project's `tsconfig.json`.
+  includeProjectReferenceSources: {{ include_project_refs }}
+
+  # Append shared types (from the TypeScript root) to the `include` field
+  # of every project's `tsconfig.json`.
+  includeSharedTypes: {{ include_shared_types }}
+
   # Name of `tsconfig.json` file in each project root.
   # projectConfigFileName: 'tsconfig.json'
 
-  # Name of `tsconfig.json` file in the workspace root.
+  # Path to the TypeScript root, relative from the workspace root.
+  # root: '.'
+
+  # Name of `tsconfig.json` file in the TypeScript root.
   # rootConfigFileName: 'tsconfig.json'
 
   # Name of the config file in the workspace root that defines shared compiler
@@ -25,7 +36,7 @@ typescript:
   # to moon's `.moon/cache` directory.
   routeOutDirToCache: {{ route_cache }}
 
-  # Sync a project's `dependsOn` as project references within the
+  # Sync a project's dependencies as project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
   syncProjectReferences: {{ project_refs }}
 

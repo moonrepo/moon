@@ -1,3 +1,4 @@
+use super::prompts::prompt_version;
 use super::InitOptions;
 use crate::helpers::fully_qualify_version;
 use dialoguer::theme::ColorfulTheme;
@@ -5,15 +6,12 @@ use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
-use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
+use moon_node_lang::package_json::PackageJson;
 use moon_node_lang::{BUN, NODENV, NPM, NVM, PNPM, YARN};
-use moon_project_graph::locate_projects_with_globs;
 use moon_terminal::label_header;
-use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
-use std::collections::BTreeMap;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -23,22 +21,24 @@ pub fn render_template(context: Context) -> AppResult<String> {
 
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> AppResult<(String, String)> {
-    if is_using_version_manager(dest_dir, &NVM) {
-        return Ok((
-            fully_qualify_version(fs::read_file(dest_dir.join(NVM.version_file))?.trim()),
-            NVM.binary.to_owned(),
-        ));
-    }
+fn detect_node_version(dest_dir: &Path) -> AppResult<String> {
+    Ok(if is_using_version_manager(dest_dir, &NVM) {
+        fully_qualify_version(fs::read_file(dest_dir.join(NVM.version_file))?.trim())
+    } else if is_using_version_manager(dest_dir, &NODENV) {
+        fully_qualify_version(fs::read_file(dest_dir.join(NODENV.version_file))?.trim())
+    } else {
+        String::new()
+    })
+}
 
-    if is_using_version_manager(dest_dir, &NODENV) {
-        return Ok((
-            fully_qualify_version(fs::read_file(dest_dir.join(NODENV.version_file))?.trim()),
-            NODENV.binary.to_owned(),
-        ));
-    }
-
-    Ok(("20.0.0".into(), String::new()))
+fn detect_node_version_manager(dest_dir: &Path) -> AppResult<String> {
+    Ok(if is_using_version_manager(dest_dir, &NVM) {
+        NVM.binary.to_owned()
+    } else if is_using_version_manager(dest_dir, &NODENV) {
+        NODENV.binary.to_owned()
+    } else {
+        String::new()
+    })
 }
 
 /// Verify the package manager to use. If a `package.json` exists,
@@ -59,6 +59,11 @@ fn detect_package_manager(
 
                 pm_type = parts.next().unwrap_or_default().to_owned();
                 pm_version = parts.next().unwrap_or_default().to_owned();
+
+                // Remove corepack hash
+                if let Some(index) = pm_version.find('+') {
+                    pm_version = pm_version[0..index].to_owned();
+                }
             } else {
                 pm_type = pm;
             }
@@ -83,7 +88,7 @@ fn detect_package_manager(
         let items = vec![NPM.binary, PNPM.binary, YARN.binary, BUN.binary];
         let default_index = 0;
 
-        let index = if options.yes {
+        let index = if options.yes || options.minimal {
             default_index
         } else {
             Select::with_theme(theme)
@@ -98,91 +103,36 @@ fn detect_package_manager(
         pm_type = items[index].to_owned();
     }
 
+    pm_version = prompt_version(&pm_type, options, theme, || Ok(pm_version))?;
+
     Ok((pm_type, fully_qualify_version(&pm_version)))
-}
-
-// Detect potential projects (for existing repos only) by
-// inspecting the `workspaces` field in a root `package.json`.
-fn detect_projects(
-    dest_dir: &Path,
-    options: &InitOptions,
-    parent_context: &mut Context,
-    theme: &ColorfulTheme,
-) -> AppResult {
-    let mut projects = FxHashMap::default();
-    let mut project_globs = vec![];
-
-    if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
-        if let Some(workspaces) = pkg.workspaces {
-            let items = vec![
-                "Don't inherit",
-                "As a list of globs",
-                "As a map of project sources",
-            ];
-            let default_index = 1;
-
-            let index = if options.yes {
-                default_index
-            } else {
-                Select::with_theme(theme)
-                    .with_prompt(format!(
-                        "Inherit projects from {} workspaces?",
-                        color::file(NPM.manifest)
-                    ))
-                    .items(&items)
-                    .default(default_index)
-                    .interact_opt()
-                    .into_diagnostic()?
-                    .unwrap_or(default_index)
-            };
-
-            let globs = match workspaces {
-                PackageWorkspaces::Array(list) => list,
-                PackageWorkspaces::Object(object) => object.packages.unwrap_or_default(),
-            };
-
-            if index == 1 {
-                project_globs.extend(globs);
-            } else if index == 2 {
-                locate_projects_with_globs(dest_dir, &globs, &mut projects, None)?;
-            }
-        }
-    }
-
-    if projects.is_empty() && project_globs.is_empty() {
-        project_globs.push("apps/*".to_owned());
-        project_globs.push("packages/*".to_owned());
-    }
-
-    // Sort the projects for template rendering
-    let mut sorted_projects = BTreeMap::new();
-
-    for (key, value) in projects {
-        sorted_projects.insert(key, value);
-    }
-
-    parent_context.insert("projects", &sorted_projects);
-    parent_context.insert("project_globs", &project_globs);
-
-    Ok(())
 }
 
 pub async fn init_node(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-    parent_context: Option<&mut Context>,
 ) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("Node"));
+
+        println!(
+            "Toolchain: {}",
+            color::url("https://moonrepo.dev/docs/concepts/toolchain")
+        );
+        println!(
+            "Handbook: {}",
+            color::url("https://moonrepo.dev/docs/guides/javascript/node-handbook")
+        );
+        println!(
+            "Config: {}\n",
+            color::url("https://moonrepo.dev/docs/config/toolchain#node")
+        );
     }
 
-    let node_version = detect_node_version(dest_dir)?;
+    let node_version = prompt_version("Node", options, theme, || detect_node_version(dest_dir))?;
+    let node_version_manager = detect_node_version_manager(dest_dir)?;
     let package_manager = detect_package_manager(dest_dir, options, theme)?;
-
-    if let Some(parent_context) = parent_context {
-        detect_projects(dest_dir, options, parent_context, theme)?;
-    }
 
     let infer_tasks = if options.yes || options.minimal {
         false
@@ -197,12 +147,32 @@ pub async fn init_node(
             .into_diagnostic()?
     };
 
+    let sync_dependencies = options.yes
+        || options.minimal
+        || Confirm::with_theme(theme)
+            .with_prompt(format!(
+                "Sync project relationships as {} {}?",
+                color::file(NPM.manifest),
+                color::property("dependencies")
+            ))
+            .interact()
+            .into_diagnostic()?;
+
+    let dedupe_lockfile = options.yes
+        || options.minimal
+        || Confirm::with_theme(theme)
+            .with_prompt("Automatically dedupe lockfile when changed?")
+            .interact()
+            .into_diagnostic()?;
+
     let mut context = Context::new();
-    context.insert("node_version", &node_version.0);
-    context.insert("node_version_manager", &node_version.1);
+    context.insert("node_version", &node_version);
+    context.insert("node_version_manager", &node_version_manager);
     context.insert("package_manager", &package_manager.0);
     context.insert("package_manager_version", &package_manager.1);
     context.insert("infer_tasks", &infer_tasks);
+    context.insert("sync_dependencies", &sync_dependencies);
+    context.insert("dedupe_lockfile", &dedupe_lockfile);
     context.insert("minimal", &options.minimal);
 
     render_template(context)
@@ -213,26 +183,27 @@ mod tests {
     use super::*;
     use moon_test_utils::assert_snapshot;
 
-    #[test]
-    fn renders_default() {
+    fn create_context() -> Context {
         let mut context = Context::new();
         context.insert("node_version", &"16.0.0");
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"8.0.0");
         context.insert("infer_tasks", &false);
+        context.insert("dedupe_lockfile", &false);
+        context.insert("sync_dependencies", &true);
+        context.insert("minimal", &false);
+        context
+    }
 
-        assert_snapshot!(render_template(context).unwrap());
+    #[test]
+    fn renders_default() {
+        assert_snapshot!(render_template(create_context()).unwrap());
     }
 
     #[test]
     fn renders_minimal() {
-        let mut context = Context::new();
-        context.insert("node_version", &"16.0.0");
-        context.insert("node_version_manager", &"");
-        context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"8.0.0");
-        context.insert("infer_tasks", &false);
+        let mut context = create_context();
         context.insert("minimal", &true);
 
         assert_snapshot!(render_template(context).unwrap());
@@ -240,83 +211,59 @@ mod tests {
 
     #[test]
     fn renders_nvm() {
-        let mut context = Context::new();
-        context.insert("node_version", &"18.1.0");
+        let mut context = create_context();
         context.insert("node_version_manager", &"nvm");
-        context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"8.0.0");
-        context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
     fn renders_nodenv() {
-        let mut context = Context::new();
-        context.insert("node_version", &"18.1.0");
+        let mut context = create_context();
         context.insert("node_version_manager", &"nodenv");
-        context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"8.0.0");
-        context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
     fn renders_npm() {
-        let mut context = Context::new();
-        context.insert("node_version", &"16.0.0");
-        context.insert("node_version_manager", &"");
+        let mut context = create_context();
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"9.0.0");
-        context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
     fn renders_pnpm() {
-        let mut context = Context::new();
-        context.insert("node_version", &"16.0.0");
-        context.insert("node_version_manager", &"");
+        let mut context = create_context();
         context.insert("package_manager", &"pnpm");
         context.insert("package_manager_version", &"7.14.0");
-        context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
     fn renders_yarn() {
-        let mut context = Context::new();
-        context.insert("node_version", &"16.0.0");
-        context.insert("node_version_manager", &"");
+        let mut context = create_context();
         context.insert("package_manager", &"yarn");
         context.insert("package_manager_version", &"3.2.0");
-        context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
     fn renders_bun() {
-        let mut context = Context::new();
-        context.insert("node_version", &"16.0.0");
-        context.insert("node_version_manager", &"");
+        let mut context = create_context();
         context.insert("package_manager", &"bun");
         context.insert("package_manager_version", &"1.0.0");
-        context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
     fn renders_tasks() {
-        let mut context = Context::new();
-        context.insert("node_version", &"16.0.0");
-        context.insert("node_version_manager", &"");
-        context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"8.0.0");
+        let mut context = create_context();
         context.insert("infer_tasks", &true);
 
         assert_snapshot!(render_template(context).unwrap());

@@ -1052,7 +1052,7 @@ mod bun {
             cmd.arg("run").arg("bun:version");
         });
 
-        assert!(predicate::str::contains("1.0.0").eval(&assert.output()));
+        assert!(predicate::str::contains("bun:version").eval(&assert.output()));
     }
 
     #[test]

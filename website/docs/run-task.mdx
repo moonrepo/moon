@@ -38,8 +38,8 @@ primary target, as their outputs may be required for the primary target to funct
 
 However, if you're working on a project that is shared and consumed by other projects, you may want
 to verify that downstream dependents have not been indirectly broken by any changes. This can be
-achieved by passing the `--dependents` option, which will run dependent targets (of the same task
-name) _after_ the primary target.
+achieved by passing the `--dependents` option, which will run dependent targets _after_ the primary
+target.
 
 ```shell
 $ moon run app:build --dependents

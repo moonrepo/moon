@@ -4,7 +4,7 @@ use std::{env, ffi::OsStr};
 #[cached]
 #[inline]
 fn is_command_on_path(name: String) -> bool {
-    system_env::is_command_on_path(&name)
+    system_env::is_command_on_path(name)
 }
 
 #[inline]

@@ -1,19 +1,33 @@
 {%- if minimal -%}
 
 rust:
+{%- if rust_version != "" %}
   version: '{{ rust_version }}'
+{%- else %}
+  version: 'stable'
+{%- endif %}
 
 {%- else -%}
 
 # Configures Rust within the toolchain.
 rust:
-  # The Rust toolchain to use. Must be a semantic version that includes major, minor, and patch.
+  # The Rust toolchain to use. Must be a semantic version or release channel.
+{%- if rust_version != "" %}
   version: '{{ rust_version }}'
+{%- else %}
+  # version: 'stable'
+{%- endif %}
 
-  # List of Cargo binaries to install globally and make available to tasks.
+  # List of Cargo binaries to install globally and make available.
   bins: []
+
+  # List of rustup toolchain components to install and make available.
+  components: []
 
   # Sync the configured version above as a channel to the root `rust-toolchain.toml` config.
   syncToolchainConfig: false
+
+  # List of rustup toolchain targets to install and make available.
+  targets: []
 
 {%- endif %}

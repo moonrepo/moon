@@ -14,7 +14,11 @@ mod init_rust {
         sandbox.create_file("rust-toolchain.toml", "[toolchain]\nchannel = \"1.2.3\"");
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("init").arg("--yes").arg(root);
+            cmd.arg("init")
+                .arg("rust")
+                .arg("--yes")
+                .arg("--to")
+                .arg(root);
         });
 
         let content = fs::read_to_string(config).unwrap();

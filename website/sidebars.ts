@@ -4,6 +4,7 @@ import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
 	docs: [
 		'intro',
+		'install',
 		{
 			type: 'category',
 			label: 'How it works',
@@ -32,15 +33,14 @@ const sidebars: SidebarsConfig = {
 			label: 'Getting started',
 			collapsed: false,
 			collapsible: true,
-			items: [
-				'install',
-				'setup-workspace',
-				'setup-toolchain',
-				'create-project',
-				'create-task',
-				'run-task',
-				'migrate-to-moon',
-			],
+			items: ['setup-workspace', 'create-project', 'create-task', 'run-task', 'migrate-to-moon'],
+		},
+		{
+			type: 'category',
+			label: 'Advanced usage',
+			collapsed: false,
+			collapsible: true,
+			items: ['setup-toolchain'],
 		},
 		{
 			type: 'category',

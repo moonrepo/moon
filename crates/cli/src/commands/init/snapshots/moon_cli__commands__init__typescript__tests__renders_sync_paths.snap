@@ -1,6 +1,5 @@
 ---
 source: crates/cli/src/commands/init/typescript.rs
-assertion_line: 99
 expression: render_template(context).unwrap()
 ---
 # Configures how moon integrates with TypeScript.
@@ -9,10 +8,21 @@ typescript:
   # *does not* have a `tsconfig.json`, automatically create one.
   createMissingConfig: true
 
+  # Append the sources of each project reference to the `include` field
+  # of each applicable project's `tsconfig.json`.
+  includeProjectReferenceSources: false
+
+  # Append shared types (from the TypeScript root) to the `include` field
+  # of every project's `tsconfig.json`.
+  includeSharedTypes: false
+
   # Name of `tsconfig.json` file in each project root.
   # projectConfigFileName: 'tsconfig.json'
 
-  # Name of `tsconfig.json` file in the workspace root.
+  # Path to the TypeScript root, relative from the workspace root.
+  # root: '.'
+
+  # Name of `tsconfig.json` file in the TypeScript root.
   # rootConfigFileName: 'tsconfig.json'
 
   # Name of the config file in the workspace root that defines shared compiler
@@ -23,7 +33,7 @@ typescript:
   # to moon's `.moon/cache` directory.
   routeOutDirToCache: true
 
-  # Sync a project's `dependsOn` as project references within the
+  # Sync a project's dependencies as project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
   syncProjectReferences: true
 

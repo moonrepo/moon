@@ -350,10 +350,10 @@ not have dependencies.
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#syncProjectWorkspaceDependencies" />
 
-Will sync a project's [`dependsOn`](./project#dependson) setting as normal dependencies within the
-project's `package.json`. If a dependent project does not have a `package.json`, or if a dependency
-of the same name has an explicit version already defined, the sync will be skipped. Defaults to
-`true`.
+Will sync a project's [dependencies](../concepts/project#dependencies) as normal dependencies within
+the project's `package.json`. If a dependent project does not have a `package.json`, or if a
+dependency of the same name has an explicit version already defined, the sync will be skipped.
+Defaults to `true`.
 
 ```yaml title=".moon/toolchain.yml" {2}
 node:

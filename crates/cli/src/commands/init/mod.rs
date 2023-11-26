@@ -1,15 +1,17 @@
+mod bun;
 mod node;
+mod prompts;
 mod rust;
 mod typescript;
 
+use bun::init_bun;
 use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
-use moon_node_lang::NPM;
-use moon_rust_lang::CARGO;
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
 use moon_vcs::{Git, Vcs};
@@ -19,10 +21,8 @@ use rust::init_rust;
 use starbase::{system, AppResult};
 use starbase_styles::color;
 use starbase_utils::fs;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::BTreeMap;
 use std::env;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use typescript::init_typescript;
@@ -30,6 +30,7 @@ use typescript::init_typescript;
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
 pub enum InitTool {
+    Bun,
     Node,
     Rust,
     TypeScript,
@@ -37,7 +38,14 @@ pub enum InitTool {
 
 #[derive(Args, Clone, Debug)]
 pub struct InitArgs {
-    #[arg(help = "Destination to initialize in", default_value = ".")]
+    #[arg(value_enum, help = "Specific tool to initialize")]
+    tool: Option<InitTool>,
+
+    #[arg(
+        long = "to",
+        help = "Destination to initialize into",
+        default_value = "."
+    )]
     dest: String,
 
     #[arg(long, help = "Overwrite existing configurations")]
@@ -48,9 +56,6 @@ pub struct InitArgs {
 
     #[arg(long, help = "Skip prompts and use default values")]
     yes: bool,
-
-    #[arg(long, value_enum, help = "Specific tool to initialize")]
-    tool: Option<InitTool>,
 }
 
 fn render_toolchain_template(context: &Context) -> AppResult<String> {
@@ -126,34 +131,42 @@ pub async fn init_tool(
     options: &InitOptions,
     theme: &ColorfulTheme,
 ) -> AppResult {
-    let workspace_config_path = dest_dir
-        .join(CONFIG_DIRNAME)
-        .join(CONFIG_WORKSPACE_FILENAME);
+    if !is_test_env() {
+        let workspace_config_path = dest_dir
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_WORKSPACE_FILENAME);
 
-    if !workspace_config_path.exists() {
-        eprintln!(
-            "moon has not been initialized! Try running {} first?",
-            color::shell("moon init")
-        );
+        if !workspace_config_path.exists() {
+            eprintln!(
+                "moon has not been initialized! Try running {} first?",
+                color::shell("moon init")
+            );
 
-        safe_exit(1);
+            safe_exit(1);
+        }
     }
 
     let tool_config = match tool {
-        InitTool::Node => init_node(dest_dir, options, theme, None).await?,
-        InitTool::Rust => init_rust(dest_dir, options, theme, None).await?,
+        InitTool::Bun => init_bun(dest_dir, options, theme).await?,
+        InitTool::Node => init_node(dest_dir, options, theme).await?,
+        InitTool::Rust => init_rust(dest_dir, options, theme).await?,
         InitTool::TypeScript => init_typescript(dest_dir, options, theme).await?,
     };
 
-    let mut file = OpenOptions::new()
-        .create(false)
-        .append(true)
-        .open(workspace_config_path)
-        .into_diagnostic()?;
+    let toolchain_config_path = dest_dir
+        .join(CONFIG_DIRNAME)
+        .join(CONFIG_TOOLCHAIN_FILENAME);
 
-    writeln!(file, "\n\n{}", tool_config.trim()).into_diagnostic()?;
+    if !toolchain_config_path.exists() {
+        fs::write_file(
+            &toolchain_config_path,
+            render_toolchain_template(&Context::new())?.trim(),
+        )?;
+    }
 
-    println!("\nWorkspace config has successfully been updated");
+    fs::append_file(toolchain_config_path, format!("\n\n{}", tool_config.trim()))?;
+
+    println!("\nToolchain config has successfully been updated");
 
     Ok(())
 }
@@ -206,54 +219,7 @@ pub async fn init(args: ArgsRef<InitArgs>) {
         },
     );
 
-    // Initialize all tools
-    let mut toolchain_configs = VecDeque::new();
-
-    if dest_dir.join(NPM.manifest).exists()
-        || !options.yes
-            && Confirm::with_theme(&theme)
-                .with_prompt("Initialize Node.js?")
-                .interact()
-                .into_diagnostic()?
-    {
-        toolchain_configs
-            .push_back(init_node(&dest_dir, &options, &theme, Some(&mut context)).await?);
-
-        if dest_dir.join("tsconfig.json").exists()
-            || !options.yes
-                && Confirm::with_theme(&theme)
-                    .with_prompt("Initialize TypeScript?")
-                    .interact()
-                    .into_diagnostic()?
-        {
-            toolchain_configs.push_back(init_typescript(&dest_dir, &options, &theme).await?);
-        }
-    }
-
-    // For other languages, avoid enabling them by default
-    if dest_dir.join(CARGO.manifest).exists()
-        || !options.yes
-            && Confirm::with_theme(&theme)
-                .with_prompt("Initialize Rust?")
-                .interact()
-                .into_diagnostic()?
-    {
-        toolchain_configs
-            .push_back(init_rust(&dest_dir, &options, &theme, Some(&mut context)).await?);
-    }
-
-    toolchain_configs.push_front(render_toolchain_template(&context)?);
-
-    // Create config files
-    fs::write_file(
-        moon_dir.join(CONFIG_TOOLCHAIN_FILENAME),
-        toolchain_configs
-            .into_iter()
-            .map(|c| c.trim().to_owned())
-            .collect::<Vec<String>>()
-            .join("\n\n"),
-    )?;
-
+    // Create workspace file
     fs::write_file(
         moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         render_workspace_template(&context)?,
@@ -270,14 +236,20 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     )?;
 
     println!(
-        "\nmoon has successfully been initialized in {}",
+        "\nSuccessfully initialized moon in {}!",
         color::path(&dest_dir),
     );
 
+    println!("Get started with these next steps.\n");
+
+    println!("  Learn more: {}", color::url("https://monorepo.dev/docs"));
+
     println!(
-        "\nNot enjoying moon? Let us know with a 1 minute survey: {}",
-        color::url("https://bit.ly/moon-survey")
+        "  Need help? {}",
+        color::url("https://discord.gg/qCh9MEynv2")
     );
+
+    println!();
 }
 
 #[cfg(test)]

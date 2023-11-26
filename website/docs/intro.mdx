@@ -19,6 +19,9 @@ for the web ecosystem, written in Rust. Many of the concepts within moon are hea
 Bazel and other popular build systems, but tailored for our
 [supported languages](#supported-languages).
 
+You can think of a moon as a tool that sits firmly in the middle between be Bazel (high complexity,
+full structure), and make/just/etc scripts (low complexity, no structure).
+
 ### Why use moon?
 
 Working in a language's ecosystem can be very involved, especially when it comes to managing a
@@ -124,8 +127,7 @@ currently:
 - **Code generation** - Easily scaffold new applications, libraries, tooling, and more!
 - **Dependency workspaces** - Works alongside package manager workspaces so that projects have
   distinct dependency trees.
-- **Code ownership** <FeatureStatus status="new" /> - Declare owners, maintainers, support channels,
-  and more. Generate CODEOWNERS.
+- **Code ownership** - Declare owners, maintainers, support channels, and more. Generate CODEOWNERS.
 
 #### Orchestration
 
@@ -144,8 +146,7 @@ currently:
   the pipeline. Useful for metrics gathering and insights.
 - **Terminal notifications** <FeatureStatus status="coming-soon" /> - Receives notifications in your
   chosen terminal when builds are successful... or are not.
-- **Git hooks** <FeatureStatus status="new" /> - Manage Git hooks to enforce workflows and
-  requirements for contributors.
+- **Git hooks** - Manage Git hooks to enforce workflows and requirements for contributors.
 
 ## moonbase
 

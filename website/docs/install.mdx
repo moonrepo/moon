@@ -102,19 +102,28 @@ moon upgrade
 Otherwise, you can re-run the installers above and it will download, install, and overwrite with the
 latest version.
 
+## Canary releases
+
+moon supports canary releases, which are built and published for every commit to our development
+branches. These releases will include features and functionality that have not yet landed on master.
+When using a canary release, you'll need to download and execute the binaries manually:
+
+- Using our npm package
+  [`@moonrepo/cli`](https://www.npmjs.com/package/@moonrepo/cli?activeTab=versions) under the
+  `canary` tag. Releases are versioned by date.
+- From a [GitHub prerelease](https://github.com/moonrepo/moon/releases/tag/canary) using the
+  `canary` tag. This tag always represents the latest development release.
+
 ## Nightly releases
 
-moon supports nightly releases, which are built and published once a day, and for each merged
-feature to our develop branches. When using a nightly release, you'll need to download and execute
-the binaries manually.
+moon supports nightly releases, which are built and published once a day from the latest commit on
+master. When using a nightly release, you'll need to download and execute the binaries manually.
 
-Nightlies are published to the following channels:
-
-- To our npm package
+- Using our npm package
   [`@moonrepo/cli`](https://www.npmjs.com/package/@moonrepo/cli?activeTab=versions) under the
   `nightly` tag. Releases are versioned by date.
-- As a [GitHub prerelease](https://github.com/moonrepo/moon/releases/tag/nightly) using the
-  `nightly` tag. This tag always represents the latest release, and is not historical.
+- From a [GitHub prerelease](https://github.com/moonrepo/moon/releases/tag/nightly) using the
+  `nightly` tag. This tag always represents the latest stable release.
 
 ## Next steps
 

@@ -1,14 +1,22 @@
 {%- if minimal -%}
 
 rust:
+{%- if rust_version != "" %}
   version: '{{ rust_version }}'
+{%- else %}
+  version: 'stable'
+{%- endif %}
 
 {%- else -%}
 
 # Configures Rust within the toolchain.
 rust:
   # The Rust toolchain to use. Must be a semantic version or release channel.
+{%- if rust_version != "" %}
   version: '{{ rust_version }}'
+{%- else %}
+  # version: 'stable'
+{%- endif %}
 
   # List of Cargo binaries to install globally and make available.
   bins: []

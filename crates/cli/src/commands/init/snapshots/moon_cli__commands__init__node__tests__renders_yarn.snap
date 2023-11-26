@@ -20,7 +20,7 @@ node:
   addEnginesConstraint: true
 
   # Dedupe dependencies after the lockfile has changed.
-  dedupeOnLockfileChange: true
+  dedupeOnLockfileChange: false
 
   # Version format to use when syncing dependencies within the project's `package.json`.
   # dependencyVersionFormat: 'workspace'
@@ -32,7 +32,7 @@ node:
   # Support the "one version policy" by only declaring dependencies in the root `package.json`.
   # rootPackageOnly: true
 
-  # Sync a project's dependencies as `dependencies` within the project's `package.json`.
+  # Sync a project's relationships as `dependencies` within the project's `package.json`.
   syncProjectWorkspaceDependencies: true
 
   # Sync `node.version` to a 3rd-party version manager's config file.

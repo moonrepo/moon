@@ -1,14 +1,22 @@
 {%- if minimal -%}
 
 bun:
+{%- if bun_version != "" %}
   version: '{{ bun_version }}'
+{%- else %}
+  version: '1.0.0'
+{%- endif %}
 
 {%- else -%}
 
 # Configures Bun within the toolchain.
 bun:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
+{%- if bun_version != "" %}
   version: '{{ bun_version }}'
+{%- else %}
+  # version: '1.0.0'
+{%- endif %}
 
   # Version format to use when syncing dependencies within the project's `package.json`.
   # dependencyVersionFormat: 'workspace'
@@ -17,6 +25,6 @@ bun:
   # rootPackageOnly: true
 
   # Sync a project's dependencies as `dependencies` within the project's `package.json`.
-  syncProjectWorkspaceDependencies: true
+  syncProjectWorkspaceDependencies: {{ sync_dependencies }}
 
 {%- endif %}

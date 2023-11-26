@@ -21,6 +21,19 @@ pub async fn init_typescript(
 ) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("TypeScript"));
+
+        println!(
+            "Toolchain: {}",
+            color::url("https://moonrepo.dev/docs/concepts/toolchain")
+        );
+        println!(
+            "Handbook: {}",
+            color::url("https://moonrepo.dev/docs/guides/javascript/typescript-project-refs")
+        );
+        println!(
+            "Config: {}\n",
+            color::url("https://moonrepo.dev/docs/config/toolchain#typescript")
+        );
     }
 
     let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {
@@ -67,14 +80,17 @@ pub async fn init_typescript(
                 .into_diagnostic()?;
     }
 
-    let include_shared = options.yes
-        || Confirm::with_theme(theme)
+    let include_shared = if options.yes || options.minimal {
+        false
+    } else {
+        Confirm::with_theme(theme)
             .with_prompt(format!(
                 "Append shared types to {}?",
                 color::property("include")
             ))
             .interact()
-            .into_diagnostic()?;
+            .into_diagnostic()?
+    };
 
     let mut context = Context::new();
     context.insert("project_refs", &project_refs);

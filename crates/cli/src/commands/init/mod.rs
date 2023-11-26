@@ -1,5 +1,6 @@
 mod bun;
 mod node;
+mod prompts;
 mod rust;
 mod typescript;
 

@@ -1,7 +1,11 @@
 {%- if minimal -%}
 
 node:
+{%- if node_version != "" %}
   version: '{{ node_version }}'
+{%- else %}
+  version: '20.0.0'
+{%- endif %}
   packageManager: '{{ package_manager }}'
 {%- if package_manager_version != "" %}
   {{ package_manager }}:
@@ -14,7 +18,11 @@ node:
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
+{%- if node_version != "" %}
   version: '{{ node_version }}'
+{%- else %}
+  # version: '20.0.0'
+{%- endif %}
 
   # The package manager to use when managing dependencies.
   # Accepts "npm" (default), "pnpm", "yarn", or "bun".
@@ -32,7 +40,7 @@ node:
   addEnginesConstraint: true
 
   # Dedupe dependencies after the lockfile has changed.
-  dedupeOnLockfileChange: true
+  dedupeOnLockfileChange: {{ dedupe_lockfile }}
 
   # Version format to use when syncing dependencies within the project's `package.json`.
   # dependencyVersionFormat: 'workspace'
@@ -44,8 +52,8 @@ node:
   # Support the "one version policy" by only declaring dependencies in the root `package.json`.
   # rootPackageOnly: true
 
-  # Sync a project's dependencies as `dependencies` within the project's `package.json`.
-  syncProjectWorkspaceDependencies: true
+  # Sync a project's relationships as `dependencies` within the project's `package.json`.
+  syncProjectWorkspaceDependencies: {{ sync_dependencies }}
 
   # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.

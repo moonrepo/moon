@@ -1,3 +1,4 @@
+use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::PnpmConfig;
 use moon_logger::debug;
@@ -15,7 +16,8 @@ use proto_core::{
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::sync::Arc;
 
 pub struct PnpmTool {
     pub config: PnpmConfig,
@@ -23,20 +25,27 @@ pub struct PnpmTool {
     pub global: bool,
 
     pub tool: ProtoTool,
+
+    proto_env: Arc<ProtoEnvironment>,
 }
 
 impl PnpmTool {
     pub async fn new(
-        proto: &ProtoEnvironment,
+        proto_env: Arc<ProtoEnvironment>,
         config: &Option<PnpmConfig>,
     ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(PnpmTool {
             global: use_global_tool_on_path() || config.version.is_none(),
-            tool: load_tool_plugin(&Id::raw("pnpm"), proto, config.plugin.as_ref().unwrap())
-                .await?,
+            tool: load_tool_plugin(
+                &Id::raw("pnpm"),
+                &proto_env,
+                config.plugin.as_ref().unwrap(),
+            )
+            .await?,
             config,
+            proto_env,
         })
     }
 }
@@ -46,14 +55,6 @@ impl Tool for PnpmTool {
     fn as_any(&self) -> &(dyn std::any::Any + Send + Sync) {
         self
     }
-
-    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
-    //     Ok(if self.global {
-    //         "pnpm".into()
-    //     } else {
-    //         self.tool.get_exe_path()?.to_path_buf()
-    //     })
-    // }
 
     async fn setup(
         &mut self,
@@ -118,32 +119,13 @@ impl Tool for PnpmTool {
 
 #[async_trait]
 impl DependencyManager<NodeTool> for PnpmTool {
-    fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
-        // let mut cmd = if self.global {
-        //     Command::new("pnpm")
-        // } else if let Some(shim) = self.get_shim_path() {
-        //     Command::new(shim)
-        // } else {
-        //     let mut cmd = Command::new(node.get_bin_path()?);
-        //     cmd.arg(self.get_bin_path()?);
-        //     cmd
-        // };
+    fn create_command(&self, _node: &NodeTool) -> miette::Result<Command> {
+        let mut cmd = Command::new("pnpm");
 
-        // if !self.global {
-        //     cmd.env(
-        //         "PATH",
-        //         prepend_path_env_var([
-        //             node.get_bin_path()?.parent().unwrap(),
-        //             self.tool.get_exe_path()?.parent().unwrap(),
-        //         ]),
-        //     );
-        // }
-
-        // if !node.global {
-        //     cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
-        // }
-
-        let cmd = Command::new("pnpm");
+        cmd.env(
+            "PATH",
+            prepend_path_env_var(get_node_env_paths(&self.proto_env)),
+        );
 
         Ok(cmd)
     }

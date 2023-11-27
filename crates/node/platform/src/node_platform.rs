@@ -66,28 +66,6 @@ impl NodePlatform {
             workspace_root: workspace_root.to_path_buf(),
         }
     }
-
-    pub fn get_node_module_paths(&self, project_root: &Path) -> Vec<PathBuf> {
-        let mut paths = vec![];
-        let mut current_dir = project_root;
-
-        loop {
-            paths.push(current_dir.join("node_modules").join(".bin"));
-
-            if current_dir == self.workspace_root {
-                break;
-            }
-
-            match current_dir.parent() {
-                Some(dir) => {
-                    current_dir = dir;
-                }
-                None => break,
-            };
-        }
-
-        paths
-    }
 }
 
 #[async_trait]
@@ -324,7 +302,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                NodeTool::new(&self.proto_env, &self.config, &req).await?,
+                NodeTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
             );
         }
 
@@ -352,7 +330,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                NodeTool::new(&self.proto_env, &self.config, req).await?,
+                NodeTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
             );
         }
 
@@ -462,24 +440,6 @@ impl Platform for NodePlatform {
         _runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
-        // let command = if self.is_toolchain_enabled()? {
-        //     actions::create_target_command(
-        //         self.toolchain.get_for_version(&runtime.requirement)?,
-        //         context,
-        //         project,
-        //         task,
-        //         working_dir,
-        //     )?
-        // } else {
-        //     actions::create_target_command_without_tool(
-        //         &self.config,
-        //         context,
-        //         project,
-        //         task,
-        //         working_dir,
-        //     )?
-        // };
-
         let command = actions::create_target_command_without_tool(
             &self.config,
             context,
@@ -491,35 +451,25 @@ impl Platform for NodePlatform {
         Ok(command)
     }
 
-    // async fn get_env_paths(&self, working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
-    //     let mut paths = vec![];
-    //     let mut current_dir = working_dir;
+    fn get_run_target_paths(&self, working_dir: &Path) -> Vec<PathBuf> {
+        let mut paths = vec![];
+        let mut current_dir = working_dir;
 
-    //     loop {
-    //         paths.push(current_dir.join("node_modules").join(".bin"));
+        loop {
+            paths.push(current_dir.join("node_modules").join(".bin"));
 
-    //         if current_dir == self.workspace_root {
-    //             break;
-    //         }
+            if current_dir == self.workspace_root {
+                break;
+            }
 
-    //         match current_dir.parent() {
-    //             Some(dir) => {
-    //                 current_dir = dir;
-    //             }
-    //             None => break,
-    //         };
-    //     }
+            match current_dir.parent() {
+                Some(dir) => {
+                    current_dir = dir;
+                }
+                None => break,
+            };
+        }
 
-    //     paths.push(
-    //         self.proto_env
-    //             .tools_dir
-    //             .join("node")
-    //             .join("globals")
-    //             .join("bin"),
-    //     );
-
-    //     // TODO: npm, pnpm, yarn global paths?
-
-    //     Ok(paths)
-    // }
+        paths
+    }
 }

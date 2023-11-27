@@ -4,17 +4,23 @@ use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
 use moon_logger::debug;
-use moon_node_lang::node;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
+    async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
     DependencyManager, Tool, ToolError,
 };
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+pub fn get_node_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
+    let mut paths = get_proto_paths(proto_env);
+    paths.push(proto_env.tools_dir.join("node").join("globals").join("bin"));
+    paths
+}
 
 pub struct NodeTool {
     pub config: NodeConfig,
@@ -30,23 +36,30 @@ pub struct NodeTool {
     pnpm: Option<PnpmTool>,
 
     yarn: Option<YarnTool>,
+
+    proto_env: Arc<ProtoEnvironment>,
 }
 
 impl NodeTool {
     pub async fn new(
-        proto: &ProtoEnvironment,
+        proto_env: Arc<ProtoEnvironment>,
         config: &NodeConfig,
         req: &RuntimeReq,
     ) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
             config: config.to_owned(),
-            tool: load_tool_plugin(&Id::raw("node"), proto, config.plugin.as_ref().unwrap())
-                .await?,
+            tool: load_tool_plugin(
+                &Id::raw("node"),
+                &proto_env,
+                config.plugin.as_ref().unwrap(),
+            )
+            .await?,
             bun: None,
             npm: None,
             pnpm: None,
             yarn: None,
+            proto_env: Arc::clone(&proto_env),
         };
 
         if use_global_tool_on_path() || req.is_global() {
@@ -58,16 +71,16 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Bun => {
-                node.bun = Some(BunTool::new(proto, &config.bun).await?);
+                node.bun = Some(BunTool::new(Arc::clone(&proto_env), &config.bun).await?);
             }
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(proto, &config.npm).await?);
+                node.npm = Some(NpmTool::new(Arc::clone(&proto_env), &config.npm).await?);
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm).await?);
+                node.pnpm = Some(PnpmTool::new(Arc::clone(&proto_env), &config.pnpm).await?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(proto, &config.yarn).await?);
+                node.yarn = Some(YarnTool::new(Arc::clone(&proto_env), &config.yarn).await?);
             }
         };
 
@@ -100,14 +113,10 @@ impl NodeTool {
             _ => {
                 let mut cmd = Command::new(self.get_npx_path()?);
                 cmd.args(["--silent", "--", package]);
-
-                if !self.global {
-                    cmd.env(
-                        "PATH",
-                        prepend_path_env_var([self.tool.get_exe_path()?.parent().unwrap()]),
-                    );
-                }
-
+                cmd.env(
+                    "PATH",
+                    prepend_path_env_var(get_node_env_paths(&self.proto_env)),
+                );
                 cmd
             }
         };
@@ -138,14 +147,7 @@ impl NodeTool {
     }
 
     pub fn get_npx_path(&self) -> miette::Result<PathBuf> {
-        if self.global {
-            return Ok("npx".into());
-        }
-
-        Ok(node::find_package_manager_bin(
-            self.tool.get_tool_dir(),
-            "npx",
-        ))
+        Ok("npx".into())
     }
 
     /// Return the `pnpm` package manager.
@@ -190,14 +192,6 @@ impl Tool for NodeTool {
     fn as_any(&self) -> &(dyn std::any::Any + Send + Sync) {
         self
     }
-
-    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
-    //     Ok(if self.global {
-    //         "node".into()
-    //     } else {
-    //         self.tool.get_exe_path()?.to_path_buf()
-    //     })
-    // }
 
     async fn setup(
         &mut self,

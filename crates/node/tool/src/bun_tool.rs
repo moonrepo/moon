@@ -1,3 +1,4 @@
+use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::BunpmConfig;
 use moon_logger::debug;
@@ -13,7 +14,8 @@ use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec}
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::sync::Arc;
 
 pub struct BunTool {
     pub config: BunpmConfig,
@@ -21,29 +23,35 @@ pub struct BunTool {
     pub global: bool,
 
     pub tool: ProtoTool,
+
+    proto_env: Arc<ProtoEnvironment>,
 }
 
 impl BunTool {
     pub async fn new(
-        proto: &ProtoEnvironment,
+        proto_env: Arc<ProtoEnvironment>,
         config: &Option<BunpmConfig>,
     ) -> miette::Result<BunTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(BunTool {
             global: use_global_tool_on_path() || config.version.is_none(),
-            tool: load_tool_plugin(&Id::raw("bun"), proto, config.plugin.as_ref().unwrap()).await?,
+            tool: load_tool_plugin(&Id::raw("bun"), &proto_env, config.plugin.as_ref().unwrap())
+                .await?,
             config,
+            proto_env,
         })
     }
 
     fn internal_create_command(&self) -> miette::Result<Command> {
-        // Ok(if self.global {
-        //     Command::new("bun")
-        // } else {
-        //     Command::new(self.get_bin_path()?)
-        // })
-        Ok(Command::new("bun"))
+        let mut cmd = Command::new("bun");
+
+        cmd.env(
+            "PATH",
+            prepend_path_env_var(get_node_env_paths(&self.proto_env)),
+        );
+
+        Ok(cmd)
     }
 }
 
@@ -52,14 +60,6 @@ impl Tool for BunTool {
     fn as_any(&self) -> &(dyn std::any::Any + Send + Sync) {
         self
     }
-
-    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
-    //     Ok(if self.global {
-    //         "bun".into()
-    //     } else {
-    //         self.tool.get_exe_path()?.to_path_buf()
-    //     })
-    // }
 
     async fn setup(
         &mut self,
@@ -125,16 +125,7 @@ impl Tool for BunTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for BunTool {
     fn create_command(&self, _node: &NodeTool) -> miette::Result<Command> {
-        let mut cmd = self.internal_create_command()?;
-
-        if !self.global {
-            cmd.env(
-                "PATH",
-                prepend_path_env_var([self.tool.get_exe_path()?.parent().unwrap()]),
-            );
-        }
-
-        Ok(cmd)
+        self.internal_create_command()
     }
 
     async fn dedupe_dependencies(

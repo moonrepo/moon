@@ -2,15 +2,11 @@ use crate::target_hash::NodeTargetHash;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 use moon_logger::trace;
-use moon_node_lang::{
-    node::{self, BinFile},
-    PackageJson,
-};
+use moon_node_lang::{node, PackageJson};
 use moon_node_tool::NodeTool;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{prepend_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::{get_cache_dir, path, string_vec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -75,50 +71,6 @@ fn create_node_options(
     Ok(options)
 }
 
-fn find_package_bin(
-    command: &mut Command,
-    node_options: &[String],
-    starting_dir: &Path,
-    working_dir: &Path,
-    bin_name: &str,
-) -> miette::Result<Option<Command>> {
-    let possible_bin_path = match node::find_package_bin(starting_dir, bin_name)? {
-        Some(bin) => bin,
-        None => {
-            // moon isn't installed as a node module, but probably
-            // exists globally, so let's go with that instead of failing
-            if bin_name == "moon" {
-                return Ok(Some(Command::new(bin_name)));
-            }
-
-            return Err(ToolError::MissingBinary("node module".into(), bin_name.to_owned()).into());
-        }
-    };
-
-    match possible_bin_path {
-        // Rust, Go
-        BinFile::Binary(bin_path) => {
-            return Ok(Some(Command::new(bin_path)));
-        }
-        // JavaScript
-        BinFile::Script(bin_path) => {
-            command.args(node_options);
-            command.arg(path::to_string(
-                path::relative_from(bin_path, working_dir).unwrap(),
-            )?);
-        }
-        // Other (Bash)
-        BinFile::Other(bin_path, parent_cmd) => {
-            let mut cmd = Command::new(parent_cmd);
-            cmd.arg(bin_path);
-
-            return Ok(Some(cmd));
-        }
-    };
-
-    Ok(None)
-}
-
 fn prepare_target_command(
     command: &mut Command,
     context: &ActionContext,
@@ -145,81 +97,6 @@ fn prepare_target_command(
     Ok(())
 }
 
-/// Runs a task command through our toolchain's installed Node.js instance.
-/// We accomplish this by executing the Node.js binary as a child process,
-/// while passing a file path to a package's node module binary (this is the file
-/// being executed). We then also pass arguments defined in the task.
-/// This would look something like the following:
-///
-/// ~/.proto/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
-///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
-#[track_caller]
-pub fn create_target_command(
-    node: &NodeTool,
-    context: &ActionContext,
-    project: &Project,
-    task: &Task,
-    working_dir: &Path,
-) -> miette::Result<Command> {
-    let node_options = create_node_options(&node.config, context, task)?;
-    let mut command = Command::new("node");
-    let mut is_package_manager = false;
-
-    match task.command.as_str() {
-        "node" | "nodejs" => {
-            command.args(&node_options);
-        }
-        "npx" => {
-            command = Command::new(node.get_npx_path()?);
-        }
-        "npm" => {
-            is_package_manager = true;
-            command = node.get_npm()?.create_command(node)?;
-        }
-        "pnpm" | "pnpx" => {
-            is_package_manager = true;
-            command = node.get_pnpm()?.create_command(node)?;
-
-            if task.command == "pnpx" {
-                command.arg("dlx");
-            }
-        }
-        "yarn" | "yarnpkg" => {
-            is_package_manager = true;
-            command = node.get_yarn()?.create_command(node)?;
-        }
-        "bun" | "bunx" => {
-            is_package_manager = true;
-            command = node.get_bun()?.create_command(node)?;
-
-            if task.command == "bunx" {
-                command.arg("x");
-            }
-        }
-        bin => {
-            if let Some(new_command) =
-                find_package_bin(&mut command, &node_options, &project.root, working_dir, bin)?
-            {
-                command = new_command;
-            }
-        }
-    };
-
-    if !is_package_manager && !node.global {
-        command.env(
-            "PATH",
-            prepend_path_env_var([node.tool.get_exe_path()?.parent().unwrap()]),
-        );
-    }
-
-    prepare_target_command(&mut command, context, task, &node.config)?;
-
-    Ok(command)
-}
-
-// This is like the function above, but is for situations where the tool
-// has not been configured, and should default to the global "node" found
-// in the user's shell.
 pub fn create_target_command_without_tool(
     node_config: &NodeConfig,
     context: &ActionContext,
@@ -227,23 +104,17 @@ pub fn create_target_command_without_tool(
     task: &Task,
     _working_dir: &Path,
 ) -> miette::Result<Command> {
-    let node_options = create_node_options(node_config, context, task)?;
     let mut command = Command::new("node");
 
     match task.command.as_str() {
         "node" | "nodejs" => {
-            command.args(&node_options);
+            command.args(create_node_options(node_config, context, task)?);
         }
         "npx" | "npm" | "pnpm" | "pnpx" | "yarn" | "yarnpkg" | "bun" | "bunx" => {
             command = Command::new(&task.command);
         }
         bin => {
             command = Command::new(bin);
-            // if let Some(new_command) =
-            //     find_package_bin(&mut command, &node_options, &project.root, working_dir, bin)?
-            // {
-            //     command = new_command;
-            // }
         }
     };
 

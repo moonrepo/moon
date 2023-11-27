@@ -126,6 +126,16 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 };
 
 export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
+	act: {
+		bins: ['act'],
+		description: 'Run your GitHub Actions locally.',
+		homepageUrl: 'https://github.com/nektos/act',
+		name: 'act',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/theomessin/proto-toml-plugins/master/act.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/act.toml',
+	},
 	buf: {
 		bins: ['buf'],
 		description: 'A new way of working with Protocol Buffers.',

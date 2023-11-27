@@ -6,8 +6,8 @@ use moon_node_lang::{bun, LockfileDependencyVersions, BUN};
 use moon_process::{output_to_string, Command};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
-    DependencyManager, Tool,
+    async_trait, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
+    use_global_tool_on_path, DependencyManager, Tool,
 };
 use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
@@ -53,10 +53,9 @@ impl BunTool {
             );
         }
 
-        cmd.env(
-            "PROTO_BUN_VERSION",
-            self.tool.get_resolved_version().to_string(),
-        );
+        if let Some(version) = get_proto_version_env(&self.tool) {
+            cmd.env("PROTO_BUN_VERSION", version);
+        }
 
         Ok(cmd)
     }
@@ -136,9 +135,17 @@ impl DependencyManager<NodeTool> for BunTool {
 
         if !self.global {
             cmd.env(
-                "PROTO_NODE_VERSION",
-                node.tool.get_resolved_version().to_string(),
+                "PATH",
+                prepend_path_env_var(get_node_env_paths(&self.proto_env)),
             );
+        }
+
+        if let Some(version) = get_proto_version_env(&self.tool) {
+            cmd.env("PROTO_BUN_VERSION", version);
+        }
+
+        if let Some(version) = get_proto_version_env(&node.tool) {
+            cmd.env("PROTO_NODE_VERSION", version);
         }
 
         Ok(cmd)

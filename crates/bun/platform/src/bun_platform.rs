@@ -14,7 +14,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
@@ -403,11 +403,10 @@ impl Platform for BunPlatform {
         command.args(&task.args);
         command.envs(&task.env);
 
-        if let Ok(tool) = self.toolchain.get_for_version(&runtime.requirement) {
-            command.env(
-                "PROTO_BUN_VERSION",
-                tool.tool.get_resolved_version().to_string(),
-            );
+        if let Ok(bun) = self.toolchain.get_for_version(&runtime.requirement) {
+            if let Some(version) = get_proto_version_env(&bun.tool) {
+                command.env("PROTO_BUN_VERSION", version);
+            }
         }
 
         let mut paths = vec![];

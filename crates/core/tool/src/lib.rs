@@ -42,10 +42,24 @@ where
 
 pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
     vec![
+        // Always use a versioned proto first
         proto.tools_dir.join("proto").join(PROTO_CLI_VERSION),
+        // Then fallback to shims/bins
         proto.shims_dir.clone(),
         proto.bin_dir.clone(),
+        // And ensure non-proto managed moon comes last
+        proto.home.join(".moon").join("bin"),
     ]
+}
+
+pub fn get_proto_version_env(tool: &ProtoTool) -> Option<String> {
+    let spec = tool.get_resolved_version();
+
+    if spec.is_latest() {
+        return None;
+    }
+
+    Some(spec.to_string())
 }
 
 pub async fn load_tool_plugin(

@@ -8,8 +8,8 @@ use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
-    DependencyManager, Tool, ToolError,
+    async_trait, get_proto_paths, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
+    use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
@@ -113,10 +113,11 @@ impl NodeTool {
             _ => {
                 let mut cmd = Command::new(self.get_npx_path()?);
                 cmd.args(["--silent", "--", package]);
-                cmd.env(
-                    "PROTO_NODE_VERSION",
-                    self.tool.get_resolved_version().to_string(),
-                );
+
+                if let Some(version) = get_proto_version_env(&self.tool) {
+                    cmd.env("PROTO_NODE_VERSION", version);
+                }
+
                 if !self.global {
                     cmd.env(
                         "PATH",

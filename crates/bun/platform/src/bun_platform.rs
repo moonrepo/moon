@@ -14,7 +14,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{Tool, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
@@ -396,17 +396,22 @@ impl Platform for BunPlatform {
         _context: &ActionContext,
         project: &Project,
         task: &Task,
-        _runtime: &Runtime,
-        working_dir: &Path,
+        runtime: &Runtime,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
-        let command = actions::create_target_command_without_tool(project, task, working_dir)?;
+        let mut command = Command::new(&task.command);
+        command.args(&task.args);
+        command.envs(&task.env);
 
-        Ok(command)
-    }
+        if let Ok(tool) = self.toolchain.get_for_version(&runtime.requirement) {
+            command.env(
+                "PROTO_BUN_VERSION",
+                tool.tool.get_resolved_version().to_string(),
+            );
+        }
 
-    fn get_run_target_paths(&self, working_dir: &Path) -> Vec<PathBuf> {
         let mut paths = vec![];
-        let mut current_dir = working_dir;
+        let mut current_dir = project.root.as_path();
 
         loop {
             paths.push(current_dir.join("node_modules").join(".bin"));
@@ -423,7 +428,12 @@ impl Platform for BunPlatform {
             };
         }
 
-        paths.extend(get_bun_env_paths(&self.proto_env));
-        paths
+        if !runtime.requirement.is_global() {
+            paths.extend(get_bun_env_paths(&self.proto_env));
+        }
+
+        command.env("PATH", prepend_path_env_var(paths));
+
+        Ok(command)
     }
 }

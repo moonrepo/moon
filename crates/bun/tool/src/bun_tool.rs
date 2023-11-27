@@ -130,17 +130,17 @@ impl DependencyManager<()> for BunTool {
     fn create_command(&self, _parent: &()) -> miette::Result<Command> {
         let mut cmd = Command::new("bun");
 
-        cmd.env(
-            "PATH",
-            prepend_path_env_var(get_bun_env_paths(&self.proto_env)),
-        );
-
         if !self.global {
             cmd.env(
-                "PROTO_BUN_VERSION",
-                self.tool.get_resolved_version().to_string(),
+                "PATH",
+                prepend_path_env_var(get_bun_env_paths(&self.proto_env)),
             );
         }
+
+        cmd.env(
+            "PROTO_BUN_VERSION",
+            self.tool.get_resolved_version().to_string(),
+        );
 
         Ok(cmd)
     }

@@ -7,7 +7,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_proto_paths, Tool};
+use moon_tool::{get_proto_paths, prepend_path_env_var, Tool};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use std::path::{Path, PathBuf};
@@ -86,7 +86,7 @@ impl Platform for SystemPlatform {
         _context: &ActionContext,
         _project: &Project,
         task: &Task,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
@@ -108,10 +108,13 @@ impl Platform for SystemPlatform {
 
         command.envs(&task.env);
 
-        Ok(command)
-    }
+        if !runtime.requirement.is_global() {
+            command.env(
+                "PATH",
+                prepend_path_env_var(get_proto_paths(&self.proto_env)),
+            );
+        }
 
-    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
-        get_proto_paths(&self.proto_env)
+        Ok(command)
     }
 }

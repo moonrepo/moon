@@ -350,17 +350,20 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         _project: &Project,
         task: &Task,
-        _runtime: &Runtime,
-        working_dir: &Path,
+        runtime: &Runtime,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+        command.args(&task.args);
+        command.envs(&task.env);
 
-        command.args(&task.args).envs(&task.env).cwd(working_dir);
+        if !runtime.requirement.is_global() {
+            command.env(
+                "PATH",
+                prepend_path_env_var(get_deno_env_paths(&self.proto_env)),
+            );
+        }
 
         Ok(command)
-    }
-
-    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
-        get_deno_env_paths(&self.proto_env)
     }
 }

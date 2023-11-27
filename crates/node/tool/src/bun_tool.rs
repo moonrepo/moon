@@ -46,17 +46,17 @@ impl BunTool {
     fn internal_create_command(&self) -> miette::Result<Command> {
         let mut cmd = Command::new("bun");
 
-        cmd.env(
-            "PATH",
-            prepend_path_env_var(get_node_env_paths(&self.proto_env)),
-        );
-
         if !self.global {
             cmd.env(
-                "PROTO_BUN_VERSION",
-                self.tool.get_resolved_version().to_string(),
+                "PATH",
+                prepend_path_env_var(get_node_env_paths(&self.proto_env)),
             );
         }
+
+        cmd.env(
+            "PROTO_BUN_VERSION",
+            self.tool.get_resolved_version().to_string(),
+        );
 
         Ok(cmd)
     }

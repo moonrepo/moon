@@ -17,7 +17,6 @@ use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
 use moon_terminal::{label_checkpoint, Checkpoint};
-use moon_tool::prepend_path_env_var;
 use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
@@ -244,18 +243,14 @@ impl<'a> Runner<'a> {
             color::path(working_dir)
         );
 
-        let platform = PlatformManager::read().get(task.platform)?;
-        let mut command = platform
+        let mut command = PlatformManager::read()
+            .get(task.platform)?
             .create_run_target_command(context, project, task, runtime, working_dir)
             .await?;
 
         command
             .cwd(working_dir)
             .envs(self.create_env_vars().await?)
-            .env(
-                "PATH",
-                prepend_path_env_var(platform.get_run_target_paths(&project.root)),
-            )
             // We need to handle non-zero's manually
             .set_error_on_nonzero(false);
 

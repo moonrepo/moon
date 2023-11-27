@@ -17,6 +17,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
+use moon_tool::prepend_path_env_var;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
@@ -438,10 +439,10 @@ impl Platform for NodePlatform {
         context: &ActionContext,
         project: &Project,
         task: &Task,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
-        let command = actions::create_target_command_without_tool(
+        let mut command = actions::create_target_command_without_tool(
             &self.config,
             context,
             project,
@@ -449,12 +450,43 @@ impl Platform for NodePlatform {
             working_dir,
         )?;
 
-        Ok(command)
-    }
+        if let Ok(node) = self.toolchain.get_for_version(&runtime.requirement) {
+            command.env(
+                "PROTO_NODE_VERSION",
+                node.tool.get_resolved_version().to_string(),
+            );
 
-    fn get_run_target_paths(&self, working_dir: &Path) -> Vec<PathBuf> {
+            if let Ok(npm) = node.get_npm() {
+                command.env(
+                    "PROTO_NPM_VERSION",
+                    npm.tool.get_resolved_version().to_string(),
+                );
+            }
+
+            if let Ok(pnpm) = node.get_pnpm() {
+                command.env(
+                    "PROTO_PNPM_VERSION",
+                    pnpm.tool.get_resolved_version().to_string(),
+                );
+            }
+
+            if let Ok(yarn) = node.get_yarn() {
+                command.env(
+                    "PROTO_YARN_VERSION",
+                    yarn.tool.get_resolved_version().to_string(),
+                );
+            }
+
+            if let Ok(bun) = node.get_bun() {
+                command.env(
+                    "PROTO_BUN_VERSION",
+                    bun.tool.get_resolved_version().to_string(),
+                );
+            }
+        }
+
         let mut paths = vec![];
-        let mut current_dir = working_dir;
+        let mut current_dir = project.root.as_path();
 
         loop {
             paths.push(current_dir.join("node_modules").join(".bin"));
@@ -471,7 +503,12 @@ impl Platform for NodePlatform {
             };
         }
 
-        paths.extend(get_node_env_paths(&self.proto_env));
-        paths
+        if !runtime.requirement.is_global() {
+            paths.extend(get_node_env_paths(&self.proto_env));
+        }
+
+        command.env("PATH", prepend_path_env_var(paths));
+
+        Ok(command)
     }
 }

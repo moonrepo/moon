@@ -114,13 +114,15 @@ impl NodeTool {
                 let mut cmd = Command::new(self.get_npx_path()?);
                 cmd.args(["--silent", "--", package]);
                 cmd.env(
-                    "PATH",
-                    prepend_path_env_var(get_node_env_paths(&self.proto_env)),
-                );
-                cmd.env(
                     "PROTO_NODE_VERSION",
                     self.tool.get_resolved_version().to_string(),
                 );
+                if !self.global {
+                    cmd.env(
+                        "PATH",
+                        prepend_path_env_var(get_node_env_paths(&self.proto_env)),
+                    );
+                }
                 cmd
             }
         };

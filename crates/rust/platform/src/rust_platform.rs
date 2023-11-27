@@ -21,7 +21,7 @@ use moon_rust_lang::{
 use moon_rust_tool::{get_rust_env_paths, RustTool};
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
@@ -505,7 +505,7 @@ impl Platform for RustPlatform {
         _project: &Project,
         task: &Task,
         runtime: &Runtime,
-        working_dir: &Path,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
         let mut args = vec![];
@@ -534,16 +534,14 @@ impl Platform for RustPlatform {
             }
         }
 
-        command
-            .args(&args)
-            .args(&task.args)
-            .envs(&task.env)
-            .cwd(working_dir);
+        command.args(&args);
+        command.args(&task.args);
+        command.envs(&task.env);
+        command.env(
+            "PATH",
+            prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+        );
 
         Ok(command)
-    }
-
-    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
-        get_rust_env_paths(&self.proto_env)
     }
 }

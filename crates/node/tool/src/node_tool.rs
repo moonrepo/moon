@@ -117,6 +117,10 @@ impl NodeTool {
                     "PATH",
                     prepend_path_env_var(get_node_env_paths(&self.proto_env)),
                 );
+                cmd.env(
+                    "PROTO_NODE_VERSION",
+                    self.tool.get_resolved_version().to_string(),
+                );
                 cmd
             }
         };

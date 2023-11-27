@@ -181,13 +181,24 @@ impl Tool for YarnTool {
 
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
-    fn create_command(&self, _node: &NodeTool) -> miette::Result<Command> {
+    fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("yarn");
 
         cmd.env(
             "PATH",
             prepend_path_env_var(get_node_env_paths(&self.proto_env)),
         );
+
+        if !self.global {
+            cmd.env(
+                "PROTO_YARN_VERSION",
+                self.tool.get_resolved_version().to_string(),
+            );
+            cmd.env(
+                "PROTO_NODE_VERSION",
+                node.tool.get_resolved_version().to_string(),
+            );
+        }
 
         Ok(cmd)
     }

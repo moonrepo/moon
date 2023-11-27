@@ -135,6 +135,13 @@ impl DependencyManager<()> for BunTool {
             prepend_path_env_var(get_bun_env_paths(&self.proto_env)),
         );
 
+        if !self.global {
+            cmd.env(
+                "PROTO_BUN_VERSION",
+                self.tool.get_resolved_version().to_string(),
+            );
+        }
+
         Ok(cmd)
     }
 

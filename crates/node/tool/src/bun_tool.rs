@@ -51,6 +51,13 @@ impl BunTool {
             prepend_path_env_var(get_node_env_paths(&self.proto_env)),
         );
 
+        if !self.global {
+            cmd.env(
+                "PROTO_BUN_VERSION",
+                self.tool.get_resolved_version().to_string(),
+            );
+        }
+
         Ok(cmd)
     }
 }
@@ -124,8 +131,17 @@ impl Tool for BunTool {
 
 #[async_trait]
 impl DependencyManager<NodeTool> for BunTool {
-    fn create_command(&self, _node: &NodeTool) -> miette::Result<Command> {
-        self.internal_create_command()
+    fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
+        let mut cmd = self.internal_create_command()?;
+
+        if !self.global {
+            cmd.env(
+                "PROTO_NODE_VERSION",
+                node.tool.get_resolved_version().to_string(),
+            );
+        }
+
+        Ok(cmd)
     }
 
     async fn dedupe_dependencies(

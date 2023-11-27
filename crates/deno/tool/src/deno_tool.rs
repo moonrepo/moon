@@ -4,6 +4,7 @@ use moon_tool::{async_trait, get_proto_paths, use_global_tool_on_path, Tool};
 use proto_core::ProtoEnvironment;
 use std::env;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub fn get_deno_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
@@ -30,7 +31,7 @@ pub struct DenoTool {
 
 impl DenoTool {
     pub fn new(
-        _proto: &ProtoEnvironment,
+        _proto: Arc<ProtoEnvironment>,
         config: &DenoConfig,
         req: &RuntimeReq,
     ) -> miette::Result<DenoTool> {

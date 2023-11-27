@@ -29,7 +29,6 @@ use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
-    env,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -198,7 +197,7 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                RustTool::new(&self.proto_env, &self.config, &req).await?,
+                RustTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
             );
         }
 
@@ -226,7 +225,7 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                RustTool::new(&self.proto_env, &self.config, req).await?,
+                RustTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
             );
         }
 
@@ -542,21 +541,5 @@ impl Platform for RustPlatform {
             .cwd(working_dir);
 
         Ok(command)
-    }
-
-    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
-        let mut paths = vec![];
-
-        if let Ok(value) = env::var("CARGO_INSTALL_ROOT") {
-            paths.push(PathBuf::from(value).join("bin"));
-        }
-
-        if let Ok(value) = env::var("CARGO_HOME") {
-            paths.push(PathBuf::from(value).join("bin"));
-        }
-
-        paths.push(self.proto_env.home.join(".cargo").join("bin"));
-
-        paths
     }
 }

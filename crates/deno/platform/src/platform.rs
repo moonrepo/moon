@@ -125,8 +125,10 @@ impl Platform for DenoPlatform {
         let mut last_versions = FxHashMap::default();
 
         if !self.toolchain.has(&req) {
-            self.toolchain
-                .register(&req, DenoTool::new(&self.proto_env, &self.config, &req)?);
+            self.toolchain.register(
+                &req,
+                DenoTool::new(Arc::clone(&self.proto_env), &self.config, &req)?,
+            );
         }
 
         self.toolchain.setup(&req, &mut last_versions).await?;
@@ -151,8 +153,10 @@ impl Platform for DenoPlatform {
         let req = &runtime.requirement;
 
         if !self.toolchain.has(req) {
-            self.toolchain
-                .register(req, DenoTool::new(&self.proto_env, &self.config, req)?);
+            self.toolchain.register(
+                req,
+                DenoTool::new(Arc::clone(&self.proto_env), &self.config, req)?,
+            );
         }
 
         Ok(self.toolchain.setup(req, last_versions).await?)

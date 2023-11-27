@@ -18,7 +18,7 @@ use moon_rust_lang::{
     toolchain_toml::{ToolchainToml, ToolchainTomlCache},
     CARGO, RUSTUP, RUSTUP_LEGACY,
 };
-use moon_rust_tool::RustTool;
+use moon_rust_tool::{get_rust_env_paths, RustTool};
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
@@ -541,5 +541,9 @@ impl Platform for RustPlatform {
             .cwd(working_dir);
 
         Ok(command)
+    }
+
+    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
+        get_rust_env_paths(&self.proto_env)
     }
 }

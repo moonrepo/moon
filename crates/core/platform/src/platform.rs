@@ -163,7 +163,5 @@ pub trait Platform: Send + Sync {
         working_dir: &Path,
     ) -> miette::Result<Command>;
 
-    fn get_run_target_paths(&self, working_dir: &Path) -> Vec<PathBuf> {
-        vec![]
-    }
+    fn get_run_target_paths(&self, working_dir: &Path) -> Vec<PathBuf>;
 }

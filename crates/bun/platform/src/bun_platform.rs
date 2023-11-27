@@ -1,7 +1,7 @@
 use crate::actions;
 use moon_action_context::ActionContext;
 use moon_bun_lang::BUNPM;
-use moon_bun_tool::BunTool;
+use moon_bun_tool::{get_bun_env_paths, BunTool};
 use moon_common::Id;
 use moon_config::{
     BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
@@ -423,6 +423,7 @@ impl Platform for BunPlatform {
             };
         }
 
+        paths.extend(get_bun_env_paths(&self.proto_env));
         paths
     }
 }

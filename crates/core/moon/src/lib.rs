@@ -125,7 +125,13 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
     }
 
     // Should be last since it's the most common
-    registry.register(PlatformType::System, Box::<SystemPlatform>::default());
+    registry.register(
+        PlatformType::System,
+        Box::new(SystemPlatform::new(
+            &workspace.root,
+            Arc::clone(&workspace.proto_env),
+        )),
+    );
 
     Ok(workspace)
 }

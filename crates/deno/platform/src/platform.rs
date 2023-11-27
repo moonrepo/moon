@@ -359,4 +359,8 @@ impl Platform for DenoPlatform {
 
         Ok(command)
     }
+
+    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
+        get_deno_env_paths(&self.proto_env)
+    }
 }

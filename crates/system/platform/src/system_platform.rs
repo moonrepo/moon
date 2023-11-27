@@ -7,13 +7,28 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::Tool;
+use moon_tool::{get_proto_paths, Tool};
 use moon_utils::async_trait;
-use std::path::Path;
+use proto_core::ProtoEnvironment;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
-#[derive(Debug, Default)]
 pub struct SystemPlatform {
     tool: SystemToolStub,
+
+    proto_env: Arc<ProtoEnvironment>,
+
+    _workspace_root: PathBuf,
+}
+
+impl SystemPlatform {
+    pub fn new(workspace_root: &Path, proto_env: Arc<ProtoEnvironment>) -> Self {
+        SystemPlatform {
+            tool: SystemToolStub::default(),
+            proto_env,
+            _workspace_root: workspace_root.to_path_buf(),
+        }
+    }
 }
 
 #[async_trait]
@@ -94,5 +109,9 @@ impl Platform for SystemPlatform {
         command.envs(&task.env);
 
         Ok(command)
+    }
+
+    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
+        get_proto_paths(&self.proto_env)
     }
 }

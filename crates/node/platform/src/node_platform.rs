@@ -11,6 +11,7 @@ use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
+use moon_node_tool::get_node_env_paths;
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
@@ -470,6 +471,7 @@ impl Platform for NodePlatform {
             };
         }
 
+        paths.extend(get_node_env_paths(&self.proto_env));
         paths
     }
 }

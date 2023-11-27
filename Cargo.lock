@@ -3913,6 +3913,7 @@ dependencies = [
  "moon_task",
  "moon_tool",
  "moon_utils",
+ "proto_core",
  "serde",
  "serde_json",
 ]

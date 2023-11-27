@@ -1,22 +1,14 @@
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_process::Command;
-use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};
+use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::any::Any;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[async_trait]
 pub trait Tool: Any + Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
-
-    // /// Return an absolute path to the tool's binary.
-    // fn get_bin_path(&self) -> miette::Result<PathBuf>;
-
-    // /// Return an absolute path to an applicable tool shim.
-    // fn get_shim_path(&self) -> Option<PathBuf> {
-    //     None
-    // }
 
     /// Setup the tool by downloading and installing it.
     /// Return a count of how many sub-tools were installed.

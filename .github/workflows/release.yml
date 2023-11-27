@@ -29,15 +29,15 @@ jobs:
     outputs:
       publish:
         ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
-        contains(github.ref, 'develop-') }}
-      nightly: ${{ steps.plan-step.outputs.nightly }}
+        github.event_name == 'push' && contains(github.ref, 'develop-') }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
     steps:
       - uses: actions/checkout@v4
       - id: plan-step
         run: bash ./scripts/release/planRelease.sh
         env:
-          NIGHTLY: ${{ github.event_name != 'workflow_dispatch' }}
+          CANARY: ${{ github.event_name == 'push' && contains(github.ref, 'develop-') }}
+          NIGHTLY: ${{ github.event_name == 'schedule' }}
 
   build:
     if: ${{ needs.plan.outputs.publish == 'true' }}
@@ -222,19 +222,33 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NIGHTLY: ${{ needs.plan.outputs.nightly }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - if: ${{ needs.plan.outputs.nightly == 'false' }}
+      - if:
+          ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next'
+          }}
         uses: ncipollo/release-action@v1
         name: Create GitHub release
         with:
           artifactErrorsFailBuild: true
           artifacts: artifacts/release/*
           tag: ${{ steps.publish-step.outputs.npm-tag-name }}
-          prerelease: ${{ needs.plan.outputs.npm-channel != 'latest' }}
+          prerelease: ${{ needs.plan.outputs.npm-channel == 'next' }}
           skipIfReleaseExists: true
-      - if: ${{ needs.plan.outputs.nightly == 'true' }}
+      - if: ${{ needs.plan.outputs.npm-channel == 'canary' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This canary release corresponds to the commit [${{ github.sha }}].'
+          name: 'Canary'
+          tag: 'canary'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
+      - if: ${{ needs.plan.outputs.npm-channel == 'nightly' }}
         uses: ncipollo/release-action@v1
         name: Create GitHub release
         with:
@@ -249,7 +263,8 @@ jobs:
           skipIfReleaseExists: false
 
   publish-npm:
-    if: ${{ needs.plan.outputs.nightly == 'false' }}
+    if:
+      ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next' }}
     needs:
       - plan
     name: Publish npm packages
@@ -269,6 +284,5 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NIGHTLY: ${{ needs.plan.outputs.nightly }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

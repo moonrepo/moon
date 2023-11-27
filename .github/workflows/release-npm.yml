@@ -21,6 +21,5 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NIGHTLY: false
           NPM_CHANNEL: latest
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

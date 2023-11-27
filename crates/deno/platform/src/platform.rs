@@ -16,7 +16,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
@@ -351,24 +351,29 @@ impl Platform for DenoPlatform {
         working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
-        let mut globals_dirs = vec![];
+
+        command.args(&task.args).envs(&task.env).cwd(working_dir);
+
+        Ok(command)
+    }
+
+    async fn get_run_target_paths(
+        &self,
+        _project: &Project,
+        _working_dir: &Path,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = vec![];
 
         if let Ok(value) = env::var("DENO_INSTALL_ROOT") {
-            globals_dirs.push(PathBuf::from(value).join("bin"));
+            paths.push(PathBuf::from(value).join("bin"));
         }
 
         if let Ok(value) = env::var("DENO_HOME") {
-            globals_dirs.push(PathBuf::from(value).join("bin"));
+            paths.push(PathBuf::from(value).join("bin"));
         }
 
-        globals_dirs.push(self.proto_env.home.join(".deno").join("bin"));
+        paths.push(self.proto_env.home.join(".deno").join("bin"));
 
-        command
-            .args(&task.args)
-            .envs(&task.env)
-            .env("PATH", prepend_path_env_var(globals_dirs))
-            .cwd(working_dir);
-
-        Ok(command)
+        Ok(paths)
     }
 }

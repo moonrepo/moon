@@ -13,7 +13,7 @@ use moon_task::Task;
 use moon_tool::Tool;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[async_trait]
@@ -162,4 +162,10 @@ pub trait Platform: Send + Sync {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command>;
+
+    async fn get_run_target_paths(
+        &self,
+        project: &Project,
+        working_dir: &Path,
+    ) -> miette::Result<Vec<PathBuf>>;
 }

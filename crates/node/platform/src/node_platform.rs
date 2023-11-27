@@ -16,7 +16,6 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::prepend_path_env_var;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
@@ -481,7 +480,7 @@ impl Platform for NodePlatform {
         //     )?
         // };
 
-        let mut command = actions::create_target_command_without_tool(
+        let command = actions::create_target_command_without_tool(
             &self.config,
             context,
             project,
@@ -489,7 +488,32 @@ impl Platform for NodePlatform {
             working_dir,
         )?;
 
-        let mut paths = self.get_node_module_paths(&project.root);
+        Ok(command)
+    }
+
+    async fn get_run_target_paths(
+        &self,
+        project: &Project,
+        _working_dir: &Path,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = vec![];
+        let mut current_dir = project.root.as_path();
+
+        loop {
+            paths.push(current_dir.join("node_modules").join(".bin"));
+
+            if current_dir == self.workspace_root {
+                break;
+            }
+
+            match current_dir.parent() {
+                Some(dir) => {
+                    current_dir = dir;
+                }
+                None => break,
+            };
+        }
+
         paths.push(
             self.proto_env
                 .tools_dir
@@ -498,8 +522,8 @@ impl Platform for NodePlatform {
                 .join("bin"),
         );
 
-        command.env("PATH", prepend_path_env_var(paths));
+        // TODO: npm, pnpm, yarn global paths?
 
-        Ok(command)
+        Ok(paths)
     }
 }

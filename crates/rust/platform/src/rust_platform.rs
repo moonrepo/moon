@@ -21,7 +21,7 @@ use moon_rust_lang::{
 use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{Tool, ToolManager};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
@@ -29,6 +29,7 @@ use starbase_styles::color;
 use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
+    env,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -509,7 +510,6 @@ impl Platform for RustPlatform {
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
         let mut args = vec![];
-        let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
 
         match task.command.as_str() {
             // Do nothing and run as-is
@@ -523,6 +523,7 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
+                let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
                 let cargo_bin = task.command.strip_prefix("cargo-").unwrap_or(&task.command);
                 let cargo_bin_path = globals_dir.join(exe_name(format!("cargo-{}", cargo_bin)));
 
@@ -538,9 +539,28 @@ impl Platform for RustPlatform {
             .args(&args)
             .args(&task.args)
             .envs(&task.env)
-            .env("PATH", prepend_path_env_var([globals_dir]))
             .cwd(working_dir);
 
         Ok(command)
+    }
+
+    async fn get_run_target_paths(
+        &self,
+        _project: &Project,
+        _working_dir: &Path,
+    ) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = vec![];
+
+        if let Ok(value) = env::var("CARGO_INSTALL_ROOT") {
+            paths.push(PathBuf::from(value).join("bin"));
+        }
+
+        if let Ok(value) = env::var("CARGO_HOME") {
+            paths.push(PathBuf::from(value).join("bin"));
+        }
+
+        paths.push(self.proto_env.home.join(".cargo").join("bin"));
+
+        Ok(paths)
     }
 }

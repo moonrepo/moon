@@ -9,7 +9,7 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_tool::Tool;
 use moon_utils::async_trait;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default)]
 pub struct SystemPlatform {
@@ -94,5 +94,13 @@ impl Platform for SystemPlatform {
         command.envs(&task.env);
 
         Ok(command)
+    }
+
+    async fn get_run_target_paths(
+        &self,
+        _project: &Project,
+        _working_dir: &Path,
+    ) -> miette::Result<Vec<PathBuf>> {
+        Ok(vec![])
     }
 }

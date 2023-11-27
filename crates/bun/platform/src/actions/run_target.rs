@@ -13,7 +13,7 @@ use moon_utils::path;
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
-fn find_package_bin(
+fn _find_package_bin(
     command: &mut Command,
     starting_dir: &Path,
     working_dir: &Path,
@@ -55,7 +55,7 @@ fn find_package_bin(
     Ok(None)
 }
 
-pub fn create_target_command(
+pub fn _create_target_command(
     bun: &BunTool,
     project: &Project,
     task: &Task,
@@ -71,7 +71,7 @@ pub fn create_target_command(
         }
         bin => {
             if let Some(new_command) =
-                find_package_bin(&mut command, &project.root, working_dir, bin)?
+                _find_package_bin(&mut command, &project.root, working_dir, bin)?
             {
                 command = new_command;
             }
@@ -94,19 +94,19 @@ pub fn create_target_command(
 // has not been configured, and should default to the global "bun" found
 // in the user's shell.
 pub fn create_target_command_without_tool(
-    project: &Project,
+    _project: &Project,
     task: &Task,
-    working_dir: &Path,
+    _working_dir: &Path,
 ) -> miette::Result<Command> {
     let mut command = Command::new(&task.command);
 
-    if task.command != "bun" && task.command != "bunx" {
-        if let Some(new_command) =
-            find_package_bin(&mut command, &project.root, working_dir, &task.command)?
-        {
-            command = new_command;
-        }
-    }
+    // if task.command != "bun" && task.command != "bunx" {
+    //     if let Some(new_command) =
+    //         find_package_bin(&mut command, &project.root, working_dir, &task.command)?
+    //     {
+    //         command = new_command;
+    //     }
+    // }
 
     command.args(&task.args).envs(&task.env);
 

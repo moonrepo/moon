@@ -14,7 +14,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{Tool, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
@@ -66,6 +66,28 @@ impl BunPlatform {
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
+    }
+
+    pub fn get_node_module_paths(&self, project_root: &Path) -> Vec<PathBuf> {
+        let mut paths = vec![];
+        let mut current_dir = project_root;
+
+        loop {
+            paths.push(current_dir.join("node_modules").join(".bin"));
+
+            if current_dir == self.workspace_root {
+                break;
+            }
+
+            match current_dir.parent() {
+                Some(dir) => {
+                    current_dir = dir;
+                }
+                None => break,
+            };
+        }
+
+        paths
     }
 }
 
@@ -394,19 +416,26 @@ impl Platform for BunPlatform {
         _context: &ActionContext,
         project: &Project,
         task: &Task,
-        runtime: &Runtime,
+        _runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
-        let command = if self.is_toolchain_enabled()? {
-            actions::create_target_command(
-                self.toolchain.get_for_version(&runtime.requirement)?,
-                project,
-                task,
-                working_dir,
-            )?
-        } else {
-            actions::create_target_command_without_tool(project, task, working_dir)?
-        };
+        // let command = if self.is_toolchain_enabled()? {
+        //     actions::create_target_command(
+        //         self.toolchain.get_for_version(&runtime.requirement)?,
+        //         project,
+        //         task,
+        //         working_dir,
+        //     )?
+        // } else {
+        //     actions::create_target_command_without_tool(project, task, working_dir)?
+        // };
+
+        let mut command = actions::create_target_command_without_tool(project, task, working_dir)?;
+
+        let mut paths = self.get_node_module_paths(&project.root);
+        paths.push(self.proto_env.home.join(".bun").join("bin"));
+
+        command.env("PATH", prepend_path_env_var(paths));
 
         Ok(command)
     }

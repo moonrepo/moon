@@ -224,9 +224,9 @@ pub fn create_target_command(
 pub fn create_target_command_without_tool(
     node_config: &NodeConfig,
     context: &ActionContext,
-    project: &Project,
+    _project: &Project,
     task: &Task,
-    working_dir: &Path,
+    _working_dir: &Path,
 ) -> miette::Result<Command> {
     let node_options = create_node_options(node_config, context, task)?;
     let mut command = Command::new("node");
@@ -239,11 +239,12 @@ pub fn create_target_command_without_tool(
             command = Command::new(&task.command);
         }
         bin => {
-            if let Some(new_command) =
-                find_package_bin(&mut command, &node_options, &project.root, working_dir, bin)?
-            {
-                command = new_command;
-            }
+            command = Command::new(bin);
+            // if let Some(new_command) =
+            //     find_package_bin(&mut command, &node_options, &project.root, working_dir, bin)?
+            // {
+            //     command = new_command;
+            // }
         }
     };
 

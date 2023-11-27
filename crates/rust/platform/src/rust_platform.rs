@@ -21,7 +21,7 @@ use moon_rust_lang::{
 use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolError, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
@@ -509,6 +509,7 @@ impl Platform for RustPlatform {
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
         let mut args = vec![];
+        let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
 
         match task.command.as_str() {
             // Do nothing and run as-is
@@ -522,9 +523,6 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
-                let global_bin_path = globals_dir.join(exe_name(&task.command));
-
                 let cargo_bin = task.command.strip_prefix("cargo-").unwrap_or(&task.command);
                 let cargo_bin_path = globals_dir.join(exe_name(format!("cargo-{}", cargo_bin)));
 
@@ -532,18 +530,6 @@ impl Platform for RustPlatform {
                 if cargo_bin_path.exists() {
                     command = Command::new("cargo");
                     args.push(cargo_bin.to_owned());
-
-                    // Truly global and doesn't run through cargo
-                } else if global_bin_path.exists() {
-                    command = Command::new(&global_bin_path);
-
-                    // Not found, so error!
-                } else {
-                    return Err(ToolError::MissingBinary(
-                        "Cargo binary".into(),
-                        cargo_bin.to_owned(),
-                    )
-                    .into());
                 }
             }
         }
@@ -552,6 +538,7 @@ impl Platform for RustPlatform {
             .args(&args)
             .args(&task.args)
             .envs(&task.env)
+            .env("PATH", prepend_path_env_var([globals_dir]))
             .cwd(working_dir);
 
         Ok(command)

@@ -163,9 +163,5 @@ pub trait Platform: Send + Sync {
         working_dir: &Path,
     ) -> miette::Result<Command>;
 
-    async fn get_run_target_paths(
-        &self,
-        project: &Project,
-        working_dir: &Path,
-    ) -> miette::Result<Vec<PathBuf>>;
+    async fn get_env_paths(&self, working_dir: &Path) -> miette::Result<Vec<PathBuf>>;
 }

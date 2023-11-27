@@ -413,13 +413,9 @@ impl Platform for BunPlatform {
         Ok(command)
     }
 
-    async fn get_run_target_paths(
-        &self,
-        project: &Project,
-        _working_dir: &Path,
-    ) -> miette::Result<Vec<PathBuf>> {
+    async fn get_env_paths(&self, working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut paths = vec![];
-        let mut current_dir = project.root.as_path();
+        let mut current_dir = working_dir;
 
         loop {
             paths.push(current_dir.join("node_modules").join(".bin"));

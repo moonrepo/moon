@@ -2,7 +2,7 @@ use moon_config::DenoConfig;
 use moon_platform_runtime::RuntimeReq;
 use moon_tool::{async_trait, use_global_tool_on_path, Tool};
 use proto_core::ProtoEnvironment;
-use std::path::PathBuf;
+// use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct DenoTool {
@@ -39,7 +39,7 @@ impl Tool for DenoTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(PathBuf::from("deno"))
-    }
+    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
+    //     Ok(PathBuf::from("deno"))
+    // }
 }

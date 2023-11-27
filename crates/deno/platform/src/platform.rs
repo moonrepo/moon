@@ -16,7 +16,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolManager};
+use moon_tool::{get_proto_paths, prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
@@ -88,9 +88,7 @@ impl Platform for DenoPlatform {
         _project_id: &str,
         _project_source: &str,
     ) -> miette::Result<Vec<DependencyConfig>> {
-        let implicit_deps = vec![];
-
-        Ok(implicit_deps)
+        Ok(vec![])
     }
 
     // TOOLCHAIN
@@ -164,20 +162,20 @@ impl Platform for DenoPlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        runtime: &Runtime,
+        _runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<()> {
         if !self.config.lockfile {
             return Ok(());
         }
 
-        let tool = self.toolchain.get_for_version(&runtime.requirement)?;
+        let path = prepend_path_env_var(self.get_env_paths(working_dir).await?);
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 
         print_checkpoint("deno cache", Checkpoint::Setup);
 
-        Command::new(tool.get_bin_path()?)
+        Command::new("deno")
             .args([
                 "cache",
                 "--lock",
@@ -185,6 +183,7 @@ impl Platform for DenoPlatform {
                 "--lock-write",
                 &self.config.deps_file,
             ])
+            .env("PATH", &path)
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -230,8 +229,9 @@ impl Platform for DenoPlatform {
                     }
                 };
 
-                Command::new(tool.get_bin_path()?)
+                Command::new("deno")
                     .args(args)
+                    .env("PATH", &path)
                     .cwd(working_dir)
                     .create_async()
                     .exec_stream_output()
@@ -345,24 +345,27 @@ impl Platform for DenoPlatform {
     async fn create_run_target_command(
         &self,
         _context: &ActionContext,
-        _project: &Project,
+        project: &Project,
         task: &Task,
         _runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
 
-        command.args(&task.args).envs(&task.env).cwd(working_dir);
+        command
+            .args(&task.args)
+            .envs(&task.env)
+            .env(
+                "PATH",
+                prepend_path_env_var(self.get_env_paths(&project.root).await?),
+            )
+            .cwd(working_dir);
 
         Ok(command)
     }
 
-    async fn get_run_target_paths(
-        &self,
-        _project: &Project,
-        _working_dir: &Path,
-    ) -> miette::Result<Vec<PathBuf>> {
-        let mut paths = vec![];
+    async fn get_env_paths(&self, _working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = get_proto_paths(&self.proto_env);
 
         if let Ok(value) = env::var("DENO_INSTALL_ROOT") {
             paths.push(PathBuf::from(value).join("bin"));

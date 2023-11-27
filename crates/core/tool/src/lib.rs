@@ -11,7 +11,9 @@ use proto_core::{
     inject_default_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, Wasm,
 };
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+pub static PROTO_CLI_VERSION: &str = "0.23.4";
 
 pub fn use_global_tool_on_path() -> bool {
     env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|v| v == "1" || v == "true" || v == "on")
@@ -36,6 +38,14 @@ where
     paths.extend(env::split_paths(&path).collect::<Vec<_>>());
 
     env::join_paths(paths).unwrap()
+}
+
+pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
+    vec![
+        proto.tools_dir.join("proto").join(PROTO_CLI_VERSION),
+        proto.shims_dir.clone(),
+        proto.bin_dir.clone(),
+    ]
 }
 
 pub async fn load_tool_plugin(

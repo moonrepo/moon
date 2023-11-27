@@ -544,11 +544,7 @@ impl Platform for RustPlatform {
         Ok(command)
     }
 
-    async fn get_run_target_paths(
-        &self,
-        _project: &Project,
-        _working_dir: &Path,
-    ) -> miette::Result<Vec<PathBuf>> {
+    async fn get_env_paths(&self, _working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut paths = vec![];
 
         if let Ok(value) = env::var("CARGO_INSTALL_ROOT") {

@@ -8,7 +8,7 @@ use moon_config::{
     ProjectConfig, TypeScriptConfig,
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
-use moon_deno_tool::DenoTool;
+use moon_deno_tool::{get_deno_env_paths, DenoTool};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -16,12 +16,11 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{get_proto_paths, prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
-use std::env;
 use std::sync::Arc;
 use std::{
     collections::BTreeMap,
@@ -169,7 +168,7 @@ impl Platform for DenoPlatform {
             return Ok(());
         }
 
-        // let path = prepend_path_env_var(self.get_env_paths(working_dir).await?);
+        let path = prepend_path_env_var(get_deno_env_paths(&self.proto_env));
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 
@@ -183,7 +182,7 @@ impl Platform for DenoPlatform {
                 "--lock-write",
                 &self.config.deps_file,
             ])
-            // .env("PATH", &path)
+            .env("PATH", &path)
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -231,7 +230,7 @@ impl Platform for DenoPlatform {
 
                 Command::new("deno")
                     .args(args)
-                    // .env("PATH", &path)
+                    .env("PATH", &path)
                     .cwd(working_dir)
                     .create_async()
                     .exec_stream_output()
@@ -345,7 +344,7 @@ impl Platform for DenoPlatform {
     async fn create_run_target_command(
         &self,
         _context: &ActionContext,
-        project: &Project,
+        _project: &Project,
         task: &Task,
         _runtime: &Runtime,
         working_dir: &Path,
@@ -355,21 +354,5 @@ impl Platform for DenoPlatform {
         command.args(&task.args).envs(&task.env).cwd(working_dir);
 
         Ok(command)
-    }
-
-    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
-        let mut paths = get_proto_paths(&self.proto_env);
-
-        if let Ok(value) = env::var("DENO_INSTALL_ROOT") {
-            paths.push(PathBuf::from(value).join("bin"));
-        }
-
-        if let Ok(value) = env::var("DENO_HOME") {
-            paths.push(PathBuf::from(value).join("bin"));
-        }
-
-        paths.push(self.proto_env.home.join(".deno").join("bin"));
-
-        paths
     }
 }

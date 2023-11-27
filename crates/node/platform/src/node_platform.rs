@@ -491,35 +491,35 @@ impl Platform for NodePlatform {
         Ok(command)
     }
 
-    async fn get_env_paths(&self, working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
-        let mut paths = vec![];
-        let mut current_dir = working_dir;
+    // async fn get_env_paths(&self, working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+    //     let mut paths = vec![];
+    //     let mut current_dir = working_dir;
 
-        loop {
-            paths.push(current_dir.join("node_modules").join(".bin"));
+    //     loop {
+    //         paths.push(current_dir.join("node_modules").join(".bin"));
 
-            if current_dir == self.workspace_root {
-                break;
-            }
+    //         if current_dir == self.workspace_root {
+    //             break;
+    //         }
 
-            match current_dir.parent() {
-                Some(dir) => {
-                    current_dir = dir;
-                }
-                None => break,
-            };
-        }
+    //         match current_dir.parent() {
+    //             Some(dir) => {
+    //                 current_dir = dir;
+    //             }
+    //             None => break,
+    //         };
+    //     }
 
-        paths.push(
-            self.proto_env
-                .tools_dir
-                .join("node")
-                .join("globals")
-                .join("bin"),
-        );
+    //     paths.push(
+    //         self.proto_env
+    //             .tools_dir
+    //             .join("node")
+    //             .join("globals")
+    //             .join("bin"),
+    //     );
 
-        // TODO: npm, pnpm, yarn global paths?
+    //     // TODO: npm, pnpm, yarn global paths?
 
-        Ok(paths)
-    }
+    //     Ok(paths)
+    // }
 }

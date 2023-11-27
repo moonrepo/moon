@@ -39,13 +39,13 @@ impl Tool for NpmTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(if self.global {
-            "npm".into()
-        } else {
-            self.tool.get_exe_path()?.to_path_buf()
-        })
-    }
+    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
+    //     Ok(if self.global {
+    //         "npm".into()
+    //     } else {
+    //         self.tool.get_exe_path()?.to_path_buf()
+    //     })
+    // }
 
     async fn setup(
         &mut self,
@@ -111,29 +111,31 @@ impl Tool for NpmTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
-        let mut cmd = if self.global {
-            Command::new("npm")
-        } else if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
-        } else {
-            let mut cmd = Command::new(node.get_bin_path()?);
-            cmd.arg(self.get_bin_path()?);
-            cmd
-        };
+        // let mut cmd = if self.global {
+        //     Command::new("npm")
+        // } else if let Some(shim) = self.get_shim_path() {
+        //     Command::new(shim)
+        // } else {
+        //     let mut cmd = Command::new(node.get_bin_path()?);
+        //     cmd.arg(self.get_bin_path()?);
+        //     cmd
+        // };
 
-        if !self.global {
-            cmd.env(
-                "PATH",
-                prepend_path_env_var([
-                    node.get_bin_path()?.parent().unwrap(),
-                    self.tool.get_exe_path()?.parent().unwrap(),
-                ]),
-            );
-        }
+        // if !self.global {
+        //     cmd.env(
+        //         "PATH",
+        //         prepend_path_env_var([
+        //             node.get_bin_path()?.parent().unwrap(),
+        //             self.tool.get_exe_path()?.parent().unwrap(),
+        //         ]),
+        //     );
+        // }
 
-        if !node.global {
-            cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
-        }
+        // if !node.global {
+        //     cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
+        // }
+
+        let cmd = Command::new("npm");
 
         Ok(cmd)
     }

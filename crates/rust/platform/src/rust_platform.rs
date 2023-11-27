@@ -544,7 +544,7 @@ impl Platform for RustPlatform {
         Ok(command)
     }
 
-    async fn get_env_paths(&self, _working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
         let mut paths = vec![];
 
         if let Ok(value) = env::var("CARGO_INSTALL_ROOT") {
@@ -557,6 +557,6 @@ impl Platform for RustPlatform {
 
         paths.push(self.proto_env.home.join(".cargo").join("bin"));
 
-        Ok(paths)
+        paths
     }
 }

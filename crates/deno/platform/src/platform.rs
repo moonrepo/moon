@@ -169,7 +169,7 @@ impl Platform for DenoPlatform {
             return Ok(());
         }
 
-        let path = prepend_path_env_var(self.get_env_paths(working_dir).await?);
+        // let path = prepend_path_env_var(self.get_env_paths(working_dir).await?);
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 
@@ -183,7 +183,7 @@ impl Platform for DenoPlatform {
                 "--lock-write",
                 &self.config.deps_file,
             ])
-            .env("PATH", &path)
+            // .env("PATH", &path)
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -231,7 +231,7 @@ impl Platform for DenoPlatform {
 
                 Command::new("deno")
                     .args(args)
-                    .env("PATH", &path)
+                    // .env("PATH", &path)
                     .cwd(working_dir)
                     .create_async()
                     .exec_stream_output()
@@ -352,19 +352,12 @@ impl Platform for DenoPlatform {
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
 
-        command
-            .args(&task.args)
-            .envs(&task.env)
-            .env(
-                "PATH",
-                prepend_path_env_var(self.get_env_paths(&project.root).await?),
-            )
-            .cwd(working_dir);
+        command.args(&task.args).envs(&task.env).cwd(working_dir);
 
         Ok(command)
     }
 
-    async fn get_env_paths(&self, _working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+    fn get_run_target_paths(&self, _working_dir: &Path) -> Vec<PathBuf> {
         let mut paths = get_proto_paths(&self.proto_env);
 
         if let Ok(value) = env::var("DENO_INSTALL_ROOT") {
@@ -377,6 +370,6 @@ impl Platform for DenoPlatform {
 
         paths.push(self.proto_env.home.join(".deno").join("bin"));
 
-        Ok(paths)
+        paths
     }
 }

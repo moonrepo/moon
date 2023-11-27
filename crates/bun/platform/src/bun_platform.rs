@@ -266,7 +266,7 @@ impl Platform for BunPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                BunTool::new(&self.proto_env, &self.config, &req).await?,
+                BunTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
             );
         }
 
@@ -292,8 +292,10 @@ impl Platform for BunPlatform {
         let req = &runtime.requirement;
 
         if !self.toolchain.has(req) {
-            self.toolchain
-                .register(req, BunTool::new(&self.proto_env, &self.config, req).await?);
+            self.toolchain.register(
+                req,
+                BunTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
+            );
         }
 
         Ok(self.toolchain.setup(req, last_versions).await?)
@@ -397,23 +399,12 @@ impl Platform for BunPlatform {
         _runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
-        // let command = if self.is_toolchain_enabled()? {
-        //     actions::create_target_command(
-        //         self.toolchain.get_for_version(&runtime.requirement)?,
-        //         project,
-        //         task,
-        //         working_dir,
-        //     )?
-        // } else {
-        //     actions::create_target_command_without_tool(project, task, working_dir)?
-        // };
-
         let command = actions::create_target_command_without_tool(project, task, working_dir)?;
 
         Ok(command)
     }
 
-    async fn get_env_paths(&self, working_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+    fn get_run_target_paths(&self, working_dir: &Path) -> Vec<PathBuf> {
         let mut paths = vec![];
         let mut current_dir = working_dir;
 
@@ -432,8 +423,6 @@ impl Platform for BunPlatform {
             };
         }
 
-        paths.push(self.proto_env.home.join(".bun").join("bin"));
-
-        Ok(paths)
+        paths
     }
 }

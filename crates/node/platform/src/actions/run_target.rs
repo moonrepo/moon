@@ -161,9 +161,8 @@ pub fn create_target_command(
     task: &Task,
     working_dir: &Path,
 ) -> miette::Result<Command> {
-    let node_bin = node.get_bin_path()?;
     let node_options = create_node_options(&node.config, context, task)?;
-    let mut command = Command::new(node_bin);
+    let mut command = Command::new("node");
     let mut is_package_manager = false;
 
     match task.command.as_str() {

@@ -191,13 +191,13 @@ impl Tool for NodeTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(if self.global {
-            "node".into()
-        } else {
-            self.tool.get_exe_path()?.to_path_buf()
-        })
-    }
+    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
+    //     Ok(if self.global {
+    //         "node".into()
+    //     } else {
+    //         self.tool.get_exe_path()?.to_path_buf()
+    //     })
+    // }
 
     async fn setup(
         &mut self,

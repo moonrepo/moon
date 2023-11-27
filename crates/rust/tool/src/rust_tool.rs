@@ -6,10 +6,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{async_trait, load_tool_plugin, use_global_tool_on_path, Tool};
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::{ffi::OsStr, path::Path};
 
 pub struct RustTool {
     pub config: RustConfig,
@@ -79,9 +76,9 @@ impl Tool for RustTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(PathBuf::from("cargo"))
-    }
+    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
+    //     Ok(PathBuf::from("cargo"))
+    // }
 
     async fn setup(
         &mut self,

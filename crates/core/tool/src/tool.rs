@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_process::Command;
-use proto_core::UnresolvedVersionSpec;
+use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::any::Any;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Tool: Any + Send + Sync {

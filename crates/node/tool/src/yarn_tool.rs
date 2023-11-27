@@ -109,13 +109,13 @@ impl Tool for YarnTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(if self.global {
-            "yarn".into()
-        } else {
-            self.tool.get_exe_path()?.to_path_buf()
-        })
-    }
+    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
+    //     Ok(if self.global {
+    //         "yarn".into()
+    //     } else {
+    //         self.tool.get_exe_path()?.to_path_buf()
+    //     })
+    // }
 
     async fn setup(
         &mut self,
@@ -181,29 +181,31 @@ impl Tool for YarnTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
-        let mut cmd = if self.global {
-            Command::new("yarn")
-        } else if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
-        } else {
-            let mut cmd = Command::new(node.get_bin_path()?);
-            cmd.arg(self.get_bin_path()?);
-            cmd
-        };
+        // let mut cmd = if self.global {
+        //     Command::new("yarn")
+        // } else if let Some(shim) = self.get_shim_path() {
+        //     Command::new(shim)
+        // } else {
+        //     let mut cmd = Command::new(node.get_bin_path()?);
+        //     cmd.arg(self.get_bin_path()?);
+        //     cmd
+        // };
 
-        if !self.global {
-            cmd.env(
-                "PATH",
-                prepend_path_env_var([
-                    node.get_bin_path()?.parent().unwrap(),
-                    self.tool.get_exe_path()?.parent().unwrap(),
-                ]),
-            );
-        }
+        // if !self.global {
+        //     cmd.env(
+        //         "PATH",
+        //         prepend_path_env_var([
+        //             node.get_bin_path()?.parent().unwrap(),
+        //             self.tool.get_exe_path()?.parent().unwrap(),
+        //         ]),
+        //     );
+        // }
 
-        if !node.global {
-            cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
-        }
+        // if !node.global {
+        //     cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
+        // }
+
+        let cmd = Command::new("yarn");
 
         Ok(cmd)
     }

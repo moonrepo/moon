@@ -38,11 +38,12 @@ impl BunTool {
     }
 
     fn internal_create_command(&self) -> miette::Result<Command> {
-        Ok(if self.global {
-            Command::new("bun")
-        } else {
-            Command::new(self.get_bin_path()?)
-        })
+        // Ok(if self.global {
+        //     Command::new("bun")
+        // } else {
+        //     Command::new(self.get_bin_path()?)
+        // })
+        Ok(Command::new("bun"))
     }
 }
 
@@ -52,13 +53,13 @@ impl Tool for BunTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(if self.global {
-            "bun".into()
-        } else {
-            self.tool.get_exe_path()?.to_path_buf()
-        })
-    }
+    // fn get_bin_path(&self) -> miette::Result<PathBuf> {
+    //     Ok(if self.global {
+    //         "bun".into()
+    //     } else {
+    //         self.tool.get_exe_path()?.to_path_buf()
+    //     })
+    // }
 
     async fn setup(
         &mut self,

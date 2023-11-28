@@ -2,10 +2,7 @@ use miette::IntoDiagnostic;
 use mimalloc::MiMalloc;
 use moon_cli::run_cli;
 use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
-use moon_node_lang::{
-    node::{extract_canonical_node_module_bin, BinFile},
-    NODE,
-};
+use moon_node_lang::NODE;
 use moon_terminal::safe_exit;
 use moon_utils::is_test_env;
 use starbase::MainResult;
@@ -55,10 +52,10 @@ fn get_local_lookups(workspace_root: &Path) -> Vec<PathBuf> {
             .join(NODE.vendor_dir.unwrap())
             .join("@moonrepo/cli")
             .join(BIN_NAME),
-        workspace_root
-            .join(NODE.vendor_dir.unwrap())
-            .join(".bin")
-            .join(BIN_NAME),
+        // workspace_root
+        //     .join(NODE.vendor_dir.unwrap())
+        //     .join(".bin")
+        //     .join(BIN_NAME),
     ]
 }
 
@@ -148,15 +145,11 @@ async fn main() -> MainResult {
                     // we're running the version pinned in `package.json`,
                     // instead of this global one!
                     if lookup.exists() {
-                        if let Ok(BinFile::Binary(moon_bin)) =
-                            extract_canonical_node_module_bin(lookup)
-                        {
-                            set_executed_with(&moon_bin);
+                        set_executed_with(&lookup);
 
-                            run_bin(&moon_bin, &current_dir).await?;
+                        run_bin(&lookup, &current_dir).await?;
 
-                            return Ok(());
-                        }
+                        return Ok(());
                     }
                 }
             }

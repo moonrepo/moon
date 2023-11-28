@@ -3008,6 +3008,7 @@ dependencies = [
  "moon_actions",
  "moon_api",
  "moon_cache_item",
+ "moon_common",
  "moon_emitter",
  "moon_hash",
  "moon_logger",
@@ -3493,7 +3494,6 @@ name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
- "content_inspector",
  "miette",
  "moon_bun_lang",
  "moon_lang",
@@ -4026,6 +4026,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "miette",
+ "moon_common",
  "moon_lang",
  "moon_platform_runtime",
  "moon_process",

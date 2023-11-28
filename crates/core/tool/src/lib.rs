@@ -7,13 +7,12 @@ pub use errors::*;
 pub use manager::*;
 pub use tool::*;
 
+use moon_common::consts::PROTO_CLI_VERSION;
 use proto_core::{
     inject_default_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, Wasm,
 };
 use std::env;
 use std::path::{Path, PathBuf};
-
-pub static PROTO_CLI_VERSION: &str = "0.23.4";
 
 pub fn use_global_tool_on_path() -> bool {
     env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|v| v == "1" || v == "true" || v == "on")

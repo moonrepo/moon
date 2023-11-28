@@ -15,3 +15,5 @@ pub const CONFIG_TASKS_FILENAME: &str = "tasks.yml";
 pub const CONFIG_PROJECT_FILENAME: &str = "moon.yml";
 
 pub const CONFIG_TEMPLATE_FILENAME: &str = "template.yml";
+
+pub const PROTO_CLI_VERSION: &str = "0.23.4";

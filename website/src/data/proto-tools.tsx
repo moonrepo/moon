@@ -216,6 +216,16 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/sops.toml',
 	},
+	terraform: {
+		bins: ['terraform'],
+		description: 'Provision & Manage any Infrastructure.',
+		homepageUrl: 'https://www.terraform.io',
+		name: 'terraform',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/theomessin/proto-toml-plugins/master/terraform.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/terraform.toml',
+	},
 	terragrunt: {
 		bins: ['terragrunt'],
 		description:

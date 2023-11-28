@@ -1,6 +1,5 @@
 use moon_tool::Tool;
 
-#[derive(Debug, Default)]
 pub struct SystemToolStub;
 
 impl Tool for SystemToolStub {

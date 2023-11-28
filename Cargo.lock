@@ -3013,6 +3013,7 @@ dependencies = [
  "moon_logger",
  "moon_notifier",
  "moon_platform",
+ "moon_process",
  "moon_project",
  "moon_project_graph",
  "moon_runner",

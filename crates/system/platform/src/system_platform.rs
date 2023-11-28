@@ -24,7 +24,7 @@ pub struct SystemPlatform {
 impl SystemPlatform {
     pub fn new(workspace_root: &Path, proto_env: Arc<ProtoEnvironment>) -> Self {
         SystemPlatform {
-            tool: SystemToolStub::default(),
+            tool: SystemToolStub,
             proto_env,
             _workspace_root: workspace_root.to_path_buf(),
         }

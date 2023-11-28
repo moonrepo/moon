@@ -16,6 +16,7 @@ moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
+moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../../nextgen/project" }
 moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_runner = { path = "../runner" }

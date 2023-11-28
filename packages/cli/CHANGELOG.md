@@ -14,6 +14,10 @@
 
 #### 🚀 Updates
 
+- Rewrote toolchain based task running to use a shell.
+  - Instead of locating a direct executable, we'll now use the shell to locate the executable.
+  - This approach will now benefit from proto shims and binaries.
+  - We'll also download and install the `proto` binary if it does not exist.
 - Reworked the `moon init` command.
   - Will no longer scaffold the toolchain configuration by default.
   - The tool to scaffold into a toolchain can be passed as an argument.

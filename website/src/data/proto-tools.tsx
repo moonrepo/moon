@@ -146,6 +146,16 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/buf.toml',
 	},
+	earthly: {
+		bins: ['earthly'],
+		description: 'Like Dockerfile and Makefile had a baby.',
+		homepageUrl: 'https://earthly.dev',
+		name: 'earthly',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/theomessin/proto-toml-plugins/master/earthly.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/earthly.toml',
+	},
 	gojq: {
 		bins: ['gojq'],
 		description: 'Pure Go implementation of jq.',

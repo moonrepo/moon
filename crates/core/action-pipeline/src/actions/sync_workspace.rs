@@ -94,26 +94,28 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
     } else {
         "proto.sh"
     };
-    let script_file = workspace.proto_env.temp_dir.join(script_name);
+    let script_path = workspace.proto_env.temp_dir.join(script_name);
     let script_url = format!("https://moonrepo.dev/install/{script_name}");
 
+    // Download the install script
     debug!("Downloading from {}", script_url);
 
     download_from_url_to_file(
         &script_url,
-        &script_file,
+        &script_path,
         workspace.proto_env.get_http_client()?,
     )
     .await?;
 
-    fs::update_perms(&script_file, None)?;
+    fs::update_perms(&script_path, None)?;
 
-    debug!("Executing install script {}", script_file.display());
+    // Install using the official script
+    debug!("Executing install script {}", script_path.display());
 
-    let mut cmd = Command::new(script_file);
+    let mut cmd = Command::new(script_path);
     let mut cmd = cmd
         .arg(PROTO_CLI_VERSION)
-        .env("PROTO_INSTALL_DIR", install_dir)
+        .env("PROTO_INSTALL_DIR", &install_dir)
         .env("PROTO_DEBUG", "true")
         .create_async();
 
@@ -121,6 +123,14 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         cmd.exec_stream_output().await?;
     } else {
         cmd.exec_capture_output().await?;
+    }
+
+    // Copy the binary to the bin folder
+    let bin_name = if cfg!(windows) { "proto.exe" } else { "proto" };
+    let bin_path = workspace.proto_env.bin_dir.join(&bin_name);
+
+    if !bin_path.exists() {
+        fs::copy_file(install_dir.join(bin_name), bin_path)?;
     }
 
     Ok(())

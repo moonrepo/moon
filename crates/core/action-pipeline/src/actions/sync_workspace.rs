@@ -78,7 +78,7 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         .join("proto")
         .join(PROTO_CLI_VERSION);
 
-    if install_dir.exists() {
+    if install_dir.exists() || is_test_env() {
         return Ok(());
     }
 

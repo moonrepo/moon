@@ -1,5 +1,6 @@
 use miette::IntoDiagnostic;
 use mimalloc::MiMalloc;
+use moon_cli::commands::upgrade::is_musl;
 use moon_cli::run_cli;
 use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
 use moon_node_lang::NODE;
@@ -7,7 +8,7 @@ use moon_terminal::safe_exit;
 use moon_utils::is_test_env;
 use starbase::MainResult;
 use starbase_utils::dirs;
-use std::env;
+use std::env::{self, consts};
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
 
@@ -47,16 +48,37 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
 }
 
 fn get_local_lookups(workspace_root: &Path) -> Vec<PathBuf> {
-    vec![
-        workspace_root
-            .join(NODE.vendor_dir.unwrap())
-            .join("@moonrepo/cli")
-            .join(BIN_NAME),
-        // workspace_root
-        //     .join(NODE.vendor_dir.unwrap())
-        //     .join(".bin")
-        //     .join(BIN_NAME),
-    ]
+    let cli_bin = workspace_root
+        .join(NODE.vendor_dir.unwrap())
+        .join("@moonrepo/cli")
+        .join(BIN_NAME);
+
+    let arch = match consts::ARCH {
+        "x86_64" => "x64",
+        "aarch64" => "arm64",
+        _ => {
+            return vec![cli_bin];
+        }
+    };
+
+    let package = match consts::OS {
+        "linux" => format!(
+            "core-linux-{arch}-{}",
+            if is_musl() { "musl" } else { "gnu" }
+        ),
+        "macos" => format!("core-macos-{arch}"),
+        "windows" => format!("core-windows-{arch}-msvc"),
+        _ => {
+            return vec![cli_bin];
+        }
+    };
+
+    let core_bin = workspace_root
+        .join(NODE.vendor_dir.unwrap())
+        .join(format!("@moonrepo/{package}"))
+        .join(BIN_NAME);
+
+    vec![core_bin, cli_bin]
 }
 
 fn set_executed_with(path: &Path) {

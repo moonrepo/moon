@@ -255,9 +255,8 @@ impl<'a> Runner<'a> {
             .set_error_on_nonzero(false);
 
         // Wrap in a shell
-        // if task.platform.is_system() && task.options.shell {
-        if task.options.shell {
-            command.with_shell();
+        if !task.options.shell {
+            command.without_shell();
         }
 
         // Passthrough args

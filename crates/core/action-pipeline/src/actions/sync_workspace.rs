@@ -115,7 +115,6 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         .arg(PROTO_CLI_VERSION)
         .env("PROTO_INSTALL_DIR", install_dir)
         .env("PROTO_DEBUG", "true")
-        .with_shell()
         .create_async();
 
     if env::var("MOON_DEBUG_PROTO_INSTALL").is_ok() {

@@ -1,2 +1,12 @@
-node = "20.8.0"
-yarn = "4.0.0"
+act = "~0.2"
+earthly = "~0.7"
+moon = "~1.17"
+node = "~16.20"
+pnpm = "8.10.5"
+terraform = "1.6.4"
+
+[plugins]
+act = "source:https://raw.githubusercontent.com/theomessin/proto-toml-plugins/master/act.toml"
+earthly = "source:https://raw.githubusercontent.com/theomessin/proto-toml-plugins/master/earthly.toml"
+moon = "source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"
+terraform = "source:https://raw.githubusercontent.com/theomessin/proto-toml-plugins/master/terraform.toml"

@@ -76,7 +76,9 @@ jobs:
           components: llvm-tools-preview
       # Required for "global bins" tests
       - uses: moonrepo/setup-toolchain@v0
-        if: ${{ runner.os == 'Linux' }}
+        with:
+          auto-install: true
+          cache: false
       - run: proto install bun 1.0.0
         if: ${{ runner.os == 'Linux' }}
       - uses: mozilla-actions/sccache-action@v0.0.3

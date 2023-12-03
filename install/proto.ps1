@@ -21,7 +21,13 @@ $DownloadUrl = if ($Version -eq "latest") {
 
 $TempDir = "${HOME}\.proto\temp\proto\${Target}"
 $DownloadFile = "${TempDir}.zip"
-$InstallDir = "${Home}\.proto\bin"
+
+$InstallDir = if ($env:PROTO_INSTALL_DIR) {
+  $env:PROTO_INSTALL_DIR
+} else {
+  "${Home}\.proto\bin"
+}
+
 $BinPath = "${InstallDir}\proto.exe"
 
 # Download and unpack in temp dir

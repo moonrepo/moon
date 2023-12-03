@@ -51,7 +51,13 @@ fi
 
 temp_dir="$HOME/.proto/temp/proto/$target"
 download_file="$temp_dir$ext"
-install_dir="$HOME/.proto/bin"
+
+if [ -z "$PROTO_INSTALL_DIR" ]; then
+	install_dir="$HOME/.proto/bin"
+else
+	install_dir="$PROTO_INSTALL_DIR"
+fi
+
 bin_path="$install_dir/$bin"
 
 # Download and unpack in temp dir

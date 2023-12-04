@@ -32,6 +32,8 @@ const LOG_TARGET: &str = "moon:bun-platform";
 pub struct BunPlatform {
     pub config: BunConfig,
 
+    node_also_enabled: bool,
+
     package_names: FxHashMap<String, Id>,
 
     packages_root: PathBuf,
@@ -52,10 +54,12 @@ impl BunPlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
+        node_also_enabled: bool,
     ) -> Self {
         BunPlatform {
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),
             config: config.to_owned(),
+            node_also_enabled,
             package_names: FxHashMap::default(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(PlatformType::Bun, RuntimeReq::Global)),
@@ -149,21 +153,31 @@ impl Platform for BunPlatform {
 
                     if let Some(existing_source) = projects_map.get(&alias) {
                         if existing_source != project_source {
-                            warn!(
-                                target: LOG_TARGET,
-                                "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                                color::id(&alias),
-                                color::file(existing_source),
-                                color::file(project_source)
-                            );
+                            if !self.node_also_enabled {
+                                warn!(
+                                    target: LOG_TARGET,
+                                    "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
+                                    color::id(&alias),
+                                    color::file(existing_source),
+                                    color::file(project_source)
+                                );
+                            }
 
                             continue;
                         }
                     }
 
-                    if aliases_map.contains_key(&alias) {
-                        // Ignore warning here since the duplicate may have come
-                        // from the Node.js platform!
+                    if let Some(existing_id) = aliases_map.get(&alias) {
+                        if !self.node_also_enabled {
+                            warn!(
+                                target: LOG_TARGET,
+                                "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
+                                color::id(alias),
+                                color::id(existing_id),
+                                color::file(project_source)
+                            );
+                        }
+
                         continue;
                     }
 

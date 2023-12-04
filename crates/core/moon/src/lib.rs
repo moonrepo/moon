@@ -83,6 +83,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
                 Arc::clone(&workspace.proto_env),
+                workspace.toolchain_config.node.is_some(),
             )),
         );
     }
@@ -107,6 +108,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
                 Arc::clone(&workspace.proto_env),
+                workspace.toolchain_config.bun.is_some(),
             )),
         );
     }

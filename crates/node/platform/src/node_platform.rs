@@ -30,6 +30,8 @@ use std::{collections::BTreeMap, path::Path};
 const LOG_TARGET: &str = "moon:node-platform";
 
 pub struct NodePlatform {
+    bun_also_enabled: bool,
+
     config: NodeConfig,
 
     package_names: FxHashMap<String, Id>,
@@ -51,8 +53,10 @@ impl NodePlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
+        bun_also_enabled: bool,
     ) -> Self {
         NodePlatform {
+            bun_also_enabled,
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),
             config: config.to_owned(),
             package_names: FxHashMap::default(),
@@ -152,26 +156,30 @@ impl Platform for NodePlatform {
 
                     if let Some(existing_source) = projects_map.get(&alias) {
                         if existing_source != project_source {
-                            warn!(
-                                target: LOG_TARGET,
-                                "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                                color::id(&alias),
-                                color::file(existing_source),
-                                color::file(project_source)
-                            );
+                            if !self.bun_also_enabled {
+                                warn!(
+                                    target: LOG_TARGET,
+                                    "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
+                                    color::id(&alias),
+                                    color::file(existing_source),
+                                    color::file(project_source)
+                                );
+                            }
 
                             continue;
                         }
                     }
 
                     if let Some(existing_id) = aliases_map.get(&alias) {
-                        warn!(
-                            target: LOG_TARGET,
-                            "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
-                            color::id(alias),
-                            color::id(existing_id),
-                            color::file(project_source)
-                        );
+                        if !self.bun_also_enabled {
+                            warn!(
+                                target: LOG_TARGET,
+                                "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
+                                color::id(alias),
+                                color::id(existing_id),
+                                color::file(project_source)
+                            );
+                        }
 
                         continue;
                     }

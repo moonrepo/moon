@@ -18,11 +18,13 @@
   on Windows.
 - Fixed `typescript.includeProjectReferenceSources` and `typescript.syncProjectReferencesToPaths`
   settings not including project references that were manually added (not auto-synced).
+- Fixed the "a project already exists with alias" warnings when using Bun and Node together.
 
 #### ⚙️ Internal
 
 - Added canary release support.
-- Updated proto to v0.23.5.
+- Enabled wasmtime caching, which should improve performance of WASM plugins by 10-20%.
+- Updated proto to v0.23.7.
 
 ## 1.17.3
 

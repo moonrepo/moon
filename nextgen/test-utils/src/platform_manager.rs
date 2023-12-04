@@ -16,14 +16,26 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
     if let Some(bun_config) = &config.bun {
         manager.register(
             PlatformType::Bun,
-            Box::new(BunPlatform::new(bun_config, &None, root, proto.clone())),
+            Box::new(BunPlatform::new(
+                bun_config,
+                &None,
+                root,
+                proto.clone(),
+                config.node.is_some(),
+            )),
         );
     }
 
     if let Some(node_config) = &config.node {
         manager.register(
             PlatformType::Node,
-            Box::new(NodePlatform::new(node_config, &None, root, proto.clone())),
+            Box::new(NodePlatform::new(
+                node_config,
+                &None,
+                root,
+                proto.clone(),
+                config.bun.is_some(),
+            )),
         );
     }
 

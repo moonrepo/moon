@@ -75,7 +75,7 @@ export default function Pricing() {
 								// 	tooltip:
 								// 		'Maximum number of projects aggregated into the registry, across all repositories.',
 								// },
-								{ label: '100 CI runs', monthly: true, tooltip: 'Across all repositories.' },
+								{ label: '100 CI insights', monthly: true, tooltip: 'Across all repositories.' },
 								{ label: '1GB cloud storage', tooltip: 'Across all repositories.' },
 							]}
 							cta={{ href: 'https://moonrepo.app', label: 'Get started' }}
@@ -97,7 +97,7 @@ export default function Pricing() {
 								// 	tooltip:
 								// 		'Maximum number of projects aggregated into the registry, across all repositories.',
 								// },
-								{ label: '1,000 CI runs', monthly: true, tooltip: 'Across all repositories.' },
+								{ label: '1,000 CI insights', monthly: true, tooltip: 'Across all repositories.' },
 								{
 									label: '10GB cloud storage',
 									tooltip: 'Across all repositories.',
@@ -113,7 +113,7 @@ export default function Pricing() {
 									<Heading level={1}>$5</Heading>
 								</div>
 								<div className="text-left">
-									per member + repo
+									per member <i>or</i> repo
 									<Text className="m-0" variant="muted">
 										monthly
 									</Text>
@@ -142,10 +142,17 @@ export default function Pricing() {
 								// 	tooltip:
 								// 		'Maximum number of projects aggregated into the registry, across all repositories.',
 								// },
-								{ label: 'Unlimited CI runs', monthly: true, tooltip: 'Across all repositories.' },
+								{
+									label: 'Unlimited CI insights',
+									monthly: true,
+									tooltip: 'Across all repositories.',
+								},
 								{
 									label: 'Unlimited cloud storage',
 									tooltip: 'Across all repositories.',
+								},
+								{
+									label: 'Unlocked settings',
 								},
 								// {
 								// 	label: '+ previous tier',

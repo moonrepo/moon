@@ -14,9 +14,8 @@ pin to a `.prototools` file in the current directory. This version will be used 
 $ proto pin go 1.20
 ```
 
-When the `--global` option is passed, the version will be pinned globally in
-`~/.proto/tools/<tool>/manifest.json`. This version will be used as a global fallback when
-attempting to [detect a version](../detection).
+When the `--global` option is passed, the version will be pinned globally in `~/.proto/.prototools`.
+This version will be used as a global fallback when attempting to [detect a version](../detection).
 
 ```shell
 $ proto pin go 1.20 --global

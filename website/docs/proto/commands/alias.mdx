@@ -10,8 +10,19 @@ accepted.
 $ proto alias node work 16.16
 ```
 
+By default this will update the local [`.prototools`](../config) file. Pass `--global` to update the
+global [`~/.proto/.prototools`](../config) file instead.
+
+```shell
+$ proto alias yarn berry 4 --global
+```
+
 ### Arguments
 
 - `<tool>` - Type of tool.
-- `<label>` - Name of the alias. Supports alpanumeric chars.
+- `<label>` - Name of the alias. Supports alphanumeric chars.
 - `<version>` - Version to map to the alias.
+
+## Options
+
+- `--global` - Pin the version globally, rather than in the current directory.

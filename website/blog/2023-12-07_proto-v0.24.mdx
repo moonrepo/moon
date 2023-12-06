@@ -1,0 +1,146 @@
+---
+slug: proto-v0.24
+title: proto v0.24 - Standardized configuration and 10x WASM boost
+authors: [milesj]
+tags: [proto, config, tools]
+image: ./img/proto/v0.24.png
+---
+
+In this release, we've standardized our configuration from the ground-up.
+
+<!--truncate-->
+
+## Improved WASM performance up to 20x
+
+Before we dive into the major changes of this release, we want to highlight the performance
+improvements that have landed recently. Thanks to [Dylibso](https://dylibso.com/) and the
+[Extism](https://extism.org/) team, we've been able to improve the performance of our WASM plugins
+by 10-20x! This was achieved by plugging into wasmtime's ahead-of-time (AOT) compiler and caching
+layer.
+
+Here's an example of the performance improvements when running `node --version`. On older versions,
+the execution time was anywhere from 100ms-200ms, but is now down to 10-20ms! This is almost as fast
+as native's 5-10ms!
+
+```shell
+# proto v0.23.5 and below
+hyperfine --warmup 10 -- 'node --version'
+Benchmark 1: node --version
+  Time (mean ± σ):      99.2 ms ±   6.3 ms    [User: 662.5 ms, System: 79.4 ms]
+  Range (min … max):    91.3 ms … 119.7 ms    29 runs
+
+# proto v0.23.6 and above
+hyperfine --warmup 10 -- 'node --version'
+Benchmark 1: node --version
+  Time (mean ± σ):      18.5 ms ±   1.0 ms    [User: 7.9 ms, System: 12.7 ms]
+  Range (min … max):    17.1 ms …  23.8 ms    146 runs
+```
+
+:::success
+
+Dylibso is hosting an [Extism hackathon](https://dylibso.com/events/2023/hack-for-good/) through the
+month of December, that'll donate to children in need. Check it out and participate!
+
+:::
+
+## Standardized configuration (breaking)
+
+Up until now, proto has supported 2 types of configuration, `.prototools` and
+`~/.proto/config.toml`. The former can exist in any folder, and is used for pinning versions and
+defining plugins. The latter is a per-user file that is used for customizing how proto works and
+also defining plugins.
+
+Over time, functionality in both of these files has grown, and so has the overlap between them. We
+felt it was time to standardize these files into a single configuration file, and as such, have
+removed `~/.proto/config.toml` and merged its functionality into
+[`.prototools`](/docs/proto/config). The biggest changes are:
+
+- proto settings (like `auto-clean` and `http`) must now exist within a
+  [`[settings]` table](/docs/proto/config#settings).
+- Tool specific settings (like `node-intercept-globals`) have moved to the new
+  [`[tools.node]` table](/docs/proto/config#tools) ([more info below](#tool-level-settings)).
+- Plugins are still configured within a [`[plugins]` table](/docs/proto/config#plugins).
+- Global/default settings can be defined in `~/.proto/.prototools`.
+
+```toml title=".prototools"
+node = "20.0.0"
+
+[settings]
+auto-clean = true
+
+[settings.http]
+allow-invalid-certs = true
+```
+
+The other massive benefit of this change, is that settings _can now be defined anywhere_!
+Previously, settings like `auto-clean` or `detect-strategy` could only be defined at the user-level,
+but what if your company or team wanted to control this setting? It wasn't possible without asking
+all team members to update their configuration manually. With this change, settings can now be tied
+to projects or repositories!
+
+:::info
+
+After upgrading, run `proto migrate v0.24` to migrate the old user configuration to the new format!
+
+:::
+
+### Tool-level settings
+
+While working on these configuration changes, we also landed the
+[Tool-level configuration RFC](https://github.com/moonrepo/proto/issues/261), although with a
+different implementation. This enables users to define settings that will be passed to the WASM
+plugin of a specific tool, controlling how it works. These settings can be configured with the new
+[`[tools.<name>]` table](/docs/proto/config#tools).
+
+For example, the `node` tool has a setting called `intercept-globals`, which will trigger an error
+when npm/pnpm/yarn attempt to install a global package.
+
+```toml title=".prototools"
+[tools.go]
+gobin = false
+
+[tools.node]
+intercept-globals = false
+```
+
+As of now, only the [Node.js](https://github.com/moonrepo/node-plugin) and
+[Go](https://github.com/moonrepo/go-plugin) plugins support settings.
+
+## Moved aliases and default versions (breaking)
+
+To continue with these configuration changes, we've also moved aliases and the default version into
+this new configuration. Previously, both of these values were stored in
+`~/.proto/tools/<name>/manifest.json`, but the problem was, that this file is internally managed by
+proto, and should not be modified by users. This made it difficult for users to manage, and to
+persist these values across machines (think dotfile syncing).
+
+Now these values are stored in [`.prototools`](/docs/proto/config), with aliases being configured in
+[`[tools.<name>.aliases]`](/docs/proto/config#toolsaliases), and the default version (global) being
+pinned as a version in `~/.proto/.prototools`. Here's an example:
+
+```toml title="~/.proto/.prototools"
+node = "20.0.0"
+
+[tools.node.aliases]
+work = "18"
+```
+
+This change also enables aliases to be defined anywhere! Previously, aliases were only allowed to be
+defined globally for a user, but now they can be defined per-project, or even per-directory.
+
+:::info
+
+After upgrading, run `proto migrate v0.24` to migrate your aliases and default versions to the new
+configuration format!
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.24.0) for a full list
+of changes.
+
+- proto now supports [canary](/docs/proto/install#canary-releases) and
+  [nightly](/docs/proto/install#nightly-releases) releases.
+- Updated non-latest plugins to be cached for 30 days, instead of forever.
+- Fixed an issue where resolving canary versions wouldn't work correctly.

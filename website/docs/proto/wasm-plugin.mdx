@@ -193,6 +193,30 @@ plugin functions!
 
 :::
 
+### Tool configuration
+
+Users can configure tools through the [`[tools.*]`](./config#tools) section of their `.prototools`,
+which can then be accessed within the WASM plugin using the
+[`get_tool_config`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_tool_config.html) function.
+
+```rust
+let config = get_tool_config::<NodeConfig>()?;
+config.bundled_npm;
+```
+
+This function requires a struct to deserialize into. It should implement `Default`, enable serde
+defaults, and map keys from `kebab-case`. If you want to error on unknown settings, also enable
+`deny_unknown_fields`.
+
+```rust
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+struct NodeConfig {
+    pub bundled_npm: bool,
+    pub intercept_globals: bool,
+}
+```
+
 ## Create a plugin
 
 :::info
@@ -483,6 +507,7 @@ pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionOutput>> {
             ".node-version".into(),
             "package.json".into(),
         ],
+        ignore: vec!["node_modules".into()],
     }))
 }
 ```

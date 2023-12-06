@@ -1,35 +1,60 @@
 ---
 title: Configuration
+toc_max_heading_level: 6
 ---
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <HeaderLabel text="1 min" />
 
-We support configuration for both projects and users. Both config files are in
-[TOML](https://toml.io/en/).
+We support configuration at both the project-level and user-level using a
+[TOML](https://toml.io/en/) based `.prototools` file. This file can be used to pin versions of
+tools, provide tool specific configuration, enable new tools via plugins, define proto settings, and
+more.
 
-## Project configuration
+## Resolution order
 
-proto supports pinning versions of tools on a per-project or per-directory basis through our
-`.prototools` configuration file. This file takes precedence during [version detection](./detection)
-and can be created/updated with [`proto pin`](./commands/pin).
+When a `proto` command or shim is ran, we load the `.prototools` file in the current directory, and
+traverse upwards loading `.prototools` within each directory, until we reach the system root or the
+user directory (`~`), whichever comes first. Once complete, we then load the special
+`~/.proto/.prototools` file, which acts as configuration at the user-level and includes fallback
+settings. This operation may look like the following:
 
-This configuration simply maps tools to versions for the current directory.
+```text
+~/Projects/web-app/packages/components/src/.prototools
+~/Projects/web-app/packages/components/.prototools
+~/Projects/web-app/packages/.prototools
+~/Projects/web-app/.prototools
+~/Projects/.prototools
+~/.prototools
+~/.proto/.prototools
+```
+
+We then deeply merge all of these configuration files into a final configuration object, with the
+current directory taking highest precedence.
+
+## Pinning versions
+
+proto supports pinning versions of tools on a per-directory basis through our `.prototools`
+configuration file. This file takes precedence during [version detection](./detection) and can be
+created/updated with [`proto pin`](./commands/pin).
+
+At its most basic level, you can map tools to specific versions, for the directory the file is
+located in. A version can either be a fully-qualified semantic version, a partial version, a range
+or requirement, or an alias.
 
 ```toml title=".prototools"
 node = "16.16.0"
 npm = "9"
-go = "1.20"
-rust = "1.68.0"
+go = "~1.20"
+rust = "stable"
 ```
 
-> The names of tools are the same used on the command line!
+## Available settings
 
 ### `[plugins]`
 
-[Plugins](./plugins) can also be configured with the `[plugins]` section.
+Additional [plugins](./plugins) can be configured with the `[plugins]` section.
 [Learn more about this syntax](./plugins#enabling-plugins).
 
 ```toml title=".prototools"
@@ -43,98 +68,125 @@ Once configured, you can run a plugin as if it was a built-in tool:
 $ proto install my-tool
 ```
 
-## User configuration
+### `[settings]`
 
-proto operates with sane defaults and accomplishes its goals very well. However, we also believe in
-user choice and customization, and as such, support a user configuration file located at
-`~/.proto/config.toml`, which can be used to customize the behavior of proto.
-
-Some of these settings (excluding plugins) can also be configured via environment variables.
-
-```shell
-PROTO_AUTO_INSTALL=true proto run node
-```
-
-### `auto-install`
+#### `auto-install`
 
 When enabled, will automatically installing missing tools when [`proto run`](./commands/run) is run,
-instead of erroring. Defaults to `false`.
+instead of erroring. Defaults to `false` or `PROTO_AUTO_INSTALL`.
 
-```toml title="~/.proto/config.toml"
+```toml title=".prototools"
+[settings]
 auto-install = true
 ```
 
-### `auto-clean`
+#### `auto-clean`
 
 When enabled, will automatically clean up the proto cache when [`proto use`](./commands/use) is run.
-Defaults to `false`.
+Defaults to `false` or `PROTO_AUTO_CLEAN`.
 
-```toml title="~/.proto/config.toml"
+```toml title=".prototools"
+[settings]
 auto-clean = true
 ```
 
-### `detect-strategy`<VersionLabel version="0.23.0" />
+#### `detect-strategy`
 
-The strategy to use when [detecting versions](./detection). Defaults to `first-available`.
+The strategy to use when [detecting versions](./detection). Defaults to `first-available` or
+`PROTO_DETECT_STRATEGY`.
 
 - `first-available` - Will use the first available version that is found. Either from `.prototools`
   or a tool specific file (`.nvmrc`, etc).
 - `prefer-prototools` - Prefer a `.prototools` version, even if found in a parent directory. If none
   found, falls back to tool specific file.
 
-```toml title="~/.proto/config.toml"
+```toml title=".prototools"
+[settings]
 detect-strategy = "prefer-prototools"
 ```
 
-### `node-intercept-globals`
-
-When enabled, will intercept global package installs for node/npm/pnpm/yarn and suggest using
-[`proto install-global`](./commands/install-global) instead. Defaults to `true`.
-
-```toml title="~/.proto/config.toml"
-node-intercept-globals = false
-```
-
-### `pin-latest`<VersionLabel version="0.19.0" />
+#### `pin-latest`
 
 When defined and a tool is installed with the "latest" version, will automatically pin the resolved
-version to the configured location. Accepts the following locations:
+version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 
-- `global` - Pins globally to `~/.proto/config.toml`.
-- `local` - Pins locally to `.prototools`.
+- `global` - Pins globally to `~/.proto/.prototools`.
+- `local` - Pins locally to `.prototools` in current directory.
 
-```toml title="~/.proto/config.toml"
+```toml title=".prototools"
+[settings]
 pin-latest = "local"
 ```
 
-### `[http]`<VersionLabel version="0.18.0" />
+#### `[http]`
 
-Can be used to customize the HTTP client used by proto and warpgate, primarily for requesting files
-to download, available versions, and more. The following settings are available:
+Can be used to customize the HTTP client used by proto, primarily for requesting files to download,
+available versions, and more.
 
-- `allow-invalid-certs` - When enabled, will allow invalid certificates instead of failing. This is
-  an _escape hatch_ and should only be used if other settings have failed. Be sure you know what
-  you're doing!
-- `proxies` - A list of proxy URLs to use for requests.
-- `root-cert` - The path to a root certificate to use for requests. This is useful for overriding
-  the native certificate, or for using a self-signed certificate, especially when in a
-  corporate/internal environment. Supports `pem` and `der` files.
+##### `allow-invalid-certs`
 
-```toml title="~/.proto/config.toml"
-[http]
+When enabled, will allow invalid certificates instead of failing. This is an _escape hatch_ and
+should only be used if other settings have failed. Be sure you know what you're doing! Defaults to
+`false`.
+
+```toml title=".prototools"
+[settings.http]
+allow-invalid-certs = true
+```
+
+##### `proxies`
+
+A list of proxy URLs to use for requests.
+
+```toml title=".prototools"
+[settings.http]
+proxies = ["https://internal.proxy", "https://corp.net/proxy"]
+```
+
+##### `root-cert`
+
+The path to a root certificate to use for requests. This is useful for overriding the native
+certificate, or for using a self-signed certificate, especially when in a corporate/internal
+environment. Supports `pem` and `der` files.
+
+```toml title=".prototools"
+[settings.http]
 root-cert = "/path/to/root/cert.pem"
 ```
 
-### `[plugins]`
+## Tool specific settings
 
-A mapping of plugins available to the user, and not just a project/directory. Refer to the
-[`[plugins]`](#plugins) section above for more information.
+### `[tools.*]`
+
+Tools support custom configuration that will be passed to their WASM plugin, which can be used to
+control the business logic within the plugin. Please refer to the [official documentation](./tools)
+for each tool (typically on their repository) for a list of available settings.
+
+As an example, let's configure [Node.js](https://github.com/moonrepo/node-plugin) (using the `node`
+identifier).
+
+```toml title=".prototools"
+[tools.node]
+bundled-npm = false
+intercept-globals = false
+```
+
+### `[tools.*.aliases]`
+
+Aliases are custom and unique labels that map to a specific version, and can be configured manually
+within `.prototools`, or by calling the [`proto alias`](./commands/alias) command.
+
+```toml title=".prototools"
+[tools.node.aliases]
+work = "18"
+oss = "20"
+```
 
 ## GitHub Action
 
 To streamline GitHub CI workflows, we provide the
-[`moonrepo/setup-proto`](https://github.com/moonrepo/setup-proto) action, which can be used to
-install `proto` globally, and cache the toolchain found at `~/.proto`.
+[`moonrepo/setup-toolchain`](https://github.com/moonrepo/setup-toolchain) action, which can be used
+to install `proto` globally, and cache the toolchain found at `~/.proto`.
 
 ```yaml title=".github/workflows/ci.yml"
 # ...
@@ -144,6 +196,6 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v4'
-      - uses: 'moonrepo/setup-proto@v1'
+      - uses: 'moonrepo/setup-toolchain@v0'
       - run: 'proto use'
 ```

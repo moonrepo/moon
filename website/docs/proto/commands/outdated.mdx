@@ -6,9 +6,9 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.19.0" header />
 
-The `proto outdated` command will load the closest `.prototools` file and check for newer versions
-of each configured tool. By default, only newer versions that match the configured version
-requirements or ranges will be used. To ignore this and use the latest version, pass `--latest`.
+The `proto outdated` command will load all `.prototools` files and check for newer versions of each
+configured tool. By default, only newer versions that match the configured version requirements or
+ranges will be used. To ignore this and use the latest version, pass `--latest`.
 
 ```
 $ proto outdated
@@ -24,4 +24,4 @@ node - current version 20.7.0 (via 20.7.0), latest version 20.8.0, update availa
 - `--json` - Print the list in JSON format.
 - `--latest` - Check for the latest available version, ignoring any version requirements, ranges, or
   constraints.
-- `--update` - Update the loaded `.prototools` file with newer versions if available.
+- `--update` - Update the local `.prototools` file with newer versions if available.

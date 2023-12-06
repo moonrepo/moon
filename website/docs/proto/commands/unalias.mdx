@@ -9,7 +9,18 @@ provided tool.
 $ proto unalias node work
 ```
 
+By default this will update the local [`.prototools`](../config) file. Pass `--global` to update the
+global [`~/.proto/.prototools`](../config) file instead.
+
+```shell
+$ proto unalias yarn berry --global
+```
+
 ### Arguments
 
 - `<tool>` - Type of tool.
 - `<label>` - Name of the alias. Supports alpanumeric chars.
+
+## Options
+
+- `--global` - Pin the version globally, rather than in the current directory.

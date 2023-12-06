@@ -1,0 +1,78 @@
+---
+slug: proto-v0.24
+title: proto v0.24 - Standardized configuration and 10x WASM boost
+authors: [milesj]
+tags: [proto, config, tools]
+# image: ./img/proto/v0.24.png
+---
+
+In this release, we've standardized our configuration from the ground-up.
+
+<!--truncate-->
+
+## Improved WASM performance up to 20x
+
+Before we dive into the major changes of this release, we want to highlight the performance
+improvements that have landed recently. Thanks to [Dylibso](https://dylibso.com/) and the
+[Extism](https://extism.org/) team, we've been able to improve the performance of our WASM plugins
+by 10-20x! This was achieved by plugging into wasmtime's ahead-of-time (AOT) compiler and caching
+layer.
+
+Here's an example of the performance improvements when running `node --version`. On older versions,
+the execution time was anywhere from 100ms-200ms, but is now down to 10-20ms! This is almost as fast
+as native's 5-10ms!
+
+```shell
+# proto v0.23.5 and below
+hyperfine --warmup 10 -- 'node --version'
+Benchmark 1: node --version
+  Time (mean ± σ):      99.2 ms ±   6.3 ms    [User: 662.5 ms, System: 79.4 ms]
+  Range (min … max):    91.3 ms … 119.7 ms    29 runs
+
+# proto v0.23.6 and above
+hyperfine --warmup 10 -- 'node --version'
+Benchmark 1: node --version
+  Time (mean ± σ):      18.5 ms ±   1.0 ms    [User: 7.9 ms, System: 12.7 ms]
+  Range (min … max):    17.1 ms …  23.8 ms    146 runs
+```
+
+## Standardized configuration (breaking)
+
+### Tool-level settings
+
+## Moved aliases and default versions (breaking)
+
+To continue with these configuration changes, we've also moved aliases and the default version into
+this new configuration. Previously, both of these values were stored in
+`~/.proto/tools/<name>/manifest.json`, but the problem was, that this file is internally managed by
+proto, and should not be modified by users. This made it difficult for users to manage, and to
+persist these values across machines (think dotfile syncing).
+
+Now these values are stored in [`.prototools`](/docs/proto/config), with aliases being configured in
+[`[tools.<name>.aliases]`](/docs/proto/config#toolsaliases), and the default version (global) being
+pinned as a version in `~/.proto/.prototools`. Here's an example:
+
+```toml title="~/.proto/.prototools"
+node = "20.0.0"
+
+[tools.node.aliases]
+work = "18"
+```
+
+This change also enables aliases to be defined anywhere! Previously, aliases were only allowed to be
+defined globally for a user, but now they can be defined per-project, or even per-directory.
+
+:::info
+
+After upgrading, run `proto migrate v0.24` to migrate your aliases and default versions to the new
+configuration format!
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.24.0) for a full list
+of changes.
+
+- Updated non-latest plugins to be cached for 30 days, instead of forever.
+- Fixed an issue where resolving canary versions wouldn't work correctly.

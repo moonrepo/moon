@@ -212,8 +212,8 @@ defaults, and map keys from `kebab-case`. If you want to error on unknown settin
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
 struct NodeConfig {
-    bundled_npm: bool,
-    intercept_globals: bool,
+    pub bundled_npm: bool,
+    pub intercept_globals: bool,
 }
 ```
 

@@ -17,11 +17,10 @@ pub struct CommandLine<'l> {
     pub command: Vec<LineValue<'l>>,
     pub input: LineValue<'l>,
     pub main_command: LineValue<'l>,
-    _command: &'l Command,
 }
 
 impl<'l> CommandLine<'l> {
-    pub fn new(command: &'l Command) -> CommandLine<'l> {
+    pub fn new(command: &Command) -> CommandLine {
         let mut command_line: Vec<LineValue> = vec![];
         let mut input_line: Vec<LineValue> = vec![];
         let mut main_line: Vec<LineValue> = vec![];
@@ -80,7 +79,6 @@ impl<'l> CommandLine<'l> {
             // },
             input: Cow::Owned(input_line.join(OsStr::new(" "))),
             main_command: Cow::Owned(join_args_os(main_line)),
-            _command: command,
         }
     }
 }

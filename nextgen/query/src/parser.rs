@@ -86,7 +86,7 @@ fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>>
     })
 }
 
-fn parse_ast<'i>(pairs: Pairs<'i, Rule>) -> Result<Vec<AstNode<'i>>, Box<Error<Rule>>> {
+fn parse_ast(pairs: Pairs<'_, Rule>) -> Result<Vec<AstNode<'_>>, Box<Error<Rule>>> {
     let mut ast = vec![];
 
     for pair in pairs {
@@ -98,6 +98,6 @@ fn parse_ast<'i>(pairs: Pairs<'i, Rule>) -> Result<Vec<AstNode<'i>>, Box<Error<R
     Ok(ast)
 }
 
-pub fn parse_query<'i>(input: &'i str) -> Result<Vec<AstNode<'i>>, Box<Error<Rule>>> {
+pub fn parse_query(input: &str) -> Result<Vec<AstNode<'_>>, Box<Error<Rule>>> {
     parse_ast(MqlParser::parse(Rule::query, input)?)
 }

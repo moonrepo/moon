@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::token_expander_error::TokenExpanderError;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
@@ -9,6 +7,7 @@ use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
 use rustc_hash::FxHashMap;
+use std::borrow::Cow;
 use tracing::warn;
 
 pub type ExpandedPaths = (Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>);

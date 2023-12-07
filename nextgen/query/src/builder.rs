@@ -83,10 +83,10 @@ impl<'l> AsRef<Criteria<'l>> for Criteria<'l> {
     }
 }
 
-fn build_criteria_enum<'l, T: FromStr>(
+fn build_criteria_enum<T: FromStr>(
     field: &str,
     op: &ComparisonOperator,
-    values: FieldValues<'l>,
+    values: FieldValues<'_>,
 ) -> miette::Result<Vec<T>> {
     if matches!(op, ComparisonOperator::Like | ComparisonOperator::NotLike) {
         return Err(QueryError::UnsupportedLikeOperator(field.to_owned()).into());
@@ -105,7 +105,7 @@ fn build_criteria_enum<'l, T: FromStr>(
     Ok(result)
 }
 
-fn build_criteria<'l>(ast: Vec<AstNode<'l>>) -> miette::Result<Criteria<'l>> {
+fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
     let mut op = None;
     let mut conditions = vec![];
 
@@ -162,7 +162,7 @@ fn build_criteria<'l>(ast: Vec<AstNode<'l>>) -> miette::Result<Criteria<'l>> {
     })
 }
 
-pub fn build_query<'l>(input: &'l str) -> miette::Result<Criteria<'l>> {
+pub fn build_query(input: &str) -> miette::Result<Criteria<'_>> {
     if input.is_empty() {
         return Err(QueryError::EmptyInput.into());
     }

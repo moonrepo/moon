@@ -5,6 +5,7 @@ use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
 use moon_project_expander::TokenExpander;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
+use std::borrow::Cow;
 use utils::{create_context, create_project, create_task};
 
 mod token_expander {
@@ -83,8 +84,6 @@ mod token_expander {
     }
 
     mod vars {
-        use std::borrow::Cow;
-
         use super::*;
 
         #[test]

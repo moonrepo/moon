@@ -16,13 +16,14 @@ npm = "9.0.0"
     );
 
     let workspace = Workspace::load_from(sandbox.path()).unwrap();
+    let proto_config = workspace.proto_env.load_config().unwrap();
 
     assert_eq!(
-        workspace.proto_tools.tools.get("node").unwrap().to_string(),
+        proto_config.versions.get("node").unwrap().to_string(),
         "18.0.0"
     );
     assert_eq!(
-        workspace.proto_tools.tools.get("npm").unwrap().to_string(),
+        proto_config.versions.get("npm").unwrap().to_string(),
         "9.0.0"
     );
 }

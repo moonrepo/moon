@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{BinConfig, BinEntry, NodePackageManager, NodeVersionFormat, ToolchainConfig};
-use proto_core::{Id, PluginLocator, ToolsConfig, UnresolvedVersionSpec};
+use proto_core::{Id, PluginLocator, ProtoConfig, UnresolvedVersionSpec};
 use starbase_sandbox::create_sandbox;
 use std::env;
 use utils::*;
@@ -17,14 +17,14 @@ mod toolchain_config {
     )]
     fn error_unknown_field() {
         test_load_config(FILENAME, "unknown: 123", |path| {
-            ToolchainConfig::load_from(path, &ToolsConfig::default())
+            ToolchainConfig::load_from(path, &ProtoConfig::default())
         });
     }
 
     #[test]
     fn loads_defaults() {
         let config = test_load_config(FILENAME, "{}", |path| {
-            ToolchainConfig::load_from(path, &ToolsConfig::default())
+            ToolchainConfig::load_from(path, &ProtoConfig::default())
         });
 
         assert!(config.deno.is_none());
@@ -40,7 +40,7 @@ mod toolchain_config {
         fn recursive_merges() {
             let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
-                ToolchainConfig::load(sandbox.path(), path, &ToolsConfig::default())
+                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
             });
 
             let node = config.node.unwrap();
@@ -65,7 +65,7 @@ mod toolchain_config {
         fn recursive_merges_typescript() {
             let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("typescript-2.yml"), |path| {
-                ToolchainConfig::load(sandbox.path(), path, &ToolsConfig::default())
+                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
             });
 
             let typescript = config.typescript.unwrap();
@@ -82,7 +82,7 @@ mod toolchain_config {
         // #[test]
         // fn uses_defaults() {
         //     let config = test_load_config(FILENAME, "bun: {}", |path| {
-        //         ToolchainConfig::load_from(path, &ToolsConfig::default())
+        //         ToolchainConfig::load_from(path, &ProtoConfig::default())
         //     });
 
         //     let cfg = config.bun.unwrap();
@@ -93,8 +93,8 @@ mod toolchain_config {
         #[test]
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ToolsConfig::default();
-                proto.tools.insert(
+                let mut proto = ProtoConfig::default();
+                proto.versions.insert(
                     Id::raw("bun"),
                     UnresolvedVersionSpec::parse("1.0.0").unwrap(),
                 );
@@ -112,7 +112,7 @@ mod toolchain_config {
         #[test]
         fn inherits_plugin_locator() {
             let config = test_load_config(FILENAME, "bun: {}", |path| {
-                let mut tools = ToolsConfig::default();
+                let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
                 ToolchainConfig::load_from(path, &tools)
@@ -121,7 +121,7 @@ mod toolchain_config {
             assert_eq!(
                 config.bun.unwrap().plugin.unwrap(),
                 PluginLocator::SourceUrl {
-                    url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.5.0/bun_plugin.wasm".into()
+                    url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.6.0/bun_plugin.wasm".into()
                 }
             );
         }
@@ -135,8 +135,8 @@ bun:
   version: 1.0.0
 ",
                 |path| {
-                    let mut proto = ToolsConfig::default();
-                    proto.tools.insert(
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
                         Id::raw("bun"),
                         UnresolvedVersionSpec::parse("2.0.0").unwrap(),
                     );
@@ -163,8 +163,8 @@ bun:
     version: 3.0.0
 ",
                 |path| {
-                    let mut proto = ToolsConfig::default();
-                    proto.tools.insert(
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
                         Id::raw("bun"),
                         UnresolvedVersionSpec::parse("2.0.0").unwrap(),
                     );
@@ -188,7 +188,7 @@ bun:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "deno: {}", |path| {
-                ToolchainConfig::load_from(path, &ToolsConfig::default())
+                ToolchainConfig::load_from(path, &ProtoConfig::default())
             });
 
             let cfg = config.deno.unwrap();
@@ -206,7 +206,7 @@ deno:
   depsFile: dependencies.ts
   lockfile: true
 ",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
             );
 
             let cfg = config.deno.unwrap();
@@ -227,7 +227,7 @@ deno:
       name: 'fs'
       force: true
 ",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
             );
 
             let cfg = config.deno.unwrap();
@@ -249,8 +249,8 @@ deno:
         #[test]
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ToolsConfig::default();
-                proto.tools.insert(
+                let mut proto = ProtoConfig::default();
+                proto.versions.insert(
                     Id::raw("deno"),
                     UnresolvedVersionSpec::parse("1.30.0").unwrap(),
                 );
@@ -269,7 +269,7 @@ deno:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "node: {}", |path| {
-                ToolchainConfig::load_from(path, &ToolsConfig::default())
+                ToolchainConfig::load_from(path, &ProtoConfig::default())
             });
 
             let cfg = config.node.unwrap();
@@ -287,7 +287,7 @@ node:
   dedupeOnLockfileChange: false
   inferTasksFromScripts: true
 ",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
             );
 
             let cfg = config.node.unwrap();
@@ -299,8 +299,8 @@ node:
         #[test]
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ToolsConfig::default();
-                proto.tools.insert(
+                let mut proto = ProtoConfig::default();
+                proto.versions.insert(
                     Id::raw("node"),
                     UnresolvedVersionSpec::parse("18.0.0").unwrap(),
                 );
@@ -318,7 +318,7 @@ node:
         #[test]
         fn inherits_plugin_locator() {
             let config = test_load_config(FILENAME, "node: {}", |path| {
-                let mut tools = ToolsConfig::default();
+                let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
                 ToolchainConfig::load_from(path, &tools)
@@ -327,7 +327,7 @@ node:
             assert_eq!(
                 config.node.unwrap().plugin.unwrap(),
                 PluginLocator::SourceUrl {
-                    url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_plugin.wasm".into()
+                    url: "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_plugin.wasm".into()
                 }
             );
         }
@@ -341,8 +341,8 @@ node:
   version: 20.0.0
 ",
                 |path| {
-                    let mut proto = ToolsConfig::default();
-                    proto.tools.insert(
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
                         Id::raw("node"),
                         UnresolvedVersionSpec::parse("18.0.0").unwrap(),
                     );
@@ -369,8 +369,8 @@ node:
   version: 20.0.0
 ",
                 |path| {
-                    let mut proto = ToolsConfig::default();
-                    proto.tools.insert(
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
                         Id::raw("node"),
                         UnresolvedVersionSpec::parse("18.0.0").unwrap(),
                     );
@@ -400,8 +400,8 @@ node:
     version: 9.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("npm"),
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
@@ -419,7 +419,7 @@ node:
             #[test]
             fn inherits_plugin_locator() {
                 let config = test_load_config(FILENAME, "node:\n  npm: {}", |path| {
-                    let mut tools = ToolsConfig::default();
+                    let mut tools = ProtoConfig::default();
                     tools.inherit_builtin_plugins();
 
                     ToolchainConfig::load_from(path, &tools)
@@ -428,7 +428,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().npm.plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -445,8 +445,8 @@ node:
     version: 9.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("npm"),
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
@@ -472,7 +472,7 @@ node:
   packageManager: npm
   dependencyVersionFormat: workspace
 ",
-                    |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
                 );
 
                 let cfg = config.node.unwrap();
@@ -487,13 +487,13 @@ node:
             #[test]
             fn enables_when_defined() {
                 let config = test_load_config(FILENAME, "node: {}", |path| {
-                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                    ToolchainConfig::load_from(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().pnpm.is_none());
 
                 let config = test_load_config(FILENAME, "node:\n  pnpm: {}", |path| {
-                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                    ToolchainConfig::load_from(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().pnpm.is_some());
@@ -509,7 +509,7 @@ node:
   pnpm: {}
 ",
                     |path| {
-                        let mut tools = ToolsConfig::default();
+                        let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
                         ToolchainConfig::load_from(path, &tools)
@@ -519,7 +519,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -533,7 +533,7 @@ node:
   packageManager: pnpm
 ",
                     |path| {
-                        let mut tools = ToolsConfig::default();
+                        let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
                         ToolchainConfig::load_from(path, &tools)
@@ -543,7 +543,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -558,8 +558,8 @@ node:
     version: 9.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("pnpm"),
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
@@ -586,8 +586,8 @@ node:
     version: 9.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("pnpm"),
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
@@ -611,13 +611,13 @@ node:
             #[test]
             fn enables_when_defined() {
                 let config = test_load_config(FILENAME, "node: {}", |path| {
-                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                    ToolchainConfig::load_from(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().yarn.is_none());
 
                 let config = test_load_config(FILENAME, "node:\n  yarn: {}", |path| {
-                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                    ToolchainConfig::load_from(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().yarn.is_some());
@@ -633,7 +633,7 @@ node:
   yarn: {}
 ",
                     |path| {
-                        let mut tools = ToolsConfig::default();
+                        let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
                         ToolchainConfig::load_from(path, &tools)
@@ -643,7 +643,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -657,7 +657,7 @@ node:
   packageManager: yarn
 ",
                     |path| {
-                        let mut tools = ToolsConfig::default();
+                        let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
                         ToolchainConfig::load_from(path, &tools)
@@ -667,7 +667,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.5.3/node_depman_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_depman_plugin.wasm".into()
                     }
                 );
             }
@@ -682,8 +682,8 @@ node:
     version: 9.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("yarn"),
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
@@ -710,8 +710,8 @@ node:
     version: 9.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("yarn"),
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
@@ -735,13 +735,13 @@ node:
             #[test]
             fn enables_when_defined() {
                 let config = test_load_config(FILENAME, "node: {}", |path| {
-                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                    ToolchainConfig::load_from(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().bun.is_none());
 
                 let config = test_load_config(FILENAME, "node:\n  bun: {}", |path| {
-                    ToolchainConfig::load_from(path, &ToolsConfig::default())
+                    ToolchainConfig::load_from(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().bun.is_some());
@@ -757,7 +757,7 @@ node:
   bun: {}
 ",
                     |path| {
-                        let mut tools = ToolsConfig::default();
+                        let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
                         ToolchainConfig::load_from(path, &tools)
@@ -767,7 +767,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().bun.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.5.0/bun_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.6.0/bun_plugin.wasm".into()
                     }
                 );
             }
@@ -781,7 +781,7 @@ node:
   packageManager: bun
 ",
                     |path| {
-                        let mut tools = ToolsConfig::default();
+                        let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
                         ToolchainConfig::load_from(path, &tools)
@@ -791,7 +791,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().bun.unwrap().plugin.unwrap(),
                     PluginLocator::SourceUrl {
-                        url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.5.0/bun_plugin.wasm".into()
+                        url: "https://github.com/moonrepo/bun-plugin/releases/download/v0.6.0/bun_plugin.wasm".into()
                     }
                 );
             }
@@ -806,8 +806,8 @@ node:
     version: 1.0.0
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("bun"),
                             UnresolvedVersionSpec::parse("0.0.1").unwrap(),
                         );
@@ -834,8 +834,8 @@ node:
     version: 0.0.1
 ",
                     |path| {
-                        let mut proto = ToolsConfig::default();
-                        proto.tools.insert(
+                        let mut proto = ProtoConfig::default();
+                        proto.versions.insert(
                             Id::raw("bun"),
                             UnresolvedVersionSpec::parse("0.1.0").unwrap(),
                         );
@@ -861,7 +861,7 @@ node:
   packageManager: bun
   dependencyVersionFormat: workspace-tilde
 ",
-                    |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
                 );
 
                 let cfg = config.node.unwrap();
@@ -877,7 +877,7 @@ node:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "rust: {}", |path| {
-                ToolchainConfig::load_from(path, &ToolsConfig::default())
+                ToolchainConfig::load_from(path, &ProtoConfig::default())
             });
 
             let cfg = config.rust.unwrap();
@@ -895,7 +895,7 @@ rust:
   bins: [cargo-make]
   syncToolchainConfig: true
 ",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
             );
 
             let cfg = config.rust.unwrap();
@@ -918,7 +918,7 @@ rust:
       local: true
   syncToolchainConfig: true
 ",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
             );
 
             let cfg = config.rust.unwrap();
@@ -945,8 +945,8 @@ rust:
         #[test]
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ToolsConfig::default();
-                proto.tools.insert(
+                let mut proto = ProtoConfig::default();
+                proto.versions.insert(
                     Id::raw("rust"),
                     UnresolvedVersionSpec::parse("1.69.0").unwrap(),
                 );
@@ -964,7 +964,7 @@ rust:
         #[test]
         fn inherits_plugin_locator() {
             let config = test_load_config(FILENAME, "rust: {}", |path| {
-                let mut tools = ToolsConfig::default();
+                let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
                 ToolchainConfig::load_from(path, &tools)
@@ -973,7 +973,7 @@ rust:
             assert_eq!(
                 config.rust.unwrap().plugin.unwrap(),
                 PluginLocator::SourceUrl {
-                    url: "https://github.com/moonrepo/rust-plugin/releases/download/v0.4.0/rust_plugin.wasm".into()
+                    url: "https://github.com/moonrepo/rust-plugin/releases/download/v0.5.0/rust_plugin.wasm".into()
                 }
             );
         }
@@ -987,8 +987,8 @@ rust:
   version: 1.60.0
 ",
                 |path| {
-                    let mut proto = ToolsConfig::default();
-                    proto.tools.insert(
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
                         Id::raw("rust"),
                         UnresolvedVersionSpec::parse("1.69.0").unwrap(),
                     );
@@ -1015,8 +1015,8 @@ rust:
           version: 1.60.0
         ",
                 |path| {
-                    let mut proto = ToolsConfig::default();
-                    proto.tools.insert(
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
                         Id::raw("rust"),
                         UnresolvedVersionSpec::parse("1.65.0").unwrap(),
                     );
@@ -1040,7 +1040,7 @@ rust:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "typescript: {}", |path| {
-                ToolchainConfig::load_from(path, &ToolsConfig::default())
+                ToolchainConfig::load_from(path, &ProtoConfig::default())
             });
 
             let cfg = config.typescript.unwrap();
@@ -1058,7 +1058,7 @@ typescript:
   projectConfigFileName: tsconf.json
   syncProjectReferences: false
 ",
-                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
             );
 
             let cfg = config.typescript.unwrap();
@@ -1070,8 +1070,8 @@ typescript:
         #[test]
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
-                let mut proto = ToolsConfig::default();
-                proto.tools.insert(
+                let mut proto = ProtoConfig::default();
+                proto.versions.insert(
                     Id::raw("typescript"),
                     UnresolvedVersionSpec::parse("5.0.0").unwrap(),
                 );

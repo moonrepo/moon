@@ -147,7 +147,7 @@ impl Queryable for Project {
                         }
                         Field::ProjectName(ids) => condition.matches(ids, &self.id),
                         Field::ProjectSource(sources) => {
-                            condition.matches(sources, &self.source.to_string())
+                            condition.matches(sources, self.source.as_str())
                         }
                         Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
                         Field::Tag(tags) => condition.matches_list(
@@ -156,7 +156,7 @@ impl Queryable for Project {
                                 .config
                                 .tags
                                 .iter()
-                                .map(|t| t.to_string())
+                                .map(|t| t.as_str())
                                 .collect::<Vec<_>>(),
                         ),
                         Field::Task(ids) => Ok(self

@@ -173,7 +173,9 @@ impl Workspace {
         );
 
         // Load proto tools
-        let proto_env = ProtoEnvironment::new()?;
+        let mut proto_env = ProtoEnvironment::new()?;
+        proto_env.cwd = working_dir.to_path_buf();
+
         let proto_config = proto_env.load_config()?;
 
         // Load configs

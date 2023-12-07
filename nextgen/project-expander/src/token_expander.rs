@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::token_expander_error::TokenExpanderError;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
@@ -181,7 +183,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                         self.context
                             .project
                             .source
-                            .join(self.replace_variable(task, var)?),
+                            .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
                 }
                 InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
@@ -374,18 +376,22 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
     }
 
     pub fn replace_variables(&self, task: &Task, value: &str) -> miette::Result<String> {
-        let mut value = value.to_owned();
+        let mut value = Cow::Borrowed(value);
 
         while self.has_token_variable(&value) {
-            value = self.replace_variable(task, &value)?;
+            value = self.replace_variable(task, value)?;
         }
 
-        Ok(value)
+        Ok(value.to_string())
     }
 
-    pub fn replace_variable(&self, task: &Task, value: &str) -> miette::Result<String> {
-        let Some(matches) = patterns::TOKEN_VAR.captures(value) else {
-            return Ok(value.to_owned());
+    pub fn replace_variable<'l>(
+        &self,
+        task: &Task,
+        value: Cow<'l, str>,
+    ) -> miette::Result<Cow<'l, str>> {
+        let Some(matches) = patterns::TOKEN_VAR.captures(&value) else {
+            return Ok(value);
         };
 
         let token = matches.get(0).unwrap().as_str(); // $var
@@ -404,30 +410,33 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         )?;
 
         let replaced_value = match variable {
-            "workspaceRoot" => path::to_string(self.context.workspace_root)?,
+            "workspaceRoot" => Cow::Owned(path::to_string(self.context.workspace_root)?),
             // Project
-            "language" => project.language.to_string(),
-            "project" => project.id.to_string(),
-            "projectAlias" => project.alias.clone().unwrap_or_default(),
-            "projectRoot" => path::to_string(&project.root)?,
-            "projectSource" => project.source.to_string(),
-            "projectType" => project.type_of.to_string(),
+            "language" => Cow::Owned(project.language.to_string()),
+            "project" => Cow::Borrowed(project.id.as_str()),
+            "projectAlias" => match project.alias.as_ref() {
+                Some(alias) => Cow::Borrowed(alias.as_str()),
+                None => Cow::Owned(String::new()),
+            },
+            "projectRoot" => Cow::Owned(path::to_string(&project.root)?),
+            "projectSource" => Cow::Borrowed(project.source.as_str()),
+            "projectType" => Cow::Owned(project.type_of.to_string()),
             // Task
-            "target" => task.target.to_string(),
-            "task" => task.id.to_string(),
-            "taskPlatform" => task.platform.to_string(),
-            "taskType" => task.type_of.to_string(),
+            "target" => Cow::Borrowed(task.target.as_str()),
+            "task" => Cow::Borrowed(task.id.as_str()),
+            "taskPlatform" => Cow::Owned(task.platform.to_string()),
+            "taskType" => Cow::Owned(task.type_of.to_string()),
             // Datetime
-            "date" => now_timestamp().format("%F").to_string(),
-            "datetime" => now_timestamp().format("%F_%T").to_string(),
-            "time" => now_timestamp().format("%T").to_string(),
-            "timestamp" => (now_millis() / 1000).to_string(),
+            "date" => Cow::Owned(now_timestamp().format("%F").to_string()),
+            "datetime" => Cow::Owned(now_timestamp().format("%F_%T").to_string()),
+            "time" => Cow::Owned(now_timestamp().format("%T").to_string()),
+            "timestamp" => Cow::Owned((now_millis() / 1000).to_string()),
             _ => {
-                return Ok(value.to_owned());
+                return Ok(value);
             }
         };
 
-        Ok(value.replace(token, &replaced_value))
+        Ok(value.replace(token, &replaced_value).into())
     }
 
     fn check_scope(&self, token: &str, allowed: &[TokenScope]) -> miette::Result<()> {

@@ -23,7 +23,7 @@
 
 #### ⚙️ Internal
 
-- Improved string allocation and performance for queries.
+- Improved string allocation and performance for queries and task tokens.
 
 ## 1.17.4
 

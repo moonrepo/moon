@@ -1,5 +1,5 @@
 use moon_bun_platform::BunPlatform;
-use moon_config::{PlatformType, ToolchainConfig, ToolsConfig};
+use moon_config::{PlatformType, ProtoConfig, ToolchainConfig};
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_rust_platform::RustPlatform;
@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformManager {
     let proto = Arc::new(ProtoEnvironment::new_testing(root));
-    let config = ToolchainConfig::load_from(root, &ToolsConfig::default()).unwrap();
+    let config = ToolchainConfig::load_from(root, &ProtoConfig::default()).unwrap();
     let mut manager = PlatformManager::default();
 
     if let Some(bun_config) = &config.bun {

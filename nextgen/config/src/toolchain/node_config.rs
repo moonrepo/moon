@@ -1,6 +1,6 @@
 use crate::{inherit_tool, inherit_tool_required};
 use moon_common::color;
-use proto_core::{PluginLocator, ToolsConfig, UnresolvedVersionSpec};
+use proto_core::{PluginLocator, ProtoConfig, UnresolvedVersionSpec};
 use schematic::{derive_enum, Config, ConfigEnum};
 use tracing::debug;
 
@@ -163,31 +163,31 @@ impl NodeConfig {
 
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
-    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
+    pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
         match &self.package_manager {
             NodePackageManager::Bun => {
                 if self.bun.is_none() {
                     self.bun = Some(BunpmConfig::default());
                 }
 
-                self.inherit_proto_bun(proto_tools)?;
+                self.inherit_proto_bun(proto_config)?;
             }
             NodePackageManager::Npm => {
-                self.inherit_proto_npm(proto_tools)?;
+                self.inherit_proto_npm(proto_config)?;
             }
             NodePackageManager::Pnpm => {
                 if self.pnpm.is_none() {
                     self.pnpm = Some(PnpmConfig::default());
                 }
 
-                self.inherit_proto_pnpm(proto_tools)?;
+                self.inherit_proto_pnpm(proto_config)?;
             }
             NodePackageManager::Yarn => {
                 if self.yarn.is_none() {
                     self.yarn = Some(YarnConfig::default());
                 }
 
-                self.inherit_proto_yarn(proto_tools)?;
+                self.inherit_proto_yarn(proto_config)?;
             }
         };
 

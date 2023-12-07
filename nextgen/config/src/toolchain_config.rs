@@ -5,7 +5,7 @@ use crate::toolchain::*;
 use crate::validate::check_yml_extension;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
-use proto_core::ToolsConfig;
+use proto_core::ProtoConfig;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
@@ -75,15 +75,15 @@ impl ToolchainConfig {
         tools
     }
 
-    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
-        self.inherit_proto_bun(proto_tools)?;
-        self.inherit_proto_deno(proto_tools)?;
-        self.inherit_proto_node(proto_tools)?;
-        self.inherit_proto_rust(proto_tools)?;
-        self.inherit_proto_typescript(proto_tools)?;
+    pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+        self.inherit_proto_bun(proto_config)?;
+        self.inherit_proto_deno(proto_config)?;
+        self.inherit_proto_node(proto_config)?;
+        self.inherit_proto_rust(proto_config)?;
+        self.inherit_proto_typescript(proto_config)?;
 
         if let Some(node_config) = &mut self.node {
-            node_config.inherit_proto(proto_tools)?;
+            node_config.inherit_proto(proto_config)?;
         }
 
         Ok(())
@@ -92,21 +92,21 @@ impl ToolchainConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
-        proto_tools: &ToolsConfig,
+        proto_config: &ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
         let mut result = ConfigLoader::<ToolchainConfig>::new()
             .set_root(workspace_root)
             .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
-        result.config.inherit_proto(proto_tools)?;
+        result.config.inherit_proto(proto_config)?;
 
         Ok(result.config)
     }
 
     pub fn load_from<R: AsRef<Path>>(
         workspace_root: R,
-        proto_tools: &ToolsConfig,
+        proto_config: &ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
         let workspace_root = workspace_root.as_ref();
 
@@ -115,7 +115,7 @@ impl ToolchainConfig {
             workspace_root
                 .join(consts::CONFIG_DIRNAME)
                 .join(consts::CONFIG_TOOLCHAIN_FILENAME),
-            proto_tools,
+            proto_config,
         )
     }
 }

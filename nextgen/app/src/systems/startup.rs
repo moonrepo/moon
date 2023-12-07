@@ -4,7 +4,7 @@ use crate::app_error::AppError;
 use moon_app_components::{AppInfo, Tasks, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use proto_core::{get_proto_home, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{get_proto_home, ProtoConfig, PROTO_CONFIG_NAME};
 use semver::Version;
 use starbase::system;
 use starbase_styles::color;
@@ -121,7 +121,7 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         consts::CONFIG_TOOLCHAIN_FILENAME
     );
     let config_path = workspace_root.join(&config_name);
-    let proto_path = workspace_root.join(TOOLS_CONFIG_NAME);
+    let proto_path = workspace_root.join(PROTO_CONFIG_NAME);
 
     debug!(
         file = ?config_path,
@@ -132,24 +132,24 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
     if proto_path.exists() {
         debug!(
             "Found a {} file in the root, loading into the toolchain",
-            color::file(TOOLS_CONFIG_NAME)
+            color::file(PROTO_CONFIG_NAME)
         );
     }
 
-    let mut proto_tools = ToolsConfig::load_from(workspace_root)?;
-    proto_tools.inherit_builtin_plugins();
+    // TODO
+    let proto_config = ProtoConfig::default();
 
     let config = if config_path.exists() {
         debug!("Config file does not exist, using defaults");
 
         ToolchainConfig::default()
     } else {
-        ToolchainConfig::load(workspace_root, &config_path, &proto_tools)?
+        ToolchainConfig::load(workspace_root, &config_path, &proto_config)?
     };
 
     resources.set(Toolchain {
         config,
-        proto: proto_tools,
+        proto_config,
         proto_home: get_proto_home()?,
     });
 }

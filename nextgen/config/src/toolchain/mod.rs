@@ -15,8 +15,8 @@ pub use typescript_config::*;
 #[macro_export]
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
-        pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
-            if let Some(version) = proto_tools.tools.get($key) {
+        pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+            if let Some(version) = proto_config.versions.get($key) {
                 let config = self.$tool.get_or_insert_with($config::default);
 
                 if config.version.is_none() {
@@ -26,10 +26,7 @@ macro_rules! inherit_tool {
 
             if let Some(config) = &mut self.$tool {
                 if config.plugin.is_none() {
-                    config.plugin = proto_tools.plugins.get($key).cloned();
-                    // config.plugin = Some(PluginLocator::SourceUrl {
-                    //     url: $plugin.into(),
-                    // });
+                    config.plugin = proto_config.plugins.get($key).cloned();
                 }
             }
 
@@ -41,15 +38,15 @@ macro_rules! inherit_tool {
 #[macro_export]
 macro_rules! inherit_tool_required {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
-        pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
-            if let Some(version) = proto_tools.tools.get($key) {
+        pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+            if let Some(version) = proto_config.versions.get($key) {
                 if self.$tool.version.is_none() {
                     self.$tool.version = Some(version.to_owned());
                 }
             }
 
             if self.$tool.plugin.is_none() {
-                self.$tool.plugin = proto_tools.plugins.get($key).cloned();
+                self.$tool.plugin = proto_config.plugins.get($key).cloned();
             }
 
             Ok(())
@@ -60,15 +57,15 @@ macro_rules! inherit_tool_required {
 #[macro_export]
 macro_rules! inherit_tool_without_version {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
-        pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
-            if self.$tool.is_none() && proto_tools.tools.get($key).is_some() {
+        pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+            if self.$tool.is_none() && proto_config.versions.get($key).is_some() {
                 self.$tool = Some($config::default());
             }
 
             // Not used yet!
             // if let Some(config) = self.$tool.as_mut() {
             //     if config.plugin.is_none() {
-            //         config.plugin = proto_tools.plugins.get($key).cloned();
+            //         config.plugin = proto_config.plugins.get($key).cloned();
             //     }
             // }
 

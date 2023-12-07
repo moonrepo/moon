@@ -1,32 +1,36 @@
 use crate::command::Command;
-use moon_args::join_args;
+use moon_args::join_args_os;
 use moon_common::color;
 use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
+use std::borrow::Cow;
 use std::env;
+use std::ffi::OsStr;
 use std::fmt::{self, Display};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use tracing::{debug, enabled};
 
+type LineValue<'l> = Cow<'l, OsStr>;
+
 #[derive(Debug)]
-pub struct CommandLine {
-    pub command: Vec<String>,
-    pub input: String,
-    pub main_command: String,
+pub struct CommandLine<'l> {
+    pub command: Vec<LineValue<'l>>,
+    pub input: LineValue<'l>,
+    pub main_command: LineValue<'l>,
 }
 
-impl CommandLine {
+impl<'l> CommandLine<'l> {
     pub fn new(command: &Command) -> CommandLine {
-        let mut command_line: Vec<String> = vec![];
-        let mut input_line: Vec<String> = vec![];
-        let mut main_line: Vec<String> = vec![];
+        let mut command_line: Vec<LineValue> = vec![];
+        let mut input_line: Vec<LineValue> = vec![];
+        let mut main_line: Vec<LineValue> = vec![];
         // let mut join_input = false;
 
-        let push_to_line = |line: &mut Vec<String>| {
-            line.push(command.bin.to_string_lossy().to_string());
+        let push_to_line = |line: &mut Vec<LineValue>| {
+            line.push(Cow::Owned(command.bin.to_owned()));
 
             for arg in &command.args {
-                line.push(arg.to_string_lossy().to_string());
+                line.push(Cow::Owned(arg.to_owned()));
             }
         };
 
@@ -36,8 +40,8 @@ impl CommandLine {
         // If wrapped in a shell, the shell binary and arguments
         // must be placed at the start of the line.
         if let Some(shell) = &command.shell {
-            command_line.push(shell.bin.clone());
-            command_line.extend(shell.args.clone());
+            command_line.push(Cow::Borrowed(OsStr::new(shell.bin.as_str())));
+            command_line.extend(shell.args.iter().map(|arg| Cow::Borrowed(OsStr::new(arg))));
 
             // If the main command should be passed via stdin,
             // then append the input line instead of the command line.
@@ -48,10 +52,10 @@ impl CommandLine {
                 // Otherwise append as a *single* argument. This typically
                 // appears after a "-" argument (should come from shell).
             } else {
-                let mut sub_line: Vec<String> = vec![];
+                let mut sub_line: Vec<LineValue> = vec![];
                 push_to_line(&mut sub_line);
 
-                command_line.push(join_args(sub_line));
+                command_line.push(Cow::Owned(join_args_os(sub_line)));
             }
 
             // Otherwise we have a normal command and arguments.
@@ -61,7 +65,7 @@ impl CommandLine {
             // That also may have input.
             if !command.input.is_empty() {
                 for input in &command.input {
-                    input_line.push(input.to_string_lossy().to_string());
+                    input_line.push(Cow::Borrowed(input));
                 }
             }
         }
@@ -73,17 +77,18 @@ impl CommandLine {
             // } else {
             //     input_line.join("")
             // },
-            input: input_line.join(" "),
-            main_command: join_args(main_line),
+            input: Cow::Owned(input_line.join(OsStr::new(" "))),
+            main_command: Cow::Owned(join_args_os(main_line)),
         }
     }
 }
 
-impl Display for CommandLine {
+impl<'l> Display for CommandLine<'l> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let command = join_args(&self.command);
+        let command = join_args_os(&self.command);
+        let command = command.to_string_lossy();
 
-        write!(f, "{}", &command)?;
+        write!(f, "{}", command)?;
 
         if !self.input.is_empty() {
             let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
@@ -99,7 +104,7 @@ impl Display for CommandLine {
                 if input.len() > 200 && !debug_input {
                     "(truncated)".into()
                 } else {
-                    input.replace('\n', " ")
+                    input.to_string_lossy().replace('\n', " ")
                 }
             )?;
         }
@@ -110,7 +115,7 @@ impl Display for CommandLine {
 
 pub struct CommandInspector<'cmd> {
     command: &'cmd Command,
-    line_cache: OnceCell<CommandLine>,
+    line_cache: OnceCell<CommandLine<'cmd>>,
 }
 
 impl<'cmd> CommandInspector<'cmd> {
@@ -124,7 +129,11 @@ impl<'cmd> CommandInspector<'cmd> {
     pub fn get_cache_key(&self) -> String {
         let line = self.get_command_line();
 
-        format!("{}{}", line.command.join(" "), line.input)
+        format!(
+            "{}{}",
+            line.command.join(OsStr::new(" ")).to_string_lossy(),
+            line.input.to_string_lossy()
+        )
     }
 
     pub fn get_command_line(&self) -> &CommandLine {
@@ -189,7 +198,11 @@ impl<'cmd> CommandInspector<'cmd> {
         if self.command.print_command {
             println!(
                 "{}",
-                self.format_command(&command_line.main_command, &workspace_root, None)
+                self.format_command(
+                    command_line.main_command.to_str().unwrap(),
+                    &workspace_root,
+                    None
+                )
             );
         }
 

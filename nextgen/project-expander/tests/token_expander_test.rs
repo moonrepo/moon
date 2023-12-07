@@ -5,6 +5,7 @@ use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
 use moon_project_expander::TokenExpander;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
+use std::borrow::Cow;
 use utils::{create_context, create_project, create_task};
 
 mod token_expander {
@@ -98,64 +99,103 @@ mod token_expander {
             let expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.replace_variable(&task, "$language").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$language"))
+                    .unwrap(),
                 "javascript"
             );
             assert_eq!(
-                expander.replace_variable(&task, "$project").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$project"))
+                    .unwrap(),
                 "project"
             );
             assert_eq!(
-                expander.replace_variable(&task, "$projectAlias").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectAlias"))
+                    .unwrap(),
                 ""
             );
             assert_eq!(
-                expander.replace_variable(&task, "$projectSource").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectSource"))
+                    .unwrap(),
                 "project/source"
             );
             assert_eq!(
-                expander.replace_variable(&task, "$projectRoot").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectRoot"))
+                    .unwrap(),
                 project.root.to_string_lossy()
             );
             assert_eq!(
-                expander.replace_variable(&task, "$projectType").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectType"))
+                    .unwrap(),
                 "library"
             );
             assert_eq!(
-                expander.replace_variable(&task, "$target").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$target"))
+                    .unwrap(),
                 "project:task"
             );
-            assert_eq!(expander.replace_variable(&task, "$task").unwrap(), "task");
             assert_eq!(
-                expander.replace_variable(&task, "$taskPlatform").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$task"))
+                    .unwrap(),
+                "task"
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$taskPlatform"))
+                    .unwrap(),
                 "unknown"
             );
             assert_eq!(
-                expander.replace_variable(&task, "$taskType").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$taskType"))
+                    .unwrap(),
                 "test"
             );
             assert_eq!(
-                expander.replace_variable(&task, "$workspaceRoot").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$workspaceRoot"))
+                    .unwrap(),
                 sandbox.path().to_string_lossy()
             );
 
             assert!(predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}")
                 .unwrap()
-                .eval(&expander.replace_variable(&task, "$date").unwrap()));
+                .eval(
+                    &expander
+                        .replace_variable(&task, Cow::Borrowed("$date"))
+                        .unwrap()
+                ));
 
             assert!(predicate::str::is_match("[0-9]{2}:[0-9]{2}:[0-9]{2}")
                 .unwrap()
-                .eval(&expander.replace_variable(&task, "$time").unwrap()));
+                .eval(
+                    &expander
+                        .replace_variable(&task, Cow::Borrowed("$time"))
+                        .unwrap()
+                ));
 
             assert!(predicate::str::is_match(
                 "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}:[0-9]{2}:[0-9]{2}"
             )
             .unwrap()
-            .eval(&expander.replace_variable(&task, "$datetime").unwrap()));
+            .eval(
+                &expander
+                    .replace_variable(&task, Cow::Borrowed("$datetime"))
+                    .unwrap()
+            ));
 
-            assert!(predicate::str::is_match("[0-9]{10}")
-                .unwrap()
-                .eval(&expander.replace_variable(&task, "$timestamp").unwrap()));
+            assert!(predicate::str::is_match("[0-9]{10}").unwrap().eval(
+                &expander
+                    .replace_variable(&task, Cow::Borrowed("$timestamp"))
+                    .unwrap()
+            ));
         }
 
         #[test]
@@ -169,28 +209,32 @@ mod token_expander {
             let expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.replace_variable(&task, "$language").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$language"))
+                    .unwrap(),
                 "javascript"
             );
             assert_eq!(
                 expander
-                    .replace_variable(&task, "$language/before")
+                    .replace_variable(&task, Cow::Borrowed("$language/before"))
                     .unwrap(),
                 "javascript/before"
             );
             assert_eq!(
-                expander.replace_variable(&task, "after/$language").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("after/$language"))
+                    .unwrap(),
                 "after/javascript"
             );
             assert_eq!(
                 expander
-                    .replace_variable(&task, "in/$language/between")
+                    .replace_variable(&task, Cow::Borrowed("in/$language/between"))
                     .unwrap(),
                 "in/javascript/between"
             );
             assert_eq!(
                 expander
-                    .replace_variable(&task, "partof$languagestring")
+                    .replace_variable(&task, Cow::Borrowed("partof$languagestring"))
                     .unwrap(),
                 "partofjavascriptstring"
             );
@@ -206,7 +250,9 @@ mod token_expander {
             let expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.replace_variable(&task, "$unknown").unwrap(),
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$unknown"))
+                    .unwrap(),
                 "$unknown"
             );
         }

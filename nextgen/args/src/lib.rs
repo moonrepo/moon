@@ -1,4 +1,5 @@
 use miette::Diagnostic;
+use std::ffi::{OsStr, OsString};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -44,7 +45,7 @@ where
         let arg = arg.as_ref();
 
         match arg {
-            "&" | "&&" | "|&" | "|" | "||" | ";" | "!" | ">" | ">>" | "<" | "-" | "--" => {
+            "&" | "&&" | "|&" | "|" | "||" | ";" | "!" | ">" | ">>" | "<" | "<<" | "-" | "--" => {
                 line.push_str(arg);
                 line.push(' ');
             }
@@ -63,6 +64,50 @@ where
         line
     });
 
-    line.pop();
+    line.pop(); // Trailing space
     line
+}
+
+pub fn join_args_os<I, S>(args: I) -> OsString
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let single_chars = [b"&", b"|", b";", b"!", b">", b"<", b"-"];
+    let multi_chars = [b"&&", b"|&", b"||", b">>", b"<<", b"--"];
+
+    args.into_iter().fold(OsString::new(), |mut line, arg| {
+        let arg = arg.as_ref();
+        let bytes = arg.as_encoded_bytes();
+        let bytes_len = bytes.len();
+
+        // Better way to do this?
+        let has_special_chars =
+            // Multi chars
+            bytes
+                .windows(bytes_len)
+                .any(|window| multi_chars.iter().any(|c| *c == window))
+            ||
+            // Single chars
+            single_chars.iter().any(|c| bytes.contains(&c[0]));
+
+        if has_special_chars {
+            line.push(arg);
+            line.push(OsStr::new(" "));
+        } else {
+            if bytes.starts_with(&[b'$'])
+                || bytes.starts_with(&[b'\''])
+                || bytes.starts_with(&[b'"'])
+            {
+                line.push(arg);
+            } else {
+                let quoted = shell_words::quote(arg.to_str().unwrap()); // Handle conversion?
+                line.push(OsStr::new(quoted.as_ref()));
+            }
+
+            line.push(OsStr::new(" "))
+        }
+
+        line
+    })
 }

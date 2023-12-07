@@ -1,6 +1,14 @@
 use moon_config::{LanguageType, PlatformType, ProjectType, TaskType};
-use moon_query::{build_query, ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
-use starbase_utils::string_vec;
+use moon_query::{
+    build_query, ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator,
+};
+use std::borrow::Cow;
+
+fn value_list<I: IntoIterator<Item = V>, V: AsRef<str>>(list: I) -> FieldValues<'static> {
+    list.into_iter()
+        .map(|s| Cow::Owned(s.as_ref().to_owned()))
+        .collect()
+}
 
 mod mql_build {
     use super::*;
@@ -84,15 +92,15 @@ mod mql_build {
                                 op: LogicalOperator::Or,
                                 conditions: vec![
                                     Condition::Field {
-                                        field: Field::Task(string_vec!["foo"]),
+                                        field: Field::Task(value_list(["foo"])),
                                         op: ComparisonOperator::Equal,
                                     },
                                     Condition::Field {
-                                        field: Field::Task(string_vec!["bar"]),
+                                        field: Field::Task(value_list(["bar"])),
                                         op: ComparisonOperator::NotEqual,
                                     },
                                     Condition::Field {
-                                        field: Field::Task(string_vec!["baz"]),
+                                        field: Field::Task(value_list(["baz"])),
                                         op: ComparisonOperator::Like,
                                     }
                                 ],
@@ -120,11 +128,11 @@ mod mql_build {
                         op: LogicalOperator::Or,
                         conditions: vec![
                             Condition::Field {
-                                field: Field::Task(string_vec!["foo"]),
+                                field: Field::Task(value_list(["foo"])),
                                 op: ComparisonOperator::Equal,
                             },
                             Condition::Field {
-                                field: Field::Task(string_vec!["bar"]),
+                                field: Field::Task(value_list(["bar"])),
                                 op: ComparisonOperator::NotEqual,
                             },
                         ],
@@ -167,7 +175,7 @@ mod mql_build {
                                 op: LogicalOperator::Or,
                                 conditions: vec![
                                     Condition::Field {
-                                        field: Field::Task(string_vec!["foo"]),
+                                        field: Field::Task(value_list(["foo"])),
                                         op: ComparisonOperator::Equal,
                                     },
                                     Condition::Criteria {
@@ -221,7 +229,7 @@ mod mql_build {
         //                             op: ComparisonOperator::Equal,
         //                         },
         //                         QueryField {
-        //                             field: Field::Task(string_vec!["lint*"]),
+        //                             field: Field::Task(value_list(["lint*"]),
         //                             op: ComparisonOperator::Like,
         //                         },
         //                     ],
@@ -234,7 +242,7 @@ mod mql_build {
         //                             op: ComparisonOperator::Equal,
         //                         },
         //                         QueryField {
-        //                             field: Field::Task(string_vec!["build*"]),
+        //                             field: Field::Task(value_list(["build*"]),
         //                             op: ComparisonOperator::Like,
         //                         },
         //                     ],
@@ -306,7 +314,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Project(string_vec!["foo"]),
+                        field: Field::Project(value_list(["foo"])),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("project!=foo".into())
@@ -321,7 +329,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Project(string_vec!["foo*"]),
+                        field: Field::Project(value_list(["foo*"])),
                         op: ComparisonOperator::Like,
                     }],
                     input: Some("project~foo*".into())
@@ -340,7 +348,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectAlias(string_vec!["foo"]),
+                        field: Field::ProjectAlias(value_list(["foo"])),
                         op: ComparisonOperator::Equal,
                     }],
                     input: Some("projectAlias=foo".into())
@@ -355,7 +363,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectAlias(string_vec!["foo*"]),
+                        field: Field::ProjectAlias(value_list(["foo*"])),
                         op: ComparisonOperator::NotLike,
                     }],
                     input: Some("projectAlias!~foo*".into())
@@ -370,7 +378,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectAlias(string_vec!["@scope/*"]),
+                        field: Field::ProjectAlias(value_list(["@scope/*"])),
                         op: ComparisonOperator::Like,
                     }],
                     input: Some("projectAlias~@scope/*".into())
@@ -389,7 +397,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectSource(string_vec!["packages/foo"]),
+                        field: Field::ProjectSource(value_list(["packages/foo"])),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("projectSource!=packages/foo".into())
@@ -404,7 +412,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectSource(string_vec!["packages/*"]),
+                        field: Field::ProjectSource(value_list(["packages/*"])),
                         op: ComparisonOperator::NotLike,
                     }],
                     input: Some("projectSource!~packages/*".into())
@@ -479,7 +487,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Tag(string_vec!["lib"]),
+                        field: Field::Tag(value_list(["lib"])),
                         op: ComparisonOperator::Equal,
                     }],
                     input: Some("tag=lib".into())
@@ -494,7 +502,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Tag(string_vec!["foo", "bar"]),
+                        field: Field::Tag(value_list(["foo", "bar"])),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("tag!=[foo,bar]".into())
@@ -509,7 +517,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Tag(string_vec!["app-*"]),
+                        field: Field::Tag(value_list(["app-*"])),
                         op: ComparisonOperator::Like,
                     }],
                     input: Some("tag~app-*".into())
@@ -528,7 +536,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Task(string_vec!["foo"]),
+                        field: Field::Task(value_list(["foo"])),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("task!=foo".into())
@@ -543,7 +551,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Task(string_vec!["foo*"]),
+                        field: Field::Task(value_list(["foo*"])),
                         op: ComparisonOperator::Like,
                     }],
                     input: Some("task~foo*".into())

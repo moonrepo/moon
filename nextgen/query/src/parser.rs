@@ -4,6 +4,7 @@ use pest::{
     Parser,
 };
 use pest_derive::Parser;
+use std::borrow::Cow;
 
 #[derive(Parser)]
 #[grammar = "mql.pest"]
@@ -26,17 +27,17 @@ pub enum ComparisonOperator {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum AstNode {
+pub enum AstNode<'l> {
     Comparison {
-        field: String,
+        field: Cow<'l, str>,
         op: ComparisonOperator,
-        value: Vec<String>,
+        value: Vec<Cow<'l, str>>,
     },
     Op {
         op: LogicalOperator,
     },
     Group {
-        nodes: Vec<AstNode>,
+        nodes: Vec<AstNode<'l>>,
     },
 }
 
@@ -50,7 +51,7 @@ fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>>
 
             Some(AstNode::Comparison {
                 field: match field.as_rule() {
-                    Rule::key => field.as_str().to_string(),
+                    Rule::key => Cow::Borrowed(field.as_str()),
                     _ => unreachable!(),
                 },
                 op: match op.as_rule() {
@@ -61,11 +62,11 @@ fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>>
                     _ => unreachable!(),
                 },
                 value: match value.as_rule() {
-                    Rule::value => vec![value.as_str().to_string()],
-                    Rule::value_glob => vec![value.as_str().to_string()],
+                    Rule::value => vec![Cow::Borrowed(value.as_str())],
+                    Rule::value_glob => vec![Cow::Borrowed(value.as_str())],
                     Rule::value_list => value
                         .into_inner()
-                        .map(|pair| pair.as_str().to_string())
+                        .map(|pair| Cow::Borrowed(pair.as_str()))
                         .collect(),
                     _ => unreachable!(),
                 },
@@ -85,7 +86,7 @@ fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>>
     })
 }
 
-fn parse_ast(pairs: Pairs<Rule>) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
+fn parse_ast(pairs: Pairs<'_, Rule>) -> Result<Vec<AstNode<'_>>, Box<Error<Rule>>> {
     let mut ast = vec![];
 
     for pair in pairs {
@@ -97,6 +98,6 @@ fn parse_ast(pairs: Pairs<Rule>) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
     Ok(ast)
 }
 
-pub fn parse_query(input: &str) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
+pub fn parse_query(input: &str) -> Result<Vec<AstNode<'_>>, Box<Error<Rule>>> {
     parse_ast(MqlParser::parse(Rule::query, input)?)
 }

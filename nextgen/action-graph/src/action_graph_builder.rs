@@ -22,7 +22,7 @@ pub struct RunRequirements<'app> {
 }
 
 pub struct ActionGraphBuilder<'app> {
-    all_query: Option<Criteria>,
+    all_query: Option<Criteria<'app>>,
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
@@ -77,7 +77,7 @@ impl<'app> ActionGraphBuilder<'app> {
         Runtime::system()
     }
 
-    pub fn set_query(&mut self, input: &str) -> miette::Result<()> {
+    pub fn set_query(&mut self, input: &'app str) -> miette::Result<()> {
         self.all_query = Some(build_query(input)?);
 
         Ok(())
@@ -318,7 +318,7 @@ impl<'app> ActionGraphBuilder<'app> {
             TargetScope::Tag(tag) => {
                 let projects = self
                     .project_graph
-                    .query(build_query(format!("tag={}", tag))?)?;
+                    .query(build_query(format!("tag={}", tag).as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist

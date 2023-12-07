@@ -2,40 +2,44 @@ use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 use crate::query_error::QueryError;
 use moon_config::{LanguageType, PlatformType, ProjectType, TaskType};
 use starbase_utils::glob::GlobSet;
+use std::borrow::Cow;
 use std::cmp::PartialEq;
 use std::str::FromStr;
 
+pub type FieldValue<'l> = Cow<'l, str>;
+pub type FieldValues<'l> = Vec<FieldValue<'l>>;
+
 #[derive(Debug, PartialEq)]
-pub enum Field {
+pub enum Field<'l> {
     Language(Vec<LanguageType>),
-    Project(Vec<String>),
-    ProjectAlias(Vec<String>),
-    ProjectName(Vec<String>),
-    ProjectSource(Vec<String>),
+    Project(FieldValues<'l>),
+    ProjectAlias(FieldValues<'l>),
+    ProjectName(FieldValues<'l>),
+    ProjectSource(FieldValues<'l>),
     ProjectType(Vec<ProjectType>),
-    Tag(Vec<String>),
-    Task(Vec<String>),
+    Tag(FieldValues<'l>),
+    Task(FieldValues<'l>),
     TaskPlatform(Vec<PlatformType>),
     TaskType(Vec<TaskType>),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Condition {
+pub enum Condition<'l> {
     Field {
-        field: Field,
+        field: Field<'l>,
         op: ComparisonOperator,
     },
     Criteria {
-        criteria: Criteria,
+        criteria: Criteria<'l>,
     },
 }
 
-impl Condition {
-    pub fn matches(&self, haystack: &[String], needle: &String) -> miette::Result<bool> {
+impl<'l> Condition<'l> {
+    pub fn matches(&self, haystack: &FieldValues, needle: &str) -> miette::Result<bool> {
         Ok(match self {
             Condition::Field { op, .. } => match op {
-                ComparisonOperator::Equal => haystack.contains(needle),
-                ComparisonOperator::NotEqual => !haystack.contains(needle),
+                ComparisonOperator::Equal => haystack.contains(&Cow::Borrowed(needle)),
+                ComparisonOperator::NotEqual => !haystack.contains(&Cow::Borrowed(needle)),
                 ComparisonOperator::Like => GlobSet::new(haystack)?.is_match(needle),
                 ComparisonOperator::NotLike => !GlobSet::new(haystack)?.is_match(needle),
             },
@@ -43,7 +47,7 @@ impl Condition {
         })
     }
 
-    pub fn matches_list(&self, haystack: &[String], needles: &[String]) -> miette::Result<bool> {
+    pub fn matches_list(&self, haystack: &FieldValues, needles: &[&str]) -> miette::Result<bool> {
         for needle in needles {
             if self.matches(haystack, needle)? {
                 return Ok(true);
@@ -67,14 +71,14 @@ impl Condition {
 }
 
 #[derive(Debug, Default, PartialEq)]
-pub struct Criteria {
+pub struct Criteria<'l> {
     pub op: LogicalOperator,
-    pub conditions: Vec<Condition>,
-    pub input: Option<String>,
+    pub conditions: Vec<Condition<'l>>,
+    pub input: Option<Cow<'l, str>>,
 }
 
-impl AsRef<Criteria> for Criteria {
-    fn as_ref(&self) -> &Criteria {
+impl<'l> AsRef<Criteria<'l>> for Criteria<'l> {
+    fn as_ref(&self) -> &Criteria<'l> {
         self
     }
 }
@@ -82,7 +86,7 @@ impl AsRef<Criteria> for Criteria {
 fn build_criteria_enum<T: FromStr>(
     field: &str,
     op: &ComparisonOperator,
-    values: Vec<String>,
+    values: FieldValues<'_>,
 ) -> miette::Result<Vec<T>> {
     if matches!(op, ComparisonOperator::Like | ComparisonOperator::NotLike) {
         return Err(QueryError::UnsupportedLikeOperator(field.to_owned()).into());
@@ -94,21 +98,21 @@ fn build_criteria_enum<T: FromStr>(
         result.push(
             value
                 .parse()
-                .map_err(|_| QueryError::UnknownFieldValue(field.to_owned(), value))?,
+                .map_err(|_| QueryError::UnknownFieldValue(field.to_owned(), value.to_string()))?,
         );
     }
 
     Ok(result)
 }
 
-fn build_criteria(ast: Vec<AstNode>) -> miette::Result<Criteria> {
+fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
     let mut op = None;
     let mut conditions = vec![];
 
     for node in ast {
         match node {
             AstNode::Comparison { field, op, value } => {
-                let field = match field.as_str() {
+                let field = match field.as_ref() {
                     "language" => {
                         Field::Language(build_criteria_enum::<LanguageType>(&field, &op, value)?)
                     }
@@ -128,7 +132,7 @@ fn build_criteria(ast: Vec<AstNode>) -> miette::Result<Criteria> {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }
                     _ => {
-                        return Err(QueryError::UnknownField(field).into());
+                        return Err(QueryError::UnknownField(field.to_string()).into());
                     }
                 };
 
@@ -158,9 +162,7 @@ fn build_criteria(ast: Vec<AstNode>) -> miette::Result<Criteria> {
     })
 }
 
-pub fn build_query<I: AsRef<str>>(input: I) -> miette::Result<Criteria> {
-    let input = input.as_ref();
-
+pub fn build_query(input: &str) -> miette::Result<Criteria<'_>> {
     if input.is_empty() {
         return Err(QueryError::EmptyInput.into());
     }
@@ -168,7 +170,7 @@ pub fn build_query<I: AsRef<str>>(input: I) -> miette::Result<Criteria> {
     let mut criteria =
         build_criteria(parse_query(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)?;
 
-    criteria.input = Some(input.to_owned());
+    criteria.input = Some(Cow::Borrowed(input));
 
     Ok(criteria)
 }

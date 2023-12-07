@@ -1,5 +1,5 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use proto_core::ToolsConfig;
+use proto_core::ProtoConfig;
 use semver::Version;
 use starbase::Resource;
 use std::path::PathBuf;
@@ -29,7 +29,7 @@ pub struct Tasks {
 #[derive(Debug, Resource)]
 pub struct Toolchain {
     pub config: ToolchainConfig,
-    pub proto: ToolsConfig,
+    pub proto_config: ProtoConfig,
     pub proto_home: PathBuf,
 }
 

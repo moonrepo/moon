@@ -8,8 +8,7 @@ pub use manager::*;
 pub use tool::*;
 
 use proto_core::{
-    inject_default_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool,
-    UserConfig, Wasm,
+    inject_default_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, Wasm,
 };
 use std::env;
 use std::path::Path;
@@ -49,9 +48,7 @@ pub async fn load_tool_plugin(
         Wasm::file(proto.get_plugin_loader().load_plugin(id, locator).await?),
     )?;
 
-    let user_config = UserConfig::load()?;
-
-    inject_default_manifest_config(id, proto, &user_config, &mut manifest)?;
+    inject_default_manifest_config(id, proto, &mut manifest)?;
 
     ProtoTool::load_from_manifest(id, proto, manifest)
 }

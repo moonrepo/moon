@@ -1,6 +1,6 @@
 use moon_config::{
     InheritedTasksEntry, InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig,
-    PartialTaskConfig, ToolchainConfig, ToolsConfig, WorkspaceConfig, WorkspaceProjects,
+    PartialTaskConfig, ProtoConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
     WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
@@ -24,10 +24,10 @@ pub struct ProjectGraphContainer {
 
 impl ProjectGraphContainer {
     pub fn new(root: &Path) -> Self {
-        let proto = ToolsConfig::default();
+        let proto_config = ProtoConfig::default();
         let mut graph = Self {
             inherited_tasks: InheritedTasksManager::load_from(root).unwrap(),
-            toolchain_config: ToolchainConfig::load_from(root, &proto).unwrap(),
+            toolchain_config: ToolchainConfig::load_from(root, &proto_config).unwrap(),
             workspace_root: root.to_path_buf(),
             ..Default::default()
         };

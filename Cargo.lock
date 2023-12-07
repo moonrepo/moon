@@ -761,9 +761,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.4.8"
+version = "4.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2275f18819641850fa26c89acc84d465c1bf91ce57bc2748b28c420473352f64"
+checksum = "bfaff671f6b22ca62406885ece523383b9b64022e341e53e009a62ebc47a45f2"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -771,9 +771,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.4.8"
+version = "4.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07cdf1b148b25c1e1f7a42225e30a0d99a615cd4637eae7365548dd4529b95bc"
+checksum = "a216b506622bb1d316cd51328dce24e07bdff4a6128a47c7e7fad11878d5adbb"
 dependencies = [
  "anstream",
  "anstyle",
@@ -788,7 +788,7 @@ version = "4.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bffe91f06a11b4b9420f62103854e90867812cd5d01557f853c5ee8e791b12ae"
 dependencies = [
- "clap 4.4.8",
+ "clap 4.4.11",
 ]
 
 [[package]]
@@ -2963,7 +2963,7 @@ dependencies = [
 name = "moon_action_context"
 version = "0.1.0"
 dependencies = [
- "clap 4.4.8",
+ "clap 4.4.11",
  "moon_common",
  "moon_target",
  "rustc-hash",
@@ -3207,7 +3207,7 @@ version = "1.17.4"
 dependencies = [
  "bytes",
  "ci_env",
- "clap 4.4.8",
+ "clap 4.4.11",
  "clap_complete",
  "clap_lex 0.6.0",
  "console",
@@ -4235,9 +4235,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.18.0"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
+checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
 name = "once_map"
@@ -4655,9 +4655,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.23.7"
+version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "978135450f0fa16ec42a159fdcf01b92b65611a5b87ff484461cba1fd32993e7"
+checksum = "b898d9381330a511bfc08e112507b57a6f03b4fa25b5269c1eb4ea14e5a33004"
 dependencies = [
  "cached",
  "extism",
@@ -4668,6 +4668,7 @@ dependencies = [
  "proto_pdk_api",
  "regex",
  "reqwest",
+ "schematic",
  "semver",
  "serde",
  "serde_json",
@@ -4687,9 +4688,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.10.4"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cde8df4fbd8eeea007157df37376c24bf1cde6bffb3638aeefa95583911b15a5"
+checksum = "72325283c00030c565ff067fab5bee7ce22c3c345aea6f5b48ffb28d60234f58"
 dependencies = [
  "anyhow",
  "semver",
@@ -5098,6 +5099,7 @@ dependencies = [
  "serde_yaml 0.9.27",
  "starbase_styles",
  "thiserror",
+ "toml 0.8.8",
  "tracing",
 ]
 
@@ -5121,8 +5123,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c38cdd0968bde35f7e093600c90e0306da6af5ffd1b3cb175dbfde1146debcf2"
 dependencies = [
  "semver",
- "version_spec",
- "warpgate",
+ "serde_json",
+ "toml 0.8.8",
 ]
 
 [[package]]
@@ -5715,10 +5717,11 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.1.6"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d56db17c73df41a4b8a42dacbc63dd56ae5fcf936c4807aca9ade566be0abc4"
+checksum = "ca213bddf34f26c2d4d76ef0a6e7f0d29d11c3246d514dc78723b8e457f9f3f9"
 dependencies = [
+ "schematic",
  "serde",
  "serde_json",
  "shell-words",
@@ -6383,9 +6386,9 @@ checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
 
 [[package]]
 name = "uuid"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c58fe91d841bc04822c9801002db4ea904b9e4b8e6bbad25127b46eff8dc516b"
+checksum = "5e395fcf16a7a3d8127ec99782007af141946b4795001f876d54fb0d55978560"
 dependencies = [
  "getrandom",
 ]
@@ -6422,12 +6425,13 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "version_spec"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a874b9ff438ee535ce27c6099a76f23483b475e5942b85fd97d4a6806abaa3f3"
+checksum = "f3aaaf40ae0d800122ce8ef646ddd08ea02a42a141b249e08496e10ae3eb4440"
 dependencies = [
  "human-sort",
  "regex",
+ "schematic",
  "semver",
  "serde",
 ]
@@ -6475,9 +6479,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.15"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2aedafb67d3791893d2e7c62f9d08a9bf95b4ae78f9d8c610e56ee57b6a12f57"
+checksum = "8a7753f1234515fcfb16f532527e6d4c3bf20a9745b89ca6d450f7ae9b04fbdd"
 dependencies = [
  "extism",
  "miette",
@@ -6485,6 +6489,7 @@ dependencies = [
  "once_map",
  "regex",
  "reqwest",
+ "schematic",
  "serde",
  "serde_json",
  "sha2",
@@ -6498,10 +6503,11 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a4834d752d83450aab41986e1b9a08d069bbe09a83fe016532de19d0a87e24e"
+checksum = "5fe2fae4f5a428c7c697e057909240e376abdd45577beec6d4bd9798b451f20c"
 dependencies = [
+ "schematic",
  "serde",
 ]
 

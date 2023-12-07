@@ -178,7 +178,7 @@ impl Workspace {
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;
-        let toolchain_config = load_toolchain_config(&root_dir, &proto_config)?;
+        let toolchain_config = load_toolchain_config(&root_dir, proto_config)?;
         let tasks_config = load_tasks_config(&root_dir)?;
 
         if let Some(constraint) = &config.version_constraint {

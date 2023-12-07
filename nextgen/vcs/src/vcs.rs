@@ -1,5 +1,6 @@
 use crate::touched_files::TouchedFiles;
 use async_trait::async_trait;
+use miette::IntoDiagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
 use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
@@ -74,6 +75,6 @@ pub trait Vcs: Debug {
     async fn is_version_supported(&self, req: &str) -> miette::Result<bool> {
         let version = self.get_version().await?;
 
-        Ok(VersionReq::parse(req).unwrap().matches(&version))
+        Ok(VersionReq::parse(req).into_diagnostic()?.matches(&version))
     }
 }

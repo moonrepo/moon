@@ -21,6 +21,10 @@
   - Added support for the `bun` tool.
   - Simplified the workflow overall.
 
+#### ⚙️ Internal
+
+- Improved string allocation and performance for queries.
+
 ## 1.17.4
 
 #### 🐞 Fixes

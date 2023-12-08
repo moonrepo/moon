@@ -75,7 +75,8 @@ If manually mapping projects is too tedious or cumbersome, you may provide a lis
 the workspace root.
 
 When using this approach, the project name is derived from the project folder name, and is cleaned
-to our [supported characters](../concepts/project#names) . Furthermore, globbing **does risk the
+to our [supported characters](../concepts/project#names), but can be customized with the
+[`id`](./project#id) setting in [`moon.yml`](./project). Furthermore, globbing **does risk the
 chance of collision**, and when that happens, we log a warning and skip the conflicting project from
 being configured in the project graph.
 

@@ -6,7 +6,7 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
-use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
     DependencyScope, InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
@@ -234,18 +234,20 @@ impl<'app> ProjectGraphBuilder<'app> {
             "Project does not exist in the project graph, attempting to load",
         );
 
-        let Some(source) = self.sources.get(&id) else {
+        let Some(source) = self.sources.get(&id).map(|s| s.to_owned()) else {
             return Err(ProjectGraphError::UnconfiguredID(id).into());
         };
 
         // Create the project
-        let project = self.build_project(&id, source).await?;
+        let project = self.build_project(id, source).await?;
         let dependencies = project
             .dependencies
             .values()
             .map(|v| v.to_owned())
             .collect::<Vec<_>>(); // How to avoid cloning???
 
+        // Add to the graph
+        let id = project.id.clone();
         let index = self.graph.add_node(project);
 
         cycle.insert(id.clone());
@@ -279,11 +281,11 @@ impl<'app> ProjectGraphBuilder<'app> {
 
     /// Create and build the project with the provided ID and source.
     async fn build_project(
-        &self,
-        id: &Id,
-        source: &WorkspaceRelativePath,
+        &mut self,
+        id: Id,
+        source: WorkspaceRelativePathBuf,
     ) -> miette::Result<Project> {
-        debug!(id = id.as_str(), "Building project {}", color::id(id));
+        debug!(id = id.as_str(), "Building project {}", color::id(&id));
 
         let context = self.context();
 
@@ -292,8 +294,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         let mut builder = ProjectBuilder::new(
-            id,
-            source,
+            &id,
+            &source,
             ProjectBuilderContext {
                 detect_language: &context.detect_language,
                 detect_platform: &context.detect_platform,
@@ -329,16 +331,28 @@ impl<'app> ProjectGraphBuilder<'app> {
             builder.extend_with_task(task_id, task_config);
         }
 
-        // Inherit alias before building incase the project
+        // Inherit alias before building in case the project
         // references itself in tasks or dependencies
         for (alias, project_id) in &self.aliases {
-            if project_id == id {
+            if project_id == &id {
                 builder.set_alias(alias);
                 break;
             }
         }
 
-        builder.build().await
+        let project = builder.build().await?;
+
+        // If we received a new ID, update references
+        if project.id != id {
+            self.sources.remove(&id);
+            self.sources.insert(project.id.clone(), source.to_owned());
+
+            if let Some(alias) = project.alias.as_ref() {
+                self.aliases.insert(alias.to_owned(), project.id.clone());
+            }
+        }
+
+        Ok(project)
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.

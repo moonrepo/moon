@@ -63,6 +63,16 @@
         }
       ]
     },
+    "id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "language": {
       "anyOf": [
         {

@@ -20,6 +20,8 @@
   - The path to initialize in is now behined the `--to` option.
   - Added support for the `bun` tool.
   - Simplified the workflow overall.
+- Updated `moon.yml` to support customizing the project name using the `id` field.
+  - Can be used to override the project name derived in `.moon/workspace.yml`.
 
 #### ⚙️ Internal
 

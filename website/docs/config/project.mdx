@@ -45,6 +45,25 @@ dependsOn:
 
 ## Metadata
 
+## `id`<VersionLabel version="1.18.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#id" />
+
+Overrides the name (identifier) of the project, which was configured in or derived from the
+[`projects`](./workspace#projects) setting in [`.moon/workspace.yml`](./workspace). This setting is
+useful when using glob based project location, and want to avoid using the folder name as the
+project name.
+
+```yaml title="moon.yml"
+id: 'custom-id'
+```
+
+:::info
+
+All references to the project must use the new identifier, including project and task dependencies.
+
+:::
+
 ## `language`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#language" />

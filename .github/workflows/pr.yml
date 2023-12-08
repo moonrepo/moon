@@ -1,9 +1,9 @@
 name: PR
 on:
   pull_request:
-env:
-  MOON_DEBUG: 'true'
-  PROTO_DEBUG: 'true'
+# env:
+#   MOON_DEBUG: 'true'
+#   PROTO_DEBUG: 'true'
 jobs:
   version:
     name: Version check

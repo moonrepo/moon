@@ -3,15 +3,12 @@ language: javascript
 tasks:
   # :scope
   all:
-    command: node
-    args: -e "console.log('scope=all')"
+    command: echo 'scope=all'
 
   # ~:scope
   self:
-    command: node
-    args: -e "console.log('scope=self')"
+    command: echo 'scope=self'
     deps:
       - '~:selfOther'
   selfOther:
-    command: node
-    args: -e "console.log('scope=self/other')"
+    command: echo 'scope=self/other'

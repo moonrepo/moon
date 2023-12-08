@@ -8,12 +8,10 @@ dependsOn:
 tasks:
   # :scope
   all:
-    command: node
-    args: -e "console.log('scope=all')"
+    command: echo 'scope=all'
 
   # ^:scope
   deps:
-    command: node
-    args: -e "console.log('scope=deps')"
+    command: echo 'scope=deps'
     deps:
       - '^:standard'

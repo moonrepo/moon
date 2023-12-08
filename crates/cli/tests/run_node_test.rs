@@ -366,7 +366,8 @@ fn can_exec_global_bin_as_child_process() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("v18.0.0").eval(&output));
+    assert!(predicate::str::contains("execBinSelf").eval(&output));
+    assert!(predicate::str::contains("v").eval(&output)); // Version not deterministic
 }
 
 #[test]

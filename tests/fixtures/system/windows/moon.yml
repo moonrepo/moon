@@ -65,14 +65,14 @@ tasks:
 
   # Misc
   foo:
-    command: powershell -c "./echo.bat 'foo'"
+    command: powershell -c "./echo.ps1 'foo'"
     platform: system
     options:
       shell: false
     inputs:
       - '*.bat'
   bar:
-    command: powershell.exe -c "./echo.bat 'bar'"
+    command: powershell.exe -c "./echo.ps1 'bar'"
     platform: system
     options:
       shell: false

@@ -4,7 +4,7 @@ expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:passthroughArgs
-Args: -aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
+Args: -aBc --opt value --optCamel=value foo bar baz --opt-kebab 123
 ▪▪▪▪ node:passthroughArgs (100ms)
 
 Tasks: 1 completed

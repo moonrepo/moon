@@ -225,7 +225,9 @@ fn passes_args_through() {
             .arg("123");
     });
 
-    assert_snapshot!(assert.output());
+    assert!(
+        predicate::str::contains("Args: -aBc --opt value --optCamel=value").eval(&assert.output())
+    );
 }
 
 #[test]

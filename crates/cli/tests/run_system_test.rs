@@ -539,6 +539,8 @@ mod windows {
                 .arg("windows:baz");
         });
 
+        assert.debug();
+
         let output = assert.output();
 
         assert!(predicate::str::contains("windows:foo | foo").eval(&output));

@@ -78,7 +78,7 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         .join("proto")
         .join(PROTO_CLI_VERSION);
 
-    if install_dir.exists() || is_test_env() {
+    if install_dir.exists() {
         return Ok(());
     }
 
@@ -123,14 +123,6 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         cmd.exec_stream_output().await?;
     } else {
         cmd.exec_capture_output().await?;
-    }
-
-    // Copy the binary to the bin folder
-    let bin_name = if cfg!(windows) { "proto.exe" } else { "proto" };
-    let bin_path = workspace.proto_env.bin_dir.join(bin_name);
-
-    if !bin_path.exists() {
-        fs::copy_file(install_dir.join(bin_name), bin_path)?;
     }
 
     Ok(())

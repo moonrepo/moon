@@ -1,0 +1,5 @@
+tasks:
+  noop:
+    command: noop
+    deps:
+      - bar:noop # Invalid, using old ID

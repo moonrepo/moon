@@ -87,6 +87,7 @@ export interface PartialProjectConfig {
 	dependsOn?: PartialProjectDependsOn[] | null;
 	env?: Record<string, string> | null;
 	fileGroups?: Record<string, string[]> | null;
+	id?: string | null;
 	language?: LanguageType | null;
 	owners?: PartialOwnersConfig | null;
 	platform?: PlatformType | null;
@@ -163,6 +164,7 @@ export interface ProjectConfig {
 	dependsOn: ProjectDependsOn[];
 	env: Record<string, string>;
 	fileGroups: Record<string, string[]>;
+	id: string | null;
 	language: LanguageType;
 	owners: OwnersConfig;
 	platform: PlatformType | null;

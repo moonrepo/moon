@@ -78,6 +78,8 @@ cacheable!(
 
         pub file_groups: FxHashMap<Id, Vec<InputPath>>,
 
+        pub id: Option<Id>,
+
         pub language: LanguageType,
 
         #[setting(nested)]

@@ -1,0 +1,48 @@
+---
+slug: moon-v1.18
+title: moon v1.18 - New toolchain execution and custom project names
+authors: [milesj]
+tags: [toolchain, shell, id, name, project]
+# image: ./img/moon/v1.17.png
+---
+
+<!--truncate-->
+
+## Customize the project name in `moon.yml`
+
+This has been a long requested feature, but thanks to the project graph rework and improvements over
+the last few releases, this is now possible. In [`moon.yml`](/docs/config/project), you can now
+configure the [`id`](/docs/config/project#id) setting to override the project name (identifier)
+derived from [`projects`](/docs/config/workspace#projects) in
+[`.moon/workspace.yml`](/docs/config/workspace) (most applicable to glob based project locations).
+
+For example, say we have the following `projects` glob.
+
+```yml title=".moon/workspace.yml"
+projects:
+  - 'apps/*'
+  - 'packages/*'
+```
+
+By default, the project folder name becomes the project name. For the most part this is fine, but
+what if you have a very large monorepo? Or have conflicting project names? Or are migrating
+projects? It becomes difficult to manage and organize. But now, simply configure `id`!
+
+```yml title="<project>/moon.yml"
+id: 'custom-project-name'
+```
+
+:::info
+
+Be sure that all targets, project dependencies, task dependencies, and other references are using
+the new identifier, otherwise an error will be triggered!
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.18.0) for a full list
+of changes.
+
+- Improved string allocation and performance for queries, task tokens, and process commands.
+- Updated proto to v0.24.

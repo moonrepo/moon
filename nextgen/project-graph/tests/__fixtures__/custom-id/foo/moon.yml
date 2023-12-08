@@ -1,0 +1,6 @@
+tasks:
+  noop:
+    command: noop
+    deps:
+      - bar-renamed:noop
+      - baz-renamed:noop

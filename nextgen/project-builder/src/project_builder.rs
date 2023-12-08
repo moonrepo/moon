@@ -11,9 +11,10 @@ use moon_task::{TargetScope, Task};
 use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, Event};
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use tracing::trace;
+use tracing::{debug, trace};
 
 #[derive(Debug)]
 pub struct DetectLanguageEvent {
@@ -41,7 +42,7 @@ pub struct ProjectBuilder<'app> {
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
-    id: &'app Id,
+    id: Cow<'app, Id>,
     source: &'app WorkspaceRelativePath,
     alias: Option<&'app str>,
     project_root: PathBuf,
@@ -66,7 +67,7 @@ impl<'app> ProjectBuilder<'app> {
         Ok(ProjectBuilder {
             project_root: source.to_logical_path(context.workspace_root),
             context,
-            id,
+            id: Cow::Borrowed(id),
             source,
             alias: None,
             global_config: None,
@@ -158,6 +159,21 @@ impl<'app> ProjectBuilder<'app> {
             platform
         });
 
+        // Inherit the custom ID
+        if let Some(new_id) = &config.id {
+            if new_id != self.id.as_ref() {
+                debug!(
+                    old_id = self.id.as_str(),
+                    new_id = new_id.as_str(),
+                    "Project has been configured with an explicit identifier of {}, renaming from {}",
+                    color::id(new_id),
+                    color::id(self.id.as_str()),
+                );
+
+                self.id = Cow::Owned(new_id.to_owned());
+            }
+        }
+
         self.local_config = Some(config);
 
         Ok(())
@@ -207,7 +223,7 @@ impl<'app> ProjectBuilder<'app> {
             dependencies: self.build_dependencies(&tasks)?,
             file_groups: self.build_file_groups()?,
             tasks,
-            id: self.id.to_owned(),
+            id: self.id.into_owned(),
             language: self.language,
             platform: self.platform,
             root: self.project_root,
@@ -253,7 +269,7 @@ impl<'app> ProjectBuilder<'app> {
                 if let TargetScope::Project(dep_id) = &task_dep.scope {
                     // Already a dependency, or references self
                     if deps.contains_key(dep_id)
-                        || self.id == dep_id
+                        || self.id.as_ref() == dep_id
                         || self.alias.as_ref().is_some_and(|a| *a == dep_id.as_str())
                     {
                         continue;
@@ -349,7 +365,7 @@ impl<'app> ProjectBuilder<'app> {
         trace!(id = self.id.as_str(), "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(
-            self.id,
+            self.id.as_ref(),
             self.source.as_str(),
             &self.platform,
             TasksBuilderContext {

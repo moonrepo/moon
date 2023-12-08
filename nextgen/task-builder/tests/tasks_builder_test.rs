@@ -586,9 +586,14 @@ mod tasks_builder {
             // True for system
             assert_eq!(tasks.get("system").unwrap().options.shell, Some(true));
 
-            // None for others
-            assert_eq!(tasks.get("bun").unwrap().options.shell, None);
-            assert_eq!(tasks.get("node").unwrap().options.shell, None);
+            // None for others (except windows)
+            if cfg!(windows) {
+                assert_eq!(tasks.get("bun").unwrap().options.shell, Some(true));
+                assert_eq!(tasks.get("node").unwrap().options.shell, Some(true));
+            } else {
+                assert_eq!(tasks.get("bun").unwrap().options.shell, None);
+                assert_eq!(tasks.get("node").unwrap().options.shell, None);
+            }
         }
     }
 

@@ -461,8 +461,11 @@ impl<'proj> TasksBuilder<'proj> {
             TaskType::Test
         };
 
-        if task.platform.is_system() && task.options.shell.is_none() {
-            task.options.shell = Some(true);
+        if task.options.shell.is_none() {
+            // Windows requires a shell for path resolution to work correctly
+            if cfg!(windows) || task.platform.is_system() {
+                task.options.shell = Some(true);
+            }
         }
 
         Ok(task)

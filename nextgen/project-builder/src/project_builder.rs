@@ -161,15 +161,17 @@ impl<'app> ProjectBuilder<'app> {
 
         // Inherit the custom ID
         if let Some(new_id) = &config.id {
-            debug!(
-                old_id = self.id.as_str(),
-                new_id = new_id.as_str(),
-                "Project has been configured with an explicit identifier of {}, renaming from {}",
-                color::id(new_id),
-                color::id(self.id.as_str()),
-            );
+            if new_id != self.id.as_ref() {
+                debug!(
+                    old_id = self.id.as_str(),
+                    new_id = new_id.as_str(),
+                    "Project has been configured with an explicit identifier of {}, renaming from {}",
+                    color::id(new_id),
+                    color::id(self.id.as_str()),
+                );
 
-            self.id = Cow::Owned(new_id.to_owned());
+                self.id = Cow::Owned(new_id.to_owned());
+            }
         }
 
         self.local_config = Some(config);

@@ -79,6 +79,8 @@ jobs:
         with:
           auto-install: true
           proto-version: '0.24.2' # Keep in sync
+      # Temporary till after proto 0.24 migration
+      - run: proto migrate v0.24
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}

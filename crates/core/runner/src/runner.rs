@@ -250,9 +250,10 @@ impl<'a> Runner<'a> {
 
         command
             .cwd(working_dir)
-            .envs(self.create_env_vars().await?)
             // We need to handle non-zero's manually
             .set_error_on_nonzero(false);
+
+        self.create_env_vars(&mut command).await?;
 
         // Wrap in a shell
         if task.options.shell.is_none() || task.options.shell.is_some_and(|s| !s) {
@@ -314,7 +315,7 @@ impl<'a> Runner<'a> {
         Ok(command)
     }
 
-    pub async fn create_env_vars(&self) -> miette::Result<FxHashMap<String, String>> {
+    pub async fn create_env_vars(&self, command: &mut Command) -> miette::Result<()> {
         let mut env_vars = FxHashMap::default();
 
         env_vars.insert(
@@ -352,9 +353,39 @@ impl<'a> Runner<'a> {
                     .join(self.project.get_cache_dir().join("snapshot.json")),
             )?,
         );
-        // env_vars.insert("PROTO_SKIP_USED_AT".to_owned(), "true".to_owned());
 
-        Ok(env_vars)
+        command.envs(env_vars);
+
+        // Pin versions for each tool in the toolchain
+        if let Some(bun_config) = &self.workspace.toolchain_config.bun {
+            if let Some(version) = &bun_config.version {
+                command.env_if_missing("PROTO_BUN_VERSION", version.to_string());
+            }
+        }
+
+        if let Some(node_config) = &self.workspace.toolchain_config.node {
+            if let Some(version) = &node_config.version {
+                command.env_if_missing("PROTO_NODE_VERSION", version.to_string());
+            }
+
+            if let Some(version) = &node_config.npm.version {
+                command.env_if_missing("PROTO_NPM_VERSION", version.to_string());
+            }
+
+            if let Some(pnpm_config) = &node_config.pnpm {
+                if let Some(version) = &pnpm_config.version {
+                    command.env_if_missing("PROTO_PNPM_VERSION", version.to_string());
+                }
+            }
+
+            if let Some(yarn_config) = &node_config.yarn {
+                if let Some(version) = &yarn_config.version {
+                    command.env_if_missing("PROTO_YARN_VERSION", version.to_string());
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub fn flush_output(&self) -> miette::Result<()> {

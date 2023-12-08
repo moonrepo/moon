@@ -110,6 +110,18 @@ impl Command {
         self
     }
 
+    pub fn env_if_missing<K, V>(&mut self, key: K, val: V) -> &mut Command
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        let key = key.as_ref();
+        if !self.env.contains_key(key) {
+            self.env(key, val);
+        }
+        self
+    }
+
     pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Command
     where
         I: IntoIterator<Item = (K, V)>,

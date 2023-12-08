@@ -26,14 +26,14 @@ basis. Since we only support Node.js at the moment, this can be achieved with th
 
 For example, if your workspace Node.js version is configured as v18.
 
-```yml title=".moon/workspace.yml"
+```yaml title=".moon/workspace.yml"
 node:
   version: '18.0.0'
 ```
 
 You can now override this version at the project-level. Let's go with v14.
 
-```yml title="<project>/moon.yml"
+```yaml title="<project>/moon.yml"
 workspace:
   node:
     version: '14.0.0'

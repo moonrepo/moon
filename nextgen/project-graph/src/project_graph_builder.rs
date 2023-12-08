@@ -6,7 +6,7 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
-use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
     DependencyScope, InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
@@ -216,7 +216,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         project_locator: &str,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
-        let mut id = self.resolve_id(project_locator);
+        let id = self.resolve_id(project_locator);
 
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
@@ -239,19 +239,15 @@ impl<'app> ProjectGraphBuilder<'app> {
         };
 
         // Create the project
-        let project = self.build_project(&id, &source).await?;
+        let project = self.build_project(id, source).await?;
         let dependencies = project
             .dependencies
             .values()
             .map(|v| v.to_owned())
             .collect::<Vec<_>>(); // How to avoid cloning???
 
-        // Replace the ID in case it has changed
-        if project.id != id {
-            id = project.id.clone();
-        }
-
         // Add to the graph
+        let id = project.id.clone();
         let index = self.graph.add_node(project);
 
         cycle.insert(id.clone());
@@ -286,10 +282,10 @@ impl<'app> ProjectGraphBuilder<'app> {
     /// Create and build the project with the provided ID and source.
     async fn build_project(
         &mut self,
-        id: &Id,
-        source: &WorkspaceRelativePath,
+        id: Id,
+        source: WorkspaceRelativePathBuf,
     ) -> miette::Result<Project> {
-        debug!(id = id.as_str(), "Building project {}", color::id(id));
+        debug!(id = id.as_str(), "Building project {}", color::id(&id));
 
         let context = self.context();
 
@@ -298,8 +294,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         let mut builder = ProjectBuilder::new(
-            id,
-            source,
+            &id,
+            &source,
             ProjectBuilderContext {
                 detect_language: &context.detect_language,
                 detect_platform: &context.detect_platform,
@@ -338,7 +334,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Inherit alias before building in case the project
         // references itself in tasks or dependencies
         for (alias, project_id) in &self.aliases {
-            if project_id == id {
+            if project_id == &id {
                 builder.set_alias(alias);
                 break;
             }
@@ -347,20 +343,13 @@ impl<'app> ProjectGraphBuilder<'app> {
         let project = builder.build().await?;
 
         // If we received a new ID, update references
-        if let Some(new_id) = project.config.id.as_ref() {
-            self.sources.remove(id);
-            self.sources.insert(new_id.to_owned(), source.to_owned());
+        if project.id != id {
+            self.sources.remove(&id);
+            self.sources.insert(project.id.clone(), source.to_owned());
 
             if let Some(alias) = project.alias.as_ref() {
-                self.aliases.remove(alias);
-                self.aliases.insert(alias.to_owned(), new_id.to_owned());
+                self.aliases.insert(alias.to_owned(), project.id.clone());
             }
-
-            debug!(
-                old_id = id.as_str(),
-                new_id = new_id.as_str(),
-                "Project has been configured with an explicit identifier, updating graph references"
-            );
         }
 
         Ok(project)

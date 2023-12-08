@@ -10,25 +10,15 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
-## NEXT
-
-#### 🚀 Updates
-
-- Rewrote toolchain based task running to use a shell.
-  - Instead of locating a direct executable, we'll now use the shell to locate the executable.
-  - This approach will now benefit from proto shims and binaries.
-  - We'll also download and install the `proto` binary if it does not exist.
-- Reworked the `moon init` command.
-  - Will no longer scaffold the toolchain configuration by default.
-  - The tool to scaffold into a toolchain can be passed as an argument.
-  - The path to initialize in is now behined the `--to` option.
-  - Added support for the `bun` tool.
-  - Simplified the workflow overall.
-
 ## Unreleased
 
 #### 🚀 Updates
 
+- Rewrote toolchain based task running to use a path based approach.
+  - Instead of manually locating an executable, we now rely on `PATH` to locate the executable.
+  - Non-system tasks can now be wrapped in a shell using the `shell` option.
+  - This approach will now benefit from proto shims and binaries.
+  - We'll also download and install the `proto` binary if it does not exist.
 - Reworked the `moon init` command.
   - Will no longer scaffold the toolchain configuration by default.
   - The tool to scaffold into a toolchain can be passed as an argument.

@@ -255,7 +255,7 @@ impl<'a> Runner<'a> {
             .set_error_on_nonzero(false);
 
         // Wrap in a shell
-        if !task.options.shell {
+        if task.options.shell.is_none() || task.options.shell.is_some_and(|s| !s) {
             command.without_shell();
         }
 

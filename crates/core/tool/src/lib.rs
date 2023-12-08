@@ -68,7 +68,7 @@ pub async fn load_tool_plugin(
 ) -> miette::Result<ProtoTool> {
     let mut manifest = ProtoTool::create_plugin_manifest(
         proto,
-        Wasm::file(proto.get_plugin_loader().load_plugin(id, locator).await?),
+        Wasm::file(proto.get_plugin_loader()?.load_plugin(id, locator).await?),
     )?;
 
     inject_default_manifest_config(id, proto, &mut manifest)?;

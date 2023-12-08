@@ -37,7 +37,7 @@ cacheable!(
 
         pub run_from_workspace_root: bool,
 
-        pub shell: bool,
+        pub shell: Option<bool>,
     }
 );
 
@@ -60,7 +60,7 @@ impl Default for TaskOptions {
             run_deps_in_parallel: true,
             run_in_ci: true,
             run_from_workspace_root: false,
-            shell: true,
+            shell: None,
         }
     }
 }

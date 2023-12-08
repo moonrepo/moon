@@ -216,7 +216,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         project_locator: &str,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
-        let id = self.resolve_id(project_locator);
+        let mut id = self.resolve_id(project_locator);
 
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
@@ -234,18 +234,24 @@ impl<'app> ProjectGraphBuilder<'app> {
             "Project does not exist in the project graph, attempting to load",
         );
 
-        let Some(source) = self.sources.get(&id) else {
+        let Some(source) = self.sources.get(&id).map(|s| s.to_owned()) else {
             return Err(ProjectGraphError::UnconfiguredID(id).into());
         };
 
         // Create the project
-        let project = self.build_project(&id, source).await?;
+        let project = self.build_project(&id, &source).await?;
         let dependencies = project
             .dependencies
             .values()
             .map(|v| v.to_owned())
             .collect::<Vec<_>>(); // How to avoid cloning???
 
+        // Replace the ID in case it has changed
+        if project.id != id {
+            id = project.id.clone();
+        }
+
+        // Add to the graph
         let index = self.graph.add_node(project);
 
         cycle.insert(id.clone());
@@ -279,7 +285,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
     /// Create and build the project with the provided ID and source.
     async fn build_project(
-        &self,
+        &mut self,
         id: &Id,
         source: &WorkspaceRelativePath,
     ) -> miette::Result<Project> {
@@ -329,7 +335,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             builder.extend_with_task(task_id, task_config);
         }
 
-        // Inherit alias before building incase the project
+        // Inherit alias before building in case the project
         // references itself in tasks or dependencies
         for (alias, project_id) in &self.aliases {
             if project_id == id {
@@ -338,7 +344,26 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
         }
 
-        builder.build().await
+        let project = builder.build().await?;
+
+        // If we received a new ID, update references
+        if let Some(new_id) = project.config.id.as_ref() {
+            self.sources.remove(id);
+            self.sources.insert(new_id.to_owned(), source.to_owned());
+
+            if let Some(alias) = project.alias.as_ref() {
+                self.aliases.remove(alias);
+                self.aliases.insert(alias.to_owned(), new_id.to_owned());
+            }
+
+            debug!(
+                old_id = id.as_str(),
+                new_id = new_id.as_str(),
+                "Project has been configured with an explicit identifier, updating graph references"
+            );
+        }
+
+        Ok(project)
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.

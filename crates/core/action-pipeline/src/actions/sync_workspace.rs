@@ -9,7 +9,7 @@ use moon_project_graph::ProjectGraph;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
-use proto_core::download_from_url_to_file;
+use proto_core::{download_from_url_to_file, is_offline, ProtoError};
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::env;
@@ -89,6 +89,10 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         Checkpoint::Setup,
     );
 
+    if is_offline() {
+        return Err(ProtoError::InternetConnectionRequired.into());
+    }
+
     let script_name = if cfg!(windows) {
         "proto.ps1"
     } else {
@@ -124,6 +128,8 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
     } else {
         cmd.exec_capture_output().await?;
     }
+
+    debug!("Successfully installed proto!");
 
     Ok(())
 }

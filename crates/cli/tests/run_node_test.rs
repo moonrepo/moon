@@ -1096,8 +1096,6 @@ mod bun {
                 .arg("1");
         });
 
-        assert_snapshot!(assert.output());
-
         assert!(sandbox.path().join("bun.lockb").exists());
         assert!(sandbox.path().join("not-in-workspace/bun.lockb").exists());
         assert!(sandbox

@@ -461,6 +461,13 @@ impl<'proj> TasksBuilder<'proj> {
             TaskType::Test
         };
 
+        if task.options.shell.is_none() {
+            // Windows requires a shell for path resolution to work correctly
+            if cfg!(windows) || task.platform.is_system() {
+                task.options.shell = Some(true);
+            }
+        }
+
         Ok(task)
     }
 
@@ -546,7 +553,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(shell) = &config.shell {
-                options.shell = *shell;
+                options.shell = Some(*shell);
             }
         }
 

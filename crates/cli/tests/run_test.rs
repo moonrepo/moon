@@ -1389,7 +1389,7 @@ mod root_level {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("root one off").eval(&output));
+        assert!(predicate::str::contains("root-one-off").eval(&output));
     }
 }
 

@@ -577,6 +577,24 @@ mod tasks_builder {
             assert!(!task.options.run_in_ci);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
+
+        #[tokio::test]
+        async fn shell() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml").await;
+
+            // True for system
+            assert_eq!(tasks.get("system").unwrap().options.shell, Some(true));
+
+            // None for others (except windows)
+            if cfg!(windows) {
+                assert_eq!(tasks.get("bun").unwrap().options.shell, Some(true));
+                assert_eq!(tasks.get("node").unwrap().options.shell, Some(true));
+            } else {
+                assert_eq!(tasks.get("bun").unwrap().options.shell, None);
+                assert_eq!(tasks.get("node").unwrap().options.shell, None);
+            }
+        }
     }
 
     mod local_mode {

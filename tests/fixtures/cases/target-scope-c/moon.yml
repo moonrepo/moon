@@ -3,5 +3,4 @@ language: javascript
 tasks:
   # :scope
   all:
-    command: node
-    args: -e "console.log('scope=all')"
+    command: echo 'scope=all'

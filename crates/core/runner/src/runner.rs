@@ -250,13 +250,14 @@ impl<'a> Runner<'a> {
 
         command
             .cwd(working_dir)
-            .envs(self.create_env_vars().await?)
             // We need to handle non-zero's manually
             .set_error_on_nonzero(false);
 
+        self.create_env_vars(&mut command).await?;
+
         // Wrap in a shell
-        if task.platform.is_system() && task.options.shell {
-            command.with_shell();
+        if task.options.shell.is_none() || task.options.shell.is_some_and(|s| !s) {
+            command.without_shell();
         }
 
         // Passthrough args
@@ -314,7 +315,7 @@ impl<'a> Runner<'a> {
         Ok(command)
     }
 
-    pub async fn create_env_vars(&self) -> miette::Result<FxHashMap<String, String>> {
+    pub async fn create_env_vars(&self, command: &mut Command) -> miette::Result<()> {
         let mut env_vars = FxHashMap::default();
 
         env_vars.insert(
@@ -352,9 +353,76 @@ impl<'a> Runner<'a> {
                     .join(self.project.get_cache_dir().join("snapshot.json")),
             )?,
         );
-        // env_vars.insert("PROTO_SKIP_USED_AT".to_owned(), "true".to_owned());
 
-        Ok(env_vars)
+        command.envs(env_vars);
+
+        // Pin versions for each tool in the toolchain
+        if let Some(bun_config) = &self.workspace.toolchain_config.bun {
+            command.env_if_missing(
+                "PROTO_BUN_VERSION",
+                bun_config
+                    .version
+                    .as_ref()
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "*".into()),
+            );
+        }
+
+        if let Some(node_config) = &self.workspace.toolchain_config.node {
+            command.env_if_missing(
+                "PROTO_NODE_VERSION",
+                node_config
+                    .version
+                    .as_ref()
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "*".into()),
+            );
+
+            command.env_if_missing(
+                "PROTO_NPM_VERSION",
+                node_config
+                    .npm
+                    .version
+                    .as_ref()
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "*".into()),
+            );
+
+            if let Some(pnpm_config) = &node_config.pnpm {
+                command.env_if_missing(
+                    "PROTO_PNPM_VERSION",
+                    pnpm_config
+                        .version
+                        .as_ref()
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "*".into()),
+                );
+            }
+
+            if let Some(yarn_config) = &node_config.yarn {
+                command.env_if_missing(
+                    "PROTO_YARN_VERSION",
+                    yarn_config
+                        .version
+                        .as_ref()
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "*".into()),
+                );
+            }
+        }
+
+        // Pin a version for all plugins so that global/system tasks work well
+        for plugin in self.workspace.proto_config.plugins.keys() {
+            command.env_if_missing(
+                format!(
+                    "PROTO_{}_VERSION",
+                    plugin.as_str().to_uppercase().replace('-', "_")
+                ),
+                "*",
+            );
+        }
+
+        Ok(())
     }
 
     pub fn flush_output(&self) -> miette::Result<()> {

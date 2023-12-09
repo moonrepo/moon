@@ -34,6 +34,9 @@ impl ProcessCache {
         // Run from workspace root instead of git root so that we can avoid
         // prefixing all file paths to ensure everything is relative and accurate.
         command.cwd(&self.root);
+        // The VCS binary should be available on the system,
+        // so avoid the shell overhead
+        command.without_shell();
         command
     }
 

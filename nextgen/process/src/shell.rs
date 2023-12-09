@@ -1,5 +1,5 @@
 use cached::proc_macro::cached;
-use std::{env, ffi::OsStr};
+use std::ffi::OsStr;
 
 #[cached]
 #[inline]
@@ -52,7 +52,7 @@ pub fn create_shell() -> Shell {
 #[inline]
 pub fn create_shell() -> Shell {
     Shell {
-        bin: env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()),
+        bin: std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()),
         args: vec!["-c".into()],
         pass_args_stdin: false,
     }

@@ -1,12 +1,76 @@
 ---
 slug: moon-v1.18
-title: moon v1.18 - New toolchain execution and custom project names
+title: moon v1.18 - New task execution flow and custom project names
 authors: [milesj]
 tags: [toolchain, shell, id, name, project]
 # image: ./img/moon/v1.17.png
 ---
 
 <!--truncate-->
+
+## New path based task execution
+
+Since moon's inception, before we would execute a task's command, we would locate its executable on
+the file system and execute it directly. We went with this approach as we wanted to avoid all of the
+baggage and "unknown behavior" that came with executing through a shell, and to ensure a more
+deterministic outcome. This approach worked very well for stand-alone binaries, like `node`,
+`cargo`, and built-in commands like `rm`, `mkdir`, and `git`.
+
+However, it was very problematic in 2 scenarios: executables from language dependencies (Node.js
+modules, etc), and multi-command based tasks (using `&&`). To remedy this situation, we're no longer
+locating the executables ourselves, and instead are prepending `PATH` with the locations in which we
+know these executables should exist. We're also loosening the restriction on the
+[`shell` task option](/docs/config/project#shell), which can now be enabled for _all_ tasks, not
+just system tasks.
+
+### Dependency executables
+
+For the 1st scenario, let's talk about Node.js modules. When we encountered an unknown task command,
+like `eslint` or `prettier`, we'd attempt to locate its executable by traversing `node_modules/.bin`
+directories, parsing Bash/PowerShell scripts, resolving the source `.js` files, and finally
+executing with `node`. To demonstrate this, say you had the following task:
+
+```yaml title="moon.yml"
+tasks:
+  format:
+    command: 'prettier --write .'
+```
+
+When finally executed, internally it would become something like this command:
+
+```shell
+~/.proto/tools/node/<version>/bin/node ../../node_modules/prettier/internal/cli.mjs --write .
+```
+
+This was required since our runtime is Rust and we don't have access to Node.js's module resolution
+algorithm... but this approach was very brittle and error prone. It took us many releases to iron
+out all the bugs, and we're pretty sure there are still edge cases unaccounted for. So instead, as
+mentioned above, we now prepend `PATH`, resulting in the following command:
+
+```shell
+PATH="/path/to/node_modules/.bin:/path/to/proto/tools:$PATH" prettier --write .
+```
+
+### Multi-command tasks
+
+While not officially supported in moon, it's been possible to run multiple commands in a single task
+using `&&` syntax. However, this approach did not work correctly with our integrated toolchain, as
+only the 1st command in the list would have its binary be located and executed correctly. For
+example, say we wanted to run 2 npm packages:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'rm -rf dist && vite build'
+```
+
+With this new `PATH` based approach, this will now work correctly. And furthermore, this also
+enables executables within Bash and PowerShell scripts to be located and executed correctly as well.
+
+### What's next?
+
+In the future, we'll continue to expand on this functionality, and our ultimate goal is to remove
+the concept of `platform` from tasks, which has been a bit confusing for new users.
 
 ## Customize the project name in `moon.yml`
 
@@ -18,7 +82,7 @@ derived from [`projects`](/docs/config/workspace#projects) in
 
 For example, say we have the following `projects` glob.
 
-```yml title=".moon/workspace.yml"
+```yaml title=".moon/workspace.yml"
 projects:
   - 'apps/*'
   - 'packages/*'
@@ -28,7 +92,7 @@ By default, the project folder name becomes the project name. For the most part 
 what if you have a very large monorepo? Or have conflicting project names? Or are migrating
 projects? It becomes difficult to manage and organize. But now, simply configure `id`!
 
-```yml title="<project>/moon.yml"
+```yaml title="<project>/moon.yml"
 id: 'custom-project-name'
 ```
 

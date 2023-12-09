@@ -46,7 +46,10 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
         );
     }
 
-    manager.register(PlatformType::System, Box::<SystemPlatform>::default());
+    manager.register(
+        PlatformType::System,
+        Box::new(SystemPlatform::new(root, proto.clone())),
+    );
 
     manager
 }

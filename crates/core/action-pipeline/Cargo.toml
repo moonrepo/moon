@@ -10,12 +10,14 @@ moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../../../nextgen/action-graph" }
 moon_actions = { path = "../actions" }
 moon_api = { path = "../../../nextgen/api" }
+moon_common = { path = "../../../nextgen/common" }
 moon_cache_item = { path = "../../../nextgen/cache-item" }
 moon_emitter = { path = "../emitter" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
+moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../../nextgen/project" }
 moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_runner = { path = "../runner" }

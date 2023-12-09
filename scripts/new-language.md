@@ -22,7 +22,7 @@ enum ProjectLanguage {
 - [ ] Updated enum
 - [ ] Updated TypeScript types at `packages/types/src/project-config.ts`
 - [ ] Verified all `match` callsites handle the new variant
-- [ ] Ran `cargo make schemas` and updated the JSON schemas
+- [ ] Ran `just schemas` and updated the JSON schemas
 
 ### Add case to `PlatformType::from` in `moon_config`
 
@@ -122,7 +122,7 @@ pub struct ToolchainConfig {
 - [ ] Created language struct
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
-- [ ] Ran `cargo make schemas` and updated the JSON schemas
+- [ ] Ran `just schemas` and updated the JSON schemas
 - [ ] Add `.prototools` support in `nextgen/config/src/toolchain_config.rs`
 - [ ] Add tests to `nextgen/config/tests/toolchain_config_test.rs`
 
@@ -239,7 +239,7 @@ kotlin = "1.2.3"
 
 - [ ] Updated config struct: `nextgen/config/src/toolchain/<lang>.rs`
 - [ ] Supported proto version in `nextgen/config/src/toolchain_config.rs`
-- [ ] Ran `cargo make schemas` and updated the JSON schemas
+- [ ] Ran `just schemas` and updated the JSON schemas
 
 ### Integrate proto tool into moon tool crate
 

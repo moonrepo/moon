@@ -12,7 +12,7 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 #[derive(Clone, Debug)]
 pub struct Moonbase {
@@ -46,7 +46,6 @@ impl Moonbase {
             SigninInput {
                 organization_key: secret_key,
                 repository: slug,
-                repository_key: String::new(), // Remove from API
             },
             None,
         )
@@ -59,25 +58,31 @@ impl Moonbase {
                 remote_caching,
                 repository_id,
                 token,
-            })) => Some(Moonbase {
-                auth_token: token,
-                ci_insights_enabled: ci_insights,
-                organization_id,
-                remote_caching_enabled: remote_caching,
-                repository_id,
-            }),
+            })) => {
+                debug!("Sign in successful!");
+
+                Some(Moonbase {
+                    auth_token: token,
+                    ci_insights_enabled: ci_insights,
+                    organization_id,
+                    remote_caching_enabled: remote_caching,
+                    repository_id,
+                })
+            }
             Ok(Response::Failure { message, status }) => {
                 warn!(
                     status,
-                    "Failed to sign in to moonbase, please verify your API keys. Pipeline will still continue. Failure: {}", color::muted_light(message)
+                    "Failed to sign in to moonbase, please verify your API keys. Pipeline will still continue",
                 );
+                warn!("Failure: {}", color::muted_light(message));
 
                 None
             }
             Err(error) => {
                 warn!(
-                    "Failed to sign in to moonbase, request has failed. Pipeline will still continue. Failure: {}", color::muted_light(error.to_string()),
+                    "Failed to sign in to moonbase, request has failed. Pipeline will still continue",
                 );
+                warn!("Failure: {}", color::muted_light(error.to_string()));
 
                 None
             }

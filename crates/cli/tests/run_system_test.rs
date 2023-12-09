@@ -400,8 +400,8 @@ mod unix {
 
 #[cfg(windows)]
 mod windows {
-    use std::env;
     use super::*;
+    use std::env;
 
     #[test]
     fn runs_bat_script() {

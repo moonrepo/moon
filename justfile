@@ -2,7 +2,7 @@ export MOON_TEST := "true"
 
 init:
 	cargo install cargo-binstall
-	cargo binstall cargo-insta cargo-nextest cargo-wasi
+	cargo binstall cargo-insta cargo-nextest cargo-llvm-cov
 
 # BUILDING
 
@@ -21,7 +21,7 @@ lint:
 	cargo clippy --workspace --all-targets
 
 lint-fix:
-	just lint --fix --allow-dirty --allow-staged
+	cargo clippy --workspace --all-targets --fix --allow-dirty --allow-staged
 
 # TESTING
 
@@ -29,7 +29,7 @@ test name="":
 	cargo nextest run --workspace --config-file ./.cargo/nextest.toml {{name}}
 
 test-ci:
-	just test --profile ci
+	cargo nextest run --workspace --config-file ./.cargo/nextest.toml --profile ci
 
 # CODE COVERAGE
 
@@ -37,7 +37,7 @@ cov:
 	cargo llvm-cov nextest --workspace --config-file ./.cargo/nextest.toml
 
 cov-ci:
-	just cov --profile ci
+	cargo llvm-cov nextest --workspace --config-file ./.cargo/nextest.toml --profile ci
 
 gen-report:
 	cargo llvm-cov report --lcov --ignore-filename-regex error --output-path ./report.txt

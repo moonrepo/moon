@@ -66,10 +66,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
+        os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     env:
-      WITH_COVERAGE: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
+      WITH_COVERAGE:
+        ${{ github.event_name == 'push' && contains(github.ref, 'develop-') || github.ref_name ==
+        'master' }}
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
@@ -100,7 +102,9 @@ jobs:
           path: ./report.txt
           if-no-files-found: error
   coverage:
-    if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
+    if:
+      ${{ github.event_name == 'push' && contains(github.ref, 'develop-') || github.ref_name ==
+      'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

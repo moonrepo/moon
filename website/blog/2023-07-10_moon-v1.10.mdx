@@ -59,7 +59,7 @@ The `ignorePatterns` setting can be used to entirely ignore a file (using glob p
 hashed, and in turn, exclude it as an input source. For example, say we want to ignore all image
 files.
 
-```yml title=".moon/workspace.yml"
+```yaml title=".moon/workspace.yml"
 hasher:
   ignorePatterns:
     - '**/*.{png,svg}'
@@ -71,7 +71,7 @@ log a warning to the terminal that an input is missing. This is useful for uncov
 misconfigurations, but can be quite noisy when inputs are truly optional. This new setting can be
 used to filter these warnings.
 
-```yml title=".moon/workspace.yml"
+```yaml title=".moon/workspace.yml"
 hasher:
   warnOnMissingInputs: true
   ignoreMissingPatterns:

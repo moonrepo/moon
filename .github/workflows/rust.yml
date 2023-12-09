@@ -74,11 +74,11 @@ jobs:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
           cache-base: '^(master|develop-)'
           components: llvm-tools-preview
-      # Required for "global bins" tests
       - uses: moonrepo/setup-toolchain@v0
         if: ${{ runner.os == 'Linux' }}
-      - run: proto install bun 1.0.0 --pin
-        if: ${{ runner.os == 'Linux' }}
+        with:
+          auto-install: true
+          proto-version: '0.24.2' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}

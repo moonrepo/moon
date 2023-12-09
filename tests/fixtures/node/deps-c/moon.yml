@@ -2,12 +2,10 @@ language: javascript
 
 tasks:
   standard:
-    command: node
-    args: -e "console.log('deps=c')"
+    command: echo 'deps=c'
 
   dependencyOrder:
-    command: node
-    args: -e "console.log('deps=c')"
+    command: echo 'deps=c'
 
   # Cycle detection
   taskCycle:

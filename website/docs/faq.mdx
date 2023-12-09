@@ -160,29 +160,22 @@ However, we do suggest the following alternatives:
 
 ### How to run tasks in a shell?
 
-By default, all non-system tasks _will not_ run in a shell, as we interact with and execute a tool's
-binary directly within the toolchain. We also provide no built-in support for wrapping language
-based tasks within a shell, and have no plans to support this as it makes tasks less deterministic.
-
-However, system based tasks do support shells, and will run in a shell based on the task's
-[`shell`](./config/project#shell) option, as demonstrated below:
+By default, all tasks run in a shell, based on the task's [`shell`](./config/project#shell) option,
+as demonstrated below:
 
 ```yaml title="moon.yml"
 tasks:
   # Runs in a shell
   global:
     command: 'some-command-on-path'
-    platform: 'system'
 
   # Custom shells
   unix:
     command: 'bash -c some-command'
-    platform: 'system'
     options:
       shell: false
   windows:
     command: 'pwsh.exe -c some-command'
-    platform: 'system'
     options:
       shell: false
 ```

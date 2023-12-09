@@ -3,13 +3,32 @@ use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, load_tool_plugin, use_global_tool_on_path, Tool};
+use moon_tool::{
+    async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
+    Tool,
+};
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-};
+use std::env;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::{ffi::OsStr, path::Path};
+
+pub fn get_rust_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
+    let mut paths = get_proto_paths(proto_env);
+
+    if let Ok(value) = env::var("CARGO_INSTALL_ROOT") {
+        paths.push(PathBuf::from(value).join("bin"));
+    }
+
+    if let Ok(value) = env::var("CARGO_HOME") {
+        paths.push(PathBuf::from(value).join("bin"));
+    }
+
+    paths.push(proto_env.home.join(".cargo").join("bin"));
+
+    paths
+}
 
 pub struct RustTool {
     pub config: RustConfig,
@@ -17,19 +36,26 @@ pub struct RustTool {
     pub global: bool,
 
     pub tool: ProtoTool,
+
+    proto_env: Arc<ProtoEnvironment>,
 }
 
 impl RustTool {
     pub async fn new(
-        proto: &ProtoEnvironment,
+        proto_env: Arc<ProtoEnvironment>,
         config: &RustConfig,
         req: &RuntimeReq,
     ) -> miette::Result<RustTool> {
         let mut rust = RustTool {
             config: config.to_owned(),
             global: false,
-            tool: load_tool_plugin(&Id::raw("rust"), proto, config.plugin.as_ref().unwrap())
-                .await?,
+            tool: load_tool_plugin(
+                &Id::raw("rust"),
+                &proto_env,
+                config.plugin.as_ref().unwrap(),
+            )
+            .await?,
+            proto_env,
         };
 
         if use_global_tool_on_path() || req.is_global() {
@@ -49,6 +75,10 @@ impl RustTool {
     {
         Command::new("cargo")
             .args(args)
+            .env(
+                "PATH",
+                prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+            )
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -64,6 +94,10 @@ impl RustTool {
     {
         Command::new("rustup")
             .args(args)
+            .env(
+                "PATH",
+                prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+            )
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -77,10 +111,6 @@ impl RustTool {
 impl Tool for RustTool {
     fn as_any(&self) -> &(dyn std::any::Any + Send + Sync) {
         self
-    }
-
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(PathBuf::from("cargo"))
     }
 
     async fn setup(

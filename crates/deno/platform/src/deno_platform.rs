@@ -8,7 +8,7 @@ use moon_config::{
     ProjectConfig, TypeScriptConfig,
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
-use moon_deno_tool::DenoTool;
+use moon_deno_tool::{get_deno_env_paths, DenoTool};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -16,7 +16,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
@@ -87,9 +87,7 @@ impl Platform for DenoPlatform {
         _project_id: &str,
         _project_source: &str,
     ) -> miette::Result<Vec<DependencyConfig>> {
-        let implicit_deps = vec![];
-
-        Ok(implicit_deps)
+        Ok(vec![])
     }
 
     // TOOLCHAIN
@@ -127,8 +125,10 @@ impl Platform for DenoPlatform {
         let mut last_versions = FxHashMap::default();
 
         if !self.toolchain.has(&req) {
-            self.toolchain
-                .register(&req, DenoTool::new(&self.proto_env, &self.config, &req)?);
+            self.toolchain.register(
+                &req,
+                DenoTool::new(Arc::clone(&self.proto_env), &self.config, &req)?,
+            );
         }
 
         self.toolchain.setup(&req, &mut last_versions).await?;
@@ -153,8 +153,10 @@ impl Platform for DenoPlatform {
         let req = &runtime.requirement;
 
         if !self.toolchain.has(req) {
-            self.toolchain
-                .register(req, DenoTool::new(&self.proto_env, &self.config, req)?);
+            self.toolchain.register(
+                req,
+                DenoTool::new(Arc::clone(&self.proto_env), &self.config, req)?,
+            );
         }
 
         Ok(self.toolchain.setup(req, last_versions).await?)
@@ -163,20 +165,20 @@ impl Platform for DenoPlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        runtime: &Runtime,
+        _runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<()> {
         if !self.config.lockfile {
             return Ok(());
         }
 
-        let tool = self.toolchain.get_for_version(&runtime.requirement)?;
+        let path = prepend_path_env_var(get_deno_env_paths(&self.proto_env));
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 
         print_checkpoint("deno cache", Checkpoint::Setup);
 
-        Command::new(tool.get_bin_path()?)
+        Command::new("deno")
             .args([
                 "cache",
                 "--lock",
@@ -184,6 +186,7 @@ impl Platform for DenoPlatform {
                 "--lock-write",
                 &self.config.deps_file,
             ])
+            .env("PATH", &path)
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -229,8 +232,9 @@ impl Platform for DenoPlatform {
                     }
                 };
 
-                Command::new(tool.get_bin_path()?)
+                Command::new("deno")
                     .args(args)
+                    .env("PATH", &path)
                     .cwd(working_dir)
                     .create_async()
                     .exec_stream_output()
@@ -346,12 +350,19 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         _project: &Project,
         task: &Task,
-        _runtime: &Runtime,
-        working_dir: &Path,
+        runtime: &Runtime,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+        command.args(&task.args);
+        command.envs(&task.env);
 
-        command.args(&task.args).envs(&task.env).cwd(working_dir);
+        if !runtime.requirement.is_global() {
+            command.env(
+                "PATH",
+                prepend_path_env_var(get_deno_env_paths(&self.proto_env)),
+            );
+        }
 
         Ok(command)
     }

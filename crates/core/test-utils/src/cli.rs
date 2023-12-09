@@ -24,7 +24,7 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage
     cmd.env("MOON_LOG", "trace");
-    cmd.env("PROTO_LOG", "trace");
+    // cmd.env("PROTO_LOG", "trace");
     cmd
 }
 

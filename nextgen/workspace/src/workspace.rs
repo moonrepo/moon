@@ -140,6 +140,9 @@ pub struct Workspace {
     /// The plugin loader.
     pub proto_env: Arc<ProtoEnvironment>,
 
+    /// Local `.prototools` config.
+    pub proto_config: Arc<ProtoConfig>,
+
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
 
@@ -172,11 +175,10 @@ impl Workspace {
             "Creating workspace",
         );
 
-        // Load proto tools
+        // Load proto tools from workspace root only
         let mut proto_env = ProtoEnvironment::new()?;
-        proto_env.cwd = working_dir.to_path_buf();
-
-        let proto_config = proto_env.load_config()?;
+        proto_env.cwd = root_dir.clone();
+        let proto_config = proto_env.load_config_manager()?.get_local_config()?;
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;
@@ -210,6 +212,7 @@ impl Workspace {
             cache_engine: Arc::new(cache_engine),
             config: Arc::new(config),
             hash_engine: Arc::new(hash_engine),
+            proto_config: Arc::new(proto_config.to_owned()),
             proto_env: Arc::new(proto_env),
             root: root_dir,
             session: None,

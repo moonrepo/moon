@@ -11,11 +11,14 @@ use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
+use moon_node_tool::get_node_env_paths;
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
+use moon_tool::get_proto_version_env;
+use moon_tool::prepend_path_env_var;
 use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
@@ -302,7 +305,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                NodeTool::new(&self.proto_env, &self.config, &req).await?,
+                NodeTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
             );
         }
 
@@ -330,7 +333,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                NodeTool::new(&self.proto_env, &self.config, req).await?,
+                NodeTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
             );
         }
 
@@ -440,23 +443,67 @@ impl Platform for NodePlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<Command> {
-        let command = if self.is_toolchain_enabled()? {
-            actions::create_target_command(
-                self.toolchain.get_for_version(&runtime.requirement)?,
-                context,
-                project,
-                task,
-                working_dir,
-            )?
-        } else {
-            actions::create_target_command_without_tool(
-                &self.config,
-                context,
-                project,
-                task,
-                working_dir,
-            )?
-        };
+        let mut command = actions::create_target_command_without_tool(
+            &self.config,
+            context,
+            project,
+            task,
+            working_dir,
+        )?;
+
+        if let Ok(node) = self.toolchain.get_for_version(&runtime.requirement) {
+            if let Some(version) = get_proto_version_env(&node.tool) {
+                command.env("PROTO_NODE_VERSION", version);
+            }
+
+            if let Ok(npm) = node.get_npm() {
+                if let Some(version) = get_proto_version_env(&npm.tool) {
+                    command.env("PROTO_NPM_VERSION", version);
+                }
+            }
+
+            if let Ok(pnpm) = node.get_pnpm() {
+                if let Some(version) = get_proto_version_env(&pnpm.tool) {
+                    command.env("PROTO_PNPM_VERSION", version);
+                }
+            }
+
+            if let Ok(yarn) = node.get_yarn() {
+                if let Some(version) = get_proto_version_env(&yarn.tool) {
+                    command.env("PROTO_YARN_VERSION", version);
+                }
+            }
+
+            if let Ok(bun) = node.get_bun() {
+                if let Some(version) = get_proto_version_env(&bun.tool) {
+                    command.env("PROTO_BUN_VERSION", version);
+                }
+            }
+        }
+
+        let mut paths = vec![];
+        let mut current_dir = project.root.as_path();
+
+        loop {
+            paths.push(current_dir.join("node_modules").join(".bin"));
+
+            if current_dir == self.workspace_root {
+                break;
+            }
+
+            match current_dir.parent() {
+                Some(dir) => {
+                    current_dir = dir;
+                }
+                None => break,
+            };
+        }
+
+        if !runtime.requirement.is_global() {
+            paths.extend(get_node_env_paths(&self.proto_env));
+        }
+
+        command.env("PATH", prepend_path_env_var(paths));
 
         Ok(command)
     }

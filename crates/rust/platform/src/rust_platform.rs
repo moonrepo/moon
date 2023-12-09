@@ -18,10 +18,10 @@ use moon_rust_lang::{
     toolchain_toml::{ToolchainToml, ToolchainTomlCache},
     CARGO, RUSTUP, RUSTUP_LEGACY,
 };
-use moon_rust_tool::RustTool;
+use moon_rust_tool::{get_rust_env_paths, RustTool};
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolError, ToolManager};
+use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
@@ -197,7 +197,7 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                RustTool::new(&self.proto_env, &self.config, &req).await?,
+                RustTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
             );
         }
 
@@ -225,7 +225,7 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                RustTool::new(&self.proto_env, &self.config, req).await?,
+                RustTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
             );
         }
 
@@ -505,7 +505,7 @@ impl Platform for RustPlatform {
         _project: &Project,
         task: &Task,
         runtime: &Runtime,
-        working_dir: &Path,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
         let mut args = vec![];
@@ -523,8 +523,6 @@ impl Platform for RustPlatform {
             // Binary may be installed to ~/.cargo/bin
             _ => {
                 let globals_dir = self.get_globals_dir(self.toolchain.get().ok());
-                let global_bin_path = globals_dir.join(exe_name(&task.command));
-
                 let cargo_bin = task.command.strip_prefix("cargo-").unwrap_or(&task.command);
                 let cargo_bin_path = globals_dir.join(exe_name(format!("cargo-{}", cargo_bin)));
 
@@ -532,27 +530,17 @@ impl Platform for RustPlatform {
                 if cargo_bin_path.exists() {
                     command = Command::new("cargo");
                     args.push(cargo_bin.to_owned());
-
-                    // Truly global and doesn't run through cargo
-                } else if global_bin_path.exists() {
-                    command = Command::new(&global_bin_path);
-
-                    // Not found, so error!
-                } else {
-                    return Err(ToolError::MissingBinary(
-                        "Cargo binary".into(),
-                        cargo_bin.to_owned(),
-                    )
-                    .into());
                 }
             }
         }
 
-        command
-            .args(&args)
-            .args(&task.args)
-            .envs(&task.env)
-            .cwd(working_dir);
+        command.args(&args);
+        command.args(&task.args);
+        command.envs(&task.env);
+        command.env(
+            "PATH",
+            prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
+        );
 
         Ok(command)
     }

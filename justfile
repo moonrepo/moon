@@ -1,3 +1,5 @@
+set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+
 export MOON_TEST := "true"
 
 init:
@@ -34,9 +36,6 @@ test-ci:
 # CODE COVERAGE
 
 cov:
-	cargo llvm-cov nextest --workspace --config-file ./.cargo/nextest.toml
-
-cov-ci:
 	cargo llvm-cov nextest --workspace --config-file ./.cargo/nextest.toml --profile ci
 
 gen-report:

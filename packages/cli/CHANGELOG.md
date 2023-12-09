@@ -28,6 +28,12 @@
 - Updated `moon.yml` to support customizing the project name using the `id` field.
   - Can be used to override the project name derived in `.moon/workspace.yml`.
 
+#### 🧩 Plugins
+
+- Updated `bun_plugin` to v0.6.
+- Updated `node_plugin` and `node_depman_plugin` to v0.6.1.
+- Updated `rust_plugin` to v0.5.
+
 #### ⚙️ Internal
 
 - Improved string allocation and performance for queries, task tokens, and process commands.

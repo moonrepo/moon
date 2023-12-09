@@ -4658,9 +4658,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.24.3"
+version = "0.24.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f825ca8b035f64d6608b542cec5b052548111aef69b010840ea052b99d810676"
+checksum = "43875e2479ae2727893eca2d6c56c35f7cd85f80f127af4e07e69ab7e704f32a"
 dependencies = [
  "cached",
  "extism",

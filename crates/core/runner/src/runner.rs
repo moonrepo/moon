@@ -411,6 +411,17 @@ impl<'a> Runner<'a> {
             }
         }
 
+        // Pin a version for all plugins so that global/system tasks work well
+        for plugin in self.workspace.proto_config.plugins.keys() {
+            command.env_if_missing(
+                format!(
+                    "PROTO_{}_VERSION",
+                    plugin.as_str().to_uppercase().replace('-', "_")
+                ),
+                "*",
+            );
+        }
+
         Ok(())
     }
 

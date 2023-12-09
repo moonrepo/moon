@@ -377,7 +377,7 @@ impl<'a> Runner<'a> {
                     .map(|v| v.to_string())
                     .unwrap_or_else(|| "*".into()),
             );
-            
+
             command.env_if_missing(
                 "PROTO_NPM_VERSION",
                 node_config

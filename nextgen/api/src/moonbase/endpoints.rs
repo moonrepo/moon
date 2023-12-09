@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 pub struct SigninInput {
     pub organization_key: String,
     pub repository: String,
-    pub repository_key: String,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]

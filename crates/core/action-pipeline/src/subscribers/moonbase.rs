@@ -8,6 +8,7 @@ use moon_api::{
     },
 };
 use moon_cache_item::get_cache_mode;
+use moon_common::is_ci;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_logger::{debug, error, map_list, trace, warn};
 use moon_platform::Runtime;
@@ -100,7 +101,7 @@ impl Subscriber for MoonbaseSubscriber {
 
         // CI INSIGHTS
 
-        if moonbase.ci_insights_enabled {
+        if moonbase.ci_insights_enabled && is_ci() {
             match event {
                 // We must wait for this request to finish before firing off other requests,
                 // as we require the run ID from the record saved upstream!
@@ -396,7 +397,8 @@ impl Subscriber for MoonbaseSubscriber {
             }
 
             match event {
-                // Check if archive exists in moonbase (the remote) by querying the artifacts endpoint.
+                // Check if archive exists in moonbase (the remote) by querying the artifacts
+                // endpoint. This only checks that the database record exists!
                 Event::TargetOutputCacheCheck { hash, .. } => {
                     if get_cache_mode().is_readable() {
                         match moonbase.read_artifact(hash).await {
@@ -478,6 +480,11 @@ impl Subscriber for MoonbaseSubscriber {
                                         .await
                                     {
                                         log_failure(error);
+                                    } else {
+                                        trace!(
+                                            target: LOG_TARGET,
+                                            "Artifact upload successful!",
+                                        );
                                     }
                                 }));
                             }

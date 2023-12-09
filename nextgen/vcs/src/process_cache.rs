@@ -80,12 +80,12 @@ impl ProcessCache {
             let output = executor.exec_capture_output().await?;
 
             self.cache.insert(cache_key.clone(), |_| {
-                format(output_to_string(&output.stdout))
+                let value = output_to_string(&output.stdout);
+
+                format(if trim { value.trim().to_owned() } else { value })
             });
         }
 
-        let output = self.cache.get(&cache_key).unwrap();
-
-        Ok(if trim { output.trim() } else { output })
+        Ok(self.cache.get(&cache_key).unwrap())
     }
 }

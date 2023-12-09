@@ -1,6 +1,6 @@
 ---
 slug: moon-v1.18
-title: moon v1.18 - New toolchain execution and custom project names
+title: moon v1.18 - New task execution flow and custom project names
 authors: [milesj]
 tags: [toolchain, shell, id, name, project]
 # image: ./img/moon/v1.17.png
@@ -16,7 +16,7 @@ baggage and "unknown behavior" that came with executing through a shell, and to 
 deterministic outcome. This approach worked very well for stand-alone binaries, like `node`,
 `cargo`, and built-in commands like `rm`, `mkdir`, and `git`.
 
-However, it was very problematic in 2 scenarios: executables from language dependencies (node
+However, it was very problematic in 2 scenarios: executables from language dependencies (Node.js
 modules, etc), and multi-command based tasks (using `&&`). To remedy this situation, we're no longer
 locating the executables ourselves, and instead are prepending `PATH` with the locations in which we
 know these executables should exist. We're also loosening the restriction on the
@@ -36,7 +36,7 @@ tasks:
     command: 'prettier --write .'
 ```
 
-When finally executed, internally it would become something like this command.
+When finally executed, internally it would become something like this command:
 
 ```shell
 ~/.proto/tools/node/<version>/bin/node ../../node_modules/prettier/internal/cli.mjs --write .
@@ -44,7 +44,28 @@ When finally executed, internally it would become something like this command.
 
 This was required since our runtime is Rust and we don't have access to Node.js's module resolution
 algorithm... but this approach was very brittle and error prone. It took us many releases to iron
-out all the bugs, and we're pretty sure there are still edge cases unaccounted for.
+out all the bugs, and we're pretty sure there are still edge cases unaccounted for. So instead, as
+mentioned above, we now prepend `PATH`, resulting in the following command:
+
+```shell
+PATH="/path/to/node_modules/.bin:/path/to/proto/tools:$PATH" prettier --write .
+```
+
+### Multi-command tasks
+
+While not officially supported in moon, it's been possible to run multiple commands in a single task
+using `&&` syntax. However, this approach did not work correctly with our integrated toolchain, as
+only the 1st command in the list would have its binary be located and executed correctly. For
+example, say we wanted to run 2 npm packages:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'rm -rf dist && vite build'
+```
+
+With this new `PATH` based approach, this will now work correctly. And furthermore, this also
+enables executables within Bash and PowerShell scripts to be located and executed correctly as well.
 
 ### What's next?
 

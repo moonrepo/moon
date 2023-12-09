@@ -397,7 +397,8 @@ impl Subscriber for MoonbaseSubscriber {
             }
 
             match event {
-                // Check if archive exists in moonbase (the remote) by querying the artifacts endpoint.
+                // Check if archive exists in moonbase (the remote) by querying the artifacts
+                // endpoint. This only checks that the database record exists!
                 Event::TargetOutputCacheCheck { hash, .. } => {
                     if get_cache_mode().is_readable() {
                         match moonbase.read_artifact(hash).await {
@@ -479,6 +480,11 @@ impl Subscriber for MoonbaseSubscriber {
                                         .await
                                     {
                                         log_failure(error);
+                                    } else {
+                                        trace!(
+                                            target: LOG_TARGET,
+                                            "Artifact upload successful!",
+                                        );
                                     }
                                 }));
                             }

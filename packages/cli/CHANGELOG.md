@@ -37,6 +37,7 @@
 #### ⚙️ Internal
 
 - Improved string allocation and performance for queries, task tokens, and process commands.
+- Improved remote caching flow.
 - Updated proto to v0.24.
 
 ## 1.17.4

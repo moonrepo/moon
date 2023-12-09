@@ -137,6 +137,10 @@ impl DependencyManager<NodeTool> for PnpmTool {
             cmd.env("PROTO_NODE_VERSION", version);
         }
 
+        // Tell proto to resolve instead of failing
+        cmd.env_if_missing("PROTO_PNPM_VERSION", "*");
+        cmd.env_if_missing("PROTO_NODE_VERSION", "*");
+
         Ok(cmd)
     }
 

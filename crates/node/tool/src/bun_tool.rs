@@ -57,6 +57,9 @@ impl BunTool {
             cmd.env("PROTO_BUN_VERSION", version);
         }
 
+        // Tell proto to resolve instead of failing
+        cmd.env_if_missing("PROTO_BUN_VERSION", "*");
+
         Ok(cmd)
     }
 }
@@ -147,6 +150,10 @@ impl DependencyManager<NodeTool> for BunTool {
         if let Some(version) = get_proto_version_env(&node.tool) {
             cmd.env("PROTO_NODE_VERSION", version);
         }
+
+        // Tell proto to resolve instead of failing
+        cmd.env_if_missing("PROTO_BUN_VERSION", "*");
+        cmd.env_if_missing("PROTO_NODE_VERSION", "*");
 
         Ok(cmd)
     }

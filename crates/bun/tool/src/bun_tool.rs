@@ -141,6 +141,9 @@ impl DependencyManager<()> for BunTool {
             cmd.env("PROTO_BUN_VERSION", version);
         }
 
+        // Tell proto to resolve instead of failing
+        cmd.env_if_missing("PROTO_BUN_VERSION", "*");
+
         Ok(cmd)
     }
 

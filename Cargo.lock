@@ -3008,11 +3008,13 @@ dependencies = [
  "moon_actions",
  "moon_api",
  "moon_cache_item",
+ "moon_common",
  "moon_emitter",
  "moon_hash",
  "moon_logger",
  "moon_notifier",
  "moon_platform",
+ "moon_process",
  "moon_project",
  "moon_project_graph",
  "moon_runner",
@@ -3492,7 +3494,6 @@ name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
- "content_inspector",
  "miette",
  "moon_bun_lang",
  "moon_lang",
@@ -3913,6 +3914,7 @@ dependencies = [
  "moon_task",
  "moon_tool",
  "moon_utils",
+ "proto_core",
  "serde",
  "serde_json",
 ]
@@ -4024,6 +4026,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "miette",
+ "moon_common",
  "moon_lang",
  "moon_platform_runtime",
  "moon_process",
@@ -4655,9 +4658,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.24.2"
+version = "0.24.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b898d9381330a511bfc08e112507b57a6f03b4fa25b5269c1eb4ea14e5a33004"
+checksum = "43875e2479ae2727893eca2d6c56c35f7cd85f80f127af4e07e69ab7e704f32a"
 dependencies = [
  "cached",
  "extism",
@@ -5489,9 +5492,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "935856c30da2f62a73bcc57eecb5508bedd313287bc0e00e7e7c4b7a07fb5995"
+checksum = "b4a0d1c404d4e987597b018bee76fb8e79937f3b2ab0cf5963ce043031092694"
 dependencies = [
  "flate2",
  "miette",
@@ -6425,9 +6428,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "version_spec"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3aaaf40ae0d800122ce8ef646ddd08ea02a42a141b249e08496e10ae3eb4440"
+checksum = "460b94056fcc70bbf79dd743b91f6709e395a20d4b37bb2a929b73bd59fb24b0"
 dependencies = [
  "human-sort",
  "regex",
@@ -6479,9 +6482,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a7753f1234515fcfb16f532527e6d4c3bf20a9745b89ca6d450f7ae9b04fbdd"
+checksum = "422ee7bb02157d5b78c8aad4f96d4905e452da4b128fc4aec80d2597cee71d0c"
 dependencies = [
  "extism",
  "miette",

@@ -1,7 +1,7 @@
 use crate::actions;
 use moon_action_context::ActionContext;
 use moon_bun_lang::BUNPM;
-use moon_bun_tool::BunTool;
+use moon_bun_tool::{get_bun_env_paths, BunTool};
 use moon_common::Id;
 use moon_config::{
     BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
@@ -14,7 +14,7 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{Tool, ToolManager};
+use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
@@ -266,7 +266,7 @@ impl Platform for BunPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                BunTool::new(&self.proto_env, &self.config, &req).await?,
+                BunTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
             );
         }
 
@@ -292,8 +292,10 @@ impl Platform for BunPlatform {
         let req = &runtime.requirement;
 
         if !self.toolchain.has(req) {
-            self.toolchain
-                .register(req, BunTool::new(&self.proto_env, &self.config, req).await?);
+            self.toolchain.register(
+                req,
+                BunTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
+            );
         }
 
         Ok(self.toolchain.setup(req, last_versions).await?)
@@ -395,18 +397,41 @@ impl Platform for BunPlatform {
         project: &Project,
         task: &Task,
         runtime: &Runtime,
-        working_dir: &Path,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
-        let command = if self.is_toolchain_enabled()? {
-            actions::create_target_command(
-                self.toolchain.get_for_version(&runtime.requirement)?,
-                project,
-                task,
-                working_dir,
-            )?
-        } else {
-            actions::create_target_command_without_tool(project, task, working_dir)?
-        };
+        let mut command = Command::new(&task.command);
+        command.args(&task.args);
+        command.envs(&task.env);
+
+        if let Ok(bun) = self.toolchain.get_for_version(&runtime.requirement) {
+            if let Some(version) = get_proto_version_env(&bun.tool) {
+                command.env("PROTO_BUN_VERSION", version);
+            }
+        }
+
+        let mut paths = vec![];
+        let mut current_dir = project.root.as_path();
+
+        loop {
+            paths.push(current_dir.join("node_modules").join(".bin"));
+
+            if current_dir == self.workspace_root {
+                break;
+            }
+
+            match current_dir.parent() {
+                Some(dir) => {
+                    current_dir = dir;
+                }
+                None => break,
+            };
+        }
+
+        if !runtime.requirement.is_global() {
+            paths.extend(get_bun_env_paths(&self.proto_env));
+        }
+
+        command.env("PATH", prepend_path_env_var(paths));
 
         Ok(command)
     }

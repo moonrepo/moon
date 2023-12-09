@@ -3,5 +3,4 @@ tasks:
     command: 'noop'
 
   standard:
-    command: node
-    args: -e "console.log('name-only')"
+    command: echo 'name-only'

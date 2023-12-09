@@ -7,11 +7,12 @@ pub use errors::*;
 pub use manager::*;
 pub use tool::*;
 
+use moon_common::consts::PROTO_CLI_VERSION;
 use proto_core::{
     inject_default_manifest_config, Id, PluginLocator, ProtoEnvironment, Tool as ProtoTool, Wasm,
 };
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub fn use_global_tool_on_path() -> bool {
     env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|v| v == "1" || v == "true" || v == "on")
@@ -38,6 +39,28 @@ where
     env::join_paths(paths).unwrap()
 }
 
+pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
+    vec![
+        // Always use a versioned proto first
+        proto.tools_dir.join("proto").join(PROTO_CLI_VERSION),
+        // Then fallback to shims/bins
+        proto.shims_dir.clone(),
+        proto.bin_dir.clone(),
+        // And ensure non-proto managed moon comes last
+        proto.home.join(".moon").join("bin"),
+    ]
+}
+
+pub fn get_proto_version_env(tool: &ProtoTool) -> Option<String> {
+    let spec = tool.get_resolved_version();
+
+    if spec.is_latest() {
+        return None;
+    }
+
+    Some(spec.to_string())
+}
+
 pub async fn load_tool_plugin(
     id: &Id,
     proto: &ProtoEnvironment,
@@ -45,7 +68,7 @@ pub async fn load_tool_plugin(
 ) -> miette::Result<ProtoTool> {
     let mut manifest = ProtoTool::create_plugin_manifest(
         proto,
-        Wasm::file(proto.get_plugin_loader().load_plugin(id, locator).await?),
+        Wasm::file(proto.get_plugin_loader()?.load_plugin(id, locator).await?),
     )?;
 
     inject_default_manifest_config(id, proto, &mut manifest)?;

@@ -1,3 +1,4 @@
+use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
 use moon_logger::debug;
@@ -5,8 +6,8 @@ use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
-    DependencyManager, Tool, ToolError,
+    async_trait, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
+    use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
@@ -14,7 +15,8 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::sync::Arc;
 
 pub struct YarnTool {
     pub config: YarnConfig,
@@ -22,20 +24,27 @@ pub struct YarnTool {
     pub global: bool,
 
     pub tool: ProtoTool,
+
+    proto_env: Arc<ProtoEnvironment>,
 }
 
 impl YarnTool {
     pub async fn new(
-        proto: &ProtoEnvironment,
+        proto_env: Arc<ProtoEnvironment>,
         config: &Option<YarnConfig>,
     ) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(YarnTool {
             global: use_global_tool_on_path() || config.version.is_none(),
-            tool: load_tool_plugin(&Id::raw("yarn"), proto, config.plugin.as_ref().unwrap())
-                .await?,
+            tool: load_tool_plugin(
+                &Id::raw("yarn"),
+                &proto_env,
+                config.plugin.as_ref().unwrap(),
+            )
+            .await?,
             config,
+            proto_env,
         })
     }
 
@@ -109,14 +118,6 @@ impl Tool for YarnTool {
         self
     }
 
-    fn get_bin_path(&self) -> miette::Result<PathBuf> {
-        Ok(if self.global {
-            "yarn".into()
-        } else {
-            self.tool.get_exe_path()?.to_path_buf()
-        })
-    }
-
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
@@ -181,29 +182,26 @@ impl Tool for YarnTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
-        let mut cmd = if self.global {
-            Command::new("yarn")
-        } else if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
-        } else {
-            let mut cmd = Command::new(node.get_bin_path()?);
-            cmd.arg(self.get_bin_path()?);
-            cmd
-        };
+        let mut cmd = Command::new("yarn");
 
         if !self.global {
             cmd.env(
                 "PATH",
-                prepend_path_env_var([
-                    node.get_bin_path()?.parent().unwrap(),
-                    self.tool.get_exe_path()?.parent().unwrap(),
-                ]),
+                prepend_path_env_var(get_node_env_paths(&self.proto_env)),
             );
         }
 
-        if !node.global {
-            cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
+        if let Some(version) = get_proto_version_env(&self.tool) {
+            cmd.env("PROTO_YARN_VERSION", version);
         }
+
+        if let Some(version) = get_proto_version_env(&node.tool) {
+            cmd.env("PROTO_NODE_VERSION", version);
+        }
+
+        // Tell proto to resolve instead of failing
+        cmd.env_if_missing("PROTO_YARN_VERSION", "*");
+        cmd.env_if_missing("PROTO_NODE_VERSION", "*");
 
         Ok(cmd)
     }

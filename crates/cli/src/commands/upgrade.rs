@@ -16,6 +16,14 @@ use std::{
 };
 use tracing::error;
 
+pub fn is_musl() -> bool {
+    let Ok(output) = std::process::Command::new("ldd").arg("--version").output() else {
+        return false;
+    };
+
+    String::from_utf8(output.stdout).map_or(false, |out| out.contains("musl"))
+}
+
 #[system]
 pub async fn upgrade() {
     if proto_core::is_offline() {
@@ -45,17 +53,10 @@ pub async fn upgrade() {
 
     let target = match (consts::OS, consts::ARCH) {
         ("linux", arch) => {
-            // Run ldd to check if we're running on musl
-            let output = std::process::Command::new("ldd")
-                .arg("--version")
-                .output()
-                .into_diagnostic()?;
-            let output = String::from_utf8(output.stdout).into_diagnostic()?;
-            let libc = match output.contains("musl") {
-                true => "musl",
-                false => "gnu",
-            };
-            format!("moon-{arch}-unknown-linux-{libc}")
+            format!(
+                "moon-{arch}-unknown-linux-{}",
+                if is_musl() { "musl" } else { "gnu" }
+            )
         }
         ("macos", arch) => format!("moon-{arch}-apple-darwin"),
         ("windows", "x86_64") => "moon-x86_64-pc-windows-msvc.exe".to_owned(),

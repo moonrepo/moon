@@ -87,6 +87,7 @@ impl<'l> Display for CommandLine<'l> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let command = join_args_os(&self.command);
         let command = command.to_string_lossy();
+        let command = command.trim();
 
         write!(f, "{}", command)?;
 
@@ -104,7 +105,7 @@ impl<'l> Display for CommandLine<'l> {
                 if input.len() > 200 && !debug_input {
                     "(truncated)".into()
                 } else {
-                    input.to_string_lossy().replace('\n', " ")
+                    input.to_string_lossy().trim().replace('\n', " ")
                 }
             )?;
         }
@@ -221,8 +222,9 @@ impl<'cmd> CommandInspector<'cmd> {
                 if debug_env {
                     true
                 } else {
-                    let key = key.to_str().unwrap_or_default();
-                    key.starts_with("MOON_") || key.starts_with("PROTO_")
+                    key.to_str()
+                        .map(|k| k.starts_with("MOON_"))
+                        .unwrap_or_default()
                 }
             })
             .collect::<FxHashMap<_, _>>();
@@ -233,7 +235,7 @@ impl<'cmd> CommandInspector<'cmd> {
             env_vars = ?env_vars_field,
             working_dir = ?working_dir_field,
             "Running command {}",
-            color::shell(command_line.to_string())
+            color::shell(command_line.to_string().trim())
         );
     }
 }

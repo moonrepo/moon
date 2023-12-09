@@ -1,5 +1,5 @@
-mod platform;
+mod system_platform;
 mod target_hash;
 mod tool;
 
-pub use platform::SystemPlatform;
+pub use system_platform::SystemPlatform;

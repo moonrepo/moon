@@ -10,7 +10,6 @@ moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
-content_inspector = "0.2.4"
 miette = { workspace = true }
 once_cell = { workspace = true }
 package-lock-json-parser = "0.4.0"

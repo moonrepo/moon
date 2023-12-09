@@ -35,10 +35,8 @@ pub struct Command {
 
 impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
-        let bin = bin.as_ref();
-
-        let mut command = Command {
-            bin: bin.to_os_string(),
+        Command {
+            bin: bin.as_ref().to_os_string(),
             args: vec![],
             cwd: None,
             env: FxHashMap::default(),
@@ -46,15 +44,8 @@ impl Command {
             input: vec![],
             prefix: None,
             print_command: false,
-            shell: None,
-        };
-
-        // Referencing a batch script needs to be ran with a shell
-        if shell::is_windows_script(&command.bin) {
-            command.shell = Some(shell::create_shell());
+            shell: Some(shell::create_shell()),
         }
-
-        command
     }
 
     pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Command {
@@ -116,6 +107,18 @@ impl Command {
     {
         self.env
             .insert(key.as_ref().to_os_string(), val.as_ref().to_os_string());
+        self
+    }
+
+    pub fn env_if_missing<K, V>(&mut self, key: K, val: V) -> &mut Command
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        let key = key.as_ref();
+        if !self.env.contains_key(key) {
+            self.env(key, val);
+        }
         self
     }
 
@@ -193,13 +196,8 @@ impl Command {
         self
     }
 
-    pub fn set_shell(&mut self, shell: shell::Shell) -> &mut Command {
-        self.shell = Some(shell);
-        self
-    }
-
-    pub fn with_shell(&mut self) -> &mut Command {
-        self.set_shell(shell::create_shell());
+    pub fn without_shell(&mut self) -> &mut Command {
+        self.shell = None;
         self
     }
 }

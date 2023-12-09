@@ -14,8 +14,8 @@ on:
       - Cargo.toml
       - Makefile.toml
       - rust-toolchain.toml
+
 env:
-  WITH_COVERAGE: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
   # sccache
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -26,9 +26,11 @@ env:
   # SCCACHE_NO_DAEMON: 1
   SCCACHE_REGION: us-east-2
   SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   format:
     name: Format
@@ -37,10 +39,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
+          bins: just
           cache: false
           components: rustfmt
       - name: Check formatting
-        run: cargo fmt --all --check
+        run: just format-check
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}
@@ -52,12 +55,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          bins: cargo-make
+          bins: just
           cache-base: '^(master|develop-)'
           components: clippy
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run linter
-        run: cargo make lint
+        run: just lint
   test:
     name: Test
     runs-on: ${{ matrix.os }}
@@ -65,13 +68,13 @@ jobs:
       matrix:
         os: [buildjet-8vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
-    # Linux runs out of disk space right now...
-    continue-on-error: ${{ matrix.os == 'buildjet-8vcpu-ubuntu-2204' }}
+    env:
+      WITH_COVERAGE: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          bins: cargo-make, cargo-nextest, cargo-llvm-cov
+          bins: just, cargo-nextest, cargo-llvm-cov
           cache-base: '^(master|develop-)'
           components: llvm-tools-preview
       - uses: moonrepo/setup-toolchain@v0
@@ -82,17 +85,13 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Run tests
         if: ${{ env.WITH_COVERAGE == 'false' }}
-        run: cargo make test-ci
-        env:
-          NEXTEST_PROFILE: ci
+        run: just test-ci
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
-        run: cargo make test-coverage
-        env:
-          NEXTEST_PROFILE: ci
+        run: just cov-ci
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
-        run: cargo make generate-report
+        run: just gen-report
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
         if: ${{ env.WITH_COVERAGE == 'true' }}

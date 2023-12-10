@@ -19,8 +19,8 @@ else
 	case "$arch" in
 	"Darwin x86_64") target="proto_cli-x86_64-apple-darwin" ;;
 	"Darwin arm64") target="proto_cli-aarch64-apple-darwin" ;;
-	# "Linux aarch64") target="proto_cli-aarch64-unknown-linux-gnu" ;;
-	"Linux x86_64") target="proto_cli-x86_64-unknown-linux-gnu" ;;
+	"Linux aarch64") target="proto_cli-aarch64-unknown-linux" ;;
+	"Linux x86_64") target="proto_cli-x86_64-unknown-linux" ;;
 	*)
 		echo "Unsupported system or architecture \"$arch\". Unable to install proto!"
 		exit 1
@@ -32,7 +32,9 @@ if [[ "$arch" == "Linux"* ]]; then
 	deps=$(ldd --version 2>&1 || true)
 
 	if [[ $deps == *"musl"* ]]; then
-		target="${target/gnu/musl}"
+		target="$target-musl"
+	else
+		target="$target-gnu"
 	fi
 fi
 
@@ -90,9 +92,14 @@ rm -rf "$download_file" "$temp_dir"
 # Run setup script to update shells
 
 export PROTO_LOG=error
-$bin_path setup
+profile_path=$($bin_path setup --profile)
 
-echo "Successfully installed proto to $bin_path"
+if [ -z "$profile_path" ]; then
+	echo "Successfully installed proto to $bin_path"
+else
+	echo "Successfully installed proto to $bin_path and updated $profile_path"
+fi
+
 echo "Launch a new terminal window to start using proto!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"

@@ -4,7 +4,7 @@ use crate::language_platform::PlatformType;
 use crate::toolchain::*;
 use crate::validate::check_yml_extension;
 use crate::{inherit_tool, inherit_tool_without_version};
-use moon_common::consts;
+use moon_common::{color, consts};
 use proto_core::ProtoConfig;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
@@ -95,6 +95,9 @@ impl ToolchainConfig {
         proto_config: &ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
         let mut result = ConfigLoader::<ToolchainConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/toolchain",
+            ))
             .set_root(workspace_root)
             .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;

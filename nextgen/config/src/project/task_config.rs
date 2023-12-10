@@ -1,7 +1,7 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
-use moon_common::{cacheable, Id};
+use moon_common::{cacheable, color, Id};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
@@ -107,6 +107,7 @@ cacheable!(
 impl TaskConfig {
     pub fn parse<T: AsRef<str>>(code: T) -> miette::Result<TaskConfig> {
         let result = ConfigLoader::<TaskConfig>::new()
+            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
             .code(code.as_ref(), Format::Yaml)?
             .load()?;
 

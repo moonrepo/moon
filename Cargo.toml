@@ -39,7 +39,7 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.24.4"
+proto_core = "0.24.5"
 relative-path = { version = "1.9.0", features = ["serde"] }
 regex = "1.10.2"
 reqwest = { version = "0.11.22", default-features = false, features = [
@@ -48,7 +48,7 @@ reqwest = { version = "0.11.22", default-features = false, features = [
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.12.10", default-features = false, features = [
+schematic = { version = "0.12.12", default-features = false, features = [
 	"config",
 	"schema",
 	"url",

@@ -4,8 +4,7 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
 use crate::validate::check_yml_extension;
-use moon_common::cacheable;
-use moon_common::{consts, Id};
+use moon_common::{cacheable, color, consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{derive_enum, validate, Config, ConfigEnum, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
@@ -112,6 +111,9 @@ impl ProjectConfig {
         path: P,
     ) -> miette::Result<ProjectConfig> {
         let result = ConfigLoader::<ProjectConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/project",
+            ))
             .set_root(workspace_root.as_ref())
             .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
@@ -137,6 +139,9 @@ impl ProjectConfig {
         let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
 
         Ok(ConfigLoader::<ProjectConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/project",
+            ))
             .file_optional(path)?
             .load_partial(&())?)
     }

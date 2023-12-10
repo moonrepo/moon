@@ -4645,9 +4645,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.24.4"
+version = "0.24.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43875e2479ae2727893eca2d6c56c35f7cd85f80f127af4e07e69ab7e704f32a"
+checksum = "ca22c6ce60dade2f8e3e5a3de471e490838b763b8bb8d1a4b282cbb14b781664"
 dependencies = [
  "cached",
  "extism",
@@ -5072,9 +5072,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.12.10"
+version = "0.12.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "710a6af816c586a37dc9b8b304370f36d8b90751785bbb245942bed0ae00a69d"
+checksum = "c5ed74b468686fb5551b8f29c8339dcf0b7ac4e0f475490f6f49f6a2aadcd392"
 dependencies = [
  "garde",
  "indexmap 2.1.0",

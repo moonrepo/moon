@@ -29,7 +29,7 @@ fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson)
     };
 
     if let Some(version) = manager_version {
-        if package_json.set_package_manager(&version) {
+        if !version.is_empty() && package_json.set_package_manager(&version) {
             debug!(
                 target: LOG_TARGET,
                 "Adding package manager version to {}",

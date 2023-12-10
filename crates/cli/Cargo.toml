@@ -60,7 +60,7 @@ indicatif = "0.17.7"
 itertools = "0.12.0"
 miette = { workspace = true }
 mimalloc = { version = "0.1.39", default-features = false }
-open = "5.0.0"
+open = "5.0.1"
 petgraph = { workspace = true }
 proto_core = { workspace = true }
 reqwest = { workspace = true }

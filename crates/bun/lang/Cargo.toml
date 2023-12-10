@@ -6,9 +6,7 @@ publish = false
 
 [dependencies]
 moon_lang = { path = "../../core/lang" }
-moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
 miette = { workspace = true }
-once_cell = { workspace = true }
 rustc-hash = { workspace = true }
-yarn-lock-parser = "0.5.0"
+yarn-lock-parser = "0.6.0"

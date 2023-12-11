@@ -33,6 +33,7 @@
 #### 🐞 Fixes
 
 - Fixed `moon upgrade` failing when not ran in a moon workspace.
+- Fixed `CODEOWNERS` being written with double trailing newlines.
 
 #### 🧩 Plugins
 

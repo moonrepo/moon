@@ -45,7 +45,7 @@
 
 - Improved string allocation and performance for queries, task tokens, and process commands.
 - Improved remote caching flow and handling.
-- Updated proto to v0.24.
+- Updated proto to v0.25.
 
 ## 1.17.4
 

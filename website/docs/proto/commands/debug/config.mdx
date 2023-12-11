@@ -1,0 +1,50 @@
+---
+title: debug config
+sidebar_label: config
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.25.0" header />
+
+The `proto debug config` command will list all `.prototools` configuration files (in TOML format)
+that have been loaded, in order of precedence, with the final merged configuration printed at the
+end.
+
+```
+$ proto debug config
+
+~/.proto/.prototools
+  node = "20.0.0"
+  npm = "bundled"
+
+  [tools.node.aliases]
+  stable = "~20"
+
+  [settings]
+  auto-clean = false
+
+Configuration
+  [tools.node.aliases]
+  stable = "~20"
+
+  [plugins]
+  node = "source:https://github.com/moonrepo/node-plugin/releases/download/v0.6.1/node_plugin.wasm"
+
+  [settings]
+  auto-clean = false
+  auto-install = false
+  detect-strategy = "first-available"
+
+  [settings.http]
+  allow-invalid-certs = false
+  proxies = []
+
+  [versions]
+  node = "20.0.0"
+  npm = "bundled"
+```
+
+### Options
+
+- `--json` - Print the list in JSON format.

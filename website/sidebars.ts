@@ -281,6 +281,18 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/bin',
 				'proto/commands/clean',
 				'proto/commands/completions',
+				{
+					type: 'category',
+					label: 'debug',
+					items: ['proto/commands/debug/config'],
+					link: {
+						type: 'generated-index',
+						title: 'debug',
+						description: 'Operations for debugging the current proto environment.',
+						slug: '/proto/commands/debug',
+						keywords: ['cli', 'commands', 'debug'],
+					},
+				},
 				'proto/commands/install',
 				'proto/commands/install-global',
 				'proto/commands/list',

@@ -100,3 +100,32 @@ binary name like `node.exe`, you'll need to do one of the following:
   environment variable to find the appropriate extension, which includes `.cmd` by default.
 - Ensure `~/.proto/bin` is in your `PATH`. If a shim cannot be found, the original binary will be
   used instead.
+
+## Troubleshooting
+
+### Network requests keep failing, how can I bypass?
+
+When a tool is executed, we validate the version to ensure it's correct. We achieve this by making
+network requests to a remote service to gather the list of valid versions. If you're having network
+issues, or the request is timing out, you can bypass these checks with the following:
+
+- Pass a fully-qualified version as an environment variable. The version must be installed for this
+  to work.
+
+  ```shell
+  PROTO_NODE_VERSION=20.0.0 node --version
+  ```
+
+  If executing a Node.js package manager, you'll need to set versions for both Node.js and the
+  manager. This is required since manager's execute `node` processes under the hood.
+
+  ```shell
+  PROTO_NODE_VERSION=20.0.0 PROTO_NPM_VERSION=10.0.0 npm --version
+  ```
+
+- Pass the `PROTO_BYPASS_VERSION_CHECK` environment variable. This will bypass the network request
+  to load versions, but does not bypass other requests. However, this is typically enough.
+
+  ```shell
+  PROTO_BYPASS_VERSION_CHECK=1 node --version
+  ```

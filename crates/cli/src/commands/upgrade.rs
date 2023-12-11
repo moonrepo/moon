@@ -10,7 +10,7 @@ use std::{
     env::{self, consts},
     fs::File,
     io::copy,
-    path::Component,
+    path::{Component, PathBuf},
 };
 use tracing::error;
 
@@ -54,10 +54,13 @@ pub async fn upgrade() {
     };
 
     let current_bin_path = env::current_exe().into_diagnostic()?;
-    let bin_dir = dirs::home_dir()
-        .expect("Invalid home directory.")
-        .join(".moon")
-        .join("bin");
+    let bin_dir = match env::var("MOON_INSTALL_DIR") {
+        Ok(dir) => PathBuf::from(dir),
+        Err(_) => dirs::home_dir()
+            .expect("Invalid home directory.")
+            .join(".moon")
+            .join("bin"),
+    };
 
     // We can only upgrade moon if it's installed under .moon
     let upgradeable = current_bin_path

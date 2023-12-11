@@ -2,146 +2,24 @@
 title: Setup toolchain
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="4 min" />
 
 One of moon's most powerful features is the [toolchain](./concepts/toolchain), which manages and
-automatically installs Node.js and other tools. The toolchain is configured with
-[`.moon/toolchain.yml`](./config/toolchain).
+automatically installs Node.js and other tools for every developer, using [proto](/proto) behind the
+scenes. The toolchain is configured with [`.moon/toolchain.yml`](./config/toolchain).
 
-:::caution
+## How it works
 
-This toolchain article is currently Node.js only. If you're using another language, feel free to
-skip to the next article, [creating a project](./create-project).
-
-:::
-
-## Choosing a package manager
-
-Before we continue, we should briefly talk about Node.js package managers. To start, moon does not
-replace a package manager, nor does it apply any "magic" for them to work differently. Instead, moon
-builds upon a package manager to provide a robust task runner, assumes a standard `node_modules`
-layout and module resolution algorithm, and supports any of the following 3 package managers.
-
-- [npm](https://docs.npmjs.com/)
-- [pnpm](https://pnpm.io/)
-- [Yarn](https://yarnpkg.com/) (v1, v2+ in `node-modules` linker mode)
-
-### Enabling workspaces (optional)
-
-moon was built with monorepos in mind, and as such, has first-class support for them through package
-workspaces (but is not a requirement). To utilize workspaces, enable them for your chosen package
-manager.
-
-import PackageWorkspaces from './__partials__/node/package-workspaces.mdx';
-
-<PackageWorkspaces />
-
-## Configuring Node.js
-
-As Node.js is the backbone of a JavaScript based repository, we need to enable its functionality.
-This is done by defining [`node`](./config/toolchain#node) in
-[`.moon/toolchain.yml`](./config/toolchain). Languages are like plugins, where the existence of a
-setting enables the plugin, hence why an empty object below is acceptable.
-
-```yaml title=".moon/toolchain.yml"
-node: {}
-```
-
-By default, the language will execute tasks using the global `node` binary available on `PATH`.
-While this works, we suggest using our toolchain that will download, install, and execute tasks with
-the same version of Node.js across _all_ machines. To enable the toolchain, simply define the
-version with [`node.version`](./config/toolchain#version).
-
-```yaml title=".moon/toolchain.yml"
-node:
-  version: '18.0.0'
-```
-
-This setting can be a fully qualified semantic version (preferred), a partial version (missing patch
-or minor), or even an alias (learn more about the
-[version specification](./concepts/toolchain#version-specification)). We suggest _always_ using an
-[Active LTS](https://nodejs.org/en/about/releases/) version.
-
-Let's now run [`moon setup --log debug`](./commands/setup) to verify that Node.js is downloaded and
-installed correctly. Pretty cool right?
-
-:::info
-
-The Node.js version can also be customized _per project_ using the
-[`toolchain.node.version`](./config/project#node) setting in [`moon.yml`](./config/project). This
-setting exists to support legacy projects that are coupled to an old version and are unable to
-upgrade. We suggest keeping all projects on the same version whenever possible.
-
-:::
-
-## Configuring a package manager
-
-Even though Node.js is now installed, we need a package manager to install dependencies. Earlier we
-talked about [choosing a package manager](./install#choosing-a-package-manager), so let's use that
-choice here by defining [`node.packageManager`](./config/toolchain#packagemanager).
-
-```yaml title=".moon/toolchain.yml"
-node:
-  version: '18.0.0'
-  packageManager: 'yarn'
-```
-
-By default moon will install a stable version of the package manager, but this isn't consistently
-updated, so we suggest defining a
-[version specification](./concepts/toolchain#version-specification) for the package manager as well,
-through the [`node.<packageManager>.version`](./config/toolchain#version-1) setting.
-
-```yaml title=".moon/toolchain.yml"
-node:
-  version: '18.0.0'
-  packageManager: 'yarn'
-  yarn:
-    version: '3.2.0'
-```
-
-Once again, let's run [`moon setup --log debug`](./commands/setup) to verify the package manager is
-installed, and also take note that Node.js is _already_ installed. Based on the example
-configuration above, we'll be switching from npm (the default) to yarn.
-
-## Adding a package script
-
-For scenarios like CI, `moon` can be ran through a root `package.json` script — but this comes with
-a cost — which is the overhead of launching Node.js and your chosen package manager to execute the
-Rust binary, _instead of_ executing the Rust binary directly. If this is problematic, feel free to
-use the global `moon` binary.
-
-```json title="package.json"
-{
-  // ...
-  "scripts": {
-    // ...
-    "moon": "moon",
-    // For Yarn 2+
-    "moon": "$(yarn bin moon)"
-  }
-}
-```
-
-:::caution
-
-Yarn 2+ does not support executing Rust binaries through package scripts
-([issue](https://github.com/yarnpkg/berry/issues/882)), so we must access the full binary path and
-execute on that.
-
-:::
-
-With this script, moon can then be run with `npm run moon ...` (or `yarn run`, or `pnpm run`).
+## Enabling a tool
 
 ## Next steps
 
 <NextSteps
   links={[
-    { icon: 'new-project', label: 'Create a project', url: './create-project' },
+    { icon: 'new-task', label: 'Create a task', url: './create-task' },
     {
       icon: 'toolchain-config',
       label: (

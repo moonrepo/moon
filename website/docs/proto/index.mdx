@@ -89,20 +89,17 @@ tools can be supported through [third-party plugins](./proto/plugins).
 Because proto is written in Rust, we only support targets that are explicitly compiled for, which
 are currently:
 
-| Operating system | Architecture | Target                      |
-| :--------------- | :----------- | :-------------------------- |
-| macOS 64-bit     | Intel        | `x86_64-apple-darwin`       |
-| macOS 64-bit     | ARM          | `aarch64-apple-darwin`      |
-| Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu`  |
-| Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl` |
-| Windows 64-bit   | Intel        | `x86_64-pc-windows-msvc`    |
-
-<!--
-| Linux 64-bit     | ARM GNU      | `aarch64-unknown-linux-gnu` |
-| Linux 64-bit     | ARM musl     | `aarch64-unknown-linux-musl` | -->
+| Operating system | Architecture | Target                       |
+| :--------------- | :----------- | :--------------------------- |
+| macOS 64-bit     | Intel        | `x86_64-apple-darwin`        |
+| macOS 64-bit     | ARM          | `aarch64-apple-darwin`       |
+| Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu`   |
+| Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl`  |
+| Linux 64-bit     | ARM GNU      | `aarch64-unknown-linux-gnu`  |
+| Linux 64-bit     | ARM musl     | `aarch64-unknown-linux-musl` |
+| Windows 64-bit   | Intel        | `x86_64-pc-windows-msvc`     |
 
 ## Roadmap
 
-- Linux ARM support.
 - Build from source for existing languages.
 - New languages.

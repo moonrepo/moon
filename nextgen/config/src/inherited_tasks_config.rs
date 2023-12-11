@@ -4,7 +4,7 @@ use crate::project_config::ProjectType;
 use crate::shapes::InputPath;
 use crate::validate::check_yml_extension;
 use moon_common::path::standardize_separators;
-use moon_common::{cacheable, consts, Id};
+use moon_common::{cacheable, color, consts, Id};
 use moon_target::Target;
 use once_map::OnceMap;
 use rustc_hash::FxHashMap;
@@ -59,6 +59,7 @@ cacheable!(
 impl InheritedTasksConfig {
     pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
         let result = ConfigLoader::<InheritedTasksConfig>::new()
+            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
             .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
@@ -70,6 +71,7 @@ impl InheritedTasksConfig {
         path: F,
     ) -> miette::Result<PartialInheritedTasksConfig> {
         Ok(ConfigLoader::<InheritedTasksConfig>::new()
+            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
             .set_root(workspace_root.as_ref())
             .file_optional(check_yml_extension(path.as_ref()))?
             .load_partial(&())?)
@@ -260,6 +262,7 @@ impl InheritedTasksManager {
                         }
                     ),
                     error,
+                    help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
                 })?;
 
             Ok(InheritedTasksResult {

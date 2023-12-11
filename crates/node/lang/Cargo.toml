@@ -20,7 +20,7 @@ serde_yaml = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
-yarn-lock-parser = "0.5.0"
+yarn-lock-parser = "0.6.0"
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }

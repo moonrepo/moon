@@ -87,37 +87,43 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
     }
 
     if !task.input_files.is_empty() || !task.input_globs.is_empty() {
-        term.line("")?;
-        term.render_label(Label::Default, "Inputs")?;
-        term.render_list(
+        let mut files = vec![];
+        files.extend(
             task.input_globs
                 .iter()
                 .map(color::rel_path)
                 .collect::<Vec<_>>(),
-        )?;
-        term.render_list(
+        );
+        files.extend(
             task.input_files
                 .iter()
                 .map(color::rel_path)
                 .collect::<Vec<_>>(),
-        )?;
+        );
+
+        term.line("")?;
+        term.render_label(Label::Default, "Inputs")?;
+        term.render_list(files)?;
     }
 
     if !task.output_files.is_empty() || !task.output_globs.is_empty() {
-        term.line("")?;
-        term.render_label(Label::Default, "Outputs")?;
-        term.render_list(
+        let mut files = vec![];
+        files.extend(
             task.output_globs
                 .iter()
                 .map(color::rel_path)
                 .collect::<Vec<_>>(),
-        )?;
-        term.render_list(
+        );
+        files.extend(
             task.output_files
                 .iter()
                 .map(color::rel_path)
                 .collect::<Vec<_>>(),
-        )?;
+        );
+
+        term.line("")?;
+        term.render_label(Label::Default, "Outputs")?;
+        term.render_list(files)?;
     }
 
     term.line("")?;

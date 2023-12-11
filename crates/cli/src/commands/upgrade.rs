@@ -3,16 +3,14 @@ use bytes::Buf;
 use itertools::Itertools;
 use miette::{miette, IntoDiagnostic};
 use moon_api::Launchpad;
-use moon_cache::CacheEngine;
 use moon_common::consts::BIN_NAME;
-use moon_utils::{get_workspace_root, semver::Version};
 use starbase::system;
 use starbase_utils::{dirs, fs};
 use std::{
     env::{self, consts},
     fs::File,
     io::copy,
-    path::Component,
+    path::{Component, PathBuf},
 };
 use tracing::error;
 
@@ -30,17 +28,9 @@ pub async fn upgrade() {
         return Err(miette!("Upgrading moon requires an internet connection!"));
     }
 
-    let cache_engine = CacheEngine::new(&get_workspace_root())?;
-    let version = env!("CARGO_PKG_VERSION");
-    let version_check = Launchpad::check_version(&cache_engine, version, true).await;
-
-    let new_version = match version_check {
-        Ok(Some(newer_version))
-            if Version::parse(&newer_version.current_version).into_diagnostic()?
-                > Version::parse(version).into_diagnostic()? =>
-        {
-            newer_version.current_version
-        }
+    let local_version = env!("CARGO_PKG_VERSION");
+    let remote_version = match Launchpad::check_version_without_cache(local_version).await {
+        Ok(Some(result)) if result.update_available => result.remote_version,
         Ok(_) => {
             println!("You're already on the latest version of moon!");
             return Ok(());
@@ -64,10 +54,13 @@ pub async fn upgrade() {
     };
 
     let current_bin_path = env::current_exe().into_diagnostic()?;
-    let bin_dir = dirs::home_dir()
-        .expect("Invalid home directory.")
-        .join(".moon")
-        .join("bin");
+    let bin_dir = match env::var("MOON_INSTALL_DIR") {
+        Ok(dir) => PathBuf::from(dir),
+        Err(_) => dirs::home_dir()
+            .expect("Invalid home directory.")
+            .join(".moon")
+            .join("bin"),
+    };
 
     // We can only upgrade moon if it's installed under .moon
     let upgradeable = current_bin_path
@@ -82,10 +75,10 @@ pub async fn upgrade() {
         ));
     }
 
-    let done = create_progress_bar(format!("Upgrading moon to version {new_version}..."));
+    let done = create_progress_bar(format!("Upgrading moon to version {remote_version}..."));
 
     // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(version).join(BIN_NAME);
+    let versioned_bin_path = bin_dir.join(local_version).join(BIN_NAME);
 
     fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
     fs::rename(&current_bin_path, versioned_bin_path)?;
@@ -114,7 +107,7 @@ pub async fn upgrade() {
     copy(&mut new_bin.reader(), &mut file).into_diagnostic()?;
 
     done(
-        format!("Successfully upgraded moon to version {new_version}"),
+        format!("Successfully upgraded moon to version {remote_version}"),
         true,
     );
 }

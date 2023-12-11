@@ -52,6 +52,13 @@ fn create_anonymous_rid(workspace_root: &Path) -> String {
     )
 }
 
+pub struct VersionCheck {
+    pub local_version: Version,
+    pub remote_version: Version,
+    pub message: Option<String>,
+    pub update_available: bool,
+}
+
 pub struct Launchpad;
 
 impl Launchpad {
@@ -59,17 +66,7 @@ impl Launchpad {
         cache_engine: &CacheEngine,
         current_version: &str,
         bypass_cache: bool,
-    ) -> miette::Result<Option<CurrentVersion>> {
-        let moon_dir = fs::find_upwards(
-            CONFIG_DIRNAME,
-            env::current_dir().expect("Invalid working directory."),
-        );
-
-        if is_test_env() || proto_core::is_offline() || moon_dir.is_none() {
-            return Ok(None);
-        }
-
-        // Check cache and avoid requesting if within the pause duration
+    ) -> miette::Result<Option<VersionCheck>> {
         let mut state = cache_engine.cache_state::<CurrentVersionState>("moonVersion.json")?;
 
         if let Some(last_check) = state.data.last_check {
@@ -78,9 +75,28 @@ impl Launchpad {
             }
         }
 
-        debug!(current_version, "Checking for new version of moon");
+        if let Some(result) = Self::check_version_without_cache(current_version).await? {
+            state.data.last_check = Some(SystemTime::now());
+            state.data.local_version = Some(result.local_version.clone());
+            state.data.remote_version = Some(result.remote_version.clone());
+            state.save()?;
 
-        let Ok(response) = reqwest::Client::new()
+            return Ok(Some(result));
+        }
+
+        Ok(None)
+    }
+
+    pub async fn check_version_without_cache(
+        current_version: &str,
+    ) -> miette::Result<Option<VersionCheck>> {
+        if is_test_env() || proto_core::is_offline() {
+            return Ok(None);
+        }
+
+        debug!(current_version, "Checking for a new version of moon");
+
+        let mut client = reqwest::Client::new()
             .get(CURRENT_VERSION_URL)
             .header("X-Moon-Version", current_version)
             .header("X-Moon-CI", ci_env::is_ci().to_string())
@@ -93,14 +109,19 @@ impl Launchpad {
                 "X-Moon-CD-Provider",
                 format!("{:?}", cd_env::detect_provider()),
             )
-            .header("X-Moon-UID", load_or_create_anonymous_uid()?)
-            .header(
+            .header("X-Moon-UID", load_or_create_anonymous_uid()?);
+
+        if let Some(moon_dir) = fs::find_upwards(
+            CONFIG_DIRNAME,
+            env::current_dir().expect("Invalid working directory!"),
+        ) {
+            client = client.header(
                 "X-Moon-RID",
-                create_anonymous_rid(moon_dir.unwrap().parent().unwrap()),
-            )
-            .send()
-            .await
-        else {
+                create_anonymous_rid(moon_dir.parent().unwrap()),
+            );
+        }
+
+        let Ok(response) = client.send().await else {
             return Ok(None);
         };
 
@@ -113,21 +134,18 @@ impl Launchpad {
         let remote_version = Version::parse(&data.current_version).into_diagnostic()?;
         let update_available = remote_version > local_version;
 
-        // Write state to cache
-        state.data.last_check = Some(SystemTime::now());
-        state.data.local_version = Some(local_version);
-        state.data.remote_version = Some(remote_version);
-        state.save()?;
-
         if update_available {
             debug!(
                 latest_version = &data.current_version,
                 "Found a newer version"
             );
-
-            return Ok(Some(data));
         }
 
-        Ok(None)
+        Ok(Some(VersionCheck {
+            local_version,
+            remote_version,
+            message: data.message,
+            update_available,
+        }))
     }
 }

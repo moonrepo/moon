@@ -68,10 +68,6 @@ jobs:
       matrix:
         os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
-    env:
-      WITH_COVERAGE:
-        ${{ github.event_name == 'push' && contains(github.ref, 'develop-') || github.ref_name ==
-        'master' }}
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
@@ -85,26 +81,31 @@ jobs:
           auto-install: true
           proto-version: '0.24.2' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.3
+      - name: Checking coverage status
+        id: coverage
+        run: echo "coverage=$WITH_COVERAGE" >> $GITHUB_OUTPUT
+        env:
+          WITH_COVERAGE:
+            ${{ (contains(github.ref, 'develop-') || github.ref_name == 'master') && runner.os !=
+            'Linux' }}
       - name: Run tests
-        if: ${{ env.WITH_COVERAGE == 'false' }}
+        if: ${{ steps.coverage.outputs.coverage == 'false' }}
         run: just test-ci
       - name: Run tests with coverage
-        if: ${{ env.WITH_COVERAGE == 'true' }}
-        run: just cov-ci
+        if: ${{ steps.coverage.outputs.coverage == 'true' }}
+        run: just cov
       - name: Generate code coverage
-        if: ${{ env.WITH_COVERAGE == 'true' }}
+        if: ${{ steps.coverage.outputs.coverage == 'true' }}
         run: just gen-report
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
-        if: ${{ env.WITH_COVERAGE == 'true' }}
+        if: ${{ steps.coverage.outputs.coverage == 'true' }}
         with:
           name: coverage-${{ runner.os }}
           path: ./report.txt
           if-no-files-found: error
   coverage:
-    if:
-      ${{ github.event_name == 'push' && contains(github.ref, 'develop-') || github.ref_name ==
-      'master' }}
+    if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:
@@ -118,6 +119,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
+          # files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
+          files: ./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           flags: rust
           verbose: true

@@ -1,3 +1,4 @@
+use moon_common::color;
 use schematic::{Config, ConfigLoader, Format};
 
 /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
@@ -23,6 +24,9 @@ impl TemplateFrontmatterConfig {
         }
 
         let result = ConfigLoader::<TemplateFrontmatterConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/template",
+            ))
             .code(content, Format::Yaml)?
             .load()?;
 

@@ -19,7 +19,7 @@ else
 	case "$arch" in
 	"Darwin x86_64") target="proto_cli-x86_64-apple-darwin" ;;
 	"Darwin arm64") target="proto_cli-aarch64-apple-darwin" ;;
-	# "Linux aarch64") target="proto_cli-aarch64-unknown-linux-gnu" ;;
+	"Linux aarch64") target="proto_cli-aarch64-unknown-linux-gnu" ;;
 	"Linux x86_64") target="proto_cli-x86_64-unknown-linux-gnu" ;;
 	*)
 		echo "Unsupported system or architecture \"$arch\". Unable to install proto!"

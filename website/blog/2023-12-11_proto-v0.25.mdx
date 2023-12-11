@@ -1,0 +1,29 @@
+---
+slug: proto-v0.25
+title: proto v0.25 - Linux arm64 gnu and musl support
+authors: [milesj]
+tags: [proto, linux, musl, gnu, arm64]
+# image: ./img/proto/v0.25.png
+---
+
+This is a very small release that primarily adds support for Linux arm64 targets.
+
+<!--truncate-->
+
+Thanks to [cargo-dist](https://github.com/axodotdev/cargo-dist), we can now build and distribute
+arm64 binaries with relative ease. When building the binary, libraries are statically linked to
+ensure that the binary can run on any Linux distribution.
+
+You can download the binary from the official
+[GitHub release](https://github.com/moonrepo/proto/releases/tag/v0.21.0) or by running the
+[Bash installation script](/docs/proto/install#linux-macos-wsl).
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.25.0) for a full list
+of changes.
+
+- Added a [`proto debug config`](/docs/proto/commands/debug/config) command, to debug all loaded
+  configs and the final merged config.
+- Added a `PROTO_BYPASS_VERSION_CHECK` environment variable, to bypass loading and checking of
+  versions.

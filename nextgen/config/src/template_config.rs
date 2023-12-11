@@ -1,7 +1,7 @@
 // template.yml
 
 use crate::validate::check_yml_extension;
-use moon_common::consts;
+use moon_common::{color, consts};
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
@@ -82,6 +82,9 @@ pub struct TemplateConfig {
 impl TemplateConfig {
     pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
         let result = ConfigLoader::<TemplateConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/template",
+            ))
             .file(check_yml_extension(path.as_ref()))?
             .load()?;
 

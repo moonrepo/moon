@@ -3,7 +3,7 @@
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
 use crate::validate::check_yml_extension;
 use crate::workspace::*;
-use moon_common::{consts, Id};
+use moon_common::{color, consts, Id};
 use proto_core::VersionReq;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
@@ -135,6 +135,9 @@ impl WorkspaceConfig {
         path: P,
     ) -> miette::Result<WorkspaceConfig> {
         let result = ConfigLoader::<WorkspaceConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/workspace",
+            ))
             .set_root(workspace_root.as_ref())
             .file(check_yml_extension(path.as_ref()))?
             .load()?;

@@ -27,6 +27,12 @@
   - Simplified the workflow overall.
 - Updated `moon.yml` to support customizing the project name using the `id` field.
   - Can be used to override the project name derived in `.moon/workspace.yml`.
+- Added a `MOON_INSTALL_DIR` environment variable, to control where the `moon` binary is installed
+  to.
+
+#### 🐞 Fixes
+
+- Fixed `moon upgrade` failing when not ran in a moon workspace.
 
 #### 🧩 Plugins
 

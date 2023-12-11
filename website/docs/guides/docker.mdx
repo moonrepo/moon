@@ -329,5 +329,19 @@ of when running moon within Docker. There's basically 2 scenarios to choose from
    `COPY`. moon will work with full functionality, but it will increase the overall size of the
    image because of caching.
 
+### Supporting `node:alpine` images
+
+If you're trying to use the `node:alpine` image with moon's
+[integrated toolchain](../concepts/toolchain), you'll need to set the `MOON_TOOLCHAIN_FORCE_GLOBALS`
+environment variable in the Docker image to disable moon's toolchain. This is required as Node.js
+does not provide pre-built binaries for the Alpine target, so installing the Node.js toolchain will
+fail.
+
+```docker
+FROM node:alpine
+
+ENV MOON_TOOLCHAIN_FORCE_GLOBALS=1
+```
+
 [prune]: ../commands/docker/prune
 [scaffold]: ../commands/docker/scaffold

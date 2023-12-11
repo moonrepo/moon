@@ -28,6 +28,10 @@
 - Updated `moon.yml` to support customizing the project name using the `id` field.
   - Can be used to override the project name derived in `.moon/workspace.yml`.
 
+#### 🐞 Fixes
+
+- Fixed `moon upgrade` failing when not ran in a moon workspace.
+
 #### 🧩 Plugins
 
 - Updated `bun_plugin` to v0.6.

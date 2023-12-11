@@ -27,19 +27,23 @@ pub async fn check_for_new_version(workspace: ResourceRef<Workspace>) {
         return Ok(());
     }
 
-    let current_version = env!("CARGO_PKG_VERSION");
     let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
 
-    match Launchpad::check_version(&workspace.cache_engine, current_version, false).await {
-        Ok(Some(latest)) => {
+    match Launchpad::check_version(&workspace.cache_engine, env!("CARGO_PKG_VERSION"), false).await
+    {
+        Ok(Some(result)) => {
+            if !result.update_available {
+                return Ok(());
+            }
+
             println!(
                 "{} There's a new version of moon available, {} (currently on {})!",
                 prefix,
-                color::hash(latest.current_version),
-                current_version,
+                color::hash(result.remote_version.to_string()),
+                result.local_version,
             );
 
-            if let Some(newer_message) = latest.message {
+            if let Some(newer_message) = result.message {
                 println!("{} {}", prefix, newer_message);
             }
 

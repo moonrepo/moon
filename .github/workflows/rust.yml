@@ -92,7 +92,7 @@ jobs:
         run: just test-ci
       - name: Run tests with coverage
         if: ${{ steps.coverage.outputs.coverage == 'true' }}
-        run: just cov-ci
+        run: just cov
       - name: Generate code coverage
         if: ${{ steps.coverage.outputs.coverage == 'true' }}
         run: just gen-report

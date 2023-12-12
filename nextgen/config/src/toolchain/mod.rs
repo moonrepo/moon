@@ -13,6 +13,22 @@ pub use rust_config::*;
 pub use typescript_config::*;
 
 #[macro_export]
+macro_rules! is_using_tool_version {
+    ($self:ident, $parent_tool:ident, $tool:ident) => {
+        if let Some(config) = &$self.$parent_tool {
+            is_using_tool_version!(config, $tool);
+        }
+    };
+    ($self:ident, $tool:ident) => {
+        if let Some(config) = &$self.$tool {
+            if config.version.is_some() {
+                return true;
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
         pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {

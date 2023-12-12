@@ -3,7 +3,7 @@
 use crate::language_platform::PlatformType;
 use crate::toolchain::*;
 use crate::validate::check_yml_extension;
-use crate::{inherit_tool, inherit_tool_without_version};
+use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 use moon_common::{color, consts};
 use proto_core::ProtoConfig;
 use schematic::{validate, Config, ConfigLoader};
@@ -73,6 +73,25 @@ impl ToolchainConfig {
         }
 
         tools
+    }
+
+    pub fn should_install_proto(&self) -> bool {
+        is_using_tool_version!(self, bun);
+        is_using_tool_version!(self, node);
+        is_using_tool_version!(self, node, pnpm);
+        is_using_tool_version!(self, node, yarn);
+        is_using_tool_version!(self, rust);
+
+        // Special case
+        if self
+            .node
+            .as_ref()
+            .is_some_and(|config| config.npm.version.is_some())
+        {
+            return true;
+        }
+
+        false
     }
 
     pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {

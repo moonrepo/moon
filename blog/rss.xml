@@ -4,10 +4,98 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Mon, 11 Dec 2023 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 12 Dec 2023 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[moon v1.18 - New task execution flow and custom project names]]></title>
+            <link>https://moonrepo.dev/blog/moon-v1.18</link>
+            <guid>https://moonrepo.dev/blog/moon-v1.18</guid>
+            <pubDate>Tue, 12 Dec 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[With this release, we've focused heavily on 2 important aspects: task execution, and our onboarding]]></description>
+            <content:encoded><![CDATA[<p>With this release, we've focused heavily on 2 important aspects: task execution, and our onboarding
+flow.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-path-based-task-execution">New path based task execution<a href="https://moonrepo.dev/blog/moon-v1.18#new-path-based-task-execution" class="hash-link" aria-label="Direct link to New path based task execution" title="Direct link to New path based task execution">​</a></h2>
+<p>Since moon's inception, before we would execute a task's command, we would locate its executable on
+the file system and execute it directly. We went with this approach as we wanted to avoid all of the
+baggage and "unknown behavior" that came with executing through a shell, and to ensure a more
+deterministic outcome. This approach worked very well for stand-alone binaries, like <code>node</code>,
+<code>cargo</code>, and built-in commands like <code>rm</code>, <code>mkdir</code>, and <code>git</code>.</p>
+<p>However, it was very problematic in 2 scenarios: executables from language dependencies (Node.js
+modules, etc), and multi-command based tasks (using <code>&amp;&amp;</code>). To remedy this situation, we're no longer
+locating the executables ourselves, and instead are prepending <code>PATH</code> with the locations in which we
+know these executables should exist. We're also loosening the restriction on the
+<a href="https://moonrepo.dev/docs/config/project#shell"><code>shell</code> task option</a>, which can now be enabled for <em>all</em> tasks, not
+just system tasks.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="dependency-executables">Dependency executables<a href="https://moonrepo.dev/blog/moon-v1.18#dependency-executables" class="hash-link" aria-label="Direct link to Dependency executables" title="Direct link to Dependency executables">​</a></h3>
+<p>For the 1st scenario, let's talk about Node.js modules. When we encountered an unknown task command,
+like <code>eslint</code> or <code>prettier</code>, we'd attempt to locate its executable by traversing <code>node_modules/.bin</code>
+directories, parsing Bash/PowerShell scripts, resolving the source <code>.js</code> files, and finally
+executing with <code>node</code>. To demonstrate this, say you had the following task:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">format</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'prettier --write .'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>When finally executed, internally it would become something like this command:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">~/.proto/tools/node/</span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">version</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token plain">/bin/node </span><span class="token punctuation" style="color:#cad4e2">..</span><span class="token plain">/</span><span class="token punctuation" style="color:#cad4e2">..</span><span class="token plain">/node_modules/prettier/internal/cli.mjs </span><span class="token parameter variable" style="color:#fef9c3">--write</span><span class="token plain"> </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">.</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>This was required since our runtime is Rust and we don't have access to Node.js's module resolution
+algorithm... but this approach was very brittle and error prone. It took us many releases to iron
+out all the bugs, and we're pretty sure there are still edge cases unaccounted for. So instead, as
+mentioned above, we now prepend <code>PATH</code>, resulting in the following command:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token assign-left variable environment constant" style="color:#ff94ff;font-weight:bold">PATH</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token string" style="color:#c9e166">"/path/to/node_modules/.bin:/path/to/proto/tools:</span><span class="token string environment constant" style="color:#ff94ff;font-weight:bold">$PATH</span><span class="token string" style="color:#c9e166">"</span><span class="token plain"> prettier </span><span class="token parameter variable" style="color:#fef9c3">--write</span><span class="token plain"> </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">.</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>This is a much cleaner approach and is far easier to understand as a user.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="multi-command-tasks">Multi-command tasks<a href="https://moonrepo.dev/blog/moon-v1.18#multi-command-tasks" class="hash-link" aria-label="Direct link to Multi-command tasks" title="Direct link to Multi-command tasks">​</a></h3>
+<p>While not officially supported in moon, it's been possible to run multiple commands in a single task
+using <code>&amp;&amp;</code> syntax. However, this approach did not work correctly with our integrated toolchain, as
+only the 1st command in the list would have its binary be located and executed correctly.</p>
+<p>For example, say we wanted to run 2 npm packages, the following would <em>not</em> work:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'rm -rf dist &amp;&amp; vite build &amp;&amp; tsc --build'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>With this new <code>PATH</code> based approach, this will now work correctly. And furthermore, this also
+enables executables within Bash and PowerShell scripts to be located and executed correctly as well.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.18#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h3>
+<p>In the future, we'll continue to expand on this functionality, and our ultimate goal is to remove
+the concept of <code>platform</code> from tasks, which has been a bit confusing for new users.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-the-project-name-in-moonyml">Customize the project name in <code>moon.yml</code><a href="https://moonrepo.dev/blog/moon-v1.18#customize-the-project-name-in-moonyml" class="hash-link" aria-label="Direct link to customize-the-project-name-in-moonyml" title="Direct link to customize-the-project-name-in-moonyml">​</a></h2>
+<p>This has been a long requested feature, but thanks to the project graph rework and improvements over
+the last few releases, this is now possible. In <a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a>, you can now
+configure the <a href="https://moonrepo.dev/docs/config/project#id"><code>id</code></a> setting to override the project name (identifier)
+derived from <a href="https://moonrepo.dev/docs/config/workspace#projects"><code>projects</code></a> in
+<a href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.yml</code></a> (most applicable to glob based project locations).</p>
+<p>For example, say we have the following <code>projects</code> glob.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">projects</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'apps/*'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'packages/*'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>By default, the project folder name becomes the project name. For the most part this is fine, but
+what if you have a very large monorepo? Or have conflicting project names? Or are migrating
+projects? It becomes difficult to manage and organize. But now, simply configure <code>id</code>!</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">&lt;project&gt;/moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'custom-project-name'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Be sure that all targets, project dependencies, task dependencies, and other references are using
+the new identifier, otherwise an error will be triggered!</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-onboarding-flow">Improved onboarding flow<a href="https://moonrepo.dev/blog/moon-v1.18#improved-onboarding-flow" class="hash-link" aria-label="Direct link to Improved onboarding flow" title="Direct link to Improved onboarding flow">​</a></h2>
+<p>While this doesn't affect current users, we still want to announce that we've made some slight
+changes to our onboarding process and the <a href="https://moonrepo.dev/docs/commands/init"><code>moon init</code></a> command. The previous
+command prompted far too many questions, as we would attempt to detect what languages are currently
+in use, and integrate them into the toolchain.</p>
+<p>This was confusing for new users, so starting with this release, we've simplified the process to
+only create the moon workspace within a repository.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">moon init</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>With that being said, you can still integrate tools into the toolchain, by passing the identifier of
+a supported moon tool as an argument.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">moon init </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># bun, rust, etc</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="theme-admonition theme-admonition-success admonition_WCGJ alert alert--success"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 12 16"><path fill-rule="evenodd" d="M6.5 0C3.48 0 1 2.19 1 5c0 .92.55 2.25 1 3 1.34 2.25 1.78 2.78 2 4v1h5v-1c.22-1.22.66-1.75 2-4 .45-.75 1-2.08 1-3 0-2.81-2.48-5-5.5-5zm3.64 7.48c-.25.44-.47.8-.67 1.11-.86 1.41-1.25 2.06-1.45 3.23-.02.05-.02.11-.02.17H5c0-.06 0-.13-.02-.17-.2-1.17-.59-1.83-1.45-3.23-.2-.31-.42-.67-.67-1.11C2.44 6.78 2 5.65 2 5c0-2.2 2.02-4 4.5-4 1.22 0 2.36.42 3.22 1.19C10.55 2.94 11 3.94 11 5c0 .66-.44 1.78-.86 2.48zM4 14h5c-.23 1.14-1.3 2-2.5 2s-2.27-.86-2.5-2z"></path></svg></span>success</div><div class="admonitionContent_pbrs"><p>We've also rewritten a good portion of the "<a href="https://moonrepo.dev/docs/setup-workspace">Getting started</a>" documentation
+to reflect these changes!</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.18#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.18.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Improved string allocation and performance for queries, task tokens, and process commands.</li>
+<li>Improved remote caching flow and handling.</li>
+<li>Updated proto to v0.25.</li>
+</ul>]]></content:encoded>
+            <category>toolchain</category>
+            <category>shell</category>
+            <category>id</category>
+            <category>name</category>
+            <category>project</category>
+            <category>init</category>
+            <category>onboarding</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.25 - Linux arm64 gnu and musl support]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.25</link>
@@ -1214,94 +1302,6 @@ directory and upwards.</li>
             <category>proto</category>
             <category>wasm</category>
             <category>plugin</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.10 - Mid-year quality of life improvements]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.10</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.10</guid>
-            <pubDate>Mon, 10 Jul 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[Instead of launching a large feature this release, we're focusing on quality of life and developer]]></description>
-            <content:encoded><![CDATA[<p>Instead of launching a large feature this release, we're focusing on quality of life and developer
-experience improvements.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="quality-improvements">Quality improvements<a href="https://moonrepo.dev/blog/moon-v1.10#quality-improvements" class="hash-link" aria-label="Direct link to Quality improvements" title="Direct link to Quality improvements">​</a></h2>
-<p>In the past 6 months, we've released over 16 versions of moon, with our official v1.0 release among
-them. This is extremely impressive and we're very proud of the progress we've made. To continue this
-trend, we'll be starting a new initiative that will land quality of life improvements (instead of
-major features) every 6 months, starting with this release!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="potential-breaking-changes">Potential breaking changes<a href="https://moonrepo.dev/blog/moon-v1.10#potential-breaking-changes" class="hash-link" aria-label="Direct link to Potential breaking changes" title="Direct link to Potential breaking changes">​</a></h3>
-<p>While APIs haven't changed, we have introduced some fixes for edge case that could be considered
-breaking, but for the most part, these changes probably won't affect you. With that being said...</p>
-<p>The first fix is that tasks configured with the same <code>outputs</code> location (including glob overlap)
-will now error. This is extremely problematic for caching and hydration, as multiple tasks all
-writing to the same output will inflate the tarball, and cause unwanted side effects. To demonstrate
-this, the following is now an error:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'foo build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">outputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'dist'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">compile</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'bar compile'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">outputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'dist'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>The other fix, which primarily applies to <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> and <a href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a>,
-is that a target will be skipped if one of its dependencies failed or has also been skipped.
-Previously the target would attempt to run and most likely fail since it relied on artifacts from
-its dependencies (which don't exist). Another benefit of this change is that runs should be much
-faster, as we're not wasting time running targets that we know will fail, which is great for CI.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="ignore-hashing-input-files">Ignore hashing input files<a href="https://moonrepo.dev/blog/moon-v1.10#ignore-hashing-input-files" class="hash-link" aria-label="Direct link to Ignore hashing input files" title="Direct link to Ignore hashing input files">​</a></h3>
-<p>We're introducing 2 new settings to <a href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.yml</code></a> that'll provide
-more control over the hashing flow, <a href="https://moonrepo.dev/docs/config/workspace#ignorepatterns"><code>hasher.ignorePatterns</code></a>
-and <a href="https://moonrepo.dev/docs/config/workspace#ignoremissingpatterns"><code>hasher.ignoreMissingPatterns</code></a>.</p>
-<p>The <code>ignorePatterns</code> setting can be used to entirely ignore a file (using glob patterns) from being
-hashed, and in turn, exclude it as an input source. For example, say we want to ignore all image
-files.</p>
-<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">hasher</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">ignorePatterns</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'**/*.{png,svg}'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>The <code>ignoreMissingPatterns</code> setting pairs with
-<a href="https://moonrepo.dev/docs/config/workspace#warnonmissinginputs"><code>hasher.warnOnMissingInputs</code></a>. When enabled, moon will
-log a warning to the terminal that an input is missing. This is useful for uncovering
-misconfigurations, but can be quite noisy when inputs are truly optional. This new setting can be
-used to filter these warnings.</p>
-<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">hasher</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">warnOnMissingInputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">ignoreMissingPatterns</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'**/.eslintrc.*'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'**/*.config.*'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="customize-base-and-head-revision">Customize base and head revision<a href="https://moonrepo.dev/blog/moon-v1.10#customize-base-and-head-revision" class="hash-link" aria-label="Direct link to Customize base and head revision" title="Direct link to Customize base and head revision">​</a></h3>
-<p>The <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> command has always supported customizing the Git base and head revisions through
-the <code>--base</code> and <code>--head</code> options respectively. This was a requirement for running CI effectively,
-by comparing across branches or commits. However, the <a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a> did not support this, as
-this command was designed to primarily be run locally, but it turns out, y'all are using it in CI
-too!</p>
-<p>To improve the effectiveness of <code>moon run</code> in CI, we've made the following improvements, all of
-which require the <code>--remote</code> option to be passed.</p>
-<ul>
-<li>Added support for <code>MOON_BASE</code> and <code>MOON_HEAD</code> environment variables, for customizing the base and
-head revisions respectively (also supported in <code>moon ci</code>). If not defined, will use the default
-branch and <code>HEAD</code>.</li>
-<li>When the current branch is the default branch, the base revision will be the previous commit.
-Useful for commits landing on master/main.</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-debugging-a-task-guide">New debugging a task guide<a href="https://moonrepo.dev/blog/moon-v1.10#new-debugging-a-task-guide" class="hash-link" aria-label="Direct link to New debugging a task guide" title="Direct link to New debugging a task guide">​</a></h2>
-<p>Running tasks is the most common way to interact with moon, so what do you do when your task isn't
-working as expected? Diagnose it of course! However, diagnosing the root cause of a broken task can
-be quite daunting:</p>
-<ul>
-<li>Is configuration wrong?</li>
-<li>What about inheritance? Or merging?</li>
-<li>Is the task platform correct?</li>
-<li>Were tokens expanded correctly?</li>
-<li>What about variable substitution?</li>
-<li>So on and so forth...</li>
-</ul>
-<p>To help answer these questions, we're excited to publish an
-<a href="https://moonrepo.dev/docs/guides/debug-task">in-depth guide for debugging a task</a>! These steps are the same steps we
-use internally to diagnose reported issues, or help the Discord community. We hope you find this
-guide extremely beneficial!</p>
-<div class="flex justify-center"><a class="border border-transparent rounded-md px-2 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600 hover:text-white hover:bg-blurple-500 dark:hover:bg-purple-500 cursor-pointer py-2" href="https://moonrepo.dev/docs/guides/debug-task" target="_blank">View debugging a task guide</a></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.10#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.10.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Updated <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> to include a summary of all failed actions.</li>
-<li>Updated the run report to include stderr/stdout for all attempts.</li>
-</ul>]]></content:encoded>
-            <category>quality</category>
-            <category>life</category>
-            <category>qol</category>
-            <category>ignore</category>
-            <category>hasher</category>
-            <category>vcs</category>
-            <category>ci</category>
-            <category>debug</category>
         </item>
     </channel>
 </rss>

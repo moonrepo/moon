@@ -16,10 +16,10 @@ function ColumnLinkItem({ item }: { item: FooterLinkItem }) {
 			{...(href
 				? {
 						href: prependBaseUrlToHref ? normalizedHref : href,
-				  }
+					}
 				: {
 						to: toUrl,
-				  })}
+					})}
 			{...props}
 		>
 			{label}

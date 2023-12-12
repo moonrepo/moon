@@ -4,16 +4,111 @@ title: Setup toolchain
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
+import LangPartials from '@site/src/components/LangPartials';
 
-<HeaderLabel text="4 min" />
+<HeaderLabel text="5 min" />
 
-One of moon's most powerful features is the [toolchain](./concepts/toolchain), which manages and
-automatically installs Node.js and other tools for every developer, using [proto](/proto) behind the
-scenes. The toolchain is configured with [`.moon/toolchain.yml`](./config/toolchain).
+One of moon's most powerful features is the [toolchain](./concepts/toolchain), which automatically
+manages, downloads, and installs Node.js and other languages behind the scenes using
+[proto](/proto). It also enables [advanced functionality](./how-it-works/languages#tier-2--platform)
+for task running based on the platform (language and environment combination) it runs in.
+
+The toolchain is configured with [`.moon/toolchain.yml`](./config/toolchain).
+
+:::tip
+
+Change the language dropdown at the top right to switch the examples!
+
+:::
 
 ## How it works
 
-## Enabling a tool
+For more information on the toolchain, our tier based support, and how languages integrate into
+moon, refer to the official ["how it works" language guide](./how-it-works/languages) and the
+[toolchain concept](./concepts/toolchain) documentation!
+
+:::info
+
+The toolchain is optional but helps to solve an array of issues that developers face in their
+day-to-day.
+
+:::
+
+## Enabling a platform
+
+By default all tasks run through the
+[system platform](./how-it-works/languages#system-language-and-platform) and inherit _no_ special
+functionality. If you want to take advantage of this functionality, like dependency hashing, package
+shorthand execution, and lockfile management, you'll need to enable the platform in
+[`.moon/toolchain.yml`](./config/toolchain). Otherwise, you can skip to the
+[create a task](./create-task) guide.
+
+Begin by declaring the necessary configuration block, even if an empty object! This configuration
+can also be injected using the [`moon init <tool>`](./commands/init) command (doesn't support all
+languages).
+
+import Tier2Bun from './__partials__/setup-toolchain/bun/tier2.mdx';
+import Tier2Deno from './__partials__/setup-toolchain/deno/tier2.mdx';
+import Tier2Go from './__partials__/setup-toolchain/go/tier2.mdx';
+import Tier2Node from './__partials__/setup-toolchain/node/tier2.mdx';
+import Tier2PHP from './__partials__/setup-toolchain/php/tier2.mdx';
+import Tier2Python from './__partials__/setup-toolchain/python/tier2.mdx';
+import Tier2Ruby from './__partials__/setup-toolchain/ruby/tier2.mdx';
+import Tier2Rust from './__partials__/setup-toolchain/rust/tier2.mdx';
+
+<LangPartials>
+  <Tier2Bun key="bun" />
+  <Tier2Deno key="deno" />
+  <Tier2Go key="go" />
+  <Tier2Node key="node" />
+  <Tier2PHP key="php" />
+  <Tier2Python key="python" />
+  <Tier2Ruby key="ruby" />
+  <Tier2Rust key="rust" />
+</LangPartials>
+
+Although we've enabled the platform, language binaries must exist on `PATH` for task execution to
+function correctly. Continue reading to learn how to automate this flow using tier 3 support.
+
+## Automatically installing a tool
+
+One of the best features of moon is its integrated toolchain and automatic download and installation
+of programming languages (when supported), for all developers and machines that moon runs on. This
+feature solves the following pain points:
+
+- Developers running tasks using different versions of languages.
+- Version drift of languages between machines.
+- Languages being installed through different version managers or install scripts.
+- Language binaries not existing on `PATH`.
+- How shell profiles should be configured.
+
+If you have dealt with any of these pain points before and would like to eliminate them for you and
+all your developers, you can try enabling moon's tier 3 support for supported tools. This is easily
+done by defining the `version` field for each platform.
+
+import Tier3Bun from './__partials__/setup-toolchain/bun/tier3.mdx';
+import Tier3Deno from './__partials__/setup-toolchain/deno/tier3.mdx';
+import Tier3Go from './__partials__/setup-toolchain/go/tier3.mdx';
+import Tier3Node from './__partials__/setup-toolchain/node/tier3.mdx';
+import Tier3PHP from './__partials__/setup-toolchain/php/tier3.mdx';
+import Tier3Python from './__partials__/setup-toolchain/python/tier3.mdx';
+import Tier3Ruby from './__partials__/setup-toolchain/ruby/tier3.mdx';
+import Tier3Rust from './__partials__/setup-toolchain/rust/tier3.mdx';
+
+<LangPartials>
+  <Tier3Bun key="bun" />
+  <Tier3Deno key="deno" />
+  <Tier3Go key="go" />
+  <Tier3Node key="node" />
+  <Tier3PHP key="php" />
+  <Tier3Python key="python" />
+  <Tier3Ruby key="ruby" />
+  <Tier3Rust key="rust" />
+</LangPartials>
+
+When the `version` field is configured, moon will download and install the tool when a related task
+is executed for the first time! It will also set the correct `PATH` lookups and environment
+variables automatically. Amazing right?
 
 ## Next steps
 

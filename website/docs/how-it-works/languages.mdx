@@ -109,11 +109,8 @@ complex of all tiers, and the tier is in charge of:
 - Loading project aliases and inferring implicit relationships between projects.
 - Syncing a project and ensuring a healthy project state.
 - Hashing efficiently for dependency installs and target runs.
-- Finding an appropriate binary for a task's command (for example, Node.js tasks will find the
-  command in `node_modules/.bin`).
+- Prepending `PATH` with appropriate lookups to execute a task.
 - Running a target's command with proper arguments, environment variables, and flags.
-- When tier 3 is supported, integrating the toolchain for running targets with the language's
-  binary. When not tier 3, relies on the language's binary on `PATH`.
 - Maps to a project's [`platform`](../config/project#platform) or task's
   [`platform`](../config/project#platform-1) setting.
 - Supports a configuration block by name in [`.moon/toolchain.yml`](../config/toolchain).

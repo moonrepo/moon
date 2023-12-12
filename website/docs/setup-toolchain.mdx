@@ -2,146 +2,119 @@
 title: Setup toolchain
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
+import LangPartials from '@site/src/components/LangPartials';
 
-<HeaderLabel text="4 min" />
+<HeaderLabel text="5 min" />
 
-One of moon's most powerful features is the [toolchain](./concepts/toolchain), which manages and
-automatically installs Node.js and other tools. The toolchain is configured with
-[`.moon/toolchain.yml`](./config/toolchain).
+One of moon's most powerful features is the [toolchain](./concepts/toolchain), which automatically
+manages, downloads, and installs Node.js and other languages behind the scenes using
+[proto](/proto). It also enables [advanced functionality](./how-it-works/languages#tier-2--platform)
+for task running based on the platform (language and environment combination) it runs in.
 
-:::caution
+The toolchain is configured with [`.moon/toolchain.yml`](./config/toolchain).
 
-This toolchain article is currently Node.js only. If you're using another language, feel free to
-skip to the next article, [creating a project](./create-project).
+:::tip
+
+Change the language dropdown at the top right to switch the examples!
 
 :::
 
-## Choosing a package manager
+## How it works
 
-Before we continue, we should briefly talk about Node.js package managers. To start, moon does not
-replace a package manager, nor does it apply any "magic" for them to work differently. Instead, moon
-builds upon a package manager to provide a robust task runner, assumes a standard `node_modules`
-layout and module resolution algorithm, and supports any of the following 3 package managers.
-
-- [npm](https://docs.npmjs.com/)
-- [pnpm](https://pnpm.io/)
-- [Yarn](https://yarnpkg.com/) (v1, v2+ in `node-modules` linker mode)
-
-### Enabling workspaces (optional)
-
-moon was built with monorepos in mind, and as such, has first-class support for them through package
-workspaces (but is not a requirement). To utilize workspaces, enable them for your chosen package
-manager.
-
-import PackageWorkspaces from './__partials__/node/package-workspaces.mdx';
-
-<PackageWorkspaces />
-
-## Configuring Node.js
-
-As Node.js is the backbone of a JavaScript based repository, we need to enable its functionality.
-This is done by defining [`node`](./config/toolchain#node) in
-[`.moon/toolchain.yml`](./config/toolchain). Languages are like plugins, where the existence of a
-setting enables the plugin, hence why an empty object below is acceptable.
-
-```yaml title=".moon/toolchain.yml"
-node: {}
-```
-
-By default, the language will execute tasks using the global `node` binary available on `PATH`.
-While this works, we suggest using our toolchain that will download, install, and execute tasks with
-the same version of Node.js across _all_ machines. To enable the toolchain, simply define the
-version with [`node.version`](./config/toolchain#version).
-
-```yaml title=".moon/toolchain.yml"
-node:
-  version: '18.0.0'
-```
-
-This setting can be a fully qualified semantic version (preferred), a partial version (missing patch
-or minor), or even an alias (learn more about the
-[version specification](./concepts/toolchain#version-specification)). We suggest _always_ using an
-[Active LTS](https://nodejs.org/en/about/releases/) version.
-
-Let's now run [`moon setup --log debug`](./commands/setup) to verify that Node.js is downloaded and
-installed correctly. Pretty cool right?
+For more information on the toolchain, our tier based support, and how languages integrate into
+moon, refer to the official ["how it works" language guide](./how-it-works/languages) and the
+[toolchain concept](./concepts/toolchain) documentation!
 
 :::info
 
-The Node.js version can also be customized _per project_ using the
-[`toolchain.node.version`](./config/project#node) setting in [`moon.yml`](./config/project). This
-setting exists to support legacy projects that are coupled to an old version and are unable to
-upgrade. We suggest keeping all projects on the same version whenever possible.
+The toolchain is optional but helps to solve an array of issues that developers face in their
+day-to-day.
 
 :::
 
-## Configuring a package manager
+## Enabling a platform
 
-Even though Node.js is now installed, we need a package manager to install dependencies. Earlier we
-talked about [choosing a package manager](./install#choosing-a-package-manager), so let's use that
-choice here by defining [`node.packageManager`](./config/toolchain#packagemanager).
+By default all tasks run through the
+[system platform](./how-it-works/languages#system-language-and-platform) and inherit _no_ special
+functionality. If you want to take advantage of this functionality, like dependency hashing, package
+shorthand execution, and lockfile management, you'll need to enable the platform in
+[`.moon/toolchain.yml`](./config/toolchain). Otherwise, you can skip to the
+[create a task](./create-task) guide.
 
-```yaml title=".moon/toolchain.yml"
-node:
-  version: '18.0.0'
-  packageManager: 'yarn'
-```
+Begin by declaring the necessary configuration block, even if an empty object! This configuration
+can also be injected using the [`moon init <tool>`](./commands/init) command (doesn't support all
+languages).
 
-By default moon will install a stable version of the package manager, but this isn't consistently
-updated, so we suggest defining a
-[version specification](./concepts/toolchain#version-specification) for the package manager as well,
-through the [`node.<packageManager>.version`](./config/toolchain#version-1) setting.
+import Tier2Bun from './__partials__/setup-toolchain/bun/tier2.mdx';
+import Tier2Deno from './__partials__/setup-toolchain/deno/tier2.mdx';
+import Tier2Go from './__partials__/setup-toolchain/go/tier2.mdx';
+import Tier2Node from './__partials__/setup-toolchain/node/tier2.mdx';
+import Tier2PHP from './__partials__/setup-toolchain/php/tier2.mdx';
+import Tier2Python from './__partials__/setup-toolchain/python/tier2.mdx';
+import Tier2Ruby from './__partials__/setup-toolchain/ruby/tier2.mdx';
+import Tier2Rust from './__partials__/setup-toolchain/rust/tier2.mdx';
 
-```yaml title=".moon/toolchain.yml"
-node:
-  version: '18.0.0'
-  packageManager: 'yarn'
-  yarn:
-    version: '3.2.0'
-```
+<LangPartials>
+  <Tier2Bun key="bun" />
+  <Tier2Deno key="deno" />
+  <Tier2Go key="go" />
+  <Tier2Node key="node" />
+  <Tier2PHP key="php" />
+  <Tier2Python key="python" />
+  <Tier2Ruby key="ruby" />
+  <Tier2Rust key="rust" />
+</LangPartials>
 
-Once again, let's run [`moon setup --log debug`](./commands/setup) to verify the package manager is
-installed, and also take note that Node.js is _already_ installed. Based on the example
-configuration above, we'll be switching from npm (the default) to yarn.
+Although we've enabled the platform, language binaries must exist on `PATH` for task execution to
+function correctly. Continue reading to learn how to automate this flow using tier 3 support.
 
-## Adding a package script
+## Automatically installing a tool
 
-For scenarios like CI, `moon` can be ran through a root `package.json` script — but this comes with
-a cost — which is the overhead of launching Node.js and your chosen package manager to execute the
-Rust binary, _instead of_ executing the Rust binary directly. If this is problematic, feel free to
-use the global `moon` binary.
+One of the best features of moon is its integrated toolchain and automatic download and installation
+of programming languages (when supported), for all developers and machines that moon runs on. This
+feature solves the following pain points:
 
-```json title="package.json"
-{
-  // ...
-  "scripts": {
-    // ...
-    "moon": "moon",
-    // For Yarn 2+
-    "moon": "$(yarn bin moon)"
-  }
-}
-```
+- Developers running tasks using different versions of languages.
+- Version drift of languages between machines.
+- Languages being installed through different version managers or install scripts.
+- Language binaries not existing on `PATH`.
+- How shell profiles should be configured.
 
-:::caution
+If you have dealt with any of these pain points before and would like to eliminate them for you and
+all your developers, you can try enabling moon's tier 3 support for supported tools. This is easily
+done by defining the `version` field for each platform.
 
-Yarn 2+ does not support executing Rust binaries through package scripts
-([issue](https://github.com/yarnpkg/berry/issues/882)), so we must access the full binary path and
-execute on that.
+import Tier3Bun from './__partials__/setup-toolchain/bun/tier3.mdx';
+import Tier3Deno from './__partials__/setup-toolchain/deno/tier3.mdx';
+import Tier3Go from './__partials__/setup-toolchain/go/tier3.mdx';
+import Tier3Node from './__partials__/setup-toolchain/node/tier3.mdx';
+import Tier3PHP from './__partials__/setup-toolchain/php/tier3.mdx';
+import Tier3Python from './__partials__/setup-toolchain/python/tier3.mdx';
+import Tier3Ruby from './__partials__/setup-toolchain/ruby/tier3.mdx';
+import Tier3Rust from './__partials__/setup-toolchain/rust/tier3.mdx';
 
-:::
+<LangPartials>
+  <Tier3Bun key="bun" />
+  <Tier3Deno key="deno" />
+  <Tier3Go key="go" />
+  <Tier3Node key="node" />
+  <Tier3PHP key="php" />
+  <Tier3Python key="python" />
+  <Tier3Ruby key="ruby" />
+  <Tier3Rust key="rust" />
+</LangPartials>
 
-With this script, moon can then be run with `npm run moon ...` (or `yarn run`, or `pnpm run`).
+When the `version` field is configured, moon will download and install the tool when a related task
+is executed for the first time! It will also set the correct `PATH` lookups and environment
+variables automatically. Amazing right?
 
 ## Next steps
 
 <NextSteps
   links={[
-    { icon: 'new-project', label: 'Create a project', url: './create-project' },
+    { icon: 'new-task', label: 'Create a task', url: './create-task' },
     {
       icon: 'toolchain-config',
       label: (

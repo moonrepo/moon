@@ -2,9 +2,12 @@
 slug: moon-v1.18
 title: moon v1.18 - New task execution flow and custom project names
 authors: [milesj]
-tags: [toolchain, shell, id, name, project]
-# image: ./img/moon/v1.17.png
+tags: [toolchain, shell, id, name, project, init, onboarding]
+image: ./img/moon/v1.18.png
 ---
+
+With this release, we've focused heavily on 2 important aspects: task execution, and our onboarding
+flow.
 
 <!--truncate-->
 
@@ -51,17 +54,20 @@ mentioned above, we now prepend `PATH`, resulting in the following command:
 PATH="/path/to/node_modules/.bin:/path/to/proto/tools:$PATH" prettier --write .
 ```
 
+This is a much cleaner approach and is far easier to understand as a user.
+
 ### Multi-command tasks
 
 While not officially supported in moon, it's been possible to run multiple commands in a single task
 using `&&` syntax. However, this approach did not work correctly with our integrated toolchain, as
-only the 1st command in the list would have its binary be located and executed correctly. For
-example, say we wanted to run 2 npm packages:
+only the 1st command in the list would have its binary be located and executed correctly.
+
+For example, say we wanted to run 2 npm packages, the following would _not_ work:
 
 ```yaml title="moon.yml"
 tasks:
   build:
-    command: 'rm -rf dist && vite build'
+    command: 'rm -rf dist && vite build && tsc --build'
 ```
 
 With this new `PATH` based approach, this will now work correctly. And furthermore, this also
@@ -103,10 +109,39 @@ the new identifier, otherwise an error will be triggered!
 
 :::
 
+## Improved onboarding flow
+
+While this doesn't affect current users, we still want to announce that we've made some slight
+changes to our onboarding process and the [`moon init`](/docs/commands/init) command. The previous
+command prompted far too many questions, as we would attempt to detect what languages are currently
+in use, and integrate them into the toolchain.
+
+This was confusing for new users, so starting with this release, we've simplified the process to
+only create the moon workspace within a repository.
+
+```shell
+moon init
+```
+
+With that being said, you can still integrate tools into the toolchain, by passing the identifier of
+a supported moon tool as an argument.
+
+```shell
+moon init node # bun, rust, etc
+```
+
+:::success
+
+We've also rewritten a good portion of the "[Getting started](/docs/setup-workspace)" documentation
+to reflect these changes!
+
+:::
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.18.0) for a full list
 of changes.
 
 - Improved string allocation and performance for queries, task tokens, and process commands.
-- Updated proto to v0.24.
+- Improved remote caching flow and handling.
+- Updated proto to v0.25.

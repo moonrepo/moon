@@ -2,40 +2,36 @@
 title: init
 ---
 
-The `moon init [dest]` command will initialize moon into a repository and scaffold config files by
-creating a `.moon` folder. By default moon will enable the following supported languages when a
-certain file exists, or we'll prompt you to decide.
-
-- `node` enabled when `package.json` exists.
-- `rust` enabled when `Cargo.toml` exists.
-- `typescript` enabled when `tsconfig.json` exists.
-
-Furthermore, we'll also attempt to detect applicable language versions, dependency managers, and
-other ecosystem related settings.
+The `moon init` command will initialize moon into a repository and scaffold necessary config files
+by creating a `.moon` folder.
 
 ```shell
 $ moon init
 
 # In another directory
-$ moon init ./app
+$ moon init --to ./app
 ```
 
-The command can also be used to initialize a specific tool _after_ moon has already been
-initialized. Perfect for adopting a new language into the workspace.
+#### Initializing a specific tool
+
+The command can also be used to initialize a specific tool into the toolchain _after_ moon has
+already been initialized. Perfect for adopting a new language into the workspace.
 
 ```shell
-$ moon init --tool typescript
+$ moon init node
 ```
+
+When ran, we'll prompt you with a handful of questions, and generate (or modify) the
+[`.moon/toolchain.yml`](../config/toolchain) file.
 
 ### Arguments
 
-- `[dest]` - Destination to initialize and scaffold into. Defaults to `.` (current working
-  directory).
+- `[tool]` - Individual tool to initialize and configure.
+  - Accepts: `bun`, `node`, `rust`, `typescript`
 
 ### Options
 
 - `--force` - Overwrite existing config files if they exist.
 - `--minimal` - Generate minimal configurations and sane defaults.
-- `--tool` - Individual tool to initialize and configure.
-  - Accepts: `node`, `rust`, `typescript`
+- `--to` - Destination to initialize and scaffold into. Defaults to `.` (current working directory).
 - `--yes` - Skip all prompts and enables tools based on file detection.

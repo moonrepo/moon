@@ -185,7 +185,7 @@ impl<'cmd> CommandInspector<'cmd> {
 
         format!(
             "{} {}",
-            color::muted_light(line),
+            color::muted_light(line.trim()),
             color::muted(format!("(in {target_dir})"))
         )
     }
@@ -197,14 +197,9 @@ impl<'cmd> CommandInspector<'cmd> {
             .unwrap_or_else(|_| env::current_dir().unwrap_or_default());
 
         if self.command.print_command {
-            println!(
-                "{}",
-                self.format_command(
-                    command_line.main_command.to_str().unwrap(),
-                    &workspace_root,
-                    None
-                )
-            );
+            if let Some(cmd_line) = command_line.main_command.to_str() {
+                println!("{}", self.format_command(cmd_line, &workspace_root, None));
+            }
         }
 
         // Avoid all this overhead if we're not logging

@@ -33,6 +33,7 @@
 #### 🐞 Fixes
 
 - Fixed `moon upgrade` failing when not ran in a moon workspace.
+- Fixed `CODEOWNERS` being written with double trailing newlines.
 
 #### 🧩 Plugins
 
@@ -43,8 +44,8 @@
 #### ⚙️ Internal
 
 - Improved string allocation and performance for queries, task tokens, and process commands.
-- Improved remote caching flow.
-- Updated proto to v0.24.
+- Improved remote caching flow and handling.
+- Updated proto to v0.25.
 
 ## 1.17.4
 

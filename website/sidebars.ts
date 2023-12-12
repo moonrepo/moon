@@ -33,14 +33,14 @@ const sidebars: SidebarsConfig = {
 			label: 'Getting started',
 			collapsed: false,
 			collapsible: true,
-			items: ['setup-workspace', 'create-project', 'create-task', 'run-task', 'migrate-to-moon'],
-		},
-		{
-			type: 'category',
-			label: 'Advanced usage',
-			collapsed: false,
-			collapsible: true,
-			items: ['setup-toolchain'],
+			items: [
+				'setup-workspace',
+				'create-project',
+				'setup-toolchain',
+				'create-task',
+				'run-task',
+				'migrate-to-moon',
+			],
 		},
 		{
 			type: 'category',

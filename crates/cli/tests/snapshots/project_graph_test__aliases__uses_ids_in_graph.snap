@@ -3,22 +3,22 @@ source: crates/cli/tests/project_graph_test.rs
 expression: assert.output()
 ---
 digraph {
-    0 [ label="explicitAndImplicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    1 [ label="nodeNameScope" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 [ label="nodeNameOnly" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    3 [ label="node" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    0 [ label="nodeNameScope" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="nodeNameOnly" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="node" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="explicitAndImplicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     4 [ label="explicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     5 [ label="noLang" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     6 [ label="implicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    0 -> 1 [ label="production" arrowhead=none]
-    0 -> 2 [ label="peer" arrowhead=none]
-    3 -> 2 [ label="production" arrowhead=box, arrowtail=box]
-    3 -> 1 [ label="production" arrowhead=box, arrowtail=box]
-    0 -> 3 [ label="development" arrowhead=none]
-    4 -> 1 [ label="production" arrowhead=box, arrowtail=box]
-    4 -> 3 [ label="development" arrowhead=box, arrowtail=box]
-    6 -> 1 [ label="development" arrowhead=box, arrowtail=box]
-    6 -> 3 [ label="production" arrowhead=box, arrowtail=box]
+    2 -> 1 [ label="production" arrowhead=box, arrowtail=box]
+    2 -> 0 [ label="production" arrowhead=box, arrowtail=box]
+    3 -> 0 [ label="production" arrowhead=box, arrowtail=box]
+    3 -> 1 [ label="peer" arrowhead=box, arrowtail=box]
+    3 -> 2 [ label="development" arrowhead=box, arrowtail=box]
+    4 -> 0 [ label="production" arrowhead=box, arrowtail=box]
+    4 -> 2 [ label="development" arrowhead=box, arrowtail=box]
+    6 -> 0 [ label="development" arrowhead=box, arrowtail=box]
+    6 -> 2 [ label="production" arrowhead=box, arrowtail=box]
 }
 
 

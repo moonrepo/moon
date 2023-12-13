@@ -1406,10 +1406,6 @@ mod project_graph {
             assert_eq!(graph.get("foo").unwrap().id, "foo");
             assert_eq!(graph.get("bar-renamed").unwrap().id, "bar-renamed");
             assert_eq!(graph.get("baz-renamed").unwrap().id, "baz-renamed");
-
-            // Should not exist
-            assert!(graph.get("bar").is_err());
-            assert!(graph.get("baz").is_err());
         }
 
         #[tokio::test]
@@ -1427,13 +1423,6 @@ mod project_graph {
                     Target::parse("baz-renamed:noop").unwrap()
                 ]
             );
-        }
-
-        #[tokio::test]
-        #[should_panic(expected = "No project has been configured with the name or alias bar.")]
-        async fn errors_when_referencing_old_id() {
-            let sandbox = create_sandbox("custom-id-old-ref");
-            generate_project_graph_from_sandbox(sandbox.path()).await;
         }
     }
 }

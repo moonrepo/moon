@@ -31,6 +31,7 @@ pub struct ProjectGraphCache<'graph> {
 pub struct ProjectNode {
     pub alias: Option<String>,
     pub index: NodeIndex,
+    pub original_id: Option<Id>,
     pub source: WorkspaceRelativePathBuf,
 }
 
@@ -377,7 +378,15 @@ impl ProjectGraph {
         } else {
             self.nodes
                 .iter()
-                .find(|(_, node)| node.alias.as_ref().is_some_and(|a| a == alias_or_id))
+                .find(|(_, node)| {
+                    node.alias
+                        .as_ref()
+                        .is_some_and(|alias| alias == alias_or_id)
+                        || node
+                            .original_id
+                            .as_ref()
+                            .is_some_and(|id| id == alias_or_id)
+                })
                 .map(|(id, _)| id.as_str())
                 .unwrap_or(alias_or_id)
         })

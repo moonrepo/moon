@@ -59,6 +59,10 @@ pub struct ProjectGraphBuilder<'app> {
     /// Nodes (projects) inserted into the graph.
     nodes: FxHashMap<Id, NodeIndex>,
 
+    /// Projects that have explicitly renamed themselves.
+    /// Maps original ID to renamed ID.
+    renamed_ids: FxHashMap<Id, Id>,
+
     /// The root project ID.
     #[serde(skip)]
     root_project_id: Option<Id>,
@@ -81,6 +85,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
+            renamed_ids: FxHashMap::default(),
             root_project_id: None,
             sources: FxHashMap::default(),
         };
@@ -178,6 +183,12 @@ impl<'app> ProjectGraphBuilder<'app> {
         for (alias, id) in self.aliases {
             nodes.entry(id).and_modify(|node| {
                 node.alias = Some(alias);
+            });
+        }
+
+        for (original_id, id) in self.renamed_ids {
+            nodes.entry(id).and_modify(|node| {
+                node.original_id = Some(original_id);
             });
         }
 
@@ -350,6 +361,8 @@ impl<'app> ProjectGraphBuilder<'app> {
             if let Some(alias) = project.alias.as_ref() {
                 self.aliases.insert(alias.to_owned(), project.id.clone());
             }
+
+            self.renamed_ids.insert(id, project.id.clone());
         }
 
         Ok(project)
@@ -502,9 +515,14 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     fn resolve_id(&self, project_locator: &str) -> Id {
-        match self.aliases.get(project_locator) {
+        let id = match self.aliases.get(project_locator) {
             Some(project_id) => project_id.to_owned(),
             None => Id::raw(project_locator),
+        };
+
+        match self.renamed_ids.get(&id) {
+            Some(new_id) => new_id.to_owned(),
+            None => id,
         }
     }
 }

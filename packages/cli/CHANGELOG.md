@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where we would install `proto` even when not required.
+- Fixed an issue where implicit dependencies were not resolving correct when projects were renamed.
 
 ## 1.18.0
 

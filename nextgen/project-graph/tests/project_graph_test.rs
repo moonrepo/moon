@@ -720,7 +720,7 @@ mod project_graph {
                     .build_graph_for(context, &["some-depends-on"])
                     .await;
 
-                assert_eq!(map_ids(graph.ids()), ["some-depends-on", "c", "a"]);
+                assert_eq!(map_ids(graph.ids()), ["c", "a", "some-depends-on"]);
             }
 
             #[tokio::test]
@@ -732,7 +732,7 @@ mod project_graph {
                     .build_graph_for(context, &["from-task-deps"])
                     .await;
 
-                assert_eq!(map_ids(graph.ids()), ["from-task-deps", "b", "c"]);
+                assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
 
                 let deps = &graph.get("from-task-deps").unwrap().dependencies;
 
@@ -749,7 +749,7 @@ mod project_graph {
                     .build_graph_for(context, &["from-root-task-deps"])
                     .await;
 
-                assert_eq!(map_ids(graph.ids()), ["from-root-task-deps", "root"]);
+                assert_eq!(map_ids(graph.ids()), ["root", "from-root-task-deps"]);
 
                 let deps = &graph.get("from-root-task-deps").unwrap().dependencies;
 

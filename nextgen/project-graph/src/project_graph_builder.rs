@@ -59,9 +59,13 @@ pub struct ProjectGraphBuilder<'app> {
     /// Nodes (projects) inserted into the graph.
     nodes: FxHashMap<Id, NodeIndex>,
 
+    /// Projects that have explicitly renamed themselves.
+    /// Maps original ID to renamed ID.
+    renamed_ids: FxHashMap<Id, Id>,
+
     /// The root project ID.
     #[serde(skip)]
-    root_project_id: Option<Id>,
+    root_id: Option<Id>,
 
     /// Mapping of project IDs to file system sources,
     /// derived from the `workspace.projects` setting.
@@ -81,7 +85,8 @@ impl<'app> ProjectGraphBuilder<'app> {
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
-            root_project_id: None,
+            renamed_ids: FxHashMap::default(),
+            root_id: None,
             sources: FxHashMap::default(),
         };
 
@@ -181,6 +186,12 @@ impl<'app> ProjectGraphBuilder<'app> {
             });
         }
 
+        for (original_id, id) in self.renamed_ids {
+            nodes.entry(id).and_modify(|node| {
+                node.original_id = Some(original_id);
+            });
+        }
+
         let mut graph = ProjectGraph::new(self.graph, nodes, context.workspace_root);
 
         graph.working_dir = context.working_dir.to_owned();
@@ -215,7 +226,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         &mut self,
         project_locator: &str,
         cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<NodeIndex> {
+    ) -> miette::Result<(Id, NodeIndex)> {
         let id = self.resolve_id(project_locator);
 
         // Already loaded, exit early with existing index
@@ -225,7 +236,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 "Project already exists in the project graph, skipping load",
             );
 
-            return Ok(*index);
+            return Ok((id, *index));
         }
 
         // Check that the project ID is configured
@@ -239,44 +250,92 @@ impl<'app> ProjectGraphBuilder<'app> {
         };
 
         // Create the project
-        let project = self.build_project(id, source).await?;
-        let dependencies = project
-            .dependencies
-            .values()
-            .map(|v| v.to_owned())
-            .collect::<Vec<_>>(); // How to avoid cloning???
-
-        // Add to the graph
+        let mut project = self.build_project(id, source).await?;
         let id = project.id.clone();
-        let index = self.graph.add_node(project);
 
         cycle.insert(id.clone());
-        self.nodes.insert(id.clone(), index);
 
         // Create dependent projects
-        for dep_config in dependencies {
-            if cycle.contains(&dep_config.id) {
+        let mut edges = vec![];
+
+        for dep_config in project.dependencies.values_mut() {
+            let loaded_dep_id = if cycle.contains(&dep_config.id) {
                 debug!(
                     id = id.as_str(),
                     dependency_id = dep_config.id.as_str(),
                     "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
                 );
 
+                continue;
+
                 // Don't link the root project to any project, but still load it
             } else if matches!(dep_config.scope, DependencyScope::Root) {
-                self.internal_load(&dep_config.id, cycle).await?;
+                self.internal_load(&dep_config.id, cycle).await?.0
 
                 // Otherwise link projects
             } else {
-                let dep_index = self.internal_load(&dep_config.id, cycle).await?;
+                let dep = self.internal_load(&dep_config.id, cycle).await?;
+                edges.push((dep.1, dep_config.scope));
+                dep.0
+            };
 
-                self.graph.add_edge(index, dep_index, dep_config.scope);
+            if loaded_dep_id != dep_config.id {
+                dep_config.id = loaded_dep_id;
             }
+        }
+
+        // Add to the graph
+        let index = self.graph.add_node(project);
+
+        self.nodes.insert(id.clone(), index);
+
+        for edge in edges {
+            self.graph.add_edge(index, edge.0, edge.1);
         }
 
         cycle.clear();
 
-        Ok(index)
+        Ok((id, index))
+
+        // // Create the project
+        // let project = self.build_project(id, source).await?;
+        // let dependencies = project
+        //     .dependencies
+        //     .values()
+        //     .map(|v| v.to_owned())
+        //     .collect::<Vec<_>>(); // How to avoid cloning???
+
+        // // Add to the graph
+        // let id = project.id.clone();
+        // let index = self.graph.add_node(project);
+
+        // cycle.insert(id.clone());
+        // self.nodes.insert(id.clone(), index);
+
+        // // Create dependent projects
+        // for dep_config in dependencies {
+        //     if cycle.contains(&dep_config.id) {
+        //         debug!(
+        //             id = id.as_str(),
+        //             dependency_id = dep_config.id.as_str(),
+        //             "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
+        //         );
+
+        //         // Don't link the root project to any project, but still load it
+        //     } else if matches!(dep_config.scope, DependencyScope::Root) {
+        //         self.internal_load(&dep_config.id, cycle).await?;
+
+        //         // Otherwise link projects
+        //     } else {
+        //         let dep_index = self.internal_load(&dep_config.id, cycle).await?;
+
+        //         self.graph.add_edge(index, dep_index, dep_config.scope);
+        //     }
+        // }
+
+        // cycle.clear();
+
+        // Ok(index)
     }
 
     /// Create and build the project with the provided ID and source.
@@ -303,7 +362,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                     .workspace_config
                     .experiments
                     .interweaved_task_inheritance,
-                root_project_id: self.root_project_id.as_ref(),
+                root_project_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,
             },
@@ -350,6 +409,8 @@ impl<'app> ProjectGraphBuilder<'app> {
             if let Some(alias) = project.alias.as_ref() {
                 self.aliases.insert(alias.to_owned(), project.id.clone());
             }
+
+            self.renamed_ids.insert(id, project.id.clone());
         }
 
         Ok(project)
@@ -483,7 +544,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             .await?;
 
         // Find the root project
-        self.root_project_id = sources.iter().find_map(|(id, source)| {
+        self.root_id = sources.iter().find_map(|(id, source)| {
             if source.as_str().is_empty() || source.as_str() == "." {
                 Some(id.to_owned())
             } else {
@@ -502,9 +563,14 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     fn resolve_id(&self, project_locator: &str) -> Id {
-        match self.aliases.get(project_locator) {
+        let id = match self.aliases.get(project_locator) {
             Some(project_id) => project_id.to_owned(),
             None => Id::raw(project_locator),
+        };
+
+        match self.renamed_ids.get(&id) {
+            Some(new_id) => new_id.to_owned(),
+            None => id,
         }
     }
 }

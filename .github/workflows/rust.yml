@@ -83,6 +83,7 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Checking coverage status
         id: coverage
+        shell: bash
         run: echo "coverage=$WITH_COVERAGE" >> $GITHUB_OUTPUT
         env:
           WITH_COVERAGE:

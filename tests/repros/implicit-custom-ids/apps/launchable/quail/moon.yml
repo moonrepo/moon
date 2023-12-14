@@ -1,0 +1,5 @@
+id: quail
+type: application
+tasks:
+  build:
+    command: noop

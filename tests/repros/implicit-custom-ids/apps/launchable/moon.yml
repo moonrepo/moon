@@ -1,5 +1,7 @@
 id: launchable
-type: application
 tasks:
   start:
     command: noop
+    deps:
+      - 'launchable.worker:build'
+      - 'launchable.frontend:build'

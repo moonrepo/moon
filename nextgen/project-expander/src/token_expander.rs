@@ -265,6 +265,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let mut files: Vec<WorkspaceRelativePathBuf> = vec![];
         let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
+        let loose_check = matches!(self.scope, TokenScope::Outputs);
         let file_group = || -> miette::Result<&FileGroup> {
             self.check_scope(
                 token,
@@ -292,8 +293,8 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                         .root(self.context.workspace_root, &self.context.project.source)?,
                 );
             }
-            "dirs" => files.extend(file_group()?.dirs(self.context.workspace_root)?),
-            "files" => files.extend(file_group()?.files(self.context.workspace_root)?),
+            "dirs" => files.extend(file_group()?.dirs(self.context.workspace_root, loose_check)?),
+            "files" => files.extend(file_group()?.files(self.context.workspace_root, loose_check)?),
             "globs" => globs.extend(file_group()?.globs()?.to_owned()),
             "group" => {
                 let group = file_group()?;

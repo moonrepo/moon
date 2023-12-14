@@ -52,7 +52,7 @@ mod dirs {
         let file_group = FileGroup::new_with_source("id", [file("**/*")]).unwrap();
 
         assert_eq!(
-            file_group.dirs(&workspace_root).unwrap(),
+            file_group.dirs(&workspace_root, false).unwrap(),
             vec![
                 RelativePathBuf::from("project/dir"),
                 RelativePathBuf::from("project/dir/subdir")
@@ -66,7 +66,7 @@ mod dirs {
         let file_group = FileGroup::new_with_source("id", [file("**/*.json")]).unwrap();
         let result: Vec<RelativePathBuf> = vec![];
 
-        assert_eq!(file_group.dirs(&workspace_root).unwrap(), result);
+        assert_eq!(file_group.dirs(&workspace_root, false).unwrap(), result);
     }
 }
 
@@ -79,7 +79,7 @@ mod files {
         let file_group =
             FileGroup::new_with_source("id", [file("**/*.json"), file("docs.md")]).unwrap();
 
-        let mut results = file_group.files(&workspace_root).unwrap();
+        let mut results = file_group.files(&workspace_root, false).unwrap();
         results.sort();
 
         assert_eq!(
@@ -105,7 +105,7 @@ mod files {
         .unwrap();
 
         assert_eq!(
-            file_group.files(&workspace_root).unwrap(),
+            file_group.files(&workspace_root, false).unwrap(),
             vec![
                 RelativePathBuf::from("docs.md"),
                 RelativePathBuf::from("workspace.json"),
@@ -127,7 +127,7 @@ mod files {
         .unwrap();
 
         assert_eq!(
-            file_group.files(&workspace_root).unwrap(),
+            file_group.files(&workspace_root, false).unwrap(),
             vec![
                 RelativePathBuf::from("project/docs.md"),
                 RelativePathBuf::from("project/project.json"),
@@ -141,7 +141,7 @@ mod files {
         let file_group = FileGroup::new_with_source("id", [file("dir")]).unwrap();
         let result: Vec<RelativePathBuf> = vec![];
 
-        assert_eq!(file_group.files(&workspace_root).unwrap(), result);
+        assert_eq!(file_group.files(&workspace_root, false).unwrap(), result);
     }
 }
 

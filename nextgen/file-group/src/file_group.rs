@@ -80,14 +80,22 @@ impl FileGroup {
 
     /// Return the file group as an expanded list of directory paths.
     /// If a glob is detected, it will aggregate all directories found.
-    pub fn dirs(&self, workspace_root: &Path) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
-        self.walk(true, workspace_root)
+    pub fn dirs(
+        &self,
+        workspace_root: &Path,
+        loose_check: bool,
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+        self.walk(true, workspace_root, loose_check)
     }
 
     /// Return the file group as an expanded list of file paths.
     /// If a glob is detected, it will aggregate all files found.
-    pub fn files(&self, workspace_root: &Path) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
-        self.walk(false, workspace_root)
+    pub fn files(
+        &self,
+        workspace_root: &Path,
+        loose_check: bool,
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+        self.walk(false, workspace_root, loose_check)
     }
 
     /// Return the file group as a list of file globs (as-is),
@@ -107,7 +115,7 @@ impl FileGroup {
         workspace_root: P,
         project_source: S,
     ) -> miette::Result<WorkspaceRelativePathBuf> {
-        let dirs = self.dirs(workspace_root.as_ref())?;
+        let dirs = self.dirs(workspace_root.as_ref(), false)?;
         let project_source = project_source.as_ref();
 
         if !dirs.is_empty() {
@@ -133,15 +141,19 @@ impl FileGroup {
         &self,
         is_dir: bool,
         workspace_root: &Path,
+        loose_check: bool,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut list = vec![];
 
         for path in &self.files {
-            let allowed = if is_dir {
-                path.to_path(workspace_root).is_dir()
-            } else {
-                path.to_path(workspace_root).is_file()
-            };
+            let file = path.to_path(workspace_root);
+            let mut allowed = false;
+
+            if is_dir && (file.is_dir() || loose_check && file.extension().is_none()) {
+                allowed = true;
+            } else if !is_dir && (file.is_file() || loose_check && file.extension().is_some()) {
+                allowed = true;
+            }
 
             if allowed {
                 list.push(path.to_owned());

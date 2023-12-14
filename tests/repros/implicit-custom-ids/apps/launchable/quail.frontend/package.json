@@ -1,3 +1,6 @@
 {
-  "name": "@workspace/quail.frontend"
+  "name": "@workspace/quail.frontend",
+  "devDependencies": {
+    "@workspace/shared.configs": "workspace:*"
+  }
 }

@@ -1,6 +1,7 @@
 {
   "name": "root",
   "workspaces": [
-    "apps/launchable/*"
+    "apps/launchable/*",
+    "libs/*"
   ]
 }

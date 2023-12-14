@@ -1,3 +1,6 @@
 {
-  "name": "@workspace/launchable.infrastructure"
+  "name": "@workspace/launchable.infrastructure",
+  "devDependencies": {
+    "@workspace/shared.configs": "workspace:*"
+  }
 }

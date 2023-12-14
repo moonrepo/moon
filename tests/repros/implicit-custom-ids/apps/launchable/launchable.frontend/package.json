@@ -1,3 +1,6 @@
 {
-  "name": "@workspace/launchable.frontend"
+  "name": "@workspace/launchable.frontend",
+  "dependencies": {
+    "@workspace/launchable.worker": "*"
+  }
 }

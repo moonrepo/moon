@@ -6,7 +6,7 @@ use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
+    async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
 use moon_utils::{get_workspace_root, is_ci};
@@ -183,6 +183,7 @@ impl Tool for YarnTool {
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("yarn");
+        cmd.envs(get_proto_env_vars());
 
         if !self.global {
             cmd.env(

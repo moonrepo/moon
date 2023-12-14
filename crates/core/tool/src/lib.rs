@@ -5,6 +5,7 @@ mod tool;
 pub use async_trait::async_trait;
 pub use errors::*;
 pub use manager::*;
+use rustc_hash::FxHashMap;
 pub use tool::*;
 
 use moon_common::consts::PROTO_CLI_VERSION;
@@ -59,6 +60,13 @@ pub fn get_proto_version_env(tool: &ProtoTool) -> Option<String> {
     }
 
     Some(spec.to_string())
+}
+
+pub fn get_proto_env_vars() -> FxHashMap<String, String> {
+    FxHashMap::from_iter([
+        ("PROTO_IGNORE_MIGRATE_WARNING".into(), "true".into()),
+        ("PROTO_NO_PROGRESS".into(), "true".into()),
+    ])
 }
 
 pub async fn load_tool_plugin(

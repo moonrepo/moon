@@ -12,9 +12,18 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Silenced proto migration warnings when ran in the context of moon.
+
 #### 🐞 Fixes
 
 - Fixed an issue where `@dirs` and `@files` tokens didn't always work correctly in `outputs`.
+- Fixed the `@moonrepo/cli` package pulling in different `@moonrepo/core-*` versions
+
+#### ⚙️ Internal
+
+- Updated proto to v0.25.
 
 ## 1.18.1
 

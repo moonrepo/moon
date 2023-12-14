@@ -229,6 +229,8 @@ impl<'app> ProjectGraphBuilder<'app> {
     ) -> miette::Result<(Id, NodeIndex)> {
         let id = self.resolve_id(project_locator);
 
+        dbg!("internal_load", &id, project_locator);
+
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
             trace!(

@@ -1,0 +1,5 @@
+projects:
+  globs:
+    - '**/moon.yml'
+  sources:
+    'workspace': '.'

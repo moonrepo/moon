@@ -162,7 +162,7 @@ mod files {
         let file_group =
             FileGroup::new_with_source("id", [file("fake/dir"), file("fake/file.txt")]).unwrap();
 
-        assert!(file_group.dirs(&workspace_root, false).unwrap().is_empty());
+        assert!(file_group.files(&workspace_root, false).unwrap().is_empty());
     }
 
     #[test]
@@ -172,7 +172,7 @@ mod files {
             FileGroup::new_with_source("id", [file("fake/dir"), file("fake/file.txt")]).unwrap();
 
         assert_eq!(
-            file_group.dirs(&workspace_root, true).unwrap(),
+            file_group.files(&workspace_root, true).unwrap(),
             vec![RelativePathBuf::from("project/fake/file.txt")]
         );
     }

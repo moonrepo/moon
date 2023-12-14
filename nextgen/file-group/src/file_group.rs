@@ -149,6 +149,7 @@ impl FileGroup {
             let file = path.to_path(workspace_root);
             let mut allowed = false;
 
+            #[allow(clippy::if_same_then_else)]
             if is_dir && (file.is_dir() || loose_check && file.extension().is_none()) {
                 allowed = true;
             } else if !is_dir && (file.is_file() || loose_check && file.extension().is_some()) {

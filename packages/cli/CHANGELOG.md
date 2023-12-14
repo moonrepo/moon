@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `@dirs` and `@files` tokens didn't always work correctly in `outputs`.
+
 ## 1.18.1
 
 #### 🐞 Fixes

@@ -70,7 +70,14 @@ tasks:
 
 The `@dirs(file_group)` token will be replaced with an expanded list of directory paths, derived
 from the file group of the same name. If a glob pattern is detected within the file group, it will
-walk the file system and aggregate all directories found.
+aggregate all directories found.
+
+:::warning
+
+This token walks the file system to verify each directory exists, and filters out those that don't.
+If using within `outputs`, you're better off using [`@group`](#group) instead.
+
+:::
 
 ```yaml
 fileGroups:
@@ -107,8 +114,15 @@ tasks:
 > Usable in `args`, `env`, `inputs`, and `outputs`.
 
 The `@files(file_group)` token will be replaced with an expanded list of file paths, derived from
-the file group of the same name. If a glob pattern is detected within the file group, it will walk
-the file system and aggregate all files found.
+the file group of the same name. If a glob pattern is detected within the file group, it will
+aggregate all files found.
+
+:::warning
+
+This token walks the file system to verify each file exists, and filters out those that don't. If
+using within `outputs`, you're better off using [`@group`](#group) instead.
+
+:::
 
 ```yaml
 fileGroups:

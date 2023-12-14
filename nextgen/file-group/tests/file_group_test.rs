@@ -52,11 +52,32 @@ mod dirs {
         let file_group = FileGroup::new_with_source("id", [file("**/*")]).unwrap();
 
         assert_eq!(
-            file_group.dirs(&workspace_root).unwrap(),
+            file_group.dirs(&workspace_root, false).unwrap(),
             vec![
                 RelativePathBuf::from("project/dir"),
                 RelativePathBuf::from("project/dir/subdir")
             ]
+        );
+    }
+
+    #[test]
+    fn doesnt_return_non_existent_dirs_nonloose_mode() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", [file("fake/dir"), file("fake/file.txt")]).unwrap();
+
+        assert!(file_group.dirs(&workspace_root, false).unwrap().is_empty());
+    }
+
+    #[test]
+    fn returns_non_existent_dirs_loose_mode() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", [file("fake/dir"), file("fake/file.txt")]).unwrap();
+
+        assert_eq!(
+            file_group.dirs(&workspace_root, true).unwrap(),
+            vec![RelativePathBuf::from("project/fake/dir")]
         );
     }
 
@@ -66,7 +87,7 @@ mod dirs {
         let file_group = FileGroup::new_with_source("id", [file("**/*.json")]).unwrap();
         let result: Vec<RelativePathBuf> = vec![];
 
-        assert_eq!(file_group.dirs(&workspace_root).unwrap(), result);
+        assert_eq!(file_group.dirs(&workspace_root, false).unwrap(), result);
     }
 }
 
@@ -79,7 +100,7 @@ mod files {
         let file_group =
             FileGroup::new_with_source("id", [file("**/*.json"), file("docs.md")]).unwrap();
 
-        let mut results = file_group.files(&workspace_root).unwrap();
+        let mut results = file_group.files(&workspace_root, false).unwrap();
         results.sort();
 
         assert_eq!(
@@ -105,7 +126,7 @@ mod files {
         .unwrap();
 
         assert_eq!(
-            file_group.files(&workspace_root).unwrap(),
+            file_group.files(&workspace_root, false).unwrap(),
             vec![
                 RelativePathBuf::from("docs.md"),
                 RelativePathBuf::from("workspace.json"),
@@ -127,11 +148,32 @@ mod files {
         .unwrap();
 
         assert_eq!(
-            file_group.files(&workspace_root).unwrap(),
+            file_group.files(&workspace_root, false).unwrap(),
             vec![
                 RelativePathBuf::from("project/docs.md"),
                 RelativePathBuf::from("project/project.json"),
             ]
+        );
+    }
+
+    #[test]
+    fn doesnt_return_non_existent_files_nonloose_mode() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", [file("fake/dir"), file("fake/file.txt")]).unwrap();
+
+        assert!(file_group.files(&workspace_root, false).unwrap().is_empty());
+    }
+
+    #[test]
+    fn returns_non_existent_files_loose_mode() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", [file("fake/dir"), file("fake/file.txt")]).unwrap();
+
+        assert_eq!(
+            file_group.files(&workspace_root, true).unwrap(),
+            vec![RelativePathBuf::from("project/fake/file.txt")]
         );
     }
 
@@ -141,7 +183,7 @@ mod files {
         let file_group = FileGroup::new_with_source("id", [file("dir")]).unwrap();
         let result: Vec<RelativePathBuf> = vec![];
 
-        assert_eq!(file_group.files(&workspace_root).unwrap(), result);
+        assert_eq!(file_group.files(&workspace_root, false).unwrap(), result);
     }
 }
 

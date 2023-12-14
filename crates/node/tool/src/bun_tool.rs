@@ -6,7 +6,7 @@ use moon_node_lang::{bun, LockfileDependencyVersions, BUN};
 use moon_process::{output_to_string, Command};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
-    async_trait, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
+    async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool,
 };
 use moon_utils::get_workspace_root;
@@ -45,6 +45,7 @@ impl BunTool {
 
     fn internal_create_command(&self) -> miette::Result<Command> {
         let mut cmd = Command::new("bun");
+        cmd.envs(get_proto_env_vars());
 
         if !self.global {
             cmd.env(

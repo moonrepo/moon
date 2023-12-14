@@ -17,6 +17,7 @@ use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
 use moon_terminal::{label_checkpoint, Checkpoint};
+use moon_tool::get_proto_env_vars;
 use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
@@ -355,6 +356,7 @@ impl<'a> Runner<'a> {
         );
 
         command.envs(env_vars);
+        command.envs(get_proto_env_vars());
 
         // Pin versions for each tool in the toolchain
         if let Some(bun_config) = &self.workspace.toolchain_config.bun {

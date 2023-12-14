@@ -16,7 +16,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{get_proto_env_vars, prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
@@ -187,6 +187,7 @@ impl Platform for DenoPlatform {
                 &self.config.deps_file,
             ])
             .env("PATH", &path)
+            .envs(get_proto_env_vars())
             .cwd(working_dir)
             .create_async()
             .exec_stream_output()
@@ -235,6 +236,7 @@ impl Platform for DenoPlatform {
                 Command::new("deno")
                     .args(args)
                     .env("PATH", &path)
+                    .envs(get_proto_env_vars())
                     .cwd(working_dir)
                     .create_async()
                     .exec_stream_output()

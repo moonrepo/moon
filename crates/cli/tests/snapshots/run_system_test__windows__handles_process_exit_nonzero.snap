@@ -5,8 +5,8 @@ expression: assert.output()
 ▪▪▪▪ windows:exitNonZero
 stdout
 ▪▪▪▪ windows:exitNonZero (100ms)
-stderr 
-Error: target_runner::run_failed
+stderr
+Error: task_runner::run_failed
 
   × Task windows:exitNonZero failed to run. View hash details with moon query
   │ hash hash1234.

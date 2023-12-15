@@ -137,6 +137,8 @@ impl<'app> ProjectGraphBuilder<'app> {
                 graph.sources.len(),
             );
 
+            dbg!("READ CACHE", std::fs::read_to_string(&cache_path).unwrap());
+
             let mut cache: ProjectGraphBuilder = json::read_file(cache_path)?;
             cache.context = graph.context;
 
@@ -203,33 +205,55 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     /// Load a single project by name or alias into the graph.
-    pub async fn load(&mut self, project_locator: &str) -> miette::Result<()> {
-        self.internal_load(project_locator, &mut FxHashSet::default())
-            .await?;
+    #[async_recursion]
+    pub async fn load(&mut self, project_locator: &str) -> miette::Result<Id> {
+        let (id, index) = self.insert_project(project_locator).await?;
+        let mut links = vec![id.clone()];
 
-        Ok(())
+        // Create dependent projects
+        if let Some(dep_ids) = self
+            .graph
+            .node_weight(index)
+            .map(|project| project.dependencies.keys().cloned().collect::<Vec<_>>())
+        {
+            for dep_id in dep_ids {
+                links.push(self.load(&dep_id).await?);
+            }
+        }
+
+        // Then link edges
+        for id in links {
+            self.link_dependencies(&id, &mut FxHashSet::default())
+                .await?;
+        }
+
+        Ok(id)
     }
 
     /// Load all projects into the graph, as configured in the workspace.
     pub async fn load_all(&mut self) -> miette::Result<()> {
         let ids = self.sources.keys().cloned().collect::<Vec<_>>();
 
-        for id in ids {
-            self.internal_load(&id, &mut FxHashSet::default()).await?;
+        dbg!("load_all", &ids);
+
+        // Create all the nodes first
+        for id in &ids {
+            self.insert_project(id).await?;
+        }
+
+        // Then link edges
+        for id in &ids {
+            self.link_dependencies(id, &mut FxHashSet::default())
+                .await?;
         }
 
         Ok(())
     }
 
-    #[async_recursion]
-    async fn internal_load(
-        &mut self,
-        project_locator: &str,
-        cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<(Id, NodeIndex)> {
+    async fn insert_project(&mut self, project_locator: &str) -> miette::Result<(Id, NodeIndex)> {
         let id = self.resolve_id(project_locator);
 
-        dbg!("internal_load", &id, project_locator);
+        dbg!("insert_project", &id, &self.renamed_ids);
 
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
@@ -252,92 +276,63 @@ impl<'app> ProjectGraphBuilder<'app> {
         };
 
         // Create the project
-        let mut project = self.build_project(id, source).await?;
-        let id = project.id.clone();
-
-        cycle.insert(id.clone());
-
-        // Create dependent projects
-        let mut edges = vec![];
-
-        for dep_config in project.dependencies.values_mut() {
-            let loaded_dep_id = if cycle.contains(&dep_config.id) {
-                debug!(
-                    id = id.as_str(),
-                    dependency_id = dep_config.id.as_str(),
-                    "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-                );
-
-                continue;
-
-                // Don't link the root project to any project, but still load it
-            } else if matches!(dep_config.scope, DependencyScope::Root) {
-                self.internal_load(&dep_config.id, cycle).await?.0
-
-                // Otherwise link projects
-            } else {
-                let dep = self.internal_load(&dep_config.id, cycle).await?;
-                edges.push((dep.1, dep_config.scope));
-                dep.0
-            };
-
-            if loaded_dep_id != dep_config.id {
-                dep_config.id = loaded_dep_id;
-            }
-        }
+        let project = self.build_project(id, source).await?;
 
         // Add to the graph
+        let id = project.id.clone();
         let index = self.graph.add_node(project);
 
         self.nodes.insert(id.clone(), index);
 
-        for edge in edges {
-            self.graph.add_edge(index, edge.0, edge.1);
-        }
-
-        cycle.clear();
-
         Ok((id, index))
+    }
 
-        // // Create the project
-        // let project = self.build_project(id, source).await?;
-        // let dependencies = project
-        //     .dependencies
-        //     .values()
-        //     .map(|v| v.to_owned())
-        //     .collect::<Vec<_>>(); // How to avoid cloning???
+    async fn link_dependencies(
+        &mut self,
+        project_locator: &str,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<Option<(Id, NodeIndex)>> {
+        let id = self.resolve_id(project_locator);
 
-        // // Add to the graph
-        // let id = project.id.clone();
-        // let index = self.graph.add_node(project);
+        let Some(index) = self.nodes.get(&id) else {
+            return Ok(None);
+        };
 
-        // cycle.insert(id.clone());
-        // self.nodes.insert(id.clone(), index);
+        if let Some(project) = self.graph.node_weight_mut(*index) {
+            cycle.insert(project.id.clone());
 
-        // // Create dependent projects
-        // for dep_config in dependencies {
-        //     if cycle.contains(&dep_config.id) {
-        //         debug!(
-        //             id = id.as_str(),
-        //             dependency_id = dep_config.id.as_str(),
-        //             "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-        //         );
+            // for (_, dep_config) in &mut project.dependencies {
+            //     if cycle.contains(&dep_config.id) {
+            //         debug!(
+            //             id = id.as_str(),
+            //             dependency_id = dep_config.id.as_str(),
+            //             "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
+            //         );
 
-        //         // Don't link the root project to any project, but still load it
-        //     } else if matches!(dep_config.scope, DependencyScope::Root) {
-        //         self.internal_load(&dep_config.id, cycle).await?;
+            //         continue;
 
-        //         // Otherwise link projects
-        //     } else {
-        //         let dep_index = self.internal_load(&dep_config.id, cycle).await?;
+            //         // Don't link the root project to any project
+            //     } else if matches!(dep_config.scope, DependencyScope::Root) {
+            //         continue;
 
-        //         self.graph.add_edge(index, dep_index, dep_config.scope);
-        //     }
-        // }
+            //         // Otherwise link projects
+            //     } else if let Some((dep_id, dep_index)) =
+            //         self.link_dependencies(&dep_config.id, cycle).await?
+            //     {
+            //         self.graph.add_edge(*index, dep_index, dep_config.scope);
 
-        // cycle.clear();
+            //         if dep_id != dep_config.id {
+            //             dep_config.id = dep_id;
+            //         }
+            //     };
+            // }
 
-        // Ok(index)
+            cycle.clear();
+
+            return Ok(Some((id, *index)));
+        };
+
+        Ok(None)
     }
 
     /// Create and build the project with the provided ID and source.
@@ -553,6 +548,8 @@ impl<'app> ProjectGraphBuilder<'app> {
                 None
             }
         });
+
+        dbg!("preload", &sources, &extended_data.aliases);
 
         self.sources = sources;
         self.aliases = extended_data.aliases;

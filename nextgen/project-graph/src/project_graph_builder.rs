@@ -9,7 +9,8 @@ use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    DependencyScope, InheritedTasksManager, ProjectConfig, ToolchainConfig, WorkspaceConfig,
+    WorkspaceProjects,
 };
 use moon_hash::HashEngine;
 use moon_project::Project;
@@ -53,6 +54,9 @@ pub struct ProjectGraphBuilder<'app> {
     /// Mapping of project aliases to project IDs.
     aliases: FxHashMap<String, Id>,
 
+    /// Loaded project configuration (`moon.yml`) files.
+    configs: FxHashMap<Id, ProjectConfig>,
+
     /// The DAG instance.
     graph: GraphType,
 
@@ -82,6 +86,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         let mut graph = ProjectGraphBuilder {
             context: Some(context),
+            configs: FxHashMap::default(),
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
@@ -401,18 +406,6 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         let project = builder.build().await?;
 
-        // If we received a new ID, update references
-        if project.id != id {
-            self.sources.remove(&id);
-            self.sources.insert(project.id.clone(), source.to_owned());
-
-            if let Some(alias) = project.alias.as_ref() {
-                self.aliases.insert(alias.to_owned(), project.id.clone());
-            }
-
-            self.renamed_ids.insert(id, project.id.clone());
-        }
-
         Ok(project)
     }
 
@@ -554,6 +547,58 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         self.sources = sources;
         self.aliases = extended_data.aliases;
+
+        // Then load all config files
+        self.preload_configs()?;
+
+        Ok(())
+    }
+
+    fn preload_configs(&mut self) -> miette::Result<()> {
+        let context = self.context();
+        let mut configs = FxHashMap::default();
+        let mut renamed_ids = FxHashMap::default();
+
+        for (id, source) in &self.sources {
+            let config_name = source.join(consts::CONFIG_PROJECT_FILENAME);
+            let config_path = config_name.to_path(context.workspace_root);
+
+            trace!(
+                id = id.as_str(),
+                file = ?config_path,
+                "Attempting to load {} (optional)",
+                color::file(config_name.as_str())
+            );
+
+            if config_path.exists() {
+                let config = ProjectConfig::load(context.workspace_root, config_path)?;
+
+                // Track renames
+                if let Some(new_id) = &config.id {
+                    if new_id != id {
+                        renamed_ids.insert(id.to_owned(), new_id.to_owned());
+                    }
+                }
+
+                configs.insert(id.to_owned(), config);
+            }
+        }
+
+        // If we received new IDs, update references
+        for (old_id, new_id) in &renamed_ids {
+            if let Some(source) = self.sources.remove(old_id) {
+                self.sources.insert(new_id.to_owned(), source);
+            }
+
+            for (_, to_id) in &mut self.aliases {
+                if to_id == old_id {
+                    *to_id = new_id.to_owned();
+                }
+            }
+        }
+
+        self.configs.extend(configs);
+        self.renamed_ids.extend(renamed_ids);
 
         Ok(())
     }

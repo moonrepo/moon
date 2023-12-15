@@ -27,6 +27,7 @@ use starbase_events::Emitter;
 use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
@@ -49,7 +50,7 @@ pub struct ProjectGraphBuilderContext<'app> {
 #[derive(Deserialize, Serialize)]
 pub struct ProjectGraphBuilder<'app> {
     #[serde(skip)]
-    context: Option<ProjectGraphBuilderContext<'app>>,
+    context: Option<Arc<ProjectGraphBuilderContext<'app>>>,
 
     /// Mapping of project aliases to project IDs.
     aliases: FxHashMap<String, Id>,
@@ -85,7 +86,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         debug!("Building project graph");
 
         let mut graph = ProjectGraphBuilder {
-            context: Some(context),
+            context: Some(Arc::new(context)),
             configs: FxHashMap::default(),
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
@@ -301,46 +302,6 @@ impl<'app> ProjectGraphBuilder<'app> {
         cycle.clear();
 
         Ok((id, index))
-
-        // // Create the project
-        // let project = self.build_project(id, source).await?;
-        // let dependencies = project
-        //     .dependencies
-        //     .values()
-        //     .map(|v| v.to_owned())
-        //     .collect::<Vec<_>>(); // How to avoid cloning???
-
-        // // Add to the graph
-        // let id = project.id.clone();
-        // let index = self.graph.add_node(project);
-
-        // cycle.insert(id.clone());
-        // self.nodes.insert(id.clone(), index);
-
-        // // Create dependent projects
-        // for dep_config in dependencies {
-        //     if cycle.contains(&dep_config.id) {
-        //         debug!(
-        //             id = id.as_str(),
-        //             dependency_id = dep_config.id.as_str(),
-        //             "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-        //         );
-
-        //         // Don't link the root project to any project, but still load it
-        //     } else if matches!(dep_config.scope, DependencyScope::Root) {
-        //         self.internal_load(&dep_config.id, cycle).await?;
-
-        //         // Otherwise link projects
-        //     } else {
-        //         let dep_index = self.internal_load(&dep_config.id, cycle).await?;
-
-        //         self.graph.add_edge(index, dep_index, dep_config.scope);
-        //     }
-        // }
-
-        // cycle.clear();
-
-        // Ok(index)
     }
 
     /// Create and build the project with the provided ID and source.
@@ -373,7 +334,12 @@ impl<'app> ProjectGraphBuilder<'app> {
             },
         )?;
 
-        builder.load_local_config().await?;
+        if let Some(config) = self.configs.remove(&id) {
+            builder.inherit_local_config(config).await?;
+        } else {
+            builder.load_local_config().await?;
+        }
+
         builder.inherit_global_config(context.inherited_tasks)?;
 
         let extended_data = context
@@ -570,18 +536,16 @@ impl<'app> ProjectGraphBuilder<'app> {
                 color::file(config_name.as_str())
             );
 
-            if config_path.exists() {
-                let config = ProjectConfig::load(context.workspace_root, config_path)?;
+            let config = ProjectConfig::load(context.workspace_root, config_path)?;
 
-                // Track renames
-                if let Some(new_id) = &config.id {
-                    if new_id != id {
-                        renamed_ids.insert(id.to_owned(), new_id.to_owned());
-                    }
+            // Track ID renames
+            if let Some(new_id) = &config.id {
+                if new_id != id {
+                    renamed_ids.insert(id.to_owned(), new_id.to_owned());
                 }
-
-                configs.insert(id.to_owned(), config);
             }
+
+            configs.insert(id.to_owned(), config);
         }
 
         // If we received new IDs, update references
@@ -590,9 +554,9 @@ impl<'app> ProjectGraphBuilder<'app> {
                 self.sources.insert(new_id.to_owned(), source);
             }
 
-            for (_, to_id) in &mut self.aliases {
-                if to_id == old_id {
-                    *to_id = new_id.to_owned();
+            for aliased_id in self.aliases.values_mut() {
+                if aliased_id == old_id {
+                    *aliased_id = new_id.to_owned();
                 }
             }
         }
@@ -603,8 +567,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(())
     }
 
-    fn context(&self) -> &ProjectGraphBuilderContext<'app> {
-        self.context.as_ref().unwrap()
+    fn context(&self) -> Arc<ProjectGraphBuilderContext<'app>> {
+        Arc::clone(self.context.as_ref().unwrap())
     }
 
     fn resolve_id(&self, project_locator: &str) -> Id {

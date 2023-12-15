@@ -903,14 +903,8 @@ mod project_graph {
             let graph = generate_aliases_project_graph().await;
 
             assert_eq!(
-                graph
-                    .get("dupes-depends-on")
-                    .unwrap()
-                    .dependencies
-                    .values()
-                    .map(|c| c.to_owned())
-                    .collect::<Vec<_>>(),
-                [DependencyConfig {
+                graph.get("dupes-depends-on").unwrap().dependencies,
+                vec![DependencyConfig {
                     id: "alias-two".into(),
                     scope: DependencyScope::Build,
                     source: DependencySource::Explicit,

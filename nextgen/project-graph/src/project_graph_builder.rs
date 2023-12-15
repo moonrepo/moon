@@ -211,15 +211,15 @@ impl<'app> ProjectGraphBuilder<'app> {
         let mut links = vec![id.clone()];
 
         // Create dependent projects
-        if let Some(dep_ids) = self
-            .graph
-            .node_weight(index)
-            .map(|project| project.dependencies.keys().cloned().collect::<Vec<_>>())
-        {
-            for dep_id in dep_ids {
-                links.push(self.load(&dep_id).await?);
-            }
-        }
+        // if let Some(dep_ids) = self
+        //     .graph
+        //     .node_weight(index)
+        //     .map(|project| project.dependencies.keys().cloned().collect::<Vec<_>>())
+        // {
+        //     for dep_id in dep_ids {
+        //         links.push(self.load(&dep_id).await?);
+        //     }
+        // }
 
         // Then link edges
         for id in links {

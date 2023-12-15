@@ -244,7 +244,7 @@ impl<'app> ProjectBuilder<'app> {
     fn build_dependencies(
         &self,
         tasks: &BTreeMap<Id, Task>,
-    ) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
+    ) -> miette::Result<Vec<DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(id = self.id.as_str(), "Building project dependencies");
@@ -308,7 +308,7 @@ impl<'app> ProjectBuilder<'app> {
             );
         }
 
-        Ok(deps)
+        Ok(deps.into_values().collect::<Vec<_>>())
     }
 
     fn build_file_groups(&self) -> miette::Result<FxHashMap<Id, FileGroup>> {

@@ -34,23 +34,20 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
     }
 
     pub fn expand_deps(&mut self, project: &mut Project) -> miette::Result<()> {
-        let mut depends_on = FxHashMap::default();
+        let mut depends_on = vec![];
 
-        for (dep_id, dep_config) in mem::take(&mut project.dependencies) {
+        for dep_config in mem::take(&mut project.dependencies) {
             let new_dep_id = self
                 .context
                 .aliases
-                .get(dep_id.as_str())
+                .get(dep_config.id.as_str())
                 .map(|id| (*id).to_owned())
-                .unwrap_or(dep_id);
+                .unwrap_or(dep_config.id);
 
-            depends_on.insert(
-                new_dep_id.clone(),
-                DependencyConfig {
-                    id: new_dep_id,
-                    ..dep_config
-                },
-            );
+            depends_on.push(DependencyConfig {
+                id: new_dep_id,
+                ..dep_config
+            });
         }
 
         project.dependencies = depends_on;

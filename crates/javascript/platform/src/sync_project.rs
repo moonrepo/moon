@@ -46,12 +46,12 @@ impl<'app> JavaScriptSyncer<'app> {
         let mut package_dev_deps: BTreeMap<String, String> = BTreeMap::new();
         let version_prefix = self.dependency_version_format.get_prefix();
 
-        for (dep_id, dep_cfg) in &self.project.dependencies {
-            let Some(dep_project) = dependencies.get(dep_id) else {
+        for dep_config in &self.project.dependencies {
+            let Some(dep_project) = dependencies.get(&dep_config.id) else {
                 continue;
             };
 
-            if dep_project.is_root_level() || matches!(dep_cfg.scope, DependencyScope::Root) {
+            if dep_project.is_root_level() || matches!(dep_config.scope, DependencyScope::Root) {
                 continue;
             }
 
@@ -80,7 +80,7 @@ impl<'app> JavaScriptSyncer<'app> {
                         _ => version_prefix.clone(),
                     };
 
-                    match dep_cfg.scope {
+                    match dep_config.scope {
                         DependencyScope::Build | DependencyScope::Root => {
                             // Not supported
                         }
@@ -104,7 +104,7 @@ impl<'app> JavaScriptSyncer<'app> {
                     }
 
                     debug!(
-                        scope = ?dep_cfg.scope,
+                        scope = ?dep_config.scope,
                         "Syncing {} as a dependency to {}'s package.json",
                         color::id(&dep_project.id),
                         color::id(&self.project.id),

@@ -1,4 +1,0 @@
-id: quail.worker
-tasks:
-  build:
-    command: noop

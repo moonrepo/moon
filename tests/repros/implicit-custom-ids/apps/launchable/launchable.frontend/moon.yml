@@ -1,5 +1,0 @@
-id: launchable.frontend
-type: application
-tasks:
-  build:
-    command: noop

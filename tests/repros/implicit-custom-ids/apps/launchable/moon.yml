@@ -1,7 +1,0 @@
-id: launchable
-tasks:
-  start:
-    command: noop
-    deps:
-      - 'launchable.worker:build'
-      - 'launchable.frontend:build'

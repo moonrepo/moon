@@ -1,5 +1,0 @@
-id: quail.infrastructure
-type: application
-tasks:
-  build:
-    command: noop

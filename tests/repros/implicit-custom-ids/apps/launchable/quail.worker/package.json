@@ -1,6 +1,0 @@
-{
-  "name": "@workspace/quail.worker",
-  "devDependencies": {
-    "@workspace/shared.configs": "workspace:*"
-  }
-}

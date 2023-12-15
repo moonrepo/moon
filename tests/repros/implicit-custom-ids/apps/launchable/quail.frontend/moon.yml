@@ -1,5 +1,0 @@
-id: quail.frontend
-type: application
-tasks:
-  build:
-    command: noop

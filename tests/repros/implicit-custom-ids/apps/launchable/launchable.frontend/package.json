@@ -1,9 +1,0 @@
-{
-  "name": "@workspace/launchable.frontend",
-  "dependencies": {
-    "@workspace/launchable.worker": "*"
-  },
-  "devDependencies": {
-    "@workspace/shared.configs": "workspace:*"
-  }
-}

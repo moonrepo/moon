@@ -1,5 +1,0 @@
-id: launchable.infrastructure
-type: application
-tasks:
-  build:
-    command: noop

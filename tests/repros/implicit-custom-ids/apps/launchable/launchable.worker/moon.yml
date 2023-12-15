@@ -1,4 +1,0 @@
-id: launchable.worker
-tasks:
-  build:
-    command: noop

@@ -1,7 +1,0 @@
-{
-  "name": "root",
-  "workspaces": [
-    "apps/launchable/*",
-    "libs/*"
-  ]
-}

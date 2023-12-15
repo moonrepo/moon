@@ -171,7 +171,7 @@ impl<'app> ProjectBuilder<'app> {
         let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
         let config_path = config_name.to_path(self.context.workspace_root);
 
-        trace!(
+        debug!(
             id = self.id.as_str(),
             file = ?config_path,
             "Attempting to load {} (optional)",
@@ -304,8 +304,6 @@ impl<'app> ProjectBuilder<'app> {
                 }
             }
         }
-
-        dbg!(&deps);
 
         if !deps.is_empty() {
             trace!(

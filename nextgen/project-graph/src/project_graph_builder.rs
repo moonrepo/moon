@@ -56,6 +56,7 @@ pub struct ProjectGraphBuilder<'app> {
     aliases: FxHashMap<String, Id>,
 
     /// Loaded project configuration (`moon.yml`) files.
+    #[serde(skip)]
     configs: FxHashMap<Id, ProjectConfig>,
 
     /// The DAG instance.
@@ -69,7 +70,6 @@ pub struct ProjectGraphBuilder<'app> {
     renamed_ids: FxHashMap<Id, Id>,
 
     /// The root project ID.
-    #[serde(skip)]
     root_id: Option<Id>,
 
     /// Mapping of project IDs to file system sources,
@@ -144,6 +144,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             );
 
             let mut cache: ProjectGraphBuilder = json::read_file(cache_path)?;
+            cache.configs = graph.configs;
             cache.context = graph.context;
 
             return Ok(cache);
@@ -529,7 +530,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             let config_name = source.join(consts::CONFIG_PROJECT_FILENAME);
             let config_path = config_name.to_path(context.workspace_root);
 
-            trace!(
+            debug!(
                 id = id.as_str(),
                 file = ?config_path,
                 "Attempting to load {} (optional)",
@@ -545,7 +546,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 }
             }
 
-            configs.insert(id.to_owned(), config);
+            configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
         }
 
         // If we received new IDs, update references

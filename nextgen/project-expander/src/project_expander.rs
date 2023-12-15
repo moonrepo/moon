@@ -3,6 +3,7 @@ use crate::tasks_expander::TasksExpander;
 use moon_common::color;
 use moon_config::DependencyConfig;
 use moon_project::Project;
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::mem;
 use tracing::debug;
@@ -33,7 +34,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
     }
 
     pub fn expand_deps(&mut self, project: &mut Project) -> miette::Result<()> {
-        let mut depends_on = vec![];
+        let mut depends_on = FxHashMap::default();
 
         for dep_config in mem::take(&mut project.dependencies) {
             let new_dep_id = self
@@ -43,13 +44,17 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
                 .map(|id| (*id).to_owned())
                 .unwrap_or(dep_config.id);
 
-            depends_on.push(DependencyConfig {
-                id: new_dep_id,
-                ..dep_config
-            });
+            // Use a map so that aliases and IDs get flattened
+            depends_on.insert(
+                new_dep_id.clone(),
+                DependencyConfig {
+                    id: new_dep_id,
+                    ..dep_config
+                },
+            );
         }
 
-        project.dependencies = depends_on;
+        project.dependencies = depends_on.into_values().collect();
 
         Ok(())
     }

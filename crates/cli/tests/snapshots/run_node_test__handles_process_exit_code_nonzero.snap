@@ -8,7 +8,7 @@ stdout
 This should appear!
 ▪▪▪▪ node:exitCodeNonZero (100ms)
 stderr
-Error: target_runner::run_failed
+Error: task_runner::run_failed
 
   × Task node:exitCodeNonZero failed to run. View hash details with moon query
   │ hash hash1234.

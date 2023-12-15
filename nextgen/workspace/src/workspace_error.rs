@@ -5,18 +5,22 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum WorkspaceError {
+    #[diagnostic(code(workspace::unknown_root))]
     #[error(
         "Unable to determine workspace root. Please create a {} configuration folder.",
         consts::CONFIG_DIRNAME.style(Style::File)
     )]
     MissingConfigDir,
 
+    #[diagnostic(code(workspace::missing_home))]
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 
+    #[diagnostic(code(workspace::missing_cwd))]
     #[error("Unable to determine your current working directory.")]
     MissingWorkingDir,
 
+    #[diagnostic(code(workspace::missing_config))]
     #[error(
         "Unable to locate {}/{} configuration file.",
         consts::CONFIG_DIRNAME.style(Style::File),
@@ -24,6 +28,7 @@ pub enum WorkspaceError {
     )]
     MissingWorkspaceConfigFile,
 
+    #[diagnostic(code(workspace::invalid_version))]
     #[error(
         "Invalid moon version, unable to proceed. Found {}, expected {}.",
         .actual.style(Style::Hash),

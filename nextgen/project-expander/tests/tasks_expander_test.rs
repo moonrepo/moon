@@ -297,7 +297,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .insert("foo".into(), DependencyConfig::default());
+                    .push(DependencyConfig::new("foo".into()));
 
                 let mut task = create_task();
                 task.deps.push(Target::parse("^:build").unwrap());
@@ -328,7 +328,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .insert("foo".into(), DependencyConfig::default());
+                    .push(DependencyConfig::new("foo".into()));
 
                 let mut task = create_task();
                 task.options.persistent = false;
@@ -351,7 +351,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .insert("foo".into(), DependencyConfig::default());
+                    .push(DependencyConfig::new("foo".into()));
 
                 let mut task = create_task();
                 task.deps.push(Target::parse("^:test-fail").unwrap());

@@ -113,7 +113,7 @@ mod project_builder {
         let project = build_project_without_inherited("baz", sandbox.path()).await;
 
         assert_eq!(
-            project.dependencies.into_values().collect::<Vec<_>>(),
+            project.dependencies,
             vec![
                 DependencyConfig {
                     id: "bar".into(),
@@ -449,7 +449,7 @@ mod project_builder {
             let project = builder.build().await.unwrap();
 
             assert_eq!(
-                project.dependencies.into_values().collect::<Vec<_>>(),
+                project.dependencies,
                 vec![DependencyConfig {
                     id: "foo".into(),
                     scope: DependencyScope::Development,

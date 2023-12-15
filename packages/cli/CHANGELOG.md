@@ -10,6 +10,16 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed more issues in relation to custom project IDs not resolving correctly.
+
+#### ⚙️ Internal
+
+- Improved some error messages with more information.
+
 ## 1.18.2
 
 #### 🚀 Updates
@@ -23,7 +33,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.25.
+- Updated proto to v0.25.2.
 
 ## 1.18.1
 

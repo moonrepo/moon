@@ -33,3 +33,12 @@ cacheable!(
         pub via: Option<String>,
     }
 );
+
+impl DependencyConfig {
+    pub fn new(id: Id) -> Self {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
+}

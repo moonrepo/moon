@@ -21,7 +21,7 @@ cacheable!(
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.
-        pub dependencies: FxHashMap<Id, DependencyConfig>,
+        pub dependencies: Vec<DependencyConfig>,
 
         /// File groups specific to the project. Inherits all file groups from the global config.
         pub file_groups: FxHashMap<Id, FileGroup>,
@@ -62,7 +62,10 @@ impl Project {
 
     /// Return a list of project IDs this project depends on.
     pub fn get_dependency_ids(&self) -> Vec<&Id> {
-        self.dependencies.keys().collect::<Vec<_>>()
+        self.dependencies
+            .iter()
+            .map(|dep| &dep.id)
+            .collect::<Vec<_>>()
     }
 
     /// Return a task with the defined ID.

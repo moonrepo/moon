@@ -9,7 +9,8 @@ use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    DependencyScope, InheritedTasksManager, ProjectConfig, ToolchainConfig, WorkspaceConfig,
+    WorkspaceProjects,
 };
 use moon_hash::HashEngine;
 use moon_project::Project;
@@ -26,6 +27,7 @@ use starbase_events::Emitter;
 use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
@@ -48,10 +50,14 @@ pub struct ProjectGraphBuilderContext<'app> {
 #[derive(Deserialize, Serialize)]
 pub struct ProjectGraphBuilder<'app> {
     #[serde(skip)]
-    context: Option<ProjectGraphBuilderContext<'app>>,
+    context: Option<Arc<ProjectGraphBuilderContext<'app>>>,
 
     /// Mapping of project aliases to project IDs.
     aliases: FxHashMap<String, Id>,
+
+    /// Loaded project configuration (`moon.yml`) files.
+    #[serde(skip)]
+    configs: FxHashMap<Id, ProjectConfig>,
 
     /// The DAG instance.
     graph: GraphType,
@@ -64,7 +70,6 @@ pub struct ProjectGraphBuilder<'app> {
     renamed_ids: FxHashMap<Id, Id>,
 
     /// The root project ID.
-    #[serde(skip)]
     root_id: Option<Id>,
 
     /// Mapping of project IDs to file system sources,
@@ -81,7 +86,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         debug!("Building project graph");
 
         let mut graph = ProjectGraphBuilder {
-            context: Some(context),
+            context: Some(Arc::new(context)),
+            configs: FxHashMap::default(),
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
@@ -138,6 +144,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             );
 
             let mut cache: ProjectGraphBuilder = json::read_file(cache_path)?;
+            cache.configs = graph.configs;
             cache.context = graph.context;
 
             return Ok(cache);
@@ -258,7 +265,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Create dependent projects
         let mut edges = vec![];
 
-        for dep_config in project.dependencies.values_mut() {
+        for dep_config in &mut project.dependencies {
             let loaded_dep_id = if cycle.contains(&dep_config.id) {
                 debug!(
                     id = id.as_str(),
@@ -296,46 +303,6 @@ impl<'app> ProjectGraphBuilder<'app> {
         cycle.clear();
 
         Ok((id, index))
-
-        // // Create the project
-        // let project = self.build_project(id, source).await?;
-        // let dependencies = project
-        //     .dependencies
-        //     .values()
-        //     .map(|v| v.to_owned())
-        //     .collect::<Vec<_>>(); // How to avoid cloning???
-
-        // // Add to the graph
-        // let id = project.id.clone();
-        // let index = self.graph.add_node(project);
-
-        // cycle.insert(id.clone());
-        // self.nodes.insert(id.clone(), index);
-
-        // // Create dependent projects
-        // for dep_config in dependencies {
-        //     if cycle.contains(&dep_config.id) {
-        //         debug!(
-        //             id = id.as_str(),
-        //             dependency_id = dep_config.id.as_str(),
-        //             "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-        //         );
-
-        //         // Don't link the root project to any project, but still load it
-        //     } else if matches!(dep_config.scope, DependencyScope::Root) {
-        //         self.internal_load(&dep_config.id, cycle).await?;
-
-        //         // Otherwise link projects
-        //     } else {
-        //         let dep_index = self.internal_load(&dep_config.id, cycle).await?;
-
-        //         self.graph.add_edge(index, dep_index, dep_config.scope);
-        //     }
-        // }
-
-        // cycle.clear();
-
-        // Ok(index)
     }
 
     /// Create and build the project with the provided ID and source.
@@ -368,7 +335,12 @@ impl<'app> ProjectGraphBuilder<'app> {
             },
         )?;
 
-        builder.load_local_config().await?;
+        if let Some(config) = self.configs.remove(&id) {
+            builder.inherit_local_config(config).await?;
+        } else {
+            builder.load_local_config().await?;
+        }
+
         builder.inherit_global_config(context.inherited_tasks)?;
 
         let extended_data = context
@@ -400,18 +372,6 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         let project = builder.build().await?;
-
-        // If we received a new ID, update references
-        if project.id != id {
-            self.sources.remove(&id);
-            self.sources.insert(project.id.clone(), source.to_owned());
-
-            if let Some(alias) = project.alias.as_ref() {
-                self.aliases.insert(alias.to_owned(), project.id.clone());
-            }
-
-            self.renamed_ids.insert(id, project.id.clone());
-        }
 
         Ok(project)
     }
@@ -555,11 +515,61 @@ impl<'app> ProjectGraphBuilder<'app> {
         self.sources = sources;
         self.aliases = extended_data.aliases;
 
+        // Then load all config files
+        self.preload_configs()?;
+
         Ok(())
     }
 
-    fn context(&self) -> &ProjectGraphBuilderContext<'app> {
-        self.context.as_ref().unwrap()
+    fn preload_configs(&mut self) -> miette::Result<()> {
+        let context = self.context();
+        let mut configs = FxHashMap::default();
+        let mut renamed_ids = FxHashMap::default();
+
+        for (id, source) in &self.sources {
+            let config_name = source.join(consts::CONFIG_PROJECT_FILENAME);
+            let config_path = config_name.to_path(context.workspace_root);
+
+            debug!(
+                id = id.as_str(),
+                file = ?config_path,
+                "Attempting to load {} (optional)",
+                color::file(config_name.as_str())
+            );
+
+            let config = ProjectConfig::load(context.workspace_root, config_path)?;
+
+            // Track ID renames
+            if let Some(new_id) = &config.id {
+                if new_id != id {
+                    renamed_ids.insert(id.to_owned(), new_id.to_owned());
+                }
+            }
+
+            configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
+        }
+
+        // If we received new IDs, update references
+        for (old_id, new_id) in &renamed_ids {
+            if let Some(source) = self.sources.remove(old_id) {
+                self.sources.insert(new_id.to_owned(), source);
+            }
+
+            for aliased_id in self.aliases.values_mut() {
+                if aliased_id == old_id {
+                    *aliased_id = new_id.to_owned();
+                }
+            }
+        }
+
+        self.configs.extend(configs);
+        self.renamed_ids.extend(renamed_ids);
+
+        Ok(())
+    }
+
+    fn context(&self) -> Arc<ProjectGraphBuilderContext<'app>> {
+        Arc::clone(self.context.as_ref().unwrap())
     }
 
     fn resolve_id(&self, project_locator: &str) -> Id {

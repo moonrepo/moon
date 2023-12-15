@@ -36,14 +36,15 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
     pub fn expand_deps(&mut self, project: &mut Project) -> miette::Result<()> {
         let mut depends_on = FxHashMap::default();
 
-        for (dep_id, dep_config) in mem::take(&mut project.dependencies) {
+        for dep_config in mem::take(&mut project.dependencies) {
             let new_dep_id = self
                 .context
                 .aliases
-                .get(dep_id.as_str())
+                .get(dep_config.id.as_str())
                 .map(|id| (*id).to_owned())
-                .unwrap_or(dep_id);
+                .unwrap_or(dep_config.id);
 
+            // Use a map so that aliases and IDs get flattened
             depends_on.insert(
                 new_dep_id.clone(),
                 DependencyConfig {
@@ -53,7 +54,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
             );
         }
 
-        project.dependencies = depends_on;
+        project.dependencies = depends_on.into_values().collect();
 
         Ok(())
     }

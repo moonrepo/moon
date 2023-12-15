@@ -284,12 +284,12 @@ impl<'app> TypeScriptSyncer<'app> {
         // Sync each dependency to `tsconfig.json` and `package.json`
         let mut tsconfig_project_refs: FxHashSet<PathBuf> = FxHashSet::default();
 
-        for (dep_id, dep_cfg) in &self.project.dependencies {
-            let Some(dep_project) = dependencies.get(dep_id) else {
+        for dep_config in &self.project.dependencies {
+            let Some(dep_project) = dependencies.get(&dep_config.id) else {
                 continue;
             };
 
-            if dep_project.is_root_level() || matches!(dep_cfg.scope, DependencyScope::Root) {
+            if dep_project.is_root_level() || matches!(dep_config.scope, DependencyScope::Root) {
                 continue;
             }
 

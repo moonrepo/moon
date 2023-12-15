@@ -105,21 +105,8 @@ impl<'app> ProjectBuilder<'app> {
         Ok(self)
     }
 
-    /// Load a `moon.yml` config file from the root of the project (derived from source).
-    /// Once loaded, detect applicable language and platform fields.
-    pub async fn load_local_config(&mut self) -> miette::Result<()> {
-        let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
-        let config_path = config_name.to_path(self.context.workspace_root);
-
-        trace!(
-            id = self.id.as_str(),
-            file = ?config_path,
-            "Attempting to load {} (optional)",
-            color::file(config_name.as_str())
-        );
-
-        let config = ProjectConfig::load(self.context.workspace_root, config_path)?;
-
+    /// Inherit the local config and then detect applicable language and platform fields.
+    pub async fn inherit_local_config(&mut self, config: ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
             let mut language = self
@@ -175,6 +162,25 @@ impl<'app> ProjectBuilder<'app> {
         }
 
         self.local_config = Some(config);
+
+        Ok(())
+    }
+
+    /// Load a `moon.yml` config file from the root of the project (derived from source).
+    pub async fn load_local_config(&mut self) -> miette::Result<()> {
+        let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
+        let config_path = config_name.to_path(self.context.workspace_root);
+
+        debug!(
+            id = self.id.as_str(),
+            file = ?config_path,
+            "Attempting to load {} (optional)",
+            color::file(config_name.as_str())
+        );
+
+        let config = ProjectConfig::load(self.context.workspace_root, config_path)?;
+
+        self.inherit_local_config(config).await?;
 
         Ok(())
     }
@@ -244,7 +250,7 @@ impl<'app> ProjectBuilder<'app> {
     fn build_dependencies(
         &self,
         tasks: &BTreeMap<Id, Task>,
-    ) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
+    ) -> miette::Result<Vec<DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
         trace!(id = self.id.as_str(), "Building project dependencies");
@@ -308,7 +314,7 @@ impl<'app> ProjectBuilder<'app> {
             );
         }
 
-        Ok(deps)
+        Ok(deps.into_values().collect::<Vec<_>>())
     }
 
     fn build_file_groups(&self) -> miette::Result<FxHashMap<Id, FileGroup>> {

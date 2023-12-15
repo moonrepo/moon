@@ -84,11 +84,11 @@ pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspac
 
     let mut deps = vec![];
 
-    for (dep_id, dep_cfg) in &project.dependencies {
+    for dep_config in &project.dependencies {
         deps.push(format!(
             "{} {}",
-            color::id(dep_id),
-            color::muted_light(format!("({}, {})", dep_cfg.source, dep_cfg.scope)),
+            color::id(&dep_config.id),
+            color::muted_light(format!("({}, {})", dep_config.source, dep_config.scope)),
         ));
     }
 

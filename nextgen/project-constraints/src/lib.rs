@@ -5,6 +5,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectConstraintsError {
+    #[diagnostic(code(project_constraints::invalid_type_relationship))]
     #[error(
         "Invalid project relationship. Project {} of type {source_type} cannot depend on project {} of type {dep_type}; can only depend on {allowed}.",
         .source_id.style(Style::Id),
@@ -18,6 +19,7 @@ pub enum ProjectConstraintsError {
         allowed: String,
     },
 
+    #[diagnostic(code(project_constraints::invalid_tag_relationship))]
     #[error(
         "Invalid tag relationship. Project {} with tag #{source_tag} cannot depend on project {}. The tag #{source_tag} requires a dependency to have one of the following tags: {allowed}.",
         .source_id.style(Style::Id),

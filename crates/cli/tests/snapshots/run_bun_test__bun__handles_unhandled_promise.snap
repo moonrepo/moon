@@ -8,7 +8,7 @@ stdout
 ▪▪▪▪ bun:unhandledPromise (100ms)
 stderr
 error: Oops
-Error: target_runner::run_failed
+Error: task_runner::run_failed
 
   × Task bun:unhandledPromise failed to run. View hash details with moon query
   │ hash hash1234.

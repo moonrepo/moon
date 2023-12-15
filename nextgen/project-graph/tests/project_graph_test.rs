@@ -591,7 +591,7 @@ mod project_graph {
             let project = graph.get("project").unwrap();
 
             assert_eq!(
-                project.dependencies.values().cloned().collect::<Vec<_>>(),
+                project.dependencies,
                 vec![DependencyConfig {
                     id: "base".into(),
                     scope: DependencyScope::Development,
@@ -736,8 +736,8 @@ mod project_graph {
 
                 let deps = &graph.get("from-task-deps").unwrap().dependencies;
 
-                assert_eq!(deps.get("b").unwrap().scope, DependencyScope::Build);
-                assert_eq!(deps.get("c").unwrap().scope, DependencyScope::Build);
+                assert_eq!(deps[0].scope, DependencyScope::Build);
+                assert_eq!(deps[1].scope, DependencyScope::Build);
             }
 
             #[tokio::test]
@@ -753,7 +753,7 @@ mod project_graph {
 
                 let deps = &graph.get("from-root-task-deps").unwrap().dependencies;
 
-                assert_eq!(deps.get("root").unwrap().scope, DependencyScope::Root);
+                assert_eq!(deps[0].scope, DependencyScope::Root);
             }
 
             #[tokio::test]
@@ -903,14 +903,8 @@ mod project_graph {
             let graph = generate_aliases_project_graph().await;
 
             assert_eq!(
-                graph
-                    .get("dupes-depends-on")
-                    .unwrap()
-                    .dependencies
-                    .values()
-                    .map(|c| c.to_owned())
-                    .collect::<Vec<_>>(),
-                [DependencyConfig {
+                graph.get("dupes-depends-on").unwrap().dependencies,
+                vec![DependencyConfig {
                     id: "alias-two".into(),
                     scope: DependencyScope::Build,
                     source: DependencySource::Explicit,

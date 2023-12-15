@@ -6,10 +6,11 @@ expression: assert.output()
 stdout
 ▪▪▪▪ windows:exitNonZero (100ms)
 stderr 
-Error: target_runner::run_failed
+Error: task_runner::run_failed
 
   × Task windows:exitNonZero failed to run. View hash details with moon query
   │ hash hash1234.
   ╰─▶ Process cmd.exe failed with a 1 exit code.
+
 
 

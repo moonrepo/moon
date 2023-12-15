@@ -14,14 +14,15 @@ stdout
 ▪▪▪▪ windows:retryCount (4/4)
 stdout
 ▪▪▪▪ windows:retryCount (4/4, 100ms)
-stderr
-stderr
-stderr
-stderr
+stderr 
+stderr 
+stderr 
+stderr 
 Error: task_runner::run_failed
 
   × Task windows:retryCount failed to run. View hash details with moon query
   │ hash hash1234.
   ╰─▶ Process cmd.exe failed with a 1 exit code.
+
 
 

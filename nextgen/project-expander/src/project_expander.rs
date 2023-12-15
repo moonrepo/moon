@@ -3,7 +3,6 @@ use crate::tasks_expander::TasksExpander;
 use moon_common::color;
 use moon_config::DependencyConfig;
 use moon_project::Project;
-use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::mem;
 use tracing::debug;

@@ -134,7 +134,7 @@ impl ProjectGraph {
     pub fn get_unexpanded(&self, project_locator: &str) -> miette::Result<&Project> {
         let id = self.resolve_id(project_locator);
 
-        dbg!("get_unexpanded", &id, project_locator);
+        // dbg!("get_unexpanded", &id, project_locator);
 
         let node = self
             .nodes

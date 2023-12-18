@@ -15,8 +15,8 @@
 #### 🚀 Updates
 
 - Updated the proto installation step to download, unpack, and install using Rust, instead of
-  relying on our Bash/PowerShell scripts. This should remove the requirement the openssl, tar, and
-  other environment requirements.
+  relying on our Bash/PowerShell scripts. This should remove the requirement that openssl, tar, and
+  other environment tools must exist.
 
 #### ⚙️ Internal
 

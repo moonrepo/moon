@@ -3,7 +3,7 @@ use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_common::consts::PROTO_CLI_VERSION;
-use moon_logger::{debug, trace};
+use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::is_test_env;
@@ -102,9 +102,7 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         &target_triple,
         PROTO_CLI_VERSION,
         &workspace.proto_env.temp_dir,
-        |current, total| {
-            trace!("Downloaded {}/{} bytes", current, total);
-        },
+        |_, _| {},
     )
     .await?;
 

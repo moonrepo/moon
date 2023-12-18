@@ -3,15 +3,14 @@ use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_common::consts::PROTO_CLI_VERSION;
-use moon_logger::debug;
-use moon_process::Command;
+use moon_logger::{debug, trace};
 use moon_project_graph::ProjectGraph;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
-use proto_core::{download_from_url_to_file, is_offline, ProtoError};
+use proto_core::{is_offline, ProtoError};
+use proto_installer::{determine_triple, download_release, unpack_release};
 use starbase_styles::color;
-use starbase_utils::fs;
 use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -95,41 +94,23 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         return Err(ProtoError::InternetConnectionRequired.into());
     }
 
-    let script_name = if cfg!(windows) {
-        "proto.ps1"
-    } else {
-        "proto.sh"
-    };
-    let script_path = workspace.proto_env.temp_dir.join(script_name);
-    let script_url = format!("https://moonrepo.dev/install/{script_name}");
+    let target_triple = determine_triple()?;
 
-    // Download the install script
-    debug!("Downloading from {}", script_url);
+    debug!("Downloading proto archive ({})", target_triple);
 
-    download_from_url_to_file(
-        &script_url,
-        &script_path,
-        workspace.proto_env.get_plugin_loader()?.get_client()?,
+    let result = download_release(
+        &target_triple,
+        PROTO_CLI_VERSION,
+        &workspace.proto_env.temp_dir,
+        |current, total| {
+            trace!("Downloaded {}/{} bytes", current, total);
+        },
     )
     .await?;
 
-    fs::update_perms(&script_path, None)?;
+    debug!("Unpacking archive and installing proto");
 
-    // Install using the official script
-    debug!("Executing install script {}", script_path.display());
-
-    let mut cmd = Command::new(script_path);
-    let mut cmd = cmd
-        .arg(PROTO_CLI_VERSION)
-        .env("PROTO_INSTALL_DIR", &install_dir)
-        .env("PROTO_DEBUG", "true")
-        .create_async();
-
-    if env::var("MOON_DEBUG_PROTO_INSTALL").is_ok() {
-        cmd.exec_stream_output().await?;
-    } else {
-        cmd.exec_capture_output().await?;
-    }
+    unpack_release(result, &install_dir, &workspace.proto_env.tools_dir)?;
 
     debug!("Successfully installed proto!");
 

@@ -1,0 +1,75 @@
+---
+slug: proto-v0.26-rc
+title: proto v0.26 (rc) - Release candidate available for testing!
+authors: [milesj]
+tags: [proto, shim]
+# image: ./img/proto/v0.26.png
+---
+
+We've got a very special release candidate that we'd love to stress test before an official release!
+
+<!--truncate-->
+
+proto at its core is a version manager, which means like most version managers, it relies on a
+concept known as shims. Shims are lightweight executable scripts that act like a proxy to the
+underlying binary, and are useful for proto to intercept executions and inject custom functionality,
+like our dynamic version detection.
+
+On Unix machines, we relied on Bash scripts for shims, which worked rather well. However, on
+Windows, we relied on PowerShell scripts (`.ps1`), batch/cmd scripts (`.cmd`), and Bash scripts, all
+with differing levels of functionality, and each serving a separate purpose. Windows support _did
+not_ work well.
+
+## What didn't work?
+
+When using shims, you must ensure that all the following scenarios work well: piping data/commands,
+redirection, stdin prompts, interactivity, signal handling, exit code bubbling, so on and so forth.
+Bash solves a lot of this for us, but Windows does not have a native Bash shell, and thus we had to
+rely on other scripting languages. The `.cmd` files barely supported any of this, and the `.ps1`
+files were a bit better, but still not great.
+
+For the most part, executing a shim as-is and doing basic work was fine, but once you needed a
+complex scenario (like above), it broke down pretty quickly. It was also further exacerbated when
+dealing with nested shim exections, for example, `npm` calls `node` under the hood. The parent shim
+may be executed with `.ps1` but the child may be `.cmd`, and these do not play well together.
+
+The other problem on Windows is that scripts are not true executables, and are not easily located on
+`PATH` (excluding `.cmd` files).
+
+## What's new?
+
+To combat all of these problems, we needed a truly native solution, and that's exactly what we did.
+We wrote our own Rust based executable, that will replace all of the custom shim scripts, and can
+properly handle all of the required scenarios. This new executable is named `proto-shim`
+(`proto-shim.exe` on Windows) and is published alongside the `proto` binary.
+
+This new executable solves all of the following problems (hopfully):
+
+- Locatable on `PATH` (is an `.exe` for Windows)
+- Can pipe/redirect data
+- Handles stdin prompts/interactivity
+- Supports ctrl+c interruptions
+- Passes parent signals to child processes
+- Attempts to kill child processes on parent exit
+- Bubbles exit codes
+- Native performance
+- Doesn't require special privileges (no symlinks)
+
+## How to test?
+
+If you're interested in testing this new implementation (we'd appreciate it), you can do so by
+downloading the release candidate from GitHub:
+https://github.com/moonrepo/proto/releases/tag/v0.26.0-rc.1
+
+Once downloaded, unpack the archive, and move the `proto` and `proto-shim` binaries to the
+`~/.proto/bin` directory (or the location of the `PROTO_INSTALL_DIR` environment variable). From
+here, you can execute `proto` or your tool binaries as normal.
+
+> If you run into issues, try deleting the old `~/.proto/shims` directory and trying again. If
+> problems still persist, please report an issue or reach out to us on Discord!
+
+## What to test?
+
+Basically everything. We want to ensure that all of the functionality in [What's new?](#whats-new)
+works as expected, so simply go about your day to day development and let us know if you run into
+any issues!

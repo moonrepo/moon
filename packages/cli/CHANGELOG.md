@@ -10,6 +10,18 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated the proto installation step to download, unpack, and install using Rust, instead of
+  relying on our Bash/PowerShell scripts. This should remove the requirement that openssl, tar, and
+  other environment tools must exist.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.25.3.
+
 ## 1.18.3
 
 #### 🐞 Fixes

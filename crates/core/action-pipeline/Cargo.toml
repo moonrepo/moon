@@ -31,6 +31,7 @@ console = { workspace = true }
 miette = { workspace = true }
 num_cpus = "1.16.0"
 proto_core = { workspace = true }
+proto_installer = "0.1.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

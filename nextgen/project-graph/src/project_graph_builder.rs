@@ -539,6 +539,10 @@ impl<'app> ProjectGraphBuilder<'app> {
                 None => id,
             };
 
+            if id == alias {
+                continue;
+            }
+
             if let Some(existing_id) = dupe_aliases.get(&alias) {
                 if existing_id == &id {
                     continue;

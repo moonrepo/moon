@@ -861,6 +861,13 @@ mod project_graph {
         }
 
         #[tokio::test]
+        async fn doesnt_set_alias_if_same_as_id() {
+            let graph = generate_aliases_project_graph().await;
+
+            assert_eq!(graph.get("alias-same-id").unwrap().alias, None);
+        }
+
+        #[tokio::test]
         async fn can_get_projects_by_alias() {
             let graph = generate_aliases_project_graph().await;
 

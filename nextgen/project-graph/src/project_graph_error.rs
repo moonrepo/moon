@@ -7,7 +7,7 @@ use thiserror::Error;
 pub enum ProjectGraphError {
     #[diagnostic(code(project_graph::duplicate_alias))]
     #[error(
-        "The project {} is already using the alias {}, unable to set the alias for project {}.\nTry changing the alias to something unique to move forward.",
+        "Project {} is already using the alias {}, unable to set the alias for project {}.\nTry changing the alias to something unique to move forward.",
         .old_id.style(Style::Id),
         .alias.style(Style::Label),
         .new_id.style(Style::Id),

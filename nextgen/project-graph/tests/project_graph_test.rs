@@ -780,7 +780,11 @@ mod project_graph {
         use super::*;
 
         async fn generate_aliases_project_graph() -> ProjectGraph {
-            let sandbox = create_sandbox("aliases");
+            generate_aliases_project_graph_for_fixture("aliases").await
+        }
+
+        async fn generate_aliases_project_graph_for_fixture(fixture: &str) -> ProjectGraph {
+            let sandbox = create_sandbox(fixture);
             let container = ProjectGraphContainer::new(sandbox.path());
             let context = container.create_context();
 
@@ -946,6 +950,42 @@ mod project_graph {
                     Target::parse("implicit:global").unwrap(),
                 ]
             );
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Project one is already using the alias @test")]
+        async fn errors_duplicate_aliases() {
+            generate_aliases_project_graph_for_fixture("aliases-conflict").await;
+        }
+
+        #[tokio::test]
+        async fn ignores_duplicate_aliases_if_ids_match() {
+            let sandbox = create_sandbox("aliases-conflict");
+            let container = ProjectGraphContainer::new(sandbox.path());
+            let context = container.create_context();
+
+            context
+                .extend_project_graph
+                .on(
+                    |event: Arc<ExtendProjectGraphEvent>,
+                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+                        let mut data = data.write().await;
+
+                        for (id, _) in &event.sources {
+                            // Add dupes
+                            data.aliases.push((id.to_owned(), format!("@{id}")));
+                            data.aliases.push((id.to_owned(), format!("@{id}")));
+                        }
+
+                        Ok(EventState::Continue)
+                    },
+                )
+                .await;
+
+            let graph = container.build_graph(context).await;
+
+            assert!(graph.get("@one").is_ok());
+            assert!(graph.get("@two").is_ok());
         }
     }
 

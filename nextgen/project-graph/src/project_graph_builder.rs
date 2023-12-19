@@ -9,8 +9,8 @@ use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsAliasesList,
-    ProjectsSourcesList, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_hash::HashEngine;
 use moon_project::Project;
@@ -492,16 +492,17 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Extend graph from subscribers
         debug!("Extending project graph from subscribers");
 
-        let mut extended_data = context
+        let aliases = context
             .extend_project_graph
             .emit(ExtendProjectGraphEvent {
                 sources: sources.clone(),
                 workspace_root: context.workspace_root.to_owned(),
             })
-            .await?;
+            .await?
+            .aliases;
 
         // Load all config files
-        self.preload_configs(&mut sources, &mut extended_data.aliases)?;
+        self.preload_configs(&mut sources)?;
 
         // Find the root project
         self.root_id = sources.iter().find_map(|(id, source)| {
@@ -512,9 +513,13 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
         });
 
-        // Set our data and warn against problems
+        // Set our data and warn/error against problems
         for (id, source) in sources {
             if let Some(existing_source) = self.sources.get(&id) {
+                if existing_source == &source {
+                    continue;
+                }
+
                 return Err(ProjectGraphError::DuplicateId {
                     id: id.clone(),
                     old_source: existing_source.to_string(),
@@ -528,19 +533,23 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         let mut dupe_aliases = FxHashMap::<String, Id>::default();
 
-        for (id, alias) in extended_data.aliases {
+        for (id, alias) in aliases {
+            let id = match self.renamed_ids.get(&id) {
+                Some(new_id) => new_id.to_owned(),
+                None => id,
+            };
+
             if let Some(existing_id) = dupe_aliases.get(&alias) {
-                if existing_id != &id {
-                    debug!(
-                        id = id.as_str(),
-                        existing_id = existing_id.as_str(),
-                        "The alias {} has already been used by project ID {}, skipping duplicate alias",
-                        color::label(&alias),
-                        color::id(existing_id)
-                    );
+                if existing_id == &id {
+                    continue;
                 }
 
-                continue;
+                return Err(ProjectGraphError::DuplicateAlias {
+                    alias: alias.clone(),
+                    old_id: existing_id.to_owned(),
+                    new_id: id.clone(),
+                }
+                .into());
             }
 
             dupe_aliases.insert(alias.clone(), id.clone());
@@ -550,11 +559,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(())
     }
 
-    fn preload_configs(
-        &mut self,
-        sources: &mut ProjectsSourcesList,
-        aliases: &mut ProjectsAliasesList,
-    ) -> miette::Result<()> {
+    fn preload_configs(&mut self, sources: &mut ProjectsSourcesList) -> miette::Result<()> {
         let context = self.context();
         let mut configs = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();
@@ -581,16 +586,6 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
 
             configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
-        }
-
-        // If we received new IDs, update references
-        for (old_id, new_id) in &renamed_ids {
-            for (aliased_id, _) in &mut *aliases {
-                if aliased_id == old_id {
-                    *aliased_id = new_id.to_owned();
-                    break;
-                }
-            }
         }
 
         self.configs.extend(configs);

@@ -9,7 +9,7 @@ pub enum ProjectGraphError {
     #[error(
         "The project {} is already using the alias {}, unable to set the alias for project {}.\nTry changing the alias to something unique to move forward.",
         .old_id.style(Style::Id),
-        .alias.style(Style::Id),
+        .alias.style(Style::Label),
         .new_id.style(Style::Id),
     )]
     DuplicateAlias {

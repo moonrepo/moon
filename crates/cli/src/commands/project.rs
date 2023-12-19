@@ -45,7 +45,7 @@ pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspac
     term.render_entry("Project", color::id(&project.id))?;
 
     if let Some(alias) = &project.alias {
-        term.render_entry("Alias", color::id(alias))?;
+        term.render_entry("Alias", color::label(alias))?;
     }
 
     term.render_entry("Source", color::file(&project.source))?;

@@ -87,6 +87,12 @@ mod project_graph {
             .unwrap();
     }
 
+    #[tokio::test]
+    #[should_panic(expected = "A project already exists with the name id")]
+    async fn errors_duplicate_ids() {
+        generate_project_graph("dupe-folder-conflict").await;
+    }
+
     mod sources {
         use super::*;
 
@@ -180,7 +186,7 @@ mod project_graph {
             let sandbox = create_sandbox("dependencies");
 
             sandbox.enable_git();
-            sandbox.create_file(".moon/workspace.yml", "");
+            sandbox.create_file(".moon/workspace.yml", "projects: ['*']");
 
             let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
 
@@ -1417,6 +1423,20 @@ mod project_graph {
                     Target::parse("baz-renamed:noop").unwrap()
                 ]
             );
+        }
+
+        #[tokio::test]
+        async fn doesnt_error_for_duplicate_folder_names_if_renamed() {
+            let graph = generate_project_graph("dupe-folder-ids").await;
+
+            assert!(graph.get("one").is_ok());
+            assert!(graph.get("two").is_ok());
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "A project already exists with the name foo")]
+        async fn errors_duplicate_ids_from_rename() {
+            generate_project_graph("custom-id-conflict").await;
         }
     }
 }

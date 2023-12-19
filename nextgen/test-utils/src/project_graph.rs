@@ -53,16 +53,20 @@ impl ProjectGraphContainer {
         }
 
         // Use folders as project names
-        let mut projects = WorkspaceProjectsConfig {
-            globs: vec!["*".into()],
-            ..WorkspaceProjectsConfig::default()
-        };
+        if root.join(".moon/workspace.yml").exists() {
+            graph.workspace_config = WorkspaceConfig::load_from(root).unwrap();
+        } else {
+            let mut projects = WorkspaceProjectsConfig {
+                globs: vec!["*".into()],
+                ..WorkspaceProjectsConfig::default()
+            };
 
-        if root.join("moon.yml").exists() {
-            projects.sources.insert("root".into(), ".".into());
+            if root.join("moon.yml").exists() {
+                projects.sources.insert("root".into(), ".".into());
+            }
+
+            graph.workspace_config.projects = WorkspaceProjects::Both(projects);
         }
-
-        graph.workspace_config.projects = WorkspaceProjects::Both(projects);
 
         graph
     }

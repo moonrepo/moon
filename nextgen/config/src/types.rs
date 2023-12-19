@@ -7,8 +7,12 @@ use std::collections::BTreeMap;
 
 pub type FileGroupsMap = FxHashMap<Id, Vec<InputPath>>;
 
-pub type ProjectsSourcesMap = FxHashMap<Id, WorkspaceRelativePathBuf>;
+pub type ProjectSourceEntry = (Id, WorkspaceRelativePathBuf);
 
-pub type ProjectsAliasesMap = FxHashMap<String, Id>;
+pub type ProjectsSourcesList = Vec<ProjectSourceEntry>;
+
+pub type ProjectAliasEntry = (Id, String);
+
+pub type ProjectsAliasesList = Vec<ProjectAliasEntry>;
 
 pub type TasksConfigsMap = BTreeMap<Id, TaskConfig>;

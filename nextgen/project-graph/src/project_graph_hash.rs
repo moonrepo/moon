@@ -8,7 +8,7 @@ use std::env;
 hash_content!(
     pub struct ProjectGraphHash<'graph> {
         // Data derived from the project graph builder.
-        aliases: BTreeMap<&'graph String, &'graph Id>,
+        aliases: BTreeMap<&'graph Id, &'graph String>,
         sources: BTreeMap<&'graph Id, &'graph WorkspaceRelativePathBuf>,
 
         // Project and workspace configs required for cache invalidation.
@@ -38,7 +38,7 @@ impl<'cfg> ProjectGraphHash<'cfg> {
         }
     }
 
-    pub fn add_aliases(&mut self, aliases: &'cfg FxHashMap<String, Id>) {
+    pub fn add_aliases(&mut self, aliases: &'cfg FxHashMap<Id, String>) {
         self.aliases.extend(aliases.iter().map(|(k, v)| (k, v)));
     }
 

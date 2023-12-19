@@ -87,6 +87,12 @@ mod project_graph {
             .unwrap();
     }
 
+    #[tokio::test]
+    #[should_panic(expected = "A project already exists with the name id")]
+    async fn errors_duplicate_ids() {
+        generate_project_graph("dupe-folder-conflict").await;
+    }
+
     mod sources {
         use super::*;
 
@@ -180,7 +186,7 @@ mod project_graph {
             let sandbox = create_sandbox("dependencies");
 
             sandbox.enable_git();
-            sandbox.create_file(".moon/workspace.yml", "");
+            sandbox.create_file(".moon/workspace.yml", "projects: ['*']");
 
             let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
 
@@ -774,7 +780,11 @@ mod project_graph {
         use super::*;
 
         async fn generate_aliases_project_graph() -> ProjectGraph {
-            let sandbox = create_sandbox("aliases");
+            generate_aliases_project_graph_for_fixture("aliases").await
+        }
+
+        async fn generate_aliases_project_graph_for_fixture(fixture: &str) -> ProjectGraph {
+            let sandbox = create_sandbox(fixture);
             let container = ProjectGraphContainer::new(sandbox.path());
             let context = container.create_context();
 
@@ -790,10 +800,10 @@ mod project_graph {
                             let alias_path = source.join("alias").to_path(&event.workspace_root);
 
                             if alias_path.exists() {
-                                data.aliases.insert(
-                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
+                                data.aliases.push((
                                     id.to_owned(),
-                                );
+                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
+                                ));
                             }
                         }
 
@@ -848,6 +858,21 @@ mod project_graph {
                     ("@three", &Id::raw("alias-three")),
                 ])
             );
+        }
+
+        #[tokio::test]
+        async fn doesnt_set_alias_if_same_as_id() {
+            let graph = generate_aliases_project_graph().await;
+
+            assert_eq!(graph.get("alias-same-id").unwrap().alias, None);
+        }
+
+        #[tokio::test]
+        async fn doesnt_set_alias_if_a_project_has_the_id() {
+            let graph = generate_aliases_project_graph_for_fixture("aliases-conflict-ids").await;
+
+            assert_eq!(graph.get("one").unwrap().alias, None);
+            assert_eq!(graph.get("two").unwrap().alias, None);
         }
 
         #[tokio::test]
@@ -940,6 +965,51 @@ mod project_graph {
                     Target::parse("implicit:global").unwrap(),
                 ]
             );
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Project one is already using the alias @test")]
+        async fn errors_duplicate_aliases() {
+            generate_aliases_project_graph_for_fixture("aliases-conflict").await;
+        }
+
+        #[tokio::test]
+        async fn doesnt_error_for_duplicate_aliases_if_setting_off() {
+            let graph =
+                generate_aliases_project_graph_for_fixture("aliases-conflict-disabled").await;
+
+            assert_eq!(graph.get("one").unwrap().alias, Some("@test".to_owned()));
+            assert_eq!(graph.get("two").unwrap().alias, None);
+        }
+
+        #[tokio::test]
+        async fn ignores_duplicate_aliases_if_ids_match() {
+            let sandbox = create_sandbox("aliases-conflict");
+            let container = ProjectGraphContainer::new(sandbox.path());
+            let context = container.create_context();
+
+            context
+                .extend_project_graph
+                .on(
+                    |event: Arc<ExtendProjectGraphEvent>,
+                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+                        let mut data = data.write().await;
+
+                        for (id, _) in &event.sources {
+                            // Add dupes
+                            data.aliases.push((id.to_owned(), format!("@{id}")));
+                            data.aliases.push((id.to_owned(), format!("@{id}")));
+                        }
+
+                        Ok(EventState::Continue)
+                    },
+                )
+                .await;
+
+            let graph = container.build_graph(context).await;
+
+            assert!(graph.get("@one").is_ok());
+            assert!(graph.get("@two").is_ok());
         }
     }
 
@@ -1417,6 +1487,20 @@ mod project_graph {
                     Target::parse("baz-renamed:noop").unwrap()
                 ]
             );
+        }
+
+        #[tokio::test]
+        async fn doesnt_error_for_duplicate_folder_names_if_renamed() {
+            let graph = generate_project_graph("dupe-folder-ids").await;
+
+            assert!(graph.get("one").is_ok());
+            assert!(graph.get("two").is_ok());
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "A project already exists with the name foo")]
+        async fn errors_duplicate_ids_from_rename() {
+            generate_project_graph("custom-id-conflict").await;
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::{
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, path::exe_name, Id};
 use moon_config::{
-    BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
+    BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     RustConfig, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
@@ -138,11 +138,11 @@ impl Platform for RustPlatform {
 
     fn load_project_graph_aliases(
         &mut self,
-        projects_map: &ProjectsSourcesMap,
-        aliases_map: &mut ProjectsAliasesMap,
+        projects_list: &ProjectsSourcesList,
+        aliases_list: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
         // Extract the alias from the Cargo project relative to the lockfile
-        for (id, source) in projects_map {
+        for (id, source) in projects_list {
             let project_root = source.to_path(&self.workspace_root);
 
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
@@ -155,7 +155,7 @@ impl Platform for RustPlatform {
                             color::id(id)
                         );
 
-                        aliases_map.insert(package.name, id.to_owned());
+                        aliases_list.push((id.to_owned(), package.name));
                     }
                 }
             }

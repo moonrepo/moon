@@ -7,6 +7,7 @@
 set -eo pipefail
 
 bin="proto"
+shim_bin="proto-shim"
 arch=$(uname -sm)
 version="${1:-latest}"
 ext=".tar.xz"
@@ -14,6 +15,7 @@ ext=".tar.xz"
 if [[ "$OS" == "Windows_NT" ]]; then
 	target="proto_cli-x86_64-pc-windows-msvc"
 	bin="proto.exe"
+	shim_bin="proto-shim.exe"
 	ext=".zip"
 else
 	case "$arch" in
@@ -54,17 +56,18 @@ fi
 temp_dir="$HOME/.proto/temp/proto/$target"
 download_file="$temp_dir$ext"
 
-if [ -z "$PROTO_INSTALL_DIR" ]; then
+if [[ -z "$PROTO_INSTALL_DIR" ]]; then
 	install_dir="$HOME/.proto/bin"
 else
 	install_dir="$PROTO_INSTALL_DIR"
 fi
 
 bin_path="$install_dir/$bin"
+shim_path="$install_dir/$shim_bin"
 
 # Download and unpack in temp dir
 
-if [ ! -d "$temp_dir" ]; then
+if [[ ! -d "$temp_dir" ]]; then
 	mkdir -p "$temp_dir"
 fi
 
@@ -81,12 +84,18 @@ fi
 
 # Move to bin dir and clean up
 
-if [ ! -d "$install_dir" ]; then
+if [[ ! -d "$install_dir" ]]; then
 	mkdir -p "$install_dir"
 fi
 
 mv "$temp_dir/$bin" "$bin_path"
 chmod +x "$bin_path"
+
+if [[ -f "$temp_dir/$shim_bin" ]]; then
+	mv "$temp_dir/$shim_bin" "$shim_path"
+	chmod +x "$shim_path"
+fi
+
 rm -rf "$download_file" "$temp_dir"
 
 # Run setup script to update shells
@@ -94,7 +103,7 @@ rm -rf "$download_file" "$temp_dir"
 export PROTO_LOG=error
 profile_path=$($bin_path setup --profile)
 
-if [ -z "$profile_path" ]; then
+if [[ -z "$profile_path" ]]; then
 	echo "Successfully installed proto to $bin_path"
 else
 	echo "Successfully installed proto to $bin_path and updated $profile_path"
@@ -110,6 +119,7 @@ if [[ "$PROTO_DEBUG" == "true" ]]; then
 	echo "target=$target"
 	echo "download_url=$download_url"
 	echo "bin_path=$bin_path"
+	echo "shim_path=$shim_path"
 	echo "is_wsl=$is_wsl"
 	echo "deps=$deps"
 fi

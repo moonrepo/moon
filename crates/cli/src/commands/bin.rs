@@ -1,7 +1,7 @@
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon_terminal::safe_exit;
-use moon_tool::{get_proto_paths, prepend_path_env_var};
+use moon_tool::{get_proto_env_vars, get_proto_paths, prepend_path_env_var};
 use proto_core::ProtoEnvironment;
 use starbase::system;
 use tokio::process::Command;
@@ -20,6 +20,7 @@ pub async fn bin(args: ArgsRef<BinArgs>) {
         .arg("bin")
         .arg(&args.tool)
         .env("PATH", prepend_path_env_var(get_proto_paths(&proto)))
+        .envs(get_proto_env_vars())
         .spawn()
         .into_diagnostic()?
         .wait()

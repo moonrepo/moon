@@ -76,10 +76,17 @@ where
                     continue;
                 }
             } else {
-                warn!(
-                    source = ?project_root,
-                    "Received a file path for a project root, must be a directory",
-                );
+                // Don't warn on dotfiles
+                if project_root
+                    .file_name()
+                    .map(|name| !name.to_string_lossy().starts_with('.'))
+                    .unwrap_or_default()
+                {
+                    warn!(
+                        source = ?project_root,
+                        "Received a file path for a project root, must be a directory",
+                    );
+                }
 
                 continue;
             }
@@ -99,7 +106,7 @@ where
                 if vcs.is_ignored(&project_root) {
                     warn!(
                         source = project_source,
-                        "Found a project with source {}, but this path has been ignored by your VCS. Skipping ignored source.",
+                        "Found a project with source {}, but this path has been ignored by your VCS, skipping",
                         color::file(&project_source)
                     );
 

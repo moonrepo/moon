@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed glob based project locating to not log warnings when a file is found and it starts with `.`
+  (ignore dotfiles).
+
 ## 1.18.4
 
 #### 🚀 Updates

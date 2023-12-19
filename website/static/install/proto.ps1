@@ -29,6 +29,7 @@ $InstallDir = if ($env:PROTO_INSTALL_DIR) {
 }
 
 $BinPath = "${InstallDir}\proto.exe"
+$ShimPath = "${InstallDir}\proto-shim.exe"
 
 # Download and unpack in temp dir
 
@@ -36,7 +37,6 @@ if (!(Test-Path $TempDir)) {
   New-Item $TempDir -ItemType Directory | Out-Null
 }
 
-# curl.exe -Lo $DownloadFile $DownloadUrl
 $wc = New-Object Net.Webclient
 $wc.downloadFile($DownloadUrl, $DownloadFile)
 
@@ -53,6 +53,11 @@ if (!(Test-Path $InstallDir)) {
 }
 
 Copy-Item "${TempDir}\proto.exe" -Destination $BinPath -Force
+
+if (Test-Path "${TempDir}\proto-shim.exe") {
+  Copy-Item "${TempDir}\proto-shim.exe" -Destination $ShimPath -Force
+}
+
 Remove-Item $TempDir -Recurse -Force
 Remove-Item $DownloadFile -Force
 
@@ -71,4 +76,5 @@ if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output "target=${Target}"
 	Write-Output "download_url=${DownloadUrl}"
 	Write-Output "bin_path=${BinPath}"
+	Write-Output "shim_path=${ShimPath}"
 }

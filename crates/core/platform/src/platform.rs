@@ -3,7 +3,7 @@ use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
-    ProjectsSourcesMap, TasksConfigsMap, UnresolvedVersionSpec,
+    ProjectsSourcesList, TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
 use moon_platform_runtime::{Runtime, RuntimeReq};
@@ -39,7 +39,7 @@ pub trait Platform: Send + Sync {
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
         &mut self,
-        projects_map: &ProjectsSourcesMap,
+        projects_list: &ProjectsSourcesList,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> miette::Result<()> {
         Ok(())

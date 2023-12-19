@@ -5,7 +5,8 @@ use moon_bun_tool::{get_bun_env_paths, BunTool};
 use moon_common::Id;
 use moon_config::{
     BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TypeScriptConfig, UnresolvedVersionSpec,
+    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesList, TypeScriptConfig,
+    UnresolvedVersionSpec,
 };
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::{debug, warn};
@@ -132,7 +133,7 @@ impl Platform for BunPlatform {
 
     fn load_project_graph_aliases(
         &mut self,
-        projects_map: &ProjectsSourcesMap,
+        projects_list: &ProjectsSourcesList,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> miette::Result<()> {
         debug!(
@@ -141,7 +142,7 @@ impl Platform for BunPlatform {
             color::file(BUNPM.manifest)
         );
 
-        for (project_id, project_source) in projects_map {
+        for (project_id, project_source) in projects_list {
             if let Some(package_json) =
                 PackageJson::read(project_source.to_path(&self.workspace_root))?
             {
@@ -150,22 +151,6 @@ impl Platform for BunPlatform {
 
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
-
-                    if let Some(existing_source) = projects_map.get(&alias) {
-                        if existing_source != project_source {
-                            if !self.node_also_enabled {
-                                warn!(
-                                    target: LOG_TARGET,
-                                    "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                                    color::id(&alias),
-                                    color::file(existing_source),
-                                    color::file(project_source)
-                                );
-                            }
-
-                            continue;
-                        }
-                    }
 
                     if let Some(existing_id) = aliases_map.get(&alias) {
                         if !self.node_also_enabled {

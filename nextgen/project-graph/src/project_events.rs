@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct ExtendProjectGraphEvent {
-    pub sources: FxHashMap<Id, WorkspaceRelativePathBuf>,
+    pub sources: Vec<(Id, WorkspaceRelativePathBuf)>,
     pub workspace_root: PathBuf,
 }
 

@@ -1,7 +1,6 @@
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_vcs::BoxedVcs;
-use rustc_hash::FxHashMap;
 use starbase_utils::{fs, glob};
 use std::path::Path;
 use tracing::warn;
@@ -33,7 +32,7 @@ pub fn infer_project_id_and_source(
 pub fn locate_projects_with_globs<'glob, I, V>(
     workspace_root: &Path,
     globs: I,
-    sources: &mut FxHashMap<Id, WorkspaceRelativePathBuf>,
+    sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
     vcs: Option<&BoxedVcs>,
 ) -> miette::Result<()>
 where
@@ -41,7 +40,7 @@ where
     V: AsRef<str> + 'glob,
 {
     let mut locate_globs = vec![];
-    let mut has_root_level = sources.values().any(|source| source == ".");
+    let mut has_root_level = sources.iter().any(|(_, source)| source == ".");
 
     // Root-level project has special handling
     for glob in globs.into_iter() {
@@ -52,10 +51,8 @@ where
                 continue;
             }
 
-            let (id, source) = infer_project_id_and_source("", workspace_root)?;
-
             has_root_level = true;
-            sources.insert(id, source);
+            sources.push(infer_project_id_and_source("", workspace_root)?);
         } else {
             locate_globs.push(glob);
         }
@@ -114,19 +111,10 @@ where
                 }
             }
 
-            let (id, source) = infer_project_id_and_source(&project_source, workspace_root)?;
-
-            if let Some(existing_source) = sources.get(&id) {
-                warn!(
-                    source = project_source,
-                    existing_source = existing_source.as_str(),
-                    "A project already exists at source {}, skipping conflicting source {}. Try renaming the project folder to make it unique.",
-                    color::file(existing_source),
-                    color::file(&source)
-                );
-            } else {
-                sources.insert(id, source);
-            }
+            sources.push(infer_project_id_and_source(
+                &project_source,
+                workspace_root,
+            )?)
         }
     }
 

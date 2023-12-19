@@ -28,7 +28,7 @@ use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 
 pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
@@ -454,12 +454,12 @@ impl<'app> ProjectGraphBuilder<'app> {
     async fn preload(&mut self) -> miette::Result<()> {
         let context = self.context();
         let mut globs = vec![];
-        let mut sources = FxHashMap::default();
+        let mut sources = vec![];
 
         // Locate all project sources
         let mut add_sources = |map: &FxHashMap<Id, String>| {
             for (id, source) in map {
-                sources.insert(id.to_owned(), WorkspaceRelativePathBuf::from(source));
+                sources.push((id.to_owned(), WorkspaceRelativePathBuf::from(source)));
             }
         };
 
@@ -495,13 +495,16 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Extend graph from subscribers
         debug!("Extending project graph from subscribers");
 
-        let extended_data = context
+        let mut extended_data = context
             .extend_project_graph
             .emit(ExtendProjectGraphEvent {
                 sources: sources.clone(),
                 workspace_root: context.workspace_root.to_owned(),
             })
             .await?;
+
+        // Load all config files
+        self.preload_configs(&mut sources, &mut extended_data.aliases)?;
 
         // Find the root project
         self.root_id = sources.iter().find_map(|(id, source)| {
@@ -512,21 +515,39 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
         });
 
-        self.sources = sources;
+        // Set our data and warn against problems
         self.aliases = extended_data.aliases;
 
-        // Then load all config files
-        self.preload_configs()?;
+        for (id, source) in sources {
+            if let Some(existing_source) = self.sources.get(&id) {
+                warn!(
+                    source = source.as_str(),
+                    existing_source = existing_source.as_str(),
+                    "A project already exists with the ID {} (existing source {}, new source {}), skipping new source. Try renaming the project folder to make it unique, or setting the {} setting in {}.",
+                    color::id(&id),
+                    color::file(existing_source),
+                    color::file(&source),
+                    color::property("id"),
+                    color::file(consts::CONFIG_PROJECT_FILENAME)
+                );
+            } else {
+                self.sources.insert(id, source);
+            }
+        }
 
         Ok(())
     }
 
-    fn preload_configs(&mut self) -> miette::Result<()> {
+    fn preload_configs(
+        &mut self,
+        sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
+        aliases: &mut FxHashMap<String, Id>,
+    ) -> miette::Result<()> {
         let context = self.context();
         let mut configs = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();
 
-        for (id, source) in &self.sources {
+        for (id, source) in sources {
             let config_name = source.join(consts::CONFIG_PROJECT_FILENAME);
             let config_path = config_name.to_path(context.workspace_root);
 
@@ -543,6 +564,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             if let Some(new_id) = &config.id {
                 if new_id != id {
                     renamed_ids.insert(id.to_owned(), new_id.to_owned());
+                    *id = new_id.to_owned();
                 }
             }
 
@@ -551,11 +573,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // If we received new IDs, update references
         for (old_id, new_id) in &renamed_ids {
-            if let Some(source) = self.sources.remove(old_id) {
-                self.sources.insert(new_id.to_owned(), source);
-            }
-
-            for aliased_id in self.aliases.values_mut() {
+            for aliased_id in aliases.values_mut() {
                 if aliased_id == old_id {
                     *aliased_id = new_id.to_owned();
                 }

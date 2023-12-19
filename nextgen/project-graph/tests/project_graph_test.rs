@@ -868,6 +868,14 @@ mod project_graph {
         }
 
         #[tokio::test]
+        async fn doesnt_set_alias_if_a_project_has_the_id() {
+            let graph = generate_aliases_project_graph_for_fixture("aliases-conflict-ids").await;
+
+            assert_eq!(graph.get("one").unwrap().alias, None);
+            assert_eq!(graph.get("two").unwrap().alias, None);
+        }
+
+        #[tokio::test]
         async fn can_get_projects_by_alias() {
             let graph = generate_aliases_project_graph().await;
 

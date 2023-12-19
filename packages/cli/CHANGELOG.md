@@ -21,6 +21,7 @@
 
 - Fixed glob based project locating to not log warnings when a file is found and it starts with `.`
   (ignore dotfiles).
+- Fixed project aliases potentially overwriting a project with the same name.
 
 ## 1.18.4
 

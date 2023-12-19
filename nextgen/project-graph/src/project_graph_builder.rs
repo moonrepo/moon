@@ -535,16 +535,32 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         for (id, alias) in aliases {
             let id = match self.renamed_ids.get(&id) {
-                Some(new_id) => new_id.to_owned(),
-                None => id,
+                Some(new_id) => new_id,
+                None => &id,
             };
 
-            if id == alias {
+            // Skip aliases that match its own ID
+            if id == &alias {
+                continue;
+            }
+
+            // Skip aliases that would override an ID
+            if self.sources.contains_key(&alias) {
+                debug!(
+                    "Skipping alias {} (for project {}) as it conflicts with the project {}",
+                    color::label(&alias),
+                    color::id(&id),
+                    color::id(&alias),
+                );
+
                 continue;
             }
 
             if let Some(existing_id) = dupe_aliases.get(&alias) {
-                if existing_id == &id {
+                // Skip if the existing ID is already for this ID.
+                // This scenario is possible when multiple platforms
+                // extract the same aliases (Bun vs Node, etc).
+                if existing_id == id {
                     continue;
                 }
 
@@ -556,8 +572,8 @@ impl<'app> ProjectGraphBuilder<'app> {
                 .into());
             }
 
-            dupe_aliases.insert(alias.clone(), id.clone());
-            self.aliases.insert(id, alias);
+            dupe_aliases.insert(alias.clone(), id.to_owned());
+            self.aliases.insert(id.to_owned(), alias);
         }
 
         Ok(())

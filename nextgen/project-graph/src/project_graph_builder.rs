@@ -28,7 +28,7 @@ use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
@@ -515,17 +515,12 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Set our data and warn against problems
         for (id, source) in sources {
             if let Some(existing_source) = self.sources.get(&id) {
-                warn!(
-                    id = id.as_str(),
-                    source = source.as_str(),
-                    existing_source = existing_source.as_str(),
-                    "A project already exists with the ID {} (existing source {}, new source {}), skipping new source. Try renaming the project folder to make it unique, or configuring the {} setting in {}.",
-                    color::id(&id),
-                    color::file(existing_source),
-                    color::file(&source),
-                    color::property("id"),
-                    color::file(consts::CONFIG_PROJECT_FILENAME)
-                );
+                return Err(ProjectGraphError::DuplicateId {
+                    id: id.clone(),
+                    old_source: existing_source.to_string(),
+                    new_source: source.to_string(),
+                }
+                .into());
             } else {
                 self.sources.insert(id, source);
             }

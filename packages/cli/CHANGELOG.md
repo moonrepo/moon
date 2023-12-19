@@ -12,6 +12,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Reworked duplicate project ID/alias detection to be more accurate. Will also now error instead of
+  warn when a duplicate is detected.
+
 #### 🐞 Fixes
 
 - Fixed glob based project locating to not log warnings when a file is found and it starts with `.`

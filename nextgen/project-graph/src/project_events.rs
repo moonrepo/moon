@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{DependencyConfig, TaskConfig};
+use moon_config::{DependencyConfig, ProjectsSourcesList, TaskConfig};
 use rustc_hash::FxHashMap;
 use starbase_events::Event;
 use std::path::PathBuf;
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct ExtendProjectGraphEvent {
-    pub sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+    pub sources: ProjectsSourcesList,
     pub workspace_root: PathBuf,
 }
 

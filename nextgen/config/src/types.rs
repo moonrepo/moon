@@ -7,7 +7,9 @@ use std::collections::BTreeMap;
 
 pub type FileGroupsMap = FxHashMap<Id, Vec<InputPath>>;
 
-pub type ProjectsSourcesList = Vec<(Id, WorkspaceRelativePathBuf)>;
+pub type ProjectSourceEntry = (Id, WorkspaceRelativePathBuf);
+
+pub type ProjectsSourcesList = Vec<ProjectSourceEntry>;
 
 pub type ProjectsAliasesMap = FxHashMap<String, Id>;
 

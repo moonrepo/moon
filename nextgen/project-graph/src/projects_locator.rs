@@ -1,5 +1,6 @@
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
+use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use moon_vcs::BoxedVcs;
 use starbase_utils::{fs, glob};
 use std::path::Path;
@@ -10,7 +11,7 @@ use tracing::warn;
 pub fn infer_project_id_and_source(
     path: &str,
     workspace_root: &Path,
-) -> miette::Result<(Id, WorkspaceRelativePathBuf)> {
+) -> miette::Result<ProjectSourceEntry> {
     if path.is_empty() {
         return Ok((
             Id::clean(fs::file_name(workspace_root))?,
@@ -32,7 +33,7 @@ pub fn infer_project_id_and_source(
 pub fn locate_projects_with_globs<'glob, I, V>(
     workspace_root: &Path,
     globs: I,
-    sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
+    sources: &mut ProjectsSourcesList,
     vcs: Option<&BoxedVcs>,
 ) -> miette::Result<()>
 where

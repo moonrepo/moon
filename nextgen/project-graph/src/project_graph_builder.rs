@@ -9,8 +9,8 @@ use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ProjectConfig, ToolchainConfig, WorkspaceConfig,
-    WorkspaceProjects,
+    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_hash::HashEngine;
 use moon_project::Project;
@@ -521,9 +521,10 @@ impl<'app> ProjectGraphBuilder<'app> {
         for (id, source) in sources {
             if let Some(existing_source) = self.sources.get(&id) {
                 warn!(
+                    id = id.as_str(),
                     source = source.as_str(),
                     existing_source = existing_source.as_str(),
-                    "A project already exists with the ID {} (existing source {}, new source {}), skipping new source. Try renaming the project folder to make it unique, or setting the {} setting in {}.",
+                    "A project already exists with the ID {} (existing source {}, new source {}), skipping new source. Try renaming the project folder to make it unique, or configuring the {} setting in {}.",
                     color::id(&id),
                     color::file(existing_source),
                     color::file(&source),
@@ -540,7 +541,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
     fn preload_configs(
         &mut self,
-        sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
+        sources: &mut ProjectsSourcesList,
         aliases: &mut FxHashMap<String, Id>,
     ) -> miette::Result<()> {
         let context = self.context();

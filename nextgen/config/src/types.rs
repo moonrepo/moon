@@ -11,6 +11,8 @@ pub type ProjectSourceEntry = (Id, WorkspaceRelativePathBuf);
 
 pub type ProjectsSourcesList = Vec<ProjectSourceEntry>;
 
-pub type ProjectsAliasesMap = FxHashMap<String, Id>;
+pub type ProjectAliasEntry = (Id, String);
+
+pub type ProjectsAliasesList = Vec<ProjectAliasEntry>;
 
 pub type TasksConfigsMap = BTreeMap<Id, TaskConfig>;

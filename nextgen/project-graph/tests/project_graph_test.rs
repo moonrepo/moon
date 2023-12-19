@@ -790,10 +790,10 @@ mod project_graph {
                             let alias_path = source.join("alias").to_path(&event.workspace_root);
 
                             if alias_path.exists() {
-                                data.aliases.insert(
-                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
+                                data.aliases.push((
                                     id.to_owned(),
-                                );
+                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
+                                ));
                             }
                         }
 

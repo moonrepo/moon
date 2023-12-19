@@ -4,11 +4,11 @@ use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
     Config, DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
-    PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesList, TaskConfig,
+    PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
     TasksConfigsMap, TypeScriptConfig, UnresolvedVersionSpec,
 };
 use moon_hash::{ContentHasher, DepsHash};
-use moon_logger::{debug, warn};
+use moon_logger::debug;
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::get_node_env_paths;
@@ -33,8 +33,6 @@ use std::{collections::BTreeMap, path::Path};
 const LOG_TARGET: &str = "moon:node-platform";
 
 pub struct NodePlatform {
-    bun_also_enabled: bool,
-
     config: NodeConfig,
 
     package_names: FxHashMap<String, Id>,
@@ -56,10 +54,8 @@ impl NodePlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
-        bun_also_enabled: bool,
     ) -> Self {
         NodePlatform {
-            bun_also_enabled,
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),
             config: config.to_owned(),
             package_names: FxHashMap::default(),
@@ -139,7 +135,7 @@ impl Platform for NodePlatform {
     fn load_project_graph_aliases(
         &mut self,
         projects_list: &ProjectsSourcesList,
-        aliases_map: &mut ProjectsAliasesMap,
+        aliases_list: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
         debug!(
             target: LOG_TARGET,
@@ -152,26 +148,10 @@ impl Platform for NodePlatform {
                 PackageJson::read(project_source.to_path(&self.workspace_root))?
             {
                 if let Some(package_name) = package_json.name {
-                    let alias = package_name.clone();
-
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
 
-                    if let Some(existing_id) = aliases_map.get(&alias) {
-                        if !self.bun_also_enabled {
-                            warn!(
-                                target: LOG_TARGET,
-                                "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
-                                color::id(alias),
-                                color::id(existing_id),
-                                color::file(project_source)
-                            );
-                        }
-
-                        continue;
-                    }
-
-                    aliases_map.insert(alias, project_id.to_owned());
+                    aliases_list.push((project_id.to_owned(), package_name.clone()));
                 }
             }
         }

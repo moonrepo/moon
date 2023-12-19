@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
-    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
+    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList,
     ProjectsSourcesList, TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
@@ -40,7 +40,7 @@ pub trait Platform: Send + Sync {
     fn load_project_graph_aliases(
         &mut self,
         projects_list: &ProjectsSourcesList,
-        aliases_map: &mut ProjectsAliasesMap,
+        aliases_list: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
         Ok(())
     }

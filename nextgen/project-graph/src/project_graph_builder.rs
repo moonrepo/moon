@@ -9,8 +9,8 @@ use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, is_test_env, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsAliasesList,
+    ProjectsSourcesList, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_hash::HashEngine;
 use moon_project::Project;
@@ -52,8 +52,8 @@ pub struct ProjectGraphBuilder<'app> {
     #[serde(skip)]
     context: Option<Arc<ProjectGraphBuilderContext<'app>>>,
 
-    /// Mapping of project aliases to project IDs.
-    aliases: FxHashMap<String, Id>,
+    /// Mapping of project IDs to project aliases.
+    aliases: FxHashMap<Id, String>,
 
     /// Loaded project configuration (`moon.yml`) files.
     #[serde(skip)]
@@ -187,7 +187,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             );
         }
 
-        for (alias, id) in self.aliases {
+        for (id, alias) in self.aliases {
             nodes.entry(id).and_modify(|node| {
                 node.alias = Some(alias);
             });
@@ -364,11 +364,8 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Inherit alias before building in case the project
         // references itself in tasks or dependencies
-        for (alias, project_id) in &self.aliases {
-            if project_id == &id {
-                builder.set_alias(alias);
-                break;
-            }
+        if let Some(alias) = self.aliases.get(&id) {
+            builder.set_alias(alias);
         }
 
         let project = builder.build().await?;
@@ -516,8 +513,6 @@ impl<'app> ProjectGraphBuilder<'app> {
         });
 
         // Set our data and warn against problems
-        self.aliases = extended_data.aliases;
-
         for (id, source) in sources {
             if let Some(existing_source) = self.sources.get(&id) {
                 warn!(
@@ -536,13 +531,34 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
         }
 
+        let mut dupe_aliases = FxHashMap::<String, Id>::default();
+
+        for (id, alias) in extended_data.aliases {
+            if let Some(existing_id) = dupe_aliases.get(&alias) {
+                if existing_id != &id {
+                    debug!(
+                        id = id.as_str(),
+                        existing_id = existing_id.as_str(),
+                        "The alias {} has already been used by project ID {}, skipping duplicate alias",
+                        color::label(&alias),
+                        color::id(existing_id)
+                    );
+                }
+
+                continue;
+            }
+
+            dupe_aliases.insert(alias.clone(), id.clone());
+            self.aliases.insert(id, alias);
+        }
+
         Ok(())
     }
 
     fn preload_configs(
         &mut self,
         sources: &mut ProjectsSourcesList,
-        aliases: &mut FxHashMap<String, Id>,
+        aliases: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
         let context = self.context();
         let mut configs = FxHashMap::default();
@@ -574,9 +590,10 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // If we received new IDs, update references
         for (old_id, new_id) in &renamed_ids {
-            for aliased_id in aliases.values_mut() {
+            for (aliased_id, _) in &mut *aliases {
                 if aliased_id == old_id {
                     *aliased_id = new_id.to_owned();
+                    break;
                 }
             }
         }
@@ -592,9 +609,19 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     fn resolve_id(&self, project_locator: &str) -> Id {
-        let id = match self.aliases.get(project_locator) {
-            Some(project_id) => project_id.to_owned(),
-            None => Id::raw(project_locator),
+        let id = if self.sources.contains_key(project_locator) {
+            Id::raw(project_locator)
+        } else {
+            match self.aliases.iter().find_map(|(id, alias)| {
+                if alias == project_locator {
+                    Some(id)
+                } else {
+                    None
+                }
+            }) {
+                Some(project_id) => project_id.to_owned(),
+                None => Id::raw(project_locator),
+            }
         };
 
         match self.renamed_ids.get(&id) {

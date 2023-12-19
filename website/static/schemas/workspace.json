@@ -261,6 +261,17 @@
             }
           ]
         },
+        "strictProjectAliases": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "taskOutputBoundaries": {
           "default": true,
           "anyOf": [

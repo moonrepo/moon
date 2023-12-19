@@ -16,6 +16,10 @@
 
 - Reworked duplicate project ID/alias detection to be more accurate. Will also now error instead of
   warn when a duplicate is detected.
+  - For aliases, the error can be disabled with the new `experiments.strictProjectAliases` setting
+    in `.moon/workspace.yml`.
+  - For project IDs, the error can not be disabled, as conflicting IDs will cause issues with the
+    project graph.
 
 #### 🐞 Fixes
 

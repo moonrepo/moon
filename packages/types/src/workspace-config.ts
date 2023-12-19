@@ -20,6 +20,8 @@ export interface PartialExperimentsConfig {
 	/** @default true */
 	interweavedTaskInheritance?: boolean | null;
 	/** @default true */
+	strictProjectAliases?: boolean | null;
+	/** @default true */
 	taskOutputBoundaries?: boolean | null;
 }
 
@@ -113,6 +115,8 @@ export interface ConstraintsConfig {
 export interface ExperimentsConfig {
 	/** @default true */
 	interweavedTaskInheritance: boolean;
+	/** @default true */
+	strictProjectAliases: boolean;
 	/** @default true */
 	taskOutputBoundaries: boolean;
 }

@@ -227,6 +227,20 @@ experiments:
   interweavedTaskInheritance: false
 ```
 
+### `strictProjectAliases`
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#strictProjectAliases" />
+
+When enabled, will fail with an error when multiple
+[projects have the same alias](../concepts/project#aliases). When disabled, the duplicate aliases
+will not be assigned to their project, and only the first project will use the alias. Defaults to
+`true`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  strictProjectAliases: false
+```
+
 ### `taskOutputBoundaries`
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#taskOutputBoundaries" />

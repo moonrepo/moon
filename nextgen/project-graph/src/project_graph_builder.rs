@@ -564,12 +564,29 @@ impl<'app> ProjectGraphBuilder<'app> {
                     continue;
                 }
 
-                return Err(ProjectGraphError::DuplicateAlias {
-                    alias: alias.clone(),
-                    old_id: existing_id.to_owned(),
-                    new_id: id.clone(),
+                if self
+                    .context()
+                    .workspace_config
+                    .experiments
+                    .strict_project_aliases
+                {
+                    return Err(ProjectGraphError::DuplicateAlias {
+                        alias: alias.clone(),
+                        old_id: existing_id.to_owned(),
+                        new_id: id.clone(),
+                    }
+                    .into());
+                } else {
+                    debug!(
+                        duplicate_id = id.as_str(),
+                        existing_id = existing_id.as_str(),
+                        "Skipping duplicate alias {} for project {} to avoid conflicts",
+                        color::label(&alias),
+                        color::id(&id),
+                    );
+
+                    continue;
                 }
-                .into());
             }
 
             dupe_aliases.insert(alias.clone(), id.to_owned());

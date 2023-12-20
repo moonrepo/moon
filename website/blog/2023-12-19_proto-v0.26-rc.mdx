@@ -58,15 +58,25 @@ This new executable solves all of the following problems (hopfully):
 ## How to test?
 
 If you're interested in testing this new implementation (we'd appreciate it), you can do so by
-downloading the release candidate from GitHub:
-https://github.com/moonrepo/proto/releases/tag/v0.26.0-rc.1
+downloading the latest release candidate from GitHub: https://github.com/moonrepo/proto/releases
 
 Once downloaded, unpack the archive, and move the `proto` and `proto-shim` binaries to the
-`~/.proto/bin` directory (or the location of the `PROTO_INSTALL_DIR` environment variable). From
+`~/.proto/bin` directory (or the location of your `PROTO_INSTALL_DIR` environment variable). From
 here, you can execute `proto` or your tool binaries as normal.
 
-> If you run into issues, try deleting the old `~/.proto/shims` directory and trying again. If
-> problems still persist, please report an issue or reach out to us on Discord!
+:::warning
+
+If you run into issues, try deleting the old `~/.proto/shims` directory and trying again. If
+problems still persist, please report an issue or reach out to us on Discord!
+
+:::
+
+:::info
+
+On macOS, you may need to add the binary to the trusted list, in your Priacy & Security settings.
+This can also be achieved on the command line with `xattr -c ~/.proto/bin/*`.
+
+:::
 
 ## What to test?
 

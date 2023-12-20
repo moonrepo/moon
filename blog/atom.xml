@@ -53,15 +53,14 @@ properly handle all of the required scenarios. This new executable is named <cod
 </ul>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="how-to-test">How to test?<a href="https://moonrepo.dev/blog/proto-v0.26-rc#how-to-test" class="hash-link" aria-label="Direct link to How to test?" title="Direct link to How to test?">​</a></h2>
 <p>If you're interested in testing this new implementation (we'd appreciate it), you can do so by
-downloading the release candidate from GitHub:
-<a href="https://github.com/moonrepo/proto/releases/tag/v0.26.0-rc.1" target="_blank" rel="noopener noreferrer">https://github.com/moonrepo/proto/releases/tag/v0.26.0-rc.1</a></p>
+downloading the latest release candidate from GitHub: <a href="https://github.com/moonrepo/proto/releases" target="_blank" rel="noopener noreferrer">https://github.com/moonrepo/proto/releases</a></p>
 <p>Once downloaded, unpack the archive, and move the <code>proto</code> and <code>proto-shim</code> binaries to the
-<code>~/.proto/bin</code> directory (or the location of the <code>PROTO_INSTALL_DIR</code> environment variable). From
+<code>~/.proto/bin</code> directory (or the location of your <code>PROTO_INSTALL_DIR</code> environment variable). From
 here, you can execute <code>proto</code> or your tool binaries as normal.</p>
-<blockquote>
-<p>If you run into issues, try deleting the old <code>~/.proto/shims</code> directory and trying again. If
-problems still persist, please report an issue or reach out to us on Discord!</p>
-</blockquote>
+<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>If you run into issues, try deleting the old <code>~/.proto/shims</code> directory and trying again. If
+problems still persist, please report an issue or reach out to us on Discord!</p></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>On macOS, you may need to add the binary to the trusted list, in your Priacy &amp; Security settings.
+This can also be achieved on the command line with <code>xattr -c ~/.proto/bin/*</code>.</p></div></div>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-to-test">What to test?<a href="https://moonrepo.dev/blog/proto-v0.26-rc#what-to-test" class="hash-link" aria-label="Direct link to What to test?" title="Direct link to What to test?">​</a></h2>
 <p>Basically everything. We want to ensure that all of the functionality in <a href="https://moonrepo.dev/blog/proto-v0.26-rc#whats-new">What's new?</a>
 works as expected, so simply go about your day to day development and let us know if you run into

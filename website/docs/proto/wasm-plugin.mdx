@@ -182,6 +182,9 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
 The following fields are available on the
 [context object](https://docs.rs/proto_pdk/latest/proto_pdk/struct.ToolContext.html):
 
+- `proto_version` - The version of proto executing the plugin. Note that this version is for the
+  [`proto_core` crate](https://crates.io/crates/proto_core), and not the CLI. Patch numbers will
+  drift, but major and minor numbers should be in sync.
 - `tool_dir` - A virtual path to the tool's directory for the current version.
 - `version` - The current version or alias. If not resolved, will be "latest".
 

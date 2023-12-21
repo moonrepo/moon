@@ -118,6 +118,20 @@ version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 pin-latest = "local"
 ```
 
+#### `telemetry`
+
+When enabled, we collect anonymous usage statistics for tool installs and uninstalls. This helps use
+prioritize which tools to support, what tools or their versions may be broken, and the plugins
+currently in use. Defaults to `true`.
+
+```toml title=".prototools"
+[settings]
+telemetry = false
+```
+
+> The data we track is publicly available and
+> [can be found here](https://github.com/moonrepo/proto/blob/master/crates/cli/src/telemetry.rs).
+
 #### `[http]`
 
 Can be used to customize the HTTP client used by proto, primarily for requesting files to download,

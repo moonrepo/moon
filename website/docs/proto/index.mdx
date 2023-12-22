@@ -77,6 +77,14 @@ The version of a tool that's symlinked _is not_ dynamic, and is manually created
 chosen version with [`proto install --pin`](./proto/commands/install). This also happens
 automatically the first time a tool is installed.
 
+:::info
+
+Not all tools support symlinking a binary, as not all files are executable. For example, most
+Node.js package managers currently do not support this, as JavaScript files are not executable
+(especially on Windows). Shims are required for these tools.
+
+:::
+
 ## Supported tools
 
 The following tools are [officially supported](./proto/tools) in proto via moonrepo. Additional

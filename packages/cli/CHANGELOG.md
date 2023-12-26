@@ -12,6 +12,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Removed the `experiments.interweavedTaskInheritance` setting from `.moon/workspace.yml`.
+  Interweaved inheritance is now always enabled (was true by default).
+
 #### 🧩 Plugins
 
 - Updated `bun_plugin` to v0.7.

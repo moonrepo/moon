@@ -44,7 +44,6 @@ async fn build_tasks_with_config(
         &platform,
         TasksBuilderContext {
             detect_platform: &emitter,
-            legacy_task_inheritance: false,
             toolchain_config: &toolchain_config,
             workspace_root: root,
         },

@@ -79,7 +79,7 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         with:
           auto-install: true
-          proto-version: '0.25.3' # Keep in sync
+          proto-version: '0.26.1' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Checking coverage status
         id: coverage

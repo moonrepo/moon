@@ -1,5 +1,5 @@
 use moon_common::cacheable;
-use schematic::{env, Config};
+use schematic::Config;
 
 cacheable!(
     #[derive(Clone, Config, Debug)]
@@ -12,7 +12,7 @@ cacheable!(
         pub strict_project_aliases: bool,
 
         #[deprecated]
-        #[setting(default = true, env = "MOON_DISABLE_OVERLAPPING_OUTPUTS", parse_env = env::parse_bool)]
+        #[setting(default = true)]
         pub task_output_boundaries: bool,
     }
 );

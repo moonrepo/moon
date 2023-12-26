@@ -4,7 +4,7 @@ use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
-use moon_project_expander::{ExpanderContext, ExpansionBoundaries, ProjectExpander};
+use moon_project_expander::{ExpanderContext, ProjectExpander};
 use moon_query::{build_query, Criteria, Queryable};
 use once_map::OnceMap;
 use petgraph::dot::{Config, Dot};
@@ -46,8 +46,6 @@ impl ProjectNode {
 
 #[derive(Default)]
 pub struct ProjectGraph {
-    pub check_boundaries: bool,
-
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: OnceMap<PathBuf, String>,
 
@@ -82,7 +80,6 @@ impl ProjectGraph {
             workspace_root: workspace_root.to_owned(),
             fs_cache: OnceMap::new(),
             query_cache: OnceMap::new(),
-            check_boundaries: false,
         }
     }
 
@@ -125,9 +122,7 @@ impl ProjectGraph {
     /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     pub fn get(&self, project_locator: &str) -> miette::Result<Arc<Project>> {
-        let mut boundaries = ExpansionBoundaries::default();
-
-        self.internal_get(project_locator, &mut boundaries)
+        self.internal_get(project_locator)
     }
 
     /// Return an unexpanded project with the provided name or alias from the graph.
@@ -144,11 +139,10 @@ impl ProjectGraph {
 
     /// Return all projects from the graph.
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
-        let mut boundaries = ExpansionBoundaries::default();
         let mut all = vec![];
 
         for id in self.nodes.keys() {
-            all.push(self.internal_get(id, &mut boundaries)?);
+            all.push(self.internal_get(id)?);
         }
 
         Ok(all)
@@ -252,11 +246,7 @@ impl ProjectGraph {
         .into_diagnostic()
     }
 
-    fn internal_get(
-        &self,
-        alias_or_id: &str,
-        boundaries: &mut ExpansionBoundaries,
-    ) -> miette::Result<Arc<Project>> {
+    fn internal_get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
         let id = self.resolve_id(alias_or_id);
 
         // Check if the expanded project has been created, if so return it
@@ -283,14 +273,13 @@ impl ProjectGraph {
 
             let mut expander = ProjectExpander::new(ExpanderContext {
                 aliases: self.aliases(),
-                check_boundaries: self.check_boundaries,
                 project: self.get_unexpanded(&id)?,
                 query: Box::new(query),
                 workspace_root: &self.workspace_root,
             });
 
             self.write_cache()
-                .insert(id.clone(), Arc::new(expander.expand(boundaries)?));
+                .insert(id.clone(), Arc::new(expander.expand()?));
         }
 
         Ok(Arc::clone(self.read_cache().get(&id).unwrap()))

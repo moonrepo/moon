@@ -12,6 +12,12 @@
 
 ## Unreleased
 
+#### 🧩 Plugins
+
+- Updated `bun_plugin` to v0.7.
+- Updated `node_plugin` and `node_depman_plugin` to v0.7.
+- Updated `rust_plugin` to v0.6.
+
 #### ⚙️ Internal
 
 - Updated proto to v0.26.1.

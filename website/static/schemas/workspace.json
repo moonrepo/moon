@@ -252,6 +252,7 @@
       "properties": {
         "interweavedTaskInheritance": {
           "default": true,
+          "deprecated": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -274,6 +275,7 @@
         },
         "taskOutputBoundaries": {
           "default": true,
+          "deprecated": true,
           "anyOf": [
             {
               "type": "boolean"

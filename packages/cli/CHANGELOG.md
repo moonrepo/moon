@@ -20,7 +20,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.26.1.
+- Updated proto to v0.26.2.
 
 ## 1.18.5
 

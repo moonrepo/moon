@@ -549,7 +549,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 debug!(
                     "Skipping alias {} (for project {}) as it conflicts with the project {}",
                     color::label(&alias),
-                    color::id(&id),
+                    color::id(id),
                     color::id(&alias),
                 );
 
@@ -582,7 +582,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                         existing_id = existing_id.as_str(),
                         "Skipping duplicate alias {} for project {} to avoid conflicts",
                         color::label(&alias),
-                        color::id(&id),
+                        color::id(id),
                     );
 
                     continue;

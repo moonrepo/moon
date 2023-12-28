@@ -4,5 +4,5 @@ failure-output = "immediate-final"
 retries = 1
 test-threads = 2
 
-[profile.default]
-test-threads = 8
+# [profile.default]
+# test-threads = 8

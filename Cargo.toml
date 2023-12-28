@@ -39,7 +39,7 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.26.8"
+proto_core = "0.26.9"
 relative-path = { version = "1.9.0", features = ["serde"] }
 regex = "1.10.2"
 reqwest = { version = "0.11.22", default-features = false, features = [

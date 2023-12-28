@@ -18,6 +18,8 @@ pub enum ActionNode {
 
     /// Run a project's task.
     RunTask {
+        args: Vec<String>,
+        env: Vec<(String, String)>,
         interactive: bool, // Interactively with stdin
         persistent: bool,  // Never terminates
         runtime: Runtime,

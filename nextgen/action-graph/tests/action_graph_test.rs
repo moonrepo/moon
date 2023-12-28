@@ -209,6 +209,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
                         interactive: false,
                         persistent: false,
                         runtime: create_node_runtime(),
@@ -256,6 +258,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
                         interactive: false,
                         persistent: false,
                         runtime: create_node_runtime(),
@@ -364,6 +368,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
                         interactive: false,
                         persistent: false,
                         runtime: create_rust_runtime(),
@@ -393,6 +399,8 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::RunTask {
+                    args: vec![],
+                    env: vec![],
                     interactive: true,
                     persistent: false,
                     runtime: Runtime::system(),
@@ -426,6 +434,8 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::RunTask {
+                    args: vec![],
+                    env: vec![],
                     interactive: true,
                     persistent: false,
                     runtime: Runtime::system(),
@@ -454,6 +464,8 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::RunTask {
+                    args: vec![],
+                    env: vec![],
                     interactive: false,
                     persistent: true,
                     runtime: Runtime::system(),

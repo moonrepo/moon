@@ -140,6 +140,8 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: &RunRequirements<'app>,
     ) -> miette::Result<Option<NodeIndex>> {
         let node = ActionNode::RunTask {
+            args: vec![],
+            env: vec![],
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             runtime: self.get_runtime(project, Some(task), true),

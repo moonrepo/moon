@@ -174,7 +174,7 @@ impl<'app> ActionGraphBuilder<'app> {
         if !task.deps.is_empty() {
             trace!(
                 task = task.target.as_str(),
-                deps = ?task.deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
+                deps = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
                 "Linking dependencies for task",
             );
 
@@ -199,8 +199,8 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut indices = vec![];
         let mut previous_target_index = None;
 
-        for dep_target in &task.deps {
-            let (_, dep_indices) = self.run_task_by_target(dep_target, &reqs)?;
+        for dep_config in &task.deps {
+            let (_, dep_indices) = self.run_task_by_target(&dep_config.target, &reqs)?;
 
             for dep_index in dep_indices {
                 // When parallel, parent depends on child
@@ -244,7 +244,7 @@ impl<'app> ActionGraphBuilder<'app> {
                     continue;
                 }
 
-                if dep_task.deps.contains(&task.target) {
+                if dep_task.deps.iter().any(|dep| dep.target == task.target) {
                     if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
                         indices.push(index);
                     }
@@ -260,7 +260,7 @@ impl<'app> ActionGraphBuilder<'app> {
                         continue;
                     }
 
-                    if dep_task.deps.contains(&task.target) {
+                    if dep_task.deps.iter().any(|dep| dep.target == task.target) {
                         if let Some(index) = self.run_task(&dep_project, dep_task, &reqs)? {
                             indices.push(index);
                         }

@@ -4,7 +4,7 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
-    ProjectType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
+    ProjectType, TaskCommandArgs, TaskConfig, TaskDependency, TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -304,10 +304,10 @@ implicitDeps:
             assert_eq!(
                 config.implicit_deps,
                 vec![
-                    Target::parse("task").unwrap(),
-                    Target::parse("project:task").unwrap(),
-                    Target::parse("^:task").unwrap(),
-                    Target::parse("~:task").unwrap()
+                    TaskDependency::Target(Target::parse("task").unwrap()),
+                    TaskDependency::Target(Target::parse("project:task").unwrap()),
+                    TaskDependency::Target(Target::parse("^:task").unwrap()),
+                    TaskDependency::Target(Target::parse("~:task").unwrap()),
                 ]
             );
         }

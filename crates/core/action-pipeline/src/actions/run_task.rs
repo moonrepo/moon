@@ -44,8 +44,8 @@ pub async fn run_task(
     if !task.deps.is_empty() {
         let mut ctx = context.write().await;
 
-        for dep in &task.deps {
-            if let Some(dep_state) = ctx.target_states.get(dep) {
+        for dep_config in &task.deps {
+            if let Some(dep_state) = ctx.target_states.get(&dep_config.target) {
                 if !dep_state.is_complete() {
                     ctx.target_states
                         .insert(target.clone(), TargetState::Skipped);
@@ -53,7 +53,7 @@ pub async fn run_task(
                     debug!(
                         target: LOG_TARGET,
                         "Dependency {} of {} has failed or has been skipped, skipping this target",
-                        color::label(dep),
+                        color::label(&dep_config.target),
                         color::label(&task.target)
                     );
 

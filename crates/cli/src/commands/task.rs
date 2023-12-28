@@ -83,7 +83,12 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
     if !task.deps.is_empty() {
         term.line("")?;
         term.render_label(Label::Default, "Depends on")?;
-        term.render_list(task.deps.iter().map(color::label).collect::<Vec<_>>())?;
+        term.render_list(
+            task.deps
+                .iter()
+                .map(|d| color::label(&d.target))
+                .collect::<Vec<_>>(),
+        )?;
     }
 
     if !task.input_files.is_empty() || !task.input_globs.is_empty() {

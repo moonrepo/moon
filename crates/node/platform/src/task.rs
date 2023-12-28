@@ -1,5 +1,7 @@
 use moon_common::Id;
-use moon_config::{OutputPath, PartialTaskCommandArgs, PartialTaskConfig, PlatformType};
+use moon_config::{
+    OutputPath, PartialTaskCommandArgs, PartialTaskConfig, PartialTaskDependency, PlatformType,
+};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
@@ -510,7 +512,9 @@ impl<'a> ScriptParser<'a> {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
                         task.deps
                             .get_or_insert(vec![])
-                            .push(Target::new_self(previous_task_id)?);
+                            .push(PartialTaskDependency::Target(Target::new_self(
+                                previous_task_id,
+                            )?));
                     }
                 }
 
@@ -558,7 +562,9 @@ impl<'a> ScriptParser<'a> {
                 if let Some(task) = self.tasks.get_mut(task_id) {
                     task.deps
                         .get_or_insert(vec![])
-                        .push(Target::new_self(pre_task_id)?);
+                        .push(PartialTaskDependency::Target(Target::new_self(
+                            pre_task_id,
+                        )?));
                 }
             }
         }
@@ -571,7 +577,7 @@ impl<'a> ScriptParser<'a> {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
                     task.deps
                         .get_or_insert(vec![])
-                        .push(Target::new_self(task_id)?);
+                        .push(PartialTaskDependency::Target(Target::new_self(task_id)?));
                 }
             }
         }

@@ -2,7 +2,7 @@ use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::{color, Id};
-use moon_config::InputPath;
+use moon_config::{InputPath, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
 use rustc_hash::FxHashSet;
@@ -62,14 +62,14 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         trace!(
             target = task.target.as_str(),
-            deps = ?task.deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
+            deps = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
             "Expanding target scopes for deps",
         );
 
         let project = &self.context.project;
 
         // Dont use a `HashSet` as we want to preserve order
-        let mut deps: Vec<Target> = vec![];
+        let mut deps: Vec<TaskDependencyConfig> = vec![];
 
         let mut check_and_push_dep =
             |dep_project: &Project, task_id: &Id, skip_if_missing: bool| -> miette::Result<()> {
@@ -104,7 +104,11 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 }
 
                 // Add the dep if it has not already been
-                let dep = Target::new(&dep_project.id, task_id)?;
+                // TODO
+                let dep = TaskDependencyConfig {
+                    target: Target::new(&dep_project.id, task_id)?,
+                    ..TaskDependencyConfig::default()
+                };
 
                 if !deps.contains(&dep) {
                     deps.push(dep);
@@ -113,7 +117,9 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 Ok(())
             };
 
-        for dep_target in &task.deps {
+        for dep_config in &task.deps {
+            let dep_target = &dep_config.target;
+
             match &dep_target.scope {
                 // :task
                 TargetScope::All => {

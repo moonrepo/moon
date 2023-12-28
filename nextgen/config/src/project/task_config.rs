@@ -32,9 +32,31 @@ fn validate_command<D, C>(
     Ok(())
 }
 
-pub fn validate_deps<D, C>(deps: &[Target], _task: &D, _context: &C) -> Result<(), ValidateError> {
+pub fn validate_deps<D, C>(
+    deps: &[PartialTaskDependency],
+    _task: &D,
+    _context: &C,
+) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
-        if matches!(dep.scope, TargetScope::All) {
+        let scope;
+
+        match dep {
+            PartialTaskDependency::Config(cfg) => {
+                if let Some(target) = &cfg.target {
+                    scope = &target.scope;
+                } else {
+                    return Err(ValidateError::with_segment(
+                        "a target field is required",
+                        PathSegment::Index(i),
+                    ));
+                }
+            }
+            PartialTaskDependency::Target(target) => {
+                scope = &target.scope;
+            }
+        };
+
+        if matches!(scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
                 PathSegment::Index(i),
@@ -68,6 +90,41 @@ cacheable!(
 
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TaskDependencyConfig {
+        #[setting(nested)]
+        pub args: TaskCommandArgs,
+
+        pub env: FxHashMap<String, String>,
+
+        pub target: Target,
+    }
+);
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[serde(untagged, expecting = "expected a target or dependency object")]
+    pub enum TaskDependency {
+        Target(Target),
+
+        #[setting(nested)]
+        Config(TaskDependencyConfig),
+    }
+);
+
+impl TaskDependency {
+    pub fn into_config(self) -> TaskDependencyConfig {
+        match self {
+            Self::Config(config) => config,
+            Self::Target(target) => TaskDependencyConfig {
+                target,
+                ..TaskDependencyConfig::default()
+            },
+        }
+    }
+}
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskConfig {
         pub extends: Option<Id>,
 
@@ -77,8 +134,8 @@ cacheable!(
         #[setting(nested)]
         pub args: TaskCommandArgs,
 
-        #[setting(validate = validate_deps)]
-        pub deps: Vec<Target>,
+        #[setting(nested, validate = validate_deps)]
+        pub deps: Vec<TaskDependency>,
 
         pub env: FxHashMap<String, String>,
 

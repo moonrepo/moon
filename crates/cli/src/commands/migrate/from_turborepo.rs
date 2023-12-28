@@ -4,8 +4,8 @@ use moon::generate_project_graph;
 use moon_common::{consts, Id};
 use moon_config::{
     InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
-    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig, PlatformType,
-    ProjectConfig,
+    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskDependency, PartialTaskOptionsConfig,
+    PlatformType, ProjectConfig,
 };
 use moon_target::Target;
 use moon_terminal::safe_exit;
@@ -111,7 +111,11 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
         }
 
         if !deps.is_empty() {
-            config.deps = Some(deps);
+            config.deps = Some(
+                deps.into_iter()
+                    .map(|target| PartialTaskDependency::Target(target))
+                    .collect(),
+            );
         }
     }
 

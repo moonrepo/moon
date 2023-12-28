@@ -2,11 +2,12 @@ use crate::action_graph::ActionGraph;
 use crate::action_node::ActionNode;
 use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
+use moon_config::TaskDependencyConfig;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_query::{build_query, Criteria};
-use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
+use moon_task::{parse_task_args, Target, TargetError, TargetLocator, TargetScope, Task};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use tracing::{debug, trace};
@@ -139,9 +140,27 @@ impl<'app> ActionGraphBuilder<'app> {
         task: &Task,
         reqs: &RunRequirements<'app>,
     ) -> miette::Result<Option<NodeIndex>> {
+        self.run_task_with_config(project, task, reqs, None)
+    }
+
+    pub fn run_task_with_config(
+        &mut self,
+        project: &Project,
+        task: &Task,
+        reqs: &RunRequirements<'app>,
+        config: Option<&TaskDependencyConfig>,
+    ) -> miette::Result<Option<NodeIndex>> {
+        let mut args = vec![];
+        let mut env = vec![];
+
+        if let Some(config) = config {
+            args.extend(parse_task_args(&config.args)?);
+            env.extend(config.env.clone().into_iter().collect::<Vec<_>>());
+        }
+
         let node = ActionNode::RunTask {
-            args: vec![],
-            env: vec![],
+            args,
+            env,
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             runtime: self.get_runtime(project, Some(task), true),
@@ -200,7 +219,8 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut previous_target_index = None;
 
         for dep in &task.deps {
-            let (_, dep_indices) = self.run_task_by_target(&dep.target, &reqs)?;
+            let (_, dep_indices) =
+                self.run_task_by_target_with_config(&dep.target, &reqs, Some(&dep))?;
 
             for dep_index in dep_indices {
                 // When parallel, parent depends on child
@@ -277,6 +297,29 @@ impl<'app> ActionGraphBuilder<'app> {
         target: T,
         reqs: &RunRequirements<'app>,
     ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
+        self.run_task_by_target_with_config(target, reqs, None)
+    }
+
+    pub fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
+        &mut self,
+        target_locator: T,
+        reqs: &RunRequirements<'app>,
+    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
+        match target_locator.as_ref() {
+            TargetLocator::Qualified(target) => self.run_task_by_target(target, reqs),
+            TargetLocator::TaskFromWorkingDir(task_id) => self.run_task_by_target(
+                Target::new(&self.project_graph.get_from_path(None)?.id, task_id)?,
+                reqs,
+            ),
+        }
+    }
+
+    pub fn run_task_by_target_with_config<T: AsRef<Target>>(
+        &mut self,
+        target: T,
+        reqs: &RunRequirements<'app>,
+        config: Option<&TaskDependencyConfig>,
+    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         let target = target.as_ref();
         let mut inserted_targets = FxHashSet::default();
         let mut inserted_indices = FxHashSet::default();
@@ -295,7 +338,9 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if let Some(index) = self.run_task(&project, task, reqs)? {
+                        if let Some(index) =
+                            self.run_task_with_config(&project, task, reqs, config)?
+                        {
                             inserted_targets.insert(task.target.clone());
                             inserted_indices.insert(index);
                         }
@@ -308,10 +353,10 @@ impl<'app> ActionGraphBuilder<'app> {
             }
             // project:task
             TargetScope::Project(project_locator) => {
-                let project = self.project_graph.get(project_locator)?;
+                let project = self.project_graph.get(project_locator.as_str())?;
                 let task = project.get_task(&target.task_id)?;
 
-                if let Some(index) = self.run_task(&project, task, reqs)? {
+                if let Some(index) = self.run_task_with_config(&project, task, reqs, config)? {
                     inserted_targets.insert(task.target.to_owned());
                     inserted_indices.insert(index);
                 }
@@ -325,7 +370,9 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if let Some(index) = self.run_task(&project, task, reqs)? {
+                        if let Some(index) =
+                            self.run_task_with_config(&project, task, reqs, config)?
+                        {
                             inserted_targets.insert(task.target.clone());
                             inserted_indices.insert(index);
                         }
@@ -339,20 +386,6 @@ impl<'app> ActionGraphBuilder<'app> {
         };
 
         Ok((inserted_targets, inserted_indices))
-    }
-
-    pub fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
-        &mut self,
-        target_locator: T,
-        reqs: &RunRequirements<'app>,
-    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
-        match target_locator.as_ref() {
-            TargetLocator::Qualified(target) => self.run_task_by_target(target, reqs),
-            TargetLocator::TaskFromWorkingDir(task_id) => self.run_task_by_target(
-                Target::new(&self.project_graph.get_from_path(None)?.id, task_id)?,
-                reqs,
-            ),
-        }
     }
 
     pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {

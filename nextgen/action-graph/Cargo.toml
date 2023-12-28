@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_config = { path = "../config" }
 # TODO remove
 moon_platform = { path = "../../crates/core/platform" }
 moon_platform_runtime = { path = "../platform-runtime" }

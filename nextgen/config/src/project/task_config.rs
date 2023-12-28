@@ -100,9 +100,18 @@ cacheable!(
     }
 );
 
+impl TaskDependencyConfig {
+    pub fn new(target: Target) -> Self {
+        Self {
+            target,
+            ..Default::default()
+        }
+    }
+}
+
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
-    #[serde(untagged, expecting = "expected a target or dependency object")]
+    #[serde(untagged, expecting = "expected a valid target or dependency object")]
     pub enum TaskDependency {
         Target(Target),
 

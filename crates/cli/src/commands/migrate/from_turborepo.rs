@@ -113,7 +113,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
         if !deps.is_empty() {
             config.deps = Some(
                 deps.into_iter()
-                    .map(|target| PartialTaskDependency::Target(target))
+                    .map(PartialTaskDependency::Target)
                     .collect(),
             );
         }
@@ -351,9 +351,9 @@ mod tests {
             assert_eq!(
                 config.deps,
                 Some(vec![
-                    Target::new_self("normal").unwrap(),
-                    Target::parse("^:parent").unwrap(),
-                    Target::parse("project:normal").unwrap(),
+                    PartialTaskDependency::Target(Target::new_self("normal").unwrap()),
+                    PartialTaskDependency::Target(Target::parse("^:parent").unwrap()),
+                    PartialTaskDependency::Target(Target::parse("project:normal").unwrap()),
                 ])
             );
             assert_eq!(

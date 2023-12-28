@@ -313,7 +313,7 @@ implicitDeps:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid target ~:bad target")]
+        #[should_panic(expected = "expected a valid target or dependency object")]
         fn errors_on_invalid_format() {
             test_load_config(FILENAME, "implicitDeps: ['bad target']", |path| {
                 InheritedTasksConfig::load(path.join(FILENAME))

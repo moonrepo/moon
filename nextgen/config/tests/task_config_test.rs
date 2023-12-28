@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOutputStyle, TaskType,
+    FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskDependency,
+    TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use utils::*;
@@ -142,16 +142,16 @@ deps:
             assert_eq!(
                 config.deps,
                 vec![
-                    Target::parse("task").unwrap(),
-                    Target::parse("project:task").unwrap(),
-                    Target::parse("^:task").unwrap(),
-                    Target::parse("~:task").unwrap()
+                    TaskDependency::Target(Target::parse("task").unwrap()),
+                    TaskDependency::Target(Target::parse("project:task").unwrap()),
+                    TaskDependency::Target(Target::parse("^:task").unwrap()),
+                    TaskDependency::Target(Target::parse("~:task").unwrap()),
                 ]
             );
         }
 
         #[test]
-        #[should_panic(expected = "Invalid target ~:bad target")]
+        #[should_panic(expected = "expected a valid target or dependency object")]
         fn errors_on_invalid_format() {
             test_parse_config("deps: ['bad target']", |code| TaskConfig::parse(code));
         }

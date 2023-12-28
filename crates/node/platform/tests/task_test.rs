@@ -1,4 +1,6 @@
-use moon_config::{OutputPath, PartialTaskCommandArgs, PartialTaskConfig, PlatformType};
+use moon_config::{
+    OutputPath, PartialTaskCommandArgs, PartialTaskConfig, PartialTaskDependency, PlatformType,
+};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
@@ -7,13 +9,13 @@ use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
-fn create_target_deps<I, V>(list: I) -> Vec<Target>
+fn create_target_deps<I, V>(list: I) -> Vec<PartialTaskDependency>
 where
     I: IntoIterator<Item = V>,
     V: AsRef<str>,
 {
     list.into_iter()
-        .map(|value| Target::parse(value.as_ref()).unwrap())
+        .map(|value| PartialTaskDependency::Target(Target::parse(value.as_ref()).unwrap()))
         .collect()
 }
 

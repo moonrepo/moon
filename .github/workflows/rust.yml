@@ -76,7 +76,6 @@ jobs:
           cache-base: '^(master|develop-)'
           components: llvm-tools-preview
       - uses: moonrepo/setup-toolchain@v0
-        if: ${{ runner.os == 'Linux' }}
         with:
           auto-install: true
           proto-version: '0.26.2' # Keep in sync
@@ -89,6 +88,12 @@ jobs:
           WITH_COVERAGE:
             ${{ (github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
             github.event_name == 'push' && github.ref_name == 'master') && runner.os != 'Linux' }}
+      - name: Reset shims
+        if: ${{ runner.os != 'Windows' }}
+        run: rm -rf ~/.proto/shims
+      - name: Reset shims
+        if: ${{ runner.os == 'Windows' }}
+        run: rmdir /S /Q "$HOME\.proto\shims"
       - name: Run tests
         if: ${{ steps.coverage.outputs.coverage == 'false' }}
         run: just test-ci

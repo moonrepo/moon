@@ -1,0 +1,42 @@
+---
+slug: moon-v1.19
+title: moon v1.19 - ???
+authors: [milesj]
+tags: [experiments]
+# image: ./img/moon/v1.19.png
+---
+
+???
+
+<!--truncate-->
+
+## Resolved experiments
+
+moon has a concept of [experiments](/docs/config/workspace#experiments), where certain features are
+gated behind a flag. This allows us to support new and old functionality in parallel, and also allow
+users to gradually upgrade when encountering a breaking change. For many months now, we've had 2
+experiments running, and have decided on a path forward.
+
+The first is `experiments.interweavedTaskInheritance`, which would inherit global and local tasks in
+order, interweaved within each other. The old implementation would inherit global first, then local
+second, distinctly grouping them. Since this experiment was introduced, we have not received a
+single bug report or issue. This is a good sign that the new behavior is working as expected, and as
+such, have decided _to move forward_ with this experiment and make it the new implementation. The
+old implementation has been removed entirely.
+
+The second is `experiments.taskOutputBoundaries`, which was rather controversial when introduced.
+This experiment would trigger an error anytime a [task's `outputs`][outputs] overlapped within
+another [task's `outputs`][outputs]. The reason for this change, is that multiple tasks writing to
+the same output location could "corrupt" the expected state, and trigger unexpected results when
+hydrating from the cache. However in practice, this restriction has caused more headache and
+introduced a steeper learning curve then expected. It also caused problems with
+[tasks that extend](/docs/config/project#extends) from another, resulting in the same outputs being
+used. Because of this, we've decided _to **not** move forward_ with this experiment, and allow
+whatever task outputs you wish (we trust you're smart enough to not shoot yourself in the foot).
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.19.0) for a full list
+of changes.
+
+[outputs]: /docs/config/project#outputs

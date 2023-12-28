@@ -1,26 +1,14 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::patterns;
 use moon_project::Project;
-use moon_task::Target;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
 use tracing::debug;
 
-/// Boundaries between projects to validate.
-#[derive(Default)]
-pub struct ExpansionBoundaries {
-    pub output_files: FxHashMap<WorkspaceRelativePathBuf, Target>,
-    pub output_globs: FxHashMap<WorkspaceRelativePathBuf, Target>,
-}
-
 pub struct ExpanderContext<'graph, 'query> {
     /// Mapping of aliases to their project IDs.
     pub aliases: FxHashMap<&'graph str, &'graph Id>,
-
-    /// Whether to check project boundaries.
-    pub check_boundaries: bool,
 
     /// The base unexpanded project.
     pub project: &'graph Project,

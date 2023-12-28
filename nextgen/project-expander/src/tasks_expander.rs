@@ -1,4 +1,4 @@
-use crate::expander_context::{substitute_env_var, ExpanderContext, ExpansionBoundaries};
+use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::{color, Id};
@@ -6,7 +6,6 @@ use moon_config::InputPath;
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
 use rustc_hash::FxHashSet;
-use starbase_utils::glob::GlobSet;
 use tracing::{trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
@@ -282,11 +281,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         Ok(())
     }
 
-    pub fn expand_outputs(
-        &mut self,
-        task: &mut Task,
-        boundaries: &mut ExpansionBoundaries,
-    ) -> miette::Result<()> {
+    pub fn expand_outputs(&mut self, task: &mut Task) -> miette::Result<()> {
         if task.outputs.is_empty() {
             return Ok(());
         }
@@ -302,20 +297,6 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Aggregate paths first before globbing, as they are literal
         for file in files {
-            if self.context.check_boundaries {
-                if let Some(existing_target) = boundaries.output_files.get(&file) {
-                    return Err(TasksExpanderError::OverlappingOutputs {
-                        output: file.to_string(),
-                        targets: vec![existing_target.to_owned(), task.target.clone()],
-                    }
-                    .into());
-                } else {
-                    boundaries
-                        .output_files
-                        .insert(file.clone(), task.target.clone());
-                }
-            }
-
             // Outputs must *not* be considered an input,
             // so if there's an input that matches an output,
             // remove it! Is there a better way to do this?
@@ -328,52 +309,11 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Aggregate globs second so we can match against the paths
         for glob in globs {
-            if self.context.check_boundaries {
-                if let Some(existing_target) = boundaries.output_globs.get(&glob) {
-                    return Err(TasksExpanderError::OverlappingOutputs {
-                        output: glob.to_string(),
-                        targets: vec![existing_target.to_owned(), task.target.clone()],
-                    }
-                    .into());
-                } else {
-                    boundaries
-                        .output_globs
-                        .insert(glob.clone(), task.target.clone());
-                }
-            }
-
             if task.input_globs.contains(&glob) {
                 task.input_globs.remove(&glob);
             }
 
             task.output_globs.insert(glob);
-        }
-
-        // Now that we have globs, match against all aggreated paths for boundary conflicts,
-        // primarily overlapping outputs!
-        if self.context.check_boundaries
-            && !task.output_globs.is_empty()
-            && !boundaries.output_files.is_empty()
-        {
-            let globset = GlobSet::new(&task.output_globs)?;
-            let globs_without_stars = task
-                .output_globs
-                .iter()
-                .filter_map(|g| g.as_str().strip_suffix("/**/*"))
-                .collect::<FxHashSet<_>>();
-
-            for (existing_file, existing_target) in &boundaries.output_files {
-                if existing_target != &task.target
-                    && (globset.is_match(existing_file.as_str())
-                        || globs_without_stars.contains(existing_file.as_str()))
-                {
-                    return Err(TasksExpanderError::OverlappingOutputs {
-                        output: existing_file.to_string(),
-                        targets: vec![existing_target.to_owned(), task.target.clone()],
-                    }
-                    .into());
-                }
-            }
         }
 
         Ok(())

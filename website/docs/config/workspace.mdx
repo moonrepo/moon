@@ -214,19 +214,6 @@ tags: ['react']
 
 Enable or disable experiments that alter core functionality.
 
-### `interweavedTaskInheritance`
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#interweavedTaskInheritance" />
-
-Enables the new interweaved task inheritance behavior where global and local tasks are interweaved
-throughout the inheritance and extends chain. The legacy behavior would build global and local tasks
-separately, then merge them. Defaults to `true`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  interweavedTaskInheritance: false
-```
-
 ### `strictProjectAliases`
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#strictProjectAliases" />
@@ -239,19 +226,6 @@ will not be assigned to their project, and only the first project will use the a
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
   strictProjectAliases: false
-```
-
-### `taskOutputBoundaries`
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#taskOutputBoundaries" />
-
-Enforces strict boundaries for task outputs and will error when multiple tasks write to the same
-output location. This includes output globs that overlap with literal output file paths. Defaults to
-`true`, and will be fully enabled by default in a future release.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  taskOutputBoundaries: false
 ```
 
 ## `generator`

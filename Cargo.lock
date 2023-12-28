@@ -4667,9 +4667,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.26.10"
+version = "0.26.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24acc4aa213b385d88d7e3ec4b3ce4dff13084c30220e2345a09f8caefd938cf"
+checksum = "bf993b9848aaba31c11dc46fe10a654b0c9a4919d745ef89967f43a527fad9bf"
 dependencies = [
  "cached",
  "extism",
@@ -4732,9 +4732,9 @@ dependencies = [
 
 [[package]]
 name = "proto_shim"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfd00e57020e07c4fe0ac06699e0bc7fb09f2b14906403ce68967b8b81cd6fac"
+checksum = "7823a5b2dd24ec2a0f0e533d94633f41bd5354daf721b308dd04273384e7128b"
 dependencies = [
  "command-group",
  "dirs 5.0.1",

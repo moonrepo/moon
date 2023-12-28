@@ -15,7 +15,7 @@
 #### 💥 Breaking
 
 - Removed the `experiments.interweavedTaskInheritance` setting from `.moon/workspace.yml`.
-  Interweaved inheritance is now always enabled (was true by default).
+  Interweaved inheritance is now always enabled (was previously true by default).
 - Removed the `experiments.taskOutputBoundaries` setting from `.moon/workspace.yml`. We opted to
   remove boundaries entirely, as they caused more problems than solved. Task outputs may now overlap
   without issue.
@@ -28,7 +28,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.26.3.
+- Updated proto to v0.26.4.
 
 ## 1.18.5
 

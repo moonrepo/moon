@@ -1,4 +1,4 @@
 # These are used by tests that require the tools
 # to exist in the environment!
-bun = "1.0.15"
+# bun = "1.0.15"
 node = "20.8.0"

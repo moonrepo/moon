@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{DependencyConfig, InputPath, OutputPath, TaskDependencyConfig};
+use moon_config::{DependencyConfig, InputPath, OutputPath, TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_project_expander::TasksExpander;
 use moon_task::Target;
@@ -668,6 +668,94 @@ mod tasks_expander {
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+            }
+        }
+
+        mod args {
+            use super::*;
+
+            #[test]
+            fn passes_args_through() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("a b c".into()),
+                    target: Target::parse("test").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        target: Target::parse("project:test").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }]
+                );
+            }
+
+            #[test]
+            fn passes_env_through() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("test").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::None,
+                        env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                        target: Target::parse("project:test").unwrap(),
+                    }]
+                );
+            }
+
+            #[test]
+            fn passes_args_and_env_through() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("a b c".into()),
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("test").unwrap(),
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                        target: Target::parse("project:test").unwrap(),
+                    }]
+                );
             }
         }
     }

@@ -107,8 +107,9 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
             // Add the dep if it has not already been
             let dep = TaskDependencyConfig {
+                args: dep.args.clone(),
+                env: dep.env.clone(),
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,
-                ..dep.clone()
             };
 
             if !deps.contains(&dep) {

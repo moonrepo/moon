@@ -77,6 +77,9 @@ async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         .join("proto")
         .join(PROTO_CLI_VERSION);
 
+    // Set the version so that proto lookup paths take it into account
+    env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
+
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!
     if install_dir.exists() || is_test_env() || !workspace.toolchain_config.should_install_proto() {

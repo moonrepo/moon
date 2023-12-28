@@ -13,6 +13,9 @@ build:
 
 # CHECKING
 
+check:
+	cargo check --workspace
+
 format:
 	cargo fmt --all -- --emit=files
 

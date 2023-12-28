@@ -10,6 +10,18 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🧩 Plugins
+
+- Updated `bun_plugin` to v0.7.
+- Updated `node_plugin` and `node_depman_plugin` to v0.7.
+- Updated `rust_plugin` to v0.6.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.26.3.
+
 ## 1.18.5
 
 #### 🚀 Updates

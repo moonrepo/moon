@@ -39,7 +39,7 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.25.2"
+proto_core = "0.26.10"
 relative-path = { version = "1.9.0", features = ["serde"] }
 regex = "1.10.2"
 reqwest = { version = "0.11.22", default-features = false, features = [
@@ -59,7 +59,7 @@ semver = "1.0.20"
 serde = { version = "1.0.193", features = ["derive", "rc"] }
 serde_json = "1.0.108"
 serde_yaml = "0.9.27"
-starbase = "0.2.10"
+starbase = "0.2.12"
 starbase_archive = { version = "0.2.5", default-features = false, features = [
 	"tar-gz",
 ] }
@@ -73,7 +73,7 @@ starbase_utils = { version = "0.3.11", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
-system_env = "0.1.8"
+system_env = "0.1.9"
 tera = { version = "1.19.1", features = ["preserve_order"] }
 thiserror = "1.0.50"
 tokio = { version = "1.35.0", default-features = false, features = [

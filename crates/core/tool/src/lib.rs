@@ -42,6 +42,8 @@ where
 
 pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
     vec![
+        // For debugging
+        // proto.home.join("Projects").join("proto").join("target").join("debug"),
         // Always use a versioned proto first
         proto.tools_dir.join("proto").join(PROTO_CLI_VERSION),
         // Then fallback to shims/bins
@@ -66,6 +68,7 @@ pub fn get_proto_env_vars() -> FxHashMap<String, String> {
     FxHashMap::from_iter([
         ("PROTO_IGNORE_MIGRATE_WARNING".into(), "true".into()),
         ("PROTO_NO_PROGRESS".into(), "true".into()),
+        // ("PROTO_LOG".into(), "trace".into()),
     ])
 }
 

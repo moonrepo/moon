@@ -20,6 +20,11 @@
   remove boundaries entirely, as they caused more problems than solved. Task outputs may now overlap
   without issue.
 
+#### 🚀 Updates
+
+- Updated `implicitDeps` in `.moon/tasks.yml` and task `deps` in `moon.yml` to support arguments and
+  environment variables for the dependency target.
+
 #### 🧩 Plugins
 
 - Updated `bun_plugin` to v0.7.

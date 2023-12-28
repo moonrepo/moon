@@ -4,7 +4,7 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
-    ProjectType, TaskCommandArgs, TaskConfig, TaskDependency, TaskOptionsConfig,
+    ProjectType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -53,30 +53,30 @@ tasks:
                 (
                     "onlyCommand".into(),
                     TaskConfig {
-                        command: TaskCommandArgs::String("a".to_owned()),
+                        command: TaskArgs::String("a".to_owned()),
                         ..TaskConfig::default()
                     },
                 ),
                 (
                     "stringArgs".into(),
                     TaskConfig {
-                        command: TaskCommandArgs::String("b".to_owned()),
-                        args: TaskCommandArgs::String("string args".to_owned()),
+                        command: TaskArgs::String("b".to_owned()),
+                        args: TaskArgs::String("string args".to_owned()),
                         ..TaskConfig::default()
                     },
                 ),
                 (
                     "arrayArgs".into(),
                     TaskConfig {
-                        command: TaskCommandArgs::String("c".to_owned()),
-                        args: TaskCommandArgs::List(vec!["array".into(), "args".into()]),
+                        command: TaskArgs::String("c".to_owned()),
+                        args: TaskArgs::List(vec!["array".into(), "args".into()]),
                         ..TaskConfig::default()
                     },
                 ),
                 (
                     "inputs".into(),
                     TaskConfig {
-                        command: TaskCommandArgs::String("d".to_owned()),
+                        command: TaskArgs::String("d".to_owned()),
                         inputs: Some(vec![InputPath::ProjectGlob("src/**/*".into())]),
                         ..TaskConfig::default()
                     },
@@ -84,7 +84,7 @@ tasks:
                 (
                     "options".into(),
                     TaskConfig {
-                        command: TaskCommandArgs::String("e".to_owned()),
+                        command: TaskArgs::String("e".to_owned()),
                         options: TaskOptionsConfig {
                             run_in_ci: Some(false),
                             ..TaskOptionsConfig::default()
@@ -119,7 +119,7 @@ tasks:
             assert_eq!(
                 *config.tasks.get("lint").unwrap(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("eslint".to_owned()),
+                    command: TaskArgs::String("eslint".to_owned()),
                     ..TaskConfig::default()
                 },
             );
@@ -127,7 +127,7 @@ tasks:
             assert_eq!(
                 *config.tasks.get("format").unwrap(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("prettier".to_owned()),
+                    command: TaskArgs::String("prettier".to_owned()),
                     ..TaskConfig::default()
                 },
             );
@@ -135,7 +135,7 @@ tasks:
             assert_eq!(
                 *config.tasks.get("test").unwrap(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("noop".to_owned()),
+                    command: TaskArgs::String("noop".to_owned()),
                     inputs: None,
                     ..TaskConfig::default()
                 },
@@ -313,7 +313,55 @@ implicitDeps:
         }
 
         #[test]
-        #[should_panic(expected = "expected a valid target or dependency object")]
+        fn supports_objects() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+implicitDeps:
+  - target: task
+  - args: a b c
+    target: project:task
+  - env:
+      FOO: abc
+    target: ^:task
+  - args:
+      - a
+      - b
+      - c
+    env:
+      FOO: abc
+    target: ~:task
+",
+                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.implicit_deps,
+                vec![
+                    TaskDependency::Config(TaskDependencyConfig::new(
+                        Target::parse("task").unwrap()
+                    )),
+                    TaskDependency::Config(TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        target: Target::parse("project:task").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }),
+                    TaskDependency::Config(TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        target: Target::parse("^:task").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }),
+                    TaskDependency::Config(TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        target: Target::parse("~:task").unwrap()
+                    }),
+                ]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "expected a valid target or dependency config object")]
         fn errors_on_invalid_format() {
             test_load_config(FILENAME, "implicitDeps: ['bad target']", |path| {
                 InheritedTasksConfig::load(path.join(FILENAME))
@@ -326,6 +374,19 @@ implicitDeps:
             test_load_config(FILENAME, "implicitDeps: [':task']", |path| {
                 InheritedTasksConfig::load(path.join(FILENAME))
             });
+        }
+
+        #[test]
+        #[should_panic(expected = "a target field is required")]
+        fn errors_if_using_object_with_no_target() {
+            test_load_config(
+                FILENAME,
+                r"
+implicitDeps:
+  - args: a b c
+",
+                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+            );
         }
     }
 
@@ -396,7 +457,7 @@ mod task_manager {
         }
 
         TaskConfig {
-            command: TaskCommandArgs::String(command.replace("tag-", "")),
+            command: TaskArgs::String(command.replace("tag-", "")),
             global_inputs,
             platform,
             ..TaskConfig::default()

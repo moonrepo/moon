@@ -5,7 +5,7 @@ use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskCommandArgs, TaskConfig, TaskDependency,
+    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOutputStyle, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
@@ -603,9 +603,9 @@ impl<'proj> TasksBuilder<'proj> {
         let mut args = vec![];
 
         let mut cmd_list = match &config.command {
-            TaskCommandArgs::None => vec![],
-            TaskCommandArgs::String(cmd_string) => split_args(cmd_string)?,
-            TaskCommandArgs::List(cmd_args) => cmd_args.to_owned(),
+            TaskArgs::None => vec![],
+            TaskArgs::String(cmd_string) => split_args(cmd_string)?,
+            TaskArgs::List(cmd_args) => cmd_args.to_owned(),
         };
 
         if !cmd_list.is_empty() {
@@ -614,9 +614,9 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         match &config.args {
-            TaskCommandArgs::None => {}
-            TaskCommandArgs::String(args_string) => args.extend(split_args(args_string)?),
-            TaskCommandArgs::List(args_list) => args.extend(args_list.to_owned()),
+            TaskArgs::None => {}
+            TaskArgs::String(args_string) => args.extend(split_args(args_string)?),
+            TaskArgs::List(args_list) => args.extend(args_list.to_owned()),
         };
 
         Ok((command, args))

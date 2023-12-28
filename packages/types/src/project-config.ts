@@ -48,6 +48,14 @@ export interface PartialProjectMetadataConfig {
 	owner?: string | null;
 }
 
+export interface PartialTaskDependencyConfig {
+	args?: PartialTaskArgs | null;
+	env?: Record<string, string> | null;
+	target?: string | null;
+}
+
+export type PartialTaskDependency = string | PartialTaskDependencyConfig;
+
 export interface PartialProjectToolchainCommonToolConfig {
 	version?: string | null;
 }
@@ -126,6 +134,16 @@ export interface ProjectMetadataConfig {
 	name: string | null;
 	owner: string | null;
 }
+
+export type TaskArgs = null | string | string[];
+
+export interface TaskDependencyConfig {
+	args: TaskArgs;
+	env: Record<string, string>;
+	target: string;
+}
+
+export type TaskDependency = string | TaskDependencyConfig;
 
 export interface ProjectToolchainCommonToolConfig {
 	version: string | null;

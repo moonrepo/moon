@@ -3,7 +3,7 @@ mod utils;
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
     DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
+    ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
@@ -51,8 +51,8 @@ tasks:
 
         let build = config.tasks.get("build").unwrap();
 
-        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskCommandArgs::None);
+        assert_eq!(build.command, TaskArgs::String("webpack".to_owned()));
+        assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
             Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
@@ -60,8 +60,8 @@ tasks:
 
         let start = config.tasks.get("start").unwrap();
 
-        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+        assert_eq!(start.command, TaskArgs::String("webpack".to_owned()));
+        assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
         assert_eq!(
             start.inputs,
             Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
@@ -91,8 +91,8 @@ tasks:
 
         let build = config.tasks.get("build").unwrap();
 
-        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskCommandArgs::None);
+        assert_eq!(build.command, TaskArgs::String("webpack".to_owned()));
+        assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
             Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
@@ -100,8 +100,8 @@ tasks:
 
         let start = config.tasks.get("start").unwrap();
 
-        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+        assert_eq!(start.command, TaskArgs::String("webpack".to_owned()));
+        assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
         assert_eq!(
             start.inputs,
             Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])

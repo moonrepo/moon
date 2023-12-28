@@ -2,7 +2,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, LanguageType,
-    PlatformType, TaskCommandArgs, TaskConfig, ToolchainConfig,
+    PlatformType, TaskArgs, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_platform_detector::detect_project_language;
@@ -489,7 +489,7 @@ mod project_builder {
             builder.extend_with_task(
                 Id::raw("baz"),
                 TaskConfig {
-                    command: TaskCommandArgs::String("new-command-name".into()),
+                    command: TaskArgs::String("new-command-name".into()),
                     ..TaskConfig::default()
                 },
             );

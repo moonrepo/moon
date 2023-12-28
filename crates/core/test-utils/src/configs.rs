@@ -2,7 +2,7 @@ use crate::create_input_paths;
 use moon_config::{
     InputPath, NodePackageManager, PartialBunConfig, PartialBunpmConfig,
     PartialInheritedTasksConfig, PartialNodeConfig, PartialNpmConfig, PartialPnpmConfig,
-    PartialTaskCommandArgs, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
+    PartialTaskArgs, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
     PartialWorkspaceConfig, PartialWorkspaceProjects, PartialWorkspaceProjectsConfig,
     PartialYarnConfig, UnresolvedVersionSpec,
 };
@@ -75,7 +75,7 @@ pub fn get_cases_fixture_configs() -> (
         tasks: Some(BTreeMap::from_iter([(
             "noop".into(),
             PartialTaskConfig {
-                command: Some(PartialTaskCommandArgs::String("noop".into())),
+                command: Some(PartialTaskArgs::String("noop".into())),
                 ..PartialTaskConfig::default()
             },
         )])),
@@ -228,15 +228,15 @@ pub fn get_tasks_fixture_configs() -> (
             (
                 "standard".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("cmd".into())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "withArgs".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("cmd".into())),
-                    args: Some(PartialTaskCommandArgs::List(vec![
+                    command: Some(PartialTaskArgs::String("cmd".into())),
+                    args: Some(PartialTaskArgs::List(vec![
                         "--foo".into(),
                         "--bar".into(),
                         "baz".into(),
@@ -247,7 +247,7 @@ pub fn get_tasks_fixture_configs() -> (
             (
                 "withInputs".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("cmd".into())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
                         InputPath::from_str("rel/file.*").unwrap(),
                         InputPath::from_str("/root.*").unwrap(),
@@ -258,7 +258,7 @@ pub fn get_tasks_fixture_configs() -> (
             (
                 "withOutputs".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("cmd".into())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
                         InputPath::from_str("lib").unwrap(),
                         InputPath::from_str("/build").unwrap(),
@@ -301,15 +301,15 @@ pub fn get_bun_fixture_configs() -> (
             (
                 "version".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("bun".into())),
-                    args: Some(PartialTaskCommandArgs::String("--version".into())),
+                    command: Some(PartialTaskArgs::String("bun".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "noop".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("noop".into())),
+                    command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
@@ -356,15 +356,15 @@ pub fn get_node_fixture_configs() -> (
             (
                 "version".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("node".into())),
-                    args: Some(PartialTaskCommandArgs::String("--version".into())),
+                    command: Some(PartialTaskArgs::String("node".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "noop".into(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskCommandArgs::String("noop".into())),
+                    command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
                 },
             ),

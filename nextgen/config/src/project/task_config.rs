@@ -9,18 +9,18 @@ use schematic::{
 };
 
 fn validate_command<D, C>(
-    command: &PartialTaskCommandArgs,
+    command: &PartialTaskArgs,
     _task: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     let invalid = match command {
-        PartialTaskCommandArgs::None => false,
-        PartialTaskCommandArgs::String(args) => {
+        PartialTaskArgs::None => false,
+        PartialTaskArgs::String(args) => {
             let mut parts = args.split(' ');
             let cmd = parts.next();
             cmd.is_none() || cmd.unwrap().is_empty()
         }
-        PartialTaskCommandArgs::List(args) => args.is_empty() || args[0].is_empty(),
+        PartialTaskArgs::List(args) => args.is_empty() || args[0].is_empty(),
     };
 
     if invalid {
@@ -80,7 +80,7 @@ derive_enum!(
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(untagged, expecting = "expected a string or a list of strings")]
-    pub enum TaskCommandArgs {
+    pub enum TaskArgs {
         #[setting(default, null)]
         None,
         String(String),
@@ -92,7 +92,7 @@ cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskDependencyConfig {
         #[setting(nested)]
-        pub args: TaskCommandArgs,
+        pub args: TaskArgs,
 
         pub env: FxHashMap<String, String>,
 
@@ -111,7 +111,10 @@ impl TaskDependencyConfig {
 
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
-    #[serde(untagged, expecting = "expected a valid target or dependency object")]
+    #[serde(
+        untagged,
+        expecting = "expected a valid target or dependency config object"
+    )]
     pub enum TaskDependency {
         Target(Target),
 
@@ -124,10 +127,7 @@ impl TaskDependency {
     pub fn into_config(self) -> TaskDependencyConfig {
         match self {
             Self::Config(config) => config,
-            Self::Target(target) => TaskDependencyConfig {
-                target,
-                ..TaskDependencyConfig::default()
-            },
+            Self::Target(target) => TaskDependencyConfig::new(target),
         }
     }
 }
@@ -138,10 +138,10 @@ cacheable!(
         pub extends: Option<Id>,
 
         #[setting(nested, validate = validate_command)]
-        pub command: TaskCommandArgs,
+        pub command: TaskArgs,
 
         #[setting(nested)]
-        pub args: TaskCommandArgs,
+        pub args: TaskArgs,
 
         #[setting(nested, validate = validate_deps)]
         pub deps: Vec<TaskDependency>,

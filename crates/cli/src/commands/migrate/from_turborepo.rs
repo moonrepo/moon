@@ -3,9 +3,9 @@ use clap::Args;
 use moon::generate_project_graph;
 use moon_common::{consts, Id};
 use moon_config::{
-    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
-    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskDependency, PartialTaskOptionsConfig,
-    PlatformType, ProjectConfig,
+    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskArgs,
+    PartialTaskConfig, PartialTaskDependency, PartialTaskOptionsConfig, PlatformType,
+    ProjectConfig,
 };
 use moon_target::Target;
 use moon_terminal::safe_exit;
@@ -91,7 +91,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
-    config.command = Some(PartialTaskCommandArgs::String(format!(
+    config.command = Some(PartialTaskArgs::String(format!(
         "moon node run-script {name}"
     )));
 
@@ -331,9 +331,7 @@ mod tests {
 
             assert_eq!(
                 config.command,
-                Some(PartialTaskCommandArgs::String(
-                    "moon node run-script foo".into()
-                ))
+                Some(PartialTaskArgs::String("moon node run-script foo".into()))
             );
         }
 

@@ -2,8 +2,8 @@ use moon_common::Id;
 use moon_config::{
     BunConfig, DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
     ProjectConfig, ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, RustConfig,
-    TaskCommandArgs, TaskConfig, TaskDependencyConfig, TaskOptionAffectedFiles, TaskOutputStyle,
-    TaskType, ToolchainConfig,
+    TaskArgs, TaskConfig, TaskDependencyConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
+    ToolchainConfig,
 };
 use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
@@ -1108,7 +1108,7 @@ mod tasks_builder {
             project_config.tasks.insert(
                 "build".into(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("build-local".into()),
+                    command: TaskArgs::String("build-local".into()),
                     ..Default::default()
                 },
             );
@@ -1116,7 +1116,7 @@ mod tasks_builder {
             project_config.tasks.insert(
                 "test".into(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("test-local".into()),
+                    command: TaskArgs::String("test-local".into()),
                     ..Default::default()
                 },
             );

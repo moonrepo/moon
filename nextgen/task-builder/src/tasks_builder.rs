@@ -22,47 +22,6 @@ struct ConfigChain<'proj> {
     inherited: bool,
 }
 
-// This is a standalone function as recursive closures are not possible!
-fn legacy_extract_config<'builder, 'proj>(
-    configs: &'builder mut Vec<ConfigChain<'proj>>,
-    task_id: &'builder Id,
-    tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-    extendable_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-    inherited: bool,
-    extended: bool,
-) -> miette::Result<()> {
-    let config = if extended {
-        extendable_tasks.get(task_id)
-    } else {
-        tasks.get(task_id)
-    };
-
-    if let Some(config) = config {
-        if let Some(extend_task_id) = &config.extends {
-            if !extendable_tasks.contains_key(extend_task_id) {
-                return Err(TasksBuilderError::UnknownExtendsSource {
-                    source_id: task_id.to_owned(),
-                    target_id: extend_task_id.to_owned(),
-                }
-                .into());
-            }
-
-            legacy_extract_config(
-                configs,
-                extend_task_id,
-                tasks,
-                extendable_tasks,
-                inherited,
-                true,
-            )?;
-        }
-
-        configs.push(ConfigChain { config, inherited });
-    }
-
-    Ok(())
-}
-
 fn extract_config<'builder, 'proj>(
     task_id: &'builder Id,
     local_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
@@ -112,7 +71,6 @@ impl Event for DetectPlatformEvent {
 
 pub struct TasksBuilderContext<'proj> {
     pub detect_platform: &'proj Emitter<DetectPlatformEvent>,
-    pub legacy_task_inheritance: bool,
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
 }
@@ -663,40 +621,10 @@ impl<'proj> TasksBuilder<'proj> {
         id: &Id,
         _inspect: bool,
     ) -> miette::Result<Vec<ConfigChain>> {
-        let mut configs = vec![];
+        let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
+        stack.reverse();
 
-        if self.context.legacy_task_inheritance {
-            let mut extendable_tasks = FxHashMap::default();
-            extendable_tasks.extend(&self.global_tasks);
-            extendable_tasks.extend(&self.local_tasks);
-
-            // Inherit all global first
-            legacy_extract_config(
-                &mut configs,
-                id,
-                &self.global_tasks,
-                &extendable_tasks,
-                true,
-                false,
-            )?;
-
-            // Then all local
-            legacy_extract_config(
-                &mut configs,
-                id,
-                &self.local_tasks,
-                &extendable_tasks,
-                false,
-                false,
-            )?;
-        } else {
-            let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
-            stack.reverse();
-
-            configs.extend(stack);
-        }
-
-        Ok(configs)
+        Ok(stack)
     }
 
     fn apply_filters_to_deps(&self, deps: Vec<Target>) -> Vec<Target> {

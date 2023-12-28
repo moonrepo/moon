@@ -7,7 +7,7 @@ use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
-use moon_common::{color, consts, is_test_env, Id};
+use moon_common::{color, consts, Id};
 use moon_config::{
     DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
     WorkspaceConfig, WorkspaceProjects,
@@ -200,11 +200,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         let mut graph = ProjectGraph::new(self.graph, nodes, context.workspace_root);
-
         graph.working_dir = context.working_dir.to_owned();
-
-        graph.check_boundaries =
-            !is_test_env() && context.workspace_config.experiments.task_output_boundaries;
 
         Ok(graph)
     }
@@ -325,10 +321,6 @@ impl<'app> ProjectGraphBuilder<'app> {
             ProjectBuilderContext {
                 detect_language: &context.detect_language,
                 detect_platform: &context.detect_platform,
-                legacy_task_inheritance: !context
-                    .workspace_config
-                    .experiments
-                    .interweaved_task_inheritance,
                 root_project_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,

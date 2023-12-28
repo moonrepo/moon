@@ -96,8 +96,7 @@ impl ProjectGraphContainer {
         let mut builder = ProjectGraphBuilder::new(context).await.unwrap();
         builder.load_all().await.unwrap();
 
-        let mut graph = builder.build().await.unwrap();
-        graph.check_boundaries = true;
+        let graph = builder.build().await.unwrap();
         graph.get_all().unwrap();
         graph
     }
@@ -113,8 +112,7 @@ impl ProjectGraphContainer {
             builder.load(id).await.unwrap();
         }
 
-        let mut graph = builder.build().await.unwrap();
-        graph.check_boundaries = true;
+        let graph = builder.build().await.unwrap();
 
         for id in ids {
             graph.get(id).unwrap();

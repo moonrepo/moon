@@ -1,15 +1,14 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOutputStyle, TaskType, ToolchainConfig,
+    ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
+    TaskMergeStrategy, TaskOutputStyle, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
-use moon_task::{Task, TaskOptions};
+use moon_task::{parse_task_args, Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
@@ -601,23 +600,14 @@ impl<'proj> TasksBuilder<'proj> {
     ) -> miette::Result<(Option<String>, Vec<String>)> {
         let mut command = None;
         let mut args = vec![];
-
-        let mut cmd_list = match &config.command {
-            TaskArgs::None => vec![],
-            TaskArgs::String(cmd_string) => split_args(cmd_string)?,
-            TaskArgs::List(cmd_args) => cmd_args.to_owned(),
-        };
+        let mut cmd_list = parse_task_args(&config.command)?;
 
         if !cmd_list.is_empty() {
             command = Some(cmd_list.remove(0));
             args.extend(cmd_list);
         }
 
-        match &config.args {
-            TaskArgs::None => {}
-            TaskArgs::String(args_string) => args.extend(split_args(args_string)?),
-            TaskArgs::List(args_list) => args.extend(args_list.to_owned()),
-        };
+        args.extend(parse_task_args(&config.args)?);
 
         Ok((command, args))
     }

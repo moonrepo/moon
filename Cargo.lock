@@ -3935,6 +3935,7 @@ name = "moon_task"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_args",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -3949,7 +3950,6 @@ name = "moon_task_builder"
 version = "0.1.0"
 dependencies = [
  "miette",
- "moon_args",
  "moon_common",
  "moon_config",
  "moon_platform_detector",

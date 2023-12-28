@@ -220,7 +220,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         for dep in &task.deps {
             let (_, dep_indices) =
-                self.run_task_by_target_with_config(&dep.target, &reqs, Some(&dep))?;
+                self.run_task_by_target_with_config(&dep.target, &reqs, Some(dep))?;
 
             for dep_index in dep_indices {
                 // When parallel, parent depends on child

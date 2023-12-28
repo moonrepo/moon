@@ -80,7 +80,8 @@ jobs:
         run: rm -rf ~/.proto/shims
       - name: Reset shims
         if: ${{ runner.os == 'Windows' }}
-        run: rmdir /S /Q "$HOME\.proto\shims"
+        run: Remove-Item -Recurse -Force "$HOME\.proto\shims"
+        shell: pwsh
       - uses: moonrepo/setup-toolchain@v0
         with:
           auto-install: true

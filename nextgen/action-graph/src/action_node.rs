@@ -2,9 +2,9 @@ use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use moon_task::Target;
 use serde::Serialize;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize)]
 #[serde(tag = "action", content = "params")]
 pub enum ActionNode {
     #[default]
@@ -102,11 +102,5 @@ impl ActionNode {
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),
         }
-    }
-}
-
-impl Hash for ActionNode {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.label().hash(state);
     }
 }

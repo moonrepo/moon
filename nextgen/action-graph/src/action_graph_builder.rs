@@ -199,8 +199,8 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut indices = vec![];
         let mut previous_target_index = None;
 
-        for dep_config in &task.deps {
-            let (_, dep_indices) = self.run_task_by_target(&dep_config.target, &reqs)?;
+        for dep in &task.deps {
+            let (_, dep_indices) = self.run_task_by_target(&dep.target, &reqs)?;
 
             for dep_index in dep_indices {
                 // When parallel, parent depends on child

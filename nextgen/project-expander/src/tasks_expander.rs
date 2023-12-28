@@ -1,7 +1,7 @@
 use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
-use moon_common::{color, Id};
+use moon_common::color;
 use moon_config::{InputPath, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
@@ -71,54 +71,55 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         // Dont use a `HashSet` as we want to preserve order
         let mut deps: Vec<TaskDependencyConfig> = vec![];
 
-        let mut check_and_push_dep =
-            |dep_project: &Project, task_id: &Id, skip_if_missing: bool| -> miette::Result<()> {
-                let Some(dep_task) = dep_project.tasks.get(task_id) else {
-                    if skip_if_missing {
-                        return Ok(());
-                    }
-
-                    return Err(TasksExpanderError::UnknownTarget {
-                        dep: Target::new(&dep_project.id, task_id)?,
-                        task: task.target.to_owned(),
-                    }
-                    .into());
-                };
-
-                // Do not depend on tasks that can fail
-                if dep_task.options.allow_failure {
-                    return Err(TasksExpanderError::AllowFailureDepRequirement {
-                        dep: dep_task.target.to_owned(),
-                        task: task.target.to_owned(),
-                    }
-                    .into());
+        let mut check_and_push_dep = |dep_project: &Project,
+                                      dep: &TaskDependencyConfig,
+                                      skip_if_missing: bool|
+         -> miette::Result<()> {
+            let Some(dep_task) = dep_project.tasks.get(&dep.target.task_id) else {
+                if skip_if_missing {
+                    return Ok(());
                 }
 
-                // Enforce persistent constraints
-                if dep_task.is_persistent() && !task.is_persistent() {
-                    return Err(TasksExpanderError::PersistentDepRequirement {
-                        dep: dep_task.target.to_owned(),
-                        task: task.target.to_owned(),
-                    }
-                    .into());
+                return Err(TasksExpanderError::UnknownTarget {
+                    dep: Target::new(&dep_project.id, &dep.target.task_id)?,
+                    task: task.target.to_owned(),
                 }
-
-                // Add the dep if it has not already been
-                // TODO
-                let dep = TaskDependencyConfig {
-                    target: Target::new(&dep_project.id, task_id)?,
-                    ..TaskDependencyConfig::default()
-                };
-
-                if !deps.contains(&dep) {
-                    deps.push(dep);
-                }
-
-                Ok(())
+                .into());
             };
 
-        for dep_config in &task.deps {
-            let dep_target = &dep_config.target;
+            // Do not depend on tasks that can fail
+            if dep_task.options.allow_failure {
+                return Err(TasksExpanderError::AllowFailureDepRequirement {
+                    dep: dep_task.target.to_owned(),
+                    task: task.target.to_owned(),
+                }
+                .into());
+            }
+
+            // Enforce persistent constraints
+            if dep_task.is_persistent() && !task.is_persistent() {
+                return Err(TasksExpanderError::PersistentDepRequirement {
+                    dep: dep_task.target.to_owned(),
+                    task: task.target.to_owned(),
+                }
+                .into());
+            }
+
+            // Add the dep if it has not already been
+            let dep = TaskDependencyConfig {
+                target: Target::new(&dep_project.id, &dep.target.task_id)?,
+                ..dep.clone()
+            };
+
+            if !deps.contains(&dep) {
+                deps.push(dep);
+            }
+
+            Ok(())
+        };
+
+        for dep in &task.deps {
+            let dep_target = &dep.target;
 
             match &dep_target.scope {
                 // :task
@@ -148,7 +149,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         };
 
                         for dep_project in (self.context.query)(input)? {
-                            check_and_push_dep(dep_project, &dep_target.task_id, true)?;
+                            check_and_push_dep(dep_project, dep, true)?;
                         }
                     }
                 }
@@ -157,7 +158,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     if dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        check_and_push_dep(project, &dep_target.task_id, false)?;
+                        check_and_push_dep(project, dep, false)?;
                     }
                 }
                 // id:task
@@ -166,7 +167,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         if dep_target.task_id == task.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(project, &dep_target.task_id, false)?;
+                            check_and_push_dep(project, dep, false)?;
                         }
                     } else {
                         let results = (self.context.query)(format!("project={}", project_locator))?;
@@ -180,7 +181,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         }
 
                         for dep_project in results {
-                            check_and_push_dep(dep_project, &dep_target.task_id, false)?;
+                            check_and_push_dep(dep_project, dep, false)?;
                         }
                     }
                 }
@@ -190,7 +191,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         if dep_project.id == project.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(dep_project, &dep_target.task_id, true)?;
+                            check_and_push_dep(dep_project, dep, true)?;
                         }
                     }
                 }

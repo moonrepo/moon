@@ -87,6 +87,9 @@ jobs:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.26.2' # Keep in sync
+      - name: List shims
+        if: ${{ runner.os != 'Windows' }}
+        run: ls -l ~/.proto/shims
       - uses: mozilla-actions/sccache-action@v0.0.3
       - name: Checking coverage status
         id: coverage

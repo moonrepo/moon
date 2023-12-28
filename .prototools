@@ -2,3 +2,4 @@
 # to exist in the environment!
 # bun = "1.0.15"
 node = "20.8.0"
+npm = "10.1.0"

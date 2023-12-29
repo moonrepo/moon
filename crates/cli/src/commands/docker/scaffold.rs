@@ -67,6 +67,13 @@ fn scaffold_workspace(
 
             // These are special cases
             match lang {
+                LanguageType::JavaScript => {
+                    files.extend([
+                        "postinstall.js".to_owned(),
+                        "postinstall.cjs".to_owned(),
+                        "postinstall.mjs".to_owned(),
+                    ]);
+                }
                 LanguageType::Rust => {
                     if let Some(cargo_toml) = CargoTomlCache::read(source)? {
                         let manifests = cargo_toml.get_member_manifest_paths(source)?;

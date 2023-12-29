@@ -7,12 +7,8 @@ members = [
 	# Languages
 	"crates/bun/*",
 	"crates/deno/*",
-	"crates/go/*",
 	"crates/javascript/*",
 	"crates/node/*",
-	"crates/php/*",
-	"crates/python/*",
-	"crates/ruby/*",
 	"crates/rust/*",
 	"crates/system/*",
 	"crates/typescript/*",

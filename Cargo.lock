@@ -3430,14 +3430,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_go_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
-]
-
-[[package]]
 name = "moon_hash"
 version = "0.1.0"
 dependencies = [
@@ -3584,14 +3576,6 @@ dependencies = [
  "starbase_styles",
  "tokio",
  "uuid",
-]
-
-[[package]]
-name = "moon_php_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
 ]
 
 [[package]]
@@ -3759,14 +3743,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_python_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
-]
-
-[[package]]
 name = "moon_query"
 version = "0.1.0"
 dependencies = [
@@ -3777,14 +3753,6 @@ dependencies = [
  "pest_derive",
  "starbase_utils",
  "thiserror",
-]
-
-[[package]]
-name = "moon_ruby_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
 ]
 
 [[package]]

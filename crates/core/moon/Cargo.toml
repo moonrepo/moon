@@ -11,7 +11,6 @@ moon_bun_platform = { path = "../../bun/platform" }
 moon_deno_platform = { path = "../../deno/platform" }
 moon_node_platform = { path = "../../node/platform" }
 moon_platform = { path = "../platform" }
-moon_platform_detector = { path = "../platform-detector" }
 moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_rust_platform = { path = "../../rust/platform" }
 moon_system_platform = { path = "../../system/platform" }

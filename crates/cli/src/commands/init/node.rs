@@ -7,7 +7,6 @@ use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::package_json::PackageJson;
-use moon_node_lang::{BUN, NODENV, NPM, NVM, PNPM, YARN};
 use moon_terminal::label_header;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -22,20 +21,20 @@ pub fn render_template(context: Context) -> AppResult<String> {
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
 fn detect_node_version(dest_dir: &Path) -> AppResult<String> {
-    Ok(if is_using_version_manager(dest_dir, &NVM) {
-        fully_qualify_version(fs::read_file(dest_dir.join(NVM.version_file))?.trim())
-    } else if is_using_version_manager(dest_dir, &NODENV) {
-        fully_qualify_version(fs::read_file(dest_dir.join(NODENV.version_file))?.trim())
+    Ok(if is_using_version_manager(dest_dir, ".nvmrc") {
+        fully_qualify_version(fs::read_file(dest_dir.join(".nvmrc"))?.trim())
+    } else if is_using_version_manager(dest_dir, ".node-version") {
+        fully_qualify_version(fs::read_file(dest_dir.join(".node-version"))?.trim())
     } else {
         String::new()
     })
 }
 
 fn detect_node_version_manager(dest_dir: &Path) -> AppResult<String> {
-    Ok(if is_using_version_manager(dest_dir, &NVM) {
-        NVM.binary.to_owned()
-    } else if is_using_version_manager(dest_dir, &NODENV) {
-        NODENV.binary.to_owned()
+    Ok(if is_using_version_manager(dest_dir, ".nvmrc") {
+        "nvm".to_owned()
+    } else if is_using_version_manager(dest_dir, ".node-version") {
+        "nodenv".to_owned()
     } else {
         String::new()
     })
@@ -72,20 +71,20 @@ fn detect_package_manager(
 
     // If no value, detect based on files
     if pm_type.is_empty() {
-        if is_using_dependency_manager(dest_dir, &YARN, false) {
-            pm_type = YARN.binary.to_owned();
-        } else if is_using_dependency_manager(dest_dir, &PNPM, false) {
-            pm_type = PNPM.binary.to_owned();
-        } else if is_using_dependency_manager(dest_dir, &BUN, false) {
-            pm_type = BUN.binary.to_owned();
-        } else if is_using_dependency_manager(dest_dir, &NPM, false) {
-            pm_type = NPM.binary.to_owned();
+        if is_using_dependency_manager(dest_dir, "yarn.lock") {
+            pm_type = "yarn".to_owned();
+        } else if is_using_dependency_manager(dest_dir, "pnpm-lock.yaml") {
+            pm_type = "pnpm".to_owned();
+        } else if is_using_dependency_manager(dest_dir, "bun.lockb") {
+            pm_type = "bun".to_owned();
+        } else if is_using_dependency_manager(dest_dir, "package-lock.json") {
+            pm_type = "npm".to_owned();
         }
     }
 
     // If no value again, ask for explicit input
     if pm_type.is_empty() {
-        let items = vec![NPM.binary, PNPM.binary, YARN.binary, BUN.binary];
+        let items = vec!["npm", "pnpm", "yarn", "bun"];
         let default_index = 0;
 
         let index = if options.yes || options.minimal {
@@ -140,7 +139,7 @@ pub async fn init_node(
         Confirm::with_theme(theme)
             .with_prompt(format!(
                 "Infer {} scripts as moon tasks? {}",
-                color::file(NPM.manifest),
+                color::file("package.json"),
                 color::muted("(not recommended)")
             ))
             .interact()
@@ -152,7 +151,7 @@ pub async fn init_node(
         || Confirm::with_theme(theme)
             .with_prompt(format!(
                 "Sync project relationships as {} {}?",
-                color::file(NPM.manifest),
+                color::file("package.json"),
                 color::property("dependencies")
             ))
             .interact()

@@ -3,7 +3,6 @@
 pub mod dependency_path;
 pub mod workspace;
 
-use crate::PNPM;
 use cached::proc_macro::cached;
 use dependency_path::PnpmDependencyPath;
 use moon_lang::{config_cache, LockfileDependencyVersions};
@@ -13,7 +12,7 @@ use serde_yaml::Value;
 use starbase_utils::yaml::read_file as read_yaml;
 use std::path::{Path, PathBuf};
 
-config_cache!(PnpmLock, PNPM.lockfile, read_yaml);
+config_cache!(PnpmLock, "pnpm-lock.yaml", read_yaml);
 
 type DependencyMap = FxHashMap<String, Value>;
 

@@ -1,17 +1,27 @@
 use moon_config::PlatformType;
-use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use once_cell::sync::Lazy;
+use regex::Regex;
 
-static BUN_COMMANDS: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex("^(bun|bunx)$").unwrap());
+pub static BUN_COMMANDS: Lazy<Regex> = Lazy::new(|| Regex::new("^(bun|bunx)$").unwrap());
 
-static DENO_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex("^(deno)$").unwrap());
+pub static DENO_COMMANDS: Lazy<Regex> = Lazy::new(|| Regex::new("^(deno)$").unwrap());
 
-static RUST_COMMANDS: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex("^(rust-|rustc|rustdoc|rustfmt|rustup|cargo)").unwrap());
+pub static RUST_COMMANDS: Lazy<Regex> =
+    Lazy::new(|| Regex::new("^(rust-|rustc|rustdoc|rustfmt|rustup|cargo)").unwrap());
 
-static NODE_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| {
-    regex::create_regex("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap()
+pub static NODE_COMMANDS: Lazy<Regex> =
+    Lazy::new(|| Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap());
+
+pub static UNIX_SYSTEM_COMMANDS: Lazy<Regex> = Lazy::new(|| {
+    Regex::new("^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$")
+        .unwrap()
+});
+
+pub static WINDOWS_SYSTEM_COMMANDS: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        "^(cd|cmd|cmd.exe|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy|pwsh|pwsh.exe)$",
+    )
+    .unwrap()
 });
 
 fn use_platform_if_enabled(
@@ -29,11 +39,7 @@ fn use_platform_if_enabled(
     PlatformType::System
 }
 
-pub fn detect_task_platform(
-    command: &str,
-    // language: &LanguageType,
-    enabled_platforms: &[PlatformType],
-) -> PlatformType {
+pub fn detect_task_platform(command: &str, enabled_platforms: &[PlatformType]) -> PlatformType {
     if BUN_COMMANDS.is_match(command) {
         return use_platform_if_enabled(PlatformType::Bun, enabled_platforms);
     }
@@ -50,18 +56,9 @@ pub fn detect_task_platform(
         return use_platform_if_enabled(PlatformType::Rust, enabled_platforms);
     }
 
-    if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {
+    if UNIX_SYSTEM_COMMANDS.is_match(command) || WINDOWS_SYSTEM_COMMANDS.is_match(command) {
         return PlatformType::System;
     }
-
-    // Default to the platform of the project's language
-    // let platform: PlatformType = language.clone().into();
-
-    // if platform.is_unknown() {
-    //     return PlatformType::System;
-    // }
-
-    // use_platform_if_enabled(platform, toolchain_config)
 
     PlatformType::Unknown
 }

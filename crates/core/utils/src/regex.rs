@@ -37,21 +37,6 @@ pub static TOKEN_VAR_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
     create_regex("\\$(language|projectAlias|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap()
 });
 
-// Task commands (these are not exhaustive)
-pub static UNIX_SYSTEM_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
-    create_regex(
-        "^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$",
-    )
-    .unwrap()
-});
-
-pub static WINDOWS_SYSTEM_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
-    create_regex(
-        "^(cd|cmd|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy)$",
-    )
-    .unwrap()
-});
-
 #[inline]
 pub fn create_regex<V: AsRef<str>>(value: V) -> miette::Result<Regex> {
     Regex::new(value.as_ref()).into_diagnostic()

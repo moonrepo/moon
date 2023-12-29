@@ -2,7 +2,7 @@ use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::NpmConfig;
 use moon_logger::debug;
-use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
+use moon_node_lang::{npm, LockfileDependencyVersions};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
@@ -155,11 +155,11 @@ impl DependencyManager<NodeTool> for NpmTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(NPM.lockfile)
+        String::from("package-lock.json")
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(NPM.manifest)
+        String::from("package.json")
     }
 
     async fn get_resolved_dependencies(
@@ -167,7 +167,7 @@ impl DependencyManager<NodeTool> for NpmTool {
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
         let Some(lockfile_path) =
-            fs::find_upwards_until(NPM.lockfile, project_root, get_workspace_root())
+            fs::find_upwards_until("package-lock.json", project_root, get_workspace_root())
         else {
             return Ok(FxHashMap::default());
         };

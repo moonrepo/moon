@@ -3,7 +3,6 @@ use super::InitOptions;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_bun_lang::BUNPM;
 use moon_config::load_toolchain_bun_config_template;
 use moon_terminal::label_header;
 use starbase::AppResult;
@@ -44,7 +43,7 @@ pub async fn init_bun(
         || Confirm::with_theme(theme)
             .with_prompt(format!(
                 "Sync project relationships as {} {}?",
-                color::file(BUNPM.manifest),
+                color::file("package.json"),
                 color::property("dependencies")
             ))
             .interact()

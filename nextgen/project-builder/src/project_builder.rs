@@ -6,28 +6,17 @@ use moon_config::{
     ToolchainConfig,
 };
 use moon_file_group::FileGroup;
+use moon_platform_detector::detect_project_language;
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
-use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
+use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
-use starbase_events::{Emitter, Event};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::{debug, trace};
 
-#[derive(Debug)]
-pub struct DetectLanguageEvent {
-    pub project_root: PathBuf,
-}
-
-impl Event for DetectLanguageEvent {
-    type Data = LanguageType;
-}
-
 pub struct ProjectBuilderContext<'app> {
-    pub detect_language: &'app Emitter<DetectLanguageEvent>,
-    pub detect_platform: &'app Emitter<DetectPlatformEvent>,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
     pub workspace_root: &'app Path,
@@ -108,13 +97,7 @@ impl<'app> ProjectBuilder<'app> {
     pub async fn inherit_local_config(&mut self, config: ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
-            let mut language = self
-                .context
-                .detect_language
-                .emit(DetectLanguageEvent {
-                    project_root: self.project_root.clone(),
-                })
-                .await?;
+            let mut language = detect_project_language(&self.project_root);
 
             if language == LanguageType::Unknown {
                 language = config.language.clone();
@@ -374,7 +357,6 @@ impl<'app> ProjectBuilder<'app> {
             self.source.as_str(),
             &self.platform,
             TasksBuilderContext {
-                detect_platform: self.context.detect_platform,
                 toolchain_config: self.context.toolchain_config,
                 workspace_root: self.context.workspace_root,
             },

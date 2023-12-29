@@ -1,4 +1,3 @@
-use crate::RUSTUP;
 use cached::proc_macro::cached;
 use moon_lang::config_cache_container;
 use serde::{Deserialize, Serialize};
@@ -57,7 +56,7 @@ pub fn write_toml(path: &Path, toml: &ToolchainToml) -> miette::Result<()> {
 config_cache_container!(
     ToolchainTomlCache,
     ToolchainToml,
-    RUSTUP.version_file,
+    "rust-toolchain.toml",
     read_toml,
     write_toml
 );

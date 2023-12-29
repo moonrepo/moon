@@ -16,7 +16,6 @@ use moon_rust_lang::{
     cargo_lock::load_lockfile_dependencies,
     cargo_toml::CargoTomlCache,
     toolchain_toml::{ToolchainToml, ToolchainTomlCache},
-    CARGO, RUSTUP, RUSTUP_LEGACY,
 };
 use moon_rust_tool::{get_rust_env_paths, RustTool};
 use moon_task::Task;
@@ -183,7 +182,7 @@ impl Platform for RustPlatform {
     }
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
-        Ok(Some((CARGO.lockfile.to_owned(), CARGO.manifest.to_owned())))
+        Ok(Some(("Cargo.lock".to_owned(), "Cargo.toml".to_owned())))
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
@@ -339,16 +338,16 @@ impl Platform for RustPlatform {
             None => project.root.to_owned(),
         };
 
-        let legacy_toolchain_path = cargo_root.join(RUSTUP_LEGACY.version_file);
-        let toolchain_path = cargo_root.join(RUSTUP.version_file);
+        let legacy_toolchain_path = cargo_root.join("rust-toolchain");
+        let toolchain_path = cargo_root.join("rust-toolchain.toml");
 
         // Convert rust-toolchain to rust-toolchain.toml
         if legacy_toolchain_path.exists() {
             debug!(
                 target: LOG_TARGET,
                 "Found legacy {} configuration file, converting to {}",
-                color::file(RUSTUP_LEGACY.version_file),
-                color::file(RUSTUP.version_file),
+                color::file("rust-toolchain"),
+                color::file("rust-toolchain.toml"),
             );
 
             let legacy_contents = fs::read_file(&legacy_toolchain_path)?;
@@ -377,7 +376,7 @@ impl Platform for RustPlatform {
                         debug!(
                             target: LOG_TARGET,
                             "Syncing {} configuration file with version {}",
-                            color::file(RUSTUP.version_file),
+                            color::file("rust-toolchain.toml"),
                             color::hash(&version),
                         );
 
@@ -393,7 +392,7 @@ impl Platform for RustPlatform {
                 debug!(
                     target: LOG_TARGET,
                     "Creating {} configuration file",
-                    color::file(RUSTUP.version_file),
+                    color::file("rust-toolchain.toml"),
                 );
 
                 ToolchainTomlCache::write(
@@ -481,7 +480,7 @@ impl Platform for RustPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let lockfile_path = project.root.join(CARGO.lockfile);
+        let lockfile_path = project.root.join("Cargo.lock");
 
         // Not running in the Cargo workspace root, not sure how to handle!
         if !lockfile_path.exists() {

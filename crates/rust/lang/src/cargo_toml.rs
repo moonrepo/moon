@@ -1,4 +1,3 @@
-use crate::CARGO;
 use cached::proc_macro::cached;
 use cargo_toml::Manifest as CargoToml;
 use miette::IntoDiagnostic;
@@ -12,7 +11,7 @@ fn read_manifest(path: &Path) -> miette::Result<CargoToml> {
     CargoToml::from_path(path).into_diagnostic()
 }
 
-config_cache_container!(CargoTomlCache, CargoToml, CARGO.manifest, read_manifest);
+config_cache_container!(CargoTomlCache, CargoToml, "Cargo.toml", read_manifest);
 
 pub trait CargoTomlExt {
     fn get_detailed_workspace_dependency(&self, name: &str) -> Option<DependencyDetail>;
@@ -53,7 +52,7 @@ impl CargoTomlExt for CargoToml {
         }
 
         for manifest_dir in glob::walk(root_dir, &patterns)? {
-            let manifest_path = manifest_dir.join(CARGO.manifest);
+            let manifest_path = manifest_dir.join("Cargo.toml");
 
             if manifest_path.exists() {
                 paths.push(manifest_path);

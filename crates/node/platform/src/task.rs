@@ -193,7 +193,7 @@ pub fn create_task(
             script_name
         ]));
     } else {
-        if let Some(command) = args.get(0) {
+        if let Some(command) = args.first() {
             if is_bash_script(command) {
                 args.insert(0, "bash".to_owned());
             } else if is_node_script(command) {

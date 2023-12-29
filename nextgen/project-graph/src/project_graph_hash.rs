@@ -39,7 +39,7 @@ impl<'cfg> ProjectGraphHash<'cfg> {
     }
 
     pub fn add_aliases(&mut self, aliases: &'cfg FxHashMap<Id, String>) {
-        self.aliases.extend(aliases.iter().map(|(k, v)| (k, v)));
+        self.aliases.extend(aliases.iter());
     }
 
     pub fn add_configs(&mut self, configs: BTreeMap<WorkspaceRelativePathBuf, String>) {
@@ -47,6 +47,6 @@ impl<'cfg> ProjectGraphHash<'cfg> {
     }
 
     pub fn add_sources(&mut self, sources: &'cfg FxHashMap<Id, WorkspaceRelativePathBuf>) {
-        self.sources.extend(sources.iter().map(|(k, v)| (k, v)));
+        self.sources.extend(sources.iter());
     }
 }

@@ -2,9 +2,9 @@ use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use moon_task::Target;
 use serde::Serialize;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize)]
 #[serde(tag = "action", content = "params")]
 pub enum ActionNode {
     #[default]
@@ -18,7 +18,9 @@ pub enum ActionNode {
 
     /// Run a project's task.
     RunTask {
-        interactive: bool, // Interactively with stdin
+        args: Vec<String>,
+        env: Vec<(String, String)>,
+        interactive: bool, // Interactive with stdin
         persistent: bool,  // Never terminates
         runtime: Runtime,
         target: Target,
@@ -58,6 +60,17 @@ impl ActionNode {
         match self {
             Self::RunTask { persistent, .. } => *persistent,
             _ => false,
+        }
+    }
+
+    pub fn is_standard(&self) -> bool {
+        match self {
+            Self::RunTask {
+                interactive,
+                persistent,
+                ..
+            } => !interactive && !persistent,
+            _ => true,
         }
     }
 
@@ -102,11 +115,5 @@ impl ActionNode {
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),
         }
-    }
-}
-
-impl Hash for ActionNode {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.label().hash(state);
     }
 }

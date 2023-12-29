@@ -2,7 +2,15 @@
 
 /* eslint-disable */
 
-export type PartialTaskCommandArgs = null | string | string[];
+export type PartialTaskArgs = null | string | string[];
+
+export interface PartialTaskDependencyConfig {
+	args?: PartialTaskArgs | null;
+	env?: Record<string, string> | null;
+	target?: string | null;
+}
+
+export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 
 export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 
@@ -37,9 +45,9 @@ export type PlatformType = 'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknow
 export type TaskType = 'build' | 'run' | 'test';
 
 export interface PartialTaskConfig {
-	args?: PartialTaskCommandArgs | null;
-	command?: PartialTaskCommandArgs | null;
-	deps?: string[] | null;
+	args?: PartialTaskArgs | null;
+	command?: PartialTaskArgs | null;
+	deps?: PartialTaskDependency[] | null;
 	env?: Record<string, string> | null;
 	extends?: string | null;
 	inputs?: string[] | null;
@@ -56,12 +64,20 @@ export interface PartialInheritedTasksConfig {
 	$schema?: string | null;
 	extends?: string | null;
 	fileGroups?: Record<string, string[]> | null;
-	implicitDeps?: string[] | null;
+	implicitDeps?: PartialTaskDependency[] | null;
 	implicitInputs?: string[] | null;
 	tasks?: Record<string, PartialTaskConfig> | null;
 }
 
-export type TaskCommandArgs = null | string | string[];
+export type TaskArgs = null | string | string[];
+
+export interface TaskDependencyConfig {
+	args: TaskArgs;
+	env: Record<string, string>;
+	target: string;
+}
+
+export type TaskDependency = string | TaskDependencyConfig;
 
 export interface TaskOptionsConfig {
 	affectedFiles: TaskOptionAffectedFiles | null;
@@ -84,9 +100,9 @@ export interface TaskOptionsConfig {
 }
 
 export interface TaskConfig {
-	args: TaskCommandArgs;
-	command: TaskCommandArgs;
-	deps: string[];
+	args: TaskArgs;
+	command: TaskArgs;
+	deps: TaskDependency[];
 	env: Record<string, string>;
 	extends: string | null;
 	inputs: string[] | null;
@@ -103,7 +119,7 @@ export interface InheritedTasksConfig {
 	$schema: string;
 	extends: string | null;
 	fileGroups: Record<string, string[]>;
-	implicitDeps: string[];
+	implicitDeps: TaskDependency[];
 	implicitInputs: string[];
 	tasks: Record<string, TaskConfig>;
 }

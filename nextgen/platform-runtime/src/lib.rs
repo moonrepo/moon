@@ -69,7 +69,7 @@ impl From<&Runtime> for RuntimeReq {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct Runtime {
     pub platform: PlatformType,
     pub requirement: RuntimeReq,

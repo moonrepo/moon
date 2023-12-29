@@ -9,18 +9,18 @@ use schematic::{
 };
 
 fn validate_command<D, C>(
-    command: &PartialTaskCommandArgs,
+    command: &PartialTaskArgs,
     _task: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     let invalid = match command {
-        PartialTaskCommandArgs::None => false,
-        PartialTaskCommandArgs::String(args) => {
+        PartialTaskArgs::None => false,
+        PartialTaskArgs::String(args) => {
             let mut parts = args.split(' ');
             let cmd = parts.next();
             cmd.is_none() || cmd.unwrap().is_empty()
         }
-        PartialTaskCommandArgs::List(args) => args.is_empty() || args[0].is_empty(),
+        PartialTaskArgs::List(args) => args.is_empty() || args[0].is_empty(),
     };
 
     if invalid {
@@ -32,9 +32,31 @@ fn validate_command<D, C>(
     Ok(())
 }
 
-pub fn validate_deps<D, C>(deps: &[Target], _task: &D, _context: &C) -> Result<(), ValidateError> {
+pub fn validate_deps<D, C>(
+    deps: &[PartialTaskDependency],
+    _task: &D,
+    _context: &C,
+) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
-        if matches!(dep.scope, TargetScope::All) {
+        let scope;
+
+        match dep {
+            PartialTaskDependency::Config(cfg) => {
+                if let Some(target) = &cfg.target {
+                    scope = &target.scope;
+                } else {
+                    return Err(ValidateError::with_segment(
+                        "a target field is required",
+                        PathSegment::Index(i),
+                    ));
+                }
+            }
+            PartialTaskDependency::Target(target) => {
+                scope = &target.scope;
+            }
+        };
+
+        if matches!(scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
                 PathSegment::Index(i),
@@ -58,7 +80,7 @@ derive_enum!(
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(untagged, expecting = "expected a string or a list of strings")]
-    pub enum TaskCommandArgs {
+    pub enum TaskArgs {
         #[setting(default, null)]
         None,
         String(String),
@@ -68,17 +90,61 @@ cacheable!(
 
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TaskDependencyConfig {
+        #[setting(nested)]
+        pub args: TaskArgs,
+
+        pub env: FxHashMap<String, String>,
+
+        pub target: Target,
+    }
+);
+
+impl TaskDependencyConfig {
+    pub fn new(target: Target) -> Self {
+        Self {
+            target,
+            ..Default::default()
+        }
+    }
+}
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[serde(
+        untagged,
+        expecting = "expected a valid target or dependency config object"
+    )]
+    pub enum TaskDependency {
+        Target(Target),
+
+        #[setting(nested)]
+        Config(TaskDependencyConfig),
+    }
+);
+
+impl TaskDependency {
+    pub fn into_config(self) -> TaskDependencyConfig {
+        match self {
+            Self::Config(config) => config,
+            Self::Target(target) => TaskDependencyConfig::new(target),
+        }
+    }
+}
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskConfig {
         pub extends: Option<Id>,
 
         #[setting(nested, validate = validate_command)]
-        pub command: TaskCommandArgs,
+        pub command: TaskArgs,
 
         #[setting(nested)]
-        pub args: TaskCommandArgs,
+        pub args: TaskArgs,
 
-        #[setting(validate = validate_deps)]
-        pub deps: Vec<Target>,
+        #[setting(nested, validate = validate_deps)]
+        pub deps: Vec<TaskDependency>,
 
         pub env: FxHashMap<String, String>,
 

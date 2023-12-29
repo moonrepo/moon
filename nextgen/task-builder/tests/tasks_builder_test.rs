@@ -2,7 +2,7 @@ use moon_common::Id;
 use moon_config::{
     BunConfig, DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
     ProjectConfig, ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, RustConfig,
-    TaskCommandArgs, TaskConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
+    TaskArgs, TaskConfig, TaskDependencyConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
     ToolchainConfig,
 };
 use moon_platform_detector::detect_task_platform;
@@ -752,8 +752,8 @@ mod tasks_builder {
             assert_eq!(
                 task.deps,
                 vec![
-                    Target::parse("global:build").unwrap(),
-                    Target::parse("local:build").unwrap()
+                    TaskDependencyConfig::new(Target::parse("global:build").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("local:build").unwrap()),
                 ]
             );
 
@@ -805,8 +805,8 @@ mod tasks_builder {
             assert_eq!(
                 task.deps,
                 vec![
-                    Target::parse("local:build").unwrap(),
-                    Target::parse("global:build").unwrap(),
+                    TaskDependencyConfig::new(Target::parse("local:build").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("global:build").unwrap()),
                 ]
             );
 
@@ -855,7 +855,12 @@ mod tasks_builder {
 
             let task = tasks.get("deps").unwrap();
 
-            assert_eq!(task.deps, vec![Target::parse("local:build").unwrap()]);
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig::new(
+                    Target::parse("local:build").unwrap()
+                )]
+            );
 
             let task = tasks.get("env").unwrap();
 
@@ -1103,7 +1108,7 @@ mod tasks_builder {
             project_config.tasks.insert(
                 "build".into(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("build-local".into()),
+                    command: TaskArgs::String("build-local".into()),
                     ..Default::default()
                 },
             );
@@ -1111,7 +1116,7 @@ mod tasks_builder {
             project_config.tasks.insert(
                 "test".into(),
                 TaskConfig {
-                    command: TaskCommandArgs::String("test-local".into()),
+                    command: TaskArgs::String("test-local".into()),
                     ..Default::default()
                 },
             );
@@ -1132,7 +1137,9 @@ mod tasks_builder {
 
             assert_eq!(
                 tasks.get("deploy").unwrap().deps,
-                vec![Target::parse("~:compile").unwrap()]
+                vec![TaskDependencyConfig::new(
+                    Target::parse("~:compile").unwrap()
+                )]
             );
 
             assert_eq!(tasks.get("build").unwrap().command, "build-local");
@@ -1203,7 +1210,12 @@ mod tasks_builder {
             let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("no-deps").unwrap();
 
-            assert_eq!(task.deps, vec![Target::parse("app:build").unwrap()]);
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig::new(
+                    Target::parse("app:build").unwrap()
+                )]
+            );
         }
 
         #[tokio::test]
@@ -1212,7 +1224,12 @@ mod tasks_builder {
             let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("empty-deps").unwrap();
 
-            assert_eq!(task.deps, vec![Target::parse("app:build").unwrap()]);
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig::new(
+                    Target::parse("app:build").unwrap()
+                )]
+            );
         }
 
         #[tokio::test]
@@ -1224,8 +1241,8 @@ mod tasks_builder {
             assert_eq!(
                 task.deps,
                 vec![
-                    Target::parse("^:build").unwrap(),
-                    Target::parse("app:build").unwrap(),
+                    TaskDependencyConfig::new(Target::parse("^:build").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("app:build").unwrap()),
                 ]
             );
         }

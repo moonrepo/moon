@@ -109,11 +109,10 @@ implicitInputs:
 > [`moon.yml`](./project) doc.
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
-context of a project, and commonly wrap a system command. For most workspaces, every project
-_should_ have linting, typechecking, testing, code formatting, so on and so forth. To reduce the
-amount of boilerplate that _every_ project would require, this setting offers the ability to define
-tasks that are inherited by many projects within the workspace, but can also be overridden per
-project.
+context of a project, and commonly wrap a command. For most workspaces, every project _should_ have
+linting, typechecking, testing, code formatting, so on and so forth. To reduce the amount of
+boilerplate that _every_ project would require, this setting offers the ability to define tasks that
+are inherited by many projects within the workspace, but can also be overridden per project.
 
 ```yaml title=".moon/tasks.yml"
 tasks:

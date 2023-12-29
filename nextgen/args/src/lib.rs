@@ -76,6 +76,10 @@ where
     let single_chars = [b"&", b"|", b";", b"!", b">", b"<", b"-"];
     let multi_chars = [b"&&", b"|&", b"||", b">>", b"<<", b"--"];
 
+    let args = args.into_iter().collect::<Vec<_>>();
+    let last_index = args.len() - 1;
+    let mut index = 0;
+
     args.into_iter().fold(OsString::new(), |mut line, arg| {
         let arg = arg.as_ref();
         let bytes = arg.as_encoded_bytes();
@@ -93,7 +97,6 @@ where
 
         if has_special_chars {
             line.push(arg);
-            line.push(OsStr::new(" "));
         } else {
             if bytes.starts_with(&[b'$'])
                 || bytes.starts_with(&[b'\''])
@@ -104,8 +107,11 @@ where
                 let quoted = shell_words::quote(arg.to_str().unwrap()); // Handle conversion?
                 line.push(OsStr::new(quoted.as_ref()));
             }
+        }
 
-            line.push(OsStr::new(" "))
+        if index != last_index {
+            line.push(OsStr::new(" "));
+            index += 1;
         }
 
         line

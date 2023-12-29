@@ -1,11 +1,11 @@
 use crate::action_graph_error::ActionGraphError;
 use crate::action_node::ActionNode;
 use graph_cycles::Cycles;
-use moon_common::is_test_env;
+use moon_common::{color, is_test_env};
 use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;
 use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::sync::{mpsc, Arc, RwLock};
 use std::thread::spawn;
 use tracing::{debug, trace};
@@ -82,10 +82,11 @@ impl ActionGraph {
 }
 
 pub struct ActionGraphIter<'graph> {
+    completed: Arc<RwLock<FxHashSet<NodeIndex>>>,
     graph: &'graph GraphType,
     indices: Vec<NodeIndex>,
+    running: Arc<RwLock<FxHashMap<NodeIndex, String>>>,
     visited: FxHashSet<NodeIndex>,
-    completed: Arc<RwLock<FxHashSet<NodeIndex>>>,
 
     pub receiver: Option<mpsc::Receiver<usize>>,
     pub sender: mpsc::Sender<usize>,
@@ -130,12 +131,13 @@ impl<'graph> ActionGraphIter<'graph> {
                 let (sender, receiver) = mpsc::channel();
 
                 Ok(Self {
+                    completed: Arc::new(RwLock::new(FxHashSet::default())),
                     graph,
                     indices,
-                    visited: FxHashSet::default(),
-                    completed: Arc::new(RwLock::new(FxHashSet::default())),
                     receiver: Some(receiver),
+                    running: Arc::new(RwLock::new(FxHashMap::default())),
                     sender,
+                    visited: FxHashSet::default(),
                 })
             }
             // For some reason the topo sort can detect a cycle,
@@ -155,11 +157,13 @@ impl<'graph> ActionGraphIter<'graph> {
     }
 
     pub fn mark_completed(&mut self, index: NodeIndex) {
+        self.running.write().unwrap().remove(&index);
         self.completed.write().unwrap().insert(index);
     }
 
     pub fn monitor_completed(&mut self) {
         let completed = Arc::clone(&self.completed);
+        let running = Arc::clone(&self.running);
         let receiver = self.receiver.take().unwrap();
 
         spawn(move || {
@@ -168,6 +172,7 @@ impl<'graph> ActionGraphIter<'graph> {
 
                 trace!(index = index.index(), "Marking action as complete");
 
+                running.write().unwrap().remove(&index);
                 completed.write().unwrap().insert(index);
             }
         });
@@ -197,13 +202,44 @@ impl<'graph> Iterator for ActionGraphIter<'graph> {
                     completed.contains(&dep)
                 })
             {
-                self.visited.insert(*idx);
+                if let Some(node) = self.graph.node_weight(*idx) {
+                    let label = node.label();
 
-                trace!(
-                    index = idx.index(),
-                    deps = ?deps,
-                    "Running action",
-                );
+                    // If the same exact action is currently running,
+                    // avoid running another in parallel to avoid weird
+                    // collisions. This is especially true for `RunTask`,
+                    // where different args/env vars run the same task,
+                    // but with slightly different variance.
+                    {
+                        if node.is_standard()
+                            && self
+                                .running
+                                .read()
+                                .unwrap()
+                                .values()
+                                .any(|running_label| running_label == &label)
+                        {
+                            continue;
+                        }
+                    }
+
+                    trace!(
+                        index = idx.index(),
+                        deps = ?deps,
+                        "Running action {}",
+                        color::muted_light(&label),
+                    );
+
+                    self.running.write().unwrap().insert(*idx, label);
+                } else {
+                    trace!(
+                        index = idx.index(),
+                        deps = ?deps,
+                        "Running action",
+                    );
+                }
+
+                self.visited.insert(*idx);
 
                 return Some(*idx);
             }

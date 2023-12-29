@@ -1,5 +1,7 @@
 use moon_common::Id;
-use moon_config::{OutputPath, PartialTaskCommandArgs, PartialTaskConfig, PlatformType};
+use moon_config::{
+    OutputPath, PartialTaskArgs, PartialTaskConfig, PartialTaskDependency, PlatformType,
+};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
@@ -184,7 +186,7 @@ pub fn create_task(
 
     if is_wrapping {
         task_config.platform = Some(PlatformType::Node);
-        task_config.command = Some(PartialTaskCommandArgs::List(string_vec![
+        task_config.command = Some(PartialTaskArgs::List(string_vec![
             "moon",
             "node",
             "run-script",
@@ -205,9 +207,9 @@ pub fn create_task(
 
         task_config.platform = Some(detect_platform_type(&args[0]));
         task_config.command = Some(if args.len() == 1 {
-            PartialTaskCommandArgs::String(args.remove(0))
+            PartialTaskArgs::String(args.remove(0))
         } else {
-            PartialTaskCommandArgs::List(args)
+            PartialTaskArgs::List(args)
         });
     }
 
@@ -510,7 +512,9 @@ impl<'a> ScriptParser<'a> {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
                         task.deps
                             .get_or_insert(vec![])
-                            .push(Target::new_self(previous_task_id)?);
+                            .push(PartialTaskDependency::Target(Target::new_self(
+                                previous_task_id,
+                            )?));
                     }
                 }
 
@@ -558,7 +562,9 @@ impl<'a> ScriptParser<'a> {
                 if let Some(task) = self.tasks.get_mut(task_id) {
                     task.deps
                         .get_or_insert(vec![])
-                        .push(Target::new_self(pre_task_id)?);
+                        .push(PartialTaskDependency::Target(Target::new_self(
+                            pre_task_id,
+                        )?));
                 }
             }
         }
@@ -571,7 +577,7 @@ impl<'a> ScriptParser<'a> {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
                     task.deps
                         .get_or_insert(vec![])
-                        .push(Target::new_self(task_id)?);
+                        .push(PartialTaskDependency::Target(Target::new_self(task_id)?));
                 }
             }
         }

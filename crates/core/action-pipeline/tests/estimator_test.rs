@@ -10,6 +10,8 @@ const HALF_SECOND: u32 = NANOS_PER_MILLI * 500;
 
 fn create_run_task_action(runtime: Runtime, target: &str) -> Arc<ActionNode> {
     Arc::new(ActionNode::RunTask {
+        args: vec![],
+        env: vec![],
         interactive: false,
         persistent: false,
         runtime,

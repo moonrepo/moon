@@ -5,11 +5,12 @@ mod utils;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_platform_runtime::*;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_project_graph;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::ActionGraphContainer;
 
@@ -209,6 +210,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
                         interactive: false,
                         persistent: false,
                         runtime: create_node_runtime(),
@@ -256,6 +259,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
                         interactive: false,
                         persistent: false,
                         runtime: create_node_runtime(),
@@ -364,6 +369,8 @@ mod action_graph {
                         runtime: create_node_runtime()
                     },
                     ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
                         interactive: false,
                         persistent: false,
                         runtime: create_rust_runtime(),
@@ -393,6 +400,8 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::RunTask {
+                    args: vec![],
+                    env: vec![],
                     interactive: true,
                     persistent: false,
                     runtime: Runtime::system(),
@@ -426,6 +435,8 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::RunTask {
+                    args: vec![],
+                    env: vec![],
                     interactive: true,
                     persistent: false,
                     runtime: Runtime::system(),
@@ -454,11 +465,476 @@ mod action_graph {
             assert_eq!(
                 topo(graph).last().unwrap(),
                 &ActionNode::RunTask {
+                    args: vec![],
+                    env: vec![],
                     interactive: false,
                     persistent: true,
                     runtime: Runtime::system(),
                     target: task.target
                 }
+            );
+        }
+
+        #[tokio::test]
+        async fn distinguishes_between_args() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            // Test collapsing
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+
+            // Separate nodes
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["x".into(), "y".into(), "z".into()]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["a".into(), "b".into(), "c".into()],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["x".into(), "y".into(), "z".into()],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target
+                    }
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn flattens_same_args() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["a".into(), "b".into(), "c".into()],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn flattens_same_args_with_diff_enum() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["a".into(), "b".into(), "c".into()],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn distinguishes_between_env() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            // Test collapsing
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+
+            // Separate nodes
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![("FOO".into(), "1".into())],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![("BAR".into(), "2".into())],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target
+                    }
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn flattens_same_env() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![("FOO".into(), "1".into())],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn distinguishes_between_args_and_env() {
+            let sandbox = create_sandbox("projects");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let project = container.project_graph.get("bar").unwrap();
+            let mut task = create_task("build", "bar");
+            task.platform = PlatformType::Node;
+
+            // Test collapsing
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+            builder
+                .run_task(&project, &task, &RunRequirements::default())
+                .unwrap();
+
+            // Separate nodes
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+            builder
+                .run_task_with_config(
+                    &project,
+                    &task,
+                    &RunRequirements::default(),
+                    Some(&TaskDependencyConfig {
+                        args: TaskArgs::String("x y z".into()),
+                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        ..TaskDependencyConfig::default()
+                    }),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::SyncProject {
+                        project: Id::raw("bar"),
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::RunTask {
+                        args: vec![],
+                        env: vec![],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["a".into(), "b".into(), "c".into()],
+                        env: vec![("FOO".into(), "1".into())],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["a".into(), "b".into(), "c".into()],
+                        env: vec![("BAR".into(), "2".into())],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target.clone()
+                    },
+                    ActionNode::RunTask {
+                        args: vec!["x".into(), "y".into(), "z".into()],
+                        env: vec![("BAR".into(), "2".into())],
+                        interactive: false,
+                        persistent: false,
+                        runtime: create_node_runtime(),
+                        target: task.target
+                    },
+                ]
             );
         }
     }

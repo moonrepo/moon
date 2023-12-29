@@ -35,6 +35,7 @@
 
 #### ⚙️ Internal
 
+- Updated Rust to v1.75.
 - Updated proto to v0.26.4 (from v0.25).
 
 ## 1.18.5

@@ -95,18 +95,15 @@ where
             // Single chars
             single_chars.iter().any(|c| bytes.contains(&c[0]));
 
-        if has_special_chars {
+        if has_special_chars
+            || bytes.starts_with(&[b'$'])
+            || bytes.starts_with(&[b'\''])
+            || bytes.starts_with(&[b'"'])
+        {
             line.push(arg);
         } else {
-            if bytes.starts_with(&[b'$'])
-                || bytes.starts_with(&[b'\''])
-                || bytes.starts_with(&[b'"'])
-            {
-                line.push(arg);
-            } else {
-                let quoted = shell_words::quote(arg.to_str().unwrap()); // Handle conversion?
-                line.push(OsStr::new(quoted.as_ref()));
-            }
+            let quoted = shell_words::quote(arg.to_str().unwrap()); // Handle conversion?
+            line.push(OsStr::new(quoted.as_ref()));
         }
 
         if index != last_index {

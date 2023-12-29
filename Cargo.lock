@@ -190,9 +190,9 @@ dependencies = [
 
 [[package]]
 name = "assert_fs"
-version = "1.0.13"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f070617a68e5c2ed5d06ee8dd620ee18fb72b99f6c094bed34cf8ab07c875b48"
+checksum = "adc5d78e9048d836d12a0c0040ca5f45b18a94d204b4ba4f677a8a7de162426b"
 dependencies = [
  "anstyle",
  "doc-comment",
@@ -616,9 +616,9 @@ dependencies = [
 
 [[package]]
 name = "cargo_toml"
-version = "0.17.1"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d1ece59890e746567b467253aea0adbe8a21784d0b025d8a306f66c391c2957"
+checksum = "8a969e13a7589e9e3e4207e153bae624ade2b5622fb4684a4923b23ec3d57719"
 dependencies = [
  "serde",
  "toml 0.8.8",
@@ -751,9 +751,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.4.11"
+version = "4.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfaff671f6b22ca62406885ece523383b9b64022e341e53e009a62ebc47a45f2"
+checksum = "dcfab8ba68f3668e89f6ff60f5b205cea56aa7b769451a59f34b8682f51c056d"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -761,9 +761,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.4.11"
+version = "4.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a216b506622bb1d316cd51328dce24e07bdff4a6128a47c7e7fad11878d5adbb"
+checksum = "fb7fb5e4e979aec3be7791562fcba452f94ad85e954da024396433e0e25a79e9"
 dependencies = [
  "anstream",
  "anstyle",
@@ -774,11 +774,11 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.4.4"
+version = "4.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bffe91f06a11b4b9420f62103854e90867812cd5d01557f853c5ee8e791b12ae"
+checksum = "a51919c5608a32e34ea1d6be321ad070065e17613e168c5b6977024290f2630b"
 dependencies = [
- "clap 4.4.11",
+ "clap 4.4.12",
 ]
 
 [[package]]
@@ -2962,7 +2962,7 @@ dependencies = [
 name = "moon_action_context"
 version = "0.1.0"
 dependencies = [
- "clap 4.4.11",
+ "clap 4.4.12",
  "moon_common",
  "moon_target",
  "rustc-hash",
@@ -3207,7 +3207,7 @@ version = "1.18.5"
 dependencies = [
  "bytes",
  "ci_env",
- "clap 4.4.11",
+ "clap 4.4.12",
  "clap_complete",
  "clap_lex 0.6.0",
  "console",
@@ -3260,7 +3260,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "serde_yaml 0.9.27",
+ "serde_yaml 0.9.29",
  "serial_test",
  "starbase",
  "starbase_archive",
@@ -3333,7 +3333,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "serde_yaml 0.9.27",
+ "serde_yaml 0.9.29",
  "starbase_sandbox",
  "tracing",
 ]
@@ -3504,7 +3504,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "serde_yaml 0.9.27",
+ "serde_yaml 0.9.29",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
@@ -3986,7 +3986,7 @@ dependencies = [
  "predicates",
  "pretty_assertions",
  "rustc-hash",
- "serde_yaml 0.9.27",
+ "serde_yaml 0.9.29",
  "starbase_utils",
  "tokio",
 ]
@@ -4900,9 +4900,9 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
 name = "relative-path"
-version = "1.9.0"
+version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c707298afce11da2efef2f600116fa93ffa7a032b5d7b628aa17711ec81383ca"
+checksum = "e898588f33fdd5b9420719948f9f2a32c922a246964576f71ba7f24f80610fbc"
 dependencies = [
  "serde",
 ]
@@ -5134,7 +5134,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_path_to_error",
- "serde_yaml 0.9.27",
+ "serde_yaml 0.9.29",
  "starbase_styles",
  "thiserror",
  "toml 0.8.8",
@@ -5316,9 +5316,9 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.9.27"
+version = "0.9.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cc7a1570e38322cfe4154732e5110f887ea57e22b76f4bfd32b5bdd3368666c"
+checksum = "a15e0ef66bf939a7c890a0bf6d5a733c70202225f9888a89ed5c62298b019129"
 dependencies = [
  "indexmap 2.1.0",
  "itoa",
@@ -5613,7 +5613,7 @@ dependencies = [
  "relative-path",
  "serde",
  "serde_json",
- "serde_yaml 0.9.27",
+ "serde_yaml 0.9.29",
  "starbase_styles",
  "thiserror",
  "tokio",
@@ -6379,9 +6379,9 @@ dependencies = [
 
 [[package]]
 name = "unsafe-libyaml"
-version = "0.2.7"
+version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad2024452afd3874bf539695e04af6732ba06517424dbf958fdb16a01f3bef6c"
+checksum = "ab4c90930b95a82d00dc9e9ac071b4991924390d46cbd0dfe566148667605e4b"
 
 [[package]]
 name = "untrusted"

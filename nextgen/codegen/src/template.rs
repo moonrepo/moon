@@ -166,7 +166,7 @@ impl Template {
     /// to interpolate a path ourselves. Instead, let's use Tera and its
     /// template rendering to handle this.
     pub fn interpolate_path(
-        &self,
+        &mut self,
         path: &Path,
         context: &Context,
     ) -> miette::Result<RelativePathBuf> {
@@ -202,12 +202,12 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        let path = Tera::default()
-            .render_str(&name, context)
-            .map_err(|error| CodegenError::InterpolateTemplateFileFailed {
+        let path = self.engine.render_str(&name, context).map_err(|error| {
+            CodegenError::InterpolateTemplateFileFailed {
                 path: name.to_owned(),
                 error,
-            })?;
+            }
+        })?;
 
         Ok(RelativePathBuf::from(path))
     }

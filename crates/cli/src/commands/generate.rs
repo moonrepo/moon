@@ -371,9 +371,8 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
             }
         }
     });
-    let dest = template
-        .interpolate_path(&relative_dest, &context)?
-        .to_logical_path(&workspace.working_dir);
+    let relative_dest = template.interpolate_path(&relative_dest, &context)?;
+    let dest = relative_dest.to_logical_path(&workspace.working_dir);
 
     debug!(dest = ?dest, "Destination path set");
 

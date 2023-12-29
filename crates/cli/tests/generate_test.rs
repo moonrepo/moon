@@ -42,6 +42,19 @@ fn generates_files_from_template() {
 }
 
 #[test]
+fn generates_files_into_default_dest() {
+    let sandbox = generate_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("generate").arg("dest");
+    });
+
+    assert_snapshot!(assert.output_standardized());
+
+    assert!(sandbox.path().join("apps/foo-bar/file.txt").exists());
+}
+
+#[test]
 fn doesnt_generate_files_when_dryrun() {
     let sandbox = generate_sandbox();
 

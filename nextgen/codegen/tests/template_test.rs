@@ -145,7 +145,7 @@ mod template {
 
         #[test]
         fn path_segments() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -170,7 +170,7 @@ mod template {
 
         #[test]
         fn var_casing() {
-            let template = create_template();
+            let mut template = create_template();
             let mut context = create_context();
             context.insert("camelCase", "camelCase");
             context.insert("PascalCase", "PascalCase");
@@ -198,7 +198,7 @@ mod template {
 
         #[test]
         fn multiple_vars() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -217,7 +217,7 @@ mod template {
 
         #[test]
         fn ignores_unknown_vars() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -230,7 +230,7 @@ mod template {
 
         #[test]
         fn removes_exts() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -244,6 +244,25 @@ mod template {
                     .interpolate_path(&PathBuf::from("file.ts.twig"), &context)
                     .unwrap(),
                 "file.ts"
+            );
+        }
+
+        #[test]
+        fn supports_filters() {
+            let mut template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[string | upper_case].ts"), &context)
+                    .unwrap(),
+                "folder/STRING.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[bool|pascal_case].ts"), &context)
+                    .unwrap(),
+                "folder/True.ts"
             );
         }
     }

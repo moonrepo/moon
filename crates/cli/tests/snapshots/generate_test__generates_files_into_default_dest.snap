@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/generate_test.rs
+expression: assert.output_standardized()
+---
+
+Template title 
+Some description of the template and its files.
+
+
+created --> apps/foo-bar/file.txt
+
+
+

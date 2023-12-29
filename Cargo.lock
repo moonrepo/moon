@@ -3518,6 +3518,7 @@ dependencies = [
  "moon_node_lang",
  "moon_node_tool",
  "moon_platform",
+ "moon_platform_detector",
  "moon_process",
  "moon_project",
  "moon_project_graph",

@@ -2,22 +2,22 @@ use moon_config::PlatformType;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-static BUN_COMMANDS: Lazy<Regex> = Lazy::new(|| Regex::new("^(bun|bunx)$").unwrap());
+pub static BUN_COMMANDS: Lazy<Regex> = Lazy::new(|| Regex::new("^(bun|bunx)$").unwrap());
 
-static DENO_COMMANDS: Lazy<Regex> = Lazy::new(|| Regex::new("^(deno)$").unwrap());
+pub static DENO_COMMANDS: Lazy<Regex> = Lazy::new(|| Regex::new("^(deno)$").unwrap());
 
-static RUST_COMMANDS: Lazy<Regex> =
+pub static RUST_COMMANDS: Lazy<Regex> =
     Lazy::new(|| Regex::new("^(rust-|rustc|rustdoc|rustfmt|rustup|cargo)").unwrap());
 
-static NODE_COMMANDS: Lazy<Regex> =
+pub static NODE_COMMANDS: Lazy<Regex> =
     Lazy::new(|| Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap());
 
-static UNIX_SYSTEM_COMMANDS: Lazy<Regex> = Lazy::new(|| {
+pub static UNIX_SYSTEM_COMMANDS: Lazy<Regex> = Lazy::new(|| {
     Regex::new("^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$")
         .unwrap()
 });
 
-static WINDOWS_SYSTEM_COMMANDS: Lazy<Regex> = Lazy::new(|| {
+pub static WINDOWS_SYSTEM_COMMANDS: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         "^(cd|cmd|cmd.exe|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy|pwsh|pwsh.exe)$",
     )

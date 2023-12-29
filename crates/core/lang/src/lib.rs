@@ -37,11 +37,7 @@ pub struct VersionManager {
 pub type LockfileDependencyVersions = FxHashMap<String, Vec<String>>;
 
 #[inline]
-pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language) -> bool {
-    let Some(vendor_dir) = lang.vendor_dir else {
-        return false;
-    };
-
+pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, vendor_dir: &str) -> bool {
     let vendor_path = dir.as_ref().join(vendor_dir);
 
     if !vendor_path.exists() {

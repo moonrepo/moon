@@ -1,4 +1,4 @@
-use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions, BUNPM};
+use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
 use moon_config::BunConfig;
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
@@ -160,11 +160,11 @@ impl DependencyManager<()> for BunTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(BUNPM.lockfile)
+        String::from("bun.lockb")
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(BUNPM.manifest)
+        String::from("package.json")
     }
 
     async fn get_resolved_dependencies(
@@ -172,7 +172,7 @@ impl DependencyManager<()> for BunTool {
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
         let Some(lockfile_path) =
-            fs::find_upwards_until(BUNPM.lockfile, project_root, get_workspace_root())
+            fs::find_upwards_until("bun.lockb", project_root, get_workspace_root())
         else {
             return Ok(FxHashMap::default());
         };
@@ -180,7 +180,7 @@ impl DependencyManager<()> for BunTool {
         // Bun lockfiles are binary, so we need to convert them to text first
         // using Bun itself!
         let mut cmd = self.create_command(&())?;
-        cmd.arg(BUNPM.lockfile);
+        cmd.arg("bun.lockb");
         cmd.cwd(lockfile_path.parent().unwrap());
 
         let output = cmd.create_async().exec_capture_output().await?;

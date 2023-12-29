@@ -7,7 +7,7 @@ use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig, TypeScriptConfig,
 };
-use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
+use moon_deno_lang::{load_lockfile_dependencies, DenoJson};
 use moon_deno_tool::{get_deno_env_paths, DenoTool};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
@@ -110,7 +110,7 @@ impl Platform for DenoPlatform {
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
         Ok(Some((
-            DENO_DEPS.lockfile.to_owned(),
+            "deno.lock".to_owned(),
             self.config.deps_file.to_owned(),
         )))
     }
@@ -182,7 +182,7 @@ impl Platform for DenoPlatform {
             .args([
                 "cache",
                 "--lock",
-                DENO_DEPS.lockfile,
+                "deno.lock",
                 "--lock-write",
                 &self.config.deps_file,
             ])
@@ -210,7 +210,7 @@ impl Platform for DenoPlatform {
                     "--allow-read",
                     "--no-prompt",
                     "--lock",
-                    DENO_DEPS.lockfile,
+                    "deno.lock",
                 ];
 
                 match bin {
@@ -316,8 +316,7 @@ impl Platform for DenoPlatform {
         if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
             && self.config.lockfile
         {
-            let resolved_dependencies =
-                load_lockfile_dependencies(project.root.join(DENO_DEPS.lockfile))?;
+            let resolved_dependencies = load_lockfile_dependencies(project.root.join("deno.lock"))?;
 
             target_hash.hash_deps(BTreeMap::from_iter(resolved_dependencies));
         };

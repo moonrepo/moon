@@ -7,7 +7,6 @@ use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
-use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
 use moon_tool::DependencyManager;
@@ -90,8 +89,8 @@ pub async fn prune_node(
 
 // This assumes that the project was built in --release mode. Is this correct?
 pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
-    let target_dir = workspace_root.join(RUST.vendor_dir.unwrap());
-    let lockfile_path = workspace_root.join(CARGO.lockfile);
+    let target_dir = workspace_root.join("target");
+    let lockfile_path = workspace_root.join("Cargo.lock");
 
     // Only delete target if relative to `Cargo.lock`
     if target_dir.exists() && lockfile_path.exists() {

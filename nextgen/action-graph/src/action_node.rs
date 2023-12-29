@@ -63,6 +63,17 @@ impl ActionNode {
         }
     }
 
+    pub fn is_standard(&self) -> bool {
+        match self {
+            Self::RunTask {
+                interactive,
+                persistent,
+                ..
+            } => !interactive && !persistent,
+            _ => true,
+        }
+    }
+
     pub fn label(&self) -> String {
         match self {
             Self::InstallDeps { runtime } => {

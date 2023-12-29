@@ -5,21 +5,14 @@ use moon_config::{
     PlatformType, TaskArgs, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
-use moon_platform_detector::detect_project_language;
 use moon_project::Project;
-use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
-use moon_task_builder::DetectPlatformEvent;
+use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use rustc_hash::FxHashMap;
-use starbase_events::{Emitter, EventState};
 use starbase_sandbox::create_sandbox;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 // We need some top-level struct to hold the data used for lifetime refs.
 struct Stub {
-    detect_language: Emitter<DetectLanguageEvent>,
-    detect_platform: Emitter<DetectPlatformEvent>,
     toolchain_config: ToolchainConfig,
     workspace_root: PathBuf,
     id: Id,
@@ -29,8 +22,6 @@ struct Stub {
 impl Stub {
     pub fn new(id: &str, root: &Path) -> Self {
         Self {
-            detect_language: Emitter::new(),
-            detect_platform: Emitter::new(),
             toolchain_config: ToolchainConfig::default(),
             workspace_root: root.to_path_buf(),
             id: Id::raw(id),
@@ -39,23 +30,10 @@ impl Stub {
     }
 
     pub async fn create_builder(&self) -> ProjectBuilder {
-        self.detect_language
-            .on(
-                |event: Arc<DetectLanguageEvent>, data: Arc<RwLock<LanguageType>>| async move {
-                    let mut data = data.write().await;
-                    *data = detect_project_language(&event.project_root);
-
-                    Ok(EventState::Stop)
-                },
-            )
-            .await;
-
         ProjectBuilder::new(
             &self.id,
             &self.source,
             ProjectBuilderContext {
-                detect_language: &self.detect_language,
-                detect_platform: &self.detect_platform,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
                 workspace_root: &self.workspace_root,

@@ -1,14 +1,11 @@
 use moon_action_graph::ActionGraphBuilder;
 use moon_bun_platform::BunPlatform;
-use moon_config::LanguageType;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::{PlatformManager, PlatformType};
-use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project_graph::{
-    DetectLanguageEvent, DetectPlatformEvent, ExtendProjectData, ExtendProjectEvent,
-    ExtendProjectGraphData, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphBuilder,
-    ProjectGraphBuilderContext,
+    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
+    ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
 };
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
@@ -154,8 +151,6 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
     let context = ProjectGraphBuilderContext {
         extend_project: Emitter::<ExtendProjectEvent>::new(),
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
-        detect_language: Emitter::<DetectLanguageEvent>::new(),
-        detect_platform: Emitter::<DetectPlatformEvent>::new(),
         inherited_tasks: &workspace.tasks_config,
         toolchain_config: &workspace.toolchain_config,
         vcs: Some(&workspace.vcs),
@@ -200,30 +195,6 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
 
             Ok(EventState::Continue)
         })
-        .await;
-
-    context
-        .detect_language
-        .on(
-            |event: Arc<DetectLanguageEvent>, data: Arc<RwLock<LanguageType>>| async move {
-                let mut data = data.write().await;
-                *data = detect_project_language(&event.project_root);
-
-                Ok(EventState::Stop)
-            },
-        )
-        .await;
-
-    context
-        .detect_platform
-        .on(
-            |event: Arc<DetectPlatformEvent>, data: Arc<RwLock<PlatformType>>| async move {
-                let mut data = data.write().await;
-                *data = detect_task_platform(&event.task_command, &event.enabled_platforms);
-
-                Ok(EventState::Stop)
-            },
-        )
         .await;
 
     context

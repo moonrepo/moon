@@ -14,9 +14,8 @@ use moon_config::{
 };
 use moon_hash::HashEngine;
 use moon_project::Project;
-use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
+use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_task_builder::DetectPlatformEvent;
 use moon_vcs::BoxedVcs;
 use petgraph::graph::DiGraph;
 use petgraph::prelude::NodeIndex;
@@ -33,12 +32,6 @@ use tracing::{debug, trace};
 pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
-    pub detect_language: Emitter<DetectLanguageEvent>,
-    pub detect_platform: Emitter<DetectPlatformEvent>,
-    // pub extend_project: &'app Emitter<ExtendProjectEvent>,
-    // pub extend_project_graph: &'app Emitter<ExtendProjectGraphEvent>,
-    // pub detect_language: &'app Emitter<DetectLanguageEvent>,
-    // pub detect_platform: &'app Emitter<DetectPlatformEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
     pub vcs: Option<&'app BoxedVcs>,
@@ -319,8 +312,6 @@ impl<'app> ProjectGraphBuilder<'app> {
             &id,
             &source,
             ProjectBuilderContext {
-                detect_language: &context.detect_language,
-                detect_platform: &context.detect_platform,
                 root_project_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,

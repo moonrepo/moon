@@ -4,8 +4,8 @@ use moon_config::{
     WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
-    DetectLanguageEvent, DetectPlatformEvent, ExtendProjectEvent, ExtendProjectGraphEvent,
-    ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
+    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphBuilder,
+    ProjectGraphBuilderContext,
 };
 use moon_vcs::{BoxedVcs, Git};
 use starbase_events::Emitter;
@@ -81,8 +81,6 @@ impl ProjectGraphContainer {
         ProjectGraphBuilderContext {
             extend_project: Emitter::<ExtendProjectEvent>::new(),
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
-            detect_language: Emitter::<DetectLanguageEvent>::new(),
-            detect_platform: Emitter::<DetectPlatformEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
             vcs: self.vcs.as_ref(),

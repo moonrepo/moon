@@ -11,15 +11,14 @@ repository = "https://github.com/moonrepo/moon"
 moon_common = { version = "0.1.0", path = "../common" }
 moon_config = { version = "0.1.0", path = "../config" }
 moon_file_group = { version = "0.1.0", path = "../file-group" }
+moon_platform_detector = { path = "../platform-detector" }
 moon_project = { version = "0.1.0", path = "../project" }
 moon_task = { version = "0.1.0", path = "../task" }
 moon_task_builder = { version = "0.1.0", path = "../task-builder" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-starbase_events = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
-moon_platform_detector = { path = "../platform-detector" }
 tokio = { workspace = true }

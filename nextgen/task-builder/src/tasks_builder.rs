@@ -7,10 +7,10 @@ use moon_config::{
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
     TaskMergeStrategy, TaskOutputStyle, TaskType, ToolchainConfig,
 };
+use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
 use moon_task::{parse_task_args, Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
@@ -58,18 +58,7 @@ fn extract_config<'builder, 'proj>(
     Ok(stack)
 }
 
-#[derive(Debug)]
-pub struct DetectPlatformEvent {
-    pub enabled_platforms: Vec<PlatformType>,
-    pub task_command: String,
-}
-
-impl Event for DetectPlatformEvent {
-    type Data = PlatformType;
-}
-
 pub struct TasksBuilderContext<'proj> {
-    pub detect_platform: &'proj Emitter<DetectPlatformEvent>,
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
 }
@@ -394,14 +383,10 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.platform.is_unknown() {
-            let platform = self
-                .context
-                .detect_platform
-                .emit(DetectPlatformEvent {
-                    enabled_platforms: self.context.toolchain_config.get_enabled_platforms(),
-                    task_command: task.command.clone(),
-                })
-                .await?;
+            let platform = detect_task_platform(
+                &task.command,
+                &self.context.toolchain_config.get_enabled_platforms(),
+            );
 
             task.platform = if platform.is_unknown() {
                 if self.project_platform.is_unknown() {

@@ -1,5 +1,5 @@
 [package]
-name = "moon_platform_detector2"
+name = "moon_platform_detector"
 version = "0.1.0"
 edition = "2021"
 publish = false

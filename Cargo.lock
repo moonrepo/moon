@@ -3634,24 +3634,6 @@ dependencies = [
 name = "moon_platform_detector"
 version = "0.1.0"
 dependencies = [
- "moon_bun_lang",
- "moon_config",
- "moon_deno_lang",
- "moon_go_lang",
- "moon_lang",
- "moon_node_lang",
- "moon_php_lang",
- "moon_python_lang",
- "moon_ruby_lang",
- "moon_rust_lang",
- "moon_utils",
- "once_cell",
-]
-
-[[package]]
-name = "moon_platform_detector2"
-version = "0.1.0"
-dependencies = [
  "moon_config",
  "once_cell",
  "regex",

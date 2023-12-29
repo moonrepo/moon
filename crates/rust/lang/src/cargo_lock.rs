@@ -1,4 +1,3 @@
-use crate::CARGO;
 use cached::proc_macro::cached;
 use cargo_lock::Lockfile as CargoLock;
 use miette::IntoDiagnostic;
@@ -10,7 +9,7 @@ fn read_lockfile(path: &Path) -> miette::Result<CargoLock> {
     CargoLock::load(path).into_diagnostic()
 }
 
-config_cache_container!(CargoLockCache, CargoLock, CARGO.lockfile, read_lockfile);
+config_cache_container!(CargoLockCache, CargoLock, "Cargo.lock", read_lockfile);
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {

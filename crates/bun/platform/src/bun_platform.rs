@@ -1,6 +1,5 @@
 use crate::actions;
 use moon_action_context::ActionContext;
-use moon_bun_lang::BUNPM;
 use moon_bun_tool::{get_bun_env_paths, BunTool};
 use moon_common::Id;
 use moon_config::{
@@ -135,7 +134,7 @@ impl Platform for BunPlatform {
         debug!(
             target: LOG_TARGET,
             "Loading names (aliases) from project {}'s",
-            color::file(BUNPM.manifest)
+            color::file("package.json")
         );
 
         for (project_id, project_source) in projects_list {
@@ -217,7 +216,7 @@ impl Platform for BunPlatform {
     }
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
-        Ok(Some((BUNPM.lockfile.to_owned(), BUNPM.manifest.to_owned())))
+        Ok(Some(("bun.lockb".to_owned(), "package.json".to_owned())))
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {

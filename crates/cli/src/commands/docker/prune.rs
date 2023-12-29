@@ -3,11 +3,10 @@ use crate::commands::docker::scaffold::DockerManifest;
 use moon::generate_project_graph;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
-use moon_node_lang::{PackageJson, NODE};
+use moon_node_lang::PackageJson;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
-use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
 use moon_tool::DependencyManager;
@@ -38,12 +37,10 @@ pub async fn prune_bun(
     }
 
     // Some package managers do not delete stale node modules
-    if let Some(vendor_dir) = NODE.vendor_dir {
-        fs::remove_dir_all(workspace_root.join(vendor_dir))?;
+    fs::remove_dir_all(workspace_root.join("node_modules"))?;
 
-        for source in project_graph.sources().values() {
-            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
-        }
+    for source in project_graph.sources().values() {
+        fs::remove_dir_all(source.join("node_modules").to_path(workspace_root))?;
     }
 
     // Install production only dependencies for focused projects
@@ -72,12 +69,10 @@ pub async fn prune_node(
     }
 
     // Some package managers do not delete stale node modules
-    if let Some(vendor_dir) = NODE.vendor_dir {
-        fs::remove_dir_all(workspace_root.join(vendor_dir))?;
+    fs::remove_dir_all(workspace_root.join("node_modules"))?;
 
-        for source in project_graph.sources().values() {
-            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
-        }
+    for source in project_graph.sources().values() {
+        fs::remove_dir_all(source.join("node_modules").to_path(workspace_root))?;
     }
 
     // Install production only dependencies for focused projects
@@ -90,8 +85,8 @@ pub async fn prune_node(
 
 // This assumes that the project was built in --release mode. Is this correct?
 pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
-    let target_dir = workspace_root.join(RUST.vendor_dir.unwrap());
-    let lockfile_path = workspace_root.join(CARGO.lockfile);
+    let target_dir = workspace_root.join("target");
+    let lockfile_path = workspace_root.join("Cargo.lock");
 
     // Only delete target if relative to `Cargo.lock`
     if target_dir.exists() && lockfile_path.exists() {

@@ -1,6 +1,5 @@
 // package.json
 
-use crate::NPM;
 use cached::proc_macro::cached;
 use moon_lang::config_cache;
 use serde::{Deserialize, Serialize};
@@ -8,7 +7,7 @@ use starbase_utils::json::{self, read_file as read_json, JsonValue};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageJson, NPM.manifest, read_json, write_preserved_json);
+config_cache!(PackageJson, "package.json", read_json, write_preserved_json);
 
 // Only define fields we interact with and care about!
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

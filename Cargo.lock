@@ -2934,7 +2934,6 @@ dependencies = [
  "moon_deno_platform",
  "moon_node_platform",
  "moon_platform",
- "moon_platform_detector",
  "moon_project_graph",
  "moon_rust_platform",
  "moon_system_platform",
@@ -3430,14 +3429,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_go_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
-]
-
-[[package]]
 name = "moon_hash"
 version = "0.1.0"
 dependencies = [
@@ -3527,6 +3518,7 @@ dependencies = [
  "moon_node_lang",
  "moon_node_tool",
  "moon_platform",
+ "moon_platform_detector",
  "moon_process",
  "moon_project",
  "moon_project_graph",
@@ -3587,14 +3579,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_php_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
-]
-
-[[package]]
 name = "moon_pipeline"
 version = "0.1.0"
 dependencies = [
@@ -3634,18 +3618,9 @@ dependencies = [
 name = "moon_platform_detector"
 version = "0.1.0"
 dependencies = [
- "moon_bun_lang",
  "moon_config",
- "moon_deno_lang",
- "moon_go_lang",
- "moon_lang",
- "moon_node_lang",
- "moon_php_lang",
- "moon_python_lang",
- "moon_ruby_lang",
- "moon_rust_lang",
- "moon_utils",
  "once_cell",
+ "regex",
 ]
 
 [[package]]
@@ -3700,7 +3675,6 @@ dependencies = [
  "moon_task",
  "moon_task_builder",
  "rustc-hash",
- "starbase_events",
  "starbase_sandbox",
  "tokio",
  "tracing",
@@ -3768,14 +3742,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_python_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
-]
-
-[[package]]
 name = "moon_query"
 version = "0.1.0"
 dependencies = [
@@ -3786,14 +3752,6 @@ dependencies = [
  "pest_derive",
  "starbase_utils",
  "thiserror",
-]
-
-[[package]]
-name = "moon_ruby_lang"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_lang",
 ]
 
 [[package]]
@@ -3956,7 +3914,6 @@ dependencies = [
  "moon_target",
  "moon_task",
  "rustc-hash",
- "starbase_events",
  "starbase_sandbox",
  "thiserror",
  "tokio",

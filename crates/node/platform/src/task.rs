@@ -4,9 +4,10 @@ use moon_config::{
 };
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
+use moon_platform_detector::{UNIX_SYSTEM_COMMANDS, WINDOWS_SYSTEM_COMMANDS};
 use moon_process::args::split_args;
 use moon_target::Target;
-use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
+use moon_utils::regex::ID_CLEAN;
 use moon_utils::{regex, string_vec};
 use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
@@ -127,8 +128,8 @@ fn clean_script_name(name: &str) -> String {
 }
 
 fn detect_platform_type(command: &str) -> PlatformType {
-    if UNIX_SYSTEM_COMMAND.is_match(command)
-        || WINDOWS_SYSTEM_COMMAND.is_match(command)
+    if UNIX_SYSTEM_COMMANDS.is_match(command)
+        || WINDOWS_SYSTEM_COMMANDS.is_match(command)
         || command == "noop"
     {
         return PlatformType::System;

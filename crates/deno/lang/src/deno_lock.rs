@@ -1,4 +1,3 @@
-use crate::DENO_DEPS;
 use cached::proc_macro::cached;
 use moon_lang::{config_cache, LockfileDependencyVersions};
 use rustc_hash::FxHashMap;
@@ -6,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use starbase_utils::json::read_file as read_json;
 use std::path::{Path, PathBuf};
 
-config_cache!(DenoLock, DENO_DEPS.lockfile, read_json);
+config_cache!(DenoLock, "deno.lock", read_json);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]

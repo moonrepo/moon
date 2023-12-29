@@ -5,17 +5,13 @@ use moon_config::{
     TaskArgs, TaskConfig, TaskDependencyConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
     ToolchainConfig,
 };
-use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
 use moon_task::Task;
-use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
+use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
-use starbase_events::{Emitter, EventState};
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 async fn build_tasks_with_config(
     root: &Path,
@@ -25,25 +21,12 @@ async fn build_tasks_with_config(
     global_name: Option<&str>,
 ) -> BTreeMap<Id, Task> {
     let platform = local_config.platform.unwrap_or_default();
-    let emitter = Emitter::<DetectPlatformEvent>::new();
-
-    emitter
-        .on(
-            |event: Arc<DetectPlatformEvent>, data: Arc<RwLock<PlatformType>>| async move {
-                let mut data = data.write().await;
-                *data = detect_task_platform(&event.task_command, &event.enabled_platforms);
-
-                Ok(EventState::Stop)
-            },
-        )
-        .await;
 
     let mut builder = TasksBuilder::new(
         "project",
         source,
         &platform,
         TasksBuilderContext {
-            detect_platform: &emitter,
             toolchain_config: &toolchain_config,
             workspace_root: root,
         },

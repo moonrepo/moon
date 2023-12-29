@@ -1,9 +1,0 @@
-[package]
-name = "moon_php_lang"
-version = "0.1.0"
-edition = "2021"
-publish = false
-
-[dependencies]
-moon_lang = { path = "../../core/lang" }
-miette = { workspace = true }

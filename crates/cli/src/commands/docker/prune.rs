@@ -3,7 +3,7 @@ use crate::commands::docker::scaffold::DockerManifest;
 use moon::generate_project_graph;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
-use moon_node_lang::{PackageJson, NODE};
+use moon_node_lang::PackageJson;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
@@ -37,12 +37,10 @@ pub async fn prune_bun(
     }
 
     // Some package managers do not delete stale node modules
-    if let Some(vendor_dir) = NODE.vendor_dir {
-        fs::remove_dir_all(workspace_root.join(vendor_dir))?;
+    fs::remove_dir_all(workspace_root.join("node_modules"))?;
 
-        for source in project_graph.sources().values() {
-            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
-        }
+    for source in project_graph.sources().values() {
+        fs::remove_dir_all(source.join("node_modules").to_path(workspace_root))?;
     }
 
     // Install production only dependencies for focused projects
@@ -71,12 +69,10 @@ pub async fn prune_node(
     }
 
     // Some package managers do not delete stale node modules
-    if let Some(vendor_dir) = NODE.vendor_dir {
-        fs::remove_dir_all(workspace_root.join(vendor_dir))?;
+    fs::remove_dir_all(workspace_root.join("node_modules"))?;
 
-        for source in project_graph.sources().values() {
-            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
-        }
+    for source in project_graph.sources().values() {
+        fs::remove_dir_all(source.join("node_modules").to_path(workspace_root))?;
     }
 
     // Install production only dependencies for focused projects

@@ -3,7 +3,6 @@ use mimalloc::MiMalloc;
 use moon_cli::commands::upgrade::is_musl;
 use moon_cli::run_cli;
 use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
-use moon_node_lang::NODE;
 use moon_terminal::safe_exit;
 use moon_utils::is_test_env;
 use starbase::MainResult;
@@ -49,7 +48,7 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
 
 fn get_local_lookups(workspace_root: &Path) -> Vec<PathBuf> {
     let cli_bin = workspace_root
-        .join(NODE.vendor_dir.unwrap())
+        .join("node_modules")
         .join("@moonrepo/cli")
         .join(BIN_NAME);
 
@@ -74,7 +73,7 @@ fn get_local_lookups(workspace_root: &Path) -> Vec<PathBuf> {
     };
 
     let core_bin = workspace_root
-        .join(NODE.vendor_dir.unwrap())
+        .join("node_modules")
         .join(format!("@moonrepo/{package}"))
         .join(BIN_NAME);
 

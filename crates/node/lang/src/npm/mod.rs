@@ -1,4 +1,3 @@
-use crate::NPM;
 use cached::proc_macro::cached;
 use miette::IntoDiagnostic;
 use moon_lang::{config_cache_container, LockfileDependencyVersions};
@@ -14,7 +13,7 @@ fn read_file(path: &Path) -> miette::Result<PackageLockJson> {
 config_cache_container!(
     PackageLockJsonCache,
     PackageLockJson,
-    NPM.lockfile,
+    "package-lock.json",
     read_file
 );
 

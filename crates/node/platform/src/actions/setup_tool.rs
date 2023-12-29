@@ -1,6 +1,6 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_logger::debug;
-use moon_node_lang::{PackageJson, BUN, NODENV, NPM, NVM, PNPM, YARN};
+use moon_node_lang::PackageJson;
 use moon_node_tool::NodeTool;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -33,7 +33,7 @@ fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson)
             debug!(
                 target: LOG_TARGET,
                 "Adding package manager version to {}",
-                color::file(NPM.manifest)
+                color::file("package.json")
             );
 
             return true;
@@ -52,7 +52,7 @@ fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJs
             debug!(
                 target: LOG_TARGET,
                 "Adding engines version constraint to {}",
-                color::file(NPM.manifest)
+                color::file("package.json")
             );
 
             return true;
@@ -65,10 +65,10 @@ fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJs
 pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Result<()> {
     // Find the `package.json` workspaces root
     let lockfile = match node.config.package_manager {
-        NodePackageManager::Bun => BUN.lockfile,
-        NodePackageManager::Npm => NPM.lockfile,
-        NodePackageManager::Pnpm => PNPM.lockfile,
-        NodePackageManager::Yarn => YARN.lockfile,
+        NodePackageManager::Bun => "bun.lockb",
+        NodePackageManager::Npm => "package-lock.json",
+        NodePackageManager::Pnpm => "pnpm-lock.yaml",
+        NodePackageManager::Yarn => "yarn.lock",
     };
 
     let packages_root = workspace_root.join(&node.config.packages_root);
@@ -87,8 +87,8 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Resul
     if let Some(version_manager) = &node.config.sync_version_manager_config {
         if let Some(node_version) = &node.config.version {
             let rc_name = match version_manager {
-                NodeVersionManager::Nodenv => NODENV.version_file.to_string(),
-                NodeVersionManager::Nvm => NVM.version_file.to_string(),
+                NodeVersionManager::Nodenv => ".node-version".to_string(),
+                NodeVersionManager::Nvm => ".nvmrc".to_string(),
             };
             let rc_path = packages_root.join(rc_name);
 

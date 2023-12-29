@@ -2,7 +2,7 @@ use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
 use moon_logger::debug;
-use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
+use moon_node_lang::{yarn, LockfileDependencyVersions};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
@@ -232,7 +232,7 @@ impl DependencyManager<NodeTool> for YarnTool {
             if working_dir.join(self.get_lock_filename()).exists() {
                 node.exec_package(
                     "yarn-deduplicate",
-                    &["yarn-deduplicate", YARN.lockfile],
+                    &["yarn-deduplicate", "yarn.lock"],
                     working_dir,
                 )
                 .await?;
@@ -243,11 +243,11 @@ impl DependencyManager<NodeTool> for YarnTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(YARN.lockfile)
+        String::from("yarn.lock")
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(YARN.manifest)
+        String::from("package.json")
     }
 
     async fn get_resolved_dependencies(
@@ -255,7 +255,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         project_root: &Path,
     ) -> miette::Result<LockfileDependencyVersions> {
         let Some(lockfile_path) =
-            fs::find_upwards_until(YARN.lockfile, project_root, get_workspace_root())
+            fs::find_upwards_until("yarn.lock", project_root, get_workspace_root())
         else {
             return Ok(FxHashMap::default());
         };

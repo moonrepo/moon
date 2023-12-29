@@ -10,7 +10,7 @@ use moon_config::{
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
 use moon_node_lang::node::get_package_manager_workspaces;
-use moon_node_lang::{PackageJson, NPM};
+use moon_node_lang::PackageJson;
 use moon_node_tool::get_node_env_paths;
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -140,7 +140,7 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Loading names (aliases) from project {}'s",
-            color::file(NPM.manifest)
+            color::file("package.json")
         );
 
         for (project_id, project_source) in projects_list {
@@ -218,7 +218,7 @@ impl Platform for NodePlatform {
             target: LOG_TARGET,
             "Inferring {} tasks from {}",
             color::id(project_id),
-            color::file(NPM.manifest)
+            color::file("package.json")
         );
 
         if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {

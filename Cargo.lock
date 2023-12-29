@@ -3649,6 +3649,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_platform_detector2"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "once_cell",
+ "regex",
+]
+
+[[package]]
 name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [

@@ -72,6 +72,8 @@ pub struct TemplateConfig {
     #[setting(validate = validate::not_empty)]
     pub description: String,
 
+    pub destination: Option<String>,
+
     #[setting(validate = validate::not_empty)]
     pub title: String,
 

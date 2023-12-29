@@ -13,7 +13,8 @@ use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use tracing::debug;
 
-static PATH_VAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)\]").unwrap());
+static PATH_VAR: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)(?:\s*\|\s*([^\]]+))?\]").unwrap());
 
 #[derive(Debug)]
 pub struct Template {
@@ -187,7 +188,12 @@ impl Template {
                     let var = var.as_str();
 
                     if context.contains_key(var) {
-                        return format!("{{{{ {var} | as_str }}}}");
+                        return format!(
+                            "{{{{ {var} | as_str {} }}}}",
+                            caps.get(2)
+                                .map(|f| format!("| {}", f.as_str()))
+                                .unwrap_or_default()
+                        );
                     }
                 }
 

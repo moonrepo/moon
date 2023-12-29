@@ -25,6 +25,16 @@
         }
       ]
     },
+    "destination": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "title": {
       "anyOf": [
         {

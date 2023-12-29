@@ -26,6 +26,9 @@
   environment variables for the dependency target.
 - Updated the action graph and pipeline to _not_ run same target (but with different arguments and
   environment variable variations) in parallel, to avoid unexpected collisions.
+- Improved code generation and templates:
+  - Added a `destination` field to `template.yml`, to customize a default location.
+  - Updated `[var]` syntax to support filters: `[var | camel_case]`.
 
 #### 🧩 Plugins
 

@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{DependencyConfig, InputPath, OutputPath};
+use moon_config::{DependencyConfig, InputPath, OutputPath, TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_project_expander::TasksExpander;
 use moon_task::Target;
@@ -261,7 +261,8 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse(":build").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse(":build").unwrap()));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -278,7 +279,8 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("^:build").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -300,7 +302,8 @@ mod tasks_expander {
                     .push(DependencyConfig::new("foo".into()));
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("^:build").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("^:build").unwrap()));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -308,9 +311,9 @@ mod tasks_expander {
                 assert_eq!(
                     task.deps,
                     vec![
-                        Target::parse("foo:build").unwrap(),
-                        Target::parse("bar:build").unwrap(),
-                        Target::parse("baz:build").unwrap()
+                        TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("baz:build").unwrap()),
                     ]
                 );
             }
@@ -332,7 +335,8 @@ mod tasks_expander {
 
                 let mut task = create_task();
                 task.options.persistent = false;
-                task.deps.push(Target::parse("^:dev").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("^:dev").unwrap()));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -354,7 +358,9 @@ mod tasks_expander {
                     .push(DependencyConfig::new("foo".into()));
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("^:test-fail").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("^:test-fail").unwrap(),
+                ));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -371,8 +377,10 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("~:build").unwrap());
-                task.deps.push(Target::parse("lint").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("~:build").unwrap()));
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("lint").unwrap()));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -381,8 +389,8 @@ mod tasks_expander {
                 assert_eq!(
                     task.deps,
                     vec![
-                        Target::parse("project:build").unwrap(),
-                        Target::parse("project:lint").unwrap()
+                        TaskDependencyConfig::new(Target::parse("project:build").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("project:lint").unwrap()),
                     ]
                 );
             }
@@ -394,7 +402,8 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("task").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("task").unwrap()));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -410,14 +419,21 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("~:test").unwrap());
-                task.deps.push(Target::parse("test").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("~:test").unwrap()));
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("test").unwrap()));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
 
-                assert_eq!(task.deps, vec![Target::parse("project:test").unwrap()]);
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig::new(
+                        Target::parse("project:test").unwrap()
+                    )]
+                );
             }
 
             #[test]
@@ -430,7 +446,9 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("~:unknown").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("~:unknown").unwrap(),
+                ));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -448,7 +466,8 @@ mod tasks_expander {
 
                 let mut task = create_task();
                 task.options.persistent = false;
-                task.deps.push(Target::parse("~:dev").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("~:dev").unwrap()));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -465,13 +484,20 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("project:build").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("project:build").unwrap(),
+                ));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
 
-                assert_eq!(task.deps, vec![Target::parse("project:build").unwrap()]);
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig::new(
+                        Target::parse("project:build").unwrap()
+                    )]
+                );
             }
 
             #[test]
@@ -481,7 +507,9 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("project:task").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("project:task").unwrap(),
+                ));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -497,9 +525,15 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("foo:build").unwrap());
-                task.deps.push(Target::parse("bar:lint").unwrap());
-                task.deps.push(Target::parse("baz:test").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("foo:build").unwrap(),
+                ));
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("bar:lint").unwrap(),
+                ));
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("baz:test").unwrap(),
+                ));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
@@ -508,9 +542,9 @@ mod tasks_expander {
                 assert_eq!(
                     task.deps,
                     vec![
-                        Target::parse("foo:build").unwrap(),
-                        Target::parse("bar:lint").unwrap(),
-                        Target::parse("baz:test").unwrap()
+                        TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("bar:lint").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("baz:test").unwrap()),
                     ]
                 );
             }
@@ -525,7 +559,9 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("foo:unknown").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("foo:unknown").unwrap(),
+                ));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -543,7 +579,8 @@ mod tasks_expander {
 
                 let mut task = create_task();
                 task.options.persistent = false;
-                task.deps.push(Target::parse("foo:dev").unwrap());
+                task.deps
+                    .push(TaskDependencyConfig::new(Target::parse("foo:dev").unwrap()));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -560,7 +597,9 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("#tag:build").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("#tag:build").unwrap(),
+                ));
 
                 let context =
                     create_context_with_query(&project, sandbox.path(), |i| query.none(i));
@@ -576,7 +615,9 @@ mod tasks_expander {
                 let query = QueryContainer::new(sandbox.path());
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("#tag:build").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("#tag:build").unwrap(),
+                ));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
@@ -584,9 +625,9 @@ mod tasks_expander {
                 assert_eq!(
                     task.deps,
                     vec![
-                        Target::parse("foo:build").unwrap(),
-                        Target::parse("bar:build").unwrap(),
-                        Target::parse("baz:build").unwrap()
+                        TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
+                        TaskDependencyConfig::new(Target::parse("baz:build").unwrap()),
                     ]
                 );
             }
@@ -598,7 +639,9 @@ mod tasks_expander {
                 let cloned_project = project.clone();
 
                 let mut task = create_task();
-                task.deps.push(Target::parse("#tag:task").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("#tag:task").unwrap(),
+                ));
 
                 let context = create_context_with_query(&project, sandbox.path(), |_| {
                     Ok(vec![&cloned_project])
@@ -619,10 +662,145 @@ mod tasks_expander {
 
                 let mut task = create_task();
                 task.options.persistent = false;
-                task.deps.push(Target::parse("#tag:dev").unwrap());
+                task.deps.push(TaskDependencyConfig::new(
+                    Target::parse("#tag:dev").unwrap(),
+                ));
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+            }
+        }
+
+        mod config {
+            use super::*;
+
+            #[test]
+            fn passes_args_through() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("a b c".into()),
+                    target: Target::parse("test").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        target: Target::parse("project:test").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }]
+                );
+            }
+
+            #[test]
+            fn passes_env_through() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("test").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::None,
+                        env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                        target: Target::parse("project:test").unwrap(),
+                    }]
+                );
+            }
+
+            #[test]
+            fn passes_args_and_env_through() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("a b c".into()),
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("test").unwrap(),
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                        target: Target::parse("project:test").unwrap(),
+                    }]
+                );
+            }
+
+            #[test]
+            fn expands_parent_scope() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                // The valid list comes from `query` but we need a
+                // non-empty set for the expansion to work.
+                project
+                    .dependencies
+                    .push(DependencyConfig::new("foo".into()));
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("a b c".into()),
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("^:build").unwrap(),
+                });
+
+                let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![
+                        TaskDependencyConfig {
+                            args: TaskArgs::String("a b c".into()),
+                            env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                            target: Target::parse("foo:build").unwrap(),
+                        },
+                        TaskDependencyConfig {
+                            args: TaskArgs::String("a b c".into()),
+                            env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                            target: Target::parse("bar:build").unwrap(),
+                        },
+                        TaskDependencyConfig {
+                            args: TaskArgs::String("a b c".into()),
+                            env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                            target: Target::parse("baz:build").unwrap(),
+                        }
+                    ]
+                );
             }
         }
     }

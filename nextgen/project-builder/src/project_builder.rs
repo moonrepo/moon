@@ -271,7 +271,7 @@ impl<'app> ProjectBuilder<'app> {
         // Tasks can depend on arbitray projects, so include them also
         for task_config in tasks.values() {
             for task_dep in &task_config.deps {
-                if let TargetScope::Project(dep_id) = &task_dep.scope {
+                if let TargetScope::Project(dep_id) = &task_dep.target.scope {
                     // Already a dependency, or references self
                     if deps.contains_key(dep_id)
                         || self.id.as_ref() == dep_id

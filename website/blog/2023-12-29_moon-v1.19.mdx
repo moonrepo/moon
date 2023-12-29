@@ -10,7 +10,55 @@ tags: [experiments]
 
 <!--truncate-->
 
-## Resolved experiments
+## Configure args and env vars for task dependencies
+
+This has been a long standing request from the community, and we're happy to finally deliver it.
+Starting with v1.19, you can now configure optional command line arguments and environment variables
+for each task [`deps`](/docs/config/project#deps) entry. These values will be passed to the task
+when it is executed.
+
+Here's an example of what both patterns look like. The `target` field is required when configuring
+an object, and both the `args` and `env` fields can be mixed and matched.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'vite build'
+    deps:
+      # Just a target
+      - '^:build'
+
+      # With args (string)
+      - target: '^:build'
+        args: '--mode production'
+
+      # With env vars
+      - target: '^:build'
+        env:
+          NODE_ENV: 'production'
+
+      # With args (array) and env vars
+      - target: '^:build'
+        args:
+          - '--mode'
+          - 'production'
+        env:
+          NODE_ENV: 'production'
+```
+
+When using this functionality, there are a few things to understand about its implementation, and
+how it affects the rest of the pipeline:
+
+- When extending or inheriting a task and a merger is required, and this task has a dependency with
+  a colliding target, the `args` and `env` fields will _NOT_ be deeply merged. Whichever task is
+  inherited last will have its `deps` used.
+- When multiple dependencies of the same target are ran in the action pipeline, but with differing
+  args or env vars, only 1 will run at a time. We try to avoid running them in parallel to avoid
+  collisions and corrupting outputs.
+- If dependencies all write to the same output, cleaning the output is your responsibility, not
+  moon's.
+
+## Resolved long-standing experiments
 
 moon has a concept of [experiments](/docs/config/workspace#experiments), where certain features are
 gated behind a flag. This allows us to support new and old functionality in parallel, and also allow
@@ -38,5 +86,7 @@ whatever task outputs you wish (we trust you're smart enough to not shoot yourse
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.19.0) for a full list
 of changes.
+
+- Updated proto to v0.26 (from v0.25), which includes a new shims implementation.
 
 [outputs]: /docs/config/project#outputs

@@ -4,7 +4,7 @@ use moon_common::{
     path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf},
     Id,
 };
-use moon_config::{InputPath, OutputPath, PlatformType, TaskType};
+use moon_config::{InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskType};
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
@@ -32,7 +32,7 @@ cacheable!(
 
         pub command: String,
 
-        pub deps: Vec<Target>,
+        pub deps: Vec<TaskDependencyConfig>,
 
         pub env: FxHashMap<String, String>,
 

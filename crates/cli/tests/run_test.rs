@@ -168,6 +168,27 @@ fn doesnt_bail_on_failing_task_if_allowed_to_fail() {
     assert.success();
 }
 
+#[test]
+fn disambiguates_same_tasks_with_diff_args_envs() {
+    let sandbox = cases_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("taskDeps:deps");
+    });
+
+    let output = assert.output();
+
+    // The order changes so we can't snapshot it
+    assert!(predicate::str::contains("taskDeps:base")
+        .count(8) // 4 start, 4 end
+        .eval(&output));
+    assert!(predicate::str::contains("a b c").eval(&output));
+    assert!(predicate::str::contains("TEST_VAR=value").eval(&output));
+    assert!(predicate::str::contains("TEST_VAR=value x y z").eval(&output));
+
+    assert.success();
+}
+
 #[cfg(not(windows))]
 mod general {
     use super::*;
@@ -665,11 +686,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "2a945bb87fbd0eb7f7d3f693aaab76b55574677bbe153060428ce72d65d09333"
+            "587ae8b5f4a61175158a9af45f5bf70a6c064cf26fad68adb7294c1fd8dcba95"
         );
         assert_eq!(
             hash_glob,
-            "0a42c5026978985014db5bf39405b8865ba0354f4a17e6ad2f25aeb0b0c9c0cb"
+            "b666022c16fda93385fd059841fa06edbf5538ad3aa0c647a8e88e7a726833c8"
         );
     }
 }

@@ -3,6 +3,6 @@ source: crates/cli/tests/run_test.rs
 expression: "[extract_hash_from_run(sandbox.path(), \"outputs:asDep\"),\n        extract_hash_from_run(sandbox.path(), \"outputs:withDeps\")]"
 ---
 [
-    "4d6a3c976ebb06e9e26ef5793bd8a3c20d164710351c36781c2b3a2f7d6272ac",
-    "1601c9c28ae58f28238363a8624db16760b82772c0e704d4459d4b9ac2a487d4",
+    "fceb2edf65adfef8cb924b79e3a793756bdbc68b940cf095551994bf6e157e2c",
+    "f90b7340000d67b5816c56703c10d3815fdceed0a91c71533aef695354a040b1",
 ]

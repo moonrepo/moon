@@ -3,8 +3,8 @@ use clap::Args;
 use moon::generate_project_graph;
 use moon_common::{consts, Id};
 use moon_config::{
-    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
-    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig, PlatformType,
+    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskArgs,
+    PartialTaskConfig, PartialTaskDependency, PartialTaskOptionsConfig, PlatformType,
     ProjectConfig,
 };
 use moon_target::Target;
@@ -91,7 +91,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
-    config.command = Some(PartialTaskCommandArgs::String(format!(
+    config.command = Some(PartialTaskArgs::String(format!(
         "moon node run-script {name}"
     )));
 
@@ -111,7 +111,11 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
         }
 
         if !deps.is_empty() {
-            config.deps = Some(deps);
+            config.deps = Some(
+                deps.into_iter()
+                    .map(PartialTaskDependency::Target)
+                    .collect(),
+            );
         }
     }
 
@@ -327,9 +331,7 @@ mod tests {
 
             assert_eq!(
                 config.command,
-                Some(PartialTaskCommandArgs::String(
-                    "moon node run-script foo".into()
-                ))
+                Some(PartialTaskArgs::String("moon node run-script foo".into()))
             );
         }
 
@@ -347,9 +349,9 @@ mod tests {
             assert_eq!(
                 config.deps,
                 Some(vec![
-                    Target::new_self("normal").unwrap(),
-                    Target::parse("^:parent").unwrap(),
-                    Target::parse("project:normal").unwrap(),
+                    PartialTaskDependency::Target(Target::new_self("normal").unwrap()),
+                    PartialTaskDependency::Target(Target::parse("^:parent").unwrap()),
+                    PartialTaskDependency::Target(Target::parse("project:normal").unwrap()),
                 ])
             );
             assert_eq!(

@@ -495,7 +495,7 @@ The `deps` field is a list of other tasks (known as [targets](../concepts/target
 this project or found in another project, that will be executed _before_ this task. It achieves this
 by generating a directed task graph based on the project graph.
 
-```yaml title="moon.yml" {4-6}
+```yaml title="moon.yml" {4-8}
 tasks:
   build:
     command: 'webpack'
@@ -506,9 +506,25 @@ tasks:
       - 'codegen'
 ```
 
+Furthermore, for each dependency target, you can configure additional command line arguments and
+environment variables that'll be passed to the dependent task when it is ran. The `args` field
+supports a string or a list of strings, while `env` is an object of key-value pairs.
+
+```yaml title="moon.yml" {4-8}
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - target: 'apiClients:build'
+        args: '--env production'
+        env:
+          NODE_ENV: 'production'
+```
+
 > Dependencies of inherited tasks will be excluded and renamed according to the
 > [`workspace.inheritedTasks`](#inheritedtasks) setting. This process _only_ uses filters from the
-> current project, and not filters from dependent projects.
+> current project, and not filters from dependent projects. Furthermore, `args` and `env` are not
+> deeply merged.
 
 ### `env`
 

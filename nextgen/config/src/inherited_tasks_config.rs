@@ -1,11 +1,10 @@
 use crate::language_platform::{LanguageType, PlatformType};
-use crate::project::{validate_deps, TaskConfig};
+use crate::project::{validate_deps, TaskConfig, TaskDependency};
 use crate::project_config::ProjectType;
 use crate::shapes::InputPath;
 use crate::validate::check_yml_extension;
 use moon_common::path::standardize_separators;
 use moon_common::{cacheable, color, consts, Id};
-use moon_target::Target;
 use once_map::OnceMap;
 use rustc_hash::FxHashMap;
 use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
@@ -45,8 +44,8 @@ cacheable!(
         #[setting(merge = merge_fxhashmap)]
         pub file_groups: FxHashMap<Id, Vec<InputPath>>,
 
-        #[setting(merge = merge::append_vec, validate = validate_deps)]
-        pub implicit_deps: Vec<Target>,
+        #[setting(nested, merge = merge::append_vec, validate = validate_deps)]
+        pub implicit_deps: Vec<TaskDependency>,
 
         #[setting(merge = merge::append_vec)]
         pub implicit_inputs: Vec<InputPath>,

@@ -87,7 +87,6 @@ impl<'l> Display for CommandLine<'l> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let command = join_args_os(&self.command);
         let command = command.to_string_lossy();
-        let command = command.trim();
 
         write!(f, "{}", command)?;
 
@@ -230,7 +229,7 @@ impl<'cmd> CommandInspector<'cmd> {
             env_vars = ?env_vars_field,
             working_dir = ?working_dir_field,
             "Running command {}",
-            color::shell(command_line.to_string().trim())
+            color::shell(command_line.to_string())
         );
     }
 }

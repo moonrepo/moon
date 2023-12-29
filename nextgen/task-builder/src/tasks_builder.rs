@@ -1,15 +1,14 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOutputStyle, TaskType, ToolchainConfig,
+    ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
+    TaskMergeStrategy, TaskOutputStyle, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
-use moon_task::{Task, TaskOptions};
+use moon_task::{parse_task_args, Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
@@ -84,7 +83,7 @@ pub struct TasksBuilder<'proj> {
     project_source: &'proj str,
 
     // Global settings for tasks to inherit
-    implicit_deps: Vec<&'proj Target>,
+    implicit_deps: Vec<&'proj TaskDependency>,
     implicit_inputs: Vec<&'proj InputPath>,
 
     // Tasks to merge and build
@@ -297,13 +296,19 @@ impl<'proj> TasksBuilder<'proj> {
 
         for link in &chain {
             let config = link.config;
+            let deps = config
+                .deps
+                .iter()
+                .cloned()
+                .map(|d| d.into_config())
+                .collect::<Vec<_>>();
 
             task.deps = self.merge_vec(
                 task.deps,
                 if link.inherited {
-                    self.apply_filters_to_deps(config.deps.to_owned())
+                    self.apply_filters_to_deps(deps)
                 } else {
-                    config.deps.to_owned()
+                    deps
                 },
                 task.options.merge_deps,
                 true,
@@ -525,17 +530,17 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
-    fn build_global_deps(&self, target: &Target) -> miette::Result<Vec<Target>> {
+    fn build_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {
         let global_deps = self
             .implicit_deps
             .iter()
-            .map(|d| (*d).to_owned())
+            .map(|d| (*d).to_owned().into_config())
             .collect::<Vec<_>>();
 
         if !global_deps.is_empty() {
             trace!(
                 target = target.as_str(),
-                deps = ?global_deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
+                deps = ?global_deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
                 "Inheriting global implicit deps",
             );
         }
@@ -595,23 +600,14 @@ impl<'proj> TasksBuilder<'proj> {
     ) -> miette::Result<(Option<String>, Vec<String>)> {
         let mut command = None;
         let mut args = vec![];
-
-        let mut cmd_list = match &config.command {
-            TaskCommandArgs::None => vec![],
-            TaskCommandArgs::String(cmd_string) => split_args(cmd_string)?,
-            TaskCommandArgs::List(cmd_args) => cmd_args.to_owned(),
-        };
+        let mut cmd_list = parse_task_args(&config.command)?;
 
         if !cmd_list.is_empty() {
             command = Some(cmd_list.remove(0));
             args.extend(cmd_list);
         }
 
-        match &config.args {
-            TaskCommandArgs::None => {}
-            TaskCommandArgs::String(args_string) => args.extend(split_args(args_string)?),
-            TaskCommandArgs::List(args_list) => args.extend(args_list.to_owned()),
-        };
+        args.extend(parse_task_args(&config.args)?);
 
         Ok((command, args))
     }
@@ -627,17 +623,17 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(stack)
     }
 
-    fn apply_filters_to_deps(&self, deps: Vec<Target>) -> Vec<Target> {
+    fn apply_filters_to_deps(&self, deps: Vec<TaskDependencyConfig>) -> Vec<TaskDependencyConfig> {
         let Some(filters) = &self.filters else {
             return deps;
         };
 
         deps.into_iter()
-            .filter(|dep| !filters.exclude.contains(&dep.task_id))
+            .filter(|dep| !filters.exclude.contains(&dep.target.task_id))
             .map(|mut dep| {
-                if let Some(new_task_id) = filters.rename.get(&dep.task_id) {
-                    dep.id = Target::format(&dep.scope, new_task_id);
-                    dep.task_id = new_task_id.to_owned();
+                if let Some(new_task_id) = filters.rename.get(&dep.target.task_id) {
+                    dep.target.id = Target::format(&dep.target.scope, new_task_id);
+                    dep.target.task_id = new_task_id.to_owned();
                 }
 
                 dep

@@ -88,13 +88,13 @@ impl<'task> TargetHasher<'task> {
     ) -> miette::Result<()> {
         for dep in &task.deps {
             self.deps.insert(
-                dep,
-                match states.get(dep) {
+                &dep.target,
+                match states.get(&dep.target) {
                     Some(TargetState::Completed(hash)) => hash,
                     Some(TargetState::Passthrough) => "passthrough",
                     _ => {
                         return Err(RunnerError::MissingDependencyHash(
-                            dep.id.to_owned(),
+                            dep.target.id.to_owned(),
                             task.target.id.to_owned(),
                         )
                         .into());

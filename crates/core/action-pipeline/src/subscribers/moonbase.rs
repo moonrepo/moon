@@ -462,6 +462,8 @@ impl Subscriber for MoonbaseSubscriber {
 
                                 // Create a fake action label so that we can check the CI cache
                                 let action_label = ActionNode::RunTask {
+                                    args: vec![],
+                                    env: vec![],
                                     interactive: false,
                                     persistent: false,
                                     runtime: Runtime::system(),

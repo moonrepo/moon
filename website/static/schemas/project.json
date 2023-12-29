@@ -615,8 +615,8 @@
       },
       "additionalProperties": false
     },
-    "PartialTaskCommandArgs": {
-      "title": "PartialTaskCommandArgs",
+    "PartialTaskArgs": {
+      "title": "PartialTaskArgs",
       "anyOf": [
         {
           "type": "null"
@@ -639,7 +639,7 @@
         "args": {
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialTaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskArgs"
             },
             {
               "type": "null"
@@ -649,7 +649,7 @@
         "command": {
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialTaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskArgs"
             },
             {
               "type": "null"
@@ -661,7 +661,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/PartialTaskDependency"
               }
             },
             {
@@ -755,6 +755,60 @@
           "anyOf": [
             {
               "$ref": "#/definitions/TaskType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialTaskDependency": {
+      "title": "PartialTaskDependency",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialTaskDependencyConfig"
+        }
+      ]
+    },
+    "PartialTaskDependencyConfig": {
+      "title": "PartialTaskDependencyConfig",
+      "type": "object",
+      "properties": {
+        "args": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialTaskArgs"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "env": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
             },
             {
               "type": "null"

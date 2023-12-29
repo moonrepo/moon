@@ -2,10 +2,11 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOutputStyle, TaskType,
+    FilePath, InputPath, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
+use rustc_hash::FxHashMap;
 use utils::*;
 
 mod task_config {
@@ -23,8 +24,8 @@ mod task_config {
     fn loads_defaults() {
         let config = test_parse_config("{}", |code| TaskConfig::parse(code));
 
-        assert_eq!(config.command, TaskCommandArgs::None);
-        assert_eq!(config.args, TaskCommandArgs::None);
+        assert_eq!(config.command, TaskArgs::None);
+        assert_eq!(config.args, TaskArgs::None);
         assert_eq!(config.type_of, None);
     }
 
@@ -66,14 +67,14 @@ mod task_config {
         fn parses_string() {
             let config = test_parse_config("command: bin", |code| TaskConfig::parse(code));
 
-            assert_eq!(config.command, TaskCommandArgs::String("bin".into()));
+            assert_eq!(config.command, TaskArgs::String("bin".into()));
         }
 
         #[test]
         fn parses_list() {
             let config = test_parse_config("command: [bin]", |code| TaskConfig::parse(code));
 
-            assert_eq!(config.command, TaskCommandArgs::List(vec!["bin".into()]));
+            assert_eq!(config.command, TaskArgs::List(vec!["bin".into()]));
         }
     }
 
@@ -84,14 +85,14 @@ mod task_config {
         fn parses_string() {
             let config = test_parse_config("args: bin", |code| TaskConfig::parse(code));
 
-            assert_eq!(config.args, TaskCommandArgs::String("bin".into()));
+            assert_eq!(config.args, TaskArgs::String("bin".into()));
         }
 
         #[test]
         fn parses_list() {
             let config = test_parse_config("args: [bin]", |code| TaskConfig::parse(code));
 
-            assert_eq!(config.args, TaskCommandArgs::List(vec!["bin".into()]));
+            assert_eq!(config.args, TaskArgs::List(vec!["bin".into()]));
         }
 
         #[test]
@@ -111,7 +112,7 @@ args:
 
             assert_eq!(
                 config.args,
-                TaskCommandArgs::List(vec![
+                TaskArgs::List(vec![
                     "arg".into(),
                     "-o".into(),
                     "@token(0)".into(),
@@ -142,16 +143,63 @@ deps:
             assert_eq!(
                 config.deps,
                 vec![
-                    Target::parse("task").unwrap(),
-                    Target::parse("project:task").unwrap(),
-                    Target::parse("^:task").unwrap(),
-                    Target::parse("~:task").unwrap()
+                    TaskDependency::Target(Target::parse("task").unwrap()),
+                    TaskDependency::Target(Target::parse("project:task").unwrap()),
+                    TaskDependency::Target(Target::parse("^:task").unwrap()),
+                    TaskDependency::Target(Target::parse("~:task").unwrap()),
                 ]
             );
         }
 
         #[test]
-        #[should_panic(expected = "Invalid target ~:bad target")]
+        fn supports_configs() {
+            let config = test_parse_config(
+                r"
+deps:
+  - target: task
+  - args: a b c
+    target: project:task
+  - env:
+      FOO: abc
+    target: ^:task
+  - args:
+      - a
+      - b
+      - c
+    env:
+      FOO: abc
+    target: ~:task
+",
+                |code| TaskConfig::parse(code),
+            );
+
+            assert_eq!(
+                config.deps,
+                vec![
+                    TaskDependency::Config(TaskDependencyConfig::new(
+                        Target::parse("task").unwrap()
+                    )),
+                    TaskDependency::Config(TaskDependencyConfig {
+                        args: TaskArgs::String("a b c".into()),
+                        target: Target::parse("project:task").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }),
+                    TaskDependency::Config(TaskDependencyConfig {
+                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        target: Target::parse("^:task").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }),
+                    TaskDependency::Config(TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        target: Target::parse("~:task").unwrap()
+                    }),
+                ]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "expected a valid target or dependency config object")]
         fn errors_on_invalid_format() {
             test_parse_config("deps: ['bad target']", |code| TaskConfig::parse(code));
         }
@@ -160,6 +208,18 @@ deps:
         #[should_panic(expected = "target scope not supported as a task dependency")]
         fn errors_on_all_scope() {
             test_parse_config("deps: [':task']", |code| TaskConfig::parse(code));
+        }
+
+        #[test]
+        #[should_panic(expected = "a target field is required")]
+        fn errors_if_using_object_with_no_target() {
+            test_parse_config(
+                r"
+deps:
+  - args: a b c
+",
+                |code| TaskConfig::parse(code),
+            );
         }
     }
 

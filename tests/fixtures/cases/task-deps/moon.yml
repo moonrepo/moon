@@ -1,0 +1,19 @@
+tasks:
+  base:
+    command: node ./output.js
+  deps:
+    command: noop
+    deps:
+      - base
+      - target: base
+        args: 'a b c'
+      - target: base
+        env:
+          TEST_VAR: 'value'
+      - target: base
+        args:
+          - 'x'
+          - 'y'
+          - 'z'
+        env:
+          TEST_VAR: 'value'

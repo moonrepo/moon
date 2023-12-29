@@ -271,6 +271,12 @@ impl<'a> Runner<'a> {
             command.inherit_colors();
         }
 
+        // Dependency specific args/env
+        if let ActionNode::RunTask { args, env, .. } = &*self.node {
+            command.args(args);
+            command.envs(env.to_owned());
+        }
+
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
             let mut affected_files = if context.affected_only {

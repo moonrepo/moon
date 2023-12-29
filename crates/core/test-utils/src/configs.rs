@@ -57,6 +57,7 @@ pub fn get_cases_fixture_configs() -> (
             ("depsB".into(), "deps-b".to_owned()),
             ("depsC".into(), "deps-c".to_owned()),
             ("dependsOn".into(), "depends-on".to_owned()),
+            ("taskDeps".into(), "task-deps".to_owned()),
             // Target scopes
             ("targetScopeA".into(), "target-scope-a".to_owned()),
             ("targetScopeB".into(), "target-scope-b".to_owned()),

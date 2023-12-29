@@ -24,7 +24,7 @@
 
 - Updated `implicitDeps` in `.moon/tasks.yml` and task `deps` in `moon.yml` to support arguments and
   environment variables for the dependency target.
-- Updated the action graph and pipeline to _not_ run same tasks (but with different arguments and
+- Updated the action graph and pipeline to _not_ run same target (but with different arguments and
   environment variable variations) in parallel, to avoid unexpected collisions.
 
 #### 🧩 Plugins
@@ -35,7 +35,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.26.4.
+- Updated proto to v0.26.4 (from v0.25).
 
 ## 1.18.5
 

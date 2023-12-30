@@ -1,12 +1,12 @@
 ---
 slug: moon-v1.19
-title: moon v1.19 - ???
+title: moon v1.19 - Improvements to task dependencies, codegen, and more
 authors: [milesj]
-tags: [experiments]
+tags: [task, deps, args, env, codegen, templates, experiments]
 # image: ./img/moon/v1.19.png
 ---
 
-???
+In this release, we're introducing some long-awaited and requested improvements.
 
 <!--truncate-->
 
@@ -55,8 +55,58 @@ how it affects the rest of the pipeline:
 - When multiple dependencies of the same target are ran in the action pipeline, but with differing
   args or env vars, only 1 will run at a time. We try to avoid running them in parallel to avoid
   collisions and corrupting outputs.
+- Arguments and environment variables do _NOT_ support tokens.
 - If dependencies all write to the same output, cleaning the output is your responsibility, not
   moon's.
+
+## Codegen improvements
+
+Code generation is one of moon's oldest features, and hasn't been improved in quite a while. We felt
+the time was right to give it a little love.
+
+### Extend other templates
+
+This has been a [request for over a year](https://github.com/moonrepo/moon/issues/434), and we
+finally found the time to put it on the roadmap. Starting with this release, you can now extend
+other templates using the [`extends`](/docs/config/template#extends) setting in
+[`template.yml`](/docs/config/template), which supports a list of template names.
+
+Templates will be recursively extended from top to bottom, and all files and variables will be
+inherited and merged at the top-level.
+
+```yaml title="template.yml"
+title: 'npm package'
+extends: ['node-common']
+```
+
+### Configure a default destination
+
+When you call [`moon generate`](/docs/commands/generate) you must provide a destination directory
+for the generated files, or we'll prompt you to provide one. But what if you wanted to standardize
+the destination? For example, a package scaffolding template should go to `packages/`. This is now
+possible with the optional [`destination`](/docs/config/template#destination) setting in
+[`template.yml`](/docs/config/template).
+
+If no destination is provided to `moon generate`, we'll use this default destination.
+
+```yaml title="template.yml"
+title: 'npm package'
+destination: 'packages/[name | kebab_case]'
+variables:
+  name:
+    type: 'string'
+    default: ''
+    required: true
+    prompt: 'Package name?'
+```
+
+:::info
+
+For better interoperability, this setting can also reference variables using `[var]` syntax, and can
+also use Tera filters. Learn more about this in the
+[code generation documentation](/docs/guides/codegen#interpolation).
+
+:::
 
 ## Resolved long-standing experiments
 

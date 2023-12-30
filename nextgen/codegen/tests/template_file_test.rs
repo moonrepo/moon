@@ -1,4 +1,4 @@
-use moon_codegen::TemplateFile;
+use moon_codegen::{MergeType, TemplateFile};
 use moon_common::path::RelativePathBuf;
 use moon_config::TemplateFrontmatterConfig;
 use std::path::PathBuf;
@@ -22,6 +22,7 @@ mod template_file {
     }
 
     mod mergeable {
+
         use super::*;
 
         #[test]
@@ -35,14 +36,14 @@ mod template_file {
         fn is_with_json() {
             let template = TemplateFile::new(RelativePathBuf::from("file.json"), PathBuf::new());
 
-            assert_eq!(template.is_mergeable(), Some("json"));
+            assert_eq!(template.is_mergeable(), Some(MergeType::Json));
         }
 
         #[test]
         fn is_with_yaml() {
             let template = TemplateFile::new(RelativePathBuf::from("file.yaml"), PathBuf::new());
 
-            assert_eq!(template.is_mergeable(), Some("yaml"));
+            assert_eq!(template.is_mergeable(), Some(MergeType::Yaml));
         }
 
         #[test]
@@ -56,7 +57,7 @@ mod template_file {
                 ..TemplateFrontmatterConfig::default()
             });
 
-            assert_eq!(template.is_mergeable(), Some("json"));
+            assert_eq!(template.is_mergeable(), Some(MergeType::Json));
         }
     }
 

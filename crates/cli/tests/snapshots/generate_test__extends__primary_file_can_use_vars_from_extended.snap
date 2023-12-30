@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/generate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\"test/vars.txt\")).unwrap()"
+---
+one = abc
+two = 123
+

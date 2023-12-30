@@ -42,6 +42,19 @@ fn generates_files_from_template() {
 }
 
 #[test]
+fn generates_files_into_default_dest() {
+    let sandbox = generate_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("generate").arg("dest");
+    });
+
+    assert_snapshot!(assert.output_standardized());
+
+    assert!(sandbox.path().join("apps/foo-bar/file.txt").exists());
+}
+
+#[test]
 fn doesnt_generate_files_when_dryrun() {
     let sandbox = generate_sandbox();
 
@@ -249,6 +262,59 @@ fn supports_tera_twig_exts() {
         fs::read_to_string(twig).unwrap(),
         "export type FooBar = true;\n"
     );
+}
+
+mod extends {
+    use super::*;
+
+    #[test]
+    fn generates_files_from_all_templates() {
+        let sandbox = generate_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("generate").arg("extends").arg("./test");
+        });
+
+        assert_snapshot!(assert.output_standardized());
+
+        assert!(sandbox.path().join("test").exists());
+        assert!(sandbox.path().join("test/base.txt").exists());
+        assert!(sandbox.path().join("test/one.txt").exists());
+        assert!(sandbox.path().join("test/two.txt").exists());
+        assert!(sandbox.path().join("test/vars.txt").exists());
+    }
+
+    #[test]
+    fn primary_files_overwrite_extended_files() {
+        let sandbox = generate_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("generate").arg("extends").arg("./test");
+        });
+
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join("test/two.txt")).unwrap(),
+            "two overwritten\n"
+        );
+    }
+
+    #[test]
+    fn primary_file_can_use_vars_from_extended() {
+        let sandbox = generate_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("generate")
+                .arg("extends")
+                .arg("./test")
+                .arg("--")
+                .arg("--one")
+                .arg("abc")
+                .arg("--two")
+                .arg("123");
+        });
+
+        assert_snapshot!(fs::read_to_string(sandbox.path().join("test/vars.txt")).unwrap());
+    }
 }
 
 mod frontmatter {

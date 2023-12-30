@@ -59,9 +59,15 @@ templates/
 └── react-app/
 ```
 
-> Variables can be interpolated into file paths using the form `[varName]`. For example, if you had
-> a template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
-> file path would be `src/bin.ts`.
+#### Interpolation
+
+Variables can be interpolated into file paths using the form `[varName]`. For example, if you had a
+template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
+file path would be `src/bin.ts`.
+
+This syntax also supports [filters](#filters), such as `[varName | camel_case]`. However, spaces may
+cause issues with file path encoding, so this functionality is primarily recommended for the
+[`destination`](../config/template#destination) setting.
 
 #### File extensions
 
@@ -100,7 +106,7 @@ file is generated, the `.raw` extension will be removed.
 
 #### Frontmatter
 
-Frontmatter is a well-known concept for "per file configuration", and is achieved by inserting YAML
+Frontmatter is a well-known concept for "per-file configuration", and is achieved by inserting YAML
 at the top of the file, delimited by wrapping `---`. This is a very powerful feature that provides
 more control than the alternatives, and allows for some very cool integrations.
 

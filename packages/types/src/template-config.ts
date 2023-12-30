@@ -49,6 +49,8 @@ export interface PartialTemplateConfig {
 	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema?: string | null;
 	description?: string | null;
+	destination?: string | null;
+	extends?: string[] | null;
 	title?: string | null;
 	variables?: Record<string, PartialTemplateVariable> | null;
 }
@@ -109,6 +111,8 @@ export interface TemplateConfig {
 	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema: string;
 	description: string;
+	destination: string | null;
+	extends: string[];
 	title: string;
 	variables: Record<string, TemplateVariable>;
 }

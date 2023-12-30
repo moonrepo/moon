@@ -1,0 +1,10 @@
+title: 'Template title'
+description: 'Template description'
+extends: [extends-from-a, extends-from-b]
+variables:
+  base:
+    type: boolean
+
+  # Overwrites
+  c:
+    type: boolean

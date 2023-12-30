@@ -1,7 +1,7 @@
-use moon_codegen::{Template, TemplateContext, TemplateFile};
+use moon_codegen::{CodeGenerator, Template, TemplateContext, TemplateFile};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config::TemplateFrontmatterConfig;
-use starbase_sandbox::locate_fixture;
+use moon_config::{GeneratorConfig, TemplateFrontmatterConfig};
+use starbase_sandbox::{create_sandbox, locate_fixture};
 use std::path::PathBuf;
 
 fn create_template_file() -> TemplateFile {
@@ -141,6 +141,50 @@ mod template {
                 .any(|f| f.name.ends_with(CONFIG_TEMPLATE_FILENAME));
 
             assert!(!has_schema);
+        }
+
+        #[test]
+        fn inherits_extended_files() {
+            let sandbox = create_sandbox("generator");
+            let out = sandbox.path().join("out");
+
+            let mut template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
+                .load_template("extends")
+                .unwrap();
+
+            template.load_files(&out, &create_context()).unwrap();
+
+            template.flatten_files().unwrap();
+
+            // Verify sources
+            assert_eq!(
+                template
+                    .files
+                    .values()
+                    .map(|f| f.source_path.clone())
+                    .collect::<Vec<_>>(),
+                vec![
+                    sandbox.path().join("templates/extends-from-a/a.txt"),
+                    sandbox.path().join("templates/extends/b.txt"), // Overwritten
+                    sandbox.path().join("templates/extends/base.txt"),
+                    sandbox.path().join("templates/extends-from-c/c.txt"),
+                ]
+            );
+
+            // Verify dests
+            assert_eq!(
+                template
+                    .files
+                    .values()
+                    .map(|f| f.dest_path.clone())
+                    .collect::<Vec<_>>(),
+                vec![
+                    out.join("a.txt"),
+                    out.join("b.txt"),
+                    out.join("base.txt"),
+                    out.join("c.txt"),
+                ]
+            );
         }
     }
 

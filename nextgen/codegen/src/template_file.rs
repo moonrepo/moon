@@ -4,6 +4,12 @@ use std::path::{Path, PathBuf};
 use tracing::debug;
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum MergeType {
+    Json,
+    Yaml,
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
     Create,
     Merge,
@@ -48,7 +54,7 @@ impl TemplateFile {
         }
     }
 
-    pub fn is_mergeable<'l>(&self) -> Option<&'l str> {
+    pub fn is_mergeable(&self) -> Option<MergeType> {
         let mut ext = self.name.as_str();
 
         if let Some(cfg) = &self.config {
@@ -58,9 +64,9 @@ impl TemplateFile {
         }
 
         if ext.ends_with(".json") {
-            return Some("json");
+            return Some(MergeType::Json);
         } else if ext.ends_with(".yaml") || ext.ends_with(".yml") {
-            return Some("yaml");
+            return Some(MergeType::Yaml);
         }
 
         None

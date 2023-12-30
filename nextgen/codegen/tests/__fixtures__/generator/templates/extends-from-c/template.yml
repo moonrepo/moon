@@ -1,0 +1,5 @@
+title: 'Template title'
+description: 'Template description'
+variables:
+  c:
+    type: string

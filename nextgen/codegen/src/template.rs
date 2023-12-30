@@ -1,5 +1,5 @@
 use crate::asset_file::AssetFile;
-use crate::template_file::{FileState, TemplateFile};
+use crate::template_file::{FileState, MergeType, TemplateFile};
 use crate::{filters, CodegenError};
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
@@ -59,13 +59,9 @@ impl Template {
     /// Extend another template and include its files when generating.
     /// Furthermore, we'll also merge variables so that they can be handled
     /// in the command correctly.
-    pub fn extend_template(&mut self, template: Template) {
-        for (key, config) in &template.config.variables {
-            if !self.config.variables.contains_key(key) {
-                self.config
-                    .variables
-                    .insert(key.to_owned(), config.to_owned());
-            }
+    pub fn extend_template(&mut self, mut template: Template) {
+        for (key, config) in mem::take(&mut template.config.variables) {
+            self.config.variables.entry(key).or_insert(config);
         }
 
         self.templates.push(template);
@@ -74,14 +70,18 @@ impl Template {
     /// Once files have been loaded by all templates in the extends chain,
     /// we must flatten all nested files map into a single top-level map.
     pub fn flatten_files(&mut self) -> miette::Result<()> {
-        for template in &mut self.templates {
-            template.flatten_files()?;
+        if self.templates.is_empty() {
+            return Ok(());
         }
 
         let mut assets = BTreeMap::new();
         let mut files = BTreeMap::new();
 
         for template in &mut self.templates {
+            template.flatten_files()?;
+
+            self.engine.extend(&template.engine).into_diagnostic()?;
+
             assets.extend(mem::take(&mut template.assets));
             files.extend(mem::take(&mut template.files));
         }
@@ -283,7 +283,7 @@ impl Template {
                 );
 
                 match file.is_mergeable() {
-                    Some("json") => {
+                    Some(MergeType::Json) => {
                         let prev: json::JsonValue = json::read_file(&file.dest_path)?;
                         let next: json::JsonValue =
                             json::from_str(&file.content).into_diagnostic()?;
@@ -294,7 +294,7 @@ impl Template {
                             true,
                         )?;
                     }
-                    Some("yaml") => {
+                    Some(MergeType::Yaml) => {
                         let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
                         let next: yaml::YamlValue =
                             yaml::from_str(&file.content).into_diagnostic()?;

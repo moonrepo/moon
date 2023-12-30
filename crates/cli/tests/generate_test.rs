@@ -264,6 +264,59 @@ fn supports_tera_twig_exts() {
     );
 }
 
+mod extends {
+    use super::*;
+
+    #[test]
+    fn generates_files_from_all_templates() {
+        let sandbox = generate_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("generate").arg("extends").arg("./test");
+        });
+
+        assert_snapshot!(assert.output_standardized());
+
+        assert!(sandbox.path().join("test").exists());
+        assert!(sandbox.path().join("test/base.txt").exists());
+        assert!(sandbox.path().join("test/one.txt").exists());
+        assert!(sandbox.path().join("test/two.txt").exists());
+        assert!(sandbox.path().join("test/vars.txt").exists());
+    }
+
+    #[test]
+    fn primary_files_overwrite_extended_files() {
+        let sandbox = generate_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("generate").arg("extends").arg("./test");
+        });
+
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join("test/two.txt")).unwrap(),
+            "two overwritten\n"
+        );
+    }
+
+    #[test]
+    fn primary_file_can_use_vars_from_extended() {
+        let sandbox = generate_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("generate")
+                .arg("extends")
+                .arg("./test")
+                .arg("--")
+                .arg("--one")
+                .arg("abc")
+                .arg("--two")
+                .arg("123");
+        });
+
+        assert_snapshot!(fs::read_to_string(sandbox.path().join("test/vars.txt")).unwrap());
+    }
+}
+
 mod frontmatter {
     use super::*;
 

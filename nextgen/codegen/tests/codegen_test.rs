@@ -1,6 +1,6 @@
 use moon_codegen::CodeGenerator;
 use moon_common::Id;
-use moon_config::{FilePath, GeneratorConfig};
+use moon_config::{FilePath, GeneratorConfig, TemplateVariable};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 
 mod codegen {
@@ -114,6 +114,76 @@ mod codegen {
             CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
                 .load_template("three")
                 .unwrap();
+        }
+
+        mod extends {
+            use super::*;
+
+            #[test]
+            fn loads_extended() {
+                let sandbox = create_sandbox("generator");
+
+                let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
+                    .load_template("extends")
+                    .unwrap();
+
+                assert_eq!(template.id, Id::raw("extends"));
+                assert_eq!(template.root, sandbox.path().join("templates/extends"));
+
+                assert_eq!(template.templates[0].id, Id::raw("extends-from-a"));
+                assert_eq!(
+                    template.templates[0].root,
+                    sandbox.path().join("templates/extends-from-a")
+                );
+
+                assert_eq!(template.templates[1].id, Id::raw("extends-from-b"));
+                assert_eq!(
+                    template.templates[1].root,
+                    sandbox.path().join("templates/extends-from-b")
+                );
+
+                assert_eq!(
+                    template.templates[1].templates[0].id,
+                    Id::raw("extends-from-c")
+                );
+                assert_eq!(
+                    template.templates[1].templates[0].root,
+                    sandbox.path().join("templates/extends-from-c")
+                );
+            }
+
+            #[test]
+            fn inherits_extended_variables() {
+                let sandbox = create_sandbox("generator");
+
+                let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
+                    .load_template("extends")
+                    .unwrap();
+
+                assert_eq!(
+                    template.config.variables.keys().collect::<Vec<_>>(),
+                    vec!["base", "c", "b", "a"]
+                );
+
+                // Test that the base vars aren't overwritten
+                let result = matches!(
+                    template.config.variables.get("c").unwrap(),
+                    // c template is a string
+                    TemplateVariable::Boolean(_)
+                );
+
+                assert!(result);
+            }
+
+            #[test]
+            #[should_panic(expected = "No template with the name missing could not be found")]
+            fn errors_for_missing_extends() {
+                let sandbox = create_sandbox("generator");
+
+                CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
+                    .load_template("extends-unknown")
+                    .unwrap();
+            }
         }
     }
 }

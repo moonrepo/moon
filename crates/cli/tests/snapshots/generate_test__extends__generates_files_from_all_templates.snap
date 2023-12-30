@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/generate_test.rs
+expression: assert.output_standardized()
+---
+
+Template title 
+Some description of the template and its files.
+
+
+created --> test/base.txt
+created --> test/one.txt
+created --> test/two.txt
+created --> test/vars.txt
+
+
+

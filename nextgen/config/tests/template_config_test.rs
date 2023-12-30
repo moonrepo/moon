@@ -10,7 +10,7 @@ mod template_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `description`, `title`, `variables`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `description`, `destination`, `extends`, `title`, `variables`"
     )]
     fn error_unknown_field() {
         test_load_config(CONFIG_TEMPLATE_FILENAME, "unknown: 123", |path| {

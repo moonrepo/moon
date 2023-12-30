@@ -68,7 +68,33 @@ impl<'app> CodeGenerator<'app> {
                     "Found template"
                 );
 
-                return Template::new(id, root);
+                let mut template = Template::new(id, root)?;
+
+                // Inherit other templates
+                if !template.config.extends.is_empty() {
+                    debug!(
+                        template = template.id.as_str(),
+                        extends = ?template
+                            .config
+                            .extends
+                            .iter()
+                            .map(|ex| ex.as_str())
+                            .collect::<Vec<_>>(),
+                        "Extending from other templates",
+                    );
+
+                    let mut extends = vec![];
+
+                    for extend_id in &template.config.extends {
+                        extends.push(self.load_template(extend_id)?);
+                    }
+
+                    for extend in extends {
+                        template.extend_template(extend);
+                    }
+                }
+
+                return Ok(template);
             }
         }
 
@@ -78,13 +104,13 @@ impl<'app> CodeGenerator<'app> {
     pub fn generate(&self, template: &Template) -> miette::Result<()> {
         debug!(template = template.id.as_str(), "Generating template files");
 
-        for file in &template.files {
+        for file in template.files.values() {
             if file.should_write() {
                 template.write_file(file)?;
             }
         }
 
-        for asset in &template.assets {
+        for asset in template.assets.values() {
             template.copy_asset(asset)?;
         }
 

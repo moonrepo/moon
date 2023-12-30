@@ -4,7 +4,6 @@ use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
-use moon_common::path::RelativePathBuf;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_terminal::{create_theme, ExtendedTerm};
 use moon_workspace::Workspace;
@@ -12,6 +11,7 @@ use rustc_hash::FxHashMap;
 use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::fmt::Debug;
+use std::path::PathBuf;
 use tracing::{debug, warn};
 
 #[derive(Args, Clone, Debug)]
@@ -349,25 +349,34 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
     term.line("")?;
     term.flush_lines()?;
 
-    // Determine the destination path
-    let relative_dest = RelativePathBuf::from(match &args.dest {
-        Some(d) => d.clone(),
-        None => {
-            debug!("Destination path not provided, prompting the user");
+    // Gather variables
+    let mut context = gather_variables(&template, &theme, args)?;
 
-            Input::with_theme(&theme)
-                .with_prompt("Where to generate code to?")
-                .allow_empty(false)
-                .interact_text()
-                .into_diagnostic()?
+    // Determine the destination path
+    let relative_dest = PathBuf::from(match &args.dest {
+        Some(dest) => dest.to_owned(),
+        None => {
+            if let Some(dest) = &template.config.destination {
+                debug!(dest, "Default destination path provided by template config");
+
+                dest.to_owned()
+            } else {
+                debug!("Destination path not provided, prompting the user");
+
+                Input::with_theme(&theme)
+                    .with_prompt("Where to generate code to?")
+                    .allow_empty(false)
+                    .interact_text()
+                    .into_diagnostic()?
+            }
         }
     });
+    let relative_dest = template.interpolate_path(&relative_dest, &context)?;
     let dest = relative_dest.to_logical_path(&workspace.working_dir);
 
     debug!(dest = ?dest, "Destination path set");
 
-    // Gather variables and build context
-    let mut context = gather_variables(&template, &theme, args)?;
+    // Inject built-in context variables
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
     context.insert("working_dir", &workspace.working_dir);
@@ -375,8 +384,9 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
 
     // Load template files and determine when to overwrite
     template.load_files(&dest, &context)?;
+    template.flatten_files()?;
 
-    for file in &mut template.files {
+    for file in template.files.values_mut() {
         if file.is_skipped() {
             file.state = FileState::Skip;
             continue;
@@ -436,7 +446,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
 
     term.line("")?;
 
-    for file in template.files {
+    for file in template.files.values() {
         term.line(format!(
             "{} {} {}",
             match &file.state {
@@ -454,8 +464,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
                 file.dest_path
                     .strip_prefix(&workspace.working_dir)
                     .unwrap_or(&file.dest_path)
-                    .to_str()
-                    .unwrap()
+                    .to_string_lossy()
             )
         ))?;
     }

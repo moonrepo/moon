@@ -1,7 +1,7 @@
-use moon_codegen::{Template, TemplateContext, TemplateFile};
+use moon_codegen::{CodeGenerator, Template, TemplateContext, TemplateFile};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config::TemplateFrontmatterConfig;
-use starbase_sandbox::locate_fixture;
+use moon_config::{GeneratorConfig, TemplateFrontmatterConfig};
+use starbase_sandbox::{create_sandbox, locate_fixture};
 use std::path::PathBuf;
 
 fn create_template_file() -> TemplateFile {
@@ -37,7 +37,7 @@ mod template {
             assert_eq!(
                 template
                     .files
-                    .into_iter()
+                    .into_values()
                     .map(|f| f.source_path)
                     .collect::<Vec<_>>(),
                 vec![
@@ -51,7 +51,7 @@ mod template {
             assert_eq!(
                 template
                     .assets
-                    .into_iter()
+                    .into_values()
                     .map(|f| f.source_path)
                     .collect::<Vec<_>>(),
                 vec![fixture.join("image.jpg")]
@@ -86,7 +86,11 @@ mod template {
 
             template.load_files(&fixture, &create_context()).unwrap();
 
-            let file = template.files.iter().find(|f| f.name == "file.ts").unwrap();
+            let file = template
+                .files
+                .values()
+                .find(|f| f.name == "file.ts")
+                .unwrap();
 
             assert_eq!(file.content, "export {};\n");
             assert_eq!(
@@ -99,7 +103,7 @@ mod template {
 
             let file = template
                 .files
-                .iter()
+                .values()
                 .find(|f| f.name == "file.txt")
                 .unwrap();
 
@@ -116,7 +120,7 @@ mod template {
 
             let file = template
                 .files
-                .iter()
+                .values()
                 .find(|f| f.name == "file.raw.txt")
                 .unwrap();
 
@@ -133,10 +137,54 @@ mod template {
 
             let has_schema = template
                 .files
-                .iter()
+                .values()
                 .any(|f| f.name.ends_with(CONFIG_TEMPLATE_FILENAME));
 
             assert!(!has_schema);
+        }
+
+        #[test]
+        fn inherits_extended_files() {
+            let sandbox = create_sandbox("generator");
+            let out = sandbox.path().join("out");
+
+            let mut template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
+                .load_template("extends")
+                .unwrap();
+
+            template.load_files(&out, &create_context()).unwrap();
+
+            template.flatten_files().unwrap();
+
+            // Verify sources
+            assert_eq!(
+                template
+                    .files
+                    .values()
+                    .map(|f| f.source_path.clone())
+                    .collect::<Vec<_>>(),
+                vec![
+                    sandbox.path().join("templates/extends-from-a/a.txt"),
+                    sandbox.path().join("templates/extends/b.txt"), // Overwritten
+                    sandbox.path().join("templates/extends/base.txt"),
+                    sandbox.path().join("templates/extends-from-c/c.txt"),
+                ]
+            );
+
+            // Verify dests
+            assert_eq!(
+                template
+                    .files
+                    .values()
+                    .map(|f| f.dest_path.clone())
+                    .collect::<Vec<_>>(),
+                vec![
+                    out.join("a.txt"),
+                    out.join("b.txt"),
+                    out.join("base.txt"),
+                    out.join("c.txt"),
+                ]
+            );
         }
     }
 
@@ -145,7 +193,7 @@ mod template {
 
         #[test]
         fn path_segments() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -170,7 +218,7 @@ mod template {
 
         #[test]
         fn var_casing() {
-            let template = create_template();
+            let mut template = create_template();
             let mut context = create_context();
             context.insert("camelCase", "camelCase");
             context.insert("PascalCase", "PascalCase");
@@ -198,7 +246,7 @@ mod template {
 
         #[test]
         fn multiple_vars() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -217,7 +265,7 @@ mod template {
 
         #[test]
         fn ignores_unknown_vars() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -230,7 +278,7 @@ mod template {
 
         #[test]
         fn removes_exts() {
-            let template = create_template();
+            let mut template = create_template();
             let context = create_context();
 
             assert_eq!(
@@ -244,6 +292,25 @@ mod template {
                     .interpolate_path(&PathBuf::from("file.ts.twig"), &context)
                     .unwrap(),
                 "file.ts"
+            );
+        }
+
+        #[test]
+        fn supports_filters() {
+            let mut template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[string | upper_case].ts"), &context)
+                    .unwrap(),
+                "folder/STRING.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[bool|pascal_case].ts"), &context)
+                    .unwrap(),
+                "folder/True.ts"
             );
         }
     }

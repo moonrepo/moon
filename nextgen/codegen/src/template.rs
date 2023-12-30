@@ -1,5 +1,5 @@
 use crate::asset_file::AssetFile;
-use crate::template_file::{FileState, TemplateFile};
+use crate::template_file::{FileState, MergeType, TemplateFile};
 use crate::{filters, CodegenError};
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
@@ -9,20 +9,24 @@ use moon_config::TemplateConfig;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use starbase_utils::{fs, json, yaml};
+use std::collections::BTreeMap;
+use std::mem;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use tracing::debug;
 
-static PATH_VAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)\]").unwrap());
+static PATH_VAR: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)(?:\s*\|\s*([^\]]+))?\]").unwrap());
 
 #[derive(Debug)]
 pub struct Template {
-    pub assets: Vec<AssetFile>,
+    pub assets: BTreeMap<RelativePathBuf, AssetFile>,
     pub config: TemplateConfig,
     pub engine: Tera,
-    pub files: Vec<TemplateFile>,
+    pub files: BTreeMap<RelativePathBuf, TemplateFile>,
     pub id: Id,
     pub root: PathBuf,
+    pub templates: Vec<Template>, // Extending
 }
 
 impl Template {
@@ -42,18 +46,62 @@ impl Template {
         engine.register_filter("path_relative", filters::path_relative);
 
         Ok(Template {
-            assets: vec![],
+            assets: BTreeMap::new(),
             config: TemplateConfig::load_from(&root)?,
             engine,
-            files: vec![],
+            files: BTreeMap::new(),
             id,
             root,
+            templates: vec![],
         })
+    }
+
+    /// Extend another template and include its files when generating.
+    /// Furthermore, we'll also merge variables so that they can be handled
+    /// in the command correctly.
+    pub fn extend_template(&mut self, mut template: Template) {
+        for (key, config) in mem::take(&mut template.config.variables) {
+            self.config.variables.entry(key).or_insert(config);
+        }
+
+        self.templates.push(template);
+    }
+
+    /// Once files have been loaded by all templates in the extends chain,
+    /// we must flatten all nested files map into a single top-level map.
+    pub fn flatten_files(&mut self) -> miette::Result<()> {
+        if self.templates.is_empty() {
+            return Ok(());
+        }
+
+        let mut assets = BTreeMap::new();
+        let mut files = BTreeMap::new();
+
+        for template in &mut self.templates {
+            template.flatten_files()?;
+
+            self.engine.extend(&template.engine).into_diagnostic()?;
+
+            assets.extend(mem::take(&mut template.assets));
+            files.extend(mem::take(&mut template.files));
+        }
+
+        assets.extend(mem::take(&mut self.assets));
+        files.extend(mem::take(&mut self.files));
+
+        self.assets = assets;
+        self.files = files;
+
+        Ok(())
     }
 
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
     pub fn load_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
+        for template in &mut self.templates {
+            template.load_files(dest, context)?;
+        }
+
         let mut files = vec![];
 
         debug!(
@@ -82,12 +130,15 @@ impl Template {
                     "Loading asset file",
                 );
 
-                self.assets.push(AssetFile {
-                    content: source_content,
-                    dest_path: name.to_logical_path(dest),
-                    name,
-                    source_path,
-                });
+                self.assets.insert(
+                    name.clone(),
+                    AssetFile {
+                        content: source_content,
+                        dest_path: name.to_logical_path(dest),
+                        name,
+                        source_path,
+                    },
+                );
 
                 continue;
             }
@@ -153,10 +204,7 @@ impl Template {
             }
         }
 
-        // Sort so files are deterministic
-        files.sort_by(|a, d| a.name.cmp(&d.name));
-
-        self.files = files;
+        self.files = BTreeMap::from_iter(files.into_iter().map(|file| (file.name.clone(), file)));
 
         Ok(())
     }
@@ -165,7 +213,7 @@ impl Template {
     /// to interpolate a path ourselves. Instead, let's use Tera and its
     /// template rendering to handle this.
     pub fn interpolate_path(
-        &self,
+        &mut self,
         path: &Path,
         context: &Context,
     ) -> miette::Result<RelativePathBuf> {
@@ -187,7 +235,12 @@ impl Template {
                     let var = var.as_str();
 
                     if context.contains_key(var) {
-                        return format!("{{{{ {var} | as_str }}}}");
+                        return format!(
+                            "{{{{ {var} | as_str {} }}}}",
+                            caps.get(2)
+                                .map(|f| format!("| {}", f.as_str()))
+                                .unwrap_or_default()
+                        );
                     }
                 }
 
@@ -196,12 +249,12 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        let path = Tera::default()
-            .render_str(&name, context)
-            .map_err(|error| CodegenError::InterpolateTemplateFileFailed {
+        let path = self.engine.render_str(&name, context).map_err(|error| {
+            CodegenError::InterpolateTemplateFileFailed {
                 path: name.to_owned(),
                 error,
-            })?;
+            }
+        })?;
 
         Ok(RelativePathBuf::from(path))
     }
@@ -230,7 +283,7 @@ impl Template {
                 );
 
                 match file.is_mergeable() {
-                    Some("json") => {
+                    Some(MergeType::Json) => {
                         let prev: json::JsonValue = json::read_file(&file.dest_path)?;
                         let next: json::JsonValue =
                             json::from_str(&file.content).into_diagnostic()?;
@@ -241,7 +294,7 @@ impl Template {
                             true,
                         )?;
                     }
-                    Some("yaml") => {
+                    Some(MergeType::Yaml) => {
                         let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
                         let next: yaml::YamlValue =
                             yaml::from_str(&file.content).into_diagnostic()?;

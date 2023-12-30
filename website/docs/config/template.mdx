@@ -52,6 +52,17 @@ destination: 'packages/[name]'
 > This setting supports [template variables](#variables) through `[varName]` syntax. Learn more in
 > the [code generation documentation](../guides/codegen#interpolation).
 
+## `extends`<VersionLabel version="1.19.0" />
+
+<HeadingApiLink to="/api/types/interface/TemplateConfig#extends" />
+
+A list of other templates that this template should extend. Will deeply inherit all template files
+and variables.
+
+```yaml title="template.yml"
+extends: ['base', 'configs']
+```
+
 ## `variables`
 
 <HeadingApiLink to="/api/types/interface/TemplateConfig#variables" />

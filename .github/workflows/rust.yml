@@ -86,9 +86,9 @@ jobs:
         shell: bash
         run: echo "coverage=$WITH_COVERAGE" >> $GITHUB_OUTPUT
         env:
-          WITH_COVERAGE:
-            ${{ (github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
-            github.event_name == 'push' && github.ref_name == 'master') && runner.os != 'Linux' }}
+          WITH_COVERAGE: true
+          # ${{ (github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
+          # github.event_name == 'push' && github.ref_name == 'master') && runner.os != 'Linux' }}
       - name: Run tests
         if: ${{ steps.coverage.outputs.coverage == 'false' }}
         run: just test-ci
@@ -122,7 +122,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          # files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
-          files: ./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
+          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
+          # files: ./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           flags: rust
           verbose: true

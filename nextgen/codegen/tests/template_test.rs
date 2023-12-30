@@ -37,7 +37,7 @@ mod template {
             assert_eq!(
                 template
                     .files
-                    .into_iter()
+                    .into_values()
                     .map(|f| f.source_path)
                     .collect::<Vec<_>>(),
                 vec![
@@ -51,7 +51,7 @@ mod template {
             assert_eq!(
                 template
                     .assets
-                    .into_iter()
+                    .into_values()
                     .map(|f| f.source_path)
                     .collect::<Vec<_>>(),
                 vec![fixture.join("image.jpg")]
@@ -86,7 +86,11 @@ mod template {
 
             template.load_files(&fixture, &create_context()).unwrap();
 
-            let file = template.files.iter().find(|f| f.name == "file.ts").unwrap();
+            let file = template
+                .files
+                .values()
+                .find(|f| f.name == "file.ts")
+                .unwrap();
 
             assert_eq!(file.content, "export {};\n");
             assert_eq!(
@@ -99,7 +103,7 @@ mod template {
 
             let file = template
                 .files
-                .iter()
+                .values()
                 .find(|f| f.name == "file.txt")
                 .unwrap();
 
@@ -116,7 +120,7 @@ mod template {
 
             let file = template
                 .files
-                .iter()
+                .values()
                 .find(|f| f.name == "file.raw.txt")
                 .unwrap();
 
@@ -133,7 +137,7 @@ mod template {
 
             let has_schema = template
                 .files
-                .iter()
+                .values()
                 .any(|f| f.name.ends_with(CONFIG_TEMPLATE_FILENAME));
 
             assert!(!has_schema);

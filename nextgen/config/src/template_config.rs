@@ -1,14 +1,14 @@
 // template.yml
 
 use crate::validate::check_yml_extension;
-use moon_common::{color, consts};
+use moon_common::{color, consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
-        #[derive(Config, Debug, Eq, PartialEq)]
+        #[derive(Clone, Config, Debug, Eq, PartialEq)]
         pub struct $name {
             pub default: $ty,
             pub prompt: Option<String>,
@@ -21,13 +21,13 @@ var_setting!(TemplateVariableBoolSetting, bool);
 var_setting!(TemplateVariableNumberSetting, usize);
 var_setting!(TemplateVariableStringSetting, String);
 
-#[derive(Config, Debug, Eq, PartialEq)]
+#[derive(Clone, Config, Debug, Eq, PartialEq)]
 pub struct TemplateVariableEnumValueConfig {
     pub label: String,
     pub value: String,
 }
 
-#[derive(Config, Debug, Eq, PartialEq)]
+#[derive(Clone, Config, Debug, Eq, PartialEq)]
 #[config(serde(
     untagged,
     expecting = "expected a value string or value object with label"
@@ -38,7 +38,7 @@ pub enum TemplateVariableEnumValue {
     Object(TemplateVariableEnumValueConfig),
 }
 
-#[derive(Config, Debug, Eq, PartialEq)]
+#[derive(Clone, Config, Debug, Eq, PartialEq)]
 pub struct TemplateVariableEnumSetting {
     pub default: String,
     pub multiple: Option<bool>,
@@ -47,7 +47,7 @@ pub struct TemplateVariableEnumSetting {
     pub values: Vec<TemplateVariableEnumValue>,
 }
 
-#[derive(Config, Debug, Eq, PartialEq)]
+#[derive(Clone, Config, Debug, Eq, PartialEq)]
 #[config(serde(tag = "type", expecting = "expected a supported value type"))]
 pub enum TemplateVariable {
     #[setting(nested)]
@@ -73,6 +73,8 @@ pub struct TemplateConfig {
     pub description: String,
 
     pub destination: Option<String>,
+
+    pub extends: Vec<Id>,
 
     #[setting(validate = validate::not_empty)]
     pub title: String,

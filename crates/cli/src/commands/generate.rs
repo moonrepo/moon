@@ -384,8 +384,9 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
 
     // Load template files and determine when to overwrite
     template.load_files(&dest, &context)?;
+    template.flatten_files()?;
 
-    for file in &mut template.files {
+    for file in template.files.values_mut() {
         if file.is_skipped() {
             file.state = FileState::Skip;
             continue;
@@ -445,7 +446,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
 
     term.line("")?;
 
-    for file in template.files {
+    for file in template.files.values() {
         term.line(format!(
             "{} {} {}",
             match &file.state {
@@ -463,8 +464,7 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
                 file.dest_path
                     .strip_prefix(&workspace.working_dir)
                     .unwrap_or(&file.dest_path)
-                    .to_str()
-                    .unwrap()
+                    .to_string_lossy()
             )
         ))?;
     }

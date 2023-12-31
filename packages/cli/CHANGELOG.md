@@ -24,8 +24,9 @@
 
 - Updated `implicitDeps` in `.moon/tasks.yml` and task `deps` in `moon.yml` to support arguments and
   environment variables for the dependency target.
-- Updated the action graph and pipeline to _not_ run same target (but with different arguments and
-  environment variable variations) in parallel, to avoid unexpected collisions.
+- Updated the action graph and pipeline to _not_ run the same target (but with different arguments
+  and environment variable variations) in parallel, to avoid unexpected collisions.
+- Updated VS Code extension to support multiple VS Code workspace folders.
 - Improved code generation and templates:
   - Added a `destination` field to `template.yml`, to customize a default location.
   - Added a `extends` field to `template.yml`, allowing templates to extend and inherit other

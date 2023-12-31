@@ -153,7 +153,7 @@ const projectsRows: Comparison[] = [
 	{
 		feature: 'Project type (app, lib, etc)',
 		support: {
-			moon: [SUPPORTED, 'app, lib, tool'],
+			moon: [SUPPORTED, 'app, lib, tool, automation'],
 			nx: [SUPPORTED, 'app, lib'],
 		},
 	},
@@ -262,6 +262,14 @@ const tasksRows: Comparison[] = [
 			moon: [SUPPORTED, 'via `deps`'],
 			nx: [SUPPORTED, 'via `dependsOn`'],
 			turborepo: [SUPPORTED, 'via `dependsOn`'],
+		},
+	},
+	{
+		feature: 'Can provide extra params for task dependencies',
+		support: {
+			moon: SUPPORTED,
+			nx: SUPPORTED,
+			turborepo: NOT_SUPPORTED,
 		},
 	},
 	{
@@ -539,6 +547,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Generators can compose other generators',
 		support: {
+			moon: [SUPPORTED, 'via `extends`'],
 			nx: [SUPPORTED, 'using JavaScript'],
 			turborepo: [SUPPORTED, 'using JavaScript'],
 		},

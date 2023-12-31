@@ -31,6 +31,7 @@
   - Added a `extends` field to `template.yml`, allowing templates to extend and inherit other
     templates.
   - Updated `[var]` syntax to support filters: `[var | camel_case]`.
+- Updated VS Code extension to support multiple VS Code workspace folders.
 
 #### 🧩 Plugins
 

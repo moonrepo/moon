@@ -24,11 +24,11 @@
     "@fortawesome/pro-regular-svg-icons": "^6.5.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@mdx-js/react": "^3.0.0",
-    "clsx": "^2.0.0",
-    "cytoscape": "^3.26.0",
+    "clsx": "^2.1.0",
+    "cytoscape": "^3.28.1",
     "cytoscape-dagre": "^2.5.0",
     "docusaurus-plugin-typedoc-api": "^4.0.1",
-    "prism-react-renderer": "^2.3.0",
+    "prism-react-renderer": "^2.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -37,9 +37,9 @@
     "@docusaurus/tsconfig": "^3.0.1",
     "@moonrepo/runtime": "workspace:^",
     "@moonrepo/types": "workspace:^",
-    "@types/cytoscape": "^3.19.13",
-    "@types/cytoscape-dagre": "^2.3.2",
-    "tailwindcss": "^3.3.6"
+    "@types/cytoscape": "^3.19.16",
+    "@types/cytoscape-dagre": "^2.3.3",
+    "tailwindcss": "^3.4.0"
   },
   "browserslist": {
     "production": [

@@ -2,11 +2,100 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2023-12-21T00:00:00.000Z</updated>
+    <updated>2024-01-01T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.19 - Improvements to task dependencies, codegen, and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.19</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.19"/>
+        <updated>2024-01-01T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're introducing some long-awaited and requested improvements.]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're introducing some long-awaited and requested improvements.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-args-and-env-vars-for-task-dependencies">Configure args and env vars for task dependencies<a href="https://moonrepo.dev/blog/moon-v1.19#configure-args-and-env-vars-for-task-dependencies" class="hash-link" aria-label="Direct link to Configure args and env vars for task dependencies" title="Direct link to Configure args and env vars for task dependencies">​</a></h2>
+<p>This has been a long standing request from the community, and we're happy to finally deliver it.
+Starting with v1.19, you can now configure optional command line arguments and environment variables
+for each task <a href="https://moonrepo.dev/docs/config/project#deps"><code>deps</code></a> entry. These values will be passed to the task
+when it is executed.</p>
+<p>Here's an example of what both patterns look like. The <code>target</code> field is required when configuring
+an object, and both the <code>args</code> and <code>env</code> fields can be mixed and matched.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Just a target</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'^:build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># With args (string)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'^:build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">args</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'--mode production'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># With env vars</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'^:build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">env</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">          </span><span class="token key atrule">NODE_ENV</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'production'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># With args (array) and env vars</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'^:build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">args</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">          </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'--mode'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">          </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'production'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">env</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">          </span><span class="token key atrule">NODE_ENV</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'production'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>When using this functionality, there are a few things to understand about its implementation, and
+how it affects the rest of the pipeline:</p>
+<ul>
+<li>When extending or inheriting a task and a merger is required, and this task has a dependency with
+a colliding target, the <code>args</code> and <code>env</code> fields will <em>NOT</em> be deeply merged. Whichever task is
+inherited last will have its <code>deps</code> used.</li>
+<li>When multiple dependencies of the same target are ran in the action pipeline, but with differing
+args or env vars, only 1 will run at a time. We try to avoid running them in parallel to avoid
+collisions and corrupting outputs.</li>
+<li>Arguments and environment variables do <em>NOT</em> support tokens.</li>
+<li>If dependencies all write to the same output, cleaning the output is your responsibility, not
+moon's.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="codegen-improvements">Codegen improvements<a href="https://moonrepo.dev/blog/moon-v1.19#codegen-improvements" class="hash-link" aria-label="Direct link to Codegen improvements" title="Direct link to Codegen improvements">​</a></h2>
+<p>Code generation is one of moon's oldest features, and hasn't been improved in quite a while. We felt
+the time was right to give it a little love.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="extend-other-templates">Extend other templates<a href="https://moonrepo.dev/blog/moon-v1.19#extend-other-templates" class="hash-link" aria-label="Direct link to Extend other templates" title="Direct link to Extend other templates">​</a></h3>
+<p>This has been a <a href="https://github.com/moonrepo/moon/issues/434" target="_blank" rel="noopener noreferrer">request for over a year</a>, and we
+finally found the time to put it on the roadmap. Starting with this release, you can now extend
+other templates using the <a href="https://moonrepo.dev/docs/config/template#extends"><code>extends</code></a> setting in
+<a href="https://moonrepo.dev/docs/config/template"><code>template.yml</code></a>, which supports a list of template names.</p>
+<p>Templates will be recursively extended from top to bottom, and all files and variables will be
+inherited and merged at the top-level.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">title</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'npm package'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">extends</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'node-common'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="configure-a-default-destination">Configure a default destination<a href="https://moonrepo.dev/blog/moon-v1.19#configure-a-default-destination" class="hash-link" aria-label="Direct link to Configure a default destination" title="Direct link to Configure a default destination">​</a></h3>
+<p>When you call <a href="https://moonrepo.dev/docs/commands/generate"><code>moon generate</code></a> you must provide a destination directory
+for the generated files, or we'll prompt you to provide one. But what if you wanted to standardize
+the destination? For example, a package scaffolding template should go to <code>packages/</code>. This is now
+possible with the optional <a href="https://moonrepo.dev/docs/config/template#destination"><code>destination</code></a> setting in
+<a href="https://moonrepo.dev/docs/config/template"><code>template.yml</code></a>.</p>
+<p>If no destination is provided to <code>moon generate</code>, we'll use this default destination.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">title</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'npm package'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">destination</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'packages/[name | kebab_case]'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">variables</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">name</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'string'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">default</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">''</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">required</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">prompt</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Package name?'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>For better interoperability, this setting can also reference variables using <code>[var]</code> syntax, and can
+also use Tera filters. Learn more about this in the
+<a href="https://moonrepo.dev/docs/guides/codegen#interpolation">code generation documentation</a>.</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="resolved-long-standing-experiments">Resolved long-standing experiments<a href="https://moonrepo.dev/blog/moon-v1.19#resolved-long-standing-experiments" class="hash-link" aria-label="Direct link to Resolved long-standing experiments" title="Direct link to Resolved long-standing experiments">​</a></h2>
+<p>moon has a concept of <a href="https://moonrepo.dev/docs/config/workspace#experiments">experiments</a>, where certain features are
+gated behind a flag. This allows us to support new and old functionality in parallel, and also allow
+users to gradually upgrade when encountering a breaking change. For many months now, we've had 2
+experiments running, and have decided on a path forward.</p>
+<p>The first is <code>experiments.interweavedTaskInheritance</code>, which would inherit global and local tasks in
+order, interweaved within each other. The old implementation would inherit global first, then local
+second, distinctly grouping them. Since this experiment was introduced, we have not received a
+single bug report or issue. This is a good sign that the new behavior is working as expected, and as
+such, have decided <em>to move forward</em> with this experiment and make it the new implementation. The
+old implementation has been removed entirely.</p>
+<p>The second is <code>experiments.taskOutputBoundaries</code>, which was rather controversial when introduced.
+This experiment would trigger an error anytime a <a href="https://moonrepo.dev/docs/config/project#outputs">task's <code>outputs</code></a> overlapped within
+another <a href="https://moonrepo.dev/docs/config/project#outputs">task's <code>outputs</code></a>. The reason for this change, is that multiple tasks writing to
+the same output location could "corrupt" the expected state, and trigger unexpected results when
+hydrating from the cache. However in practice, this restriction has caused more headache and
+introduced a steeper learning curve then expected. It also caused problems with
+<a href="https://moonrepo.dev/docs/config/project#extends">tasks that extend</a> from another, resulting in the same outputs being
+used. Because of this, we've decided <em>to <strong>not</strong> move forward</em> with this experiment, and allow
+whatever task outputs you wish (we trust you're smart enough to not shoot yourself in the foot).</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.19#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.19.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Updated proto to v0.26 (from v0.25), which includes a new shims implementation.</li>
+<li>Updated VS Code extension to support multiple VS Code workspace folders.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="task" term="task"/>
+        <category label="deps" term="deps"/>
+        <category label="args" term="args"/>
+        <category label="env" term="env"/>
+        <category label="codegen" term="codegen"/>
+        <category label="templates" term="templates"/>
+        <category label="experiments" term="experiments"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.26 - New native shim implementation]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.26</id>
@@ -1279,72 +1368,5 @@ of changes.</p>
         </author>
         <category label="tasks" term="tasks"/>
         <category label="inheritance" term="inheritance"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.14 - Node.js and Rust now powered by WASM plugins]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.14</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.14"/>
-        <updated>2023-08-11T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[With this release, we've finished our migration to a WASM based plugin architecture.]]></summary>
-        <content type="html"><![CDATA[<p>With this release, we've finished our migration to a WASM based plugin architecture.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="full-migration-to-wasm">Full migration to WASM<a href="https://moonrepo.dev/blog/proto-v0.14#full-migration-to-wasm" class="hash-link" aria-label="Direct link to Full migration to WASM" title="Direct link to Full migration to WASM">​</a></h2>
-<p>In <a href="https://moonrepo.dev/blog/proto-v0.13">our last release</a>, we migrated the Bun, Deno, and Go plugins to WASM. In this
-release, we're excited to announce that we have completed our WASM migration by also converting
-Node.js (and npm, etc) and Rust to WASM plugins. We've also updated our TOML plugin layer to use
-WASM under the hood.</p>
-<p>With this, 100% of our tools are now powered by WASM, and the APIs are stable enough for you, the
-consumers, to build your own plugins! We have plans for additional APIs in the next release,
-primarily installing and uninstall globals, and a hooks system, so look forward to that! To learn
-more about our official plugins, check out the their repositories!</p>
-<ul>
-<li><a href="https://github.com/moonrepo/bun-plugin" target="_blank" rel="noopener noreferrer">Bun</a></li>
-<li><a href="https://github.com/moonrepo/deno-plugin" target="_blank" rel="noopener noreferrer">Deno</a></li>
-<li><a href="https://github.com/moonrepo/go-plugin" target="_blank" rel="noopener noreferrer">Go</a></li>
-<li><a href="https://github.com/moonrepo/node-plugin" target="_blank" rel="noopener noreferrer">Node</a></li>
-<li><a href="https://github.com/moonrepo/rust-plugin" target="_blank" rel="noopener noreferrer">Rust</a></li>
-<li><a href="https://github.com/moonrepo/schema-plugin" target="_blank" rel="noopener noreferrer">Schema</a></li>
-</ul>
-<p>This release may seem light, but we
-<a href="https://github.com/moonrepo/proto/pull/161" target="_blank" rel="noopener noreferrer">rewrote the entire core</a> from the ground up to support
-a pure plugin based architecture. This was a lot of work, but our implementation is far easier to
-work with, and more robust. As part of this process, we improved version and range handling, archive
-unpacking, and much more!</p>
-<blockquote>
-<p>Because of the rewrite, we may have introduced a few bugs. Please report any issues!</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="breaking-changes-for-toml-plugins">Breaking changes for TOML plugins<a href="https://moonrepo.dev/blog/proto-v0.14#breaking-changes-for-toml-plugins" class="hash-link" aria-label="Direct link to Breaking changes for TOML plugins" title="Direct link to Breaking changes for TOML plugins">​</a></h2>
-<p>In preparation for the next release, and as clean up during the rewrite, we've made a few breaking
-changes to the TOML schema, primarily around global handling. To start, this old code:</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">install</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">globals-dir</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"$PROTOSTAR_HOME/bin"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"$HOME/.protostar/bin"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">global-args</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"install"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"--force"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"{dependency}"</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Can now be rewritten as:</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">globals</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">lookup-dirs</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"$PROTOSTAR_HOME/bin"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"$HOME/.protostar/bin"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">install-args</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"install"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"--force"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"{dependency}"</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>And lastly, the <code>install.unpack</code> setting has been removed. We believe our installation layer is
-smart enough to unpack or move files automatically.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.14#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.14.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Versions defined in <code>.prototools</code> must be fully-qualified semantic versions. Partial versions
-(missing patch or minor) are no longer supported. This may change in the future based on feedback.</li>
-<li>Tool and plugin names must now be in kebab-case.</li>
-<li>Node<!-- -->
-<ul>
-<li>Yarn 2+ is now installed using <code>@yarnpkg/cli-dist</code>. We no longer downgrade to the latest v1.</li>
-<li>Will no longer detect a version from <code>engines</code> in <code>package.json</code>.</li>
-</ul>
-</li>
-<li>Rust<!-- -->
-<ul>
-<li>Will now detect a version/channel from <code>rust-toolchain.toml</code> and <code>rust-toolchain</code>.</li>
-</ul>
-</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="wasm" term="wasm"/>
-        <category label="plugin" term="plugin"/>
     </entry>
 </feed>

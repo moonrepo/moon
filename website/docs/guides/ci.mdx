@@ -53,7 +53,7 @@ by default. This can be easily controlled with the [`local`](../config/project#l
 
 The following examples can be referenced for setting up moon and its CI workflow in popular
 providers. For GitHub, we're using our
-[`setup-moon` action](https://github.com/moonrepo/setup-moon-action) to install moon. For other
+[`setup-toolchain` action](https://github.com/moonrepo/setup-toolchain) to install moon. For other
 providers, we assume moon is an npm dependency and must be installed with Node.js.
 
 <Tabs groupId="ci-env">
@@ -74,7 +74,7 @@ jobs:
       - uses: 'actions/checkout@v4'
         with:
           fetch-depth: 0
-      - uses: 'moonrepo/setup-moon-action@v1'
+      - uses: 'moonrepo/setup-toolchain@v0'
       - run: 'moon ci'
 ```
 

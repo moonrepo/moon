@@ -12,7 +12,7 @@ has been defined, we have a CI check that will fail, forcing the author to bump 
 merged. Bumping can be done by running the following command at the root:
 
 ```shell
-yarn version:bump
+just bump-interactive
 ```
 
 This will spin up an interactive CLI in which to choose major/minor/patch for each affected package.
@@ -27,7 +27,7 @@ We also support another command for bumping these packages, which requires an ex
 major/minor/patch.
 
 ```shell
-yarn version:bump:bin patch
+just bump patch
 ```
 
 ## Releasing packages
@@ -36,7 +36,7 @@ Releasing is currently _not ideal_, but works for the time being. An administrat
 to master must run the following command from an up-to-date master branch.
 
 ```shell
-yarn version:apply
+just release
 ```
 
 This will apply all the deferred Yarn versions (found in `.yarn/versions`), add and commit changes,

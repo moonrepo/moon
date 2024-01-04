@@ -13,7 +13,8 @@ const isMacos = process.platform === 'darwin';
 const isWindows = process.platform === 'win32';
 
 const platform = isWindows ? 'windows' : isMacos ? 'macos' : process.platform;
-const parts = [platform, process.arch];
+const arch = process.env['npm_config_user_agent'].match(/^bun.*arm64$/) ? 'arm64' : process.arch; // https://github.com/moonrepo/moon/issues/1103
+const parts = [platform, arch];
 
 if (isLinux) {
 	const { familySync } = require('detect-libc');

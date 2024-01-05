@@ -256,4 +256,13 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		pluginType: 'wasm',
 		repoUrl: 'https://github.com/konomae/zig-plugin',
 	},
+	zls: {
+		bins: ['zls'],
+		description: 'The Zig language server for all your Zig editor.',
+		homepageUrl: 'https://github.com/zigtools/zls',
+		name: 'zls',
+		pluginLocator: 'github:konomae/zls-plugin',
+		pluginType: 'wasm',
+		repoUrl: 'https://github.com/konomae/zls-plugin',
+	},
 };

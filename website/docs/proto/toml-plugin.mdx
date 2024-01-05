@@ -141,15 +141,12 @@ resolve with: Git tags or a JSON manifest.
 To resolve a list of available versions using Git tags, the following settings are available:
 
 - `git-url` (required) - The remote URL to fetch tags from.
-- `git-tag-pattern` - A regular expression to filter and match with. The capture group `1` will be
-  extracted as the version.
 
 ```toml title="protostar.toml"
 # ...
 
 [resolve]
 git-url = "https://github.com/moonrepo/protostar"
-git-tag-pattern = "^@protostar/cli@((\\d+)\\.(\\d+)\\.(\\d+))"
 ```
 
 #### JSON manifest
@@ -169,6 +166,32 @@ To resolve a list of available versions using a JSON manifest, the following set
 manifest-url = "https://someregistry.com/protostar/versions.json"
 manifest-version-key = "latest_version"
 ```
+
+#### Version patterns
+
+When a version is found, either from a git tag or manifest key, we attempt to parse it into a valid
+semantic version using a Rust based regex pattern and the `version-pattern` setting.
+
+This pattern uses named regex capture groups (`(?<name>...)`) to build the semantic version, and to
+support found versions that are not fully-qualified (they may be missing patch or minor versions).
+The following groups are supported:
+
+- `major` - The major version number. Defaults to `0` if missing.
+- `minor` - The minor version number. Defaults to `0` if missing.
+- `patch` - The patch version number. Defaults to `0` if missing.
+- `pre` - The pre-release identifier, like "rc.0" or "alpha.0". Supports an optional leading `-`.
+  Does nothing if missing.
+- `build` - The build metadata, like a timestamp. Supports an optional leading `+`. Does nothing if
+  missing.
+
+```toml title="protostar.toml"
+# ...
+
+[resolve]
+version-pattern = "^@protostar/cli@((?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+))"
+```
+
+> If no named capture groups are found, the match at index `1` is used as the version.
 
 ### Detecting versions
 

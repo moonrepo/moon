@@ -66,6 +66,9 @@ release:
 docs:
 	cargo run -- run website:start
 
+moon-check:
+	cargo run -- check --all --log trace
+
 schemas:
 	cargo run -p moon_config
 

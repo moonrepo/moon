@@ -1,9 +1,8 @@
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
+import readline from 'readline/promises';
 import chalk from 'chalk';
 import { execa } from 'execa';
-// eslint-disable-next-line import/no-unresolved
-import readline from 'readline/promises';
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -77,7 +76,6 @@ async function removeLocalBuilds() {
 		if (existsSync('target/release')) {
 			await fs.rm('target/release', { force: true, recursive: true });
 		}
-		// eslint-disable-next-line @typescript-eslint/no-implicit-any-catch
 	} catch (error) {
 		console.error(error.message);
 	}

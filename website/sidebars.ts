@@ -284,7 +284,7 @@ const sidebars: SidebarsConfig = {
 				{
 					type: 'category',
 					label: 'debug',
-					items: ['proto/commands/debug/config'],
+					items: ['proto/commands/debug/config', 'proto/commands/debug/env'],
 					link: {
 						type: 'generated-index',
 						title: 'debug',
@@ -300,6 +300,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/list-remote',
 				'proto/commands/outdated',
 				'proto/commands/pin',
+				'proto/commands/regen',
 				'proto/commands/run',
 				'proto/commands/setup',
 				{

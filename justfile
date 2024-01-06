@@ -47,7 +47,27 @@ gen-report:
 gen-html:
 	cargo llvm-cov report --html --ignore-filename-regex error --open
 
+# RELEASING
+
+bump type="patch":
+	bash ./scripts/version/bumpBinaryVersions.sh {{type}}
+
+bump-all:
+	bash ./scripts/version/forceBumpAllVersions.sh
+
+bump-interactive:
+	yarn version check --interactive
+
+release:
+	node ./scripts/version/applyAndTagVersions.mjs
+
 # OTHER
+
+docs:
+	cargo run -- run website:start
+
+moon-check:
+	cargo run -- check --all --log trace
 
 schemas:
 	cargo run -p moon_config

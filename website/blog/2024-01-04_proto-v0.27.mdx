@@ -1,0 +1,77 @@
+---
+slug: proto-v0.27
+title: proto v0.27 - PowerShell profiles, shim regeneration, and more
+authors: [milesj]
+tags: [proto, shim, bin, shell, profile, windows]
+# image: ./img/proto/v0.26.png
+---
+
+This is a small release that improves the overall developer experience.
+
+<!--truncate-->
+
+## PowerShell profile support
+
+When proto was first launched, we didn't support PowerShell profiles, but did support Windows by
+running `setx` commands to inject the `PROTO_HOME` environment variable, and update `PATH`. While
+this worked, it was not ideal, and unexpected for users. This is our fault and our lack of Windows
+knowledge.
+
+Starting with v0.27, we now official support PowerShell profiles, and will no longer call `setx`.
+Instead we write the environment variable changes to one of these files, depending on what exists:
+
+- Windows
+  - `~\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
+  - `~\Documents\PowerShell\Profile.ps1`
+- Unix
+  - `~/.config/powershell/Microsoft.PowerShell_profile.ps1`
+  - `~/.config/powershell/profile.ps1`
+
+## Regenerate shims & bins
+
+proto has gone through some growing pains, we won't deny that. With the handful of breaking changes,
+the configuration refactor, and the ground-up rework of how shims/bins are handled, we've hit a few
+snags. Most of those snags have been around tool execution.
+
+To remedy some of these problems, we're introducing the [`proto regen`](/docs/proto/commands/regen)
+command. This command will clean the shims (`~/.proto/shims`) and optionally bins (`~/.proto/bins`)
+directory, regenerate shims, and relink bins based on globally pinned versions.
+
+```shell
+$ proto regen
+
+# Include bins
+$ proto regen --bin
+```
+
+This is extremely useful in resetting to a clean state.
+
+## Better version parsing for TOML plugins
+
+When our [TOML plugin](/docs/proto/toml-plugin) receives a version, we attempt to parse it into a
+valid semantic version. However, not all tools follow semver, as they may release without patch or
+minor versions, or use a different pre/build pattern.
+
+To remedy this, we've updated our regex to be more flexible, and to utilize named capture groups.
+With named groups, we can now piece the version together, fill in missing values, and then parse it.
+
+We've also renamed the field to `version-pattern` from `git-tag-pattern`, as the regex is now also
+used for manifest parsing. The old name is still supported for the time being.
+
+```toml
+# Before
+[resolve]
+git-tag-pattern = "^@protostar/cli@((\\d+)\\.(\\d+)\\.(\\d+))"
+
+# After
+[resolve]
+version-pattern = "^@protostar/cli@((?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+))"
+```
+
+> Jump to the [official documentation](/docs/proto/toml-plugin#version-patterns) for more
+> information!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.27.0) for a full list
+of changes.

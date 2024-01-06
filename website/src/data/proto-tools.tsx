@@ -247,4 +247,22 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/zig.toml',
 	},
+	'zig-plugin': {
+		bins: ['zig'],
+		description: 'Zig is a general-purpose programming language and toolchain.',
+		homepageUrl: 'https://ziglang.org',
+		name: 'zig',
+		pluginLocator: 'github:konomae/zig-plugin',
+		pluginType: 'wasm',
+		repoUrl: 'https://github.com/konomae/zig-plugin',
+	},
+	zls: {
+		bins: ['zls'],
+		description: 'The Zig language server for all your Zig editor.',
+		homepageUrl: 'https://github.com/zigtools/zls',
+		name: 'zls',
+		pluginLocator: 'github:konomae/zls-plugin',
+		pluginType: 'wasm',
+		repoUrl: 'https://github.com/konomae/zls-plugin',
+	},
 };

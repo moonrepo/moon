@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `proto` binary not being available in a Dockerfile when running `moon docker` commands.
+- Fixed our `@moonrepo/cli` postinstall script not working correctly for Bun Arm64.
+
 ## 1.19.0
 
 #### 💥 Breaking

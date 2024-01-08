@@ -14,6 +14,8 @@ pub async fn install_proto(workspace: &Workspace) -> miette::Result<()> {
         .join("proto")
         .join(PROTO_CLI_VERSION);
 
+    debug!(proto = ?install_dir, "Checking if proto is installed");
+
     // Set the version so that proto lookup paths take it into account
     env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
 

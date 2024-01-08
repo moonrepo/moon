@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_action_graph = { path = "../../../nextgen/action-graph" }
+moon_actions = { path = "../actions" }
 moon_config = { path = "../../../nextgen/config" }
 moon_bun_platform = { path = "../../bun/platform" }
 moon_deno_platform = { path = "../../deno/platform" }

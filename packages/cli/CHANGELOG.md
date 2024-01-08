@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed another location where the `proto` binary was not available.
+
 ## 1.19.1
 
 #### 🐞 Fixes

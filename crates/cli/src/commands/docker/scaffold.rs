@@ -1,6 +1,7 @@
 use super::MANIFEST_NAME;
 use clap::Args;
 use moon::generate_project_graph;
+use moon_actions::install_proto;
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
@@ -245,6 +246,8 @@ fn scaffold_sources(
 
 #[system]
 pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<Workspace>) {
+    install_proto(workspace).await?;
+
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files

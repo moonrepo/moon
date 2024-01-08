@@ -2,6 +2,7 @@ use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
+use moon_actions::install_proto;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use starbase::system;
@@ -15,6 +16,8 @@ pub async fn setup(workspace: ResourceMut<Workspace>) {
         eprintln!("Unable to setup, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?");
         safe_exit(1);
     }
+
+    install_proto(workspace).await?;
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let project_graph = generate_project_graph(workspace).await?;

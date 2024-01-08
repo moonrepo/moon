@@ -10,10 +10,11 @@ import WasmLink from '../../Docs/WasmLink';
 export interface ToolCardProps {
 	id: string;
 	tool: ProtoTool;
+	showAuthor?: boolean;
 }
 
 // eslint-disable-next-line complexity
-export default function ToolCard({ id, tool }: ToolCardProps) {
+export default function ToolCard({ id, tool, showAuthor }: ToolCardProps) {
 	const bins = tool.bins ?? [];
 	const dirs = tool.globalsDirs ?? [];
 	const detect = tool.detectionSources ?? [];
@@ -31,6 +32,11 @@ export default function ToolCard({ id, tool }: ToolCardProps) {
 
 			<Heading level={5} className="mb-1">
 				<Link href={tool.homepageUrl ?? tool.repoUrl}>{tool.name}</Link>
+				{showAuthor && (
+					<Text as="span" variant="muted" size="sm" className="ml-1">
+						({tool.author})
+					</Text>
+				)}
 			</Heading>
 
 			<Text>{tool.description}</Text>

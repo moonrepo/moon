@@ -29,6 +29,7 @@ export interface ProtoTool {
 	pluginLocator?: string;
 	pluginType: 'toml' | 'wasm';
 	usageId?: string;
+	author: string;
 
 	// Availble global binaries/directories:
 	// https://moonrepo.dev/docs/proto/wasm-plugin#locating-binaries
@@ -46,6 +47,7 @@ export interface ProtoTool {
 
 export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 	bun: {
+		author: 'moonrepo',
 		bins: ['bun', 'bunx'],
 		description:
 			'Bun is an all-in-one runtime and toolset for JavaScript and TypeScript, powered by Zig and Webkit.',
@@ -56,6 +58,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/bun-plugin',
 	},
 	deno: {
+		author: 'moonrepo',
 		bins: ['deno'],
 		description:
 			"Deno is a secure runtime for JavaScript and TypeScript, powered by Rust and Chrome's V8 engine.",
@@ -67,6 +70,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/deno-plugin',
 	},
 	go: {
+		author: 'moonrepo',
 		bins: ['go'],
 		description: 'Go is a simple, secure, and fast systems language.',
 		detectionSources: [
@@ -80,6 +84,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/go-plugin',
 	},
 	node: {
+		author: 'moonrepo',
 		bins: ['node'],
 		description: "Node.js is a JavaScript runtime built on Chrome's V8 engine.",
 		detectionSources: [
@@ -94,6 +99,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/node-plugin',
 	},
 	node_depman: {
+		author: 'moonrepo',
 		bins: ['npm', 'npx', 'pnpm', 'pnpx', 'yarn', 'node-gyp'],
 		description: 'proto supports all popular Node.js package managers.',
 		detectionSources: [{ file: 'package.json', label: 'engines / package manager' }],
@@ -105,6 +111,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		usageId: '<manager>',
 	},
 	python: {
+		author: 'moonrepo',
 		bins: ['python', 'pip'],
 		description: 'Python is a high-level, general-purpose programming language.',
 		detectionSources: [{ file: '.python-version', url: 'https://github.com/pyenv/pyenv' }],
@@ -115,6 +122,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/python-plugin',
 	},
 	rust: {
+		author: 'moonrepo',
 		description: `Rust is a blazingly fast and memory-efficient systems language.`,
 		detectionSources: [{ file: 'rust-toolchain.toml' }, { file: 'rust-toolchain' }],
 		globalsDirs: ['~/.cargo/bin'],
@@ -125,8 +133,9 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 	},
 };
 
-export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
+export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	act: {
+		author: 'theomessin',
 		bins: ['act'],
 		description: 'Run your GitHub Actions locally.',
 		homepageUrl: 'https://github.com/nektos/act',
@@ -137,6 +146,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/act.toml',
 	},
 	buf: {
+		author: 'stk0vrfl0w',
 		bins: ['buf'],
 		description: 'A new way of working with Protocol Buffers.',
 		homepageUrl: 'https://buf.build',
@@ -147,6 +157,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/buf.toml',
 	},
 	earthly: {
+		author: 'theomessin',
 		bins: ['earthly'],
 		description: 'Like Dockerfile and Makefile had a baby.',
 		homepageUrl: 'https://earthly.dev',
@@ -157,6 +168,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/earthly.toml',
 	},
 	gojq: {
+		author: 'stk0vrfl0w',
 		bins: ['gojq'],
 		description: 'Pure Go implementation of jq.',
 		homepageUrl: 'https://github.com/itchyny/gojq',
@@ -167,6 +179,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/gojq.toml',
 	},
 	helm: {
+		author: 'stk0vrfl0w',
 		bins: ['helm'],
 		description: 'The Kubernetes Package Manager.',
 		homepageUrl: 'https://helm.sh',
@@ -177,6 +190,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/helm.toml',
 	},
 	helmfile: {
+		author: 'stk0vrfl0w',
 		bins: ['helmfile'],
 		description: 'Deploy Kubernetes Helm Charts.',
 		homepageUrl: 'https://helmfile.readthedocs.io/en/latest',
@@ -187,6 +201,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/helmfile.toml',
 	},
 	kubectl: {
+		author: 'stk0vrfl0w',
 		bins: ['kubectl'],
 		description: 'Kubernetes command line tool.',
 		homepageUrl: 'https://kubernetes.io',
@@ -197,6 +212,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/kubectl.toml',
 	},
 	moon: {
+		author: 'moonrepo',
 		bins: ['moon'],
 		description: 'moon is a multi-language build system and codebase management tool.',
 		homepageUrl: 'https://moonrepo.dev/moon',
@@ -207,6 +223,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
 	},
 	sops: {
+		author: 'stk0vrfl0w',
 		bins: ['sops'],
 		description: 'Simple and flexible tool for managing secrets.',
 		homepageUrl: 'https://github.com/getsops/sops',
@@ -217,6 +234,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/sops.toml',
 	},
 	terraform: {
+		author: 'stk0vrfl0w',
 		bins: ['terraform'],
 		description: 'Provision & Manage any Infrastructure.',
 		homepageUrl: 'https://www.terraform.io',
@@ -227,6 +245,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/terraform.toml',
 	},
 	terragrunt: {
+		author: 'stk0vrfl0w',
 		bins: ['terragrunt'],
 		description:
 			'Thin wrapper that provides extra tools for keeping your terraform configurations DRY.',
@@ -237,26 +256,31 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/terragrunt.toml',
 	},
-	zig: {
-		bins: ['zig'],
-		description: 'Zig is a general-purpose programming language and toolchain.',
-		homepageUrl: 'https://ziglang.org',
-		name: 'zig',
-		pluginLocator:
-			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/zig.toml',
-		pluginType: 'toml',
-		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/zig.toml',
-	},
-	'zig-plugin': {
-		bins: ['zig'],
-		description: 'Zig is a general-purpose programming language and toolchain.',
-		homepageUrl: 'https://ziglang.org',
-		name: 'zig',
-		pluginLocator: 'github:konomae/zig-plugin',
-		pluginType: 'wasm',
-		repoUrl: 'https://github.com/konomae/zig-plugin',
-	},
+	zig: [
+		{
+			author: 'stk0vrfl0w',
+			bins: ['zig'],
+			description: 'Zig is a general-purpose programming language and toolchain.',
+			homepageUrl: 'https://ziglang.org',
+			name: 'zig',
+			pluginLocator:
+				'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/zig.toml',
+			pluginType: 'toml',
+			repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/zig.toml',
+		},
+		{
+			author: 'konomae',
+			bins: ['zig'],
+			description: 'Zig is a general-purpose programming language and toolchain.',
+			homepageUrl: 'https://ziglang.org',
+			name: 'zig',
+			pluginLocator: 'github:konomae/zig-plugin',
+			pluginType: 'wasm',
+			repoUrl: 'https://github.com/konomae/zig-plugin',
+		},
+	],
 	zls: {
+		author: 'konomae',
 		bins: ['zls'],
 		description: 'The Zig language server for all your Zig editor.',
 		homepageUrl: 'https://github.com/zigtools/zls',

@@ -10,6 +10,10 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## 1.19.3
+
+This fixes a bad 1.19.2 release.
+
 ## 1.19.2
 
 #### 🐞 Fixes

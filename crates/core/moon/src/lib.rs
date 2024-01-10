@@ -1,5 +1,4 @@
 use moon_action_graph::ActionGraphBuilder;
-use moon_actions::install_proto;
 use moon_bun_platform::BunPlatform;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
@@ -132,18 +131,12 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
     Ok(workspace)
 }
 
-// Some commands require the toolchain to exist, but don't use
-// the action pipeline. This is a simple flow to wire up the tools.
-pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
-    let workspace = load_workspace().await?;
-
-    install_proto(&workspace).await?;
-
+pub async fn load_toolchain() -> miette::Result<()> {
     for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;
     }
 
-    Ok(workspace)
+    Ok(())
 }
 
 pub fn build_action_graph(project_graph: &ProjectGraph) -> miette::Result<ActionGraphBuilder> {

@@ -10,19 +10,31 @@ use starbase::system;
 use std::env;
 use tracing::debug;
 
+// These commands must not load the workspace or toolchain!
+fn is_stand_alone_command(cli: &CLI) -> bool {
+    matches!(
+        cli.command,
+        Commands::Completions(_) | Commands::Init(_) | Commands::Setup | Commands::Upgrade
+    )
+}
+
 #[system]
 pub async fn load_workspace(cli: StateRef<CLI>, resources: ResourcesMut) {
-    match &cli.command {
-        Commands::Completions(_) | Commands::Init(_) | Commands::Setup | Commands::Upgrade => {
-            // Do nothing
-        }
-        Commands::Bin(_) | Commands::Docker { .. } | Commands::Node { .. } | Commands::Teardown => {
-            resources.set(moon::load_workspace_with_toolchain().await?);
-        }
-        _ => {
-            resources.set(moon::load_workspace().await?);
-        }
-    };
+    if is_stand_alone_command(cli) {
+        return Ok(());
+    }
+
+    resources.set(moon::load_workspace().await?);
+}
+
+#[system]
+pub async fn load_toolchain(cli: StateRef<CLI>) {
+    if matches!(
+        cli.command,
+        Commands::Bin(_) | Commands::Docker { .. } | Commands::Node { .. } | Commands::Teardown
+    ) {
+        moon::load_toolchain().await?;
+    }
 }
 
 #[system]
@@ -67,11 +79,7 @@ pub async fn check_for_new_version(workspace: ResourceRef<Workspace>) {
 
 #[system]
 pub async fn install_proto(cli: StateRef<CLI>, workspace: ResourceRef<Workspace>) {
-    if matches!(
-        cli.command,
-        Commands::Completions(_) | Commands::Init(_) | Commands::Upgrade
-    ) {
-        // Don't install for these commands
+    if is_stand_alone_command(cli) {
         return Ok(());
     }
 

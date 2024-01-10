@@ -135,7 +135,8 @@ pub async fn run_cli() -> AppResult {
     app.set_state(cli.global_args());
     app.set_state(cli.clone());
     app.startup(systems::load_workspace);
-    app.analyze(systems::install_proto);
+    app.startup(systems::install_proto);
+    app.analyze(systems::load_toolchain);
 
     match cli.command {
         Commands::ActionGraph(args) => app.execute_with_args(action_graph, args),

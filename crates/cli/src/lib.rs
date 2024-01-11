@@ -39,6 +39,7 @@ use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
 use std::ffi::OsString;
+use systems::{requires_toolchain, requires_workspace};
 use tracing::debug;
 
 fn setup_logging(level: &LogLevel) {
@@ -134,9 +135,15 @@ pub async fn run_cli() -> AppResult {
     let mut app = App::new();
     app.set_state(cli.global_args());
     app.set_state(cli.clone());
-    app.startup(systems::load_workspace);
-    app.startup(systems::install_proto);
-    app.analyze(systems::load_toolchain);
+
+    if requires_workspace(&cli) {
+        app.startup(systems::load_workspace);
+        app.startup(systems::install_proto);
+
+        if requires_toolchain(&cli) {
+            app.analyze(systems::load_toolchain);
+        }
+    }
 
     match cli.command {
         Commands::ActionGraph(args) => app.execute_with_args(action_graph, args),

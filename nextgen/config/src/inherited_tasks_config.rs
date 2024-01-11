@@ -1,7 +1,5 @@
 use crate::language_platform::{LanguageType, PlatformType};
-use crate::project::{
-    validate_deps, PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig,
-};
+use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::ProjectType;
 use crate::shapes::InputPath;
 use crate::validate::check_yml_extension;
@@ -56,7 +54,7 @@ cacheable!(
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         #[setting(nested)]
-        pub task_options: TaskOptionsConfig,
+        pub task_options: Option<TaskOptionsConfig>,
     }
 );
 

@@ -122,6 +122,6 @@ export interface InheritedTasksConfig {
 	fileGroups: Record<string, string[]>;
 	implicitDeps: TaskDependency[];
 	implicitInputs: string[];
-	taskOptions: TaskOptionsConfig;
+	taskOptions: TaskOptionsConfig | null;
 	tasks: Record<string, TaskConfig>;
 }

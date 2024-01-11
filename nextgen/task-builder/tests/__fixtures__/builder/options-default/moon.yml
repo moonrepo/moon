@@ -1,0 +1,9 @@
+language: javascript
+platform: node
+type: library
+
+tasks:
+  retry-default: {}
+  retry-custom:
+    options:
+      retryCount: 3

@@ -1,3 +1,6 @@
 tasks:
   node-application:
     command: 'node-application'
+
+taskOptions:
+  retryCount: 1

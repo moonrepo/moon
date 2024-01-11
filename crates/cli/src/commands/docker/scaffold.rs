@@ -245,7 +245,6 @@ fn scaffold_sources(
 
 #[system]
 pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<Workspace>) {
-
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files

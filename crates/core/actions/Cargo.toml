@@ -10,10 +10,8 @@ moon_codeowners = { path = "../../../nextgen/codeowners" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_project_graph = { path = "../../../nextgen/project-graph" }
-moon_terminal = { path = "../terminal" }
 moon_workspace = { path = "../../../nextgen/workspace" }
 moon_vcs_hooks = { path = "../../../nextgen/vcs-hooks" }
 miette = { workspace = true }
 proto_core = { workspace = true }
-proto_installer = { workspace = true }
 tracing = { workspace = true }

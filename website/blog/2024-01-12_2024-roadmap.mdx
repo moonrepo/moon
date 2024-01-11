@@ -92,7 +92,50 @@ released 27 minor versions with:
 
 ## Launching moon v2
 
-### WASM plugin based
+It's been almost a year since we launched v1, and we believe we're ready to start planning out and
+working on v2. Our goal for major releases is to introduce breaking changes in the most seamless way
+possible, and to do so, we plan to incrementally land internal changes in v1 in preparation for v2,
+provide codemods for migrating configuration, and of course, provide an in-depth migration guide.
+
+In order of importance, we plan to land the following changes. This list does not include features
+that will [land after v2](#post-launch-features).
+
+- Move to a [plugin based architecture](#plugin-based-architecture)
+- Rename and standardize some configuration settings
+- Removed deprecated features
+
+It's a short list but also a ton of work. We have no ETA on when this will land exactly.
+
+### Plugin based architecture
+
+The biggest change and primary focus for v2 is to move to a WASM plugin based architecture (for
+language integration). Based on our work with [proto's plugins](/docs/proto/plugins), we have a very
+good idea of how we would model this for moon, and a new love for WASM based plugins (powered by
+[Extism](https://extism.org/)).
+
+One of the leading factors for this decision, is that building everything into Rust directly is not
+scalable, is a maintenance headache, and is also extremely difficult. It results in a lot of
+duplicated code, increased compilation times, and a lot of complexity. By moving to plugins, we can
+ditch most of this, and in the grand scheme of things, plugin integration is simply function calls.
+
+Of course there are a handful of additional benefits that come from plugins:
+
+- Enables the community to build and share their own plugins (additional languages).
+- Plugins can be individually updated, versioned, and released. Less moon patches.
+- Reduces moon's compilation times, as plugins live in their own repositories.
+- Easier to contribute to, as moon's codebase is quite complex.
+
+### Post-launch features
+
+Curious what kind of features we have planned for after v2? Of course you are! This isn't an
+exhaustive or detailed list, but is top of mind:
+
+- Additional languages support (will be much easier with a plugin system)
+- Release workflows (versioning, publishing, changelogs, etc)
+- System dependencies within the toolchain
+- Language dependency management tools
+- Repository and project health scores
+- Improved action graph and pipeline
 
 ## Launching proto v1
 

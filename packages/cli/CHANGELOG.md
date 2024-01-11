@@ -14,9 +14,10 @@
 
 #### 🚀 Updates
 
-- Updated proto installation to occur for all applicable commands, not just `moon run`,
+- Updated proto installation to trigger for all applicable commands, not just `moon run`,
   `moon check`, and `moon ci`.
-  - Will also use the global proto version if available and there's no internet connection.
+  - Will also use the global proto version if available when there's no internet connection, and the
+    moon required proto version has not been installed.
 
 ## 1.19.3
 

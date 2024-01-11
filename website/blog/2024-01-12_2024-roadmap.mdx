@@ -1,0 +1,105 @@
+---
+slug: 2024-roadmap
+title: What's in store for 2024
+authors: [milesj]
+tags: [roadmap, moonbase, proto, toolchain]
+---
+
+Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long
+roadmap.
+
+<!--truncate-->
+
+## Year 2023 in review
+
+Last year was an extremely exciting year for us! To start, we were accepted into the
+[Y Combinator 2023 winter batch](https://www.ycombinator.com/companies/moonrepo), which was
+extremely unexpected, but very much welcome. The 3 months we spent in YC was quite eye opening, as
+we learned so much about the industry, and how to move forward. We spent those 3 months really
+diving into what we want to build and deliver, and after much trial and error, and many failed
+prototypes, we chose to move forward with launching [proto][proto] as its own tool, improving
+[moon][moon], and slowing down development of [moonbase][moonbase] (outside of remote caching).
+
+### moon
+
+For [moon][moon], we officially launched v1 back in March, and celebrated its 2 year birthday in
+October. Over the course of 2023, we released 23 minor versions, jam packed with new features such
+as:
+
+- Action and project graphs improvements
+- Bun tier 1, 2, and 3 support
+- Canary & nightly releases
+- Code ownership (`CODEOWNERS`)
+- Configuration rewrite (using our [schematic](https://github.com/moonrepo/schematic) crate)
+- Deno tier 1 and 2 support
+- Developer experience improvements
+- Documentation polish
+- Experiments
+- Interactive & persistent tasks
+- JavaScript and TypeScript improvements
+- Onboarding flow improvements
+- `PATH` based task execution
+- [proto][proto] integration
+- Query language
+- [Railway](https://railway.app/) support
+- Rust tier 1, 2, and 3 support
+- Tagging and boundaries/contraints
+- Task extending, inheritance, and configuration enhancements
+- Task dependencies configurations
+- Toolchain enhancements
+- VCS (Git) hooks
+- ... and much much more!
+
+However, when looking at our [2023 roadmap](./2023-roadmap), there are a few items we failed to
+deliver on. The biggest are additional languages, better tier support, and release workflows. We
+ultimately didn't land these features as we plan to move to a plugin based architecture, and didn't
+want to invest too much time into the current implementation.
+
+### moonbase
+
+During YC, we officially launched [moonbase][moonbase], our cloud service that offers remote caching
+to all moon users (and also includes a free tier). Over the next few months, we continued to improve
+the service, by adding basic insights into CI runs (powered by [`moon ci`](/docs/commands/ci)), and
+overall stability.
+
+However, we unfortunately made the decision to pause development of new features for moonbase, as we
+were unsure of the value that they would provide to end-users compared to the cost it would take to
+build & maintain. Some such features include code and project ownership, project registry, and
+repository health scores. We may revisit this in the future.
+
+### proto
+
+As for [proto][proto], it's been an exciting year. For context, proto's implementation was
+originally built into moon directly, and powered
+[moon's integrated toolchain](/docs/concepts/toolchain). We strongly felt this functionality can be
+useful as a stand-alone tool, as tool installation and developer environment setup is still a major
+pain point for developers.
+
+So we decided to extract it out into its own tool, and thus proto was born. Since then, we've
+released 27 minor versions with:
+
+- Additional language support: Go, Python
+- Binary symlinking
+- Canary & nightly releases
+- Detection improvements
+- Directory-level configuration
+- Deeper shell integration
+- Global packages
+- Native shim executables
+- Runtime version detection
+- WASM and TOML based plugins
+- ... and more to come!
+
+## Launching moon v2
+
+### WASM plugin based
+
+## Launching proto v1
+
+### Expanding language support
+
+## Self-hosting moonbase
+
+[moon]: /moon
+[moonbase]: /moonbase
+[proto]: /proto

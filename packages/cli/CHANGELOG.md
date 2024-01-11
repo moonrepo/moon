@@ -10,6 +10,15 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated proto installation to trigger for all applicable commands, not just `moon run`,
+  `moon check`, and `moon ci`.
+  - Will also use the global proto version if available when there's no internet connection, and the
+    moon required proto version has not been installed.
+
 ## 1.19.3
 
 This fixes a bad 1.19.2 release.

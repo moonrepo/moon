@@ -84,7 +84,7 @@ released 27 minor versions with:
 - Detection improvements
 - Directory-level configuration
 - Deeper shell integration
-- Global packages
+- Global packages support
 - Native shim executables
 - Runtime version detection
 - WASM and TOML based plugins
@@ -139,9 +139,42 @@ exhaustive or detailed list, but is top of mind:
 
 ## Launching proto v1
 
+We're extremely close to a v1 release, most definitely in Q1. For the most part, we believe we're
+passed the point of introducing breaking changes, and so the remainder of the time will be spent on
+polish, improvements, and documentation. There are a few big features we want to land relatively
+soon though (but maybe after v1), and they are:
+
+- Build from source for languages (this is quite complicated)
+- Build/extension variants for languages (PyPy for Python, PHP extensions, etc)
+- Directory and tool level environment variables (think [direnv](https://direnv.net/) kind of
+  functionality)
+
 ### Expanding language support
 
+While not part of v1, we definitely want to support more official languages in proto. We've been
+pushing back on new languages until after v1 and the plugin APIs have stabilized, but since that's
+relatively close to being done, expect more in the future! Our top of mind languages at the moment
+are: Ruby (and Crystal), PHP, and Java.
+
+Don't forget that the community can also build and share their own plugins! For example, the
+[Zig programming language](https://github.com/konomae/zig-plugin) already exists, and is provided by
+[konomae](https://github.com/konomae)! Thanks for the amazing work.
+
 ## Self-hosting moonbase
+
+And last but not least, let's talk about moonbase. Although we've paused development on new
+features, we consistently get requests for self-hosting moonbase (primarily for remote caching), as
+companies don't want to store their proprietary builds, even though they are compiled and minified,
+in a cloud storage provider that they do not own.
+
+We definitely understand this concern, and that's why we've been working on a self-hosted version of
+moonbase (also known as on-premises). We've never done this before, so it's been quite a learning
+lesson, especially since we have many facets to take into account: database access, cloud
+credentials, error handling, auth, so on and so forth.
+
+We'd say we're about 50% done with this effort, and we aim to have it ready by the end of Q1. With
+that said, the self-hosted version of moonbase will _not_ be free, and will use a license based
+model. We're still working out the details, but we'll have more information soon.
 
 [moon]: /moon
 [moonbase]: /moonbase

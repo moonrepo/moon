@@ -4,10 +4,173 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Thu, 04 Jan 2024 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 12 Jan 2024 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[What's in store for 2024]]></title>
+            <link>https://moonrepo.dev/blog/2024-roadmap</link>
+            <guid>https://moonrepo.dev/blog/2024-roadmap</guid>
+            <pubDate>Fri, 12 Jan 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long]]></description>
+            <content:encoded><![CDATA[<p>Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long
+roadmap.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="year-2023-in-review">Year 2023 in review<a href="https://moonrepo.dev/blog/2024-roadmap#year-2023-in-review" class="hash-link" aria-label="Direct link to Year 2023 in review" title="Direct link to Year 2023 in review">​</a></h2>
+<p>Last year was an extremely exciting year for us! To start, we were accepted into the
+<a href="https://www.ycombinator.com/companies/moonrepo" target="_blank" rel="noopener noreferrer">Y Combinator 2023 winter batch</a>, which was
+extremely unexpected, but very much welcome. The 3 months we spent in YC was quite eye opening, as
+we learned so much about the industry, and how to move forward. We spent those 3 months really
+diving into what we want to build and deliver, and after much trial and error, and many failed
+prototypes, we chose to move forward with launching <a href="https://moonrepo.dev/proto">proto</a> as its own tool, improving
+<a href="https://moonrepo.dev/moon">moon</a>, and slowing down development of <a href="https://moonrepo.dev/moonbase">moonbase</a> (outside of remote caching).</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moon">moon<a href="https://moonrepo.dev/blog/2024-roadmap#moon" class="hash-link" aria-label="Direct link to moon" title="Direct link to moon">​</a></h3>
+<p>For <a href="https://moonrepo.dev/moon">moon</a>, we officially launched v1 back in March, and celebrated its 2 year birthday in
+October. Over the course of 2023, we released 23 minor versions, jam packed with new features such
+as:</p>
+<ul>
+<li>Action and project graphs improvements</li>
+<li>Bun tier 1, 2, and 3 support</li>
+<li>Canary &amp; nightly releases</li>
+<li>Code ownership (<code>CODEOWNERS</code>)</li>
+<li>Configuration rewrite (using our <a href="https://github.com/moonrepo/schematic" target="_blank" rel="noopener noreferrer">schematic</a> crate)</li>
+<li>Deno tier 1 and 2 support</li>
+<li>Developer experience improvements</li>
+<li>Documentation polish</li>
+<li>Experiments</li>
+<li>Interactive &amp; persistent tasks</li>
+<li>JavaScript and TypeScript improvements</li>
+<li>Onboarding flow improvements</li>
+<li><code>PATH</code> based task execution</li>
+<li><a href="https://moonrepo.dev/proto">proto</a> integration</li>
+<li>Query language</li>
+<li><a href="https://railway.app/" target="_blank" rel="noopener noreferrer">Railway</a> support</li>
+<li>Rust tier 1, 2, and 3 support</li>
+<li>Tagging and boundaries/contraints</li>
+<li>Task extending, inheritance, and configuration enhancements</li>
+<li>Task dependencies configurations</li>
+<li>Toolchain enhancements</li>
+<li>VCS (Git) hooks</li>
+<li>... and much much more!</li>
+</ul>
+<p>However, when looking at our <a href="https://moonrepo.dev/blog/2023-roadmap">2023 roadmap</a>, there are a few items we failed to
+deliver on. The biggest are additional languages, better tier support, and release workflows. We
+ultimately didn't land these features as we plan to move to a plugin based architecture, and didn't
+want to invest too much time into the current implementation.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moonbase">moonbase<a href="https://moonrepo.dev/blog/2024-roadmap#moonbase" class="hash-link" aria-label="Direct link to moonbase" title="Direct link to moonbase">​</a></h3>
+<p>During YC, we officially launched <a href="https://moonrepo.dev/moonbase">moonbase</a>, our cloud service that offers remote caching
+to all moon users (and also includes a free tier). Over the next few months, we continued to improve
+the service, by adding basic insights into CI runs (powered by <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a>), and
+overall stability.</p>
+<p>However, we unfortunately made the decision to pause development of new features for moonbase, as we
+were unsure of the value that they would provide to end-users compared to the cost it would take to
+build &amp; maintain. Some such features include code and project ownership, project registry, and
+repository health scores. We may revisit this in the future.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="proto">proto<a href="https://moonrepo.dev/blog/2024-roadmap#proto" class="hash-link" aria-label="Direct link to proto" title="Direct link to proto">​</a></h3>
+<p>As for <a href="https://moonrepo.dev/proto">proto</a>, it's been an exciting year. For context, proto's implementation was
+originally built into moon directly, and powered
+<a href="https://moonrepo.dev/docs/concepts/toolchain">moon's integrated toolchain</a>. We strongly felt this functionality can be
+useful as a stand-alone tool, as tool installation and developer environment setup is still a major
+pain point for developers.</p>
+<p>So we decided to extract it out into its own tool, and thus proto was born. Since then, we've
+released 27 minor versions with:</p>
+<ul>
+<li>Additional language support: Go, Python</li>
+<li>Binary symlinking</li>
+<li>Canary &amp; nightly releases</li>
+<li>Detection improvements</li>
+<li>Directory-level configuration</li>
+<li>Deeper shell integration</li>
+<li>Global packages support</li>
+<li>Native shim executables</li>
+<li>Runtime version detection</li>
+<li>WASM and TOML based plugins</li>
+<li>... and more to come!</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-moon-v2">Launching moon v2<a href="https://moonrepo.dev/blog/2024-roadmap#launching-moon-v2" class="hash-link" aria-label="Direct link to Launching moon v2" title="Direct link to Launching moon v2">​</a></h2>
+<p>It's been almost a year since we launched v1, and we believe we're ready to start planning out and
+working on v2. Our goal for major releases is to introduce breaking changes in the most seamless way
+possible, and to do so, we plan to incrementally land internal changes in v1 in preparation for v2,
+provide codemods for migrating configuration, and of course, provide an in-depth migration guide.</p>
+<p>In order of importance, we plan to land the following changes. This list does not include features
+that will <a href="https://moonrepo.dev/blog/2024-roadmap#post-launch-features">land after v2</a>.</p>
+<ul>
+<li>Move to a <a href="https://moonrepo.dev/blog/2024-roadmap#plugin-based-architecture">plugin based architecture</a></li>
+<li>Rename and standardize some configuration settings</li>
+<li>Removed deprecated features</li>
+</ul>
+<p>It's a short list but also a ton of work. We have no ETA on when this will land exactly.</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-based-architecture">Plugin based architecture<a href="https://moonrepo.dev/blog/2024-roadmap#plugin-based-architecture" class="hash-link" aria-label="Direct link to Plugin based architecture" title="Direct link to Plugin based architecture">​</a></h3>
+<p>The biggest change and primary focus for v2 is to move to a WASM plugin based architecture (for
+language integration). Based on our work with <a href="https://moonrepo.dev/docs/proto/plugins">proto's plugins</a>, we have a very
+good idea of how we would model this for moon, and a new love for WASM based plugins (powered by
+<a href="https://extism.org/" target="_blank" rel="noopener noreferrer">Extism</a>).</p>
+<p>One of the leading factors for this decision, is that building everything into Rust directly is not
+scalable, is a maintenance headache, and is also extremely difficult. It results in a lot of
+duplicated code, increased compilation times, and a lot of complexity. By moving to plugins, we can
+ditch most of this, and in the grand scheme of things, plugin integration is simply function calls.</p>
+<p>Of course there are a handful of additional benefits that come from plugins:</p>
+<ul>
+<li>Enables the community to build and share their own plugins (additional languages).</li>
+<li>Plugins can be individually updated, versioned, and released. Less moon patches.</li>
+<li>Reduces moon's compilation times, as plugins live in their own repositories.</li>
+<li>Easier to contribute to, as moon's codebase is quite complex.</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="post-launch-features">Post-launch features<a href="https://moonrepo.dev/blog/2024-roadmap#post-launch-features" class="hash-link" aria-label="Direct link to Post-launch features" title="Direct link to Post-launch features">​</a></h3>
+<p>Curious what kind of features we have planned for after v2? Of course you are! This isn't an
+exhaustive or detailed list, but is top of mind:</p>
+<ul>
+<li>Additional languages support (will be much easier with a plugin system)</li>
+<li>Release workflows (versioning, publishing, changelogs, etc)</li>
+<li>System dependencies within the toolchain</li>
+<li>Language dependency management tools</li>
+<li>Repository and project health scores</li>
+<li>Improved action graph and pipeline</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-proto-v1">Launching proto v1<a href="https://moonrepo.dev/blog/2024-roadmap#launching-proto-v1" class="hash-link" aria-label="Direct link to Launching proto v1" title="Direct link to Launching proto v1">​</a></h2>
+<p>We're extremely close to a v1 release, most definitely in Q1. For the most part, we believe we're
+passed the point of introducing breaking changes, and so the remainder of the time will be spent on
+polish, improvements, and documentation. There are a few big features we want to land relatively
+soon though (but maybe after v1), and they are:</p>
+<ul>
+<li>Build from source for languages (this is quite complicated)</li>
+<li>Build/extension variants for languages (PyPy for Python, PHP extensions, etc)</li>
+<li>Directory and tool level environment variables (think <a href="https://direnv.net/" target="_blank" rel="noopener noreferrer">direnv</a> kind of
+functionality)</li>
+</ul>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="expanding-language-support">Expanding language support<a href="https://moonrepo.dev/blog/2024-roadmap#expanding-language-support" class="hash-link" aria-label="Direct link to Expanding language support" title="Direct link to Expanding language support">​</a></h3>
+<p>While not part of v1, we definitely want to support more official languages in proto. We've been
+pushing back on new languages until after v1 and the plugin APIs have stabilized, but since that's
+relatively close to being done, expect more in the future! Our top of mind languages at the moment
+are: Ruby (and Crystal), PHP, and Java.</p>
+<p>Don't forget that the community can also build and share their own plugins! For example, the
+<a href="https://github.com/konomae/zig-plugin" target="_blank" rel="noopener noreferrer">Zig programming language</a> already exists, and is provided by
+<a href="https://github.com/konomae" target="_blank" rel="noopener noreferrer">konomae</a>! Thanks for the amazing work.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="self-hosting-moonbase">Self-hosting moonbase<a href="https://moonrepo.dev/blog/2024-roadmap#self-hosting-moonbase" class="hash-link" aria-label="Direct link to Self-hosting moonbase" title="Direct link to Self-hosting moonbase">​</a></h2>
+<p>And last but not least, let's talk about moonbase. Although we've paused development on new
+features, we consistently get requests for self-hosting moonbase (primarily for remote caching), as
+companies don't want to store their proprietary builds, even though they are compiled and minified,
+in a cloud storage provider that they do not own.</p>
+<p>We definitely understand this concern, and that's why we've been working on a self-hosted version of
+moonbase (also known as on-premises). We've never done this before, so it's been quite a learning
+lesson, especially since we have many facets to take into account: database access, cloud
+credentials, error handling, auth, so on and so forth.</p>
+<p>We'd say we're about 50% done with this effort, and we aim to have it ready by the end of Q1. With
+that said, the self-hosted version of moonbase will <em>not</em> be free, and will use a license based
+model. We're still working out the details, but we'll have more information soon.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="looking-for-contributors">Looking for contributors<a href="https://moonrepo.dev/blog/2024-roadmap#looking-for-contributors" class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors">​</a></h2>
+<p>Thanks for reading this far, but we do have one last thing to talk about. The moonrepo ecosystem and
+all its products are quite large, with a lot of complexity. However, we're a small team, with most
+of the public-facing work being done by me (Miles), but there's only so much we can do in a given
+timeframe. With that said, we're looking for open source contributors that would like to help us
+out! We have a long list of features and enhancements that need to be done, and even some secret
+projects that would be very cool to work on. If you're interested, please reach out to us on
+Discord!</p>]]></content:encoded>
+            <category>roadmap</category>
+            <category>moonbase</category>
+            <category>proto</category>
+            <category>toolchain</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.27 - PowerShell profiles, shim regeneration, and more]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.27</link>
@@ -1233,53 +1396,6 @@ of changes.</p>
 </ul>]]></content:encoded>
             <category>proto</category>
             <category>plugin</category>
-        </item>
-        <item>
-            <title><![CDATA[proto v0.15 - Install and uninstall globals]]></title>
-            <link>https://moonrepo.dev/blog/proto-v0.15</link>
-            <guid>https://moonrepo.dev/blog/proto-v0.15</guid>
-            <pubDate>Wed, 23 Aug 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is a small release that adds support for uninstalling globals, and improves our WASM APIs.]]></description>
-            <content:encoded><![CDATA[<p>This is a small release that adds support for uninstalling globals, and improves our WASM APIs.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="uninstall-global-dependencies">Uninstall global dependencies<a href="https://moonrepo.dev/blog/proto-v0.15#uninstall-global-dependencies" class="hash-link" aria-label="Direct link to Uninstall global dependencies" title="Direct link to Uninstall global dependencies">​</a></h2>
-<p>proto has supported <a href="https://moonrepo.dev/blog/proto-v0.5">installing globals since v0.5</a>, but there's been no way to
-uninstall an existing global, until now! In this release, we're introducing the
-<a href="https://moonrepo.dev/docs/proto/commands/uninstall-global"><code>proto uninstall-global</code></a> command, which will do just that!
-The API is exactly the same as its installation counter-part.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">proto install-global </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> prettier</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># On second thought, nevermind...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">proto uninstall-global </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> prettier</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="wasm-functions">WASM functions<a href="https://moonrepo.dev/blog/proto-v0.15#wasm-functions" class="hash-link" aria-label="Direct link to WASM functions" title="Direct link to WASM functions">​</a></h3>
-<p>Implementing this command was rather straight forward, but most of the work went into supporting
-<a href="https://moonrepo.dev/docs/proto/wasm-plugin#installing-and-uninstalling-globals"><code>install_global</code> and <code>uninstall_global</code></a>
-functions for WASM plugins, and then updating all existing plugins! For those of you writing your
-own plugins, here's an example of what the Rust code looks like:</p>
-<div class="language-rust codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-rust codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token attribute attr-name" style="color:#fde047">#[plugin_fn]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">pub</span><span class="token plain"> </span><span class="token keyword" style="color:#b7a9f9">fn</span><span class="token plain"> </span><span class="token function-definition function" style="color:#ff94ff;font-weight:bold">install_global</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">Json</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">input</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">Json</span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">InstallGlobalInput</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">-&gt;</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">FnResult</span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">Json</span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">InstallGlobalOutput</span><span class="token operator" style="color:#b7a9f9">&gt;&gt;</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> result </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> </span><span class="token macro property" style="color:#b7a9f9">exec_command!</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">inherit</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"npm"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"install"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"--global"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token operator" style="color:#b7a9f9">&amp;</span><span class="token plain">input</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">dependency</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">Ok</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">Json</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">InstallGlobalOutput</span><span class="token punctuation" style="color:#cad4e2">::</span><span class="token function" style="color:#ff94ff;font-weight:bold">from_exec_command</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">result</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">}</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="toml-setting">TOML setting<a href="https://moonrepo.dev/blog/proto-v0.15#toml-setting" class="hash-link" aria-label="Direct link to TOML setting" title="Direct link to TOML setting">​</a></h3>
-<p>We've also updated our TOML plugins to support uninstalling globals through the new
-<a href="https://moonrepo.dev/docs/proto/toml-plugin#global-packages"><code>globals.uninstall-args</code></a> setting. Hopefully the name is
-self explanatory, but it's a list of arguments passed to the tool's binary, that'll uninstall the
-global.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">globals</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">install-args</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"install"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"--global"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"{dependency}"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">uninstall-args</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"uninstall"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"--global"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"{dependency}"</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-wasm-documentation">Improved WASM documentation<a href="https://moonrepo.dev/blog/proto-v0.15#improved-wasm-documentation" class="hash-link" aria-label="Direct link to Improved WASM documentation" title="Direct link to Improved WASM documentation">​</a></h2>
-<p>With each release we're slowly stabilizing the WASM and TOML APIs for an official v1 release (which
-is soon), and with this, it requires more documentation. As part of this release, we've done a giant
-polish pass on our WASM documentation, and have included the following sections:</p>
-<ul>
-<li><a href="https://moonrepo.dev/docs/proto/wasm-plugin#virtual-paths">Virtual paths</a></li>
-<li><a href="https://moonrepo.dev/docs/proto/wasm-plugin#host-environment">Host environment</a></li>
-<li><a href="https://moonrepo.dev/docs/proto/wasm-plugin#host-functions">Host functions</a></li>
-<li><a href="https://moonrepo.dev/docs/proto/wasm-plugin#tool-id-and-context">Tool ID and context</a></li>
-<li><a href="https://moonrepo.dev/docs/proto/wasm-plugin#installing-and-uninstalling-globals">Installing and uninstalling globals</a></li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.15#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.15.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Major WASM API improvements, including backwards incompatible changes.</li>
-</ul>]]></content:encoded>
-            <category>proto</category>
-            <category>wasm</category>
-            <category>plugin</category>
-            <category>global</category>
         </item>
     </channel>
 </rss>

@@ -1,0 +1,191 @@
+---
+slug: 2024-roadmap
+title: What's in store for 2024
+authors: [milesj]
+tags: [roadmap, moonbase, proto, toolchain]
+---
+
+Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long
+roadmap.
+
+<!--truncate-->
+
+## Year 2023 in review
+
+Last year was an extremely exciting year for us! To start, we were accepted into the
+[Y Combinator 2023 winter batch](https://www.ycombinator.com/companies/moonrepo), which was
+extremely unexpected, but very much welcome. The 3 months we spent in YC was quite eye opening, as
+we learned so much about the industry, and how to move forward. We spent those 3 months really
+diving into what we want to build and deliver, and after much trial and error, and many failed
+prototypes, we chose to move forward with launching [proto][proto] as its own tool, improving
+[moon][moon], and slowing down development of [moonbase][moonbase] (outside of remote caching).
+
+### moon
+
+For [moon][moon], we officially launched v1 back in March, and celebrated its 2 year birthday in
+October. Over the course of 2023, we released 23 minor versions, jam packed with new features such
+as:
+
+- Action and project graphs improvements
+- Bun tier 1, 2, and 3 support
+- Canary & nightly releases
+- Code ownership (`CODEOWNERS`)
+- Configuration rewrite (using our [schematic](https://github.com/moonrepo/schematic) crate)
+- Deno tier 1 and 2 support
+- Developer experience improvements
+- Documentation polish
+- Experiments
+- Interactive & persistent tasks
+- JavaScript and TypeScript improvements
+- Onboarding flow improvements
+- `PATH` based task execution
+- [proto][proto] integration
+- Query language
+- [Railway](https://railway.app/) support
+- Rust tier 1, 2, and 3 support
+- Tagging and boundaries/contraints
+- Task extending, inheritance, and configuration enhancements
+- Task dependencies configurations
+- Toolchain enhancements
+- VCS (Git) hooks
+- ... and much much more!
+
+However, when looking at our [2023 roadmap](./2023-roadmap), there are a few items we failed to
+deliver on. The biggest are additional languages, better tier support, and release workflows. We
+ultimately didn't land these features as we plan to move to a plugin based architecture, and didn't
+want to invest too much time into the current implementation.
+
+### moonbase
+
+During YC, we officially launched [moonbase][moonbase], our cloud service that offers remote caching
+to all moon users (and also includes a free tier). Over the next few months, we continued to improve
+the service, by adding basic insights into CI runs (powered by [`moon ci`](/docs/commands/ci)), and
+overall stability.
+
+However, we unfortunately made the decision to pause development of new features for moonbase, as we
+were unsure of the value that they would provide to end-users compared to the cost it would take to
+build & maintain. Some such features include code and project ownership, project registry, and
+repository health scores. We may revisit this in the future.
+
+### proto
+
+As for [proto][proto], it's been an exciting year. For context, proto's implementation was
+originally built into moon directly, and powered
+[moon's integrated toolchain](/docs/concepts/toolchain). We strongly felt this functionality can be
+useful as a stand-alone tool, as tool installation and developer environment setup is still a major
+pain point for developers.
+
+So we decided to extract it out into its own tool, and thus proto was born. Since then, we've
+released 27 minor versions with:
+
+- Additional language support: Go, Python
+- Binary symlinking
+- Canary & nightly releases
+- Detection improvements
+- Directory-level configuration
+- Deeper shell integration
+- Global packages support
+- Native shim executables
+- Runtime version detection
+- WASM and TOML based plugins
+- ... and more to come!
+
+## Launching moon v2
+
+It's been almost a year since we launched v1, and we believe we're ready to start planning out and
+working on v2. Our goal for major releases is to introduce breaking changes in the most seamless way
+possible, and to do so, we plan to incrementally land internal changes in v1 in preparation for v2,
+provide codemods for migrating configuration, and of course, provide an in-depth migration guide.
+
+In order of importance, we plan to land the following changes. This list does not include features
+that will [land after v2](#post-launch-features).
+
+- Move to a [plugin based architecture](#plugin-based-architecture)
+- Rename and standardize some configuration settings
+- Removed deprecated features
+
+It's a short list but also a ton of work. We have no ETA on when this will land exactly.
+
+### Plugin based architecture
+
+The biggest change and primary focus for v2 is to move to a WASM plugin based architecture (for
+language integration). Based on our work with [proto's plugins](/docs/proto/plugins), we have a very
+good idea of how we would model this for moon, and a new love for WASM based plugins (powered by
+[Extism](https://extism.org/)).
+
+One of the leading factors for this decision, is that building everything into Rust directly is not
+scalable, is a maintenance headache, and is also extremely difficult. It results in a lot of
+duplicated code, increased compilation times, and a lot of complexity. By moving to plugins, we can
+ditch most of this, and in the grand scheme of things, plugin integration is simply function calls.
+
+Of course there are a handful of additional benefits that come from plugins:
+
+- Enables the community to build and share their own plugins (additional languages).
+- Plugins can be individually updated, versioned, and released. Less moon patches.
+- Reduces moon's compilation times, as plugins live in their own repositories.
+- Easier to contribute to, as moon's codebase is quite complex.
+
+### Post-launch features
+
+Curious what kind of features we have planned for after v2? Of course you are! This isn't an
+exhaustive or detailed list, but is top of mind:
+
+- Additional languages support (will be much easier with a plugin system)
+- Release workflows (versioning, publishing, changelogs, etc)
+- System dependencies within the toolchain
+- Language dependency management tools
+- Repository and project health scores
+- Improved action graph and pipeline
+
+## Launching proto v1
+
+We're extremely close to a v1 release, most definitely in Q1. For the most part, we believe we're
+passed the point of introducing breaking changes, and so the remainder of the time will be spent on
+polish, improvements, and documentation. There are a few big features we want to land relatively
+soon though (but maybe after v1), and they are:
+
+- Build from source for languages (this is quite complicated)
+- Build/extension variants for languages (PyPy for Python, PHP extensions, etc)
+- Directory and tool level environment variables (think [direnv](https://direnv.net/) kind of
+  functionality)
+
+### Expanding language support
+
+While not part of v1, we definitely want to support more official languages in proto. We've been
+pushing back on new languages until after v1 and the plugin APIs have stabilized, but since that's
+relatively close to being done, expect more in the future! Our top of mind languages at the moment
+are: Ruby (and Crystal), PHP, and Java.
+
+Don't forget that the community can also build and share their own plugins! For example, the
+[Zig programming language](https://github.com/konomae/zig-plugin) already exists, and is provided by
+[konomae](https://github.com/konomae)! Thanks for the amazing work.
+
+## Self-hosting moonbase
+
+And last but not least, let's talk about moonbase. Although we've paused development on new
+features, we consistently get requests for self-hosting moonbase (primarily for remote caching), as
+companies don't want to store their proprietary builds, even though they are compiled and minified,
+in a cloud storage provider that they do not own.
+
+We definitely understand this concern, and that's why we've been working on a self-hosted version of
+moonbase (also known as on-premises). We've never done this before, so it's been quite a learning
+lesson, especially since we have many facets to take into account: database access, cloud
+credentials, error handling, auth, so on and so forth.
+
+We'd say we're about 50% done with this effort, and we aim to have it ready by the end of Q1. With
+that said, the self-hosted version of moonbase will _not_ be free, and will use a license based
+model. We're still working out the details, but we'll have more information soon.
+
+## Looking for contributors
+
+Thanks for reading this far, but we do have one last thing to talk about. The moonrepo ecosystem and
+all its products are quite large, with a lot of complexity. However, we're a small team, with most
+of the public-facing work being done by me (Miles), but there's only so much we can do in a given
+timeframe. With that said, we're looking for open source contributors that would like to help us
+out! We have a long list of features and enhancements that need to be done, and even some secret
+projects that would be very cool to work on. If you're interested, please reach out to us on
+Discord!
+
+[moon]: /moon
+[moonbase]: /moonbase
+[proto]: /proto

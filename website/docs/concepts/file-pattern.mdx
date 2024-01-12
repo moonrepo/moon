@@ -23,11 +23,8 @@ globs:
 - `[a-z]` - Matches one case-sensitive character in range in the brackets.
 - `[!x-z]` - Like the above, but will match any character _not_ in range.
 - `{glob,glob}` - Matches one or more comma separated list of sub-glob patterns.
-- `<glob:#>` - Matches a sub-glob within a defined bounds (represented by `#`).
+- `<glob:n,n>` - Matches a sub-glob within a defined bounds.
 - `!` - At the start of a pattern, will negate previous positive patterns.
-
-> The biggest difference between JavaScript and Rust globs is `?`. In JavaScript, this marks the
-> preceding character as optional, while in Rust it matches exactly 1 character.
 
 ### Examples
 

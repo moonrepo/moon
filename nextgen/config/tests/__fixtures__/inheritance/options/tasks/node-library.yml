@@ -1,0 +1,3 @@
+taskOptions:
+  mergeArgs: prepend
+  cache: false

@@ -579,6 +579,30 @@ mod tasks_builder {
         }
     }
 
+    mod default_options {
+        use super::*;
+
+        #[tokio::test]
+        async fn inherits_from_global() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options-default/moon.yml").await;
+
+            let task = tasks.get("retry-default").unwrap();
+
+            assert_eq!(task.options.retry_count, 5);
+        }
+
+        #[tokio::test]
+        async fn can_override_global() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options-default/moon.yml").await;
+
+            let task = tasks.get("retry-custom").unwrap();
+
+            assert_eq!(task.options.retry_count, 3);
+        }
+    }
+
     mod local_mode {
         use super::*;
 

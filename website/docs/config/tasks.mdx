@@ -4,6 +4,7 @@ sidebar_label: .moon/tasks...
 ---
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/tasks.yml` file configures file groups and tasks that are inherited by _every_ project in
 the workspace, while `.moon/tasks/**/*.yml` configures for projects based on their language or type.
@@ -64,8 +65,12 @@ fileGroups:
     - '**/*.{scss,css}'
 ```
 
-> File paths and globs used within a file group are relative from the inherited project's root, and
-> not the workspace.
+:::info
+
+File paths and globs used within a file group are relative from the inherited project's root, and
+not the workspace root.
+
+:::
 
 ## `implicitDeps`
 
@@ -80,7 +85,11 @@ implicitDeps:
   - '^:build'
 ```
 
-> Implicit dependencies are _always_ inherited, regardless of the [`mergeDeps`](#mergedeps) option.
+:::info
+
+Implicit dependencies are _always_ inherited, regardless of the [`mergeDeps`](#mergedeps) option.
+
+:::
 
 ## `implicitInputs`
 
@@ -99,7 +108,11 @@ implicitInputs:
   - 'package.json'
 ```
 
-> Implicit inputs are _always_ inherited, regardless of the [`mergeInputs`](#mergeinputs) option.
+:::info
+
+Implicit inputs are _always_ inherited, regardless of the [`mergeInputs`](#mergeinputs) option.
+
+:::
 
 ## `tasks`
 
@@ -129,5 +142,35 @@ tasks:
     command: 'tsc --build'
 ```
 
-> Relative file paths and globs used within a task are relative from the inherited project's root,
-> and not the workspace.
+:::info
+
+Relative file paths and globs used within a task are relative from the inherited project's root, and
+not the workspace root.
+
+:::
+
+## `taskOptions`<VersionLabel version="1.20.0" />
+
+<HeadingApiLink to="/api/types/interface/InheritedTasksConfig#taskOptions" />
+
+> For more information on task options, refer to the [`options`](./project#options) section in the
+> [`moon.yml`](./project) doc.
+
+Like [tasks](#tasks), this setting allows you to define task options that will be inherited by _all
+tasks_ within the configured file, and by all project-level inherited tasks. This setting is the 1st
+link in the inheritance chain, and can be overridden within each task.
+
+```yaml title=".moon/tasks.yml"
+taskOptions:
+  # Never cache builds
+  cache: false
+  # Always re-run flaky tests
+  retryCount: 2
+
+tasks:
+  build:
+    # ...
+    options:
+      # Override the default cache setting
+      cache: true
+```

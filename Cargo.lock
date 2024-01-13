@@ -1591,6 +1591,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "extism-pdk"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38ac12d16e778ccf351f39a45efb65c0bbdb45bc9928c557507e808efafa51cf"
+dependencies = [
+ "anyhow",
+ "base64",
+ "extism-convert",
+ "extism-manifest",
+ "extism-pdk-derive",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "extism-pdk-derive"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61a79239414de9041626020530854cef77027a28d92bf542c7854e271101e9aa"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
 name = "eyre"
 version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3505,6 +3531,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_pdk"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "extism-pdk",
+ "serde",
+]
+
+[[package]]
 name = "moon_pipeline"
 version = "0.1.0"
 dependencies = [
@@ -3555,6 +3590,15 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "serde",
+]
+
+[[package]]
+name = "moon_plugin"
+version = "0.1.0"
+dependencies = [
+ "dashmap",
+ "miette",
+ "warpgate",
 ]
 
 [[package]]

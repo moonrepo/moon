@@ -1,0 +1,13 @@
+[package]
+name = "moon_plugin"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Plugin registry and system."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+dashmap = "5.5.3"
+miette = { workspace = true }
+warpgate = { workspace = true }

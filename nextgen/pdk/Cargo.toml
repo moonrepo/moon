@@ -1,0 +1,13 @@
+[package]
+name = "moon_pdk"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "A plugin development kit for creating moon WASM plugins."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+anyhow = "1.0.79"
+extism-pdk = { workspace = true }
+serde = { workspace = true }

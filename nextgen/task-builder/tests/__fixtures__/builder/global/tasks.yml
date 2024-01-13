@@ -12,3 +12,6 @@ tasks:
   global-run:
     command: 'global-run'
     local: true
+
+taskOptions:
+  retryCount: 10

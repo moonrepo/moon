@@ -5,7 +5,7 @@ use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
-    TaskMergeStrategy, TaskOutputStyle, TaskType, ToolchainConfig,
+    TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
 };
 use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
@@ -78,6 +78,7 @@ pub struct TasksBuilder<'proj> {
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
     global_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
+    global_task_options: Option<&'proj TaskOptionsConfig>,
     local_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
     filters: Option<&'proj ProjectWorkspaceInheritedTasksConfig>,
 }
@@ -99,6 +100,7 @@ impl<'proj> TasksBuilder<'proj> {
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
+            global_task_options: None,
             local_tasks: FxHashMap::default(),
             filters: None,
         }
@@ -191,6 +193,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         self.filters = global_filters;
+        self.global_task_options = global_config.task_options.as_ref();
         self.implicit_deps.extend(&global_config.implicit_deps);
         self.implicit_inputs.extend(&global_config.implicit_inputs);
         self
@@ -237,7 +240,7 @@ impl<'proj> TasksBuilder<'proj> {
         );
 
         let mut task = Task::default();
-        let chain = self.get_config_inherit_chain(id, true)?;
+        let chain = self.get_config_inherit_chain(id)?;
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -429,13 +432,20 @@ impl<'proj> TasksBuilder<'proj> {
             ..TaskOptions::default()
         };
 
-        let configs = self
-            .get_config_inherit_chain(id, false)?
-            .iter()
-            .map(|link| &link.config.options)
-            .collect::<Vec<_>>();
+        let mut chain = vec![];
 
-        for config in configs {
+        if let Some(default_options) = self.global_task_options {
+            chain.push(default_options);
+        }
+
+        chain.extend(
+            self.get_config_inherit_chain(id)?
+                .iter()
+                .map(|link| &link.config.options)
+                .collect::<Vec<_>>(),
+        );
+
+        for config in chain {
             if let Some(affected_files) = &config.affected_files {
                 options.affected_files = Some(affected_files.to_owned());
             }
@@ -597,11 +607,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok((command, args))
     }
 
-    fn get_config_inherit_chain(
-        &self,
-        id: &Id,
-        _inspect: bool,
-    ) -> miette::Result<Vec<ConfigChain>> {
+    fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {
         let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
         stack.reverse();
 

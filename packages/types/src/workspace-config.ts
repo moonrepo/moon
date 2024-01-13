@@ -6,6 +6,7 @@ export type CodeownersOrderBy = 'file-source' | 'project-name';
 
 export interface PartialCodeownersConfig {
 	globalPaths?: Record<string, string[]> | null;
+	/** @default 'file-source' */
 	orderBy?: CodeownersOrderBy | null;
 	syncOnRun?: boolean | null;
 }
@@ -17,11 +18,17 @@ export interface PartialConstraintsConfig {
 }
 
 export interface PartialExperimentsConfig {
-	/** @default true */
+	/**
+	 * @default true
+	 * @deprecated
+	 */
 	interweavedTaskInheritance?: boolean | null;
 	/** @default true */
 	strictProjectAliases?: boolean | null;
-	/** @default true */
+	/**
+	 * @default true
+	 * @deprecated
+	 */
 	taskOutputBoundaries?: boolean | null;
 }
 
@@ -38,7 +45,9 @@ export interface PartialHasherConfig {
 	batchSize?: number | null;
 	ignoreMissingPatterns?: string[] | null;
 	ignorePatterns?: string[] | null;
+	/** @default 'accuracy' */
 	optimization?: HasherOptimization | null;
+	/** @default 'vcs' */
 	walkStrategy?: HasherWalkStrategy | null;
 	/** @default true */
 	warnOnMissingInputs?: boolean | null;
@@ -75,7 +84,9 @@ export interface PartialVcsConfig {
 	/** @default 'master' */
 	defaultBranch?: string | null;
 	hooks?: Record<string, string[]> | null;
+	/** @default 'git' */
 	manager?: VcsManager | null;
+	/** @default 'github' */
 	provider?: VcsProvider | null;
 	remoteCandidates?: string[] | null;
 	syncHooks?: boolean | null;
@@ -102,6 +113,7 @@ export interface PartialWorkspaceConfig {
 
 export interface CodeownersConfig {
 	globalPaths: Record<string, string[]>;
+	/** @default 'file-source' */
 	orderBy: CodeownersOrderBy;
 	syncOnRun: boolean;
 }
@@ -113,11 +125,17 @@ export interface ConstraintsConfig {
 }
 
 export interface ExperimentsConfig {
-	/** @default true */
+	/**
+	 * @default true
+	 * @deprecated
+	 */
 	interweavedTaskInheritance: boolean;
 	/** @default true */
 	strictProjectAliases: boolean;
-	/** @default true */
+	/**
+	 * @default true
+	 * @deprecated
+	 */
 	taskOutputBoundaries: boolean;
 }
 
@@ -130,7 +148,9 @@ export interface HasherConfig {
 	batchSize: number;
 	ignoreMissingPatterns: string[];
 	ignorePatterns: string[];
+	/** @default 'accuracy' */
 	optimization: HasherOptimization;
+	/** @default 'vcs' */
 	walkStrategy: HasherWalkStrategy;
 	/** @default true */
 	warnOnMissingInputs: boolean;
@@ -160,7 +180,9 @@ export interface VcsConfig {
 	/** @default 'master' */
 	defaultBranch: string;
 	hooks: Record<string, string[]>;
+	/** @default 'git' */
 	manager: VcsManager;
+	/** @default 'github' */
 	provider: VcsProvider;
 	remoteCandidates: string[];
 	syncHooks: boolean;

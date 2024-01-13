@@ -15,11 +15,13 @@ export type NodeVersionFormat =
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
 export interface PartialBunConfig {
+	/** @default 'workspace' */
 	dependencyVersionFormat?: NodeVersionFormat | null;
 	plugin?: string | null;
 	rootPackageOnly?: boolean | null;
 	/** @default true */
 	syncProjectWorkspaceDependencies?: boolean | null;
+	/** @envvar MOON_BUN_VERSION */
 	version?: string | null;
 }
 
@@ -43,11 +45,13 @@ export interface PartialDenoConfig {
 
 export interface PartialBunpmConfig {
 	plugin?: string | null;
+	/** @envvar MOON_BUN_VERSION */
 	version?: string | null;
 }
 
 export interface PartialNpmConfig {
 	plugin?: string | null;
+	/** @envvar MOON_NPM_VERSION */
 	version?: string | null;
 }
 
@@ -55,6 +59,7 @@ export type NodePackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
 
 export interface PartialPnpmConfig {
 	plugin?: string | null;
+	/** @envvar MOON_PNPM_VERSION */
 	version?: string | null;
 }
 
@@ -63,6 +68,7 @@ export type NodeVersionManager = 'nodenv' | 'nvm';
 export interface PartialYarnConfig {
 	plugin?: string | null;
 	plugins?: string[] | null;
+	/** @envvar MOON_YARN_VERSION */
 	version?: string | null;
 }
 
@@ -74,16 +80,20 @@ export interface PartialNodeConfig {
 	bun?: PartialBunpmConfig | null;
 	/** @default true */
 	dedupeOnLockfileChange?: boolean | null;
+	/** @default 'workspace' */
 	dependencyVersionFormat?: NodeVersionFormat | null;
 	inferTasksFromScripts?: boolean | null;
 	npm?: PartialNpmConfig | null;
+	/** @default 'npm' */
 	packageManager?: NodePackageManager | null;
 	plugin?: string | null;
 	pnpm?: PartialPnpmConfig | null;
 	rootPackageOnly?: boolean | null;
 	/** @default true */
 	syncProjectWorkspaceDependencies?: boolean | null;
+	/** @default 'nvm' */
 	syncVersionManagerConfig?: NodeVersionManager | null;
+	/** @envvar MOON_NODE_VERSION */
 	version?: string | null;
 	yarn?: PartialYarnConfig | null;
 }
@@ -95,6 +105,7 @@ export interface PartialRustConfig {
 	plugin?: string | null;
 	syncToolchainConfig?: boolean | null;
 	targets?: string[] | null;
+	/** @envvar MOON_RUST_VERSION */
 	version?: string | null;
 }
 
@@ -132,11 +143,13 @@ export interface PartialToolchainConfig {
 
 /** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
 export interface BunConfig {
+	/** @default 'workspace' */
 	dependencyVersionFormat: NodeVersionFormat;
 	plugin: string | null;
 	rootPackageOnly: boolean;
 	/** @default true */
 	syncProjectWorkspaceDependencies: boolean;
+	/** @envvar MOON_BUN_VERSION */
 	version: string | null;
 }
 
@@ -160,22 +173,26 @@ export interface DenoConfig {
 
 export interface BunpmConfig {
 	plugin: string | null;
+	/** @envvar MOON_BUN_VERSION */
 	version: string | null;
 }
 
 export interface NpmConfig {
 	plugin: string | null;
+	/** @envvar MOON_NPM_VERSION */
 	version: string | null;
 }
 
 export interface PnpmConfig {
 	plugin: string | null;
+	/** @envvar MOON_PNPM_VERSION */
 	version: string | null;
 }
 
 export interface YarnConfig {
 	plugin: string | null;
 	plugins: string[];
+	/** @envvar MOON_YARN_VERSION */
 	version: string | null;
 }
 
@@ -187,16 +204,20 @@ export interface NodeConfig {
 	bun: BunpmConfig | null;
 	/** @default true */
 	dedupeOnLockfileChange: boolean;
+	/** @default 'workspace' */
 	dependencyVersionFormat: NodeVersionFormat;
 	inferTasksFromScripts: boolean;
 	npm: NpmConfig;
+	/** @default 'npm' */
 	packageManager: NodePackageManager;
 	plugin: string | null;
 	pnpm: PnpmConfig | null;
 	rootPackageOnly: boolean;
 	/** @default true */
 	syncProjectWorkspaceDependencies: boolean;
+	/** @default 'nvm' */
 	syncVersionManagerConfig: NodeVersionManager | null;
+	/** @envvar MOON_NODE_VERSION */
 	version: string | null;
 	yarn: YarnConfig | null;
 }
@@ -208,6 +229,7 @@ export interface RustConfig {
 	plugin: string | null;
 	syncToolchainConfig: boolean;
 	targets: string[];
+	/** @envvar MOON_RUST_VERSION */
 	version: string | null;
 }
 

@@ -16,4 +16,4 @@ pub const CONFIG_PROJECT_FILENAME: &str = "moon.yml";
 
 pub const CONFIG_TEMPLATE_FILENAME: &str = "template.yml";
 
-pub const PROTO_CLI_VERSION: &str = "0.26.4";
+pub const PROTO_CLI_VERSION: &str = "0.28.0";

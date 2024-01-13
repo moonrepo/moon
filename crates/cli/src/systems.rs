@@ -88,6 +88,7 @@ pub async fn install_proto(workspace: ResourceRef<Workspace>) {
     // Set the version so that proto lookup paths take it into account
     env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
     env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
+    env::set_var("PROTO_VERSION_CHECK", "false");
 
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!

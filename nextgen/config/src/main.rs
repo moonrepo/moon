@@ -4,7 +4,7 @@ use moon_config::*;
 use schematic::schema::json_schema::JsonSchemaRenderer;
 use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use schematic::schema::SchemaGenerator;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -27,7 +27,7 @@ fn generate_project() {
         .generate(
             PathBuf::from("packages/types/src/project-config.ts"),
             TypeScriptRenderer::new(TypeScriptOptions {
-                exclude_references: HashSet::from_iter([
+                exclude_references: vec![
                     "PartialTaskArgs".into(),
                     "PartialTaskConfig".into(),
                     "PartialTaskDependency".into(),
@@ -44,14 +44,14 @@ fn generate_project() {
                     "TaskOptionsConfig".into(),
                     "TaskOutputStyle".into(),
                     "TaskType".into(),
-                ]),
+                ],
                 external_types: HashMap::from_iter([(
                     "./tasks-config".into(),
-                    HashSet::from_iter([
+                    vec![
                         "PlatformType".into(),
                         "PartialTaskConfig".into(),
                         "TaskConfig".into(),
-                    ]),
+                    ],
                 )]),
                 ..Default::default()
             }),

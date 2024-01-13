@@ -22,6 +22,10 @@
   - Will also use the global proto version if available when there's no internet connection, and the
     moon required proto version has not been installed.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.28 (from v0.26.4).
+
 ## 1.19.3
 
 This fixes a bad 1.19.2 release.

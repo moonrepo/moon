@@ -74,6 +74,7 @@
       ]
     },
     "language": {
+      "default": "unknown",
       "anyOf": [
         {
           "$ref": "#/definitions/LanguageType"
@@ -94,6 +95,7 @@
       ]
     },
     "platform": {
+      "default": "unknown",
       "anyOf": [
         {
           "$ref": "#/definitions/PlatformType"
@@ -153,6 +155,7 @@
       ]
     },
     "type": {
+      "default": "unknown",
       "anyOf": [
         {
           "$ref": "#/definitions/ProjectType"
@@ -225,6 +228,7 @@
           ]
         },
         "scope": {
+          "default": "production",
           "anyOf": [
             {
               "$ref": "#/definitions/DependencyScope"
@@ -235,6 +239,7 @@
           ]
         },
         "source": {
+          "default": "explicit",
           "anyOf": [
             {
               "$ref": "#/definitions/DependencySource"
@@ -742,6 +747,7 @@
           ]
         },
         "platform": {
+          "default": "unknown",
           "anyOf": [
             {
               "$ref": "#/definitions/PlatformType"
@@ -752,6 +758,7 @@
           ]
         },
         "type": {
+          "default": "test",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskType"
@@ -873,6 +880,7 @@
           ]
         },
         "mergeArgs": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -883,6 +891,7 @@
           ]
         },
         "mergeDeps": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -893,6 +902,7 @@
           ]
         },
         "mergeEnv": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -903,6 +913,7 @@
           ]
         },
         "mergeInputs": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -913,6 +924,7 @@
           ]
         },
         "mergeOutputs": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -923,6 +935,7 @@
           ]
         },
         "outputStyle": {
+          "default": "buffer",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"

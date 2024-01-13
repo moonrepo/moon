@@ -10,7 +10,9 @@ export type DependencySource = 'explicit' | 'implicit';
 
 export interface PartialDependencyConfig {
 	id?: string | null;
+	/** @default 'production' */
 	scope?: DependencyScope | null;
+	/** @default 'explicit' */
 	source?: DependencySource | null;
 	via?: string | null;
 }
@@ -88,20 +90,25 @@ export interface PartialProjectConfig {
 	env?: Record<string, string> | null;
 	fileGroups?: Record<string, string[]> | null;
 	id?: string | null;
+	/** @default 'unknown' */
 	language?: LanguageType | null;
 	owners?: PartialOwnersConfig | null;
+	/** @default 'unknown' */
 	platform?: PlatformType | null;
 	project?: PartialProjectMetadataConfig | null;
 	tags?: string[] | null;
 	tasks?: Record<string, PartialTaskConfig> | null;
 	toolchain?: PartialProjectToolchainConfig | null;
+	/** @default 'unknown' */
 	type?: ProjectType | null;
 	workspace?: PartialProjectWorkspaceConfig | null;
 }
 
 export interface DependencyConfig {
 	id: string;
+	/** @default 'production' */
 	scope: DependencyScope;
+	/** @default 'explicit' */
 	source: DependencySource;
 	via: string | null;
 }
@@ -165,13 +172,16 @@ export interface ProjectConfig {
 	env: Record<string, string>;
 	fileGroups: Record<string, string[]>;
 	id: string | null;
+	/** @default 'unknown' */
 	language: LanguageType;
 	owners: OwnersConfig;
+	/** @default 'unknown' */
 	platform: PlatformType | null;
 	project: ProjectMetadataConfig | null;
 	tags: string[];
 	tasks: Record<string, TaskConfig>;
 	toolchain: ProjectToolchainConfig;
+	/** @default 'unknown' */
 	type: ProjectType;
 	workspace: ProjectWorkspaceConfig;
 }

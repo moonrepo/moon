@@ -187,6 +187,7 @@
           ]
         },
         "orderBy": {
+          "default": "file-source",
           "anyOf": [
             {
               "$ref": "#/definitions/CodeownersOrderBy"
@@ -350,6 +351,7 @@
           ]
         },
         "optimization": {
+          "default": "accuracy",
           "anyOf": [
             {
               "$ref": "#/definitions/HasherOptimization"
@@ -360,6 +362,7 @@
           ]
         },
         "walkStrategy": {
+          "default": "vcs",
           "anyOf": [
             {
               "$ref": "#/definitions/HasherWalkStrategy"
@@ -487,6 +490,7 @@
           ]
         },
         "manager": {
+          "default": "git",
           "anyOf": [
             {
               "$ref": "#/definitions/VcsManager"
@@ -497,6 +501,7 @@
           ]
         },
         "provider": {
+          "default": "github",
           "anyOf": [
             {
               "$ref": "#/definitions/VcsProvider"

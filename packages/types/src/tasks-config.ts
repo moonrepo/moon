@@ -26,13 +26,23 @@ export interface PartialTaskOptionsConfig {
 	cache?: boolean | null;
 	envFile?: TaskOptionEnvFile | null;
 	interactive?: boolean | null;
+	/** @default 'append' */
 	mergeArgs?: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeDeps?: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeEnv?: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeInputs?: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeOutputs?: TaskMergeStrategy | null;
+	/**
+	 * @default 'buffer'
+	 * @envvar MOON_OUTPUT_STYLE
+	 */
 	outputStyle?: TaskOutputStyle | null;
 	persistent?: boolean | null;
+	/** @envvar MOON_RETRY_COUNT */
 	retryCount?: number | null;
 	runDepsInParallel?: boolean | null;
 	runFromWorkspaceRoot?: boolean | null;
@@ -54,7 +64,9 @@ export interface PartialTaskConfig {
 	local?: boolean | null;
 	options?: PartialTaskOptionsConfig | null;
 	outputs?: string[] | null;
+	/** @default 'unknown' */
 	platform?: PlatformType | null;
+	/** @default 'test' */
 	type?: TaskType | null;
 }
 
@@ -86,13 +98,23 @@ export interface TaskOptionsConfig {
 	cache: boolean | null;
 	envFile: TaskOptionEnvFile | null;
 	interactive: boolean | null;
+	/** @default 'append' */
 	mergeArgs: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeDeps: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeEnv: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeInputs: TaskMergeStrategy | null;
+	/** @default 'append' */
 	mergeOutputs: TaskMergeStrategy | null;
+	/**
+	 * @default 'buffer'
+	 * @envvar MOON_OUTPUT_STYLE
+	 */
 	outputStyle: TaskOutputStyle | null;
 	persistent: boolean | null;
+	/** @envvar MOON_RETRY_COUNT */
 	retryCount: number | null;
 	runDepsInParallel: boolean | null;
 	runFromWorkspaceRoot: boolean | null;
@@ -110,7 +132,9 @@ export interface TaskConfig {
 	local: boolean | null;
 	options: TaskOptionsConfig;
 	outputs: string[] | null;
+	/** @default 'unknown' */
 	platform: PlatformType;
+	/** @default 'test' */
 	type: TaskType | null;
 }
 

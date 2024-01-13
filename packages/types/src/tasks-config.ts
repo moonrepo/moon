@@ -66,6 +66,7 @@ export interface PartialInheritedTasksConfig {
 	fileGroups?: Record<string, string[]> | null;
 	implicitDeps?: PartialTaskDependency[] | null;
 	implicitInputs?: string[] | null;
+	taskOptions?: PartialTaskOptionsConfig | null;
 	tasks?: Record<string, PartialTaskConfig> | null;
 }
 
@@ -121,5 +122,6 @@ export interface InheritedTasksConfig {
 	fileGroups: Record<string, string[]>;
 	implicitDeps: TaskDependency[];
 	implicitInputs: string[];
+	taskOptions: TaskOptionsConfig | null;
 	tasks: Record<string, TaskConfig>;
 }

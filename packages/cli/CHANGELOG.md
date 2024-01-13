@@ -14,6 +14,9 @@
 
 #### 🚀 Updates
 
+- Added a `taskOptions` setting to `.moon` task configs, allowing default task options to be
+  defined.
+  - These options will be merged and inherited as part of the configuration chain.
 - Updated proto installation to trigger for all applicable commands, not just `moon run`,
   `moon check`, and `moon ci`.
   - Will also use the global proto version if available when there's no internet connection, and the

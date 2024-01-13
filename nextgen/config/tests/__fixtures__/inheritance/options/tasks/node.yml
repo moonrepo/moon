@@ -1,0 +1,3 @@
+taskOptions:
+  mergeArgs: append
+  shell: true

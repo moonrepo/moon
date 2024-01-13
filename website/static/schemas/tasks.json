@@ -70,6 +70,16 @@
         }
       ]
     },
+    "taskOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialTaskOptionsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tasks": {
       "anyOf": [
         {

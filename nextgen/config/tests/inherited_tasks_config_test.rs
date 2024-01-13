@@ -4,7 +4,8 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
-    ProjectType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskOptionsConfig,
+    ProjectType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy,
+    TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -894,6 +895,52 @@ mod task_manager {
                 config.config.tasks,
                 BTreeMap::from_iter([("command".into(), task)]),
             );
+        }
+    }
+
+    mod task_options {
+        use super::*;
+
+        #[test]
+        fn uses_defaults() {
+            let sandbox = create_sandbox("inheritance/options");
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Rust,
+                    &LanguageType::Rust,
+                    &ProjectType::Application,
+                    &[],
+                )
+                .unwrap();
+
+            let options = config.config.task_options.unwrap();
+
+            assert_eq!(options.cache, None);
+            assert_eq!(options.shell, None);
+            assert_eq!(options.merge_args, Some(TaskMergeStrategy::Replace));
+        }
+
+        #[test]
+        fn merges_all_options() {
+            let sandbox = create_sandbox("inheritance/options");
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::JavaScript,
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
+
+            let options = config.config.task_options.unwrap();
+
+            assert_eq!(options.cache, Some(false));
+            assert_eq!(options.shell, Some(true));
+            assert_eq!(options.merge_args, Some(TaskMergeStrategy::Prepend));
         }
     }
 }

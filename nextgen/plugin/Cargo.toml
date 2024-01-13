@@ -9,5 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 dashmap = "5.5.3"
+extism = { workspace = true }
 miette = { workspace = true }
+proto_core = { workspace = true }
 warpgate = { workspace = true }

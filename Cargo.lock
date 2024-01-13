@@ -3366,6 +3366,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_extension_plugin"
+version = "0.1.0"
+dependencies = [
+ "moon_plugin",
+]
+
+[[package]]
 name = "moon_file_group"
 version = "0.1.0"
 dependencies = [
@@ -3597,7 +3604,9 @@ name = "moon_plugin"
 version = "0.1.0"
 dependencies = [
  "dashmap",
+ "extism",
  "miette",
+ "proto_core",
  "warpgate",
 ]
 

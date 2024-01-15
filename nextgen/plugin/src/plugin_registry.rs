@@ -6,6 +6,11 @@ use dashmap::{
 use std::{future::Future, path::Path, sync::Arc};
 use warpgate::{Id, PluginLoader, PluginLocator};
 
+// cwd
+// moon root
+// moon paths
+// proto paths
+
 pub struct PluginRegistry<T: Plugin> {
     loader: PluginLoader,
     plugins: Arc<DashMap<Id, T>>,

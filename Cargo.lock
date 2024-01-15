@@ -3190,6 +3190,7 @@ dependencies = [
  "moon_notifier",
  "moon_platform",
  "moon_platform_detector",
+ "moon_plugin",
  "moon_project",
  "moon_project_graph",
  "moon_query",
@@ -3549,6 +3550,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "extism-pdk",
+ "moon_pdk_api",
  "serde",
 ]
 

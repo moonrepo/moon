@@ -34,6 +34,7 @@ moon_node_platform = { path = "../node/platform" }
 moon_node_tool = { path = "../node/tool" }
 moon_platform = { path = "../core/platform" }
 moon_platform_detector = { path = "../../nextgen/platform-detector" }
+moon_plugin = { path = "../../nextgen/plugin" }
 moon_project = { path = "../../nextgen/project" }
 moon_project_graph = { path = "../../nextgen/project-graph" }
 moon_query = { path = "../../nextgen/query" }

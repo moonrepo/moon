@@ -8,6 +8,7 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
+moon_pdk_api = { version = "0.0.1", path = "../pdk-api" }
 anyhow = "1.0.79"
 extism-pdk = { workspace = true }
 serde = { workspace = true }

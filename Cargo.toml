@@ -63,7 +63,7 @@ starbase = "0.2.15"
 starbase_archive = { version = "0.2.5", default-features = false, features = [
 	"tar-gz",
 ] }
-starbase_events = { version = "0.2.2" }
+starbase_events = "0.2.2"
 starbase_sandbox = "0.1.13"
 starbase_styles = { version = "0.1.18", features = ["relative-path"] }
 starbase_utils = { version = "0.3.11", default-features = false, features = [

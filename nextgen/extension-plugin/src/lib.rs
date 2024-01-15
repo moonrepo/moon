@@ -4,5 +4,5 @@ pub struct ExtensionPlugin {
     pub id: Id,
     pub type_of: PluginType,
 
-    plugin: PluginContainer<'static>,
+    plugin: PluginContainer,
 }

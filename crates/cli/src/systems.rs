@@ -137,7 +137,7 @@ pub async fn install_proto(workspace: ResourceRef<Workspace>) {
 
     debug!("Unpacking archive and installing proto");
 
-    unpack_release(result, &install_dir, &workspace.proto_env.tools_dir)?;
+    unpack_release(result, &install_dir, &workspace.proto_env.temp_dir)?;
 
     debug!("Successfully installed proto!");
 }

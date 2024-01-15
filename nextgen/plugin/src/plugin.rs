@@ -1,5 +1,6 @@
 use extism::{Manifest as PluginManifest, Wasm};
 use proto_core::ProtoEnvironment;
+use std::time::Duration;
 
 pub enum PluginType {
     Extension,

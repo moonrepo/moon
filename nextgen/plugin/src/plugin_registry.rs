@@ -1,16 +1,17 @@
+use crate::plugin::Plugin;
 use dashmap::{
     iter::{Iter, IterMut},
     DashMap,
 };
 use std::{future::Future, path::Path, sync::Arc};
-use warpgate::{Id, PluginLoader};
+use warpgate::{Id, PluginLoader, PluginLocator};
 
-pub struct PluginRegistry<T> {
+pub struct PluginRegistry<T: Plugin> {
     loader: PluginLoader,
     plugins: Arc<DashMap<Id, T>>,
 }
 
-impl<T> PluginRegistry<T> {
+impl<T: Plugin> PluginRegistry<T> {
     pub fn new(plugins_dir: &Path, temp_dir: &Path) -> Self {
         Self {
             loader: PluginLoader::new(plugins_dir, temp_dir),
@@ -86,6 +87,23 @@ impl<T> PluginRegistry<T> {
 
     pub fn iter_mut(&self) -> IterMut<'_, Id, T> {
         self.plugins.iter_mut()
+    }
+
+    pub async fn load<I: AsRef<Id>, L: AsRef<PluginLocator>>(
+        &self,
+        id: I,
+        locator: L,
+    ) -> miette::Result<()> {
+        let id = id.as_ref();
+
+        // TODO error if it already exists
+
+        self.register(
+            id.to_owned(),
+            T::new(id.to_owned(), self.loader.load_plugin(id, locator).await?)?,
+        );
+
+        Ok(())
     }
 
     pub fn register(&self, id: Id, plugin: T) {

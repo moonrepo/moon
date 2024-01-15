@@ -8,4 +8,6 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
+moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
+miette = { workspace = true }

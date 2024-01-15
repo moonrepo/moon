@@ -33,7 +33,11 @@ pub async fn create_components(states: StatesMut, resources: ResourcesMut) {
     let plugins_dir = moon_dir.join("plugins");
     let temp_dir = moon_dir.join("temp");
 
-    resources.set(ExtensionRegistry::new(&plugins_dir, &temp_dir));
+    resources.set(ExtensionRegistry::new(
+        &plugins_dir.join("extensions"),
+        &temp_dir,
+    ));
+
     states.set(MoonDir(moon_dir));
 }
 
@@ -43,6 +47,7 @@ pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
 
     states.set(WorkingDir(workspace.working_dir.clone()));
     states.set(WorkspaceRoot(workspace.root.clone()));
+
     resources.set(workspace);
 }
 

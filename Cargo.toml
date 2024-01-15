@@ -90,3 +90,4 @@ tracing = "0.1.40"
 url = "2.5.0"
 uuid = { version = "1.7.0", features = ["v4"] }
 warpgate = "0.10.3"
+warpgate_api = "0.2.0"

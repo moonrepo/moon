@@ -3373,6 +3373,8 @@ dependencies = [
 name = "moon_extension_plugin"
 version = "0.1.0"
 dependencies = [
+ "miette",
+ "moon_pdk_api",
  "moon_plugin",
 ]
 
@@ -3548,6 +3550,14 @@ dependencies = [
  "anyhow",
  "extism-pdk",
  "serde",
+]
+
+[[package]]
+name = "moon_pdk_api"
+version = "0.0.1"
+dependencies = [
+ "serde",
+ "warpgate_api 0.2.0",
 ]
 
 [[package]]
@@ -4721,7 +4731,7 @@ dependencies = [
  "system_env",
  "thiserror",
  "version_spec",
- "warpgate_api",
+ "warpgate_api 0.3.1",
 ]
 
 [[package]]
@@ -6442,7 +6452,16 @@ dependencies = [
  "system_env",
  "thiserror",
  "tracing",
- "warpgate_api",
+ "warpgate_api 0.3.1",
+]
+
+[[package]]
+name = "warpgate_api"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d20a7b09712daf3301122452839647781d6b33e1090aa68cde27f0e70fa33398"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

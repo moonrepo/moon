@@ -1,7 +1,10 @@
 use crate::app::{App as CLI, Commands};
 use moon_api::Launchpad;
-use moon_common::path::exe_name;
-use moon_common::{color, consts::PROTO_CLI_VERSION, is_test_env, is_unformatted_stdout};
+use moon_app_components::{ExtensionRegistry, MoonDir, WorkingDir, WorkspaceRoot};
+use moon_common::{
+    color, consts::PROTO_CLI_VERSION, get_moon_dir, is_test_env, is_unformatted_stdout,
+    path::exe_name,
+};
 use moon_terminal::{get_checkpoint_prefix, print_checkpoint, Checkpoint};
 use moon_workspace::Workspace;
 use proto_core::{is_offline, ProtoError};
@@ -25,8 +28,22 @@ pub fn requires_toolchain(cli: &CLI) -> bool {
 }
 
 #[system]
-pub async fn load_workspace(resources: ResourcesMut) {
-    resources.set(moon::load_workspace().await?);
+pub async fn create_components(states: StatesMut, resources: ResourcesMut) {
+    let moon_dir = get_moon_dir();
+    let plugins_dir = moon_dir.join("plugins");
+    let temp_dir = moon_dir.join("temp");
+
+    resources.set(ExtensionRegistry::new(&plugins_dir, &temp_dir));
+    states.set(MoonDir(moon_dir));
+}
+
+#[system]
+pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
+    let workspace = moon::load_workspace().await?;
+
+    states.set(WorkingDir(workspace.working_dir.clone()));
+    states.set(WorkspaceRoot(workspace.root.clone()));
+    resources.set(workspace);
 }
 
 #[system]

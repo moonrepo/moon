@@ -20,6 +20,7 @@ moon_action_graph = { path = "../../nextgen/action-graph" }
 moon_action_pipeline = { path = "../core/action-pipeline" }
 moon_actions = { path = "../core/actions" }
 moon_api = { path = "../../nextgen/api" }
+moon_app_components = { path = "../../nextgen/app-components" }
 moon_bun_lang = { path = "../bun/lang" }
 # moon_bun_platform = { path = "../bun/platform" }
 moon_bun_tool = { path = "../bun/tool" }

@@ -3046,6 +3046,8 @@ name = "moon_app_components"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_extension_plugin",
+ "moon_plugin",
  "proto_core",
  "semver",
  "starbase",
@@ -3174,6 +3176,7 @@ dependencies = [
  "moon_action_pipeline",
  "moon_actions",
  "moon_api",
+ "moon_app_components",
  "moon_bun_lang",
  "moon_bun_tool",
  "moon_cache",
@@ -3258,6 +3261,7 @@ dependencies = [
 name = "moon_common"
 version = "0.1.0"
 dependencies = [
+ "dirs 5.0.1",
  "miette",
  "once_cell",
  "regex",

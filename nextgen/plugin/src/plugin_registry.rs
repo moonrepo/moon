@@ -2,17 +2,28 @@ use dashmap::{
     iter::{Iter, IterMut},
     DashMap,
 };
-use std::{future::Future, sync::Arc};
-use warpgate::Id;
+use std::{future::Future, path::Path, sync::Arc};
+use warpgate::{Id, PluginLoader};
 
-#[derive(Default)]
 pub struct PluginRegistry<T> {
+    loader: PluginLoader,
     plugins: Arc<DashMap<Id, T>>,
 }
 
 impl<T> PluginRegistry<T> {
+    pub fn new(plugins_dir: &Path, temp_dir: &Path) -> Self {
+        Self {
+            loader: PluginLoader::new(plugins_dir, temp_dir),
+            plugins: Arc::new(DashMap::new()),
+        }
+    }
+
     pub fn get_cache(&self) -> Arc<DashMap<Id, T>> {
         Arc::clone(&self.plugins)
+    }
+
+    pub fn get_loader(&mut self) -> &mut PluginLoader {
+        &mut self.loader
     }
 
     pub fn has_plugin(&self, id: &Id) -> bool {

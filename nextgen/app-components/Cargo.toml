@@ -6,6 +6,8 @@ publish = false
 
 [dependencies]
 moon_config = { version = "0.1.0", path = "../config" }
+moon_extension_plugin = { version = "0.1.0", path = "../extension-plugin" }
+moon_plugin = { version = "0.1.0", path = "../plugin" }
 proto_core = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }

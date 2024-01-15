@@ -1,8 +1,10 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_extension_plugin::ExtensionPlugin;
+use moon_plugin::PluginRegistry;
 use proto_core::ProtoConfig;
 use semver::Version;
 use starbase::Resource;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Resource)]
 pub struct AppInfo {
@@ -19,6 +21,15 @@ pub struct AppInfo {
 
     /// Current versio of moon.
     pub version: Version,
+}
+
+#[derive(Resource)]
+pub struct ExtensionRegistry(pub PluginRegistry<ExtensionPlugin>);
+
+impl ExtensionRegistry {
+    pub fn new(plugins_dir: &Path, temp_dir: &Path) -> Self {
+        Self(PluginRegistry::new(plugins_dir, temp_dir))
+    }
 }
 
 #[derive(Debug, Resource)]

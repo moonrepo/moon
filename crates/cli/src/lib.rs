@@ -3,7 +3,6 @@ pub mod commands;
 pub mod enums;
 mod helpers;
 pub mod queries;
-mod resources;
 mod systems;
 
 use crate::app::{

@@ -1,16 +1,17 @@
 use crate::app::{App as CLI, Commands};
 use moon_api::Launchpad;
-use moon_app_components::{ExtensionRegistry, MoonDir, WorkingDir, WorkspaceRoot};
+use moon_app_components::{ExtensionRegistry, MoonEnv, ProtoEnv, WorkingDir, WorkspaceRoot};
 use moon_common::{
-    color, consts::PROTO_CLI_VERSION, get_moon_dir, is_test_env, is_unformatted_stdout,
-    path::exe_name,
+    color, consts::PROTO_CLI_VERSION, is_test_env, is_unformatted_stdout, path::exe_name,
 };
+use moon_env::MoonEnvironment;
 use moon_terminal::{get_checkpoint_prefix, print_checkpoint, Checkpoint};
 use moon_workspace::Workspace;
-use proto_core::{is_offline, ProtoError};
+use proto_core::{is_offline, ProtoEnvironment, ProtoError};
 use proto_installer::{determine_triple, download_release, unpack_release};
 use starbase::system;
 use std::env;
+use std::sync::Arc;
 use tracing::debug;
 
 pub fn requires_workspace(cli: &CLI) -> bool {
@@ -29,16 +30,16 @@ pub fn requires_toolchain(cli: &CLI) -> bool {
 
 #[system]
 pub async fn create_components(states: StatesMut, resources: ResourcesMut) {
-    let moon_dir = get_moon_dir();
-    let plugins_dir = moon_dir.join("plugins");
-    let temp_dir = moon_dir.join("temp");
+    let moon_env = Arc::new(MoonEnvironment::new());
+    let proto_env = Arc::new(ProtoEnvironment::new()?);
 
     resources.set(ExtensionRegistry::new(
-        &plugins_dir.join("extensions"),
-        &temp_dir,
+        Arc::clone(&moon_env),
+        Arc::clone(&proto_env),
     ));
 
-    states.set(MoonDir(moon_dir));
+    states.set(MoonEnv(moon_env));
+    states.set(ProtoEnv(proto_env));
 }
 
 #[system]

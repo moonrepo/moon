@@ -28,6 +28,7 @@ moon_cache = { path = "../../nextgen/cache" }
 moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }
+moon_env = { path = "../../nextgen/env" }
 moon_lang = { path = "../core/lang" }
 moon_node_lang = { path = "../node/lang" }
 moon_node_platform = { path = "../node/platform" }

@@ -3046,6 +3046,7 @@ name = "moon_app_components"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_env",
  "moon_extension_plugin",
  "moon_plugin",
  "proto_core",
@@ -3183,6 +3184,7 @@ dependencies = [
  "moon_codegen",
  "moon_common",
  "moon_config",
+ "moon_env",
  "moon_lang",
  "moon_node_lang",
  "moon_node_platform",
@@ -3262,7 +3264,6 @@ dependencies = [
 name = "moon_common"
 version = "0.1.0"
 dependencies = [
- "dirs 5.0.1",
  "miette",
  "once_cell",
  "regex",
@@ -3368,6 +3369,15 @@ dependencies = [
  "moon_workspace",
  "serde",
  "tokio",
+]
+
+[[package]]
+name = "moon_env"
+version = "0.1.0"
+dependencies = [
+ "dirs 5.0.1",
+ "moon_common",
+ "tracing",
 ]
 
 [[package]]
@@ -3622,6 +3632,7 @@ dependencies = [
  "dashmap",
  "extism",
  "miette",
+ "moon_env",
  "proto_core",
  "warpgate",
 ]

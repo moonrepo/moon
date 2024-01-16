@@ -1,27 +1,59 @@
-use crate::plugin::Plugin;
+use crate::plugin::*;
 use dashmap::{
     iter::{Iter, IterMut},
     DashMap,
 };
-use std::{future::Future, path::Path, sync::Arc};
-use warpgate::{Id, PluginLoader, PluginLocator};
+use extism::{Manifest as PluginManifest, Wasm};
+use moon_env::MoonEnvironment;
+use proto_core::{host_funcs::*, ProtoEnvironment};
+use std::{future::Future, path::PathBuf, sync::Arc};
+use warpgate::{Id, PluginContainer, PluginLoader, PluginLocator};
 
-// cwd
-// moon root
-// moon paths
-// proto paths
+pub struct PluginContext {}
 
 pub struct PluginRegistry<T: Plugin> {
     loader: PluginLoader,
+    moon_env: Arc<MoonEnvironment>,
     plugins: Arc<DashMap<Id, T>>,
+    proto_env: Arc<ProtoEnvironment>,
 }
 
 impl<T: Plugin> PluginRegistry<T> {
-    pub fn new(plugins_dir: &Path, temp_dir: &Path) -> Self {
+    pub fn new(
+        type_of: PluginType,
+        moon_env: Arc<MoonEnvironment>,
+        proto_env: Arc<ProtoEnvironment>,
+    ) -> Self {
         Self {
-            loader: PluginLoader::new(plugins_dir, temp_dir),
+            loader: PluginLoader::new(
+                &moon_env.plugins_dir.join(type_of.get_dir_name()),
+                &moon_env.temp_dir,
+            ),
             plugins: Arc::new(DashMap::new()),
+            moon_env,
+            proto_env,
         }
+    }
+
+    pub fn create_manifest(&self, wasm_file: PathBuf) -> PluginManifest {
+        let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
+
+        // Allow all hosts because we don't know what endpoints plugins
+        // will communicate with. Far too many to account for.
+        manifest = manifest.with_allowed_host("*");
+
+        // Inherit moon and proto virtual paths.
+        let mut virtual_paths = self.proto_env.get_virtual_paths();
+        virtual_paths.extend(self.moon_env.get_virtual_paths());
+
+        manifest = manifest.with_allowed_paths(virtual_paths.into_iter());
+
+        // Disable timeouts as some functions, like dependency installs,
+        // may take multiple minutes to complete. We also can't account
+        // for network connectivity.
+        manifest.timeout_ms = None;
+
+        manifest
     }
 
     pub fn get_cache(&self) -> Arc<DashMap<Id, T>> {
@@ -30,10 +62,6 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn get_loader(&mut self) -> &mut PluginLoader {
         &mut self.loader
-    }
-
-    pub fn has_plugin(&self, id: &Id) -> bool {
-        self.plugins.contains_key(id)
     }
 
     pub async fn access<F, Fut, R>(&self, id: &Id, op: F) -> miette::Result<R>
@@ -101,12 +129,17 @@ impl<T: Plugin> PluginRegistry<T> {
     ) -> miette::Result<()> {
         let id = id.as_ref();
 
-        // TODO error if it already exists
+        let functions = create_host_functions(HostData {
+            id: id.to_owned(),
+            proto: Arc::clone(&self.proto_env),
+        });
 
-        self.register(
-            id.to_owned(),
-            T::new(id.to_owned(), self.loader.load_plugin(id, locator).await?)?,
-        );
+        // TODO error if it already exists
+        let manifest = self.create_manifest(self.loader.load_plugin(id, locator).await?);
+
+        let container = PluginContainer::new(id.to_owned(), manifest, functions)?;
+
+        self.register(id.to_owned(), T::new(id.to_owned(), container)?);
 
         Ok(())
     }

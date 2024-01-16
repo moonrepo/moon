@@ -1,0 +1,13 @@
+[package]
+name = "moon_env"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "The moon workspace environment."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+moon_common = { path = "../common" }
+dirs = { workspace = true }
+tracing = { workspace = true }

@@ -1,17 +1,5 @@
-use crate::consts::CONFIG_DIRNAME;
 use std::env;
 use std::path::PathBuf;
-
-#[inline]
-pub fn get_moon_dir() -> PathBuf {
-    if let Ok(root) = env::var("MOON_HOME") {
-        return root.into();
-    }
-
-    dirs::home_dir()
-        .expect("Invalid home directory.")
-        .join(CONFIG_DIRNAME)
-}
 
 #[inline]
 pub fn is_ci() -> bool {

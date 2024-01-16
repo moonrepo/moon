@@ -8,6 +8,7 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
+moon_env = { version = "0.1.0", path = "../env" }
 dashmap = "5.5.3"
 extism = { workspace = true }
 miette = { workspace = true }

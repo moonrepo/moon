@@ -1,6 +1,5 @@
 use moon_pdk_api::extension::*;
-use moon_plugin::{create_plugin_manifest, Id, Plugin, PluginContainer, PluginType};
-use std::collections::BTreeMap;
+use moon_plugin::{Id, Plugin, PluginContainer, PluginType};
 use std::path::PathBuf;
 
 pub struct ExtensionPlugin {
@@ -26,13 +25,10 @@ impl ExtensionPlugin {
 }
 
 impl Plugin for ExtensionPlugin {
-    fn new(id: Id, wasm_file: PathBuf) -> miette::Result<Self> {
+    fn new(id: Id, plugin: PluginContainer) -> miette::Result<Self> {
         Ok(Self {
             type_of: PluginType::Extension,
-            plugin: PluginContainer::new_without_functions(
-                id.clone(),
-                create_plugin_manifest(wasm_file, BTreeMap::new()),
-            )?,
+            plugin,
             id,
         })
     }

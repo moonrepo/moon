@@ -25,12 +25,12 @@ impl ExtensionPlugin {
 }
 
 impl Plugin for ExtensionPlugin {
-    fn new(id: Id, plugin: PluginContainer) -> miette::Result<Self> {
-        Ok(Self {
+    fn new(id: Id, plugin: PluginContainer) -> Self {
+        Self {
             type_of: PluginType::Extension,
             plugin,
             id,
-        })
+        }
     }
 
     fn get_type(&self) -> PluginType {

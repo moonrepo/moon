@@ -122,24 +122,41 @@ impl<T: Plugin> PluginRegistry<T> {
         self.plugins.iter_mut()
     }
 
-    pub async fn load<I: AsRef<Id>, L: AsRef<PluginLocator>>(
+    pub async fn load<I, L>(&self, id: I, locator: L) -> miette::Result<()>
+    where
+        I: AsRef<Id>,
+        L: AsRef<PluginLocator>,
+    {
+        self.load_with_config(id, locator, |_| Ok(())).await
+    }
+
+    pub async fn load_with_config<I, L, F>(
         &self,
         id: I,
         locator: L,
-    ) -> miette::Result<()> {
+        mut op: F,
+    ) -> miette::Result<()>
+    where
+        I: AsRef<Id>,
+        L: AsRef<PluginLocator>,
+        F: FnMut(&mut PluginManifest) -> miette::Result<()>,
+    {
         let id = id.as_ref();
+
+        // TODO error if it already exists
 
         let functions = create_host_functions(HostData {
             id: id.to_owned(),
             proto: Arc::clone(&self.proto_env),
         });
 
-        // TODO error if it already exists
-        let manifest = self.create_manifest(self.loader.load_plugin(id, locator).await?);
+        let mut manifest = self.create_manifest(self.loader.load_plugin(id, locator).await?);
+
+        op(&mut manifest)?;
 
         let container = PluginContainer::new(id.to_owned(), manifest, functions)?;
 
-        self.register(id.to_owned(), T::new(id.to_owned(), container)?);
+        self.register(id.to_owned(), T::new(id.to_owned(), container));
 
         Ok(())
     }

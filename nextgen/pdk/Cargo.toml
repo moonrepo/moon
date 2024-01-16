@@ -11,4 +11,5 @@ repository = "https://github.com/moonrepo/moon"
 moon_pdk_api = { version = "0.0.1", path = "../pdk-api" }
 anyhow = "1.0.79"
 extism-pdk = { workspace = true }
+proto_pdk = { workspace = true }
 serde = { workspace = true }

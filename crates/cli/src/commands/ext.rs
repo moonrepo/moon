@@ -1,6 +1,8 @@
 use clap::Args;
+use miette::miette;
 use moon_app_components::ExtensionRegistry;
-use moon_plugin::Id;
+use moon_common::color;
+use moon_plugin::{serialize_config, Id};
 use moon_workspace::Workspace;
 use starbase::system;
 
@@ -21,12 +23,25 @@ pub async fn ext(
     extensions: ResourceRef<ExtensionRegistry>,
 ) {
     let Some(config) = workspace.config.extensions.get(&args.id) else {
-        panic!(); // TODO
+        return Err(miette!(
+            code = "plugin::missing_extension",
+            "The extension {} does not exist. Configure an {} entry in {} and try again.",
+            color::id(&args.id),
+            color::property("extensions"),
+            color::file(".moon/workspace.yml"),
+        ));
     };
 
-    // Load the plugin
+    // Load and configure the plugin
     extensions
-        .load(&args.id, config.plugin.as_ref().unwrap())
+        .load_with_config(&args.id, config.plugin.as_ref().unwrap(), move |manifest| {
+            manifest.config.insert(
+                "moon_extension_config".to_owned(),
+                serialize_config(&config.config)?,
+            );
+
+            Ok(())
+        })
         .await?;
 
     // Execute the plugin

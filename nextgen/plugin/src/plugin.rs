@@ -15,10 +15,7 @@ impl PluginType {
     }
 }
 
-pub trait Plugin
-where
-    Self: Sized,
-{
-    fn new(id: Id, plugin: PluginContainer) -> miette::Result<Self>;
+pub trait Plugin {
+    fn new(id: Id, plugin: PluginContainer) -> Self;
     fn get_type(&self) -> PluginType;
 }

@@ -3561,6 +3561,7 @@ dependencies = [
  "anyhow",
  "extism-pdk",
  "moon_pdk_api",
+ "proto_pdk",
  "serde",
 ]
 
@@ -3629,11 +3630,13 @@ dependencies = [
 name = "moon_plugin"
 version = "0.1.0"
 dependencies = [
+ "convert_case",
  "dashmap",
  "extism",
  "miette",
  "moon_env",
  "proto_core",
+ "serde_json",
  "warpgate",
 ]
 
@@ -3647,7 +3650,7 @@ dependencies = [
  "moon_common",
  "once_cell",
  "rustc-hash",
- "system_env 0.2.0",
+ "system_env",
  "thiserror",
  "tokio",
  "tracing",
@@ -4096,7 +4099,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
- "system_env 0.2.0",
+ "system_env",
  "tokio",
  "tracing",
 ]
@@ -4709,7 +4712,7 @@ dependencies = [
  "starbase_events",
  "starbase_styles",
  "starbase_utils",
- "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "system_env",
  "thiserror",
  "tracing",
  "url",
@@ -4733,6 +4736,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "proto_pdk"
+version = "0.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caf90105b373875a194fda4b02e1a6f7be3d043976f27d6e85704070ed1cd7ca"
+dependencies = [
+ "extism-pdk",
+ "proto_pdk_api",
+ "serde",
+ "warpgate_pdk",
+]
+
+[[package]]
 name = "proto_pdk_api"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4741,7 +4756,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "system_env",
  "thiserror",
  "version_spec",
  "warpgate_api",
@@ -5727,16 +5742,6 @@ dependencies = [
 [[package]]
 name = "system_env"
 version = "0.2.0"
-dependencies = [
- "serde",
- "serde_json",
- "shell-words",
- "thiserror",
-]
-
-[[package]]
-name = "system_env"
-version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8dbaf08f70781cb6543bb0cce3d6b63a50cce05f4b071db833d78426f072ef7b"
 dependencies = [
@@ -6472,7 +6477,7 @@ dependencies = [
  "starbase_archive",
  "starbase_styles",
  "starbase_utils",
- "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "system_env",
  "thiserror",
  "tracing",
  "warpgate_api",
@@ -6488,7 +6493,18 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "system_env",
+]
+
+[[package]]
+name = "warpgate_pdk"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e54d60b8fe7d4d20f74cea816ee5d761c3bedd796bc00a87c19828b85802b5e"
+dependencies = [
+ "extism-pdk",
+ "serde",
+ "warpgate_api",
 ]
 
 [[package]]

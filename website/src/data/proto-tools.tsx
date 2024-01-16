@@ -115,7 +115,7 @@ export const BUILT_IN_TOOLS: Record<string, ProtoTool> = {
 		bins: ['python', 'pip'],
 		description: 'Python is a high-level, general-purpose programming language.',
 		detectionSources: [{ file: '.python-version', url: 'https://github.com/pyenv/pyenv' }],
-		globalsDirs: ['~/.local/bin'],
+		globalsDirs: ['~/.proto/tools/python/x.x.x/install/bin'],
 		homepageUrl: 'https://www.python.org/',
 		name: 'Python (experimental)',
 		pluginType: 'wasm',

@@ -3559,7 +3559,7 @@ name = "moon_pdk_api"
 version = "0.0.1"
 dependencies = [
  "serde",
- "warpgate_api 0.2.0",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -3636,7 +3636,7 @@ dependencies = [
  "moon_common",
  "once_cell",
  "rustc-hash",
- "system_env",
+ "system_env 0.2.0",
  "thiserror",
  "tokio",
  "tracing",
@@ -4085,7 +4085,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
- "system_env",
+ "system_env 0.2.0",
  "tokio",
  "tracing",
 ]
@@ -4698,7 +4698,7 @@ dependencies = [
  "starbase_events",
  "starbase_styles",
  "starbase_utils",
- "system_env",
+ "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
  "tracing",
  "url",
@@ -4730,10 +4730,10 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "system_env",
+ "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
  "version_spec",
- "warpgate_api 0.3.1",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -5716,6 +5716,16 @@ dependencies = [
 [[package]]
 name = "system_env"
 version = "0.2.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "shell-words",
+ "thiserror",
+]
+
+[[package]]
+name = "system_env"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8dbaf08f70781cb6543bb0cce3d6b63a50cce05f4b071db833d78426f072ef7b"
 dependencies = [
@@ -6451,19 +6461,10 @@ dependencies = [
  "starbase_archive",
  "starbase_styles",
  "starbase_utils",
- "system_env",
+ "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
  "tracing",
- "warpgate_api 0.3.1",
-]
-
-[[package]]
-name = "warpgate_api"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d20a7b09712daf3301122452839647781d6b33e1090aa68cde27f0e70fa33398"
-dependencies = [
- "serde",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -6476,7 +6477,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "system_env",
+ "system_env 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

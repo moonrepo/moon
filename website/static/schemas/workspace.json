@@ -55,6 +55,22 @@
         }
       ]
     },
+    "extensions": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PartialExtensionConfig"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "generator": {
       "anyOf": [
         {
@@ -280,6 +296,46 @@
           "anyOf": [
             {
               "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialExtensionConfig": {
+      "title": "PartialExtensionConfig",
+      "type": "object",
+      "properties": {
+        "config": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "boolean",
+                  "object",
+                  "array",
+                  "number",
+                  "string",
+                  "integer"
+                ]
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
             },
             {
               "type": "null"

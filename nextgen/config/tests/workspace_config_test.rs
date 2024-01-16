@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config::{FilePath, VcsProvider, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{ExtensionConfig, FilePath, VcsProvider, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use utils::*;
@@ -574,6 +574,111 @@ vcs:
             test_load_config(FILENAME, "versionConstraint: '@1.0.0'", |path| {
                 WorkspaceConfig::load_from(path)
             });
+        }
+    }
+
+    mod extensions {
+        use super::*;
+        use proto_core::{Id, PluginLocator};
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid plugin identifier bad.id, must be a valid kebab-case string"
+        )]
+        fn errors_invalid_id() {
+            test_load_config(
+                FILENAME,
+                r"
+extensions:
+    bad.id: 'source:https://domain.com'
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "extensions.id.plugin: Missing plugin scope or location.")]
+        fn errors_invalid_locator() {
+            test_load_config(
+                FILENAME,
+                r"
+extensions:
+    id:
+        plugin: 'missing-scope'
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "extensions.id.plugin: this setting is required")]
+        fn errors_missing_locator() {
+            test_load_config(
+                FILENAME,
+                r"
+extensions:
+    id:
+        foo: 'bar'
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        fn can_set_with_object() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+extensions:
+    test-id:
+        plugin: 'source:https://domain.com'
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.extensions,
+                FxHashMap::from_iter([(
+                    Id::raw("test-id"),
+                    ExtensionConfig {
+                        config: FxHashMap::default(),
+                        plugin: Some(PluginLocator::SourceUrl {
+                            url: "https://domain.com".into()
+                        }),
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn can_set_additional_object_config() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+extensions:
+    test-id:
+        plugin: 'source:https://domain.com'
+        fooBar: 'abc'
+        bar-baz: true
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.extensions,
+                FxHashMap::from_iter([(
+                    Id::raw("test-id"),
+                    ExtensionConfig {
+                        config: FxHashMap::from_iter([
+                            ("fooBar".into(), serde_json::Value::String("abc".into())),
+                            ("bar-baz".into(), serde_json::Value::Bool(true)),
+                        ]),
+                        plugin: Some(PluginLocator::SourceUrl {
+                            url: "https://domain.com".into()
+                        }),
+                    }
+                )])
+            );
         }
     }
 }

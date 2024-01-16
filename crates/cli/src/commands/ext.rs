@@ -1,7 +1,7 @@
 use clap::Args;
 use moon_app_components::ExtensionRegistry;
 use moon_plugin::Id;
-use proto_core::PluginLocator;
+use moon_workspace::Workspace;
 use starbase::system;
 
 #[derive(Args, Clone, Debug)]
@@ -15,15 +15,18 @@ pub struct ExtArgs {
 }
 
 #[system]
-pub async fn ext(args: ArgsRef<ExtArgs>, extensions: ResourceRef<ExtensionRegistry>) {
+pub async fn ext(
+    args: ArgsRef<ExtArgs>,
+    workspace: ResourceRef<Workspace>,
+    extensions: ResourceRef<ExtensionRegistry>,
+) {
+    let Some(config) = workspace.config.extensions.get(&args.id) else {
+        panic!(); // TODO
+    };
+
     // Load the plugin
     extensions
-        .load(
-            &args.id,
-            PluginLocator::SourceUrl {
-                url: "https".into(),
-            },
-        )
+        .load(&args.id, config.plugin.as_ref().unwrap())
         .await?;
 
     // Execute the plugin

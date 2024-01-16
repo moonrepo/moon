@@ -73,7 +73,7 @@ starbase_utils = { version = "0.3.11", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
-system_env = "0.2.0"
+system_env = { version = "0.2.0", path = "../proto/crates/system-env" }
 tera = { version = "1.19.1", features = ["preserve_order"] }
 thiserror = "1.0.56"
 tokio = { version = "1.35.1", default-features = false, features = [
@@ -90,4 +90,4 @@ tracing = "0.1.40"
 url = "2.5.0"
 uuid = { version = "1.7.0", features = ["v4"] }
 warpgate = "0.10.3"
-warpgate_api = "0.2.0"
+warpgate_api = "0.3.1"

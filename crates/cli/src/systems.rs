@@ -45,7 +45,7 @@ pub async fn create_components(states: StatesMut, resources: ResourcesMut) {
 #[system]
 pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
     let proto_env = Arc::clone(states.get::<ProtoEnv>());
-    let workspace = moon::load_workspace(proto_env).await?;
+    let workspace = moon::load_workspace_from(proto_env).await?;
 
     states.set(WorkspaceRoot(workspace.root.clone()));
 

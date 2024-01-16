@@ -175,22 +175,12 @@ impl Workspace {
             "Creating workspace",
         );
 
-<<<<<<< HEAD
-        // Load proto tools from workspace root only
-        let mut proto_env = ProtoEnvironment::new()?;
-        proto_env.cwd = root_dir.clone();
-        let proto_config = proto_env
-            .load_config_manager()?
-            .get_local_config(working_dir)?;
-
-=======
->>>>>>> 45d0cd565 (Split from workspace.)
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let proto_config = proto_env
             .as_ref()
             .load_config_manager()?
-            .get_local_config()?;
+            .get_local_config(working_dir)?;
         let toolchain_config = load_toolchain_config(&root_dir, proto_config)?;
         let tasks_config = load_tasks_config(&root_dir)?;
 

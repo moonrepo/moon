@@ -3,7 +3,7 @@ name = "moon_env"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "The moon workspace environment."
+description = "The moon store and workspace environment."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 

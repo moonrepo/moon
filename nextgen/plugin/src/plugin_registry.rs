@@ -5,7 +5,7 @@ use dashmap::{
 };
 use extism::{Manifest as PluginManifest, Wasm};
 use moon_env::MoonEnvironment;
-use proto_core::{host_funcs::*, ProtoEnvironment};
+use proto_core::{host_funcs::*, inject_default_manifest_config, ProtoEnvironment};
 use std::{future::Future, path::PathBuf, sync::Arc};
 use warpgate::{Id, PluginContainer, PluginLoader, PluginLocator};
 
@@ -35,7 +35,7 @@ impl<T: Plugin> PluginRegistry<T> {
         }
     }
 
-    pub fn create_manifest(&self, wasm_file: PathBuf) -> PluginManifest {
+    pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
         let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
 
         // Allow all hosts because we don't know what endpoints plugins
@@ -53,7 +53,10 @@ impl<T: Plugin> PluginRegistry<T> {
         // for network connectivity.
         manifest.timeout_ms = None;
 
-        manifest
+        // Inherit default configs, like host environment and ID.
+        inject_default_manifest_config(id, &self.moon_env.home, &mut manifest)?;
+
+        Ok(manifest)
     }
 
     pub fn get_cache(&self) -> Arc<DashMap<Id, T>> {
@@ -150,7 +153,7 @@ impl<T: Plugin> PluginRegistry<T> {
             proto: Arc::clone(&self.proto_env),
         });
 
-        let mut manifest = self.create_manifest(self.loader.load_plugin(id, locator).await?);
+        let mut manifest = self.create_manifest(id, self.loader.load_plugin(id, locator).await?)?;
 
         op(&mut manifest)?;
 

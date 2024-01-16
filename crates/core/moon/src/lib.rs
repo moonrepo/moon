@@ -35,28 +35,9 @@ pub fn set_telemetry(state: bool) {
     TELEMETRY_READY.store(true, Ordering::Release);
 }
 
-/// Loads the workspace from the current working directory.
-pub async fn load_workspace(proto_env: Arc<ProtoEnvironment>) -> miette::Result<Workspace> {
-    let mut workspace = load_workspace_from(proto_env).await?;
-
-    if !is_test_env() {
-        if workspace.vcs.is_enabled() {
-            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
-                env::set_var("MOONBASE_REPO_SLUG", slug);
-            }
-        }
-
-        if is_ci() {
-            workspace.signin_to_moonbase().await?;
-        }
-    }
-
-    Ok(workspace)
-}
-
-/// Loads the workspace from a provided directory.
+/// Loads the workspace from the current environment.
 pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Result<Workspace> {
-    let workspace = match Workspace::load_from(&proto_env.cwd, &proto_env) {
+    let mut workspace = match Workspace::load_from(&proto_env.cwd, &proto_env) {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
             workspace
@@ -124,6 +105,18 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
         PlatformType::System,
         Box::new(SystemPlatform::new(&workspace.root, Arc::clone(&proto_env))),
     );
+
+    if !is_test_env() {
+        if workspace.vcs.is_enabled() {
+            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
+                env::set_var("MOONBASE_REPO_SLUG", slug);
+            }
+        }
+
+        if is_ci() {
+            workspace.signin_to_moonbase().await?;
+        }
+    }
 
     Ok(workspace)
 }

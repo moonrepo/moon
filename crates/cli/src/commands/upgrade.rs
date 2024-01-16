@@ -3,6 +3,7 @@ use bytes::Buf;
 use itertools::Itertools;
 use miette::{miette, IntoDiagnostic};
 use moon_api::Launchpad;
+use moon_app_components::MoonEnv;
 use moon_common::consts::BIN_NAME;
 use starbase::system;
 use starbase_utils::{dirs, fs};
@@ -23,13 +24,12 @@ pub fn is_musl() -> bool {
 }
 
 #[system]
-pub async fn upgrade() {
+pub async fn upgrade(moon_env: StateRef<MoonEnv>) {
     if proto_core::is_offline() {
         return Err(miette!("Upgrading moon requires an internet connection!"));
     }
 
-    let local_version = env!("CARGO_PKG_VERSION");
-    let remote_version = match Launchpad::check_version_without_cache(local_version).await {
+    let remote_version = match Launchpad::check_version_without_cache(moon_env).await {
         Ok(Some(result)) if result.update_available => result.remote_version,
         Ok(_) => {
             println!("You're already on the latest version of moon!");
@@ -78,7 +78,7 @@ pub async fn upgrade() {
     let done = create_progress_bar(format!("Upgrading moon to version {remote_version}..."));
 
     // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(local_version).join(BIN_NAME);
+    let versioned_bin_path = bin_dir.join(&moon_env.version).join(BIN_NAME);
 
     fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
     fs::rename(&current_bin_path, versioned_bin_path)?;

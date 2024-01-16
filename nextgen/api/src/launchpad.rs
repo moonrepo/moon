@@ -2,6 +2,7 @@ use miette::IntoDiagnostic;
 use moon_cache::{cache_item, CacheEngine};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::is_test_env;
+use moon_env::MoonEnvironment;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
@@ -62,7 +63,7 @@ pub struct Launchpad;
 impl Launchpad {
     pub async fn check_version(
         cache_engine: &CacheEngine,
-        current_version: &str,
+        moon_env: &MoonEnvironment,
         bypass_cache: bool,
     ) -> miette::Result<Option<VersionCheck>> {
         let mut state = cache_engine.cache_state::<CurrentVersionState>("moonVersion.json")?;
@@ -73,7 +74,7 @@ impl Launchpad {
             }
         }
 
-        if let Some(result) = Self::check_version_without_cache(current_version).await? {
+        if let Some(result) = Self::check_version_without_cache(moon_env).await? {
             state.data.last_check = Some(SystemTime::now());
             state.data.local_version = Some(result.local_version.clone());
             state.data.remote_version = Some(result.remote_version.clone());
@@ -86,17 +87,20 @@ impl Launchpad {
     }
 
     pub async fn check_version_without_cache(
-        current_version: &str,
+        moon_env: &MoonEnvironment,
     ) -> miette::Result<Option<VersionCheck>> {
         if is_test_env() || proto_core::is_offline() {
             return Ok(None);
         }
 
-        debug!(current_version, "Checking for a new version of moon");
+        debug!(
+            current_version = &moon_env.version,
+            "Checking for a new version of moon"
+        );
 
         let mut client = reqwest::Client::new()
             .get(CURRENT_VERSION_URL)
-            .header("X-Moon-Version", current_version)
+            .header("X-Moon-Version", &moon_env.version)
             .header("X-Moon-CI", ci_env::is_ci().to_string())
             .header(
                 "X-Moon-CI-Provider",
@@ -106,9 +110,11 @@ impl Launchpad {
             .header(
                 "X-Moon-CD-Provider",
                 format!("{:?}", cd_env::detect_provider()),
+            )
+            .header(
+                "X-Moon-UID",
+                load_or_create_anonymous_uid(&moon_env.id_file)?,
             );
-        // TODO
-        // .header("X-Moon-UID", load_or_create_anonymous_uid()?);
 
         if let Some(moon_dir) = fs::find_upwards(
             CONFIG_DIRNAME,
@@ -129,7 +135,7 @@ impl Launchpad {
         };
 
         let data: CurrentVersion = json::from_str(&text).into_diagnostic()?;
-        let local_version = Version::parse(current_version).into_diagnostic()?;
+        let local_version = Version::parse(&moon_env.version).into_diagnostic()?;
         let remote_version = Version::parse(&data.current_version).into_diagnostic()?;
         let update_available = remote_version > local_version;
 

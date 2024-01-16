@@ -26,7 +26,7 @@ impl<T: Plugin> PluginRegistry<T> {
     ) -> Self {
         Self {
             loader: PluginLoader::new(
-                &moon_env.plugins_dir.join(type_of.get_dir_name()),
+                moon_env.plugins_dir.join(type_of.get_dir_name()),
                 &moon_env.temp_dir,
             ),
             plugins: Arc::new(DashMap::new()),

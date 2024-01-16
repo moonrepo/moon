@@ -2888,6 +2888,7 @@ dependencies = [
  "moon_system_platform",
  "moon_utils",
  "moon_workspace",
+ "proto_core",
  "rustc-hash",
  "starbase_events",
  "tokio",
@@ -3009,6 +3010,7 @@ dependencies = [
  "miette",
  "moon_cache",
  "moon_common",
+ "moon_env",
  "moon_time",
  "proto_core",
  "reqwest",
@@ -3376,6 +3378,7 @@ name = "moon_env"
 version = "0.1.0"
 dependencies = [
  "dirs 5.0.1",
+ "miette",
  "moon_common",
  "tracing",
 ]

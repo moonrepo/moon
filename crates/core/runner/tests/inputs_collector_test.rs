@@ -1,4 +1,4 @@
-use moon::{generate_project_graph, load_workspace_from};
+use moon::{generate_project_graph, load_workspace_from_sandbox};
 use moon_config::{GlobPath, HasherWalkStrategy, PartialHasherConfig, WorkspaceConfig};
 use moon_runner::inputs_collector::collect_and_hash_inputs;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
@@ -44,7 +44,7 @@ async fn filters_using_input_globs() {
     let sandbox = cases_sandbox();
     sandbox.enable_git();
 
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
 
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
@@ -110,7 +110,7 @@ async fn filters_using_input_globs_in_glob_mode() {
     let sandbox = cases_sandbox();
     sandbox.enable_git();
 
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
 
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
@@ -180,7 +180,7 @@ async fn filters_using_input_files() {
     let sandbox = cases_sandbox();
     sandbox.enable_git();
 
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
 
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
@@ -245,7 +245,7 @@ async fn filters_using_input_files_in_glob_mode() {
     let sandbox = cases_sandbox();
     sandbox.enable_git();
 
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
 
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
@@ -327,7 +327,7 @@ async fn ignores_from_hasher_patterns() {
 
     sandbox.enable_git();
 
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
 
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);

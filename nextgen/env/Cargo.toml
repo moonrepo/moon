@@ -10,4 +10,5 @@ repository = "https://github.com/moonrepo/moon"
 [dependencies]
 moon_common = { path = "../common" }
 dirs = { workspace = true }
+miette = { workspace = true }
 tracing = { workspace = true }

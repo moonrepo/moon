@@ -1,3 +1,4 @@
+use miette::miette;
 use moon_common::consts::CONFIG_DIRNAME;
 use std::collections::BTreeMap;
 use std::env;
@@ -12,11 +13,24 @@ pub struct MoonEnvironment {
     pub temp_dir: PathBuf,
     pub home: PathBuf, // ~
     pub root: PathBuf, // ~/.moon
+    pub version: String,
 }
 
 impl MoonEnvironment {
-    pub fn new() -> Self {
-        let home = dirs::home_dir().expect("Unable to determine home directory!");
+    pub fn new() -> miette::Result<Self> {
+        let home = dirs::home_dir().ok_or_else(|| {
+            miette!(
+                code = "env::missing_home",
+                "Unable to determine your home directory."
+            )
+        })?;
+
+        let cwd = env::current_dir().map_err(|_| {
+            miette!(
+                code = "env::missing_cwd",
+                "Unable to determine your current working directory."
+            )
+        })?;
 
         let root = if let Ok(root) = env::var("MOON_HOME") {
             root.into()
@@ -24,23 +38,25 @@ impl MoonEnvironment {
             home.join(CONFIG_DIRNAME)
         };
 
-        debug!(store = ?root, "Creating moon environment");
+        debug!(store = ?root, "Creating moon environment, detecting store");
 
-        MoonEnvironment {
-            cwd: env::current_dir().expect("Unable to determine current working directory!"),
+        Ok(MoonEnvironment {
+            cwd,
             id_file: root.join("id"),
             plugins_dir: root.join("plugins"),
             temp_dir: root.join("temp"),
             home,
             root,
-        }
+            version: env::var("MOON_VERSION").unwrap_or_default(),
+        })
     }
 
     pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
         BTreeMap::from_iter([
-            (self.cwd.clone(), "/workspace".into()),
+            (self.cwd.clone(), "/cwd".into()),
             (self.root.clone(), "/moon".into()),
             (self.home.clone(), "/userhome".into()),
+            // TODO workspace root?
         ])
     }
 }

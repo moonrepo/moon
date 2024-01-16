@@ -11,7 +11,4 @@ pub struct MoonEnv(pub Arc<MoonEnvironment>);
 pub struct ProtoEnv(pub Arc<ProtoEnvironment>);
 
 #[derive(Debug, State)]
-pub struct WorkingDir(pub PathBuf);
-
-#[derive(Debug, State)]
 pub struct WorkspaceRoot(pub PathBuf);

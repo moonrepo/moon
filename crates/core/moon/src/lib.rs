@@ -10,7 +10,8 @@ use moon_project_graph::{
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
-use moon_workspace::{Workspace, WorkspaceError};
+use moon_workspace::Workspace;
+use proto_core::ProtoEnvironment;
 use starbase_events::{Emitter, EventState};
 use std::env;
 use std::path::Path;
@@ -35,9 +36,8 @@ pub fn set_telemetry(state: bool) {
 }
 
 /// Loads the workspace from the current working directory.
-pub async fn load_workspace() -> miette::Result<Workspace> {
-    let current_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
-    let mut workspace = load_workspace_from(&current_dir).await?;
+pub async fn load_workspace(proto_env: Arc<ProtoEnvironment>) -> miette::Result<Workspace> {
+    let mut workspace = load_workspace_from(proto_env).await?;
 
     if !is_test_env() {
         if workspace.vcs.is_enabled() {
@@ -55,8 +55,8 @@ pub async fn load_workspace() -> miette::Result<Workspace> {
 }
 
 /// Loads the workspace from a provided directory.
-pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
-    let workspace = match Workspace::load_from(path) {
+pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Result<Workspace> {
+    let workspace = match Workspace::load_from(&proto_env.cwd, &proto_env) {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
             workspace
@@ -79,7 +79,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 bun_config,
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
-                Arc::clone(&workspace.proto_env),
+                Arc::clone(&proto_env),
             )),
         );
     }
@@ -91,7 +91,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 deno_config,
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
-                Arc::clone(&workspace.proto_env),
+                Arc::clone(&proto_env),
             )),
         );
     }
@@ -103,7 +103,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
                 node_config,
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
-                Arc::clone(&workspace.proto_env),
+                Arc::clone(&proto_env),
             )),
         );
     }
@@ -114,7 +114,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
             Box::new(RustPlatform::new(
                 rust_config,
                 &workspace.root,
-                Arc::clone(&workspace.proto_env),
+                Arc::clone(&proto_env),
             )),
         );
     }
@@ -122,13 +122,14 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
     // Should be last since it's the most common
     registry.register(
         PlatformType::System,
-        Box::new(SystemPlatform::new(
-            &workspace.root,
-            Arc::clone(&workspace.proto_env),
-        )),
+        Box::new(SystemPlatform::new(&workspace.root, Arc::clone(&proto_env))),
     );
 
     Ok(workspace)
+}
+
+pub async fn load_workspace_from_sandbox(sandbox: &Path) -> miette::Result<Workspace> {
+    load_workspace_from(Arc::new(ProtoEnvironment::new_testing(sandbox))).await
 }
 
 pub async fn load_toolchain() -> miette::Result<()> {

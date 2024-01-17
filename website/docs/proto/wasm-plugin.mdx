@@ -92,12 +92,16 @@ provide a mechanism known as host functions, which are functions that are implem
 
 - [`exec_command`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.exec_command.html) - Execute a
   system command on the host machine, with a provided list of arguments or environment variables.
+- [`from_virtual_path`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.real_path.html) - Converts
+  a virtual path into a real path.
 - [`get_env_var`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_env.html) - Get an
   environment variable value from the host environment.
 - [`host_log`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_log.html) - Log a message to
   the host's stderr. This acts like tracing logs, and is not a general purpose stdout logger.
 - [`set_env_var`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_env.html) - Set an
   environment variable to the host environment.
+- [`to_virtual_path`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.virtual_path.html) - Converts
+  a real path into a virtual path.
 
 To use host functions, you'll need to make them available by registering them at the top of your
 Rust file (only add the functions you want to use).
@@ -106,9 +110,11 @@ Rust file (only add the functions you want to use).
 #[host_fn]
 extern "ExtismHost" {
     fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
-    fn get_env_var(key: &str) -> String;
+    fn from_virtual_path(path: String) -> String;
+    fn get_env_var(key: String) -> String;
     fn host_log(input: Json<HostLogInput>);
-    fn set_env_var(key: &str, value: &str);
+    fn set_env_var(key: String, value: String);
+    fn to_virtual_path(path: String) -> String;
 }
 ```
 
@@ -117,6 +123,9 @@ extern "ExtismHost" {
 ```rust
 // Set a value
 host_env!("ENV_VAR", "value");
+
+// Append to path
+host_env!("PATH", "/userhome/some/virtual/path");
 
 // Get a value (returns an `Option`)
 let value = host_env!("ENV_VAR");
@@ -136,8 +145,7 @@ exec_command!(inherit, "npm", ["install"]);
 exec_command!(ExecCommandInput {
     command: "npm".into(),
     args: vec!["install".into()],
-    env_vars: HashMap::new(),
-    stream: false,
+    ..ExecCommandInput::default()
 });
 ```
 

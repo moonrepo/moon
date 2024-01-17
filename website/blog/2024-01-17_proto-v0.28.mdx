@@ -1,0 +1,33 @@
+---
+slug: proto-v0.28
+title: proto v0.28 - Upgraded WASM runtime
+authors: [milesj]
+tags: [proto, wasm, runtime, extism]
+# image: ./img/proto/v0.26.png
+---
+
+This is a small release that primarily upgrades our WASM runtime.
+
+<!--truncate-->
+
+## Upgraded WASM runtime
+
+proto utilizes [Extism](https://extism.org/) for our WASM plugin architecture, which internally uses
+[wasmtime](https://wasmtime.dev/) as our execution runtime. Up until this point, we've been using a
+beta release of Extism, v0.5, which has worked quite nicely. We've also been working closely with
+the Extism team to report bugs, provide feedback, and help improve the project. Once such feature
+was the massive performance gains in [proto v0.24](./proto-v0.24).
+
+Thanks to all the hard work from the Extism team over the past year, an official v1.0 was released.
+Because this was a major release, it did include breaking changes around the WASM runtime, and as
+such, proto WASM plugins before v0.28 are _no longer compatible_, and will need to be recompiled
+with the latest PDKs. Our proto TOML plugins are not affected.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.28.0) for a full list
+of changes.
+
+- Will now display an upgrade message when the current proto version is out of date.
+- Improved error messages to include plugin specific information.
+- Updated our "last used at" logic to avoid race conditions with the tool manifest.

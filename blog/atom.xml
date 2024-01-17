@@ -2,11 +2,45 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-01-12T00:00:00.000Z</updated>
+    <updated>2024-01-17T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.28 - Upgraded WASM runtime]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.28</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.28"/>
+        <updated>2024-01-17T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This is a small release that primarily upgrades our WASM runtime.]]></summary>
+        <content type="html"><![CDATA[<p>This is a small release that primarily upgrades our WASM runtime.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="upgraded-wasm-runtime">Upgraded WASM runtime<a href="https://moonrepo.dev/blog/proto-v0.28#upgraded-wasm-runtime" class="hash-link" aria-label="Direct link to Upgraded WASM runtime" title="Direct link to Upgraded WASM runtime">​</a></h2>
+<p>proto utilizes <a href="https://extism.org/" target="_blank" rel="noopener noreferrer">Extism</a> for our WASM plugin architecture, which internally uses
+<a href="https://wasmtime.dev/" target="_blank" rel="noopener noreferrer">wasmtime</a> as our execution runtime. Up until this point, we've been using a
+beta release of Extism, v0.5, which has worked quite nicely. We've also been working closely with
+the Extism team to report bugs, provide feedback, and help improve the project. Once such feature
+was the massive performance gains in <a href="https://moonrepo.dev/blog/proto-v0.24">proto v0.24</a>.</p>
+<p>Thanks to all the hard work from the Extism team over the past year, an official v1.0 was released.
+Because this was a major release, it did include breaking changes around the WASM runtime, and as
+such, proto WASM plugins before v0.28 are <em>no longer compatible</em>, and will need to be recompiled
+with the latest PDKs. Our proto TOML plugins are not affected.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.28#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.28.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Will now display an upgrade message when the current proto version is out of date.</li>
+<li>Improved error messages to include plugin specific information.</li>
+<li>Updated our "last used at" logic to avoid race conditions with the tool manifest.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="proto" term="proto"/>
+        <category label="wasm" term="wasm"/>
+        <category label="runtime" term="runtime"/>
+        <category label="extism" term="extism"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[What's in store for 2024]]></title>
         <id>https://moonrepo.dev/blog/2024-roadmap</id>
@@ -1430,50 +1464,5 @@ project.</li>
         <category label="tasks" term="tasks"/>
         <category label="proto" term="proto"/>
         <category label="wasm" term="wasm"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.16 - Add, remove, and purge plugins]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.16</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.16"/>
-        <updated>2023-09-04T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This release adds functionality for managing plugins and purging the proto store.]]></summary>
-        <content type="html"><![CDATA[<p>This release adds functionality for managing plugins and purging the proto store.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="add-and-remove-plugins">Add and remove plugins<a href="https://moonrepo.dev/blog/proto-v0.16#add-and-remove-plugins" class="hash-link" aria-label="Direct link to Add and remove plugins" title="Direct link to Add and remove plugins">​</a></h2>
-<p>Now that proto has fully embraced a plugin based architecture, we thought it'd be nice to support
-the management of these plugins through the CLI. This release adds two new commands:
-<a href="https://moonrepo.dev/docs/proto/commands/tool/add"><code>proto add-plugin</code></a> and
-<a href="https://moonrepo.dev/docs/proto/commands/tool/remove"><code>proto remove-plugin</code></a>.</p>
-<p>Adding a plugin requires a unique ID and what we call a locator, which is a string that dictates
-where to locate and download the plugin from. Here's an example for Node.js, but this isn't
-necessary as it's built-in:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto add-plugin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> source:https://github.com/moonrepo/node-plugin/releases/latest/download/node_plugin.wasm</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Additionally, removing a plugin is even easier.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto remove-plugin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="purge-tools-and-plugins">Purge tools and plugins<a href="https://moonrepo.dev/blog/proto-v0.16#purge-tools-and-plugins" class="hash-link" aria-label="Direct link to Purge tools and plugins" title="Direct link to Purge tools and plugins">​</a></h2>
-<p>proto has supported cleaning for quite some time through the
-<a href="https://moonrepo.dev/docs/proto/commands/clean"><code>proto clean</code></a> command (and the
-<a href="https://moonrepo.dev/docs/proto/config#user-configuration"><code>auto-clean</code> setting</a>), which would automatically delete
-installed tool versions and temporary files that are older then a specific timeframe. This helps to
-free up disk space for unused or rarely used tools.</p>
-<p>In this release, we're expanding the <code>clean</code> command's functionality with a concept known as
-purging, which will "delete entirely". The first being the new <code>--purge</code> option, which will delete a
-tool, its manifest, <em>all</em> installed versions, and the entire <code>~/.proto/tools/&lt;id&gt;</code> directory.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Delete all traces of Node.js</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto clean </span><span class="token parameter variable" style="color:#fef9c3">--purge</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Additionaly, a new <code>--purge-plugins</code> option can be used to delete all downloaded plugins (the
-<code>~/.proto/plugins</code> directory). Useful for house keeping or if you want to start fresh.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto clean --purge-plugins</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.16#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.16.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added folder locking during tool installation to avoid colliding processes.</li>
-<li>Renamed <code>PROTO_ROOT</code> to <code>PROTO_HOME</code>, but we'll support <code>PROTO_ROOT</code> for the time being.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="plugin" term="plugin"/>
     </entry>
 </feed>

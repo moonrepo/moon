@@ -339,11 +339,6 @@ impl<'a> Runner<'a> {
             self.project.source.to_string(),
         );
         env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.to_string());
-        // TODO
-        // env_vars.insert(
-        //     "MOON_TOOLCHAIN_DIR".to_owned(),
-        //     path::to_string(&self.workspace.proto_env.root)?,
-        // );
         env_vars.insert(
             "MOON_WORKSPACE_ROOT".to_owned(),
             path::to_string(&self.workspace.root)?,

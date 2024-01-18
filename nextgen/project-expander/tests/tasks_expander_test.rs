@@ -809,113 +809,114 @@ mod tasks_expander {
                     ]
                 );
             }
-        }
 
-        #[test]
-        fn skip_missing_self_targets() {
-            let sandbox = create_empty_sandbox();
-            let project = create_project_with_tasks(sandbox.path(), "project");
-            let query = QueryContainer::new(sandbox.path());
+            #[test]
+            fn skip_missing_self_targets() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
-            let mut task = create_task();
+                let mut task = create_task();
 
-            task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::None,
-                env: FxHashMap::from_iter([]),
-                target: Target::parse("do-not-exist").unwrap(),
-                optional: Some(true),
-            });
-
-            let context =
-                create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
-            TasksExpander::new(&context).expand_deps(&mut task).unwrap();
-
-            assert_eq!(task.deps, vec![]);
-        }
-
-        #[test]
-        fn resolve_self_targets_when_optional() {
-            let sandbox = create_empty_sandbox();
-            let project = create_project_with_tasks(sandbox.path(), "project");
-            let query = QueryContainer::new(sandbox.path());
-
-            let mut task = create_task();
-            task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::None,
-                env: FxHashMap::from_iter([]),
-                target: Target::parse("build").unwrap(),
-                optional: Some(true),
-            });
-
-            let context =
-                create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
-            TasksExpander::new(&context).expand_deps(&mut task).unwrap();
-
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig {
+                task.deps.push(TaskDependencyConfig {
                     args: TaskArgs::None,
                     env: FxHashMap::from_iter([]),
-                    target: Target::parse("project:build").unwrap(),
+                    target: Target::parse("do-not-exist").unwrap(),
                     optional: Some(true),
-                },]
-            );
-        }
+                });
 
-        #[test]
-        fn error_on_missing_self_targets() {
-            let sandbox = create_empty_sandbox();
-            let project = create_project_with_tasks(sandbox.path(), "project");
-            let query = QueryContainer::new(sandbox.path());
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
 
-            let mut task = create_task();
-            task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::None,
-                env: FxHashMap::from_iter([]),
-                target: Target::parse("do-not-exist").unwrap(),
-                optional: Some(false),
-            });
+                assert_eq!(task.deps, vec![]);
+            }
 
-            let context = create_context_with_query(&project, sandbox.path(), |i| query.none(i));
-            let error = TasksExpander::new(&context)
-                .expand_deps(&mut task)
-                .unwrap_err();
+            #[test]
+            fn resolve_self_targets_when_optional() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
-            assert_eq!(
+                let mut task = create_task();
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::None,
+                    env: FxHashMap::from_iter([]),
+                    target: Target::parse("build").unwrap(),
+                    optional: Some(true),
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::None,
+                        env: FxHashMap::from_iter([]),
+                        target: Target::parse("project:build").unwrap(),
+                        optional: Some(true),
+                    },]
+                );
+            }
+
+            #[test]
+            fn error_on_missing_self_targets() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::None,
+                    env: FxHashMap::from_iter([]),
+                    target: Target::parse("do-not-exist").unwrap(),
+                    optional: Some(false),
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                let error = TasksExpander::new(&context)
+                    .expand_deps(&mut task)
+                    .unwrap_err();
+
+                assert_eq!(
                 error.to_string(),
                 "Invalid dependency project:do-not-exist for project:task, target does not exist."
             );
-        }
+            }
 
-        #[test]
-        fn error_on_missing_deps_target() {
-            let sandbox = create_empty_sandbox();
-            let mut project = create_project_with_tasks(sandbox.path(), "project");
-            let query = QueryContainer::new(sandbox.path());
+            #[test]
+            fn error_on_missing_deps_target() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
-            // The valid list comes from `query` but we need a
-            // non-empty set for the expansion to work.
-            project
-                .dependencies
-                .push(DependencyConfig::new("foo".into()));
+                // The valid list comes from `query` but we need a
+                // non-empty set for the expansion to work.
+                project
+                    .dependencies
+                    .push(DependencyConfig::new("foo".into()));
 
-            let mut task = create_task();
-            task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::None,
-                env: FxHashMap::from_iter([]),
-                target: Target::parse("^:do-not-exist").unwrap(),
-                optional: Some(false),
-            });
+                let mut task = create_task();
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::None,
+                    env: FxHashMap::from_iter([]),
+                    target: Target::parse("^:do-not-exist").unwrap(),
+                    optional: Some(false),
+                });
 
-            let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
-            let error = TasksExpander::new(&context)
-                .expand_deps(&mut task)
-                .unwrap_err();
+                let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
+                let error = TasksExpander::new(&context)
+                    .expand_deps(&mut task)
+                    .unwrap_err();
 
-            assert_eq!(
-                error.to_string(),
-                "Invalid dependency foo:do-not-exist for project:task, target does not exist."
-            );
+                assert_eq!(
+                    error.to_string(),
+                    "Invalid dependency foo:do-not-exist for project:task, target does not exist."
+                );
+            }
         }
     }
 

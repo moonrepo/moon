@@ -809,6 +809,53 @@ mod tasks_expander {
                     ]
                 );
             }
+
+            #[test]
+            fn skip_missing_targets() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("a b c".into()),
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("do-not-exist").unwrap(),
+                    optional: Some(true),
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(task.deps, vec![]);
+            }
+        }
+
+        #[test]
+        fn not_skip_missing_targets() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let query = QueryContainer::new(sandbox.path());
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::String("".into()),
+                env: FxHashMap::from_iter([]),
+                target: Target::parse("do-not-exist").unwrap(),
+                optional: Some(false),
+            });
+
+            let context = create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+            let error = TasksExpander::new(&context)
+                .expand_deps(&mut task)
+                .unwrap_err();
+
+            assert_eq!(
+                error.to_string(),
+                "Invalid dependency project:do-not-exist for project:task, target does not exist."
+            );
         }
     }
 

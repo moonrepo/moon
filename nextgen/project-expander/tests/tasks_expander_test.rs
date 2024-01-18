@@ -811,7 +811,7 @@ mod tasks_expander {
             }
 
             #[test]
-            fn skip_missing_targets() {
+            fn skip_missing_self_targets() {
                 let sandbox = create_empty_sandbox();
                 let project = create_project_with_tasks(sandbox.path(), "project");
                 let query = QueryContainer::new(sandbox.path());
@@ -834,7 +834,7 @@ mod tasks_expander {
         }
 
         #[test]
-        fn not_skip_missing_targets() {
+        fn not_skip_missing_self_targets() {
             let sandbox = create_empty_sandbox();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let query = QueryContainer::new(sandbox.path());
@@ -855,6 +855,37 @@ mod tasks_expander {
             assert_eq!(
                 error.to_string(),
                 "Invalid dependency project:do-not-exist for project:task, target does not exist."
+            );
+        }
+
+        #[test]
+        fn not_skip_missing_deps_target() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project_with_tasks(sandbox.path(), "project");
+            let query = QueryContainer::new(sandbox.path());
+
+            // The valid list comes from `query` but we need a
+            // non-empty set for the expansion to work.
+            project
+                .dependencies
+                .push(DependencyConfig::new("foo".into()));
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::String("".into()),
+                env: FxHashMap::from_iter([]),
+                target: Target::parse("^:do-not-exist").unwrap(),
+                optional: Some(false),
+            });
+
+            let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
+            let error = TasksExpander::new(&context)
+                .expand_deps(&mut task)
+                .unwrap_err();
+
+            assert_eq!(
+                error.to_string(),
+                "Invalid dependency foo:do-not-exist for project:task, target does not exist."
             );
         }
     }

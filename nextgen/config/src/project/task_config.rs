@@ -98,7 +98,7 @@ cacheable!(
 
         pub target: Target,
 
-        pub skip_if_missing: Option<bool>,
+        pub optional: Option<bool>,
     }
 );
 

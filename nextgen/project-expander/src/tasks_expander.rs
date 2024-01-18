@@ -109,7 +109,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             let dep = TaskDependencyConfig {
                 args: dep.args.clone(),
                 env: dep.env.clone(),
-                skip_if_missing: dep.skip_if_missing.clone(),
+                optional: dep.optional.clone(),
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,
             };
 
@@ -151,11 +151,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         };
 
                         for dep_project in (self.context.query)(input)? {
-                            check_and_push_dep(
-                                dep_project,
-                                dep,
-                                dep.skip_if_missing.unwrap_or(true),
-                            )?;
+                            check_and_push_dep(dep_project, dep, dep.optional.unwrap_or(true))?;
                         }
                     }
                 }
@@ -164,12 +160,12 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     if dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        check_and_push_dep(project, dep, dep.skip_if_missing.unwrap_or(false))?;
+                        check_and_push_dep(project, dep, dep.optional.unwrap_or(false))?;
                     }
                 }
                 // id:task
                 TargetScope::Project(project_locator) => {
-                    if dep.skip_if_missing.is_some() {
+                    if dep.optional.is_some() {
                         // log a message to the user to let them know that this is effectless
                     }
                     if project.matches_locator(project_locator) {
@@ -200,11 +196,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         if dep_project.id == project.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(
-                                dep_project,
-                                dep,
-                                dep.skip_if_missing.unwrap_or(true),
-                            )?;
+                            check_and_push_dep(dep_project, dep, dep.optional.unwrap_or(true))?;
                         }
                     }
                 }

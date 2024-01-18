@@ -109,7 +109,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             let dep = TaskDependencyConfig {
                 args: dep.args.clone(),
                 env: dep.env.clone(),
-                optional: dep.optional.clone(),
+                optional: dep.optional,
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,
             };
 

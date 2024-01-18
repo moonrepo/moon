@@ -109,6 +109,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             let dep = TaskDependencyConfig {
                 args: dep.args.clone(),
                 env: dep.env.clone(),
+                skip_if_missing: dep.skip_if_missing.clone(),
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,
             };
 
@@ -150,7 +151,12 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         };
 
                         for dep_project in (self.context.query)(input)? {
-                            check_and_push_dep(dep_project, dep, true)?;
+                            check_and_push_dep(
+                                dep_project,
+                                dep,
+                                dep.skip_if_missing
+                                    .unwrap_or(dep.skip_if_missing.unwrap_or(true)),
+                            )?;
                         }
                     }
                 }
@@ -159,7 +165,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     if dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        check_and_push_dep(project, dep, false)?;
+                        check_and_push_dep(project, dep, dep.skip_if_missing.unwrap_or(false))?;
                     }
                 }
                 // id:task
@@ -182,7 +188,11 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         }
 
                         for dep_project in results {
-                            check_and_push_dep(dep_project, dep, false)?;
+                            check_and_push_dep(
+                                dep_project,
+                                dep,
+                                dep.skip_if_missing.unwrap_or(false),
+                            )?;
                         }
                     }
                 }

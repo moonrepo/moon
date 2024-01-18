@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 268
+expression: assert.output()
+---
+▪▪▪▪ npm install
+Error: process::failed
+
+  × Process /opt/homebrew/bin/fish failed with a 1 exit code.
+  │ 
+  │ Error: proto::shim::create_failed
+  │ 
+  │   × Failed to create shim ~/.proto/shims/node-gyp.
+  │   ╰─▶ No such file or directory (os error 2)
+
+
+

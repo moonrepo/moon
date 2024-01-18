@@ -355,7 +355,8 @@ implicitDeps:
                     TaskDependency::Config(TaskDependencyConfig {
                         args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
                         env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
-                        target: Target::parse("~:task").unwrap()
+                        target: Target::parse("~:task").unwrap(),
+                        skip_if_missing: None,
                     }),
                 ]
             );

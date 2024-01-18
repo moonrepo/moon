@@ -726,6 +726,7 @@ mod tasks_expander {
                         args: TaskArgs::None,
                         env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                         target: Target::parse("project:test").unwrap(),
+                        skip_if_missing: None,
                     }]
                 );
             }
@@ -742,6 +743,7 @@ mod tasks_expander {
                     args: TaskArgs::String("a b c".into()),
                     env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                     target: Target::parse("test").unwrap(),
+                    skip_if_missing: None,
                 });
 
                 let context =
@@ -754,6 +756,7 @@ mod tasks_expander {
                         args: TaskArgs::String("a b c".into()),
                         env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                         target: Target::parse("project:test").unwrap(),
+                        skip_if_missing: None,
                     }]
                 );
             }
@@ -776,6 +779,7 @@ mod tasks_expander {
                     args: TaskArgs::String("a b c".into()),
                     env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                     target: Target::parse("^:build").unwrap(),
+                    skip_if_missing: None,
                 });
 
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
@@ -788,16 +792,19 @@ mod tasks_expander {
                             args: TaskArgs::String("a b c".into()),
                             env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                             target: Target::parse("foo:build").unwrap(),
+                            skip_if_missing: None,
                         },
                         TaskDependencyConfig {
                             args: TaskArgs::String("a b c".into()),
                             env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                             target: Target::parse("bar:build").unwrap(),
+                            skip_if_missing: None,
                         },
                         TaskDependencyConfig {
                             args: TaskArgs::String("a b c".into()),
                             env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                             target: Target::parse("baz:build").unwrap(),
+                            skip_if_missing: None,
                         }
                     ]
                 );

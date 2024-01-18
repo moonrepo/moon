@@ -169,6 +169,9 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 }
                 // id:task
                 TargetScope::Project(project_locator) => {
+                    if dep.skip_if_missing.is_some() {
+                        // log a message to the user to let them know that this is effectless
+                    }
                     if project.matches_locator(project_locator) {
                         if dep_target.task_id == task.id {
                             // Avoid circular references
@@ -187,11 +190,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         }
 
                         for dep_project in results {
-                            check_and_push_dep(
-                                dep_project,
-                                dep,
-                                dep.skip_if_missing.unwrap_or(false),
-                            )?;
+                            check_and_push_dep(dep_project, dep, false)?;
                         }
                     }
                 }
@@ -201,7 +200,11 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         if dep_project.id == project.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(dep_project, dep, true)?;
+                            check_and_push_dep(
+                                dep_project,
+                                dep,
+                                dep.skip_if_missing.unwrap_or(true),
+                            )?;
                         }
                     }
                 }

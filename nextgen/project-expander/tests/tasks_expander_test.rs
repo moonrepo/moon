@@ -834,7 +834,7 @@ mod tasks_expander {
         }
 
         #[test]
-        fn not_skip_missing_self_targets() {
+        fn error_on_missing_self_targets() {
             let sandbox = create_empty_sandbox();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let query = QueryContainer::new(sandbox.path());
@@ -859,7 +859,7 @@ mod tasks_expander {
         }
 
         #[test]
-        fn not_skip_missing_deps_target() {
+        fn error_on_missing_deps_target() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project_with_tasks(sandbox.path(), "project");
             let query = QueryContainer::new(sandbox.path());

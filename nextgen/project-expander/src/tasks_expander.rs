@@ -154,8 +154,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                             check_and_push_dep(
                                 dep_project,
                                 dep,
-                                dep.skip_if_missing
-                                    .unwrap_or(dep.skip_if_missing.unwrap_or(true)),
+                                dep.skip_if_missing.unwrap_or(true),
                             )?;
                         }
                     }

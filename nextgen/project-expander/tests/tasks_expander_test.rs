@@ -809,28 +809,57 @@ mod tasks_expander {
                     ]
                 );
             }
+        }
 
-            #[test]
-            fn skip_missing_self_targets() {
-                let sandbox = create_empty_sandbox();
-                let project = create_project_with_tasks(sandbox.path(), "project");
-                let query = QueryContainer::new(sandbox.path());
+        #[test]
+        fn skip_missing_self_targets() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let query = QueryContainer::new(sandbox.path());
 
-                let mut task = create_task();
+            let mut task = create_task();
 
-                task.deps.push(TaskDependencyConfig {
-                    args: TaskArgs::String("a b c".into()),
-                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
-                    target: Target::parse("do-not-exist").unwrap(),
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::None,
+                env: FxHashMap::from_iter([]),
+                target: Target::parse("do-not-exist").unwrap(),
+                optional: Some(true),
+            });
+
+            let context =
+                create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
+            TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+            assert_eq!(task.deps, vec![]);
+        }
+
+        #[test]
+        fn resolve_self_targets_when_optional() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let query = QueryContainer::new(sandbox.path());
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::None,
+                env: FxHashMap::from_iter([]),
+                target: Target::parse("build").unwrap(),
+                optional: Some(true),
+            });
+
+            let context =
+                create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
+            TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig {
+                    args: TaskArgs::None,
+                    env: FxHashMap::from_iter([]),
+                    target: Target::parse("project:build").unwrap(),
                     optional: Some(true),
-                });
-
-                let context =
-                    create_context_with_query(&project, sandbox.path(), |i| query.filtered(i));
-                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
-
-                assert_eq!(task.deps, vec![]);
-            }
+                },]
+            );
         }
 
         #[test]
@@ -841,7 +870,7 @@ mod tasks_expander {
 
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::String("".into()),
+                args: TaskArgs::None,
                 env: FxHashMap::from_iter([]),
                 target: Target::parse("do-not-exist").unwrap(),
                 optional: Some(false),
@@ -872,7 +901,7 @@ mod tasks_expander {
 
             let mut task = create_task();
             task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::String("".into()),
+                args: TaskArgs::None,
                 env: FxHashMap::from_iter([]),
                 target: Target::parse("^:do-not-exist").unwrap(),
                 optional: Some(false),

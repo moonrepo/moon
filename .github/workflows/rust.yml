@@ -27,9 +27,6 @@ env:
   # SCCACHE_NO_DAEMON: 1
   SCCACHE_REGION: us-east-2
   SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
-  SCCACHE_GHA_ENABLED:
-    ${{ github.event_name == 'push' && github.ref_name == 'master' || github.event_name ==
-    'pull_request' && !github.event.pull_request.head.repo.fork }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

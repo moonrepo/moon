@@ -52,6 +52,7 @@ const workspaceRows: Comparison[] = [
 		support: {
 			moon: [SUPPORTED, 'via `hasher.ignorePatterns`'],
 			nx: [SUPPORTED, '.nxignore'],
+			turborepo: [SUPPORTED, 'via `--ignore`'],
 		},
 	},
 	{

@@ -35,7 +35,9 @@ jobs:
     steps:
       - run: 'echo "Not affected, skipping"'
   coverage:
-    if: ${{ contains(github.ref, 'develop-') || github.ref_name == 'master' }}
+    if:
+      ${{ github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
+      github.event_name == 'push' && github.ref_name == 'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

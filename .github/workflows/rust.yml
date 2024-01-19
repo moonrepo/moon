@@ -19,9 +19,10 @@ env:
   # sccache
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  RUSTC_WRAPPER: sccache
   # RUST_LOG: trace
+  RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' }}
   SCCACHE_BUCKET: moon-ci-sccache
+  SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
   # SCCACHE_LOG: debug
   # SCCACHE_NO_DAEMON: 1
   SCCACHE_REGION: us-east-2
@@ -59,6 +60,7 @@ jobs:
           cache-base: '^(master|develop-)'
           components: clippy
       - uses: mozilla-actions/sccache-action@v0.0.3
+        if: ${{ vars.ENABLE_SCCACHE == 'true'}}
       - name: Run linter
         run: just lint
   test:
@@ -81,6 +83,7 @@ jobs:
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.28.0' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.3
+        if: ${{ vars.ENABLE_SCCACHE == 'true'}}
       - name: Checking coverage status
         id: coverage
         shell: bash

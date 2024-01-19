@@ -60,7 +60,7 @@ jobs:
           cache-base: '^(master|develop-)'
           components: clippy
       - uses: mozilla-actions/sccache-action@v0.0.3
-        if: ${{ vars.ENABLE_SCCACHE == 'true'}}
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Run linter
         run: just lint
   test:
@@ -83,7 +83,7 @@ jobs:
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.28.0' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.3
-        if: ${{ vars.ENABLE_SCCACHE == 'true'}}
+        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Checking coverage status
         id: coverage
         shell: bash

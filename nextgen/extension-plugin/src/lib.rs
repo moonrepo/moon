@@ -10,13 +10,16 @@ pub struct ExtensionPlugin {
 }
 
 impl ExtensionPlugin {
-    pub fn execute(&self) -> miette::Result<()> {
+    pub fn execute(&self, args: Vec<String>) -> miette::Result<()> {
         self.plugin.call_func_without_output(
             "execute_extension",
-            ExtensionContext {
+            ExecuteExtensionInput {
+                args,
                 // TODO
-                working_dir: self.plugin.to_virtual_path(PathBuf::new()),
-                workspace_root: self.plugin.to_virtual_path(PathBuf::new()),
+                context: MoonContext {
+                    working_dir: self.plugin.to_virtual_path(PathBuf::new()),
+                    workspace_root: self.plugin.to_virtual_path(PathBuf::new()),
+                },
             },
         )?;
 

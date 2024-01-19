@@ -1,12 +1,14 @@
 use warpgate_api::*;
 
-api_struct!(
-    /// Information about the current state of the tool.
-    pub struct ExtensionContext {
-        /// Virtual path to the current working directory.
-        pub working_dir: VirtualPath,
+pub use crate::MoonContext;
 
-        /// Virtual path to the moon workspace root.
-        pub workspace_root: VirtualPath,
+api_struct!(
+    /// Input passed to the `execute_extension` function.
+    pub struct ExecuteExtensionInput {
+        /// Custom arguments passed on the command line.
+        pub args: Vec<String>,
+
+        /// Current moon context.
+        pub context: MoonContext,
     }
 );

@@ -68,9 +68,9 @@ dependencies = [
 
 [[package]]
 name = "anstream"
-version = "0.6.7"
+version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd2405b3ac1faab2990b74d728624cd9fd115651fcecc7c2d8daf01376275ba"
+checksum = "6e2e1ebcb11de5c03c67de28a7df593d32191b44939c482e97702baaaa6ab6a5"
 dependencies = [
  "anstyle",
  "anstyle-parse",
@@ -808,7 +808,6 @@ dependencies = [
  "anstream",
  "anstyle",
  "clap_lex",
- "strsim",
  "terminal_size 0.3.0",
 ]
 
@@ -3561,6 +3560,7 @@ dependencies = [
 name = "moon_pdk"
 version = "0.0.1"
 dependencies = [
+ "clap",
  "extism-pdk",
  "moon_pdk_api",
  "serde",

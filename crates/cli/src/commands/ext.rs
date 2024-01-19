@@ -45,5 +45,5 @@ pub async fn ext(
         .await?;
 
     // Execute the plugin
-    extensions.perform_sync(&args.id, |plugin| plugin.execute())?;
+    extensions.perform_sync(&args.id, |plugin| plugin.execute(args.passthrough.clone()))?;
 }

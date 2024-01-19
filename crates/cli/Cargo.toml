@@ -52,7 +52,14 @@ moon_vcs = { path = "../../nextgen/vcs" }
 moon_workspace = { path = "../../nextgen/workspace" }
 bytes = "1.5.0"
 ci_env = { workspace = true }
-clap = { workspace = true }
+clap = { workspace = true, features = [
+	"color",
+	"derive",
+	"env",
+	"help",
+	"usage",
+	"wrap_help",
+] }
 clap_complete = { workspace = true }
 clap_lex = "0.6.0"
 console = { workspace = true }

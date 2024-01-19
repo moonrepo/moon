@@ -3,9 +3,7 @@ mod plugin_registry;
 
 pub use plugin::*;
 pub use plugin_registry::*;
-
-pub use extism::{Manifest as PluginManifest, Wasm};
-pub use warpgate::{Id, PluginContainer, PluginLoader, PluginLocator};
+pub use warpgate::{Id, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm};
 
 use convert_case::{Case, Casing};
 use miette::IntoDiagnostic;

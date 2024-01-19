@@ -3561,11 +3561,10 @@ dependencies = [
 name = "moon_pdk"
 version = "0.0.1"
 dependencies = [
- "anyhow",
  "extism-pdk",
  "moon_pdk_api",
- "proto_pdk",
  "serde",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -3635,7 +3634,6 @@ version = "0.1.0"
 dependencies = [
  "convert_case",
  "dashmap",
- "extism",
  "miette",
  "moon_env",
  "proto_core",

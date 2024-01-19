@@ -3,11 +3,13 @@ use dashmap::{
     iter::{Iter, IterMut},
     DashMap,
 };
-use extism::{Manifest as PluginManifest, Wasm};
 use moon_env::MoonEnvironment;
-use proto_core::{host_funcs::*, inject_default_manifest_config, ProtoEnvironment};
-use std::{future::Future, path::PathBuf, sync::Arc};
-use warpgate::{Id, PluginContainer, PluginLoader, PluginLocator};
+use proto_core::{is_offline, ProtoEnvironment};
+use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
+use warpgate::{
+    host_funcs::*, inject_default_manifest_config, Id, PluginContainer, PluginLoader,
+    PluginLocator, PluginManifest, Wasm,
+};
 
 pub struct PluginContext {}
 
@@ -24,11 +26,14 @@ impl<T: Plugin> PluginRegistry<T> {
         moon_env: Arc<MoonEnvironment>,
         proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
+        let mut loader = PluginLoader::new(
+            moon_env.plugins_dir.join(type_of.get_dir_name()),
+            &moon_env.temp_dir,
+        );
+        loader.set_offline_checker(is_offline);
+
         Self {
-            loader: PluginLoader::new(
-                moon_env.plugins_dir.join(type_of.get_dir_name()),
-                &moon_env.temp_dir,
-            ),
+            loader,
             plugins: Arc::new(DashMap::new()),
             moon_env,
             proto_env,
@@ -43,10 +48,7 @@ impl<T: Plugin> PluginRegistry<T> {
         manifest = manifest.with_allowed_host("*");
 
         // Inherit moon and proto virtual paths.
-        let mut virtual_paths = self.proto_env.get_virtual_paths();
-        virtual_paths.extend(self.moon_env.get_virtual_paths());
-
-        manifest = manifest.with_allowed_paths(virtual_paths.into_iter());
+        manifest = manifest.with_allowed_paths(self.get_virtual_paths().into_iter());
 
         // Disable timeouts as some functions, like dependency installs,
         // may take multiple minutes to complete. We also can't account
@@ -65,6 +67,12 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn get_loader(&mut self) -> &mut PluginLoader {
         &mut self.loader
+    }
+
+    pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
+        let mut paths = self.proto_env.get_virtual_paths();
+        paths.extend(self.moon_env.get_virtual_paths());
+        paths
     }
 
     pub async fn access<F, Fut, R>(&self, id: &Id, op: F) -> miette::Result<R>
@@ -149,8 +157,8 @@ impl<T: Plugin> PluginRegistry<T> {
         // TODO error if it already exists
 
         let functions = create_host_functions(HostData {
-            id: id.to_owned(),
-            proto: Arc::clone(&self.proto_env),
+            virtual_paths: self.get_virtual_paths(),
+            working_dir: self.moon_env.cwd.clone(), // TODO workspace
         });
 
         let mut manifest = self.create_manifest(id, self.loader.load_plugin(id, locator).await?)?;

@@ -1,7 +1,5 @@
 pub mod extension;
 
-pub use warpgate_api::*;
-
 #[macro_export]
 macro_rules! config_struct {
     ($struct:item) => {

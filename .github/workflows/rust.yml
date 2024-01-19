@@ -57,7 +57,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just
-          cache-base: '^(master|develop-)'
+          cache: false
           components: clippy
       - uses: mozilla-actions/sccache-action@v0.0.3
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
@@ -75,7 +75,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just, cargo-nextest, cargo-llvm-cov
-          cache-base: '^(master|develop-)'
+          cache: false
           components: llvm-tools-preview
       - uses: moonrepo/setup-toolchain@v0
         with:

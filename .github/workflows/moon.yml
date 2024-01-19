@@ -29,6 +29,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v3
       - uses: moonrepo/setup-rust@v1
+        with:
+          cache-base: '^(master|develop-)'
       - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}

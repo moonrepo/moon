@@ -293,7 +293,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Can run task dependencies in serial',
 		support: {
 			moon: SUPPORTED,
-			turborepo: [SUPPORTED, 'via `concurrency=1`']
+			turborepo: [SUPPORTED, 'via `concurrency=1`'],
 		},
 	},
 	{

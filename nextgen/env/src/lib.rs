@@ -11,9 +11,10 @@ pub struct MoonEnvironment {
     pub id_file: PathBuf,
     pub plugins_dir: PathBuf,
     pub temp_dir: PathBuf,
-    pub home: PathBuf, // ~
-    pub root: PathBuf, // ~/.moon
+    pub home: PathBuf,       // ~
+    pub store_root: PathBuf, // ~/.moon
     pub version: String,
+    pub workspace_root: PathBuf,
 }
 
 impl MoonEnvironment {
@@ -32,31 +33,32 @@ impl MoonEnvironment {
             )
         })?;
 
-        let root = if let Ok(root) = env::var("MOON_HOME") {
+        let store_root = if let Ok(root) = env::var("MOON_HOME") {
             root.into()
         } else {
             home.join(CONFIG_DIRNAME)
         };
 
-        debug!(store = ?root, "Creating moon environment, detecting store");
+        debug!(store = ?store_root, "Creating moon environment, detecting store");
 
         Ok(MoonEnvironment {
-            cwd,
-            id_file: root.join("id"),
-            plugins_dir: root.join("plugins"),
-            temp_dir: root.join("temp"),
+            id_file: store_root.join("id"),
+            plugins_dir: store_root.join("plugins"),
+            temp_dir: store_root.join("temp"),
             home,
-            root,
+            store_root,
             version: env::var("MOON_VERSION").unwrap_or_default(),
+            workspace_root: cwd.clone(),
+            cwd,
         })
     }
 
     pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
         BTreeMap::from_iter([
             (self.cwd.clone(), "/cwd".into()),
-            (self.root.clone(), "/moon".into()),
+            (self.store_root.clone(), "/moon".into()),
             (self.home.clone(), "/userhome".into()),
-            // TODO workspace root?
+            (self.workspace_root.clone(), "/workspace".into()),
         ])
     }
 }

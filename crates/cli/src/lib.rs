@@ -14,6 +14,7 @@ use crate::commands::ci::ci;
 use crate::commands::clean::clean;
 use crate::commands::completions;
 use crate::commands::docker;
+use crate::commands::ext::ext;
 use crate::commands::generate::generate;
 use crate::commands::graph::{action::action_graph, dep::dep_graph, project::project_graph};
 use crate::commands::init::init;
@@ -123,7 +124,14 @@ pub async fn run_cli() -> AppResult {
     setup_caching(&cli.cache);
 
     App::setup_tracing_with_options(TracingOptions {
-        filter_modules: string_vec!["moon", "proto", "schematic", "starbase", "warpgate"],
+        filter_modules: string_vec![
+            "moon",
+            "proto",
+            "schematic",
+            "starbase",
+            "warpgate",
+            "extism::pdk"
+        ],
         log_env: "MOON_APP_LOG".into(),
         log_file: cli.log_file.clone(),
         // test_env: "MOON_TEST".into(),
@@ -165,6 +173,7 @@ pub async fn run_cli() -> AppResult {
             DockerCommands::Scaffold(args) => app.execute_with_args(docker::scaffold, args),
             DockerCommands::Setup => app.execute(docker::setup),
         },
+        Commands::Ext(args) => app.execute_with_args(ext, args),
         Commands::Generate(args) => app.execute_with_args(generate, args),
         Commands::Init(args) => app.execute_with_args(init, args),
         Commands::Migrate {

@@ -1,6 +1,5 @@
 use moon_pdk_api::extension::*;
 use moon_plugin::{Id, Plugin, PluginContainer, PluginType};
-use std::path::PathBuf;
 
 pub struct ExtensionPlugin {
     pub id: Id,
@@ -10,17 +9,10 @@ pub struct ExtensionPlugin {
 }
 
 impl ExtensionPlugin {
-    pub fn execute(&self, args: Vec<String>) -> miette::Result<()> {
+    pub fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
         self.plugin.call_func_without_output(
             "execute_extension",
-            ExecuteExtensionInput {
-                args,
-                // TODO
-                context: MoonContext {
-                    working_dir: self.plugin.to_virtual_path(PathBuf::new()),
-                    workspace_root: self.plugin.to_virtual_path(PathBuf::new()),
-                },
-            },
+            ExecuteExtensionInput { args, context },
         )?;
 
         Ok(())

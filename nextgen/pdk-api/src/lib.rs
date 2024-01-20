@@ -1,5 +1,7 @@
 pub mod extension;
 
+use std::path::Path;
+
 pub use warpgate_api::*;
 
 api_struct!(
@@ -12,6 +14,21 @@ api_struct!(
         pub workspace_root: VirtualPath,
     }
 );
+
+impl MoonContext {
+    /// Return the provided file path as an absolute path (using virtual paths).
+    /// If the path is already absolute (either real or virtual), return it.
+    /// Otherwise prefix the path with the current working directory.
+    pub fn get_absolute_path<T: AsRef<Path>>(&self, path: T) -> VirtualPath {
+        let path = path.as_ref();
+
+        if path.is_absolute() {
+            return VirtualPath::Only(path.to_owned());
+        }
+
+        self.working_dir.join(path)
+    }
+}
 
 #[macro_export]
 macro_rules! config_struct {

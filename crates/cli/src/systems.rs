@@ -49,6 +49,12 @@ pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
 
     states.set(WorkspaceRoot(workspace.root.clone()));
 
+    // Ensure our env instance is using the found workspace root,
+    // as this is required for plugins to function entirely!
+    Arc::get_mut(states.get_mut::<MoonEnv>())
+        .unwrap()
+        .workspace_root = workspace.root.clone();
+
     resources.set(workspace);
 }
 

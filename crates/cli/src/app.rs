@@ -6,6 +6,7 @@ use crate::commands::ci::CiArgs;
 use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
 use crate::commands::docker::DockerScaffoldArgs;
+use crate::commands::ext::ExtArgs;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::action::ActionGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
@@ -258,6 +259,12 @@ pub enum Commands {
         alias = "r"
     )]
     Run(RunArgs),
+
+    // PLUGINS
+
+    // moon ext
+    #[command(name = "ext", about = "Execute an extension plugin.")]
+    Ext(ExtArgs),
 
     // OTHER
 

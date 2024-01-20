@@ -4,20 +4,21 @@ use dashmap::{
     DashMap,
 };
 use moon_env::MoonEnvironment;
+use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use warpgate::{
-    host_funcs::*, inject_default_manifest_config, Id, PluginContainer, PluginLoader,
-    PluginLocator, PluginManifest, Wasm,
+    host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
+    PluginLoader, PluginLocator, PluginManifest, Wasm,
 };
 
-pub struct PluginContext {}
-
+#[allow(dead_code)]
 pub struct PluginRegistry<T: Plugin> {
     loader: PluginLoader,
     moon_env: Arc<MoonEnvironment>,
     plugins: Arc<DashMap<Id, T>>,
     proto_env: Arc<ProtoEnvironment>,
+    virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
 
 impl<T: Plugin> PluginRegistry<T> {
@@ -32,11 +33,25 @@ impl<T: Plugin> PluginRegistry<T> {
         );
         loader.set_offline_checker(is_offline);
 
+        let mut paths = proto_env.get_virtual_paths();
+        paths.extend(moon_env.get_virtual_paths());
+
         Self {
             loader,
             plugins: Arc::new(DashMap::new()),
             moon_env,
             proto_env,
+            virtual_paths: paths,
+        }
+    }
+
+    pub fn create_context(&self) -> MoonContext {
+        MoonContext {
+            working_dir: to_virtual_path(self.get_virtual_paths(), &self.moon_env.cwd),
+            workspace_root: to_virtual_path(
+                self.get_virtual_paths(),
+                &self.moon_env.workspace_root,
+            ),
         }
     }
 
@@ -48,7 +63,7 @@ impl<T: Plugin> PluginRegistry<T> {
         manifest = manifest.with_allowed_host("*");
 
         // Inherit moon and proto virtual paths.
-        manifest = manifest.with_allowed_paths(self.get_virtual_paths().into_iter());
+        manifest = manifest.with_allowed_paths(self.virtual_paths.clone().into_iter());
 
         // Disable timeouts as some functions, like dependency installs,
         // may take multiple minutes to complete. We also can't account
@@ -69,10 +84,8 @@ impl<T: Plugin> PluginRegistry<T> {
         &mut self.loader
     }
 
-    pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
-        let mut paths = self.proto_env.get_virtual_paths();
-        paths.extend(self.moon_env.get_virtual_paths());
-        paths
+    pub fn get_virtual_paths(&self) -> &BTreeMap<PathBuf, PathBuf> {
+        &self.virtual_paths
     }
 
     pub async fn access<F, Fut, R>(&self, id: &Id, op: F) -> miette::Result<R>
@@ -102,7 +115,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn perform<F, Fut, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
     where
-        F: FnMut(&mut T) -> Fut,
+        F: FnMut(&mut T, MoonContext) -> Fut,
         Fut: Future<Output = miette::Result<R>> + Send + 'static,
     {
         let mut plugin = self
@@ -110,19 +123,19 @@ impl<T: Plugin> PluginRegistry<T> {
             .get_mut(id)
             .ok_or_else(|| miette::miette!("TODO"))?;
 
-        op(plugin.value_mut()).await
+        op(plugin.value_mut(), self.create_context()).await
     }
 
     pub fn perform_sync<F, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
     where
-        F: FnMut(&mut T) -> miette::Result<R>,
+        F: FnMut(&mut T, MoonContext) -> miette::Result<R>,
     {
         let mut plugin = self
             .plugins
             .get_mut(id)
             .ok_or_else(|| miette::miette!("TODO"))?;
 
-        op(plugin.value_mut())
+        op(plugin.value_mut(), self.create_context())
     }
 
     pub fn iter(&self) -> Iter<'_, Id, T> {
@@ -156,12 +169,14 @@ impl<T: Plugin> PluginRegistry<T> {
 
         // TODO error if it already exists
 
+        let plugin_file = self.loader.load_plugin(id, locator).await?;
+
         let functions = create_host_functions(HostData {
-            virtual_paths: self.get_virtual_paths(),
-            working_dir: self.moon_env.cwd.clone(), // TODO workspace
+            virtual_paths: self.virtual_paths.clone(),
+            working_dir: self.moon_env.cwd.clone(),
         });
 
-        let mut manifest = self.create_manifest(id, self.loader.load_plugin(id, locator).await?)?;
+        let mut manifest = self.create_manifest(id, plugin_file)?;
 
         op(&mut manifest)?;
 

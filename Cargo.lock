@@ -808,6 +808,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "clap_lex",
+ "strsim",
  "terminal_size 0.3.0",
 ]
 
@@ -3636,6 +3637,7 @@ dependencies = [
  "dashmap",
  "miette",
  "moon_env",
+ "moon_pdk_api",
  "proto_core",
  "serde_json",
  "warpgate",

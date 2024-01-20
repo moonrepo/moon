@@ -97,6 +97,8 @@ cacheable!(
         pub env: FxHashMap<String, String>,
 
         pub target: Target,
+
+        pub optional: Option<bool>,
     }
 );
 

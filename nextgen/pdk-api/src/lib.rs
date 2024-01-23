@@ -30,6 +30,8 @@ impl MoonContext {
     }
 }
 
+/// Apply default attributes for configuration based structs.
+/// Will assume that all keys are in camel case.
 #[macro_export]
 macro_rules! config_struct {
     ($struct:item) => {

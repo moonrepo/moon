@@ -34,7 +34,7 @@ pub async fn ext(
 
     // Load and configure the plugin
     extensions
-        .load_with_config(&args.id, config.plugin.as_ref().unwrap(), move |manifest| {
+        .load_with_config(&args.id, config.get_plugin_locator(), move |manifest| {
             manifest.config.insert(
                 "moon_extension_config".to_owned(),
                 serialize_config(&config.config)?,

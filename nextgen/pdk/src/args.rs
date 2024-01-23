@@ -26,7 +26,7 @@ struct ArgsParser<T: Args> {
 }
 
 /// Parse the list of argument strings into flags, options, and
-/// positionals, and assign the values to the provided [`Args`] type.
+/// positionals, and assign the values to the provided [`Args`] struct.
 pub fn parse_args<T: Args>(args: &[String]) -> AnyResult<T> {
     let internal_command = String::from("__internal__");
 

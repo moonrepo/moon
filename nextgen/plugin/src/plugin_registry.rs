@@ -1,4 +1,5 @@
 use crate::plugin::*;
+use crate::plugin_error::PluginError;
 use dashmap::{
     iter::{Iter, IterMut},
     DashMap,
@@ -6,7 +7,12 @@ use dashmap::{
 use moon_env::MoonEnvironment;
 use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
-use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    future::Future,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 use warpgate::{
     host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
     PluginLoader, PluginLocator, PluginManifest, Wasm,
@@ -18,6 +24,7 @@ pub struct PluginRegistry<T: Plugin> {
     moon_env: Arc<MoonEnvironment>,
     plugins: Arc<DashMap<Id, T>>,
     proto_env: Arc<ProtoEnvironment>,
+    type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
 
@@ -33,7 +40,13 @@ impl<T: Plugin> PluginRegistry<T> {
         );
         loader.set_offline_checker(is_offline);
 
-        let mut paths = proto_env.get_virtual_paths();
+        let mut paths = proto_env
+            .get_virtual_paths()
+            .into_iter()
+            // Remove proto workspace, as it collides with moon's
+            .filter(|(_, g)| g != Path::new("/workspace"))
+            .collect::<BTreeMap<_, _>>();
+
         paths.extend(moon_env.get_virtual_paths());
 
         Self {
@@ -41,6 +54,7 @@ impl<T: Plugin> PluginRegistry<T> {
             plugins: Arc::new(DashMap::new()),
             moon_env,
             proto_env,
+            type_of,
             virtual_paths: paths,
         }
     }
@@ -93,10 +107,10 @@ impl<T: Plugin> PluginRegistry<T> {
         F: FnOnce(&T) -> Fut,
         Fut: Future<Output = miette::Result<R>> + Send + 'static,
     {
-        let plugin = self
-            .plugins
-            .get(id)
-            .ok_or_else(|| miette::miette!("TODO"))?;
+        let plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
+            name: self.type_of.get_label().to_owned(),
+            id: id.to_owned(),
+        })?;
 
         op(plugin.value()).await
     }
@@ -105,10 +119,10 @@ impl<T: Plugin> PluginRegistry<T> {
     where
         F: FnOnce(&T) -> miette::Result<R>,
     {
-        let plugin = self
-            .plugins
-            .get(id)
-            .ok_or_else(|| miette::miette!("TODO"))?;
+        let plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
+            name: self.type_of.get_label().to_owned(),
+            id: id.to_owned(),
+        })?;
 
         op(plugin.value())
     }
@@ -121,7 +135,10 @@ impl<T: Plugin> PluginRegistry<T> {
         let mut plugin = self
             .plugins
             .get_mut(id)
-            .ok_or_else(|| miette::miette!("TODO"))?;
+            .ok_or_else(|| PluginError::UnknownId {
+                name: self.type_of.get_label().to_owned(),
+                id: id.to_owned(),
+            })?;
 
         op(plugin.value_mut(), self.create_context()).await
     }
@@ -133,7 +150,10 @@ impl<T: Plugin> PluginRegistry<T> {
         let mut plugin = self
             .plugins
             .get_mut(id)
-            .ok_or_else(|| miette::miette!("TODO"))?;
+            .ok_or_else(|| PluginError::UnknownId {
+                name: self.type_of.get_label().to_owned(),
+                id: id.to_owned(),
+            })?;
 
         op(plugin.value_mut(), self.create_context())
     }
@@ -167,22 +187,36 @@ impl<T: Plugin> PluginRegistry<T> {
     {
         let id = id.as_ref();
 
-        // TODO error if it already exists
+        if self.plugins.contains_key(id) {
+            return Err(PluginError::ExistingId {
+                name: self.type_of.get_label().to_owned(),
+                id: id.to_owned(),
+            }
+            .into());
+        }
 
+        // Load the WASM file (this must happen first because of async)
         let plugin_file = self.loader.load_plugin(id, locator).await?;
 
+        // Create host functions (provided by warpgate)
         let functions = create_host_functions(HostData {
             virtual_paths: self.virtual_paths.clone(),
             working_dir: self.moon_env.cwd.clone(),
         });
 
+        // Create the manifest and let the consumer configure it
         let mut manifest = self.create_manifest(id, plugin_file)?;
 
         op(&mut manifest)?;
 
-        let container = PluginContainer::new(id.to_owned(), manifest, functions)?;
-
-        self.register(id.to_owned(), T::new(id.to_owned(), container));
+        // Combine everything into the container and register
+        self.register(
+            id.to_owned(),
+            T::new(
+                id.to_owned(),
+                PluginContainer::new(id.to_owned(), manifest, functions)?,
+            ),
+        );
 
         Ok(())
     }

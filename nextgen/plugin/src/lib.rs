@@ -1,7 +1,9 @@
 mod plugin;
+mod plugin_error;
 mod plugin_registry;
 
 pub use plugin::*;
+pub use plugin_error::*;
 pub use plugin_registry::*;
 pub use warpgate::{Id, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm};
 

@@ -1,51 +1,26 @@
-use crate::app::{App as CLI, Commands};
-use moon_api::Launchpad;
 use moon_app_components::{ExtensionRegistry, MoonEnv, ProtoEnv, WorkspaceRoot};
-use moon_common::{
-    color, consts::PROTO_CLI_VERSION, is_test_env, is_unformatted_stdout, path::exe_name,
-};
+use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, is_unformatted_stdout, path::exe_name};
 use moon_env::MoonEnvironment;
-use moon_terminal::{get_checkpoint_prefix, print_checkpoint, Checkpoint};
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_workspace::Workspace;
 use proto_core::{is_offline, ProtoEnvironment, ProtoError};
-use proto_installer::{determine_triple, download_release, unpack_release};
+use proto_installer::*;
 use starbase::system;
 use std::env;
 use std::sync::Arc;
 use tracing::debug;
 
-pub fn requires_workspace(cli: &CLI) -> bool {
-    !matches!(
-        cli.command,
-        Commands::Completions(_) | Commands::Init(_) | Commands::Setup | Commands::Upgrade
-    )
-}
-
-pub fn requires_toolchain(cli: &CLI) -> bool {
-    matches!(
-        cli.command,
-        Commands::Bin(_) | Commands::Docker { .. } | Commands::Node { .. } | Commands::Teardown
-    )
-}
+// IN ORDER:
 
 #[system]
-pub async fn create_components(states: StatesMut, resources: ResourcesMut) {
-    let moon_env = Arc::new(MoonEnvironment::new()?);
-    let proto_env = Arc::new(ProtoEnvironment::new()?);
-
-    resources.set(ExtensionRegistry::new(
-        Arc::clone(&moon_env),
-        Arc::clone(&proto_env),
-    ));
-
-    states.set(MoonEnv(moon_env));
-    states.set(ProtoEnv(proto_env));
+pub async fn load_environments(states: StatesMut) {
+    states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
+    states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
 }
 
 #[system]
 pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
-    let proto_env = Arc::clone(states.get::<ProtoEnv>());
-    let workspace = moon::load_workspace_from(proto_env).await?;
+    let workspace = moon::load_workspace_from(Arc::clone(states.get::<ProtoEnv>())).await?;
 
     states.set(WorkspaceRoot(workspace.root.clone()));
 
@@ -59,47 +34,15 @@ pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
 }
 
 #[system]
-pub async fn load_toolchain() {
-    moon::load_toolchain().await?;
-}
-
-#[system]
-pub async fn check_for_new_version(moon_env: StateRef<MoonEnv>, workspace: ResourceRef<Workspace>) {
-    if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
-        return Ok(());
-    }
-
-    let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
-
-    match Launchpad::check_version(&workspace.cache_engine, moon_env, false).await {
-        Ok(Some(result)) => {
-            if !result.update_available {
-                return Ok(());
-            }
-
-            println!(
-                "{} There's a new version of moon available, {} (currently on {})!",
-                prefix,
-                color::hash(result.remote_version.to_string()),
-                result.local_version,
-            );
-
-            if let Some(newer_message) = result.message {
-                println!("{} {}", prefix, newer_message);
-            }
-
-            println!(
-                "{} Run {} or install from {}",
-                prefix,
-                color::success("moon upgrade"),
-                color::url("https://moonrepo.dev/docs/install"),
-            );
-        }
-        Err(error) => {
-            debug!("Failed to check for current version: {}", error);
-        }
-        _ => {}
-    }
+pub async fn create_plugin_registries(
+    resources: ResourcesMut,
+    moon_env: StateRef<MoonEnv>,
+    proto_env: StateRef<ProtoEnv>,
+) {
+    resources.set(ExtensionRegistry::new(
+        Arc::clone(moon_env),
+        Arc::clone(proto_env),
+    ));
 }
 
 #[system]

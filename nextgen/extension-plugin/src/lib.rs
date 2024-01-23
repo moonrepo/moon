@@ -3,8 +3,6 @@ use moon_plugin::{Id, Plugin, PluginContainer, PluginType};
 
 pub struct ExtensionPlugin {
     pub id: Id,
-    pub type_of: PluginType,
-
     plugin: PluginContainer,
 }
 
@@ -21,14 +19,10 @@ impl ExtensionPlugin {
 
 impl Plugin for ExtensionPlugin {
     fn new(id: Id, plugin: PluginContainer) -> Self {
-        Self {
-            type_of: PluginType::Extension,
-            plugin,
-            id,
-        }
+        Self { id, plugin }
     }
 
     fn get_type(&self) -> PluginType {
-        self.type_of
+        PluginType::Extension
     }
 }

@@ -11,3 +11,9 @@ pub struct ExtensionConfig {
     #[setting(flatten)]
     pub config: BTreeMap<String, serde_json::Value>,
 }
+
+impl ExtensionConfig {
+    pub fn get_plugin_locator(&self) -> &PluginLocator {
+        self.plugin.as_ref().unwrap()
+    }
+}

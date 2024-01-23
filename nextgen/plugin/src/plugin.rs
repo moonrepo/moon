@@ -13,6 +13,13 @@ impl PluginType {
             PluginType::Platform => "platforms",
         }
     }
+
+    pub fn get_label(&self) -> &str {
+        match self {
+            PluginType::Extension => "extension",
+            PluginType::Platform => "platform",
+        }
+    }
 }
 
 pub trait Plugin {

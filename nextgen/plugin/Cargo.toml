@@ -15,4 +15,6 @@ dashmap = "5.5.3"
 miette = { workspace = true }
 proto_core = { workspace = true }
 serde_json = { workspace = true }
+starbase_styles = { workspace = true }
+thiserror = { workspace = true }
 warpgate = { workspace = true }

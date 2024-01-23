@@ -24,7 +24,7 @@ pub static DIFF_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(A|D|M|T|U|X)$
 pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
 
 pub static VERSION_CLEAN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\.(windows|win|msysgit|msys)\.\d+").unwrap());
+    Lazy::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
 
 pub fn clean_git_version(version: String) -> String {
     let version = if let Some(index) = version.find('(') {

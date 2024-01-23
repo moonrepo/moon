@@ -4605,9 +4605,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.29.2"
+version = "0.29.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8867dcc31e68c59365879df461ac305fdcc686e03b3455abb30141beded033e2"
+checksum = "7a2deda7ee1819dda22e8ee9a1915b04fe34d6b90d65b7e160d5e56988c6f305"
 dependencies = [
  "cached",
  "human-sort",
@@ -6365,9 +6365,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3226aa23973b00283aa7955385a902ea1c4f60b0a5d43533bcc937f6eebd0a07"
+checksum = "521091333a5299f7834e706654301e5814d288659eb9733c7968d8e972b897f2"
 dependencies = [
  "extism",
  "miette",

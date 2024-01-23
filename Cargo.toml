@@ -35,7 +35,7 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.29.2"
+proto_core = "0.29.3"
 proto_installer = "0.2.0"
 relative-path = { version = "1.9.2", features = ["serde"] }
 regex = "1.10.3"
@@ -86,4 +86,4 @@ tokio-util = "0.7.10"
 tracing = "0.1.40"
 url = "2.5.0"
 uuid = { version = "1.7.0", features = ["v4"] }
-warpgate = "0.10.2"
+warpgate = "0.10.3"

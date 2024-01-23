@@ -178,7 +178,9 @@ impl Workspace {
         // Load proto tools from workspace root only
         let mut proto_env = ProtoEnvironment::new()?;
         proto_env.cwd = root_dir.clone();
-        let proto_config = proto_env.load_config_manager()?.get_local_config()?;
+        let proto_config = proto_env
+            .load_config_manager()?
+            .get_local_config(working_dir)?;
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;

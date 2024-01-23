@@ -7,6 +7,7 @@ export type PartialTaskArgs = null | string | string[];
 export interface PartialTaskDependencyConfig {
 	args?: PartialTaskArgs | null;
 	env?: Record<string, string> | null;
+	optional?: boolean | null;
 	target?: string | null;
 }
 
@@ -87,6 +88,7 @@ export type TaskArgs = null | string | string[];
 export interface TaskDependencyConfig {
 	args: TaskArgs;
 	env: Record<string, string>;
+	optional: boolean | null;
 	target: string;
 }
 

@@ -722,5 +722,9 @@ mod version_cleaning {
             clean_git_version("git for windows 1.2.3.msysgit.23  (64bit) ".into()),
             "1.2.3"
         );
+        assert_eq!(
+            clean_git_version("git version 1.2.3.vfs.0.0".into()),
+            "1.2.3"
+        );
     }
 }

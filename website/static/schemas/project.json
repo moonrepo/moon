@@ -812,6 +812,16 @@
             }
           ]
         },
+        "optional": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "target": {
           "anyOf": [
             {

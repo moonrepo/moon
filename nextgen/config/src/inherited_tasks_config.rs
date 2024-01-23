@@ -253,7 +253,7 @@ impl InheritedTasksManager {
             let config = partial_config.finalize(&context)?;
 
             config
-                .validate(&context)
+                .validate(&context, true)
                 .map_err(|error| ConfigError::Validator {
                     config: format!(
                         "inherited tasks {}",

@@ -2,7 +2,7 @@ pub use clap;
 pub use clap::Args;
 
 use clap::{Parser, Subcommand};
-use warpgate_api::pdk::AnyResult;
+use warpgate_pdk::AnyResult;
 
 #[derive(Subcommand)]
 enum ArgsCommand<T: Args> {

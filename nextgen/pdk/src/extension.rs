@@ -1,6 +1,6 @@
 use extism_pdk::{config, json};
 use serde::de::DeserializeOwned;
-use warpgate_api::pdk::AnyResult;
+use warpgate_pdk::AnyResult;
 
 pub use moon_pdk_api::extension::*;
 

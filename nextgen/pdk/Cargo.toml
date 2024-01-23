@@ -12,4 +12,4 @@ moon_pdk_api = { version = "0.0.1", path = "../pdk-api" }
 clap = { workspace = true, features = ["derive"] }
 extism-pdk = { workspace = true }
 serde = { workspace = true }
-warpgate_api = { workspace = true, features = ["pdk"] }
+warpgate_pdk = { workspace = true }

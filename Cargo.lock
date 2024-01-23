@@ -3565,7 +3565,7 @@ dependencies = [
  "extism-pdk",
  "moon_pdk_api",
  "serde",
- "warpgate_api",
+ "warpgate_pdk",
 ]
 
 [[package]]
@@ -4736,18 +4736,6 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "thiserror",
-]
-
-[[package]]
-name = "proto_pdk"
-version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caf90105b373875a194fda4b02e1a6f7be3d043976f27d6e85704070ed1cd7ca"
-dependencies = [
- "extism-pdk",
- "proto_pdk_api",
- "serde",
- "warpgate_pdk",
 ]
 
 [[package]]

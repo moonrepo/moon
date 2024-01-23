@@ -22,9 +22,17 @@
   - Will also use the global proto version if available when there's no internet connection, and the
     moon required proto version has not been installed.
 
+#### 🧩 Plugins
+
+- Updated `bun_plugin` to v0.9.
+- Updated `node_plugin` and `node_depman_plugin` to v0.9.
+  - Changed the `bundled-npm` and `intercept-globals` settings to be `false` by default (instead of
+    `true`).
+- Updated `rust_plugin` to v0.8.
+
 #### ⚙️ Internal
 
-- Updated proto to v0.28 (from v0.26.4).
+- Updated proto to v0.29 (from v0.26.4).
 
 ## 1.19.3
 

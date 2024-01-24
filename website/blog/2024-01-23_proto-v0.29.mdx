@@ -1,0 +1,54 @@
+---
+slug: proto-v0.29
+title: proto v0.29 - Better environment support
+authors: [milesj]
+tags: [proto, environment]
+# image: ./img/proto/v0.26.png
+---
+
+In this release, we focused heavily on environment interoperability.
+
+<!--truncate-->
+
+## New environment aware configuration
+
+We've made a small but useful improvement to `.prototools`, environment aware files! When the
+`PROTO_ENV` environment variable is set, proto will look for an additional `.prototools.{env}` file
+and merge it with the base configuration.
+
+This is useful for certain deploy scenarios where you need different versions of tools, environment
+variables, or settings!
+
+```toml title=".prototools"
+node = "21.0.0"
+```
+
+```toml title=".prototools.production"
+node = "20.0.0"
+```
+
+## New `[env]` and `[tools.*.env]` settings
+
+We're also introducing 2 new settings to the `.prototools` file, [`[env]`](/docs/proto/config#env)
+and [`[tools.*.env]`](/docs/proto/config#toolsenv), both of which configure environment variables
+that'll be applied when the tool is executed. This is useful for defining directory-level and
+tool-specific variables.
+
+```toml title=".prototools"
+[env]
+DEBUG = "*"
+
+[tools.node.env]
+NODE_ENV = "production"
+```
+
+> View the [configuration documentation](/docs/proto/config) for more information on how these work!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.29.0) for a full list
+of changes.
+
+- Updated `proto tool info` to display aliases and environment variables.
+- Updated WASM logs to be shown alongside proto's `--log` output (under the `extism::pdk`
+  namespace).

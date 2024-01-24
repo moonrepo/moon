@@ -2,11 +2,50 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-01-17T00:00:00.000Z</updated>
+    <updated>2024-01-23T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.29 - Better environment support]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.29</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.29"/>
+        <updated>2024-01-23T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we focused heavily on environment interoperability.]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we focused heavily on environment interoperability.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-environment-aware-configuration">New environment aware configuration<a href="https://moonrepo.dev/blog/proto-v0.29#new-environment-aware-configuration" class="hash-link" aria-label="Direct link to New environment aware configuration" title="Direct link to New environment aware configuration">​</a></h2>
+<p>We've made a small but useful improvement to <code>.prototools</code>, environment aware files! When the
+<code>PROTO_ENV</code> environment variable is set, proto will look for an additional <code>.prototools.{env}</code> file
+and merge it with the base configuration.</p>
+<p>This is useful for certain deploy scenarios where you need different versions of tools, environment
+variables, or settings!</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"21.0.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools.production</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"20.0.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-env-and-toolsenv-settings">New <code>[env]</code> and <code>[tools.*.env]</code> settings<a href="https://moonrepo.dev/blog/proto-v0.29#new-env-and-toolsenv-settings" class="hash-link" aria-label="Direct link to new-env-and-toolsenv-settings" title="Direct link to new-env-and-toolsenv-settings">​</a></h2>
+<p>We're also introducing 2 new settings to the <code>.prototools</code> file, <a href="https://moonrepo.dev/docs/proto/config#env"><code>[env]</code></a>
+and <a href="https://moonrepo.dev/docs/proto/config#toolsenv"><code>[tools.*.env]</code></a>, both of which configure environment variables
+that'll be applied when the tool is executed. This is useful for defining directory-level and
+tool-specific variables.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">env</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">DEBUG</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"*"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.node.env</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">NODE_ENV</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"production"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<blockquote>
+<p>View the <a href="https://moonrepo.dev/docs/proto/config">configuration documentation</a> for more information on how these work!</p>
+</blockquote>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.29#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.29.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Updated <code>proto tool info</code> to display aliases and environment variables.</li>
+<li>Updated WASM logs to be shown alongside proto's <code>--log</code> output (under the <code>extism::pdk</code>
+namespace).</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="proto" term="proto"/>
+        <category label="environment" term="environment"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.28 - Upgraded WASM runtime]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.28</id>
@@ -1295,9 +1334,9 @@ relevant timestamps, available aliases, and store location.</p>
 <p>This information can also be represented as JSON by passing the <code>--json</code> flag.</p>
 </blockquote>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-http-user-settings">New <code>[http]</code> user settings<a href="https://moonrepo.dev/blog/proto-v0.18#new-http-user-settings" class="hash-link" aria-label="Direct link to new-http-user-settings" title="Direct link to new-http-user-settings">​</a></h2>
-<p>Furthermore, we've added a new <a href="https://moonrepo.dev/docs/proto/config#http"><code>[http]</code> setting to <code>~/.proto/config.toml</code></a>
-that allows you to configure aspects of the HTTP client, which is primarily used for downloading
-tools.</p>
+<p>Furthermore, we've added a new
+<a href="https://moonrepo.dev/docs/proto/config#settingshttp"><code>[http]</code> setting to <code>~/.proto/config.toml</code></a> that allows you to
+configure aspects of the HTTP client, which is primarily used for downloading tools.</p>
 <p>This may useful if you're behind a proxy, a VPN, or corporate network, and certain requests and
 certificates are blocked.</p>
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">~/.proto/config.toml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">http</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">proxies</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"http://intra.net/proxy"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">root-cert</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"/path/to/root/cert.pem"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
@@ -1395,74 +1434,5 @@ of changes.</p>
         <category label="tool" term="tool"/>
         <category label="canary" term="canary"/>
         <category label="python" term="python"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moon v1.13 - Toolchain now uses WASM plugins]]></title>
-        <id>https://moonrepo.dev/blog/moon-v1.13</id>
-        <link href="https://moonrepo.dev/blog/moon-v1.13"/>
-        <updated>2023-09-05T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This is a light release that focused primarily on upgrading to the WASM based proto implementation.]]></summary>
-        <content type="html"><![CDATA[<p>This is a light release that focused primarily on upgrading to the WASM based proto implementation.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="proto-upgrade-and-wasm-plugins">proto upgrade and WASM plugins<a href="https://moonrepo.dev/blog/moon-v1.13#proto-upgrade-and-wasm-plugins" class="hash-link" aria-label="Direct link to proto upgrade and WASM plugins" title="Direct link to proto upgrade and WASM plugins">​</a></h2>
-<p>Over the last few months, we've made immense strides on <a href="https://moonrepo.dev/proto">proto</a>, our multi-language
-toolchain. For those of you unaware, moon's toolchain is built on top of proto, and we accomplish
-this by utilizing the same Rust code between both tools.</p>
-<p>However, moon has been locked to <a href="https://moonrepo.dev/blog/proto-v0.12">proto v0.12</a>, which was a purely Rust based
-implementation. With the release of <a href="https://moonrepo.dev/blog/proto-v0.13">proto v0.13</a> and onward, proto has moved to
-a WASM based plugin architecture (with the core still in Rust), which allows us to support more
-languages, and enables developers to write plugins in non-Rust languages.</p>
-<p>And since our WASM plugins have stabilized by <a href="https://moonrepo.dev/blog/proto-v0.16">proto v0.16</a>, we felt it was time
-to finally upgrade moon's implementation to the latest and greatest. So what does this mean exactly?
-A few things:</p>
-<ul>
-<li>If you're using moon's <a href="https://moonrepo.dev/docs/config/toolchain">toolchain</a> (like <code>node</code>), we will now download the
-<a href="https://github.com/moonrepo/node-plugin" target="_blank" rel="noopener noreferrer">Node.js WASM plugins</a> in the background (to
-<code>~/.proto/plugins</code>).</li>
-<li>These plugins are in charge of downloading and installing the Node.js, npm, pnpm, or yarn version
-specified in your toolchain configuration.</li>
-<li>The entire plugin flow is now logged to the console, so you can see what's happening behind the
-scenes.</li>
-<li>In the future (most likely moon v2), our platform and language integration will also be powered by
-WASM plugins. This enables you to build your own custom plugins!</li>
-</ul>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>This entire process should be transparent to all users, and you should not notice any changes.
-However, in case this upgrade causes issues, we wanted to isolate it from other changes, hence the
-light release!</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="allow-tasks-to-fail">Allow tasks to fail<a href="https://moonrepo.dev/blog/moon-v1.13#allow-tasks-to-fail" class="hash-link" aria-label="Direct link to Allow tasks to fail" title="Direct link to Allow tasks to fail">​</a></h2>
-<p>"Allow tasks to fail?" You ask yourself. "Doesn't that defeat the point of a task runner?" You
-question further. "You're not wrong!" We reply. These questions assume a perfect repository state,
-where all tasks either pass or fail, and there's no middle ground. In reality, very rarely is that
-true, and we want to support those stuck in the middle, such as:</p>
-<ul>
-<li>In a heavy migration and it's known that a task is currently broken.</li>
-<li>The task is flaky but you've been unable to find the root cause.</li>
-<li>Upstream dependencies have published a backwards incompatible change, and you're waiting on a fix.</li>
-<li>And of course, in the middle of adopting moon!</li>
-</ul>
-<p>For situations where a task consistently or sometimes fails, but you don't want it to fail the
-entire pipeline (especially in CI), you can enable the new
-<a href="https://moonrepo.dev/docs/config/project#allowfailure"><code>allowFailure</code> task option</a>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">typecheck</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'tsc --build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">allowFailure</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>When enabled, failing tasks will no longer bail <a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a> early, nor will it
-exit <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> with a non-zero exit code. However, we still built guard rails
-around this feature, as we don't want to encourage bad practices, and one of these guard rails is
-that tasks that enable <code>allowFailure</code> <em>cannot</em> be depended on by other tasks, as we cannot guarantee
-that it's side-effect free.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.13#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.13.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added colors to command line <code>--help</code> menus.</li>
-<li>Updated <code>runner.archivableTargets</code> to support tag scoped targets.</li>
-<li>Updated <code>moon query tasks --affected</code> to filter based on affected task, instead of affected
-project.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="tasks" term="tasks"/>
-        <category label="proto" term="proto"/>
-        <category label="wasm" term="wasm"/>
     </entry>
 </feed>

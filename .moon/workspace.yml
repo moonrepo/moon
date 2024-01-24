@@ -29,9 +29,3 @@ vcs:
   # hooks:
   #   pre-commit:
   #     - 'cargo run -- run :lint'
-
-extensions:
-  dl:
-    plugin: 'source:/Users/miles/.cargo/shared-target/wasm32-wasi/debug/moon_extension_dl.wasm'
-  dlu:
-    plugin: 'source:/Users/miles/.cargo/shared-target/wasm32-wasi/debug/moon_extension_dlu.wasm'

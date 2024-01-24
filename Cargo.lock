@@ -3640,8 +3640,10 @@ dependencies = [
  "moon_pdk_api",
  "proto_core",
  "serde_json",
+ "starbase_sandbox",
  "starbase_styles",
  "thiserror",
+ "tokio",
  "warpgate",
 ]
 

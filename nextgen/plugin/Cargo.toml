@@ -18,3 +18,7 @@ serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 warpgate = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }

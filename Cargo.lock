@@ -3577,6 +3577,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_pdk_test_utils"
+version = "0.0.1"
+dependencies = [
+ "extism",
+ "moon_pdk_api",
+ "serde",
+ "serde_json",
+ "warpgate",
+]
+
+[[package]]
 name = "moon_pipeline"
 version = "0.1.0"
 dependencies = [

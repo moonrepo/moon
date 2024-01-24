@@ -4,6 +4,7 @@ toc_max_heading_level: 6
 ---
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <HeaderLabel text="1 min" />
 
@@ -33,6 +34,27 @@ settings. This operation may look like the following:
 We then deeply merge all of these configuration files into a final configuration object, with the
 current directory taking highest precedence.
 
+### Environment mode<VersionLabel version="0.29.0" />
+
+We also support environment specific configuration, such as `.prototools.production` or
+`.prototools.development`, when the `PROTO_ENV` environment variable is set. This is useful for
+defining environment specific aliases, or tool specific configuration.
+
+These environment aware settings take precedence over the default `.prototools` file, for the
+directory it's located in, and are merged in the same way as the default configuration. For example,
+the lookup order would be the following when `PROTO_ENV=production`:
+
+```text
+...
+~/Projects/.prototools.production
+~/Projects/.prototools
+~/.prototools.production
+~/.prototools
+~/.proto/.prototools
+```
+
+> The global `~/.proto/.prototools` file does not support environment modes.
+
 ## Pinning versions
 
 proto supports pinning versions of tools on a per-directory basis through our `.prototools`
@@ -52,21 +74,26 @@ rust = "stable"
 
 ## Available settings
 
-### `[plugins]`
+### `[env]`<VersionLabel version="0.29.0" />
 
-Additional [plugins](./plugins) can be configured with the `[plugins]` section.
-[Learn more about this syntax](./plugins#enabling-plugins).
+This setting is a map of environment variables that will be applied to _all_ tools when they are
+executed. Variables defined here _will not_ override existing environment variables (either passed
+on the command line, or inherited from the shell).
 
 ```toml title=".prototools"
-[plugins]
-my-tool = "source:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+[env]
+DEBUG = "*"
 ```
 
-Once configured, you can run a plugin as if it was a built-in tool:
+Additionally, `false` can be provided as a value, which will _remove_ the environment variable when
+the tool is executed. This is useful for removing inherited shell variables.
 
-```shell
-$ proto install my-tool
+```toml title=".prototools"
+[env]
+DEBUG = false
 ```
+
+> This functionality enables per-directory environment variables!
 
 ### `[settings]`
 
@@ -132,12 +159,12 @@ telemetry = false
 > The data we track is publicly available and
 > [can be found here](https://github.com/moonrepo/proto/blob/master/crates/cli/src/telemetry.rs).
 
-#### `[http]`
+### `[settings.http]`
 
 Can be used to customize the HTTP client used by proto, primarily for requesting files to download,
 available versions, and more.
 
-##### `allow-invalid-certs`
+#### `allow-invalid-certs`
 
 When enabled, will allow invalid certificates instead of failing. This is an _escape hatch_ and
 should only be used if other settings have failed. Be sure you know what you're doing! Defaults to
@@ -148,7 +175,7 @@ should only be used if other settings have failed. Be sure you know what you're 
 allow-invalid-certs = true
 ```
 
-##### `proxies`
+#### `proxies`
 
 A list of proxy URLs to use for requests.
 
@@ -157,7 +184,7 @@ A list of proxy URLs to use for requests.
 proxies = ["https://internal.proxy", "https://corp.net/proxy"]
 ```
 
-##### `root-cert`
+#### `root-cert`
 
 The path to a root certificate to use for requests. This is useful for overriding the native
 certificate, or for using a self-signed certificate, especially when in a corporate/internal
@@ -168,13 +195,29 @@ environment. Supports `pem` and `der` files.
 root-cert = "/path/to/root/cert.pem"
 ```
 
+### `[plugins]`
+
+Additional [plugins](./plugins) can be configured with the `[plugins]` section.
+[Learn more about this syntax](./plugins#enabling-plugins).
+
+```toml title=".prototools"
+[plugins]
+my-tool = "source:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+```
+
+Once configured, you can run a plugin as if it was a built-in tool:
+
+```shell
+$ proto install my-tool
+```
+
 ## Tool specific settings
 
 ### `[tools.*]`
 
 Tools support custom configuration that will be passed to their WASM plugin, which can be used to
 control the business logic within the plugin. Please refer to the [official documentation](./tools)
-for each tool (typically on their repository) for a list of available settings.
+of each tool (typically on their repository) for a list of available settings.
 
 As an example, let's configure [Node.js](https://github.com/moonrepo/node-plugin) (using the `node`
 identifier).
@@ -196,6 +239,17 @@ work = "18"
 oss = "20"
 ```
 
+### `[tools.*.env]`<VersionLabel version="0.29.0" />
+
+This setting is a map of environment variables for a specific tool, and will be applied when that
+tool is executed. These variables will override those defined in `[env]`. Refer to [`[env]`](#env)
+for usage examples.
+
+```toml title=".prototools"
+[tools.node.env]
+NODE_ENV = "production"
+```
+
 ## GitHub Action
 
 To streamline GitHub CI workflows, we provide the
@@ -211,5 +265,6 @@ jobs:
     steps:
       - uses: 'actions/checkout@v4'
       - uses: 'moonrepo/setup-toolchain@v0'
-      - run: 'proto use'
+        with:
+          auto-install: true
 ```

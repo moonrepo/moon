@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
+moon_env = { path = "../env" }
 moon_time = { path = "../time" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }

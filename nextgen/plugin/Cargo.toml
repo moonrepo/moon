@@ -1,0 +1,24 @@
+[package]
+name = "moon_plugin"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Plugin registry and system."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+moon_env = { version = "0.1.0", path = "../env" }
+moon_pdk_api = { version = "0.0.1", path = "../pdk-api" }
+convert_case = "0.6.0"
+dashmap = "5.5.3"
+miette = { workspace = true }
+proto_core = { workspace = true }
+serde_json = { workspace = true }
+starbase_styles = { workspace = true }
+thiserror = { workspace = true }
+warpgate = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }

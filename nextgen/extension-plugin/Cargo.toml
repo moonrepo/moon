@@ -1,0 +1,13 @@
+[package]
+name = "moon_extension_plugin"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "An extension plugin, allowing unique functionality."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+moon_pdk_api = { path = "../pdk-api" }
+moon_plugin = { path = "../plugin" }
+miette = { workspace = true }

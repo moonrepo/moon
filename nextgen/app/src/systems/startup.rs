@@ -1,7 +1,7 @@
 // Systems are defined in the order they should be executed!
 
 use crate::app_error::AppError;
-use moon_app_components::{AppInfo, Tasks, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
+use moon_app_components::{AppInfo, Tasks, Toolchain, Workspace, WorkspaceRoot};
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use proto_core::{get_proto_home, ProtoConfig, PROTO_CONFIG_NAME};
@@ -80,7 +80,6 @@ pub fn find_workspace_root(states: StatesMut) {
         "Found workspace root",
     );
 
-    states.set(WorkingDir(working_dir));
     states.set(WorkspaceRoot(workspace_root));
 }
 

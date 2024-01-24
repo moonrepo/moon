@@ -9,20 +9,19 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
+use moon_app_components::MoonEnv;
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
 use moon_vcs::{Git, Vcs};
-use moon_workspace::WorkspaceError;
 use node::init_node;
 use rust::init_rust;
 use starbase::{system, AppResult};
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
-use std::env;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use typescript::init_typescript;
@@ -172,7 +171,7 @@ pub async fn init_tool(
 }
 
 #[system]
-pub async fn init(args: ArgsRef<InitArgs>) {
+pub async fn init(args: ArgsRef<InitArgs>, moon_env: StateRef<MoonEnv>) {
     let options = InitOptions {
         force: args.force,
         minimal: args.minimal,
@@ -180,14 +179,13 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     };
 
     let theme = create_theme();
-    let working_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
     let dest_path = PathBuf::from(&args.dest);
     let dest_dir = if args.dest == "." {
-        working_dir
+        moon_env.cwd.clone()
     } else if dest_path.is_absolute() {
         dest_path
     } else {
-        working_dir.join(&args.dest)
+        moon_env.cwd.join(&args.dest)
     };
     let dest_dir = path::normalize(&dest_dir);
 

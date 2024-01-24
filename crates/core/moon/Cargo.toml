@@ -18,6 +18,7 @@ moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../../../nextgen/workspace" }
 miette = { workspace = true }
+proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_events = { workspace = true }
 tokio = { workspace = true }

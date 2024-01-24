@@ -32,6 +32,11 @@ export interface PartialExperimentsConfig {
 	taskOutputBoundaries?: boolean | null;
 }
 
+export interface PartialExtensionConfig {
+	config?: Record<string, unknown> | null;
+	plugin?: string | null;
+}
+
 export interface PartialGeneratorConfig {
 	templates?: string[] | null;
 }
@@ -100,6 +105,7 @@ export interface PartialWorkspaceConfig {
 	constraints?: PartialConstraintsConfig | null;
 	experiments?: PartialExperimentsConfig | null;
 	extends?: string | null;
+	extensions?: Record<string, PartialExtensionConfig> | null;
 	generator?: PartialGeneratorConfig | null;
 	hasher?: PartialHasherConfig | null;
 	notifier?: PartialNotifierConfig | null;
@@ -137,6 +143,11 @@ export interface ExperimentsConfig {
 	 * @deprecated
 	 */
 	taskOutputBoundaries: boolean;
+}
+
+export interface ExtensionConfig {
+	config: Record<string, unknown>;
+	plugin: string | null;
 }
 
 export interface GeneratorConfig {
@@ -196,6 +207,7 @@ export interface WorkspaceConfig {
 	constraints: ConstraintsConfig;
 	experiments: ExperimentsConfig;
 	extends: string | null;
+	extensions: Record<string, ExtensionConfig>;
 	generator: GeneratorConfig;
 	hasher: HasherConfig;
 	notifier: NotifierConfig;

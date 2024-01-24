@@ -32,8 +32,14 @@ just build
 ### Node.js
 
 Contributing to our `@moonrepo` npm packages requires Node.js and Yarn. We suggest
-[installing Node.js with nvm](https://github.com/nvm-sh/nvm), and Yarn can later be installed with
-`npm install -g yarn`.
+[installing both with proto](https://moonrepo.dev/proto).
+
+```bash
+proto install node
+proto install yarn
+# or
+proto use
+```
 
 Once setup, install dependencies build initial packages.
 

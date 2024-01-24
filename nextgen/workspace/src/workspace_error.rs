@@ -12,14 +12,6 @@ pub enum WorkspaceError {
     )]
     MissingConfigDir,
 
-    #[diagnostic(code(workspace::missing_home))]
-    #[error("Unable to determine your home directory.")]
-    MissingHomeDir,
-
-    #[diagnostic(code(workspace::missing_cwd))]
-    #[error("Unable to determine your current working directory.")]
-    MissingWorkingDir,
-
     #[diagnostic(code(workspace::missing_config))]
     #[error(
         "Unable to locate {}/{} configuration file.",

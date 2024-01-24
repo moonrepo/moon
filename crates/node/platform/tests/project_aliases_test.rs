@@ -1,4 +1,4 @@
-use moon::{generate_project_graph, load_workspace_from};
+use moon::{generate_project_graph, load_workspace_from_sandbox};
 use moon_common::Id;
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
@@ -17,7 +17,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
         Some(tasks_config),
     );
 
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)

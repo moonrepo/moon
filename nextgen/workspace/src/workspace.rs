@@ -24,7 +24,7 @@ fn find_workspace_root<P: AsRef<Path>>(working_dir: P) -> miette::Result<PathBuf
     }
 
     let working_dir = working_dir.as_ref();
-    let home_dir = dirs::home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
+    let home_dir = dirs::home_dir().unwrap();
 
     debug!(
         working_dir = ?working_dir,
@@ -137,9 +137,6 @@ pub struct Workspace {
     /// Engine for reading and writing hashes/outputs.
     pub hash_engine: Arc<HashEngine>,
 
-    /// The plugin loader.
-    pub proto_env: Arc<ProtoEnvironment>,
-
     /// Local `.prototools` config.
     pub proto_config: Arc<ProtoConfig>,
 
@@ -165,7 +162,10 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn load_from<P: AsRef<Path>>(working_dir: P) -> miette::Result<Workspace> {
+    pub fn load_from<P: AsRef<Path>, E: AsRef<ProtoEnvironment>>(
+        working_dir: P,
+        proto_env: E,
+    ) -> miette::Result<Workspace> {
         let working_dir = working_dir.as_ref();
         let root_dir = find_workspace_root(working_dir)?;
 
@@ -175,15 +175,12 @@ impl Workspace {
             "Creating workspace",
         );
 
-        // Load proto tools from workspace root only
-        let mut proto_env = ProtoEnvironment::new()?;
-        proto_env.cwd = root_dir.clone();
-        let proto_config = proto_env
-            .load_config_manager()?
-            .get_local_config(working_dir)?;
-
         // Load configs
         let config = load_workspace_config(&root_dir)?;
+        let proto_config = proto_env
+            .as_ref()
+            .load_config_manager()?
+            .get_local_config(working_dir)?;
         let toolchain_config = load_toolchain_config(&root_dir, proto_config)?;
         let tasks_config = load_tasks_config(&root_dir)?;
 
@@ -215,7 +212,6 @@ impl Workspace {
             config: Arc::new(config),
             hash_engine: Arc::new(hash_engine),
             proto_config: Arc::new(proto_config.to_owned()),
-            proto_env: Arc::new(proto_env),
             root: root_dir,
             session: None,
             tasks_config: Arc::new(tasks_config),

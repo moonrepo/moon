@@ -14,6 +14,7 @@ use crate::commands::ci::ci;
 use crate::commands::clean::clean;
 use crate::commands::completions;
 use crate::commands::docker;
+use crate::commands::ext::ext;
 use crate::commands::generate::generate;
 use crate::commands::graph::{action::action_graph, dep::dep_graph, project::project_graph};
 use crate::commands::init::init;
@@ -39,7 +40,7 @@ use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
 use std::ffi::OsString;
-use systems::{requires_toolchain, requires_workspace};
+use systems::{analyze, execute, requires_toolchain, requires_workspace, startup};
 use tracing::debug;
 
 fn setup_logging(level: &LogLevel) {
@@ -123,7 +124,14 @@ pub async fn run_cli() -> AppResult {
     setup_caching(&cli.cache);
 
     App::setup_tracing_with_options(TracingOptions {
-        filter_modules: string_vec!["moon", "proto", "schematic", "starbase", "warpgate"],
+        filter_modules: string_vec![
+            "moon",
+            "proto",
+            "schematic",
+            "starbase",
+            "warpgate",
+            "extism::pdk"
+        ],
         log_env: "MOON_APP_LOG".into(),
         log_file: cli.log_file.clone(),
         // test_env: "MOON_TEST".into(),
@@ -135,25 +143,29 @@ pub async fn run_cli() -> AppResult {
     let mut app = App::new();
     app.set_state(cli.global_args());
     app.set_state(cli.clone());
+    app.startup(startup::load_environments);
 
     if requires_workspace(&cli) {
-        app.startup(systems::load_workspace);
-        app.startup(systems::install_proto);
+        app.startup(startup::load_workspace);
+        app.startup(startup::create_plugin_registries);
+        app.startup(startup::install_proto);
 
         if requires_toolchain(&cli) {
-            app.analyze(systems::load_toolchain);
+            app.analyze(analyze::load_toolchain);
         }
+    } else {
+        app.startup(startup::create_plugin_registries);
     }
 
     match cli.command {
         Commands::ActionGraph(args) => app.execute_with_args(action_graph, args),
         Commands::Bin(args) => app.execute_with_args(bin, args),
         Commands::Ci(args) => {
-            app.execute(systems::check_for_new_version);
+            app.execute(execute::check_for_new_version);
             app.execute_with_args(ci, args)
         }
         Commands::Check(args) => {
-            app.execute(systems::check_for_new_version);
+            app.execute(execute::check_for_new_version);
             app.execute_with_args(check, args)
         }
         Commands::Clean(args) => app.execute_with_args(clean, args),
@@ -164,6 +176,7 @@ pub async fn run_cli() -> AppResult {
             DockerCommands::Scaffold(args) => app.execute_with_args(docker::scaffold, args),
             DockerCommands::Setup => app.execute(docker::setup),
         },
+        Commands::Ext(args) => app.execute_with_args(ext, args),
         Commands::Generate(args) => app.execute_with_args(generate, args),
         Commands::Init(args) => app.execute_with_args(init, args),
         Commands::Migrate {
@@ -194,12 +207,12 @@ pub async fn run_cli() -> AppResult {
             QueryCommands::TouchedFiles(args) => app.execute_with_args(query::touched_files, args),
         },
         Commands::Run(args) => {
-            app.execute(systems::check_for_new_version);
+            app.execute(execute::check_for_new_version);
             app.execute_with_args(run, args)
         }
         Commands::Setup => app.execute(setup),
         Commands::Sync { command } => {
-            app.execute(systems::check_for_new_version);
+            app.execute(execute::check_for_new_version);
 
             match command {
                 Some(SyncCommands::Codeowners(args)) => {

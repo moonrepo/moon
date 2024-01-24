@@ -106,6 +106,9 @@ pub struct WorkspaceConfig {
     pub extends: Option<String>,
 
     #[setting(nested)]
+    pub extensions: FxHashMap<proto_core::Id, ExtensionConfig>,
+
+    #[setting(nested)]
     pub generator: GeneratorConfig,
 
     #[setting(nested)]

@@ -25,9 +25,13 @@ cached = "0.48.1"
 chrono = { version = "0.4.32", features = ["serde"] }
 cd_env = "0.1.2"
 ci_env = "0.2.1"
-clap = { version = "4.4.18", features = ["derive", "env", "wrap_help"] }
+clap = { version = "4.4.18", default-features = false, features = [
+	"std",
+	"error-context",
+] }
 clap_complete = "4.4.9"
 console = "0.15.8"
+dirs = "5.0.1"
 miette = "5.10.0"
 once_cell = "1.19.0"
 once_map = "0.4.14"
@@ -35,8 +39,6 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",
 ] }
-proto_core = "0.29.3"
-proto_installer = "0.2.0"
 relative-path = { version = "1.9.2", features = ["serde"] }
 regex = "1.10.3"
 reqwest = { version = "0.11.23", default-features = false, features = [
@@ -60,7 +62,7 @@ starbase = "0.2.15"
 starbase_archive = { version = "0.2.5", default-features = false, features = [
 	"tar-gz",
 ] }
-starbase_events = { version = "0.2.2" }
+starbase_events = "0.2.2"
 starbase_sandbox = "0.1.13"
 starbase_styles = { version = "0.1.18", features = ["relative-path"] }
 starbase_utils = { version = "0.3.11", default-features = false, features = [
@@ -70,7 +72,6 @@ starbase_utils = { version = "0.3.11", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
-system_env = "0.2.0"
 tera = { version = "1.19.1", features = ["preserve_order"] }
 thiserror = "1.0.56"
 tokio = { version = "1.35.1", default-features = false, features = [
@@ -86,4 +87,13 @@ tokio-util = "0.7.10"
 tracing = "0.1.40"
 url = "2.5.0"
 uuid = { version = "1.7.0", features = ["v4"] }
+
+# proto/plugin related
+extism = "1.0.3"
+extism-pdk = "1.0.0"
+proto_core = "0.29.3"
+proto_installer = "0.2.0"
+system_env = "0.2.0"
 warpgate = "0.10.3"
+warpgate_api = "0.3.1"
+warpgate_pdk = "0.1.0"

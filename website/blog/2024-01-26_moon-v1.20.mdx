@@ -1,9 +1,9 @@
 ---
 slug: moon-v1.20
-title: moon v1.20 - ???
+title: moon v1.20 - Extension plugins, default task options, and more
 authors: [milesj]
-tags: []
-# image: ./img/moon/v1.19.png
+tags: [task, options, extensions, plugins]
+# image: ./img/moon/v1.20.png
 ---
 
 ???
@@ -59,6 +59,30 @@ tasks:
 Because these options are defined at the workspace-level, they adhere to the same merge and
 inheritance rules as other settings. Just be aware that these options are inherited first in the
 chain, and can be overwritten by other layers, or by project-level tasks.
+
+## Optional task dependencies
+
+By default, all task [`deps`](/docs/config/project#tasks-1) are required to exist when tasks are
+being built and expanded, but this isn't always true when dealing with composition and inheritance.
+For example, say you're using
+[tag-based inheritance](/docs/concepts/task-inheritance#scope-by-project-metadata), and a global
+task relies on one of these tagged tasks, but not all projects may define the appropriate tags. In
+previous versions of moon, this is a hard failure, as the dependent task does not exist.
+
+To remedy this, we're introducing a new [`optional`](/docs/config/project#optional-1) flag for task
+dependencies. When set to `true`, moon will no longer error when the task doesn't exist, and instead
+will omit the dependency.
+
+```yaml title=".moon/tasks.yml" {4-6}
+tasks:
+  build:
+    command: 'vite'
+    deps:
+      - target: '#components:build'
+        optional: true
+```
+
+> Thanks to [@maastrich](https://github.com/maastrich) for this contribution!
 
 ## Other changes
 

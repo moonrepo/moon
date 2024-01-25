@@ -1,0 +1,73 @@
+---
+title: Extensions
+tags: [extension, wasm, plugin]
+toc_max_heading_level: 4
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="1.20.0" header />
+
+An extension is a WASM plugin that allows you to extend moon with additional functionality, have
+whitelisted access to the file system, and partial information about the current workspace.
+Extensions are extremely useful in offering new and unique functionality that doesn't need to be
+built into moon's core. It also enables the community to build and share their own extensions!
+
+## Using extensions
+
+Before an extension can be executed with the [`moon ext`](../commands/ext) command, it must be
+configured with the [`extensions`](../config/workspace#extensions) setting in
+[`.moon/workspace.yml`](../config/workspace) (excluding [built-in's](#built-in-extensions)).
+
+```yaml title=".moon/workspace.yml"
+extensions:
+  example:
+    plugin: 'source:https://example.com/path/to/example.wasm'
+```
+
+Once configured, it can be executed with [`moon ext`](../commands/ext) by name. Arguments unique to
+the extension _must_ be passed after a `--` separator.
+
+```shell
+$ moon ext example -- --arg1 --arg2
+```
+
+## Built-in extensions
+
+moon is shipped with a few built-in extensions that are configured and enabled by default. Official
+moon extensions are built and published in our [moonrepo/moon-extensions][repo] repository.
+
+### `download`
+
+The `download` extension can be used to download a file from a URL into the current workspace, as
+defined by the `--url` argument. For example, say we want to download the latest [proto](/proto)
+binary:
+
+```shell
+$ moon ext download --\
+  --url https://github.com/moonrepo/proto/releases/latest/download/proto_cli-aarch64-apple-darwin.tar.xz
+```
+
+By default this will download `proto_cli-aarch64-apple-darwin.tar.xz` into the current working
+directory. To customize the location, use the `--dest` argument. However, do note that the
+destination _must be_ within the current moon workspace, as only certain directories are whitelisted
+for WASM.
+
+```shell
+$ moon ext download --\
+  --url https://github.com/moonrepo/proto/releases/latest/download/proto_cli-aarch64-apple-darwin.tar.xz\
+  --dest ./temp
+```
+
+#### Arguments
+
+- `--url` (required) - URL of a file to download.
+- `--dest` - Destination folder to save the file. Defaults to the current working directory.
+- `--name` - Override the file name. Defaults to the file name in the URL.
+
+## Creating an extension
+
+Coming soon! If you're eager to get started, take a look at our [extensions repository][repo] for
+examples.
+
+[repo]: https://github.com/moonrepo/moon-extensions

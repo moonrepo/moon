@@ -14,6 +14,11 @@
 
 #### 🚀 Updates
 
+- Added a new extension plugin system.
+  - An extension is a WASM plugin that is not built into moon's core:
+    https://github.com/moonrepo/moon-extensions
+  - Extensions can be executed with the new `moon ext` command.
+  - The community can build and publish their own extensions!
 - Added a `taskOptions` setting to `.moon` task configs, allowing default task options to be
   defined.
   - These options will be merged and inherited as part of the configuration chain.

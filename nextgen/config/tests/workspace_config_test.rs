@@ -580,7 +580,7 @@ vcs:
 
     mod extensions {
         use super::*;
-        use proto_core::{Id, PluginLocator};
+        use proto_core::PluginLocator;
 
         #[test]
         #[should_panic(
@@ -638,16 +638,13 @@ extensions:
             );
 
             assert_eq!(
-                config.extensions,
-                FxHashMap::from_iter([(
-                    Id::raw("test-id"),
-                    ExtensionConfig {
-                        config: BTreeMap::default(),
-                        plugin: Some(PluginLocator::SourceUrl {
-                            url: "https://domain.com".into()
-                        }),
-                    }
-                )])
+                config.extensions.get("test-id").unwrap(),
+                &ExtensionConfig {
+                    config: BTreeMap::default(),
+                    plugin: Some(PluginLocator::SourceUrl {
+                        url: "https://domain.com".into()
+                    }),
+                }
             );
         }
 
@@ -666,19 +663,16 @@ extensions:
             );
 
             assert_eq!(
-                config.extensions,
-                FxHashMap::from_iter([(
-                    Id::raw("test-id"),
-                    ExtensionConfig {
-                        config: BTreeMap::from_iter([
-                            ("fooBar".into(), serde_json::Value::String("abc".into())),
-                            ("bar-baz".into(), serde_json::Value::Bool(true)),
-                        ]),
-                        plugin: Some(PluginLocator::SourceUrl {
-                            url: "https://domain.com".into()
-                        }),
-                    }
-                )])
+                config.extensions.get("test-id").unwrap(),
+                &ExtensionConfig {
+                    config: BTreeMap::from_iter([
+                        ("fooBar".into(), serde_json::Value::String("abc".into())),
+                        ("bar-baz".into(), serde_json::Value::Bool(true)),
+                    ]),
+                    plugin: Some(PluginLocator::SourceUrl {
+                        url: "https://domain.com".into()
+                    }),
+                }
             );
         }
     }

@@ -116,6 +116,7 @@ const sidebars: SidebarsConfig = {
 						keywords: ['cli', 'commands', 'docker'],
 					},
 				},
+				'commands/ext',
 				'commands/generate',
 				'commands/init',
 				{
@@ -193,6 +194,7 @@ const sidebars: SidebarsConfig = {
 		'guides/codeowners',
 		'guides/debug-task',
 		'guides/docker',
+		'guides/extensions',
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/remote-cache',

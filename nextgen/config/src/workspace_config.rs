@@ -137,13 +137,15 @@ impl WorkspaceConfig {
         workspace_root: R,
         path: P,
     ) -> miette::Result<WorkspaceConfig> {
-        let result = ConfigLoader::<WorkspaceConfig>::new()
+        let mut result = ConfigLoader::<WorkspaceConfig>::new()
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/workspace",
             ))
             .set_root(workspace_root.as_ref())
             .file(check_yml_extension(path.as_ref()))?
             .load()?;
+
+        result.config.inherit_default_plugins();
 
         Ok(result.config)
     }
@@ -157,5 +159,11 @@ impl WorkspaceConfig {
                 .join(consts::CONFIG_DIRNAME)
                 .join(consts::CONFIG_WORKSPACE_FILENAME),
         )
+    }
+
+    pub fn inherit_default_plugins(&mut self) {
+        for (id, extension) in default_extensions() {
+            self.extensions.entry(id).or_insert(extension);
+        }
     }
 }

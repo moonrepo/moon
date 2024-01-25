@@ -22,7 +22,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-trait = "0.1.77"
 cached = "0.48.1"
-chrono = { version = "0.4.32", features = ["serde"] }
+chrono = { version = "0.4.33", features = ["serde"] }
 cd_env = "0.1.2"
 ci_env = "0.2.1"
 clap = { version = "4.4.18", default-features = false, features = [

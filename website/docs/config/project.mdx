@@ -506,6 +506,8 @@ tasks:
       - 'codegen'
 ```
 
+#### Args & env
+
 Furthermore, for each dependency target, you can configure additional command line arguments and
 environment variables that'll be passed to the dependent task when it is ran. The `args` field
 supports a string or a list of strings, while `env` is an object of key-value pairs.
@@ -525,6 +527,21 @@ tasks:
 > [`workspace.inheritedTasks`](#inheritedtasks) setting. This process _only_ uses filters from the
 > current project, and not filters from dependent projects. Furthermore, `args` and `env` are not
 > deeply merged.
+
+#### Optional
+
+By default, all dependencies are required to exist when tasks are being built and expanded, but this
+isn't always true when dealing with composition and inheritance. For dependencies that may not exist
+based on what's inherited, you can mark it as `optional`.
+
+```yaml title="moon.yml" {4-6}
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - target: 'apiClients:build'
+        optional: true
+```
 
 ### `env`
 

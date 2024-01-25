@@ -34,7 +34,7 @@ impl CargoTomlExt for CargoToml {
                 optional: data.optional,
                 ..DependencyDetail::default()
             },
-            Dependency::Detailed(detail) => detail.to_owned(),
+            Dependency::Detailed(detail) => (**detail).to_owned(),
         })
     }
 

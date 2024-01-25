@@ -8,7 +8,7 @@ use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct ExtArgs {
-    #[arg(help = "ID of the extension to execute")]
+    #[arg(required = true, help = "ID of the extension to execute")]
     id: Id,
 
     // Passthrough args (after --)

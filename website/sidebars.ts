@@ -116,6 +116,7 @@ const sidebars: SidebarsConfig = {
 						keywords: ['cli', 'commands', 'docker'],
 					},
 				},
+				'commands/ext',
 				'commands/generate',
 				'commands/init',
 				{

@@ -228,6 +228,35 @@ experiments:
   strictProjectAliases: false
 ```
 
+## `extensions`<VersionLabel version="1.20.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />
+
+A mapping of extensions that can be downloaded and executed with the [`moon ext`](../commands/ext)
+command. An extension is a WASM plugin, and the location of the WASM file must be defined with the
+`plugin` field, which supports a relative file path or a secure URL.
+
+```yaml title=".moon/workspace.yml" {2-5}
+extensions:
+  example:
+    plugin: 'source:./path/to/example.wasm'
+    # or
+    plugin: 'source:https://example.com/path/to/example.wasm'
+```
+
+Additionally, extensions support custom configuration that is passed to the WASM runtime when the
+plugin is instantiated. This configuration is defined by inserting additional fields under the
+extension name, relative to the `plugin` field. Each extension may have its own settings, so refer
+to their documentation for more information.
+
+```yaml title=".moon/workspace.yml" {2-5}
+extensions:
+  example:
+    plugin: 'source:./path/to/example.wasm'
+    setting1: true
+    setting2: 'abc'
+```
+
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />

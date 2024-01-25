@@ -274,6 +274,12 @@ const tasksRows: Comparison[] = [
 		},
 	},
 	{
+		feature: 'Can mark a task dependency as optional',
+		support: {
+			moon: [SUPPORTED, 'via `optional`'],
+		},
+	},
+	{
 		feature: 'Can depend on arbitrary or unrelated tasks',
 		support: {
 			moon: SUPPORTED,

@@ -93,6 +93,10 @@ the tool is executed. This is useful for removing inherited shell variables.
 DEBUG = false
 ```
 
+Variables also support substitution using the syntax `${VAR_NAME}`. When using substitution,
+variables in the current process and merged `[env]` can be referenced. Recursive substitution is not
+supported!
+
 > This functionality enables per-directory environment variables!
 
 ### `[settings]`

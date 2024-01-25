@@ -35,5 +35,5 @@ serde_yaml = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-httpmock = "0.6.8"
+httpmock = "0.7.0"
 starbase_sandbox = { workspace = true }

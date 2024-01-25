@@ -14,5 +14,5 @@ starbase_utils = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-serial_test = "2.0.0"
+serial_test = "3.0.0"
 starbase_sandbox = { workspace = true }

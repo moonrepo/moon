@@ -6,9 +6,35 @@ tags: [task, options, extensions, plugins]
 # image: ./img/moon/v1.20.png
 ---
 
-???
+In this release, we're excited to introduce extensions, our first type of plugin!
 
 <!--truncate-->
+
+## New extension plugins
+
+In our [2024 roadmap blog post](./2024-roadmap), we talked heavily about plugins, as we believe
+they're the future of moon and its ecosystem. What we didn't talk about is that we plan to have
+_many types of plugins_, and not just language/platform specific ones. And with that, we're excited
+to introduce extensions!
+
+An extension is a WASM plugin that allows you to extend moon with additional functionality, have
+whitelisted access to the file system, and receive partial information about the current workspace.
+Extensions are extremely useful in offering new and unique functionality that doesn't need to be
+built into moon's core.
+
+Once such extension is our built-in `download` extension, which is a basic extension that simply
+downloads a file from a URL into the current moon workspace.
+
+```shell
+$ moon ext download -- --url https://github.com/moonrepo/proto/releases/latest/download/proto_cli-aarch64-apple-darwin.tar.xz
+```
+
+Shipping alongside extensions are the following new features:
+
+- An [official extensions guide](/docs/guides/extensions)!
+- An [`extensions`](/docs/config/workspace#extensions) setting for configuring new extensions.
+- A [`moon ext`](/docs/commands/ext) command for executing a configured extension.
+- The required infrastructure for plugins!
 
 ## Configure default options for tasks
 
@@ -89,5 +115,6 @@ tasks:
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.20.0) for a full list
 of changes.
 
+- Updated proto to v0.29.1 (from v0.26.4).
 - Updated proto installation to trigger for all applicable commands, not just `moon run`,
   `moon check`, and `moon ci`.

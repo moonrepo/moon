@@ -194,6 +194,7 @@ const sidebars: SidebarsConfig = {
 		'guides/codeowners',
 		'guides/debug-task',
 		'guides/docker',
+		'guides/extensions',
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/remote-cache',

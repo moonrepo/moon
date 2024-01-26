@@ -1,7 +1,7 @@
 use super::MANIFEST_NAME;
 use clap::Args;
 use moon::generate_project_graph;
-use moon_common::consts::CONFIG_DIRNAME;
+use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME};
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
 use moon_platform_detector::detect_language_files;
@@ -60,7 +60,11 @@ fn scaffold_workspace(
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
     let copy_from_dir = |source: &Path, dest: &Path| -> AppResult {
-        let mut files: Vec<String> = vec![".prototools".to_owned()];
+        let mut files: Vec<String> = vec![
+            ".prototools".to_owned(),
+            CONFIG_PROJECT_FILENAME.to_owned(),
+            CONFIG_TEMPLATE_FILENAME.to_owned(),
+        ];
 
         for lang in LanguageType::variants() {
             files.extend(detect_language_files(&lang));

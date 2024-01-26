@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `moon docker scaffold` not copying the project specific `moon.yml` file, resulting in a
+  skewed project graph.
+
 ## 1.20.0
 
 #### 🚀 Updates

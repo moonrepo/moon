@@ -7,10 +7,13 @@ Contributions are always welcome, no matter how large or small!
 - Node.js >= v14.15
 - Rust >= 1.61
 - Git >= 2.28 (for `test-coverage`)
+- Just
 
 ## Setup
 
 On your first checkout of the repository, you'll need to install dependencies and build the project.
+
+Before following the rest of this guide you will need to install [Just](https://github.com/casey/just)
 
 ### Rust
 

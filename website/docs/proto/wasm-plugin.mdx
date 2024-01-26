@@ -4,180 +4,27 @@ sidebar_label: WASM
 toc_max_heading_level: 5
 ---
 
-Plugins can be written in [WebAssembly (WASM)](https://webassembly.org/), a portable binary format.
-This means that plugins can be written in any language that compiles to WASM, like Rust, C, C++, Go,
-TypeScript, and more. Because WASM based plugins are powered by a programming language, they
-implicitly support complex business logic and behavior, have access to a sandboxed file system (via
-WASI), can execute child processes, and much more.
+If you want more control over how your tool works, a WASM plugin is the way to go.
 
-:::danger
+:::success
 
-Since our WASM plugin implementation is still experimental, expect breaking changes to occur in
-non-major releases.
+Refer to our [official WASM guide](../guides/wasm-plugins) for more information on how our WASM
+plugins work, critical concepts to know, and more. Once you have a good understanding, you may
+continue this proto specific guide.
 
 :::
 
 ## Concepts
 
-Before we begin, let's talk about a few concepts that are critical to WASM and our plugin system.
+The following concepts are unique to proto, but be sure to also read about the general concepts in
+our [WASM plugins guide](../guides/wasm-plugins#concepts).
 
-### Virtual paths
+### Tool context
 
-WASM by default does not have access to the host file system, but through [WASI](https://wasi.dev/),
-we can provide sandboxed access to a pre-defined list of allowed directories. We call this
-[virtual paths](https://docs.rs/proto_pdk/latest/proto_pdk/enum.VirtualPath.html), and all paths
-provided via function input or context use them.
-
-Virtual paths are implemented by mapping a real path (host machine) to a virtual path (guest
-runtime) using file path prefixes. The following prefixes are currently supported:
-
-| Real path  | Virtual path |
-| ---------- | ------------ |
-| `~`        | `/userhome`  |
-| `~/.proto` | `/proto`     |
-| CWD        | `/workspace` |
-
-For example, from the context of WASM, you may have a virtual path of `/proto/tools/node/1.2.3`,
-which simply maps back to `~/.proto/tools/node/1.2.3` on the host machine. However, this should
-almost always be transparent to you, the developer, and to end users.
-
-However, there may be a few cases where you need access to the real path from WASM, for example,
-logging or executing commands. For this, the real path can be accessed with the
-[`real_path`](https://docs.rs/proto_pdk/latest/proto_pdk/enum.VirtualPath.html#method.real_path)
-function on the `VirtualPath` enum (this is a Rust only feature).
-
-```rust
-input.tool_dir.real_path();
-```
-
-### Host environment
-
-Since WASM executes in its own runtime, it _does not_ have access to the current host operating
-system, architecture, so on and so forth. To bridge this gap, we provide the
-[`get_proto_environment`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_proto_environment.html)
-function.
-[Learn more about this type](https://docs.rs/proto_pdk/latest/proto_pdk/struct.HostEnvironment.html).
-
-```rust
-let env = get_proto_environment()?;
-```
-
-The host operating system and architecture can be accessed with `os` and `arch` fields respectively.
-Both fields are an enum in Rust, or a string in other languages.
-
-```rust
-if env.os == HostOS::Windows {
-    // Windows only
-}
-
-if env.arch == HostArch::Arm64 {
-    // aarch64 only
-}
-```
-
-Furthermore, the user's home directory (`~`) and proto's root directory (`~/.proto`) can be accessed
-with the `home_dir` and `proto_dir` fields, both of which are [virtual paths](#virtual-paths).
-
-```rust
-if env.home_dir.join(some_path).exists() {
-    // Do something
-}
-```
-
-### Host functions
-
-WASM is pretty powerful but it can't do everything since it's sandboxed. To work around this, we
-provide a mechanism known as host functions, which are functions that are implemented on the host
-(in Rust), and can be executed from WASM. The following host functions are currently available:
-
-- [`exec_command`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.exec_command.html) - Execute a
-  system command on the host machine, with a provided list of arguments or environment variables.
-- [`from_virtual_path`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.real_path.html) - Converts
-  a virtual path into a real path.
-- [`get_env_var`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_env.html) - Get an
-  environment variable value from the host environment.
-- [`host_log`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_log.html) - Log a message to
-  the host's stderr. This acts like tracing logs, and is not a general purpose stdout logger.
-- [`set_env_var`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_env.html) - Set an
-  environment variable to the host environment.
-- [`to_virtual_path`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.virtual_path.html) - Converts
-  a real path into a virtual path.
-
-To use host functions, you'll need to make them available by registering them at the top of your
-Rust file (only add the functions you want to use).
-
-```rust
-#[host_fn]
-extern "ExtismHost" {
-    fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
-    fn from_virtual_path(path: String) -> String;
-    fn get_env_var(key: String) -> String;
-    fn host_log(input: Json<HostLogInput>);
-    fn set_env_var(key: String, value: String);
-    fn to_virtual_path(path: String) -> String;
-}
-```
-
-#### Environment variables
-
-```rust
-// Set a value
-host_env!("ENV_VAR", "value");
-
-// Append to path
-host_env!("PATH", "/userhome/some/virtual/path");
-
-// Get a value (returns an `Option`)
-let value = host_env!("ENV_VAR");
-```
-
-#### Executing commands
-
-```rust
-// Pipe stdout/stderr
-let result = exec_command!("which", ["node"]);
-let result = exec_command!(pipe, "npm", ["install"]);
-
-// Inherit stdout/stderr
-exec_command!(inherit, "npm", ["install"]);
-
-// Full control
-exec_command!(ExecCommandInput {
-    command: "npm".into(),
-    args: vec!["install".into()],
-    ..ExecCommandInput::default()
-});
-```
-
-#### Logging
-
-```rust
-host_log!("Some message");
-host_log!("Some message with {}", "args");
-
-// With data
-host_log!(HostLogInput::Fields {
-    message: "Some message with data".into(),
-    data: HashMap::from_iter([
-        ("data".into(), serde_json::to_value(data)?),
-    ]),
-});
-```
-
-### Tool ID and context
-
-When implementing plugin functions, you'll need to access information about the current tool. To get
-the current tool ID (the key the plugin was configured with), use the
-[`get_tool_id`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_tool_id.html) function.
-
-```rust
-let id = get_tool_id();
-```
-
-Additionally, we also provide what we call the tool context, which is information that is constantly
-changing depending on the current step or state of proto's execution. The context cannot be accessed
-with a stand-alone function, and is instead passed as a `context` field in the input of many plugin
-functions.
+For plugin functions, we provide what we call the tool context, which is information that is
+constantly changing depending on the current step or state of proto's execution. The context cannot
+be accessed with a stand-alone function, and is instead passed as a `context` field in the input of
+many plugin functions.
 
 ```rust
 #[plugin_fn]
@@ -228,59 +75,14 @@ struct NodeConfig {
 }
 ```
 
-## Create a plugin
+## Creating a plugin
 
-:::info
+:::success
 
-Although plugins can be written in any language that compiles to WASM, we've only tested Rust. The
-rest of this article assume you're using Rust and Cargo! Refer to [Extism](https://extism.org/)'s
-documentation or our official [Node.js plugin](https://github.com/moonrepo/node-plugin) for other
-examples.
+Refer to our [official WASM guide](../guides/wasm-plugins#creating-a-plugin) for steps on how to
+create a Rust based plugin.
 
 :::
-
-To start, create a new crate with Cargo:
-
-```shell
-cargo new plugin --lib
-cd plugin
-```
-
-And set the lib type to `cdylib`, and other settings.
-
-```toml title="Cargo.toml"
-[lib]
-crate-type = ['cdylib']
-
-[profile.release]
-codegen-units = 1
-debug = false
-lto = true
-opt-level = "s"
-panic = "abort"
-```
-
-Our Rust plugins are powered by [Extism](https://extism.org/), so lets add their PDK and ours as a
-dependency.
-
-```shell
-cargo add extism-pdk proto_pdk
-```
-
-In all Rust files, we can import both PDKs with the following:
-
-```rust title="src/lib.rs"
-use extism_pdk::*;
-use proto_pdk::*;
-```
-
-We can then build the WASM binary. The file will be available at
-`target/wasm32-wasi/debug/<name>.wasm`.
-
-```shell
-cargo install cargo-wasi
-cargo wasi build
-```
 
 ## Implementing plugin functions
 
@@ -706,85 +508,12 @@ generate_shims_test!("id", ["other", "another"]);
 
 ## Building and publishing
 
-At this point, you should have a fully working WASM plugin, but to make it available to downstream
-proto users, you'll still need to build and make the `.wasm` file available. The easiest solution is
-to publish a GitHub release and include the `.wasm` file as an asset.
+:::success
 
-### Building, optimizing, and stripping
-
-WASM files are pretty fat, even when compiling in release mode. To reduce the size of these files,
-we can use `wasm-opt` and `wasm-strip`, both of which are provided by the
-[WebAssembly](https://github.com/WebAssembly) group. The following script is what we use to build
-our own plugins.
-
-:::info
-
-This functionality is natively supported in our
-[build-wasm-plugin](https://github.com/moonrepo/build-wasm-plugin) GitHub Action!
+Refer to our [official WASM guide](../guides/wasm-plugins#building-and-publishing) for steps on how
+to build and publish your plugin.
 
 :::
-
-```bash title="build-wasm"
-#!/usr/bin/env bash
-
-target="${CARGO_TARGET_DIR:-target}"
-input="$target/wasm32-wasi/release/$1.wasm"
-output="$target/wasm32-wasi/$1.wasm"
-
-echo "Building"
-
-cargo build --target wasm32-wasi --release
-
-echo "Optimizing"
-
-# https://github.com/WebAssembly/binaryen
-~/binaryen/bin/wasm-opt -Os "$input" --output "$output"
-
-echo "Stripping"
-
-# https://github.com/WebAssembly/wabt
-~/wabt/bin/wasm-strip "$output"
-```
-
-### Manually create releases
-
-When your plugin is ready to be published, you can create a release on GitHub using the following
-steps.
-
-1. Tag the release and push to GitHub.
-
-```shell
-git tag v0.0.1
-git push --tags
-```
-
-2. Build a release version of the plugin using the `build-wasm` script above. The file will be
-   available at `target/wasm32-wasi/<name>.wasm`.
-
-```shell
-build-wasm <name>
-```
-
-3. In GitHub, navigate to the tags page, find the new tag, create a new release, and attach the
-   built file as an asset.
-
-### Automate releases
-
-If you're using GitHub Actions, you can automate the release process with our official
-[build-wasm-plugin](https://github.com/moonrepo/build-wasm-plugin) action.
-
-1. Create a new workflow file at `.github/workflows/release.yml`. Refer to the link above for a
-   working example.
-
-2. Tag the release and push to GitHub.
-
-```shell
-git tag v0.0.1
-git push --tags
-```
-
-3. The action will automatically build the plugin, create a release, and attach the built file as an
-   asset.
 
 ## Resources
 

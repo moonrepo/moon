@@ -1,6 +1,7 @@
 /* eslint-disable sort-keys */
 
 import {
+	faGlobe,
 	faPuzzle,
 	faRadar,
 	faScrewdriverWrench,
@@ -44,6 +45,11 @@ const toolchainFeatures: Feature[] = [
 		title: 'Pluggable architecture',
 		icon: faPuzzle,
 		description: 'Extend the toolchain with custom plugins, enabling new and non-standard tools.',
+	},
+	{
+		title: 'Environment',
+		icon: faGlobe,
+		description: 'Support environment specific tools, their versions, and environment variables.',
 	},
 ];
 

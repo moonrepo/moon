@@ -2,15 +2,70 @@
 title: completions
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 The `proto completions` command will generate proto command and argument completions for your
 current shell. This command will write to stdout, which can then be redirected to a file of your
 choice.
 
 ```shell
-$ proto completions > ~/.bash_completion.d/proto.sh
+$ proto completions > ./path/to/write/to
 ```
 
 ### Options
 
 - `--shell` - Shell to explicitly generate for. Accepts "bash", "elvish", "fish", "powershell", or
   "zsh".
+
+### Examples
+
+<Tabs
+  groupId="comp"
+  defaultValue="bash"
+  values={[
+    { label: 'Bash', value: 'bash' },
+    { label: 'Fish', value: 'fish' },
+    { label: 'Zsh', value: 'zsh' },
+  ]}
+>
+<TabItem value="bash">
+
+If using [bash-completion](https://github.com/scop/bash-completion).
+
+```shell
+$ proto completions > ~/.bash_completion.d/proto.sh
+```
+
+Otherwise write the file to a common location, and source it in your profile.
+
+```shell
+$ proto completions > ~/.bash_completions/proto.sh
+
+# In your profile
+source ~/.bash_completions/proto.sh
+```
+
+</TabItem>
+<TabItem value="fish">
+
+Write the file to Fish's completions directory.
+
+```shell
+$ proto completions > ~/.config/fish/completions/proto.fish
+```
+
+</TabItem>
+<TabItem value="zsh">
+
+If using [oh-my-zsh](https://ohmyz.sh/) (the `_` prefix is required),
+
+```shell
+$ proto completions > ~/.oh-my-zsh/completions/_proto
+
+# Reload shell (or restart terminal)
+$ omz reload
+```
+
+</TabItem>
+</Tabs>

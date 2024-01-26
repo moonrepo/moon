@@ -12,54 +12,13 @@ their needs.
 Plugins can be enabled by configuring them in
 [`.prototools` or `~/.proto/.prototools`](./config#plugins) files, within the `[plugins]` section.
 The map key is the plugin name _in kebab-case_, which is used as the binary/tool name in proto, and
-also the name for configuration and cache purposes. The map value is a plugin locator string that
-defines a scope and source location.
+also the name for configuration and cache purposes. The map value is a
+[plugin locator string](../guides/wasm-plugins#configuring-plugin-locations) that defines a scope
+and source location.
 
 ```toml title=".prototools"
 [plugins]
 <id> = "<scope>:<location>"
-```
-
-The following locator patterns are supported:
-
-### `source:`
-
-The `source:` locator scope supports both secure URLs and file system paths (relative from the
-config file). Files will be used as-is, while URLs will be downloaded to `~/.proto/plugins`.
-
-```toml title=".prototools"
-[plugins]
-file-tool = "source:plugins/example.wasm"
-url-tool = "source:https://domain.com/path/to/plugins/example.wasm"
-```
-
-### `github:`
-
-The `github:` locator scope can be used to target and download an asset from a specific GitHub
-release. The location must be an organization + repository slug (owner/repo), and the release _must
-have_ a `.wasm` asset available to download.
-
-```toml title=".prototools"
-[plugins]
-github-tool = "github:moonrepo/example-repo"
-```
-
-By default, the latest release will be used and cached for 7 days. If you'd prefer to target a
-specific release, append the release tag to the end of the location.
-
-```toml title=".prototools"
-[plugins]
-github-tool = "github:moonrepo/example-repo@v1.2.3"
-```
-
-This strategy is powered by the [GitHub API](https://api.github.com/) and is subject to rate
-limiting. If running in a CI environment, we suggesting setting a `GITHUB_TOKEN` environment
-variable to authorize API requests with. If using GitHub Actions, it's as simple as:
-
-```yaml
-# In some job or step...
-env:
-  GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 ```
 
 ## Creating plugins

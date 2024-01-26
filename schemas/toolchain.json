@@ -175,6 +175,7 @@
       "type": "object",
       "properties": {
         "dependencyVersionFormat": {
+          "default": "workspace",
           "anyOf": [
             {
               "$ref": "#/definitions/NodeVersionFormat"
@@ -358,6 +359,7 @@
           ]
         },
         "dependencyVersionFormat": {
+          "default": "workspace",
           "anyOf": [
             {
               "$ref": "#/definitions/NodeVersionFormat"
@@ -388,6 +390,7 @@
           ]
         },
         "packageManager": {
+          "default": "npm",
           "anyOf": [
             {
               "$ref": "#/definitions/NodePackageManager"
@@ -439,6 +442,7 @@
           ]
         },
         "syncVersionManagerConfig": {
+          "default": "nvm",
           "anyOf": [
             {
               "$ref": "#/definitions/NodeVersionManager"

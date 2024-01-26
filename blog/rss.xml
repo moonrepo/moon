@@ -4,10 +4,77 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Tue, 23 Jan 2024 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 26 Jan 2024 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[moon v1.20 - Extension plugins, default task options, and more]]></title>
+            <link>https://moonrepo.dev/blog/moon-v1.20</link>
+            <guid>https://moonrepo.dev/blog/moon-v1.20</guid>
+            <pubDate>Fri, 26 Jan 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this release, we're excited to introduce extensions, our first type of plugin!]]></description>
+            <content:encoded><![CDATA[<p>In this release, we're excited to introduce extensions, our first type of plugin!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-extension-plugins">New extension plugins<a href="https://moonrepo.dev/blog/moon-v1.20#new-extension-plugins" class="hash-link" aria-label="Direct link to New extension plugins" title="Direct link to New extension plugins">​</a></h2>
+<p>In our <a href="https://moonrepo.dev/blog/2024-roadmap">2024 roadmap blog post</a>, we talked heavily about plugins, as we believe
+they're the future of moon and its ecosystem. What we didn't talk about is that we plan to have
+<em>many types of plugins</em>, and not just language/platform specific ones. And with that, we're excited
+to introduce extensions!</p>
+<p>An extension is a WASM plugin that allows you to extend moon with additional functionality, have
+whitelisted access to the file system, and receive partial information about the current workspace.
+Extensions are extremely useful in offering new and unique functionality that doesn't need to be
+built into moon's core.</p>
+<p>Once such extension is our built-in <code>download</code> extension, which is a basic extension that simply
+downloads a file from a URL into the current moon workspace.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ext download -- </span><span class="token parameter variable" style="color:#fef9c3">--url</span><span class="token plain"> https://github.com/moonrepo/proto/releases/latest/download/proto_cli-aarch64-apple-darwin.tar.xz</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Shipping alongside extensions are the following new features:</p>
+<ul>
+<li>An <a href="https://moonrepo.dev/docs/guides/extensions">official extensions guide</a>!</li>
+<li>An <a href="https://moonrepo.dev/docs/config/workspace#extensions"><code>extensions</code></a> setting for configuring new extensions.</li>
+<li>A <a href="https://moonrepo.dev/docs/commands/ext"><code>moon ext</code></a> command for executing a configured extension.</li>
+<li>The required infrastructure for plugins!</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-default-options-for-tasks">Configure default options for tasks<a href="https://moonrepo.dev/blog/moon-v1.20#configure-default-options-for-tasks" class="hash-link" aria-label="Direct link to Configure default options for tasks" title="Direct link to Configure default options for tasks">​</a></h2>
+<p><a href="https://moonrepo.dev/docs/config/project#options">Task options</a> provide a way to apply granular changes to a task's
+behavior when running in the pipeline. However, they can become tedious when you need to apply them
+to many tasks, especially when inheritance is involved. To help with this, you can now configure the
+<a href="https://moonrepo.dev/docs/config/tasks#taskoptions"><code>taskOptions</code></a> setting in task related configs, like
+<code>.moon/tasks.yml</code> and <code>.moon/tasks/*.yml</code>, which acts as the base/default options for all inherited
+tasks.</p>
+<p>For example, the following config:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/tasks.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">lint</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">test</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Can simply be rewritten as:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/tasks.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">taskOptions</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">outputStyle</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'stream'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">retryCount</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">lint</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">test</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Because these options are defined at the workspace-level, they adhere to the same merge and
+inheritance rules as other settings. Just be aware that these options are inherited first in the
+chain, and can be overwritten by other layers, or by project-level tasks.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="optional-task-dependencies">Optional task dependencies<a href="https://moonrepo.dev/blog/moon-v1.20#optional-task-dependencies" class="hash-link" aria-label="Direct link to Optional task dependencies" title="Direct link to Optional task dependencies">​</a></h2>
+<p>By default, all task <a href="https://moonrepo.dev/docs/config/project#tasks-1"><code>deps</code></a> are required to exist when tasks are
+being built and expanded, but this isn't always true when dealing with composition and inheritance.
+For example, say you're using
+<a href="https://moonrepo.dev/docs/concepts/task-inheritance#scope-by-project-metadata">tag-based inheritance</a>, and a global
+task relies on one of these tagged tasks, but not all projects may define the appropriate tags. In
+previous versions of moon, this is a hard failure, as the dependent task does not exist.</p>
+<p>To remedy this, we're introducing a new <a href="https://moonrepo.dev/docs/config/project#optional-1"><code>optional</code></a> flag for task
+dependencies. When set to <code>true</code>, moon will no longer error when the task doesn't exist, and instead
+will omit the dependency.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/tasks.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite'</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'#components:build'</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">optional</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<blockquote>
+<p>Thanks to <a href="https://github.com/maastrich" target="_blank" rel="noopener noreferrer">@maastrich</a> for this contribution!</p>
+</blockquote>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.20#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.20.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Updated proto to v0.29.1 (from v0.26.4).</li>
+<li>Updated proto installation to trigger for all applicable commands, not just <code>moon run</code>,
+<code>moon check</code>, and <code>moon ci</code>.</li>
+</ul>]]></content:encoded>
+            <category>task</category>
+            <category>options</category>
+            <category>extensions</category>
+            <category>plugins</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.29 - Better environment support]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.29</link>
@@ -1288,73 +1355,6 @@ which may cause breakages depending on a version mismatch between proto and the 
             <category>http</category>
             <category>registry</category>
             <category>index</category>
-        </item>
-        <item>
-            <title><![CDATA[proto v0.17 - Experimental Python support and canary releases]]></title>
-            <link>https://moonrepo.dev/blog/proto-v0.17</link>
-            <guid>https://moonrepo.dev/blog/proto-v0.17</guid>
-            <pubDate>Mon, 11 Sep 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[This release implements two long requested features, Python language support and canary releases.]]></description>
-            <content:encoded><![CDATA[<p>This release implements two long requested features, Python language support and canary releases.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="experimental-python-support">Experimental Python support<a href="https://moonrepo.dev/blog/proto-v0.17#experimental-python-support" class="hash-link" aria-label="Direct link to Experimental Python support" title="Direct link to Experimental Python support">​</a></h2>
-<p>It's been quite a while since we've introduced a new language into proto, and we're excited to
-announce the highly requested language, Python! Since Python is now an
-<a href="https://github.com/moonrepo/python-plugin" target="_blank" rel="noopener noreferrer">officially supported language</a>, installing Python (and
-pip) is as simple as:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> python</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>However, we're marking language support as experimental for the time being. We expect our
-implementation to work for modern Python versions, but may not work for older versions, especially
-Python 2. The reasons for this are as follows:</p>
-<ul>
-<li>proto will install pre-built binaries from
-<a href="https://github.com/indygreg/python-build-standalone" target="_blank" rel="noopener noreferrer">indygreg/python-build-standalone</a>. This is
-an unofficial project, and <em>does not</em> support all Python versions.</li>
-<li>If <a href="https://github.com/pyenv/pyenv/blob/master/plugins/python-build/README.md" target="_blank" rel="noopener noreferrer"><code>python-build</code></a> is
-available, we'll attempt to use it to build + install Python. This currently requires <code>pyenv</code> to
-be installed, and <em>does not</em> work on Windows.</li>
-<li>Furthermore, we only support <code>cpython</code> at the moment, and do not support <code>pypy</code>, <code>jython</code>, or
-other Python implementations. It's unknown whether this functionality should be in the core Python
-plugin, or another plugin entirely.</li>
-</ul>
-<p>In a future proto version, we want to support a true "build from source" approach for all tools.
-Once that functionality has landed, we can properly support Python on all platforms, but until then,
-let us know how this works for you!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="install-canary-releases">Install canary releases<a href="https://moonrepo.dev/blog/proto-v0.17#install-canary-releases" class="hash-link" aria-label="Direct link to Install canary releases" title="Direct link to Install canary releases">​</a></h2>
-<p>A canary release is a mechanism for rolling out new features and changes to a small subset of users,
-without it being an official release on an official channel. This allows users to opt-in and test
-functionality if they so choose. Canary releases are not meant to be used in production, and may
-contain bugs or breaking changes. A canary is similar to a nightly (or weekly) release, depending on
-the tool.</p>
-<p>We now support this workflow in proto. To install a canary release, simply use the
-<a href="https://moonrepo.dev/docs/proto/commands/install"><code>--canary</code> flag when installing a tool</a>:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">tool</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--canary</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>This will install the latest canary release to <code>~/.proto/tools/&lt;tool&gt;/canary</code>, and <em>only</em> the latest
-release can be used. Re-installing with <code>--canary</code> will overwrite the previous canary installation.</p>
-<p>However, because we <a href="https://moonrepo.dev/docs/proto/detection">detect a version to run with at runtime</a>, how should you
-actually run canary? The easiest way is to prefix the shim with an environment variable:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token assign-left variable" style="color:#fef9c3">PROTO_BUN_VERSION</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">canary bun ./index.ts</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Or to explicitly configure the version in <a href="https://moonrepo.dev/docs/proto/config"><code>.prototools</code></a>:</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">bun</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"canary"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.17#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.17.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added colors to command line <code>--help</code> menus.</li>
-<li>Updated the following locations to support partial versions and aliases:<!-- -->
-<ul>
-<li>Tool versions in <code>.prototools</code>.</li>
-<li>Pinning a default version with <code>proto install --pin</code>.</li>
-<li>Setting global version with <code>proto global</code>.</li>
-<li>Setting local version with <code>proto local</code>.</li>
-</ul>
-</li>
-<li>Node, npm, pnpm, and yarn will again extract a version from <code>package.json</code> engines.</li>
-</ul>]]></content:encoded>
-            <category>proto</category>
-            <category>plugin</category>
-            <category>tool</category>
-            <category>canary</category>
-            <category>python</category>
         </item>
     </channel>
 </rss>

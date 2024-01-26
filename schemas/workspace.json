@@ -55,6 +55,22 @@
         }
       ]
     },
+    "extensions": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PartialExtensionConfig"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "generator": {
       "anyOf": [
         {
@@ -187,6 +203,7 @@
           ]
         },
         "orderBy": {
+          "default": "file-source",
           "anyOf": [
             {
               "$ref": "#/definitions/CodeownersOrderBy"
@@ -288,6 +305,46 @@
       },
       "additionalProperties": false
     },
+    "PartialExtensionConfig": {
+      "title": "PartialExtensionConfig",
+      "type": "object",
+      "properties": {
+        "config": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "boolean",
+                  "object",
+                  "array",
+                  "number",
+                  "string",
+                  "integer"
+                ]
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PartialGeneratorConfig": {
       "title": "PartialGeneratorConfig",
       "type": "object",
@@ -350,6 +407,7 @@
           ]
         },
         "optimization": {
+          "default": "accuracy",
           "anyOf": [
             {
               "$ref": "#/definitions/HasherOptimization"
@@ -360,6 +418,7 @@
           ]
         },
         "walkStrategy": {
+          "default": "vcs",
           "anyOf": [
             {
               "$ref": "#/definitions/HasherWalkStrategy"
@@ -487,6 +546,7 @@
           ]
         },
         "manager": {
+          "default": "git",
           "anyOf": [
             {
               "$ref": "#/definitions/VcsManager"
@@ -497,6 +557,7 @@
           ]
         },
         "provider": {
+          "default": "github",
           "anyOf": [
             {
               "$ref": "#/definitions/VcsProvider"

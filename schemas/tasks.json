@@ -70,6 +70,16 @@
         }
       ]
     },
+    "taskOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialTaskOptionsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tasks": {
       "anyOf": [
         {
@@ -216,6 +226,7 @@
           ]
         },
         "platform": {
+          "default": "unknown",
           "anyOf": [
             {
               "$ref": "#/definitions/PlatformType"
@@ -226,6 +237,7 @@
           ]
         },
         "type": {
+          "default": "test",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskType"
@@ -273,6 +285,16 @@
               "propertyNames": {
                 "type": "string"
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optional": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -347,6 +369,7 @@
           ]
         },
         "mergeArgs": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -357,6 +380,7 @@
           ]
         },
         "mergeDeps": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -367,6 +391,7 @@
           ]
         },
         "mergeEnv": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -377,6 +402,7 @@
           ]
         },
         "mergeInputs": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -387,6 +413,7 @@
           ]
         },
         "mergeOutputs": {
+          "default": "append",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -397,6 +424,7 @@
           ]
         },
         "outputStyle": {
+          "default": "buffer",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"

@@ -67,7 +67,113 @@ $ moon ext download --\
 
 ## Creating an extension
 
-Coming soon! If you're eager to get started, take a look at our [extensions repository][repo] for
-examples.
+Refer to our [official WASM guide](./wasm-plugins) for more information on how our WASM plugins
+work, critical concepts to know, how to create a plugin, and more. Once you have a good
+understanding, you may continue this specific guide.
+
+:::note
+
+Refer to our [moonrepo/moon-extensions][repo] repository for in-depth examples.
+
+:::
+
+### Implementing execution
+
+Extensions support a single plugin function, `execute_extension`, which is called by the
+[`moon ext`](../commands/ext) command to execute the extension. This is where all your business
+logic will reside.
+
+```rust
+use extism_pdk::*;
+use moon_pdk::{*, extension::*};
+
+#[host_fn]
+extern "ExtismHost" {
+    fn host_log(input: Json<HostLogInput>);
+}
+
+#[plugin_fn]
+pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<()> {
+  host_log!(stdout, "Executing extension!");
+
+  Ok(())
+}
+```
+
+### Supporting arguments
+
+Most extensions will require arguments, as it provides a mechanism for users to pass information
+into the WASM runtime. To parse arguments, we provide the
+[`Args`](https://docs.rs/clap/latest/clap/trait.Args.html) trait/macro from the
+[clap](https://crates.io/crates/clap) crate. Refer to their
+[official documentation on usage](https://docs.rs/clap/latest/clap/_derive/index.html) (we don't
+support everything).
+
+```rust
+use moon_pdk::args::*;
+
+#[derive(Args)]
+pub struct ExampleExtensionArgs {
+  // --url, -u
+  #[arg(long, short = 'u', required = true)]
+  pub url: String,
+}
+```
+
+Once your struct has been defined, you can parse the provided input arguments using the
+[`parse_args`](https://docs.rs/moon_pdk/latest/moon_pdk/args/fn.parse_args.html) function.
+
+```rust
+#[plugin_fn]
+pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<()> {
+  let args = parse_args::<ExampleExtensionArgs>(&input.args)?;
+
+  args.url; // --url
+
+  Ok(())
+}
+```
+
+### Supporting configuration
+
+Users can configure [extensions](../config/workspace#extensions) with additional settings in
+[`.moon/workspace.yml`](../config/workspace). Do note that settings should be in camelCase for them
+to be parsed correctly!
+
+```yaml title=".moon/workspace.yml"
+extensions:
+  example:
+    plugin: 'source:./path/to/example.wasm'
+    someSetting: 'abc'
+    anotherSetting: 123
+```
+
+In the plugin, we can map these settings (excluding `plugin`) into a struct. The `Default` trait
+must be implemented to handle situations where settings were not configured, or some are missing.
+
+```rust
+config_struct!(
+  #[derive(Default)]
+  pub struct ExampleExtensionConfig {
+    pub some_setting: String,
+    pub another_setting: u32,
+  }
+);
+```
+
+Once your struct has been defined, you can access the configuration using the
+[`get_extension_config`](https://docs.rs/moon_pdk/latest/moon_pdk/extension/fn.get_extension_config.html)
+function
+
+```rust
+#[plugin_fn]
+pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<()> {
+  let config = get_extension_config::<ExampleExtensionConfig>()?;
+
+  config.another_setting; // 123
+
+  Ok(())
+}
+```
 
 [repo]: https://github.com/moonrepo/moon-extensions

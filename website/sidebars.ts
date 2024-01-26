@@ -200,6 +200,7 @@ const sidebars: SidebarsConfig = {
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',
+		'guides/wasm-plugins',
 		'guides/webhooks',
 		'guides/vcs-hooks',
 		{

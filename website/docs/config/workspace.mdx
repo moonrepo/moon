@@ -234,7 +234,8 @@ experiments:
 
 A mapping of extensions that can be downloaded and executed with the [`moon ext`](../commands/ext)
 command. An extension is a WASM plugin, and the location of the WASM file must be defined with the
-`plugin` field, which supports a relative file path or a secure URL.
+`plugin` field, which requires a
+[plugin locator string](../guides/wasm-plugins#configuring-plugin-locations).
 
 ```yaml title=".moon/workspace.yml" {2-5}
 extensions:

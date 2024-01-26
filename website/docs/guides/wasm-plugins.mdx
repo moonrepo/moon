@@ -77,6 +77,16 @@ function on the `VirtualPath` enum (this is a Rust only feature).
 virtual_path.real_path();
 ```
 
+#### File system caveats
+
+When working with the file system from the context of WASM, there are a few caveats to be aware of.
+
+- All `fs` calls must use the virtual path. Real paths will error.
+- Paths not white listed (using prefixes above) will error.
+- Changing file permissions is not supported (on Unix and Windows).
+  - This is because WASI does not support this.
+  - This also means operations like unpacking archives is not possible.
+
 ### Host environment
 
 Since WASM executes in its own runtime, it _does not_ have access to the current host operating
@@ -249,6 +259,61 @@ debug!("This is a debug message");
 info!("Something informational happened");
 warn!("Proceed with caution");
 error!("Oh no, something went wrong");
+```
+
+## Configuring plugin locations
+
+To use a WASM plugin, it'll need to be configured in both moon and proto. Luckily both tools use a
+similar approach for configuring plugins called the
+[plugin locator](https://docs.rs/warpgate/latest/warpgate/enum.PluginLocator.html). A locator string
+is composed of 2 parts separated by `:`, the former is the scope (or protocol), and the latter is
+the location.
+
+```toml
+"<scope>:<location>"
+```
+
+The following locator patterns are supported:
+
+### `source:`
+
+The `source:` locator scope supports both secure URLs and file system paths (relative from the
+config file). Files will be used as-is, while URLs will be downloaded to `~/.moon/plugins` or
+`~/.proto/plugins`.
+
+```toml
+# File
+"source:./plugins/example.wasm"
+
+# URL
+"source:https://domain.com/path/to/plugins/example.wasm"
+```
+
+### `github:`
+
+The `github:` locator scope can be used to target and download an asset from a specific GitHub
+release. The location must be an organization + repository slug (owner/repo), and the release _must
+have_ a `.wasm` asset available to download.
+
+```toml
+"github:moonrepo/example-repo"
+```
+
+By default, the latest release will be used and cached for 7 days. If you'd prefer to target a
+specific release (preferred), append the release tag to the end of the location.
+
+```toml
+"github:moonrepo/example-repo@v1.2.3"
+```
+
+This strategy is powered by the [GitHub API](https://api.github.com/) and is subject to rate
+limiting. If running in a CI environment, we suggesting setting a `GITHUB_TOKEN` environment
+variable to authorize API requests with. If using GitHub Actions, it's as simple as:
+
+```yaml
+# In some job or step...
+env:
+  GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 ```
 
 ## Creating a plugin

@@ -71,6 +71,9 @@ mod scaffold_workspace {
         assert!(docker.join(".moon/tasks/node.yml").exists());
         assert!(docker.join(".moon/toolchain.yml").exists());
         assert!(docker.join(".moon/workspace.yml").exists());
+        assert!(docker.join("base/moon.yml").exists());
+        assert!(docker.join("swc/moon.yml").exists());
+        assert!(docker.join("version-override/moon.yml").exists());
     }
 
     #[test]

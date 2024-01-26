@@ -1566,9 +1566,9 @@ dependencies = [
 
 [[package]]
 name = "extism-pdk"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38ac12d16e778ccf351f39a45efb65c0bbdb45bc9928c557507e808efafa51cf"
+checksum = "b2029c9915315a3862f6ee7de57e200230fb9e3f29477934ff7ddc48e30dd211"
 dependencies = [
  "anyhow",
  "base64",

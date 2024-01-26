@@ -24,10 +24,15 @@
   - These options will be merged and inherited as part of the configuration chain.
 - Added an `optional` field to task `deps`, allowing the dependency to be optional during
   inheritance.
+- Added a "Tags" view to the VSCode extension.
 - Updated proto installation to trigger for all applicable commands, not just `moon run`,
   `moon check`, and `moon ci`.
   - Will also use the global proto version if available when there's no internet connection, and the
     moon required proto version has not been installed.
+
+#### 🐞 Fixes
+
+- Fixed Git version parsing when using VFSForGit.
 
 #### 🧩 Plugins
 

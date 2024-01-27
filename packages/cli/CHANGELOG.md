@@ -12,6 +12,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Removed the maximum concurrency limit from persistent tasks.
+
 #### 🐞 Fixes
 
 - Fixed `moon docker scaffold` not copying the project specific `moon.yml` file, resulting in a

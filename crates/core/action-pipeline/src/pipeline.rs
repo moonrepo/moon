@@ -229,10 +229,6 @@ impl Pipeline {
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
-            let Ok(permit) = semaphore.clone().acquire_owned().await else {
-                continue; // Should error?
-            };
-
             action_handles.push(tokio::spawn(async move {
                 let result = tokio::select! {
                     biased;
@@ -252,8 +248,6 @@ impl Pipeline {
                 if let Ok(action) = &result {
                     let _ = sender.send(action.node_index);
                 }
-
-                drop(permit);
 
                 result
             }));

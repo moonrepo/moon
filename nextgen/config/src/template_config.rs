@@ -1,9 +1,10 @@
 // template.yml
 
-use crate::validate::check_yml_extension;
-use moon_common::{color, consts, Id};
+use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{validate, Config, ConfigLoader};
+use schematic::{validate, Config};
+
+#[cfg(feature = "loader")]
 use std::path::Path;
 
 macro_rules! var_setting {
@@ -83,8 +84,13 @@ pub struct TemplateConfig {
     pub variables: FxHashMap<String, TemplateVariable>,
 }
 
+#[cfg(feature = "loader")]
 impl TemplateConfig {
     pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
+        use crate::validate::check_yml_extension;
+        use moon_common::color;
+        use schematic::ConfigLoader;
+
         let result = ConfigLoader::<TemplateConfig>::new()
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/template",
@@ -96,6 +102,8 @@ impl TemplateConfig {
     }
 
     pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
+        use moon_common::consts;
+
         Self::load(
             template_root
                 .as_ref()

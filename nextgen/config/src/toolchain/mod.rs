@@ -29,7 +29,7 @@ macro_rules! is_using_tool_version {
     };
 }
 
-#[cfg(feature = "loader")]
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
@@ -53,7 +53,7 @@ macro_rules! inherit_tool {
     };
 }
 
-#[cfg(feature = "loader")]
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! inherit_tool_required {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
@@ -73,7 +73,7 @@ macro_rules! inherit_tool_required {
     };
 }
 
-#[cfg(feature = "loader")]
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! inherit_tool_without_version {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {

@@ -163,7 +163,9 @@ impl WorkspaceConfig {
 
     pub fn inherit_default_plugins(&mut self) {
         for (id, extension) in default_extensions() {
-            self.extensions.entry(id).or_insert(extension);
+            self.extensions
+                .entry(proto_core::Id::raw(id))
+                .or_insert(extension);
         }
     }
 }

@@ -1,8 +1,9 @@
-#[cfg(feature = "loader")]
-use crate::{inherit_tool, inherit_tool_required};
 use schematic::{derive_enum, Config, ConfigEnum};
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
+
+#[cfg(feature = "proto")]
+use crate::{inherit_tool, inherit_tool_required};
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -154,7 +155,7 @@ pub struct NodeConfig {
     pub yarn: Option<YarnConfig>,
 }
 
-#[cfg(feature = "loader")]
+#[cfg(feature = "proto")]
 impl NodeConfig {
     inherit_tool_required!(NpmConfig, npm, "npm", inherit_proto_npm);
 

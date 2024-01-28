@@ -1,4 +1,4 @@
-use moon_target::Target;
+use crate::types::Target;
 use schematic::Config;
 
 #[derive(Clone, Config, Debug)]

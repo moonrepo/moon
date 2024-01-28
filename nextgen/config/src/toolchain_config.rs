@@ -3,11 +3,13 @@
 use crate::language_platform::PlatformType;
 use crate::toolchain::*;
 use crate::validate::check_yml_extension;
-use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 use moon_common::{color, consts};
 use proto_core::ProtoConfig;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
+
+#[cfg(feature = "loader")]
+use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Config, Debug)]
@@ -37,6 +39,7 @@ pub struct ToolchainConfig {
     pub typescript: Option<TypeScriptConfig>,
 }
 
+#[cfg(feature = "loader")]
 impl ToolchainConfig {
     inherit_tool!(BunConfig, bun, "bun", inherit_proto_bun);
 

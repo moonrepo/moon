@@ -33,7 +33,13 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tracing = { workspace = true }
+version_spec = { workspace = true, features = ["schematic"] }
+warpgate_api = { workspace = true, features = ["schematic"] }
 
 [dev-dependencies]
 httpmock = "0.7.0"
 starbase_sandbox = { workspace = true }
+
+[features]
+default = []
+loader = []

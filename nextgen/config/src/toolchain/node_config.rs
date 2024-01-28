@@ -1,8 +1,8 @@
+#[cfg(feature = "loader")]
 use crate::{inherit_tool, inherit_tool_required};
-use moon_common::color;
-use proto_core::{PluginLocator, ProtoConfig, UnresolvedVersionSpec};
 use schematic::{derive_enum, Config, ConfigEnum};
-use tracing::debug;
+use version_spec::UnresolvedVersionSpec;
+use warpgate_api::PluginLocator;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -154,6 +154,7 @@ pub struct NodeConfig {
     pub yarn: Option<YarnConfig>,
 }
 
+#[cfg(feature = "loader")]
 impl NodeConfig {
     inherit_tool_required!(NpmConfig, npm, "npm", inherit_proto_npm);
 
@@ -164,6 +165,10 @@ impl NodeConfig {
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
     pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+        use moon_common::color;
+        use proto_core::ProtoConfig;
+        use tracing::debug;
+
         match &self.package_manager {
             NodePackageManager::Bun => {
                 if self.bun.is_none() {

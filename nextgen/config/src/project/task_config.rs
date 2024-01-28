@@ -1,12 +1,10 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
-use moon_common::{cacheable, color, Id};
+use moon_common::{cacheable, Id};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, merge, Config, ConfigEnum, ConfigLoader, Format, PathSegment, ValidateError,
-};
+use schematic::{derive_enum, merge, Config, ConfigEnum, PathSegment, ValidateError};
 
 fn validate_command<D, C>(
     command: &PartialTaskArgs,
@@ -172,8 +170,12 @@ cacheable!(
     }
 );
 
+#[cfg(feature = "loader")]
 impl TaskConfig {
     pub fn parse<T: AsRef<str>>(code: T) -> miette::Result<TaskConfig> {
+        use moon_common::color;
+        use schematic::{ConfigLoader, Format};
+
         let result = ConfigLoader::<TaskConfig>::new()
             .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
             .code(code.as_ref(), Format::Yaml)?

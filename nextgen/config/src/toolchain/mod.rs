@@ -12,6 +12,7 @@ pub use node_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
 
+#[cfg(feature = "loader")]
 #[macro_export]
 macro_rules! is_using_tool_version {
     ($self:ident, $parent_tool:ident, $tool:ident) => {
@@ -28,6 +29,7 @@ macro_rules! is_using_tool_version {
     };
 }
 
+#[cfg(feature = "loader")]
 #[macro_export]
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
@@ -51,6 +53,7 @@ macro_rules! inherit_tool {
     };
 }
 
+#[cfg(feature = "loader")]
 #[macro_export]
 macro_rules! inherit_tool_required {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
@@ -70,6 +73,7 @@ macro_rules! inherit_tool_required {
     };
 }
 
+#[cfg(feature = "loader")]
 #[macro_export]
 macro_rules! inherit_tool_without_version {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {

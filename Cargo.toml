@@ -94,6 +94,7 @@ extism-pdk = "1.0.0"
 proto_core = "0.29.3"
 proto_installer = "0.2.0"
 system_env = "0.2.0"
-warpgate = "0.10.3"
-warpgate_api = "0.3.1"
+version_spec = "0.2.0"
+warpgate = { version = "0.10.3" }
+warpgate_api = { version = "0.3.1", path = "../proto/crates/warpgate-api" }
 warpgate_pdk = "0.1.0"

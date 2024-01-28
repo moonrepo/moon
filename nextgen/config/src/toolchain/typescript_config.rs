@@ -1,5 +1,5 @@
-use proto_core::PluginLocator;
 use schematic::Config;
+use warpgate_api::PluginLocator;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
 #[derive(Clone, Config, Debug)]

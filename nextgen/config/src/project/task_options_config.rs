@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::portable_path::FilePath;
 use crate::shapes::InputPath;
 use moon_common::cacheable;
@@ -7,6 +5,7 @@ use schematic::schema::StringType;
 use schematic::{derive_enum, Config, ConfigEnum, SchemaType, Schematic, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
+use std::str::FromStr;
 
 fn validate_interactive<C>(
     enabled: &bool,

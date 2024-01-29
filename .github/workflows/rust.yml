@@ -15,19 +15,6 @@ on:
       - Makefile.toml
       - rust-toolchain.toml
 
-env:
-  # sccache
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  # RUST_LOG: trace
-  RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' || '' }}
-  SCCACHE_BUCKET: moon-ci-sccache
-  SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
-  # SCCACHE_LOG: debug
-  # SCCACHE_NO_DAEMON: 1
-  SCCACHE_REGION: us-east-2
-  SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -71,8 +58,6 @@ jobs:
           bins: just
           cache: false
           components: clippy
-      - uses: mozilla-actions/sccache-action@v0.0.3
-        if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Run linter
         run: just lint
   test:
@@ -82,6 +67,18 @@ jobs:
       matrix:
         os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
+    env:
+      # sccache
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # RUST_LOG: trace
+      RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' || '' }}
+      SCCACHE_BUCKET: moon-ci-sccache
+      SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      # SCCACHE_LOG: debug
+      # SCCACHE_NO_DAEMON: 1
+      SCCACHE_REGION: us-east-2
+      SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1

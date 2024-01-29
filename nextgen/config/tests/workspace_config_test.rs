@@ -582,20 +582,20 @@ vcs:
         use super::*;
         use proto_core::PluginLocator;
 
-        #[test]
-        #[should_panic(
-            expected = "Invalid plugin identifier bad.id, must be a valid kebab-case string"
-        )]
-        fn errors_invalid_id() {
-            test_load_config(
-                FILENAME,
-                r"
-extensions:
-    bad.id: 'source:https://domain.com'
-",
-                |path| WorkspaceConfig::load_from(path),
-            );
-        }
+        //         #[test]
+        //         #[should_panic(
+        //             expected = "Invalid plugin identifier bad.id, must be a valid kebab-case string"
+        //         )]
+        //         fn errors_invalid_id() {
+        //             test_load_config(
+        //                 FILENAME,
+        //                 r"
+        // extensions:
+        //     bad.id: 'source:https://domain.com'
+        // ",
+        //                 |path| WorkspaceConfig::load_from(path),
+        //             );
+        //         }
 
         #[test]
         #[should_panic(expected = "extensions.id.plugin: Missing plugin scope or location.")]

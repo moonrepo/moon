@@ -20,7 +20,6 @@ moon_common = { version = "0.1.0", path = "../common" }
 moon_target = { version = "0.1.0", path = "../target" }
 miette = { workspace = true }
 once_cell = { workspace = true }
-once_map = { workspace = true }
 proto_core = { workspace = true, optional = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }

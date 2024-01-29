@@ -3,12 +3,12 @@ use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfi
 use crate::project_config::ProjectType;
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
-use once_map::OnceMap;
 use rustc_hash::FxHashMap;
 use schematic::{merge, validate, Config, ConfigError};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "loader")]
 use std::path::Path;
@@ -113,7 +113,7 @@ pub struct InheritedTasksEntry {
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
-    cache: OnceMap<String, InheritedTasksResult>,
+    cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
     pub configs: FxHashMap<String, InheritedTasksEntry>,
 }
 
@@ -233,68 +233,80 @@ impl InheritedTasksManager {
         let lookup_order = self.get_lookup_order(platform, language, project, tags);
         let lookup_key = lookup_order.join(":");
 
+        // Check the cache first in read only mode!
+        {
+            if let Some(cache) = self.cache.read().unwrap().get(&lookup_key) {
+                return Ok(cache.to_owned());
+            }
+        }
+
         // Cache the result as this lookup may be the same for a large number of projects,
         // and since this clones constantly, we can avoid a lot of allocations and overhead.
-        self.cache.try_insert_cloned(lookup_key, |_| {
-            let mut partial_config = PartialInheritedTasksConfig::default();
-            let mut layers = BTreeMap::default();
+        let mut partial_config = PartialInheritedTasksConfig::default();
+        let mut layers = BTreeMap::default();
 
-            #[allow(clippy::let_unit_value)]
-            let context = ();
+        #[allow(clippy::let_unit_value)]
+        let context = ();
 
-            for lookup in &lookup_order {
-                if let Some(config_entry) = self.configs.get(lookup) {
-                    let source_path =
-                        standardize_separators(format!("{}", config_entry.input.display()));
-                    let mut managed_config = config_entry.config.clone();
+        for lookup in &lookup_order {
+            if let Some(config_entry) = self.configs.get(lookup) {
+                let source_path =
+                    standardize_separators(format!("{}", config_entry.input.display()));
+                let mut managed_config = config_entry.config.clone();
 
-                    // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
-                    // as the latter will be globbed alongside toolchain/workspace configs.
-                    // We also don't know what platform each of the tasks should be yet.
-                    if lookup != "*" {
-                        if let Some(tasks) = &mut managed_config.tasks {
-                            for task in tasks.values_mut() {
-                                // Automatically set this source as an input
-                                task.global_inputs
-                                    .get_or_insert(vec![])
-                                    .push(InputPath::WorkspaceFile(source_path.clone()));
+                // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
+                // as the latter will be globbed alongside toolchain/workspace configs.
+                // We also don't know what platform each of the tasks should be yet.
+                if lookup != "*" {
+                    if let Some(tasks) = &mut managed_config.tasks {
+                        for task in tasks.values_mut() {
+                            // Automatically set this source as an input
+                            task.global_inputs
+                                .get_or_insert(vec![])
+                                .push(InputPath::WorkspaceFile(source_path.clone()));
 
-                                // Automatically set the platform
-                                if task.platform.unwrap_or_default().is_unknown() {
-                                    task.platform = Some(platform.to_owned());
-                                }
+                            // Automatically set the platform
+                            if task.platform.unwrap_or_default().is_unknown() {
+                                task.platform = Some(platform.to_owned());
                             }
                         }
                     }
-
-                    layers.insert(source_path, managed_config.clone());
-                    partial_config.merge(&context, managed_config)?;
                 }
+
+                layers.insert(source_path, managed_config.clone());
+                partial_config.merge(&context, managed_config)?;
             }
+        }
 
-            let config = partial_config.finalize(&context)?;
+        let config = partial_config.finalize(&context)?;
 
-            config
-                .validate(&context, true)
-                .map_err(|error| ConfigError::Validator {
-                    config: format!(
-                        "inherited tasks {}",
-                        if is_js_platform(platform) {
-                            format!("({}, {}, {})", platform, language, project)
-                        } else {
-                            format!("({}, {})", language, project)
-                        }
-                    ),
-                    error,
-                    help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
-                })?;
+        config
+            .validate(&context, true)
+            .map_err(|error| ConfigError::Validator {
+                config: format!(
+                    "inherited tasks {}",
+                    if is_js_platform(platform) {
+                        format!("({}, {}, {})", platform, language, project)
+                    } else {
+                        format!("({}, {})", language, project)
+                    }
+                ),
+                error,
+                help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
+            })?;
 
-            Ok(InheritedTasksResult {
-                config: InheritedTasksConfig::from_partial(config),
-                layers,
-                order: lookup_order,
-            })
-        })
+        let result = InheritedTasksResult {
+            config: InheritedTasksConfig::from_partial(config),
+            layers,
+            order: lookup_order,
+        };
+
+        self.cache
+            .write()
+            .unwrap()
+            .insert(lookup_key, result.clone());
+
+        Ok(result)
     }
 }
 

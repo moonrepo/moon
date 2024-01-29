@@ -3210,7 +3210,6 @@ dependencies = [
  "moon_common",
  "moon_target",
  "once_cell",
- "once_map",
  "proto_core",
  "regex",
  "rustc-hash",

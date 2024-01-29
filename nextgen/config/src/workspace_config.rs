@@ -107,7 +107,7 @@ pub struct WorkspaceConfig {
     pub extends: Option<String>,
 
     #[setting(nested)]
-    pub extensions: FxHashMap<proto_core::Id, ExtensionConfig>,
+    pub extensions: FxHashMap<Id, ExtensionConfig>,
 
     #[setting(nested)]
     pub generator: GeneratorConfig,
@@ -171,9 +171,7 @@ impl WorkspaceConfig {
 
     pub fn inherit_default_plugins(&mut self) {
         for (id, extension) in default_extensions() {
-            self.extensions
-                .entry(proto_core::Id::raw(id))
-                .or_insert(extension);
+            self.extensions.entry(id).or_insert(extension);
         }
     }
 }

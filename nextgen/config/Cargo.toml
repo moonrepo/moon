@@ -44,4 +44,4 @@ starbase_sandbox = { workspace = true }
 [features]
 default = []
 loader = []
-proto = ["loader"]
+proto = ["loader", "dep:proto_core"]

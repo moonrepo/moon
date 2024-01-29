@@ -1,8 +1,8 @@
 use clap::Args;
 use miette::miette;
 use moon_app_components::ExtensionRegistry;
-use moon_common::color;
-use moon_plugin::{serialize_config, Id};
+use moon_common::{color, Id};
+use moon_plugin::{serialize_config, PluginId};
 use moon_workspace::Workspace;
 use starbase::system;
 
@@ -32,9 +32,11 @@ pub async fn ext(
         ));
     };
 
+    let id = PluginId::raw(&args.id);
+
     // Load and configure the plugin
     extensions
-        .load_with_config(&args.id, config.get_plugin_locator(), move |manifest| {
+        .load_with_config(&id, config.get_plugin_locator(), move |manifest| {
             manifest.config.insert(
                 "moon_extension_config".to_owned(),
                 serialize_config(&config.config)?,
@@ -45,7 +47,7 @@ pub async fn ext(
         .await?;
 
     // Execute the plugin
-    extensions.perform_sync(&args.id, |plugin, context| {
+    extensions.perform_sync(&id, |plugin, context| {
         plugin.execute(args.passthrough.clone(), context)
     })?;
 }

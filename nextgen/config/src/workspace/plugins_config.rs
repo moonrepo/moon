@@ -1,3 +1,4 @@
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use std::collections::BTreeMap;
@@ -19,9 +20,9 @@ impl ExtensionConfig {
     }
 }
 
-pub fn default_extensions() -> FxHashMap<String, ExtensionConfig> {
+pub fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
     FxHashMap::from_iter([(
-        "download".into(),
+        Id::raw("download"),
         ExtensionConfig {
             plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_download_extension-v0.0.1/moon_download_extension.wasm".into() }),
             config: BTreeMap::new(),

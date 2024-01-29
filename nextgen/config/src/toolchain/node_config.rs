@@ -166,9 +166,6 @@ impl NodeConfig {
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
     pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
-        use moon_common::color;
-        use tracing::debug;
-
         match &self.package_manager {
             NodePackageManager::Bun => {
                 if self.bun.is_none() {
@@ -204,13 +201,18 @@ impl NodeConfig {
                 .dependency_version_format
                 .get_default_for(&self.package_manager);
 
-            debug!(
-                "{} for {} is not supported by {}, changing to {}",
-                color::symbol(self.dependency_version_format.to_string()),
-                color::property("node.dependencyVersionFormat"),
-                self.package_manager.to_string(),
-                color::symbol(new_format.to_string()),
-            );
+            #[cfg(feature = "tracing")]
+            {
+                use moon_common::color;
+
+                tracing::debug!(
+                    "{} for {} is not supported by {}, changing to {}",
+                    color::symbol(self.dependency_version_format.to_string()),
+                    color::property("node.dependencyVersionFormat"),
+                    self.package_manager.to_string(),
+                    color::symbol(new_format.to_string()),
+                );
+            }
 
             self.dependency_version_format = new_format;
         }

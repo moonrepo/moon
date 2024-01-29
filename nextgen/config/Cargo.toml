@@ -20,7 +20,6 @@ moon_common = { version = "0.1.0", path = "../common" }
 moon_target = { version = "0.1.0", path = "../target" }
 miette = { workspace = true }
 once_cell = { workspace = true }
-proto_core = { workspace = true, optional = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
@@ -32,9 +31,12 @@ semver = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
-tracing = { workspace = true }
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
+
+# Optional
+proto_core = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 httpmock = "0.7.0"
@@ -44,3 +46,4 @@ starbase_sandbox = { workspace = true }
 default = []
 loader = []
 proto = ["loader", "dep:proto_core"]
+tracing = ["dep:tracing"]

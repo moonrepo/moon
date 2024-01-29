@@ -19,7 +19,7 @@ const workspaceRows: Comparison[] = [
 		feature: 'Written in',
 		support: {
 			moon: 'Rust',
-			nx: 'Node.js',
+			nx: 'Rust for speed & TypeScript for extensibility',
 			turborepo: 'Go (being rewritten in Rust)',
 		},
 	},
@@ -43,7 +43,7 @@ const workspaceRows: Comparison[] = [
 		feature: 'Repo / folder structure',
 		support: {
 			moon: 'loose',
-			nx: 'strict',
+			nx: 'loose',
 			turborepo: 'loose',
 		},
 	},
@@ -59,6 +59,7 @@ const workspaceRows: Comparison[] = [
 		feature: 'Supports dependencies inherited by all tasks',
 		support: {
 			moon: [SUPPORTED, 'via `implicitDeps`'],
+			nx: [SUPPORTED, 'via `targetDefaults`'],
 		},
 	},
 	{
@@ -73,6 +74,7 @@ const workspaceRows: Comparison[] = [
 		feature: 'Supports tasks inherited by all projects',
 		support: {
 			moon: SUPPORTED,
+			nx: [SUPPORTED, 'via `plugins`'],
 		},
 	},
 	{
@@ -98,7 +100,7 @@ const toolchainRows: Comparison[] = [
 		feature: 'Supported languages',
 		support: {
 			moon: 'Bash, Batch, Bun, Deno, Go, Node, JavaScript, TypeScript, PHP, Ruby, Rust, Python',
-			nx: 'JavaScript, TypeScript',
+			nx: 'All languages via plugins. OOTB TS/JS, existing plugins for Rust, Go, Dotnet and more',
 			turborepo: 'JavaScript, TypeScript',
 		},
 	},
@@ -135,7 +137,10 @@ const projectsRows: Comparison[] = [
 		feature: 'Dependencies on other projects',
 		support: {
 			moon: [SUPPORTED, 'implicit from `package.json` or explicit in `moon.yml`'],
-			nx: [SUPPORTED, 'implicit from `package.json` or explicit in `project.json`'],
+			nx: [
+				SUPPORTED,
+				'implicit from `package.json` or explicit in `project.json` and code imports/exports',
+			],
 			turborepo: [SUPPORTED, 'implicit from `package.json`'],
 		},
 	},
@@ -177,7 +182,7 @@ const projectsRows: Comparison[] = [
 		feature: 'Tags and scopes (boundaries)',
 		support: {
 			moon: [SUPPORTED, 'native for all languages'],
-			nx: [SUPPORTED, 'via ESLint (JavaScript only)'],
+			nx: [SUPPORTED, 'boundaries via ESLint (TS and JS), tags for filtering for all languages'],
 		},
 	},
 ];
@@ -187,7 +192,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Known as',
 		support: {
 			moon: 'tasks',
-			nx: 'targets, executors',
+			nx: 'targets',
 			turborepo: 'tasks',
 		},
 	},
@@ -195,7 +200,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Defines tasks in',
 		support: {
 			moon: '`moon.yml` or `package.json` scripts',
-			nx: '`project.json` or `package.json` scripts',
+			nx: '`nx.json`, `project.json` or `package.json` scripts',
 			turborepo: '`package.json` scripts',
 		},
 	},
@@ -203,7 +208,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Run a single task with',
 		support: {
 			moon: '`moon run project:task`',
-			nx: '`nx run project:target`',
+			nx: '`nx target project` or `nx run project:target`',
 			turborepo: '`turbo run task --filter=project`',
 		},
 	},
@@ -211,7 +216,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Run multiple tasks with',
 		support: {
 			moon: '`moon run :task` or `moon run a:task b:task` or `moon check`',
-			nx: '`nx run-many --target=target`',
+			nx: '`nx run-many -t task1 task2 task3`',
 			turborepo: '`turbo run task` or `turbo run a b c`',
 		},
 	},
@@ -219,25 +224,28 @@ const tasksRows: Comparison[] = [
 		feature: 'Run tasks based on a query/filter',
 		support: {
 			moon: '`moon run :task --query "..."`',
+			nx: '`nx run-many -t task -p "tag:.." -p "dir/*" -p "name*" -p "!negation"`',
 		},
 	},
 	{
 		feature: 'Can define tasks globally',
 		support: {
 			moon: [SUPPORTED, 'with `.moon/tasks.yml`'],
+			nx: [SUPPORTED, 'with `targetDefaults`'],
 		},
 	},
 	{
 		feature: 'Merges or overrides global tasks',
 		support: {
 			moon: SUPPORTED,
+			nx: SUPPORTED,
 		},
 	},
 	{
 		feature: 'Runs a command with args',
 		support: {
 			moon: SUPPORTED,
-			nx: [SIMILARLY_SUPPORTED, 'behind an executor abstraction'],
+			nx: SUPPORTED,
 			turborepo: [PARTIALLY_SUPPORTED, 'within the script'],
 		},
 	},
@@ -245,7 +253,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Runs commands from',
 		support: {
 			moon: 'project or workspace root',
-			nx: 'workspace root',
+			nx: 'current working directory, or wherever desired via config',
 			turborepo: 'project root',
 		},
 	},
@@ -283,7 +291,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Can depend on arbitrary or unrelated tasks',
 		support: {
 			moon: SUPPORTED,
-			nx: [NOT_SUPPORTED, 'dependent projects only'],
+			nx: SUPPORTED,
 			turborepo: [NOT_SUPPORTED, 'dependent projects only'],
 		},
 	},
@@ -299,6 +307,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Can run task dependencies in serial',
 		support: {
 			moon: SUPPORTED,
+			nx: [SUPPORTED, 'via `parallel=1`'],
 			turborepo: [SUPPORTED, 'via `concurrency=1`'],
 		},
 	},
@@ -306,14 +315,14 @@ const tasksRows: Comparison[] = [
 		feature: 'File groups',
 		support: {
 			moon: SUPPORTED,
-			nx: [SIMILARLY_SUPPORTED, 'via `namedInputs`'],
+			nx: [SUPPORTED, 'via `namedInputs`'],
 		},
 	},
 	{
 		feature: 'Environment variables',
 		support: {
 			moon: [SUPPORTED, 'via `env`'],
-			nx: [PARTIALLY_SUPPORTED, 'within the executor or script'],
+			nx: [SUPPORTED, 'automatically via `.env` files and/or inherited from shell'],
 			turborepo: [PARTIALLY_SUPPORTED, 'within the script'],
 		},
 	},
@@ -344,7 +353,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Custom hash inputs',
 		support: {
-			nx: [SUPPORTED, 'via `runtimeCacheInputs`'],
+			nx: [SUPPORTED, 'via `runtime` inputs'],
 			turborepo: [SUPPORTED, 'via `globalDependencies`'],
 		},
 	},
@@ -352,6 +361,10 @@ const tasksRows: Comparison[] = [
 		feature: 'Token substitution',
 		support: {
 			moon: SUPPORTED,
+			nx: [
+				SUPPORTED,
+				'`{workspaceRoot}`, `{projectRoot}`, `{projectName}`, arbitrary patterns `namedInputs`',
+			],
 		},
 	},
 	{
@@ -400,6 +413,7 @@ const taskRunnerRows: Comparison[] = [
 		feature: 'Automatically retries failed tasks',
 		support: {
 			moon: SUPPORTED,
+			nx: [SUPPORTED, 'when task flakiness detected on https://nx.app Nx Cloud'],
 		},
 	},
 	{
@@ -428,6 +442,7 @@ const taskRunnerRows: Comparison[] = [
 		feature: 'Can generate run reports',
 		support: {
 			moon: SUPPORTED,
+			nx: [SUPPORTED, 'free in https://nx.app, and in Nx Cloud GitHub App Comment'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -435,19 +450,21 @@ const taskRunnerRows: Comparison[] = [
 		feature: 'Continuous integration (CI) support',
 		support: {
 			moon: SUPPORTED,
-			nx: PARTIALLY_SUPPORTED,
+			nx: SUPPORTED,
 			turborepo: PARTIALLY_SUPPORTED,
 		},
 	},
 	{
 		feature: 'Continuous deployment (CD) support',
-		support: {},
+		support: {
+			nx: [SUPPORTED, 'via `nx release`'],
+		},
 	},
 	{
 		feature: 'Remote / cloud caching and syncing',
 		support: {
 			moon: [SUPPORTED, 'with moonrepo.app (free / paid)'],
-			nx: [SUPPORTED, 'with Nx cloud (paid)'],
+			nx: [SUPPORTED, 'with https://nx.app Nx Cloud (free / paid)'],
 			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
 		},
 	},
@@ -473,6 +490,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Template file extensions (optional)',
 		support: {
 			moon: [SUPPORTED, '.tera, .twig'],
+			nx: [SUPPORTED, 'fully under user control, built in utility for .ejs templates'],
 			turborepo: [SUPPORTED, '.hbs'],
 		},
 	},
@@ -480,6 +498,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Template files support frontmatter',
 		support: {
 			moon: SUPPORTED,
+			nx: [SUPPORTED, 'fully under user control'],
 		},
 	},
 	{
@@ -494,7 +513,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Updates/merges with existing files',
 		support: {
 			moon: [SUPPORTED, 'JSON/YAML only'],
-			nx: [SUPPORTED, 'using JavaScript'],
+			nx: [SUPPORTED, 'fully under user control, author in TypeScript/JavaScript'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -502,7 +521,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Renders with a template engine',
 		support: {
 			moon: [SUPPORTED, 'via Tera'],
-			nx: [SUPPORTED, 'via EJS'],
+			nx: [SUPPORTED, 'fully under user control, built in utility for .ejs templates'],
 			turborepo: [SUPPORTED, 'via Handlebars'],
 		},
 	},
@@ -526,7 +545,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Can define variable values via interactive prompts',
 		support: {
 			moon: SUPPORTED,
-			nx: SUPPORTED,
+			nx: [SUPPORTED, 'fully definable as JSON schema'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -534,6 +553,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Can define variable values via command line args',
 		support: {
 			moon: SUPPORTED,
+			nx: [SUPPORTED, 'fully definable as JSON schema'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -556,7 +576,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Generators can compose other generators',
 		support: {
 			moon: [SUPPORTED, 'via `extends`'],
-			nx: [SUPPORTED, 'using JavaScript'],
+			nx: [SUPPORTED, 'fully under user control, author in TypeScript/JavaScript'],
 			turborepo: [SUPPORTED, 'using JavaScript'],
 		},
 	},
@@ -619,6 +639,7 @@ const javascriptRows: Comparison[] = [
 		feature: 'Can alias `package.json` names for projects',
 		support: {
 			moon: SUPPORTED,
+			nx: SUPPORTED,
 		},
 	},
 	{
@@ -670,6 +691,7 @@ const dockerRows: Comparison[] = [
 		feature: 'Efficient scaffolding for Dockerfile layer caching',
 		support: {
 			moon: SUPPORTED,
+			nx: [SIMILARLY_SUPPORTED, 'via custom generator'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -677,6 +699,7 @@ const dockerRows: Comparison[] = [
 		feature: 'Automatic production-only dependency installation',
 		support: {
 			moon: SUPPORTED,
+			nx: [PARTIALLY_SUPPORTED, 'generated automatically by first party plugin'],
 		},
 	},
 	{

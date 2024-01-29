@@ -16,9 +16,3 @@ pub type ProjectAliasEntry = (Id, String);
 pub type ProjectsAliasesList = Vec<ProjectAliasEntry>;
 
 pub type TasksConfigsMap = BTreeMap<Id, TaskConfig>;
-
-#[cfg(feature = "target")]
-pub use moon_target::Target;
-
-#[cfg(not(feature = "target"))]
-pub type Target = String;

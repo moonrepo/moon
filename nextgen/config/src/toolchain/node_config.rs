@@ -165,9 +165,8 @@ impl NodeConfig {
 
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
-    pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+    pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
         use moon_common::color;
-        use proto_core::ProtoConfig;
         use tracing::debug;
 
         match &self.package_manager {

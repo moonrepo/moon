@@ -19,14 +19,15 @@ pub use language_platform::*;
 pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
-pub use proto_core::{ProtoConfig, UnresolvedVersionSpec, Version, VersionReq, VersionSpec};
 pub use schematic::{Config, ConfigEnum, ConfigError, PartialConfig};
+pub use semver::{Version, VersionReq};
 pub use shapes::*;
 pub use template::*;
 pub use template_config::*;
 pub use toolchain::*;
 pub use toolchain_config::*;
 pub use types::*;
+pub use version_spec::{UnresolvedVersionSpec, VersionSpec};
 pub use workspace::*;
 pub use workspace_config::*;
 

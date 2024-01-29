@@ -2,13 +2,12 @@
 
 use crate::language_platform::PlatformType;
 use crate::toolchain::*;
-use crate::validate::check_yml_extension;
-use moon_common::{color, consts};
-use proto_core::ProtoConfig;
-use schematic::{validate, Config, ConfigLoader};
+use schematic::{validate, Config};
+
+#[cfg(feature = "proto")]
 use std::path::Path;
 
-#[cfg(feature = "loader")]
+#[cfg(feature = "proto")]
 use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
@@ -39,23 +38,7 @@ pub struct ToolchainConfig {
     pub typescript: Option<TypeScriptConfig>,
 }
 
-#[cfg(feature = "loader")]
 impl ToolchainConfig {
-    inherit_tool!(BunConfig, bun, "bun", inherit_proto_bun);
-
-    inherit_tool_without_version!(DenoConfig, deno, "deno", inherit_proto_deno);
-
-    inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
-
-    inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
-
-    inherit_tool_without_version!(
-        TypeScriptConfig,
-        typescript,
-        "typescript",
-        inherit_proto_typescript
-    );
-
     pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
         let mut tools = vec![];
 
@@ -77,6 +60,24 @@ impl ToolchainConfig {
 
         tools
     }
+}
+
+#[cfg(feature = "proto")]
+impl ToolchainConfig {
+    inherit_tool!(BunConfig, bun, "bun", inherit_proto_bun);
+
+    inherit_tool_without_version!(DenoConfig, deno, "deno", inherit_proto_deno);
+
+    inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
+
+    inherit_tool!(RustConfig, rust, "rust", inherit_proto_rust);
+
+    inherit_tool_without_version!(
+        TypeScriptConfig,
+        typescript,
+        "typescript",
+        inherit_proto_typescript
+    );
 
     pub fn should_install_proto(&self) -> bool {
         is_using_tool_version!(self, bun);
@@ -97,7 +98,7 @@ impl ToolchainConfig {
         false
     }
 
-    pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+    pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
         self.inherit_proto_bun(proto_config)?;
         self.inherit_proto_deno(proto_config)?;
         self.inherit_proto_node(proto_config)?;
@@ -114,8 +115,12 @@ impl ToolchainConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
-        proto_config: &ProtoConfig,
+        proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
+        use crate::validate::check_yml_extension;
+        use moon_common::color;
+        use schematic::ConfigLoader;
+
         let mut result = ConfigLoader::<ToolchainConfig>::new()
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/toolchain",
@@ -131,8 +136,10 @@ impl ToolchainConfig {
 
     pub fn load_from<R: AsRef<Path>>(
         workspace_root: R,
-        proto_config: &ProtoConfig,
+        proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
+        use moon_common::consts;
+
         let workspace_root = workspace_root.as_ref();
 
         Self::load(

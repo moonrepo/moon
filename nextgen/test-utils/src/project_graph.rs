@@ -1,6 +1,6 @@
 use moon_config::{
     InheritedTasksEntry, InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig,
-    PartialTaskConfig, ProtoConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    PartialTaskConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
     WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
@@ -8,6 +8,7 @@ use moon_project_graph::{
     ProjectGraphBuilderContext,
 };
 use moon_vcs::{BoxedVcs, Git};
+use proto_core::ProtoConfig;
 use starbase_events::Emitter;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;

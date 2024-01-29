@@ -1,8 +1,8 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
-use crate::types::Target;
 use moon_common::{cacheable, Id};
+use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{derive_enum, merge, Config, ConfigEnum, ValidateError};
 
@@ -35,7 +35,6 @@ pub fn validate_deps<D, C>(
     _task: &D,
     _context: &C,
 ) -> Result<(), ValidateError> {
-    #[cfg(feature = "target")]
     for (i, dep) in deps.iter().enumerate() {
         let scope;
 
@@ -55,7 +54,7 @@ pub fn validate_deps<D, C>(
             }
         };
 
-        if matches!(scope, moon_target::TargetScope::All) {
+        if matches!(scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
                 schematic::PathSegment::Index(i),

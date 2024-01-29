@@ -17,11 +17,11 @@ path = "src/lib.rs"
 
 [dependencies]
 moon_common = { version = "0.1.0", path = "../common" }
-moon_target = { version = "0.1.0", path = "../target", optional = true }
+moon_target = { version = "0.1.0", path = "../target" }
 miette = { workspace = true }
 once_cell = { workspace = true }
 once_map = { workspace = true }
-proto_core = { workspace = true }
+proto_core = { workspace = true, optional = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
@@ -29,6 +29,7 @@ schematic = { workspace = true, features = [
 	"typescript",
 	"valid_url",
 ] }
+semver = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -44,4 +45,3 @@ starbase_sandbox = { workspace = true }
 default = []
 loader = []
 proto = ["loader"]
-target = ["dep:moon_target"]

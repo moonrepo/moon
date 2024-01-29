@@ -40,9 +40,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
         with:
-          bins: just
+          bins: just,cargo-wasi
           cache: false
-          components: rustfmt
       - name: Building crates
         run: just build-wasm
   format:

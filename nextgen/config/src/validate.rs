@@ -1,7 +1,8 @@
 use schematic::ValidateError;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-pub fn check_yml_extension(path: &Path) -> PathBuf {
+#[cfg(feature = "loader")]
+pub fn check_yml_extension(path: &Path) -> std::path::PathBuf {
     let mut yaml_path = path.to_path_buf();
     yaml_path.set_extension("yaml");
 

@@ -23,11 +23,16 @@ once_cell = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
+	"config",
 	"json_schema",
+	"schema",
+	"type_semver",
+	"type_serde_json",
 	"typescript",
 	"valid_url",
+	"yaml",
 ] }
-semver = { workspace = true }
+semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
@@ -44,6 +49,6 @@ starbase_sandbox = { workspace = true }
 
 [features]
 default = []
-loader = []
+loader = ["schematic/url"]
 proto = ["loader", "dep:proto_core"]
 tracing = ["dep:tracing"]

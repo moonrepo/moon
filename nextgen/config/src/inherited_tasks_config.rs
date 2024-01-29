@@ -8,10 +8,12 @@ use schematic::{merge, validate, Config, ConfigError};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "loader")]
-use std::path::Path;
+use std::{
+    path::Path,
+    sync::{Arc, RwLock},
+};
 
 pub fn merge_fxhashmap<K, V, C>(
     mut prev: FxHashMap<K, V>,
@@ -113,7 +115,9 @@ pub struct InheritedTasksEntry {
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
+    #[cfg(feature = "loader")]
     cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
+
     pub configs: FxHashMap<String, InheritedTasksEntry>,
 }
 

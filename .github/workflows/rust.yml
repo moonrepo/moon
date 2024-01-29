@@ -33,6 +33,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          bins: just
+          cache: false
+          components: rustfmt
+      - name: Building crates
+        run: just build-wasm
   format:
     name: Format
     runs-on: ubuntu-latest

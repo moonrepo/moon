@@ -9,6 +9,9 @@ init:
 build:
 	cargo build --workspace
 
+build-wasm:
+	cd wasm/test-plugin && cargo wasi build
+
 # CHECKING
 
 check:

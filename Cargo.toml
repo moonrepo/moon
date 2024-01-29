@@ -16,7 +16,7 @@ members = [
 	# Next-gen
 	"nextgen/*",
 ]
-exclude = ["tests/fixtures"]
+exclude = ["tests/fixtures", "wasm/test-plugin"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
@@ -48,11 +48,7 @@ reqwest = { version = "0.11.23", default-features = false, features = [
 ] }
 rustc-hash = "1.1.0"
 schematic = { version = "0.13.5", default-features = false, features = [
-	"config",
 	"schema",
-	"url",
-	"yaml",
-	"type_semver",
 ] }
 semver = "1.0.21"
 serde = { version = "1.0.195", features = ["derive", "rc"] }
@@ -91,18 +87,18 @@ uuid = { version = "1.7.0", features = ["v4"] }
 # proto/plugin related
 extism = "1.0.3"
 extism-pdk = "1.0.0"
-# proto_core = "0.29.3"
-# proto_installer = "0.2.0"
-# system_env = "0.2.0"
-# version_spec = "0.2.0"
-# warpgate = { version = "0.10.3" }
-# warpgate_api = { version = "0.3.1", path = "../proto/crates/warpgate-api" }
-# warpgate_pdk = "0.1.0"
+proto_core = "0.29.3"
+proto_installer = "0.2.0"
+system_env = "0.2.0"
+version_spec = "0.2.0"
+warpgate = "0.10.4"
+warpgate_api = "0.3.2"
+warpgate_pdk = "0.1.0"
 
-proto_core = { path = "../proto/crates/core" }
-proto_installer = { path = "../proto/crates/installer" }
-system_env = { path = "../proto/crates/system-env" }
-version_spec = { path = "../proto/crates/version-spec" }
-warpgate = { path = "../proto/crates/warpgate" }
-warpgate_api = { path = "../proto/crates/warpgate-api" }
-warpgate_pdk = { path = "../proto/crates/warpgate-pdk" }
+# proto_core = { path = "../proto/crates/core" }
+# proto_installer = { path = "../proto/crates/installer" }
+# system_env = { path = "../proto/crates/system-env" }
+# version_spec = { path = "../proto/crates/version-spec" }
+# warpgate = { path = "../proto/crates/warpgate" }
+# warpgate_api = { path = "../proto/crates/warpgate-api" }
+# warpgate_pdk = { path = "../proto/crates/warpgate-pdk" }

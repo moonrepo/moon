@@ -388,7 +388,7 @@ mod prune {
         });
 
         assert!(
-            predicate::str::contains("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?")
+            predicate::str::contains("Unable to prune, docker manifest missing.")
                 .eval(&assert.output())
         );
     }
@@ -571,7 +571,7 @@ mod setup {
         });
 
         assert!(
-            predicate::str::contains("Unable to setup, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?")
+            predicate::str::contains("Unable to setup, docker manifest missing.")
                 .eval(&assert.output())
         );
     }

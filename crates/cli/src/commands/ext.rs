@@ -24,7 +24,7 @@ pub async fn ext(
 ) {
     let Some(config) = workspace.config.extensions.get(&args.id) else {
         return Err(miette!(
-            code = "plugin::missing_extension",
+            code = "moon::ext",
             "The extension {} does not exist. Configure the {} setting in {} and try again.",
             color::id(&args.id),
             color::property("extensions"),

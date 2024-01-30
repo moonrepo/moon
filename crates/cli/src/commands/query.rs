@@ -8,15 +8,13 @@ pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use clap::Args;
-use console::Term;
 use miette::IntoDiagnostic;
-use moon_terminal::ExtendedTerm;
+use moon_app_components::StdoutConsole;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::system;
 use starbase_styles::color;
 use std::collections::BTreeMap;
-use std::io::{self, IsTerminal};
 
 #[derive(Args, Clone, Debug)]
 pub struct QueryHashArgs {
@@ -28,14 +26,20 @@ pub struct QueryHashArgs {
 }
 
 #[system]
-pub async fn hash(args: ArgsRef<QueryHashArgs>, workspace: ResourceRef<Workspace>) {
+pub async fn hash(
+    args: ArgsRef<QueryHashArgs>,
+    workspace: ResourceRef<Workspace>,
+    console: ResourceRef<StdoutConsole>,
+) {
     let result = query_hash(workspace, &args.hash).await?;
 
     if !args.json {
-        println!("Hash: {}\n", color::hash(result.0));
+        console.write_line(format!("Hash: {}", color::hash(result.0)))?;
+        console.print_line()?;
     }
 
-    println!("{}", result.1);
+    console.write_line(result.1)?;
+    console.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -51,11 +55,13 @@ pub struct QueryHashDiffArgs {
 }
 
 #[system]
-pub async fn hash_diff(args: ArgsRef<QueryHashDiffArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn hash_diff(
+    args: ArgsRef<QueryHashDiffArgs>,
+    workspace: ResourceRef<Workspace>,
+    console: ResourceRef<StdoutConsole>,
+) {
     let mut result = query_hash_diff(workspace, &args.left, &args.right).await?;
-
-    let is_tty = io::stdout().is_terminal();
-    let term = Term::buffered_stdout();
+    let is_tty = console.is_terminal();
 
     if args.json {
         for diff in diff::lines(&result.left, &result.right) {
@@ -66,39 +72,40 @@ pub async fn hash_diff(args: ArgsRef<QueryHashDiffArgs>, workspace: ResourceMut<
             };
         }
 
-        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console.write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else {
-        term.line(format!("Left:  {}", color::hash(&result.left_hash)))?;
-        term.line(format!("Right: {}\n", color::hash(&result.right_hash)))?;
+        console.write_line(format!("Left:  {}", color::hash(&result.left_hash)))?;
+        console.write_line(format!("Right: {}", color::hash(&result.right_hash)))?;
+        console.print_line()?;
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {
                 diff::Result::Left(l) => {
                     if is_tty {
-                        term.line(color::success(l))?
+                        console.write_line(color::success(l))?
                     } else {
-                        term.line(format!("+{}", l))?
+                        console.write_line(format!("+{}", l))?
                     }
                 }
                 diff::Result::Both(l, _) => {
                     if is_tty {
-                        term.line(l)?
+                        console.write_line(l)?
                     } else {
-                        term.line(format!(" {}", l))?
+                        console.write_line(format!(" {}", l))?
                     }
                 }
                 diff::Result::Right(r) => {
                     if is_tty {
-                        term.line(color::failure(r))?
+                        console.write_line(color::failure(r))?
                     } else {
-                        term.line(format!("-{}", r))?
+                        console.write_line(format!("-{}", r))?
                     }
                 }
             };
         }
     }
 
-    term.flush_lines()?;
+    console.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -138,7 +145,7 @@ pub struct QueryProjectsArgs {
 }
 
 #[system]
-pub async fn projects(args: ArgsRef<QueryProjectsArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -151,26 +158,26 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, workspace: ResourceMut<W
         tags: args.tags,
         tasks: args.tasks,
         touched_files: if args.affected {
-            load_touched_files(workspace).await?
+            load_touched_files(resources.get::<Workspace>()).await?
         } else {
             FxHashSet::default()
         },
         type_of: args.type_of,
     };
 
-    let mut projects = query_projects(workspace, &options).await?;
+    let mut projects = { query_projects(resources.get_mut::<Workspace>(), &options).await? };
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
-    let term = Term::buffered_stdout();
+    let console = resources.get::<StdoutConsole>();
 
     if args.json {
         let result = QueryProjectsResult { projects, options };
 
-        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console.write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !projects.is_empty() {
-        term.line(
+        console.write_line(
             projects
                 .iter()
                 .map(|p| format!("{} | {} | {} | {}", p.id, p.source, p.type_of, p.language))
@@ -179,7 +186,7 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, workspace: ResourceMut<W
         )?;
     }
 
-    term.flush_lines()?;
+    console.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -216,7 +223,7 @@ pub struct QueryTasksArgs {
 }
 
 #[system]
-pub async fn tasks(args: ArgsRef<QueryTasksArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -230,9 +237,9 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, workspace: ResourceMut<Workspa
         ..QueryProjectsOptions::default()
     };
 
-    let projects = query_projects(workspace, &options).await?;
+    let projects = { query_projects(resources.get_mut::<Workspace>(), &options).await? };
     let touched_files = if args.affected {
-        load_touched_files(workspace).await?
+        load_touched_files(resources.get::<Workspace>()).await?
     } else {
         FxHashSet::default()
     };
@@ -261,10 +268,10 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, workspace: ResourceMut<Workspa
     }
 
     // Write to stdout directly to avoid broken pipe panics
-    let term = Term::buffered_stdout();
+    let console = resources.get::<StdoutConsole>();
 
     if options.json {
-        term.line(
+        console.write_line(
             serde_json::to_string_pretty(&QueryTasksResult {
                 tasks: grouped_tasks,
                 options,
@@ -273,15 +280,15 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, workspace: ResourceMut<Workspa
         )?;
     } else if !grouped_tasks.is_empty() {
         for (project_id, tasks) in grouped_tasks {
-            term.line(project_id)?;
+            console.write_line(project_id.as_str())?;
 
             for (task_id, task) in tasks {
-                term.line(format!("\t:{} | {}", task_id, task.command))?;
+                console.write_line(format!("\t:{} | {}", task_id, task.command))?;
             }
         }
     }
 
-    term.flush_lines()?;
+    console.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -312,6 +319,7 @@ pub struct QueryTouchedFilesArgs {
 pub async fn touched_files(
     args: ArgsRef<QueryTouchedFilesArgs>,
     workspace: ResourceRef<Workspace>,
+    console: ResourceRef<StdoutConsole>,
 ) {
     let args = args.to_owned();
     let options = QueryTouchedFilesOptions {
@@ -327,17 +335,15 @@ pub async fn touched_files(
     let files = query_touched_files(workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
-    let term = Term::buffered_stdout();
-
     if args.json {
         let result = QueryTouchedFilesResult {
             files,
             options: options.clone(),
         };
 
-        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console.write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !files.is_empty() {
-        term.line(
+        console.write_line(
             files
                 .iter()
                 .map(|f| f.to_string())
@@ -346,5 +352,5 @@ pub async fn touched_files(
         )?;
     }
 
-    term.flush_lines()?;
+    console.flush()?;
 }

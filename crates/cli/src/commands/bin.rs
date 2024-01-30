@@ -1,9 +1,9 @@
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon_terminal::safe_exit;
 use moon_tool::{get_proto_env_vars, get_proto_paths, prepend_path_env_var};
 use proto_core::ProtoEnvironment;
 use starbase::system;
+use std::process::exit;
 use tokio::process::Command;
 
 #[derive(Args, Clone, Debug)]
@@ -28,6 +28,6 @@ pub async fn bin(args: ArgsRef<BinArgs>) {
         .into_diagnostic()?;
 
     if !result.success() {
-        safe_exit(result.code().unwrap_or(1));
+        exit(result.code().unwrap_or(1));
     }
 }

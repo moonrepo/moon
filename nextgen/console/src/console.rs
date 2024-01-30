@@ -38,10 +38,8 @@ impl Console {
 
                 // Has the thread been closed?
                 match rx.try_recv() {
-                    // If false, no
-                    Ok(value) if value == false => {}
-                    // If true or an error, yes
-                    _ => {
+                    Ok(false) => {}
+                    Ok(true) | Err(_) => {
                         break;
                     }
                 }
@@ -49,6 +47,8 @@ impl Console {
                 break;
             }
         });
+
+        println!("PROCESS ID = {:?}", handle.thread().id());
 
         Self {
             buffer,
@@ -91,7 +91,7 @@ impl Console {
         buffer.write_all(data.as_ref()).unwrap();
 
         // Buffer has written its data to the vec, so flush it
-        if buffer.get_ref().len() > 0 {
+        if !buffer.get_ref().is_empty() {
             flush(&mut buffer, self.target).unwrap();
         }
 

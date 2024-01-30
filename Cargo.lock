@@ -2798,7 +2798,7 @@ dependencies = [
 
 [[package]]
 name = "moon"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_action_graph",
@@ -2821,7 +2821,7 @@ dependencies = [
 
 [[package]]
 name = "moon_action"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_action_graph",
@@ -2834,18 +2834,19 @@ dependencies = [
 
 [[package]]
 name = "moon_action_context"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "clap",
  "moon_common",
  "moon_target",
+ "relative-path",
  "rustc-hash",
  "serde",
 ]
 
 [[package]]
 name = "moon_action_graph"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "graph-cycles",
  "miette",
@@ -2869,7 +2870,7 @@ dependencies = [
 
 [[package]]
 name = "moon_action_pipeline"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "ci_env",
  "console",
@@ -2910,7 +2911,7 @@ dependencies = [
 
 [[package]]
 name = "moon_actions"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_cache_item",
@@ -2926,7 +2927,7 @@ dependencies = [
 
 [[package]]
 name = "moon_api"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cd_env",
  "ci_env",
@@ -2951,7 +2952,7 @@ dependencies = [
 
 [[package]]
 name = "moon_app"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "mimalloc",
@@ -2970,7 +2971,7 @@ dependencies = [
 
 [[package]]
 name = "moon_app_components"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "moon_config",
  "moon_env",
@@ -2983,7 +2984,7 @@ dependencies = [
 
 [[package]]
 name = "moon_args"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "shell-words",
@@ -2993,7 +2994,7 @@ dependencies = [
 
 [[package]]
 name = "moon_bun_lang"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cached",
  "miette",
@@ -3004,7 +3005,7 @@ dependencies = [
 
 [[package]]
 name = "moon_bun_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon",
@@ -3039,7 +3040,7 @@ dependencies = [
 
 [[package]]
 name = "moon_bun_tool"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_bun_lang",
@@ -3057,7 +3058,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cache"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_cache_item",
@@ -3071,7 +3072,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cache_item"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "serde",
@@ -3142,6 +3143,7 @@ dependencies = [
  "proto_installer",
  "reqwest",
  "rustc-hash",
+ "schematic",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -3158,7 +3160,7 @@ dependencies = [
 
 [[package]]
 name = "moon_codegen"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "content_inspector",
  "convert_case",
@@ -3176,7 +3178,7 @@ dependencies = [
 
 [[package]]
 name = "moon_codeowners"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
@@ -3189,7 +3191,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "miette",
  "once_cell",
@@ -3203,7 +3205,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "httpmock",
  "miette",
@@ -3226,7 +3228,7 @@ dependencies = [
 
 [[package]]
 name = "moon_deno_lang"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cached",
  "miette",
@@ -3243,7 +3245,7 @@ dependencies = [
 
 [[package]]
 name = "moon_deno_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_action_context",
@@ -3271,7 +3273,7 @@ dependencies = [
 
 [[package]]
 name = "moon_deno_tool"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
@@ -3283,7 +3285,7 @@ dependencies = [
 
 [[package]]
 name = "moon_emitter"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "miette",
@@ -3302,7 +3304,7 @@ dependencies = [
 
 [[package]]
 name = "moon_env"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "dirs 5.0.1",
  "miette",
@@ -3312,7 +3314,7 @@ dependencies = [
 
 [[package]]
 name = "moon_extension_plugin"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_pdk_api",
@@ -3321,12 +3323,13 @@ dependencies = [
 
 [[package]]
 name = "moon_file_group"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "common-path",
  "miette",
  "moon_common",
  "once_cell",
+ "relative-path",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -3336,7 +3339,7 @@ dependencies = [
 
 [[package]]
 name = "moon_hash"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
@@ -3351,7 +3354,7 @@ dependencies = [
 
 [[package]]
 name = "moon_javascript_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3369,7 +3372,7 @@ dependencies = [
 
 [[package]]
 name = "moon_lang"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "rustc-hash",
@@ -3377,7 +3380,7 @@ dependencies = [
 
 [[package]]
 name = "moon_logger"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "console",
  "log",
@@ -3386,7 +3389,7 @@ dependencies = [
 
 [[package]]
 name = "moon_node_lang"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cached",
  "miette",
@@ -3410,7 +3413,7 @@ dependencies = [
 
 [[package]]
 name = "moon_node_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon",
@@ -3439,6 +3442,7 @@ dependencies = [
  "once_cell",
  "proto_core",
  "rustc-hash",
+ "schematic",
  "serde",
  "serde_json",
  "starbase_styles",
@@ -3448,7 +3452,7 @@ dependencies = [
 
 [[package]]
 name = "moon_node_tool"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
@@ -3467,7 +3471,7 @@ dependencies = [
 
 [[package]]
 name = "moon_notifier"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "ci_env",
@@ -3516,7 +3520,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pipeline"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3533,7 +3537,7 @@ dependencies = [
 
 [[package]]
 name = "moon_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "miette",
@@ -3552,7 +3556,7 @@ dependencies = [
 
 [[package]]
 name = "moon_platform_detector"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "moon_config",
  "once_cell",
@@ -3561,7 +3565,7 @@ dependencies = [
 
 [[package]]
 name = "moon_platform_runtime"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "moon_config",
  "serde",
@@ -3569,7 +3573,7 @@ dependencies = [
 
 [[package]]
 name = "moon_plugin"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "convert_case",
  "dashmap",
@@ -3587,7 +3591,7 @@ dependencies = [
 
 [[package]]
 name = "moon_process"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cached",
  "miette",
@@ -3603,7 +3607,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3618,7 +3622,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project_builder"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3636,7 +3640,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project_constraints"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3646,7 +3650,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project_expander"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "dotenvy",
  "miette",
@@ -3666,7 +3670,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project_graph"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-recursion",
  "miette",
@@ -3697,7 +3701,7 @@ dependencies = [
 
 [[package]]
 name = "moon_query"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3710,7 +3714,7 @@ dependencies = [
 
 [[package]]
 name = "moon_runner"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "console",
  "miette",
@@ -3747,7 +3751,7 @@ dependencies = [
 
 [[package]]
 name = "moon_rust_lang"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cached",
  "cargo-lock",
@@ -3764,7 +3768,7 @@ dependencies = [
 
 [[package]]
 name = "moon_rust_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon",
@@ -3796,7 +3800,7 @@ dependencies = [
 
 [[package]]
 name = "moon_rust_tool"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
@@ -3812,7 +3816,7 @@ dependencies = [
 
 [[package]]
 name = "moon_system_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_action_context",
@@ -3831,7 +3835,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3844,7 +3848,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_args",
@@ -3859,7 +3863,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task_builder"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3876,7 +3880,7 @@ dependencies = [
 
 [[package]]
 name = "moon_terminal"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "console",
  "dialoguer",
@@ -3886,7 +3890,7 @@ dependencies = [
 
 [[package]]
 name = "moon_test_utils"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -3904,7 +3908,7 @@ dependencies = [
 
 [[package]]
 name = "moon_test_utils2"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_bun_platform",
@@ -3922,7 +3926,7 @@ dependencies = [
 
 [[package]]
 name = "moon_time"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "chrono",
  "humantime",
@@ -3931,7 +3935,7 @@ dependencies = [
 
 [[package]]
 name = "moon_tool"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "miette",
@@ -3948,7 +3952,7 @@ dependencies = [
 
 [[package]]
 name = "moon_typescript_lang"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cached",
  "miette",
@@ -3964,7 +3968,7 @@ dependencies = [
 
 [[package]]
 name = "moon_typescript_platform"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -3985,7 +3989,7 @@ dependencies = [
 
 [[package]]
 name = "moon_utils"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "cached",
@@ -4012,7 +4016,7 @@ dependencies = [
 
 [[package]]
 name = "moon_vcs"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "git-url-parse",
@@ -4033,7 +4037,7 @@ dependencies = [
 
 [[package]]
 name = "moon_vcs_hooks"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -4051,7 +4055,7 @@ dependencies = [
 
 [[package]]
 name = "moon_workspace"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_api",

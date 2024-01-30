@@ -1,6 +1,6 @@
 [package]
 name = "moon_env"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "The moon store and workspace environment."

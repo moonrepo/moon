@@ -4,16 +4,16 @@ expression: deps
 ---
 {
     "bin-crate": [
-        "0.1.0",
+        "0.0.1",
     ],
     "serde_derive": [
         "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df",
     ],
     "normal-dep": [
-        "0.1.0",
+        "0.0.1",
     ],
     "inherited-dep": [
-        "0.1.0",
+        "0.0.1",
     ],
     "quote": [
         "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc",
@@ -31,7 +31,7 @@ expression: deps
         "08a91cc18015c41dd5d117c356b1708a23a0469c3256403af09dc2a48a7879ce",
     ],
     "path-deps": [
-        "0.1.0",
+        "0.0.1",
     ],
     "serde": [
         "bb2f3770c8bce3bcda7e149193a069a0f4365bda1fa5cd88e03bca26afc1216c",

@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "bin-crate"
-version = "0.1.0"
+version = "0.0.1"
 
 [[package]]
 name = "cd_env"
@@ -26,21 +26,21 @@ dependencies = [
 
 [[package]]
 name = "inherited-dep"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "cd_env",
 ]
 
 [[package]]
 name = "normal-dep"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "ci_env",
 ]
 
 [[package]]
 name = "path-deps"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "inherited-dep",
  "normal-dep",

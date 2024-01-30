@@ -3,9 +3,9 @@ use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
-    Config, DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
-    PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
-    TasksConfigsMap, TypeScriptConfig, UnresolvedVersionSpec,
+    DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig, PlatformType,
+    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
+    TypeScriptConfig, UnresolvedVersionSpec,
 };
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
@@ -24,6 +24,7 @@ use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
+use schematic::Config;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;

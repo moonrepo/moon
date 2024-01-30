@@ -7,7 +7,7 @@ expression: deps
         "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df",
     ],
     "non-workspace-project": [
-        "0.1.0",
+        "0.0.1",
     ],
     "quote": [
         "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc",

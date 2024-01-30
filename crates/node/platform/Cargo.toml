@@ -1,6 +1,6 @@
 [package]
 name = "moon_node_platform"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 publish = false
 
@@ -29,6 +29,7 @@ miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }

@@ -30,7 +30,7 @@ fn validate_command<D, C>(
     Ok(())
 }
 
-pub fn validate_deps<D, C>(
+pub(crate) fn validate_deps<D, C>(
     deps: &[PartialTaskDependency],
     _task: &D,
     _context: &C,

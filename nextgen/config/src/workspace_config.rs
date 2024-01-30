@@ -1,6 +1,6 @@
 // .moon/workspace.yml
 
-use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
+use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
@@ -133,6 +133,14 @@ pub struct WorkspaceConfig {
     pub version_constraint: Option<VersionReq>,
 }
 
+impl WorkspaceConfig {
+    pub fn inherit_default_plugins(&mut self) {
+        for (id, extension) in default_extensions() {
+            self.extensions.entry(id).or_insert(extension);
+        }
+    }
+}
+
 #[cfg(feature = "loader")]
 impl WorkspaceConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
@@ -167,11 +175,5 @@ impl WorkspaceConfig {
                 .join(consts::CONFIG_DIRNAME)
                 .join(consts::CONFIG_WORKSPACE_FILENAME),
         )
-    }
-
-    pub fn inherit_default_plugins(&mut self) {
-        for (id, extension) in default_extensions() {
-            self.extensions.entry(id).or_insert(extension);
-        }
     }
 }

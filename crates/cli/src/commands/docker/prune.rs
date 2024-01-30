@@ -1,5 +1,6 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
+use miette::miette;
 use moon::generate_project_graph;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
@@ -8,12 +9,12 @@ use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
 use moon_rust_tool::RustTool;
-use moon_terminal::safe_exit;
 use moon_tool::DependencyManager;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::system;
 use starbase::AppResult;
+use starbase_styles::color;
 use starbase_utils::fs;
 use starbase_utils::json;
 use std::path::Path;
@@ -101,8 +102,11 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
-        eprintln!("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?");
-        safe_exit(1);
+        return Err(miette!(
+            code = "moon::docker::prune",
+            "Unable to prune, docker manifest missing. Has it been scaffolded with {}?",
+            color::shell("moon docker scaffold")
+        ));
     }
 
     let project_graph = generate_project_graph(workspace).await?;

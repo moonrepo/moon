@@ -10,6 +10,7 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     cmd.current_dir(path);
     cmd.timeout(std::time::Duration::from_secs(90));
     cmd.env("RUST_BACKTRACE", "1");
+    cmd.env("NO_COLOR", "1");
     // Store plugins in the sandbox
     cmd.env(
         "MOON_HOME",

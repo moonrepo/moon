@@ -1,5 +1,6 @@
 pub mod analyze;
 pub mod execute;
+pub mod shutdown;
 pub mod startup;
 
 use crate::app::{App as CLI, Commands};

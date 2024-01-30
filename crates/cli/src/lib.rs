@@ -40,7 +40,7 @@ use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
 use std::ffi::OsString;
-use systems::{analyze, execute, requires_toolchain, requires_workspace, startup};
+use systems::{analyze, execute, requires_toolchain, requires_workspace, shutdown, startup};
 use tracing::debug;
 
 fn setup_logging(level: &LogLevel) {
@@ -144,6 +144,7 @@ pub async fn run_cli() -> AppResult {
     app.set_state(cli.global_args());
     app.set_state(cli.clone());
     app.startup(startup::load_environments);
+    app.shutdown(shutdown::flush_outputs);
 
     if requires_workspace(&cli) {
         app.startup(startup::load_workspace);

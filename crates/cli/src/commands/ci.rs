@@ -7,14 +7,15 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
+use moon_app_components::StdoutConsole;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
+use std::process::exit;
 use tracing::debug;
 
 type TargetList = Vec<Target>;
@@ -39,36 +40,48 @@ pub struct CiArgs {
     job_total: Option<usize>,
 }
 
-fn print_header(provider: &CiOutput, title: &str) {
-    println!("{}{}", provider.open_log_group, title);
+struct CiConsole<'ci> {
+    inner: &'ci StdoutConsole,
+    output: CiOutput,
 }
 
-fn print_footer(provider: &CiOutput) {
-    if !provider.close_log_group.is_empty() {
-        println!("{}", provider.close_log_group);
+impl<'ci> CiConsole<'ci> {
+    pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
+        self.inner.write_line(data)
     }
-}
 
-fn print_targets(targets: &TargetList) {
-    let mut targets_to_print = targets.clone();
-    targets_to_print.sort();
+    pub fn print_header(&self, title: &str) -> miette::Result<()> {
+        self.write_line(format!("{}{}", self.output.open_log_group, title))
+    }
 
-    println!(
-        "{}",
-        targets_to_print
-            .iter()
-            .map(|t| format!("  {}", color::label(&t.id)))
-            .join("\n")
-    );
+    pub fn print_footer(&self) -> miette::Result<()> {
+        if !self.output.close_log_group.is_empty() {
+            self.write_line(self.output.close_log_group)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn print_targets(&self, targets: &TargetList) -> miette::Result<()> {
+        let mut targets_to_print = targets.clone();
+        targets_to_print.sort();
+
+        self.write_line(
+            targets_to_print
+                .iter()
+                .map(|t| format!("  {}", color::label(&t.id)))
+                .join("\n"),
+        )
+    }
 }
 
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
-    provider: &CiOutput,
+    console: &CiConsole<'_>,
     workspace: &Workspace,
     args: &CiArgs,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
-    print_header(provider, "Gathering touched files");
+    console.print_header("Gathering touched files")?;
 
     let results = query_touched_files(
         workspace,
@@ -82,18 +95,18 @@ async fn gather_touched_files(
     )
     .await?;
 
-    print_footer(provider);
+    console.print_footer()?;
 
     Ok(results)
 }
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 fn gather_runnable_targets(
-    provider: &CiOutput,
+    console: &CiConsole<'_>,
     project_graph: &ProjectGraph,
     args: &CiArgs,
 ) -> AppResult<TargetList> {
-    print_header(provider, "Gathering runnable targets");
+    console.print_header("Gathering runnable targets")?;
 
     let mut targets = vec![];
 
@@ -119,20 +132,20 @@ fn gather_runnable_targets(
         targets.extend(args.targets.clone());
     }
 
-    print_targets(&targets);
-    print_footer(provider);
+    console.print_targets(&targets)?;
+    console.print_footer()?;
 
     Ok(targets)
 }
 
 /// Distribute targets across jobs if parallelism is enabled.
 fn distribute_targets_across_jobs(
-    provider: &CiOutput,
+    console: &CiConsole<'_>,
     args: &CiArgs,
     targets: TargetList,
-) -> TargetList {
+) -> AppResult<TargetList> {
     if args.job.is_none() || args.job_total.is_none() {
-        return targets;
+        return Ok(targets);
     }
 
     let job_index = args.job.unwrap_or_default();
@@ -140,11 +153,11 @@ fn distribute_targets_across_jobs(
     let batch_size = targets.len() / job_total;
     let batched_targets;
 
-    print_header(provider, "Distributing targets across jobs");
-    println!("Job index: {job_index}");
-    println!("Job total: {job_index}");
-    println!("Batch size: {batch_size}");
-    println!("Batched targets:");
+    console.print_header("Distributing targets across jobs")?;
+    console.write_line(format!("Job index: {job_index}"))?;
+    console.write_line(format!("Job total: {job_index}"))?;
+    console.write_line(format!("Batch size: {batch_size}"))?;
+    console.write_line("Batched targets:")?;
 
     if job_index == 0 {
         batched_targets = targets[0..batch_size].to_vec();
@@ -155,20 +168,20 @@ fn distribute_targets_across_jobs(
             targets[(batch_size * job_index)..(batch_size * (job_index + 1))].to_vec();
     }
 
-    print_targets(&batched_targets);
-    print_footer(provider);
+    console.print_targets(&batched_targets)?;
+    console.print_footer()?;
 
-    batched_targets
+    Ok(batched_targets)
 }
 
 /// Generate a dependency graph with the runnable targets.
 fn generate_action_graph(
-    provider: &CiOutput,
+    console: &CiConsole<'_>,
     project_graph: &ProjectGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<ActionGraph> {
-    print_header(provider, "Generating action graph");
+    console.print_header("Generating action graph")?;
 
     let mut action_graph_builder = build_action_graph(project_graph)?;
 
@@ -187,48 +200,45 @@ fn generate_action_graph(
 
     let action_graph = action_graph_builder.build()?;
 
-    println!("Target count: {}", targets.len());
-    println!("Action count: {}", action_graph.get_node_count());
-    print_footer(provider);
+    console.write_line(format!("Target count: {}", targets.len()))?;
+    console.write_line(format!("Action count: {}", action_graph.get_node_count()))?;
+    console.print_footer()?;
 
     Ok(action_graph)
 }
 
 #[system]
-pub async fn ci(
-    args: ArgsRef<CiArgs>,
-    global_args: StateRef<GlobalArgs>,
-    workspace: ResourceMut<Workspace>,
-) {
-    let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
-        close_log_group: "",
-        open_log_group: "▪▪▪▪ ",
-    });
-    let project_graph = generate_project_graph(workspace).await?;
-    let touched_files = gather_touched_files(&ci_provider, workspace, args).await?;
-    let targets = gather_runnable_targets(&ci_provider, &project_graph, args)?;
+pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resources: ResourcesMut) {
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
+    let workspace = resources.get::<Workspace>();
+    let console = CiConsole {
+        inner: resources.get::<StdoutConsole>(),
+        output: ci_env::get_output().unwrap_or(CiOutput {
+            close_log_group: "",
+            open_log_group: "▪▪▪▪ ",
+        }),
+    };
+
+    let touched_files = gather_touched_files(&console, workspace, args).await?;
+    let targets = gather_runnable_targets(&console, &project_graph, args)?;
 
     if targets.is_empty() {
-        println!("{}", color::invalid("No targets to run"));
+        console.write_line(color::invalid("No targets to run"))?;
 
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&ci_provider, args, targets);
-    let action_graph =
-        generate_action_graph(&ci_provider, &project_graph, &targets, &touched_files)?;
+    let targets = distribute_targets_across_jobs(&console, args, targets)?;
+    let action_graph = generate_action_graph(&console, &project_graph, &targets, &touched_files)?;
 
     if action_graph.is_empty() {
-        println!(
-            "{}",
-            color::invalid("No targets to run based on touched files")
-        );
+        console.write_line(color::invalid("No targets to run based on touched files"))?;
 
         return Ok(());
     }
 
     // Process all tasks in the graph
-    print_header(&ci_provider, "Running targets");
+    console.print_header("Running targets")?;
 
     let context = ActionContext {
         primary_targets: FxHashSet::from_iter(targets),
@@ -248,20 +258,25 @@ pub async fn ci(
         .run(action_graph, Some(context))
         .await?;
 
-    print_footer(&ci_provider);
+    console.print_footer()?;
 
-    print_header(&ci_provider, "Summary");
+    // Print out a summary of any failures
+    console.print_header("Summary")?;
 
     pipeline.render_summary(&results)?;
 
+    console.print_footer()?;
+
     // Print out the results and exit if an error occurs
-    print_header(&ci_provider, "Stats");
+    console.print_header("Stats")?;
 
     let failed = pipeline.render_results(&results)?;
 
     pipeline.render_stats(&results, false)?;
 
     if failed {
-        safe_exit(1);
+        exit(1);
+    } else {
+        console.print_footer()?;
     }
 }

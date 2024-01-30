@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_console = { path = "../console" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_plugin = { path = "../plugin" }

@@ -6,6 +6,7 @@ use moon_action_graph::RunRequirements;
 use moon_target::TargetLocator;
 use moon_workspace::Workspace;
 use starbase::{system, SystemResult};
+use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]
 pub struct ActionGraphArgs {
@@ -67,7 +68,7 @@ pub async fn internal_action_graph(
     let url = format!("http://{}", server.server_addr());
     let _ = open::that(&url);
 
-    println!("Started server on {url}");
+    println!("Started server on {}", color::url(url));
 
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Action graph".to_owned())?;

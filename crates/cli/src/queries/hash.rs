@@ -28,6 +28,7 @@ pub async fn query_hash(workspace: &Workspace, hash: &str) -> AppResult<(String,
     }
 
     Err(miette::miette!(
+        code = "moon::hash",
         "Unable to find a hash manifest for {}!",
         color::hash(hash)
     ))

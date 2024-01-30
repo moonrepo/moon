@@ -1,10 +1,11 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
+use miette::miette;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
-use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use starbase::system;
+use starbase_styles::color;
 use starbase_utils::json;
 
 #[system]
@@ -12,8 +13,11 @@ pub async fn setup(workspace: ResourceMut<Workspace>) {
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
-        eprintln!("Unable to setup, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?");
-        safe_exit(1);
+        return Err(miette!(
+            code = "moon::docker::setup",
+            "Unable to setup, docker manifest missing. Has it been scaffolded with {}?",
+            color::shell("moon docker scaffold")
+        ));
     }
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;

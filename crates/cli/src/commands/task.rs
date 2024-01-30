@@ -1,9 +1,8 @@
 use clap::Args;
-use console::Term;
 use miette::{miette, IntoDiagnostic};
 use moon::build_project_graph;
+use moon_app_components::StdoutConsole;
 use moon_target::{Target, TargetScope};
-use moon_terminal::{ExtendedTerm, Label};
 use moon_workspace::Workspace;
 use starbase::system;
 use starbase_styles::color;
@@ -18,12 +17,13 @@ pub struct TaskArgs {
 }
 
 #[system]
-pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     let TargetScope::Project(project_locator) = &args.target.scope else {
-        return Err(miette!("A project ID is required."));
+        return Err(miette!(code = "moon::task", "A project ID is required."));
     };
 
-    let mut project_graph_builder = build_project_graph(workspace).await?;
+    let mut project_graph_builder =
+        { build_project_graph(resources.get_mut::<Workspace>()).await? };
     project_graph_builder.load(project_locator).await?;
 
     let project_graph = project_graph_builder.build().await?;
@@ -36,24 +36,23 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
         return Ok(());
     }
 
-    let term = Term::buffered_stdout();
+    let workspace = resources.get::<Workspace>();
+    let console = resources.get::<StdoutConsole>();
 
-    term.line("")?;
-    term.render_label(Label::Brand, &args.target.id)?;
-    term.render_entry("Task", color::id(&args.target.task_id))?;
-    term.render_entry("Project", color::id(&project.id))?;
-    term.render_entry("Platform", term.format(&task.platform))?;
-    term.render_entry("Type", term.format(&task.type_of))?;
+    console.print_header(&args.target.id)?;
+    console.print_entry("Task", color::id(&args.target.task_id))?;
+    console.print_entry("Project", color::id(&project.id))?;
+    console.print_entry("Platform", format!("{}", &task.platform))?;
+    console.print_entry("Type", format!("{}", &task.type_of))?;
 
-    term.line("")?;
-    term.render_label(Label::Default, "Process")?;
-    term.render_entry(
+    console.print_entry_header("Process")?;
+    console.print_entry(
         "Command",
         color::shell(format!("{} {}", task.command, task.args.join(" "))),
     )?;
 
     if !task.env.is_empty() {
-        term.render_entry_list(
+        console.print_entry_list(
             "Environment variables",
             task.env
                 .iter()
@@ -62,7 +61,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
         )?;
     }
 
-    term.render_entry(
+    console.print_entry(
         "Working directory",
         color::path(if task.options.run_from_workspace_root {
             &workspace.root
@@ -70,7 +69,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
             &project.root
         }),
     )?;
-    term.render_entry(
+    console.print_entry(
         "Runs dependencies",
         if task.options.run_deps_in_parallel {
             "Concurrently"
@@ -78,12 +77,11 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
             "Serially"
         },
     )?;
-    term.render_entry_bool("Runs in CI", task.should_run_in_ci())?;
+    console.print_entry_bool("Runs in CI", task.should_run_in_ci())?;
 
     if !task.deps.is_empty() {
-        term.line("")?;
-        term.render_label(Label::Default, "Depends on")?;
-        term.render_list(
+        console.print_entry_header("Depends on")?;
+        console.print_list(
             task.deps
                 .iter()
                 .map(|d| color::label(&d.target))
@@ -106,9 +104,8 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
                 .collect::<Vec<_>>(),
         );
 
-        term.line("")?;
-        term.render_label(Label::Default, "Inputs")?;
-        term.render_list(files)?;
+        console.print_entry_header("Inputs")?;
+        console.print_list(files)?;
     }
 
     if !task.output_files.is_empty() || !task.output_globs.is_empty() {
@@ -126,11 +123,10 @@ pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
                 .collect::<Vec<_>>(),
         );
 
-        term.line("")?;
-        term.render_label(Label::Default, "Outputs")?;
-        term.render_list(files)?;
+        console.print_entry_header("Outputs")?;
+        console.print_list(files)?;
     }
 
-    term.line("")?;
-    term.flush_lines()?;
+    console.print_line()?;
+    console.flush()?;
 }

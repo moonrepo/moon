@@ -15,7 +15,7 @@ pub struct QueryHashDiffResult {
 }
 
 pub async fn query_hash_diff(
-    workspace: &mut Workspace,
+    workspace: &Workspace,
     base_left: &str,
     base_right: &str,
 ) -> AppResult<QueryHashDiffResult> {

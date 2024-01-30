@@ -1,11 +1,11 @@
 use crate::helpers::map_list;
 use clap::Args;
-use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
+use moon_app_components::StdoutConsole;
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
-use moon_terminal::{create_theme, ExtendedTerm};
+use moon_terminal::create_theme;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::{system, AppResult};
@@ -310,7 +310,11 @@ fn gather_variables(
 }
 
 #[system]
-pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Workspace>) {
+pub async fn generate(
+    args: ArgsRef<GenerateArgs>,
+    workspace: ResourceRef<Workspace>,
+    console: ResourceRef<StdoutConsole>,
+) {
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
 
@@ -333,10 +337,9 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
 
     // Create the template instance
     let mut template = generator.load_template(&args.name)?;
-    let term = Term::buffered_stdout();
 
-    term.line("")?;
-    term.line(format!(
+    console.print_line()?;
+    console.write_line(format!(
         "{} {}",
         &template.config.title,
         if args.dry_run {
@@ -345,9 +348,9 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
             "".into()
         }
     ))?;
-    term.line(&template.config.description)?;
-    term.line("")?;
-    term.flush_lines()?;
+    console.write_line(&template.config.description)?;
+    console.print_line()?;
+    console.flush()?;
 
     // Gather variables
     let mut context = gather_variables(&template, &theme, args)?;
@@ -444,10 +447,10 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
         generator.generate(&template)?;
     }
 
-    term.line("")?;
+    console.print_line()?;
 
     for file in template.files.values() {
-        term.line(format!(
+        console.write_line(format!(
             "{} {} {}",
             match &file.state {
                 FileState::Create => color::success("created"),
@@ -469,6 +472,6 @@ pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Worksp
         ))?;
     }
 
-    term.line("")?;
-    term.flush_lines()?;
+    console.print_line()?;
+    console.flush()?;
 }

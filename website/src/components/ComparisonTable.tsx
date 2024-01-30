@@ -16,11 +16,18 @@ const headers: Comparable[] = ['moon', 'nx', 'turborepo'];
 
 const workspaceRows: Comparison[] = [
 	{
-		feature: 'Written in',
+		feature: 'Core/CLI written in',
 		support: {
 			moon: 'Rust',
-			nx: 'Rust for speed & TypeScript for extensibility',
-			turborepo: 'Go (being rewritten in Rust)',
+			nx: 'Node.js & Rust (for hot paths)',
+			turborepo: 'Rust / Go',
+		},
+	},
+	{
+		feature: 'Plugins written in',
+		support: {
+			moon: 'WASM (any compatible language)',
+			nx: 'TypeScript',
 		},
 	},
 	{
@@ -97,11 +104,11 @@ const workspaceRows: Comparison[] = [
 
 const toolchainRows: Comparison[] = [
 	{
-		feature: 'Supported languages',
+		feature: 'Supported languages in task runner',
 		support: {
-			moon: 'Bash, Batch, Bun, Deno, Go, Node, JavaScript, TypeScript, PHP, Ruby, Rust, Python',
+			moon: 'All languages available on `PATH`',
 			nx: 'All languages via plugins. OOTB TS/JS, existing plugins for Rust, Go, Dotnet and more',
-			turborepo: 'JavaScript, TypeScript',
+			turborepo: 'JavaScriptTypeScript via `package.json` scripts',
 		},
 	},
 	{
@@ -110,6 +117,12 @@ const toolchainRows: Comparison[] = [
 			moon: 'npm, pnpm, yarn, bun',
 			nx: 'npm, pnpm, yarn',
 			turborepo: 'npm, pnpm, yarn',
+		},
+	},
+	{
+		feature: 'Supported toolchain languages (automatic dev envs)',
+		support: {
+			moon: 'Bun, Deno*, Node.js, Rust',
 		},
 	},
 	{
@@ -360,7 +373,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Token substitution',
 		support: {
-			moon: SUPPORTED,
+			moon: [SUPPORTED, 'token functions and variable syntax'],
 			nx: [
 				SUPPORTED,
 				'`{workspaceRoot}`, `{projectRoot}`, `{projectName}`, arbitrary patterns `namedInputs`',
@@ -413,7 +426,7 @@ const taskRunnerRows: Comparison[] = [
 		feature: 'Automatically retries failed tasks',
 		support: {
 			moon: SUPPORTED,
-			nx: [SUPPORTED, 'when task flakiness detected on https://nx.app Nx Cloud'],
+			nx: [SUPPORTED, 'when flakiness detected on Nx Cloud'],
 		},
 	},
 	{
@@ -442,7 +455,7 @@ const taskRunnerRows: Comparison[] = [
 		feature: 'Can generate run reports',
 		support: {
 			moon: SUPPORTED,
-			nx: [SUPPORTED, 'free in https://nx.app, and in Nx Cloud GitHub App Comment'],
+			nx: [SUPPORTED, 'free in Nx Cloud & GitHub App Comment'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -457,14 +470,14 @@ const taskRunnerRows: Comparison[] = [
 	{
 		feature: 'Continuous deployment (CD) support',
 		support: {
-			nx: [SUPPORTED, 'via `nx release`'],
+			nx: [PARTIALLY_SUPPORTED, 'via `nx release`'],
 		},
 	},
 	{
 		feature: 'Remote / cloud caching and syncing',
 		support: {
 			moon: [SUPPORTED, 'with moonrepo.app (free / paid)'],
-			nx: [SUPPORTED, 'with https://nx.app Nx Cloud (free / paid)'],
+			nx: [SUPPORTED, 'with nx.app Nx Cloud (free / paid)'],
 			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
 		},
 	},
@@ -513,7 +526,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Updates/merges with existing files',
 		support: {
 			moon: [SUPPORTED, 'JSON/YAML only'],
-			nx: [SUPPORTED, 'fully under user control, author in TypeScript/JavaScript'],
+			nx: [SUPPORTED, 'via TypeScript/JavaScript plugins'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -545,7 +558,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Can define variable values via interactive prompts',
 		support: {
 			moon: SUPPORTED,
-			nx: [SUPPORTED, 'fully definable as JSON schema'],
+			nx: [SUPPORTED, 'using JSON schema'],
 			turborepo: SUPPORTED,
 		},
 	},
@@ -553,7 +566,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Can define variable values via command line args',
 		support: {
 			moon: SUPPORTED,
-			nx: [SUPPORTED, 'fully definable as JSON schema'],
+			nx: [SUPPORTED, 'using JSON schema'],
 			turborepo: SUPPORTED,
 		},
 	},

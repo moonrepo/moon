@@ -1,4 +1,5 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_console::Console;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
@@ -37,6 +38,12 @@ impl ExtensionRegistry {
         ))
     }
 }
+
+#[derive(Resource)]
+pub struct StderrConsole(pub Console);
+
+#[derive(Resource)]
+pub struct StdoutConsole(pub Console);
 
 #[derive(Debug, Resource)]
 pub struct Tasks {

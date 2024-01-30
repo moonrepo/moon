@@ -2974,6 +2974,7 @@ name = "moon_app_components"
 version = "0.0.1"
 dependencies = [
  "moon_config",
+ "moon_console",
  "moon_env",
  "moon_extension_plugin",
  "moon_plugin",
@@ -3224,6 +3225,13 @@ dependencies = [
  "tracing",
  "version_spec",
  "warpgate_api",
+]
+
+[[package]]
+name = "moon_console"
+version = "0.0.1"
+dependencies = [
+ "miette",
 ]
 
 [[package]]

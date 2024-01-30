@@ -1,6 +1,6 @@
 [package]
 name = "moon_project_expander"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "Expands projects and tasks with runtime information."
@@ -8,12 +8,12 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_common = { version = "0.1.0", path = "../common" }
-moon_config = { version = "0.1.0", path = "../config" }
-moon_project = { version = "0.1.0", path = "../project" }
-moon_query = { version = "0.1.0", path = "../query" }
-moon_task = { version = "0.1.0", path = "../task" }
-moon_time = { version = "0.1.0", path = "../time" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_project = { path = "../project" }
+moon_query = { path = "../query" }
+moon_task = { path = "../task" }
+moon_time = { path = "../time" }
 dotenvy = "0.15.7"
 miette = { workspace = true }
 pathdiff = { workspace = true }

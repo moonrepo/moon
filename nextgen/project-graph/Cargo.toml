@@ -1,6 +1,6 @@
 [package]
 name = "moon_project_graph"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "Project graph for moon represented as a DAG."
@@ -8,18 +8,18 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_cache = { version = "0.1.0", path = "../cache" }
-moon_common = { version = "0.1.0", path = "../common" }
-moon_config = { version = "0.1.0", path = "../config" }
-moon_hash = { version = "0.1.0", path = "../hash" }
-moon_project = { version = "0.1.0", path = "../project" }
-moon_project_builder = { version = "0.1.0", path = "../project-builder" }
-moon_project_constraints = { version = "0.1.0", path = "../project-constraints" }
-moon_project_expander = { version = "0.1.0", path = "../project-expander" }
-moon_query = { version = "0.1.0", path = "../query" }
-moon_task = { version = "0.1.0", path = "../task" }
-moon_task_builder = { version = "0.1.0", path = "../task-builder" }
-moon_vcs = { version = "0.1.0", path = "../vcs" }
+moon_cache = { path = "../cache" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_hash = { path = "../hash" }
+moon_project = { path = "../project" }
+moon_project_builder = { path = "../project-builder" }
+moon_project_constraints = { path = "../project-constraints" }
+moon_project_expander = { path = "../project-expander" }
+moon_query = { path = "../query" }
+moon_task = { path = "../task" }
+moon_task_builder = { path = "../task-builder" }
+moon_vcs = { path = "../vcs" }
 async-recursion = "1.0.5"
 miette = { workspace = true }
 once_map = { workspace = true }

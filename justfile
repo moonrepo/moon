@@ -62,6 +62,9 @@ bump-interactive:
 release:
 	node ./scripts/version/applyAndTagVersions.mjs
 
+release-changes:
+	cargo release changes -p moon_common -p moon_config -p moon_target
+
 # OTHER
 
 docs:

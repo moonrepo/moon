@@ -317,7 +317,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "once_cell",
@@ -331,7 +331,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -687,7 +687,7 @@ dependencies = [
 
 [[package]]
 name = "test_plugin"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "moon_common",
  "moon_config",

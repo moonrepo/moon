@@ -1,6 +1,6 @@
 [package]
 name = "moon_cache"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "Caching engine."
@@ -8,9 +8,9 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_cache_item = { version = "0.1.0", path = "../cache-item" }
-moon_common = { version = "0.1.0", path = "../common" }
-moon_time = { version = "0.1.0", path = "../time" }
+moon_cache_item = { path = "../cache-item" }
+moon_common = { path = "../common" }
+moon_time = { path = "../time" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }

@@ -60,40 +60,42 @@ impl Console {
     }
 
     pub fn close(&mut self) {
-        if let Ok(mut out) = self.buffer.write() {
-            flush(&mut out, self.target).unwrap();
-        }
+        self.flush().unwrap();
 
         let _ = self.channel.send(true);
 
         self.handle.take().unwrap().join().unwrap();
     }
 
-    pub fn line(&self) {
-        self.write("\n".to_owned().into_bytes());
-    }
-
-    pub fn write(&self, data: Vec<u8>) {
-        if self.quiet {
-            return;
+    pub fn flush(&self) -> miette::Result<()> {
+        if let Ok(mut out) = self.buffer.write() {
+            flush(&mut out, self.target).unwrap();
         }
 
+        Ok(())
+    }
+
+    pub fn write<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
         let mut buffer = self
             .buffer
             .write()
             .expect("Failed to acquire console write lock.");
 
-        buffer.write_all(&data).unwrap();
+        buffer.write_all(data.as_ref()).unwrap();
 
         // Buffer has written its data to the vec, so flush it
         if buffer.get_ref().len() > 0 {
             flush(&mut buffer, self.target).unwrap();
         }
+
+        Ok(())
     }
 
-    pub fn write_line(&self, mut data: Vec<u8>) {
+    pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
+        let mut data = data.as_ref().to_owned();
         data.push(b'\n');
-        self.write(data);
+
+        self.write(data)
     }
 }
 

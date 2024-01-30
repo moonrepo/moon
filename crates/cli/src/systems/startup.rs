@@ -78,7 +78,7 @@ pub async fn install_proto(
         console.print_checkpoint(
             Checkpoint::Setup,
             format!("installing proto {}", PROTO_CLI_VERSION),
-        );
+        )?;
     }
 
     // If offline but a primary proto binary exists,

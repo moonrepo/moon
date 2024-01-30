@@ -29,10 +29,10 @@ pub async fn check_for_new_version(
                     color::hash(result.remote_version.to_string()),
                     result.local_version,
                 ),
-            );
+            )?;
 
             if let Some(newer_message) = result.message {
-                console.print_checkpoint(Checkpoint::Announcement, newer_message);
+                console.print_checkpoint(Checkpoint::Announcement, newer_message)?;
             }
 
             console.print_checkpoint(
@@ -42,7 +42,7 @@ pub async fn check_for_new_version(
                     color::success("moon upgrade"),
                     color::url("https://moonrepo.dev/docs/install"),
                 ),
-            );
+            )?;
         }
         Err(error) => {
             debug!("Failed to check for current version: {}", error);

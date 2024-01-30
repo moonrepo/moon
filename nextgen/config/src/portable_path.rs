@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 // Not accurate at all but good enough...
-pub fn is_glob(value: &str) -> bool {
+pub(crate) fn is_glob(value: &str) -> bool {
     value.contains("**")
         || value.contains('*')
         || value.contains('{')

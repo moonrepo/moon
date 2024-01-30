@@ -16,8 +16,8 @@ name = "moon_config"
 path = "src/lib.rs"
 
 [dependencies]
-moon_common = { path = "../common" }
-moon_target = { path = "../target" }
+moon_common = { version = "0.0.1", path = "../common" }
+moon_target = { version = "0.0.1", path = "../target" }
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }

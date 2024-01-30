@@ -3190,7 +3190,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "miette",
  "once_cell",

@@ -1,4 +1,5 @@
 use clap::Args;
+use miette::miette;
 use moon::build_project_graph;
 use moon_common::Id;
 use moon_config::PlatformType;
@@ -43,7 +44,8 @@ pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Wor
 
         // This should rarely happen...
     } else {
-        return Err(miette::miette!(
+        return Err(miette!(
+            code = "moon::node::run_script",
             "This command must be ran within the context of a project.",
         ));
     }

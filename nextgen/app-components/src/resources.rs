@@ -1,5 +1,5 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_console::Console;
+use moon_console::{Console, ConsoleTarget};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
@@ -42,8 +42,20 @@ impl ExtensionRegistry {
 #[derive(Resource)]
 pub struct StderrConsole(pub Console);
 
+impl StderrConsole {
+    pub fn new(quiet: bool) -> Self {
+        Self(Console::new(ConsoleTarget::Stderr, quiet))
+    }
+}
+
 #[derive(Resource)]
 pub struct StdoutConsole(pub Console);
+
+impl StdoutConsole {
+    pub fn new(quiet: bool) -> Self {
+        Self(Console::new(ConsoleTarget::Stdout, quiet))
+    }
+}
 
 #[derive(Debug, Resource)]
 pub struct Tasks {

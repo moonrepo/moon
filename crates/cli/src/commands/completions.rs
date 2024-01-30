@@ -13,7 +13,10 @@ pub struct CompletionsArgs {
 #[system]
 pub async fn completions(args: ArgsRef<CompletionsArgs>) {
     let Some(shell) = args.shell.or_else(Shell::from_env) else {
-        return Err(miette!("Could not determine your shell!"));
+        return Err(miette!(
+            code = "moon::completions",
+            "Could not determine your shell!"
+        ));
     };
 
     let mut app = App::command();

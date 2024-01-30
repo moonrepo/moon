@@ -20,7 +20,7 @@ pub struct TaskArgs {
 #[system]
 pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
     let TargetScope::Project(project_locator) = &args.target.scope else {
-        return Err(miette!("A project ID is required."));
+        return Err(miette!(code = "moon::task", "A project ID is required."));
     };
 
     let mut project_graph_builder = build_project_graph(workspace).await?;

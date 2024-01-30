@@ -26,7 +26,10 @@ pub fn is_musl() -> bool {
 #[system]
 pub async fn upgrade(moon_env: StateRef<MoonEnv>) {
     if proto_core::is_offline() {
-        return Err(miette!("Upgrading moon requires an internet connection!"));
+        return Err(miette!(
+            code = "moon::upgrade",
+            "Upgrading moon requires an internet connection!"
+        ));
     }
 
     let remote_version = match Launchpad::check_version_without_cache(moon_env).await {
@@ -69,6 +72,7 @@ pub async fn upgrade(moon_env: StateRef<MoonEnv>) {
 
     if !upgradeable {
         return Err(miette!(
+            code = "moon::upgrade",
             "moon can only upgrade itself when installed in the ~/.moon directory.\n\
             moon is currently installed at: {}",
             current_bin_path.to_string_lossy()

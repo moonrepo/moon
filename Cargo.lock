@@ -3113,6 +3113,7 @@ dependencies = [
  "moon_codegen",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_env",
  "moon_lang",
  "moon_node_lang",
@@ -3232,6 +3233,7 @@ name = "moon_console"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "starbase_styles",
 ]
 
 [[package]]

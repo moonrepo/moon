@@ -9,3 +9,4 @@ repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 miette = { workspace = true }
+starbase_styles = { workspace = true }

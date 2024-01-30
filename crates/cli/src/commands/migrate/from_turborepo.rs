@@ -1,5 +1,6 @@
 use super::check_dirty_repo;
 use clap::Args;
+use miette::miette;
 use moon::generate_project_graph;
 use moon_common::{consts, Id};
 use moon_config::{
@@ -8,7 +9,6 @@ use moon_config::{
     ProjectConfig,
 };
 use moon_target::Target;
-use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -172,8 +172,10 @@ pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>, workspace: Resourc
     let turbo_file = workspace.root.join("turbo.json");
 
     if !turbo_file.exists() {
-        eprintln!("No turbo.json was found in the workspace root.");
-        safe_exit(1);
+        return Err(miette!(
+            code = "moon::migrate::from_turborepo",
+            "No turbo.json was found in the workspace root."
+        ));
     }
 
     if args.skip_touched_files_check {

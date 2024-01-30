@@ -1,7 +1,9 @@
-use moon_app_components::{ExtensionRegistry, MoonEnv, ProtoEnv, WorkspaceRoot};
+use moon_app_components::{
+    ExtensionRegistry, MoonEnv, ProtoEnv, StderrConsole, StdoutConsole, WorkspaceRoot,
+};
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, is_unformatted_stdout, path::exe_name};
+use moon_console::Checkpoint;
 use moon_env::MoonEnvironment;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_workspace::Workspace;
 use proto_core::{is_offline, ProtoEnvironment, ProtoError};
 use proto_installer::*;
@@ -13,9 +15,12 @@ use tracing::debug;
 // IN ORDER:
 
 #[system]
-pub async fn load_environments(states: StatesMut) {
+pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
     states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
+
+    resources.set(StderrConsole::new(false));
+    resources.set(StdoutConsole::new(false));
 }
 
 #[system]
@@ -46,7 +51,11 @@ pub async fn create_plugin_registries(
 }
 
 #[system]
-pub async fn install_proto(proto_env: StateRef<ProtoEnv>, workspace: ResourceRef<Workspace>) {
+pub async fn install_proto(
+    proto_env: StateRef<ProtoEnv>,
+    workspace: ResourceRef<Workspace>,
+    console: ResourceRef<StdoutConsole>,
+) {
     let bin_name = exe_name("proto");
     let install_dir = proto_env.tools_dir.join("proto").join(PROTO_CLI_VERSION);
 
@@ -66,9 +75,9 @@ pub async fn install_proto(proto_env: StateRef<ProtoEnv>, workspace: ResourceRef
     debug!("Installing proto");
 
     if is_unformatted_stdout() {
-        print_checkpoint(
-            format!("installing proto {}", PROTO_CLI_VERSION),
+        console.print_checkpoint(
             Checkpoint::Setup,
+            format!("installing proto {}", PROTO_CLI_VERSION),
         );
     }
 

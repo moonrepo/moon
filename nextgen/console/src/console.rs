@@ -13,9 +13,10 @@ pub enum ConsoleTarget {
 pub struct Console {
     buffer: Arc<RwLock<BufWriter<Vec<u8>>>>,
     channel: Sender<bool>,
-    handle: JoinHandle<()>,
+    handle: Option<JoinHandle<()>>,
     target: ConsoleTarget,
-    quiet: bool,
+
+    pub quiet: bool,
 }
 
 impl Console {
@@ -52,19 +53,24 @@ impl Console {
         Self {
             buffer,
             channel: tx,
-            handle,
+            handle: Some(handle),
             target,
             quiet,
         }
     }
 
-    pub fn close(self) {
+    pub fn close(&mut self) {
         if let Ok(mut out) = self.buffer.write() {
             flush(&mut out, self.target).unwrap();
         }
 
-        self.channel.send(true).unwrap();
-        self.handle.join().unwrap();
+        let _ = self.channel.send(true);
+
+        self.handle.take().unwrap().join().unwrap();
+    }
+
+    pub fn line(&self) {
+        self.write("\n".to_owned().into_bytes());
     }
 
     pub fn write(&self, data: Vec<u8>) {
@@ -88,6 +94,12 @@ impl Console {
     pub fn write_line(&self, mut data: Vec<u8>) {
         data.push(b'\n');
         self.write(data);
+    }
+}
+
+impl Drop for Console {
+    fn drop(&mut self) {
+        self.close();
     }
 }
 

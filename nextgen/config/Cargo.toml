@@ -7,6 +7,9 @@ description = "Core workspace, project, and moon configuration."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
+[package.metadata.docs.rs]
+features = ["loader"]
+
 [[bin]]
 name = "moon_config"
 path = "src/main.rs"
@@ -51,4 +54,5 @@ starbase_sandbox = { workspace = true }
 default = []
 loader = ["schematic/url"]
 proto = ["loader", "dep:proto_core"]
+template = []
 tracing = ["dep:tracing"]

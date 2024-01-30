@@ -25,7 +25,7 @@ miette = { workspace = true }
 once_map = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["rc"] }
 starbase_events = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

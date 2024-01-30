@@ -2839,6 +2839,7 @@ dependencies = [
  "clap",
  "moon_common",
  "moon_target",
+ "relative-path",
  "rustc-hash",
  "serde",
 ]
@@ -3327,6 +3328,7 @@ dependencies = [
  "miette",
  "moon_common",
  "once_cell",
+ "relative-path",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

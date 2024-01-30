@@ -1,12 +1,10 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
-use moon_common::{cacheable, color, Id};
+use moon_common::{cacheable, Id};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, merge, Config, ConfigEnum, ConfigLoader, Format, PathSegment, ValidateError,
-};
+use schematic::{derive_enum, merge, Config, ConfigEnum, ValidateError};
 
 fn validate_command<D, C>(
     command: &PartialTaskArgs,
@@ -47,7 +45,7 @@ pub fn validate_deps<D, C>(
                 } else {
                     return Err(ValidateError::with_segment(
                         "a target field is required",
-                        PathSegment::Index(i),
+                        schematic::PathSegment::Index(i),
                     ));
                 }
             }
@@ -59,7 +57,7 @@ pub fn validate_deps<D, C>(
         if matches!(scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
-                PathSegment::Index(i),
+                schematic::PathSegment::Index(i),
             ));
         }
     }
@@ -172,8 +170,12 @@ cacheable!(
     }
 );
 
+#[cfg(feature = "loader")]
 impl TaskConfig {
     pub fn parse<T: AsRef<str>>(code: T) -> miette::Result<TaskConfig> {
+        use moon_common::color;
+        use schematic::{ConfigLoader, Format};
+
         let result = ConfigLoader::<TaskConfig>::new()
             .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
             .code(code.as_ref(), Format::Yaml)?

@@ -1,6 +1,6 @@
 use super::bin_config::BinEntry;
-use proto_core::PluginLocator;
 use schematic::Config;
+use warpgate_api::PluginLocator;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#deno
 #[derive(Clone, Config, Debug)]

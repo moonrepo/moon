@@ -3210,16 +3210,18 @@ dependencies = [
  "moon_common",
  "moon_target",
  "once_cell",
- "once_map",
  "proto_core",
  "regex",
  "rustc-hash",
  "schematic",
+ "semver",
  "serde",
  "serde_json",
  "serde_yaml",
  "starbase_sandbox",
  "tracing",
+ "version_spec",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -6349,9 +6351,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.10.3"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "521091333a5299f7834e706654301e5814d288659eb9733c7968d8e972b897f2"
+checksum = "babbc891ea723f23054452cca278965253ae395c99ecc1dd65615e90b79bedda"
 dependencies = [
  "extism",
  "miette",
@@ -6374,15 +6376,16 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17eca79a6da0046450f09d55829eb53284e727d3d539f076c19754e81db6d236"
+checksum = "440565adf4e418ef1c6f2c2c482bbb16c935fcd2af54f5bfedfbea9103931c06"
 dependencies = [
  "anyhow",
  "schematic",
  "serde",
  "serde_json",
  "system_env",
+ "thiserror",
 ]
 
 [[package]]

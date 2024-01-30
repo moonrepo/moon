@@ -1,10 +1,10 @@
 use moon_bun_platform::BunPlatform;
-use moon_config::{PlatformType, ProtoConfig, ToolchainConfig};
+use moon_config::{PlatformType, ToolchainConfig};
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use proto_core::ProtoEnvironment;
+use proto_core::{ProtoConfig, ProtoEnvironment};
 use std::path::Path;
 use std::sync::Arc;
 

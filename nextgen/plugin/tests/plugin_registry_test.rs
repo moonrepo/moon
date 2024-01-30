@@ -1,5 +1,7 @@
 use moon_env::MoonEnvironment;
-use moon_plugin::{Id, Plugin, PluginContainer, PluginLocator, PluginRegistry, PluginType};
+use moon_plugin::{
+    Plugin, PluginContainer, PluginId as Id, PluginLocator, PluginRegistry, PluginType,
+};
 use proto_core::ProtoEnvironment;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::fs;

@@ -1,12 +1,13 @@
 // .moon/workspace.yml
 
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
-use crate::validate::check_yml_extension;
 use crate::workspace::*;
-use moon_common::{color, consts, Id};
-use proto_core::VersionReq;
+use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
+use schematic::{validate, Config, Path as SettingPath, PathSegment, ValidateError};
+use semver::VersionReq;
+
+#[cfg(feature = "loader")]
 use std::path::Path;
 
 // We can't use serde based types in the enum below to handle validation,
@@ -106,7 +107,7 @@ pub struct WorkspaceConfig {
     pub extends: Option<String>,
 
     #[setting(nested)]
-    pub extensions: FxHashMap<proto_core::Id, ExtensionConfig>,
+    pub extensions: FxHashMap<Id, ExtensionConfig>,
 
     #[setting(nested)]
     pub generator: GeneratorConfig,
@@ -132,11 +133,16 @@ pub struct WorkspaceConfig {
     pub version_constraint: Option<VersionReq>,
 }
 
+#[cfg(feature = "loader")]
 impl WorkspaceConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
     ) -> miette::Result<WorkspaceConfig> {
+        use crate::validate::check_yml_extension;
+        use moon_common::color;
+        use schematic::ConfigLoader;
+
         let mut result = ConfigLoader::<WorkspaceConfig>::new()
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/workspace",
@@ -151,6 +157,8 @@ impl WorkspaceConfig {
     }
 
     pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
+        use moon_common::consts;
+
         let workspace_root = workspace_root.as_ref();
 
         Self::load(

@@ -1,7 +1,8 @@
-use proto_core::{Id, PluginLocator};
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use std::collections::BTreeMap;
+use warpgate_api::PluginLocator;
 
 #[derive(Clone, Config, Debug, PartialEq)]
 #[config(allow_unknown_fields)]

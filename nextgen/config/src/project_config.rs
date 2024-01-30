@@ -3,11 +3,12 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
-use crate::validate::check_yml_extension;
-use moon_common::{cacheable, color, consts, Id};
+use moon_common::{cacheable, Id};
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, validate, Config, ConfigEnum, ConfigLoader, ValidateError};
+use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError};
 use std::collections::BTreeMap;
+
+#[cfg(feature = "loader")]
 use std::path::Path;
 
 fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -105,11 +106,16 @@ cacheable!(
     }
 );
 
+#[cfg(feature = "loader")]
 impl ProjectConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
     ) -> miette::Result<ProjectConfig> {
+        use crate::validate::check_yml_extension;
+        use moon_common::color;
+        use schematic::ConfigLoader;
+
         let result = ConfigLoader::<ProjectConfig>::new()
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/project",
@@ -125,6 +131,8 @@ impl ProjectConfig {
         workspace_root: R,
         project_source: P,
     ) -> miette::Result<ProjectConfig> {
+        use moon_common::consts;
+
         let workspace_root = workspace_root.as_ref();
 
         Self::load(
@@ -136,6 +144,9 @@ impl ProjectConfig {
     }
 
     pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
+        use moon_common::{color, consts};
+        use schematic::ConfigLoader;
+
         let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
 
         Ok(ConfigLoader::<ProjectConfig>::new()

@@ -1,8 +1,8 @@
 use moon_common::cacheable;
 use moon_common::Id;
-use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use schematic::Config;
+use version_spec::UnresolvedVersionSpec;
 
 cacheable!(
     #[derive(Clone, Config, Debug)]

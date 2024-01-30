@@ -1,8 +1,8 @@
 use moon_pdk_api::extension::*;
-use moon_plugin::{Id, Plugin, PluginContainer, PluginType};
+use moon_plugin::{Plugin, PluginContainer, PluginId, PluginType};
 
 pub struct ExtensionPlugin {
-    pub id: Id,
+    pub id: PluginId,
     plugin: PluginContainer,
 }
 
@@ -18,7 +18,7 @@ impl ExtensionPlugin {
 }
 
 impl Plugin for ExtensionPlugin {
-    fn new(id: Id, plugin: PluginContainer) -> Self {
+    fn new(id: PluginId, plugin: PluginContainer) -> Self {
         Self { id, plugin }
     }
 

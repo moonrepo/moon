@@ -1,6 +1,7 @@
 use super::bin_config::BinEntry;
-use proto_core::{PluginLocator, UnresolvedVersionSpec};
 use schematic::Config;
+use version_spec::UnresolvedVersionSpec;
+use warpgate_api::PluginLocator;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
 #[derive(Clone, Config, Debug)]

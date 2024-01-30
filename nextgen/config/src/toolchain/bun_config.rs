@@ -1,6 +1,7 @@
 use super::node_config::NodeVersionFormat;
-use proto_core::{PluginLocator, UnresolvedVersionSpec};
 use schematic::Config;
+use version_spec::UnresolvedVersionSpec;
+use warpgate_api::PluginLocator;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#bun
 #[derive(Clone, Config, Debug)]

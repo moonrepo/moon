@@ -8,7 +8,7 @@ publish = false
 moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
-moon_config = { path = "../config" }
+moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_hash = { path = "../hash" }
 moon_vcs = { path = "../vcs" }
 miette = { workspace = true }

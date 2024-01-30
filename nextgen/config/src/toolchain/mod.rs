@@ -12,6 +12,7 @@ pub use node_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
 
+#[cfg(feature = "loader")]
 #[macro_export]
 macro_rules! is_using_tool_version {
     ($self:ident, $parent_tool:ident, $tool:ident) => {
@@ -28,10 +29,11 @@ macro_rules! is_using_tool_version {
     };
 }
 
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
-        pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+        pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
             if let Some(version) = proto_config.versions.get($key) {
                 let config = self.$tool.get_or_insert_with($config::default);
 
@@ -51,10 +53,11 @@ macro_rules! inherit_tool {
     };
 }
 
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! inherit_tool_required {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
-        pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+        pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
             if let Some(version) = proto_config.versions.get($key) {
                 if self.$tool.version.is_none() {
                     self.$tool.version = Some(version.to_owned());
@@ -70,10 +73,11 @@ macro_rules! inherit_tool_required {
     };
 }
 
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! inherit_tool_without_version {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
-        pub fn $method(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+        pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
             if self.$tool.is_none() && proto_config.versions.get($key).is_some() {
                 self.$tool = Some($config::default());
             }

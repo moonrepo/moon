@@ -1,8 +1,9 @@
-use crate::{inherit_tool, inherit_tool_required};
-use moon_common::color;
-use proto_core::{PluginLocator, ProtoConfig, UnresolvedVersionSpec};
 use schematic::{derive_enum, Config, ConfigEnum};
-use tracing::debug;
+use version_spec::UnresolvedVersionSpec;
+use warpgate_api::PluginLocator;
+
+#[cfg(feature = "proto")]
+use crate::{inherit_tool, inherit_tool_required};
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -154,6 +155,7 @@ pub struct NodeConfig {
     pub yarn: Option<YarnConfig>,
 }
 
+#[cfg(feature = "proto")]
 impl NodeConfig {
     inherit_tool_required!(NpmConfig, npm, "npm", inherit_proto_npm);
 
@@ -163,7 +165,7 @@ impl NodeConfig {
 
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
-    pub fn inherit_proto(&mut self, proto_config: &ProtoConfig) -> miette::Result<()> {
+    pub fn inherit_proto(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
         match &self.package_manager {
             NodePackageManager::Bun => {
                 if self.bun.is_none() {
@@ -199,13 +201,18 @@ impl NodeConfig {
                 .dependency_version_format
                 .get_default_for(&self.package_manager);
 
-            debug!(
-                "{} for {} is not supported by {}, changing to {}",
-                color::symbol(self.dependency_version_format.to_string()),
-                color::property("node.dependencyVersionFormat"),
-                self.package_manager.to_string(),
-                color::symbol(new_format.to_string()),
-            );
+            #[cfg(feature = "tracing")]
+            {
+                use moon_common::color;
+
+                tracing::debug!(
+                    "{} for {} is not supported by {}, changing to {}",
+                    color::symbol(self.dependency_version_format.to_string()),
+                    color::property("node.dependencyVersionFormat"),
+                    self.package_manager.to_string(),
+                    color::symbol(new_format.to_string()),
+                );
+            }
 
             self.dependency_version_format = new_format;
         }

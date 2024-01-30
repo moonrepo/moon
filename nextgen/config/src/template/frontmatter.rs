@@ -1,5 +1,4 @@
-use moon_common::color;
-use schematic::{Config, ConfigLoader, Format};
+use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
 #[derive(Config, Debug, Eq, PartialEq)]
@@ -15,8 +14,12 @@ pub struct TemplateFrontmatterConfig {
     pub skip: bool,
 }
 
+#[cfg(feature = "loader")]
 impl TemplateFrontmatterConfig {
     pub fn parse<T: AsRef<str>>(content: T) -> miette::Result<TemplateFrontmatterConfig> {
+        use moon_common::color;
+        use schematic::{ConfigLoader, Format};
+
         let mut content = content.as_ref();
 
         if content.is_empty() {

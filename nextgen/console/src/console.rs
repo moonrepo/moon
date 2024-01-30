@@ -1,4 +1,4 @@
-use std::io::{self, BufWriter, Write};
+use std::io::{self, BufWriter, IsTerminal, Write};
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, RwLock};
 use std::thread::{sleep, spawn, JoinHandle};
@@ -56,6 +56,13 @@ impl Console {
             handle: Some(handle),
             target,
             quiet,
+        }
+    }
+
+    pub fn is_terminal(&self) -> bool {
+        match self.target {
+            ConsoleTarget::Stderr => io::stderr().is_terminal(),
+            ConsoleTarget::Stdout => io::stdout().is_terminal(),
         }
     }
 

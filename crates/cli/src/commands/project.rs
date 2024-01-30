@@ -1,11 +1,10 @@
 use crate::helpers::map_list;
 use clap::Args;
-use console::Term;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon::build_project_graph;
+use moon_app_components::StdoutConsole;
 use moon_common::Id;
-use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
 use starbase::system;
@@ -21,8 +20,9 @@ pub struct ProjectArgs {
 }
 
 #[system]
-pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspace>) {
-    let mut project_graph_builder = build_project_graph(workspace).await?;
+pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
+    let mut project_graph_builder =
+        { build_project_graph(resources.get_mut::<Workspace>()).await? };
     project_graph_builder.load(&args.id).await?;
 
     let project_graph = project_graph_builder.build().await?;
@@ -38,47 +38,46 @@ pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspac
         return Ok(());
     }
 
-    let term = Term::buffered_stdout();
+    let console = resources.get::<StdoutConsole>();
 
-    term.line("")?;
-    term.render_label(Label::Brand, &project.id)?;
-    term.render_entry("Project", color::id(&project.id))?;
+    console.print_header(&project.id)?;
+    console.print_entry("Project", color::id(&project.id))?;
 
     if let Some(alias) = &project.alias {
-        term.render_entry("Alias", color::label(alias))?;
+        console.print_entry("Alias", color::label(alias))?;
     }
 
-    term.render_entry("Source", color::file(&project.source))?;
+    console.print_entry("Source", color::file(&project.source))?;
 
     // Dont show in test snapshots
     if !is_test_env() {
-        term.render_entry("Root", color::path(&project.root))?;
+        console.print_entry("Root", color::path(&project.root))?;
     }
 
-    term.render_entry("Language", term.format(&project.language))?;
-    term.render_entry("Type", term.format(&project.type_of))?;
+    console.print_entry("Language", format!("{}", &project.language))?;
+    console.print_entry("Type", format!("{}", &project.type_of))?;
 
     if !config.tags.is_empty() {
-        term.render_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
+        console.print_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
     }
 
     if let Some(meta) = &config.project {
         if let Some(name) = &meta.name {
-            term.render_entry("Name", name)?;
+            console.print_entry("Name", name)?;
         }
 
-        term.render_entry("Description", &meta.description)?;
+        console.print_entry("Description", &meta.description)?;
 
         if let Some(owner) = &meta.owner {
-            term.render_entry("Owner", owner)?;
+            console.print_entry("Owner", owner)?;
         }
 
         if !meta.maintainers.is_empty() {
-            term.render_entry_list("Maintainers", &meta.maintainers)?;
+            console.print_entry_list("Maintainers", &meta.maintainers)?;
         }
 
         if let Some(channel) = &meta.channel {
-            term.render_entry("Channel", channel)?;
+            console.print_entry("Channel", channel)?;
         }
     }
 
@@ -95,19 +94,17 @@ pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspac
     if !deps.is_empty() {
         deps.sort();
 
-        term.line("")?;
-        term.render_label(Label::Default, "Depends on")?;
-        term.render_list(deps)?;
+        console.print_entry_header("Depends on")?;
+        console.print_list(deps)?;
     }
 
     if !project.tasks.is_empty() {
-        term.line("")?;
-        term.render_label(Label::Default, "Tasks")?;
+        console.print_entry_header("Tasks")?;
 
         for name in project.tasks.keys().sorted() {
             let task = project.tasks.get(name).unwrap();
 
-            term.render_entry(
+            console.print_entry(
                 name,
                 color::shell(format!("{} {}", task.command, task.args.join(" "))),
             )?;
@@ -115,8 +112,7 @@ pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspac
     }
 
     if !project.file_groups.is_empty() {
-        term.line("")?;
-        term.render_label(Label::Default, "File groups")?;
+        console.print_entry_header("File groups")?;
 
         for group_name in project.file_groups.keys().sorted() {
             let mut files = vec![];
@@ -130,10 +126,10 @@ pub async fn project(args: ArgsRef<ProjectArgs>, workspace: ResourceMut<Workspac
                 files.push(color::file(file));
             }
 
-            term.render_entry_list(group_name, files)?;
+            console.print_entry_list(group_name, files)?;
         }
     }
 
-    term.line("")?;
-    term.flush_lines()?;
+    console.print_line()?;
+    console.flush()?;
 }

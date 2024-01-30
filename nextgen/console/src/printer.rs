@@ -1,6 +1,6 @@
 use crate::console::Console;
-use starbase_styles::color::owo::OwoColorize;
-use starbase_styles::color::{self, OwoStyle};
+use starbase_styles::color::owo::{OwoColorize, XtermColors};
+use starbase_styles::color::{self, Color, OwoStyle};
 
 const STEP_CHAR: &str = "▪";
 const PASS_COLORS: [u8; 4] = [57, 63, 69, 75];
@@ -59,14 +59,6 @@ impl Console {
         color::muted_light(format!("{}:", bold(key.as_ref())))
     }
 
-    pub fn format_header<M: AsRef<str>>(&self, message: M) -> String {
-        OwoStyle::new()
-            .style(message.as_ref())
-            .bold()
-            .reversed()
-            .to_string()
-    }
-
     pub fn print_checkpoint<M: AsRef<str>>(
         &self,
         checkpoint: Checkpoint,
@@ -117,14 +109,29 @@ impl Console {
 
     pub fn print_entry_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
         self.print_line()?;
-        self.write_line(self.format_header(message.as_ref().to_uppercase()))?;
+        self.write_line(
+            OwoStyle::new()
+                .style(format!(" {} ", message.as_ref().to_uppercase()))
+                .bold()
+                .reversed()
+                .to_string(),
+        )?;
+        self.print_line()?;
 
         Ok(())
     }
 
     pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
         self.print_line()?;
-        self.write_line(self.format_header(message.as_ref().to_uppercase()))?;
+        self.write_line(
+            OwoStyle::new()
+                .style(format!(" {} ", message.as_ref().to_uppercase()))
+                .bold()
+                .color(XtermColors::from(Color::Black as u8))
+                .on_color(XtermColors::from(Color::Purple as u8))
+                .to_string(),
+        )?;
+        self.print_line()?;
 
         Ok(())
     }

@@ -14,8 +14,8 @@ pub async fn setup(workspace: ResourceMut<Workspace>) {
 
     if !manifest_path.exists() {
         return Err(miette!(
-            code = "moon::docker::prune",
-            "Unable to prune, docker manifest missing. Has it been scaffolded with {}?",
+            code = "moon::docker::setup",
+            "Unable to setup, docker manifest missing. Has it been scaffolded with {}?",
             color::shell("moon docker scaffold")
         ));
     }

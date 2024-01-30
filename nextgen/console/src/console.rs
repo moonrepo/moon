@@ -48,8 +48,6 @@ impl Console {
             }
         });
 
-        println!("PROCESS ID = {:?}", handle.thread().id());
-
         Self {
             buffer,
             channel: tx,

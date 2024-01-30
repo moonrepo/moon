@@ -15,7 +15,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-pub fn merge_fxhashmap<K, V, C>(
+fn merge_fxhashmap<K, V, C>(
     mut prev: FxHashMap<K, V>,
     next: FxHashMap<K, V>,
     _context: &C,

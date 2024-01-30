@@ -22,7 +22,6 @@ pub use language_platform::*;
 pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
-pub use schematic::{Config, ConfigEnum, ConfigError, PartialConfig};
 pub use semver::{Version, VersionReq};
 pub use shapes::*;
 pub use template::*;

@@ -14,7 +14,7 @@ pub fn is_glob(value: &str) -> bool {
         || value.starts_with('!')
 }
 
-pub trait Portable: Sized {
+pub trait PortablePath: Sized {
     fn from_str(path: &str) -> Result<Self, ValidateError>;
 }
 
@@ -89,7 +89,7 @@ macro_rules! path_type {
 // Represents any file glob pattern.
 path_type!(GlobPath);
 
-impl Portable for GlobPath {
+impl PortablePath for GlobPath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
         Ok(GlobPath(value.into()))
     }
@@ -98,7 +98,7 @@ impl Portable for GlobPath {
 // Represents any file system path.
 path_type!(FilePath);
 
-impl Portable for FilePath {
+impl PortablePath for FilePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
         if is_glob(value) {
             return Err(ValidateError::new(
@@ -113,7 +113,7 @@ impl Portable for FilePath {
 // Represents a project-relative file glob pattern.
 path_type!(ProjectGlobPath);
 
-impl Portable for ProjectGlobPath {
+impl PortablePath for ProjectGlobPath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
         validate_child_relative_path(value)?;
 
@@ -124,7 +124,7 @@ impl Portable for ProjectGlobPath {
 // Represents a project-relative file system path.
 path_type!(ProjectFilePath);
 
-impl Portable for ProjectFilePath {
+impl PortablePath for ProjectFilePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
         if is_glob(value) {
             return Err(ValidateError::new(

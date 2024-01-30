@@ -12,7 +12,7 @@ pub use node_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
 
-#[cfg(feature = "loader")]
+#[cfg(feature = "proto")]
 #[macro_export]
 macro_rules! is_using_tool_version {
     ($self:ident, $parent_tool:ident, $tool:ident) => {

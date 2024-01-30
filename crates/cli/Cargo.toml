@@ -77,6 +77,7 @@ proto_core = { workspace = true }
 proto_installer = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }

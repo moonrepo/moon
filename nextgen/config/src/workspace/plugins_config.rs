@@ -20,7 +20,7 @@ impl ExtensionConfig {
     }
 }
 
-pub fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
+pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
     FxHashMap::from_iter([(
         Id::raw("download"),
         ExtensionConfig {

@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use crate::app::GlobalArgs;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
@@ -17,6 +15,7 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
+use std::process::exit;
 use tracing::debug;
 
 type TargetList = Vec<Target>;

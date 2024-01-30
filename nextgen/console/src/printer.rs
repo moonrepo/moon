@@ -26,11 +26,11 @@ fn bold(message: &str) -> String {
 }
 
 impl Console {
-    pub fn format_checkpoint<M: AsRef<str>>(
+    pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
         message: M,
-        comments: &[String],
+        comments: C,
     ) -> String {
         let colors = match checkpoint {
             Checkpoint::Announcement => ANNOUNCEMENT_COLORS,
@@ -51,7 +51,9 @@ impl Console {
         )
     }
 
-    pub fn format_comments(&self, comments: &[String]) -> String {
+    pub fn format_comments<C: AsRef<[String]>>(&self, comments: C) -> String {
+        let comments = comments.as_ref();
+
         if comments.is_empty() {
             return String::new();
         }
@@ -71,11 +73,11 @@ impl Console {
         self.print_checkpoint_with_comments(checkpoint, message, &[])
     }
 
-    pub fn print_checkpoint_with_comments<M: AsRef<str>>(
+    pub fn print_checkpoint_with_comments<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
         message: M,
-        comments: &[String],
+        comments: C,
     ) -> miette::Result<()> {
         if !self.quiet {
             self.write_line(self.format_checkpoint(checkpoint, message, comments))?;
@@ -85,7 +87,7 @@ impl Console {
     }
 
     pub fn print_line(&self) -> miette::Result<()> {
-        self.write("\n".to_owned().into_bytes())
+        self.write("\n")
     }
 
     pub fn print_entry<K: AsRef<str>, V: AsRef<str>>(
@@ -105,7 +107,7 @@ impl Console {
         key: K,
         values: V,
     ) -> miette::Result<()> {
-        self.write_line(self.format_entry_key(key).into_bytes())?;
+        self.write_line(self.format_entry_key(key))?;
         self.print_list(values)?;
 
         Ok(())

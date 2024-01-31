@@ -28,23 +28,6 @@ pub fn label_moon() -> String {
 }
 
 #[inline]
-pub fn label_to_the_moon() -> String {
-    vec![
-        style("❯").color256(55),
-        style("❯❯").color256(56),
-        style("❯ t").color256(57),
-        style("o t").color256(63),
-        style("he ").color256(69),
-        style("mo").color256(75),
-        style("on").color256(81),
-    ]
-    .iter()
-    .map(|i| i.to_string())
-    .collect::<Vec<String>>()
-    .join("")
-}
-
-#[inline]
 pub fn get_checkpoint_prefix(checkpoint: Checkpoint) -> String {
     let colors = match checkpoint {
         Checkpoint::Announcement => ANNOUNCEMENT_COLORS,

@@ -263,16 +263,16 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     // Print out a summary of any failures
     console.print_header("Summary")?;
 
-    pipeline.render_summary(&results)?;
+    pipeline.render_summary(&results, &console.inner)?;
 
     console.print_footer()?;
 
     // Print out the results and exit if an error occurs
     console.print_header("Stats")?;
 
-    let failed = pipeline.render_results(&results)?;
+    let failed = pipeline.render_results(&results, &console.inner)?;
 
-    pipeline.render_stats(&results, false)?;
+    pipeline.render_stats(&results, &console.inner, false)?;
 
     if failed {
         exit(1);

@@ -6,7 +6,6 @@ use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
 use moon_target::Target;
-use moon_terminal::Checkpoint;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
@@ -57,8 +56,9 @@ pub async fn run_task(
                         color::label(&task.target)
                     );
 
-                    runner.print_checkpoint(Checkpoint::RunFailed, &["skipped"])?;
-                    runner.flush_output()?;
+                    // TODO
+                    // runner.print_checkpoint(Checkpoint::RunFailed, &["skipped"])?;
+                    // runner.flush_output()?;
 
                     return Ok(ActionStatus::Skipped);
                 }

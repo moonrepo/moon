@@ -4,15 +4,14 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
-use console::Term;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
+use moon_console::{Checkpoint, Console};
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use starbase_styles::color;
@@ -349,9 +348,8 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn render_summary(&self, results: &ActionResults) -> miette::Result<()> {
-        let term = Term::buffered_stdout();
-        term.line("")?;
+    pub fn render_summary(&self, results: &ActionResults, console: &Console) -> miette::Result<()> {
+        console.print_line()?;
 
         let mut count = 0;
 
@@ -360,13 +358,13 @@ impl Pipeline {
                 continue;
             }
 
-            term.line(label_checkpoint(
+            console.print_checkpoint(
+                Checkpoint::RunFailed,
                 match &*result.node {
                     ActionNode::RunTask { target, .. } => target.as_str(),
                     _ => &result.label,
                 },
-                Checkpoint::RunFailed,
-            ))?;
+            )?;
 
             if let Some(attempts) = &result.attempts {
                 if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
@@ -375,39 +373,41 @@ impl Pipeline {
                     if let Some(stdout) = &attempt.stdout {
                         if !stdout.is_empty() {
                             has_stdout = true;
-                            term.line(stdout)?;
+                            console.write_line(stdout)?;
                         }
                     }
 
                     if let Some(stderr) = &attempt.stderr {
                         if has_stdout {
-                            term.line("")?;
+                            console.print_line()?;
                         }
 
                         if !stderr.is_empty() {
-                            term.line(stderr)?;
+                            console.write_line(stderr)?;
                         }
                     }
                 }
             }
 
-            term.line("")?;
+            console.print_line()?;
             count += 1;
         }
 
         if count == 0 {
-            term.line("No failed actions to summarize.")?;
+            console.write_line("No failed actions to summarize.")?;
         }
 
-        term.line("")?;
-        term.flush_lines()?;
+        console.print_line()?;
 
         Ok(())
     }
 
-    pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {
-        let term = Term::buffered_stdout();
-        term.line("")?;
+    pub fn render_results(
+        &self,
+        results: &ActionResults,
+        console: &Console,
+    ) -> miette::Result<bool> {
+        console.print_line()?;
 
         let mut failed = false;
 
@@ -441,22 +441,25 @@ impl Pipeline {
                 meta.push(time::elapsed(duration));
             }
 
-            term.line(format!(
+            console.write_line(format!(
                 "{} {} {}",
                 status,
-                // color::create_style(&result.label).bold().to_string(),
-                &result.label,
-                color::muted(format!("({})", meta.join(", ")))
+                result.label,
+                console.format_comments(meta),
             ))?;
         }
 
-        term.line("")?;
-        term.flush_lines()?;
+        console.print_line()?;
 
         Ok(failed)
     }
 
-    pub fn render_stats(&self, results: &ActionResults, compact: bool) -> miette::Result<()> {
+    pub fn render_stats(
+        &self,
+        results: &ActionResults,
+        console: &Console,
+        compact: bool,
+    ) -> miette::Result<()> {
         let mut cached_count = 0;
         let mut pass_count = 0;
         let mut fail_count = 0;
@@ -513,26 +516,24 @@ impl Pipeline {
             counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
         }
 
-        let term = Term::buffered_stdout();
-        term.line("")?;
+        console.print_line()?;
 
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(self.duration.unwrap());
 
         if pass_count == cached_count && fail_count == 0 {
-            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
+            elapsed_time = format!("{} {}", elapsed_time, crate::label_to_the_moon());
         }
 
         if compact {
-            term.render_entry("Tasks", &counts_message)?;
-            term.render_entry(" Time", &elapsed_time)?;
+            console.print_entry("Tasks", &counts_message)?;
+            console.print_entry(" Time", &elapsed_time)?;
         } else {
-            term.render_entry("Actions", &counts_message)?;
-            term.render_entry("   Time", &elapsed_time)?;
+            console.print_entry("Actions", &counts_message)?;
+            console.print_entry("   Time", &elapsed_time)?;
         }
 
-        term.line("")?;
-        term.flush_lines()?;
+        console.print_line()?;
 
         Ok(())
     }

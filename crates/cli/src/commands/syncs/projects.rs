@@ -20,14 +20,13 @@ pub async fn internal_sync(workspace: &mut Workspace) -> SystemResult {
     let action_graph = action_graph_builder.build()?;
 
     let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
-    let results = pipeline.run(action_graph, None).await?;
+
+    pipeline.run(action_graph, None).await?;
 
     done(
         format!("Successfully synced {project_count} projects"),
         true,
     );
-
-    pipeline.render_results(&results)?;
 
     Ok(())
 }

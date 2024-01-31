@@ -3233,6 +3233,7 @@ name = "moon_console"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "starbase_styles",
 ]
 

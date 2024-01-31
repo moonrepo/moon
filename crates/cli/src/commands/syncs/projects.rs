@@ -1,7 +1,7 @@
 use crate::helpers::create_progress_bar;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
-use moon_app_components::{StderrConsole, StdoutConsole};
+use moon_app_components::AppConsole;
 use moon_workspace::Workspace;
 use starbase::{system, ResourceManager, SystemResult};
 use tokio::sync::RwLockWriteGuard;
@@ -26,8 +26,7 @@ pub async fn internal_sync(mut resources: RwLockWriteGuard<'_, ResourceManager>)
     pipeline
         .run(
             action_graph,
-            resources.get::<StderrConsole>().clone_inner(),
-            resources.get::<StdoutConsole>().clone_inner(),
+            resources.get::<AppConsole>().into_inner(),
             None,
         )
         .await?;

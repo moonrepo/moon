@@ -3,7 +3,7 @@ use crate::commands::docker::scaffold::DockerManifest;
 use miette::miette;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
-use moon_app_components::{StderrConsole, StdoutConsole};
+use moon_app_components::AppConsole;
 use moon_workspace::Workspace;
 use starbase::system;
 use starbase_styles::color;
@@ -36,8 +36,7 @@ pub async fn setup(resources: ResourcesMut) {
     Pipeline::new(resources.get::<Workspace>().to_owned(), project_graph)
         .run(
             action_graph,
-            resources.get::<StderrConsole>().clone_inner(),
-            resources.get::<StdoutConsole>().clone_inner(),
+            resources.get::<AppConsole>().into_inner(),
             None,
         )
         .await?;

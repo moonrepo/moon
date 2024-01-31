@@ -44,9 +44,7 @@ pub struct Runner<'a> {
 
     project: &'a Project,
 
-    stderr: Console,
-
-    stdout: Console,
+    console: Arc<Console>,
 
     task: &'a Task,
 
@@ -59,8 +57,7 @@ impl<'a> Runner<'a> {
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
-        stderr: Console,
-        stdout: Console,
+        console: Arc<Console>,
     ) -> miette::Result<Runner<'a>> {
         let mut cache = workspace
             .cache_engine
@@ -75,8 +72,7 @@ impl<'a> Runner<'a> {
             node: Arc::new(ActionNode::None),
             emitter,
             project,
-            stderr,
-            stdout,
+            console,
             task,
             workspace,
         })
@@ -637,7 +633,7 @@ impl<'a> Runner<'a> {
         };
 
         // For long-running process, log a message every 30 seconds to indicate it's still running
-        let stdout_clone = self.stdout.clone();
+        let console_clone = self.console.clone();
         let interval_target = self.task.target.clone();
         let interval_handle = task::spawn(async move {
             if is_persistent || is_interactive {
@@ -650,7 +646,7 @@ impl<'a> Runner<'a> {
                 sleep(Duration::from_secs(30)).await;
                 secs += 30;
 
-                let _ = stdout_clone.print_checkpoint_with_comments(
+                let _ = console_clone.out.print_checkpoint_with_comments(
                     Checkpoint::RunStarted,
                     &interval_target,
                     [format!("running for {}s", secs)],
@@ -801,7 +797,8 @@ impl<'a> Runner<'a> {
         checkpoint: Checkpoint,
         comments: C,
     ) -> miette::Result<()> {
-        self.stdout
+        self.console
+            .out
             .print_checkpoint_with_comments(checkpoint, &self.task.target, comments)?;
 
         Ok(())
@@ -813,8 +810,8 @@ impl<'a> Runner<'a> {
         stderr: &str,
         failed: bool,
     ) -> miette::Result<()> {
-        let print_stdout = || -> miette::Result<()> { self.stdout.write_line(stdout) };
-        let print_stderr = || -> miette::Result<()> { self.stderr.write_line(stderr) };
+        let print_stdout = || -> miette::Result<()> { self.console.out.write_line(stdout) };
+        let print_stderr = || -> miette::Result<()> { self.console.err.write_line(stderr) };
 
         match self.task.options.output_style {
             // Only show output on failure
@@ -830,7 +827,7 @@ impl<'a> Runner<'a> {
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
-                    self.stderr.write_line(hash)?;
+                    self.console.err.write_line(hash)?;
                 }
             }
             // Show nothing
@@ -874,7 +871,7 @@ impl<'a> Runner<'a> {
             }),
         ));
 
-        self.stdout.write_line(message)?;
+        self.console.out.write_line(message)?;
 
         Ok(())
     }

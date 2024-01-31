@@ -27,8 +27,7 @@ pub async fn process_action(
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
-    stderr: Console,
-    stdout: Console,
+    console: Arc<Console>,
 ) -> miette::Result<Action> {
     action.start();
 
@@ -188,8 +187,7 @@ pub async fn process_action(
                 context,
                 emitter,
                 workspace,
-                stderr,
-                stdout,
+                console,
                 &project,
                 target,
                 runtime,

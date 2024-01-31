@@ -21,8 +21,7 @@ pub async fn run_task(
     context: Arc<RwLock<ActionContext>>,
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
-    stderr: Console,
-    stdout: Console,
+    console: Arc<Console>,
     project: &Project,
     target: &Target,
     runtime: &Runtime,
@@ -32,7 +31,7 @@ pub async fn run_task(
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
     let task = project.get_task(&target.task_id)?;
-    let mut runner = Runner::new(&emitter, &workspace, project, task, stderr, stdout)?;
+    let mut runner = Runner::new(&emitter, &workspace, project, task, console)?;
 
     debug!(
         target: LOG_TARGET,

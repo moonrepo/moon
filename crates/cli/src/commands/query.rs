@@ -9,7 +9,7 @@ pub use crate::queries::touched_files::{
 };
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon_app_components::StdoutConsole;
+use moon_app_components::AppConsole;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::system;
@@ -29,17 +29,19 @@ pub struct QueryHashArgs {
 pub async fn hash(
     args: ArgsRef<QueryHashArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<StdoutConsole>,
+    console: ResourceRef<AppConsole>,
 ) {
     let result = query_hash(workspace, &args.hash).await?;
 
     if !args.json {
-        console.write_line(format!("Hash: {}", color::hash(result.0)))?;
-        console.write_newline()?;
+        console
+            .out
+            .write_line(format!("Hash: {}", color::hash(result.0)))?;
+        console.out.write_newline()?;
     }
 
-    console.write_line(result.1)?;
-    console.flush()?;
+    console.out.write_line(result.1)?;
+    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -58,10 +60,10 @@ pub struct QueryHashDiffArgs {
 pub async fn hash_diff(
     args: ArgsRef<QueryHashDiffArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<StdoutConsole>,
+    console: ResourceRef<AppConsole>,
 ) {
     let mut result = query_hash_diff(workspace, &args.left, &args.right).await?;
-    let is_tty = console.is_terminal();
+    let is_tty = console.out.is_terminal();
 
     if args.json {
         for diff in diff::lines(&result.left, &result.right) {
@@ -72,40 +74,46 @@ pub async fn hash_diff(
             };
         }
 
-        console.write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console
+            .out
+            .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else {
-        console.write_line(format!("Left:  {}", color::hash(&result.left_hash)))?;
-        console.write_line(format!("Right: {}", color::hash(&result.right_hash)))?;
-        console.write_newline()?;
+        console
+            .out
+            .write_line(format!("Left:  {}", color::hash(&result.left_hash)))?;
+        console
+            .out
+            .write_line(format!("Right: {}", color::hash(&result.right_hash)))?;
+        console.out.write_newline()?;
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {
                 diff::Result::Left(l) => {
                     if is_tty {
-                        console.write_line(color::success(l))?
+                        console.out.write_line(color::success(l))?
                     } else {
-                        console.write_line(format!("+{}", l))?
+                        console.out.write_line(format!("+{}", l))?
                     }
                 }
                 diff::Result::Both(l, _) => {
                     if is_tty {
-                        console.write_line(l)?
+                        console.out.write_line(l)?
                     } else {
-                        console.write_line(format!(" {}", l))?
+                        console.out.write_line(format!(" {}", l))?
                     }
                 }
                 diff::Result::Right(r) => {
                     if is_tty {
-                        console.write_line(color::failure(r))?
+                        console.out.write_line(color::failure(r))?
                     } else {
-                        console.write_line(format!("-{}", r))?
+                        console.out.write_line(format!("-{}", r))?
                     }
                 }
             };
         }
     }
 
-    console.flush()?;
+    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -170,14 +178,16 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
-    let console = resources.get::<StdoutConsole>();
+    let console = resources.get::<AppConsole>();
 
     if args.json {
         let result = QueryProjectsResult { projects, options };
 
-        console.write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console
+            .out
+            .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !projects.is_empty() {
-        console.write_line(
+        console.out.write_line(
             projects
                 .iter()
                 .map(|p| format!("{} | {} | {} | {}", p.id, p.source, p.type_of, p.language))
@@ -186,7 +196,7 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
         )?;
     }
 
-    console.flush()?;
+    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -268,10 +278,10 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
     }
 
     // Write to stdout directly to avoid broken pipe panics
-    let console = resources.get::<StdoutConsole>();
+    let console = resources.get::<AppConsole>();
 
     if options.json {
-        console.write_line(
+        console.out.write_line(
             serde_json::to_string_pretty(&QueryTasksResult {
                 tasks: grouped_tasks,
                 options,
@@ -280,15 +290,17 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
         )?;
     } else if !grouped_tasks.is_empty() {
         for (project_id, tasks) in grouped_tasks {
-            console.write_line(project_id.as_str())?;
+            console.out.write_line(project_id.as_str())?;
 
             for (task_id, task) in tasks {
-                console.write_line(format!("\t:{} | {}", task_id, task.command))?;
+                console
+                    .out
+                    .write_line(format!("\t:{} | {}", task_id, task.command))?;
             }
         }
     }
 
-    console.flush()?;
+    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -319,7 +331,7 @@ pub struct QueryTouchedFilesArgs {
 pub async fn touched_files(
     args: ArgsRef<QueryTouchedFilesArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<StdoutConsole>,
+    console: ResourceRef<AppConsole>,
 ) {
     let args = args.to_owned();
     let options = QueryTouchedFilesOptions {
@@ -341,9 +353,11 @@ pub async fn touched_files(
             options: options.clone(),
         };
 
-        console.write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console
+            .out
+            .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !files.is_empty() {
-        console.write_line(
+        console.out.write_line(
             files
                 .iter()
                 .map(|f| f.to_string())
@@ -352,5 +366,5 @@ pub async fn touched_files(
         )?;
     }
 
-    console.flush()?;
+    console.out.flush()?;
 }

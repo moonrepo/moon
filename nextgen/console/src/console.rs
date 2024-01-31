@@ -11,7 +11,7 @@ pub enum ConsoleStream {
     Stdout,
 }
 
-pub struct Console {
+pub struct ConsoleBuffer {
     buffer: Arc<RwLock<BufWriter<Vec<u8>>>>,
     closed: bool,
     channel: Sender<bool>,
@@ -21,7 +21,7 @@ pub struct Console {
     pub quiet: bool,
 }
 
-impl Console {
+impl ConsoleBuffer {
     pub fn new(stream: ConsoleStream, quiet: bool) -> Self {
         let buffer = Arc::new(RwLock::new(BufWriter::new(Vec::new())));
         let buffer_clone = Arc::clone(&buffer);
@@ -75,7 +75,10 @@ impl Console {
         Ok(())
     }
 
-    pub fn write<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
+    pub fn write_raw<F: FnMut(&mut BufWriter<Vec<u8>>) -> io::Result<()>>(
+        &self,
+        mut op: F,
+    ) -> miette::Result<()> {
         if self.closed {
             return Ok(());
         }
@@ -85,7 +88,7 @@ impl Console {
             .write()
             .expect("Failed to acquire console write lock.");
 
-        buffer.write_all(data.as_ref()).into_diagnostic()?;
+        op(&mut buffer).into_diagnostic()?;
 
         // Buffer has written its data to the inner vec, so drain it
         if !buffer.get_ref().is_empty() {
@@ -95,6 +98,16 @@ impl Console {
         Ok(())
     }
 
+    pub fn write<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
+        let data = data.as_ref();
+
+        if data.is_empty() {
+            return Ok(());
+        }
+
+        self.write_raw(|buffer| buffer.write_all(data))
+    }
+
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
         let data = data.as_ref();
 
@@ -102,10 +115,11 @@ impl Console {
             return Ok(());
         }
 
-        let mut data = data.to_owned();
-        data.push(b'\n');
-
-        self.write(data)
+        self.write_raw(|buffer| {
+            buffer.write_all(data)?;
+            buffer.write_all(b"\n")?;
+            Ok(())
+        })
     }
 
     pub fn write_newline(&self) -> miette::Result<()> {
@@ -113,13 +127,13 @@ impl Console {
     }
 }
 
-impl Drop for Console {
+impl Drop for ConsoleBuffer {
     fn drop(&mut self) {
         self.close().unwrap();
     }
 }
 
-impl Clone for Console {
+impl Clone for ConsoleBuffer {
     fn clone(&self) -> Self {
         Self {
             buffer: Arc::clone(&self.buffer),
@@ -129,6 +143,48 @@ impl Clone for Console {
             stream: self.stream,
             quiet: self.quiet,
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct Console {
+    pub err: Arc<ConsoleBuffer>,
+    pub out: Arc<ConsoleBuffer>,
+}
+
+impl Console {
+    pub fn new(quiet: bool) -> Self {
+        Self {
+            err: Arc::new(ConsoleBuffer::new(ConsoleStream::Stderr, quiet)),
+            out: Arc::new(ConsoleBuffer::new(ConsoleStream::Stdout, quiet)),
+        }
+    }
+
+    // This should be safe since there will only be one console instance
+    pub fn close(&mut self) -> miette::Result<()> {
+        if let Some(err) = Arc::get_mut(&mut self.err) {
+            err.close()?
+        }
+
+        if let Some(out) = Arc::get_mut(&mut self.out) {
+            out.close()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn stderr(&self) -> Arc<ConsoleBuffer> {
+        Arc::clone(&self.err)
+    }
+
+    pub fn stdout(&self) -> Arc<ConsoleBuffer> {
+        Arc::clone(&self.out)
+    }
+}
+
+impl Drop for Console {
+    fn drop(&mut self) {
+        self.close().unwrap();
     }
 }
 

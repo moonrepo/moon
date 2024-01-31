@@ -7,7 +7,7 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
-use moon_app_components::{StderrConsole, StdoutConsole};
+use moon_app_components::AppConsole;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
@@ -41,13 +41,13 @@ pub struct CiArgs {
 }
 
 struct CiConsole<'ci> {
-    inner: &'ci StdoutConsole,
+    inner: &'ci AppConsole,
     output: CiOutput,
 }
 
 impl<'ci> CiConsole<'ci> {
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
-        self.inner.write_line(data)
+        self.inner.out.write_line(data)
     }
 
     pub fn print_header(&self, title: &str) -> miette::Result<()> {
@@ -212,7 +212,7 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
     let workspace = resources.get::<Workspace>();
     let console = CiConsole {
-        inner: resources.get::<StdoutConsole>(),
+        inner: resources.get::<AppConsole>(),
         output: ci_env::get_output().unwrap_or(CiOutput {
             close_log_group: "",
             open_log_group: "▪▪▪▪ ",
@@ -257,8 +257,7 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
         .generate_report("ciReport.json")
         .run(
             action_graph,
-            resources.get::<StderrConsole>().clone_inner(),
-            resources.get::<StdoutConsole>().clone_inner(),
+            resources.get::<AppConsole>().into_inner(),
             Some(context),
         )
         .await?;

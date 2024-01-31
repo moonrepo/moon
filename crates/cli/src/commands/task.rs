@@ -1,7 +1,7 @@
 use clap::Args;
 use miette::{miette, IntoDiagnostic};
 use moon::build_project_graph;
-use moon_app_components::StdoutConsole;
+use moon_app_components::AppConsole;
 use moon_target::{Target, TargetScope};
 use moon_workspace::Workspace;
 use starbase::system;
@@ -37,7 +37,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     }
 
     let workspace = resources.get::<Workspace>();
-    let console = resources.get::<StdoutConsole>();
+    let console = resources.get::<AppConsole>().stdout();
 
     console.print_header(&args.target.id)?;
     console.print_entry("Task", color::id(&args.target.task_id))?;

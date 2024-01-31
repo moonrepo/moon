@@ -70,8 +70,7 @@ impl Pipeline {
     pub async fn run(
         &mut self,
         action_graph: ActionGraph,
-        stderr: Console,
-        stdout: Console,
+        console: Arc<Console>,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
@@ -161,10 +160,9 @@ impl Pipeline {
             let emitter_clone = Arc::clone(&emitter);
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
+            let console_clone = Arc::clone(&console);
             let cancel_token_clone = cancel_token.clone();
             let sender = action_graph_iter.sender.clone();
-            let stderr_clone = stderr.clone();
-            let stdout_clone = stdout.clone();
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
@@ -185,8 +183,7 @@ impl Pipeline {
                         emitter_clone,
                         workspace_clone,
                         project_graph_clone,
-                        stderr_clone,
-                        stdout_clone,
+                        console_clone,
                     ) => res
                 };
 
@@ -229,10 +226,9 @@ impl Pipeline {
             let emitter_clone = Arc::clone(&emitter);
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
+            let console_clone = Arc::clone(&console);
             let cancel_token_clone = cancel_token.clone();
             let sender = action_graph_iter.sender.clone();
-            let stderr_clone = stderr.clone();
-            let stdout_clone = stdout.clone();
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
@@ -249,8 +245,7 @@ impl Pipeline {
                         emitter_clone,
                         workspace_clone,
                         project_graph_clone,
-                        stderr_clone,
-                        stdout_clone,
+                        console_clone,
                     ) => res
                 };
 
@@ -359,7 +354,7 @@ impl Pipeline {
     }
 
     pub fn render_summary(&self, results: &ActionResults, console: &Console) -> miette::Result<()> {
-        console.write_newline()?;
+        console.out.write_newline()?;
 
         let mut count = 0;
 
@@ -368,7 +363,7 @@ impl Pipeline {
                 continue;
             }
 
-            console.print_checkpoint(
+            console.out.print_checkpoint(
                 Checkpoint::RunFailed,
                 match &*result.node {
                     ActionNode::RunTask { target, .. } => target.as_str(),
@@ -383,31 +378,31 @@ impl Pipeline {
                     if let Some(stdout) = &attempt.stdout {
                         if !stdout.is_empty() {
                             has_stdout = true;
-                            console.write_line(stdout)?;
+                            console.out.write_line(stdout)?;
                         }
                     }
 
                     if let Some(stderr) = &attempt.stderr {
                         if has_stdout {
-                            console.write_newline()?;
+                            console.out.write_newline()?;
                         }
 
                         if !stderr.is_empty() {
-                            console.write_line(stderr)?;
+                            console.out.write_line(stderr)?;
                         }
                     }
                 }
             }
 
-            console.write_newline()?;
+            console.out.write_newline()?;
             count += 1;
         }
 
         if count == 0 {
-            console.write_line("No failed actions to summarize.")?;
+            console.out.write_line("No failed actions to summarize.")?;
         }
 
-        console.write_newline()?;
+        console.out.write_newline()?;
 
         Ok(())
     }
@@ -417,7 +412,7 @@ impl Pipeline {
         results: &ActionResults,
         console: &Console,
     ) -> miette::Result<bool> {
-        console.write_newline()?;
+        console.out.write_newline()?;
 
         let mut failed = false;
 
@@ -451,15 +446,15 @@ impl Pipeline {
                 meta.push(time::elapsed(duration));
             }
 
-            console.write_line(format!(
+            console.out.write_line(format!(
                 "{} {} {}",
                 status,
                 result.label,
-                console.format_comments(meta),
+                console.out.format_comments(meta),
             ))?;
         }
 
-        console.write_newline()?;
+        console.out.write_newline()?;
 
         Ok(failed)
     }
@@ -526,7 +521,7 @@ impl Pipeline {
             counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
         }
 
-        console.write_newline()?;
+        console.out.write_newline()?;
 
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(self.duration.unwrap());
@@ -536,14 +531,14 @@ impl Pipeline {
         }
 
         if compact {
-            console.print_entry("Tasks", &counts_message)?;
-            console.print_entry(" Time", &elapsed_time)?;
+            console.out.print_entry("Tasks", &counts_message)?;
+            console.out.print_entry(" Time", &elapsed_time)?;
         } else {
-            console.print_entry("Actions", &counts_message)?;
-            console.print_entry("   Time", &elapsed_time)?;
+            console.out.print_entry("Actions", &counts_message)?;
+            console.out.print_entry("   Time", &elapsed_time)?;
         }
 
-        console.write_newline()?;
+        console.out.write_newline()?;
 
         Ok(())
     }

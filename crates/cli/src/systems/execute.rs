@@ -1,5 +1,5 @@
 use moon_api::Launchpad;
-use moon_app_components::{MoonEnv, StdoutConsole};
+use moon_app_components::{AppConsole, MoonEnv};
 use moon_common::{color, is_test_env, is_unformatted_stdout};
 use moon_console::Checkpoint;
 use moon_workspace::Workspace;
@@ -10,7 +10,7 @@ use tracing::debug;
 pub async fn check_for_new_version(
     moon_env: StateRef<MoonEnv>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<StdoutConsole>,
+    console: ResourceRef<AppConsole>,
 ) {
     if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
         return Ok(());
@@ -22,7 +22,7 @@ pub async fn check_for_new_version(
                 return Ok(());
             }
 
-            console.print_checkpoint(
+            console.out.print_checkpoint(
                 Checkpoint::Announcement,
                 format!(
                     "There's a new version of moon available, {} (currently on {})!",
@@ -32,10 +32,12 @@ pub async fn check_for_new_version(
             )?;
 
             if let Some(newer_message) = result.message {
-                console.print_checkpoint(Checkpoint::Announcement, newer_message)?;
+                console
+                    .out
+                    .print_checkpoint(Checkpoint::Announcement, newer_message)?;
             }
 
-            console.print_checkpoint(
+            console.out.print_checkpoint(
                 Checkpoint::Announcement,
                 format!(
                     "Run {} or install from {}",

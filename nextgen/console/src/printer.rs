@@ -1,4 +1,5 @@
-use crate::console::Console;
+use crate::console::ConsoleBuffer;
+use moon_common::is_unformatted_stdout;
 use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{self, no_color, Color, OwoStyle};
 
@@ -25,7 +26,7 @@ fn bold(message: &str) -> String {
     }
 }
 
-impl Console {
+impl ConsoleBuffer {
     pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
@@ -79,7 +80,7 @@ impl Console {
         message: M,
         comments: C,
     ) -> miette::Result<()> {
-        if !self.quiet {
+        if !self.quiet && is_unformatted_stdout() {
             self.write_line(self.format_checkpoint(checkpoint, message, comments))?;
         }
 

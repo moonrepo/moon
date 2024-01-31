@@ -1,4 +1,5 @@
 use crate::app::GlobalArgs;
+use crate::app_error::ExitCode;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
 use clap::Args;
@@ -15,7 +16,6 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
-use std::process::exit;
 use tracing::debug;
 
 type TargetList = Vec<Target>;
@@ -285,9 +285,9 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
 
     pipeline.render_stats(&results, console.inner, false)?;
 
+    console.print_footer()?;
+
     if failed {
-        exit(1);
-    } else {
-        console.print_footer()?;
+        return Err(ExitCode(1).into());
     }
 }

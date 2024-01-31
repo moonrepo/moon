@@ -3155,6 +3155,7 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tera",
+ "thiserror",
  "tiny_http",
  "tokio",
  "tracing",

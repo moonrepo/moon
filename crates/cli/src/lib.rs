@@ -1,4 +1,5 @@
 mod app;
+mod app_error;
 pub mod commands;
 pub mod enums;
 mod helpers;
@@ -31,6 +32,7 @@ use crate::commands::teardown::teardown;
 use crate::commands::upgrade::upgrade;
 use crate::helpers::setup_colors;
 use app::App as CLI;
+use app_error::ExitCode;
 use clap::Parser;
 use commands::migrate::FromTurborepoArgs;
 use enums::{CacheMode, LogLevel};
@@ -40,6 +42,7 @@ use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
 use std::ffi::OsString;
+use std::process::exit;
 use systems::{analyze, execute, requires_toolchain, requires_workspace, shutdown, startup};
 use tracing::debug;
 
@@ -236,10 +239,15 @@ pub async fn run_cli() -> AppResult {
         // so we unfortunately need to work around it with this hack!
         // https://github.com/rust-lang/rust/issues/46016
         if error.to_string().to_lowercase().contains("broken pipe") {
-            std::process::exit(0);
-        } else {
-            return Err(error);
+            exit(0);
         }
+
+        // If we received a custom exit code, use it
+        if let Some(ExitCode(code)) = error.downcast_ref::<ExitCode>() {
+            exit(*code);
+        }
+
+        return Err(error);
     }
 
     Ok(())

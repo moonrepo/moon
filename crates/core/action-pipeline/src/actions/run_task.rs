@@ -1,5 +1,6 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::{ActionContext, TargetState};
+use moon_console::{Checkpoint, Console};
 use moon_emitter::Emitter;
 use moon_logger::{debug, warn};
 use moon_platform::Runtime;
@@ -14,11 +15,14 @@ use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:run-task";
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run_task(
     action: &mut Action,
     context: Arc<RwLock<ActionContext>>,
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
+    stderr: Console,
+    stdout: Console,
     project: &Project,
     target: &Target,
     runtime: &Runtime,
@@ -28,7 +32,7 @@ pub async fn run_task(
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
     let task = project.get_task(&target.task_id)?;
-    let mut runner = Runner::new(&emitter, &workspace, project, task)?;
+    let mut runner = Runner::new(&emitter, &workspace, project, task, stderr, stdout)?;
 
     debug!(
         target: LOG_TARGET,
@@ -56,9 +60,7 @@ pub async fn run_task(
                         color::label(&task.target)
                     );
 
-                    // TODO
-                    // runner.print_checkpoint(Checkpoint::RunFailed, &["skipped"])?;
-                    // runner.flush_output()?;
+                    runner.print_checkpoint(Checkpoint::RunFailed, ["skipped".to_owned()])?;
 
                     return Ok(ActionStatus::Skipped);
                 }

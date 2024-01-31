@@ -7,7 +7,7 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
-use moon_app_components::StdoutConsole;
+use moon_app_components::{StderrConsole, StdoutConsole};
 use moon_common::is_test_env;
 use moon_console::Console;
 use moon_project_graph::ProjectGraph;
@@ -107,7 +107,8 @@ pub async fn run_target(
     args: &RunArgs,
     concurrency: Option<usize>,
     workspace: &Workspace,
-    console: &Console,
+    stderr: Console,
+    stdout: Console,
     project_graph: ProjectGraph,
 ) -> AppResult {
     // Force cache to update using write-only mode
@@ -209,10 +210,10 @@ pub async fn run_target(
     let results = pipeline
         .bail_on_error()
         .generate_report("runReport.json")
-        .run(action_graph, Some(context))
+        .run(action_graph, stderr, stdout.clone(), Some(context))
         .await?;
 
-    pipeline.render_stats(&results, console, true)?;
+    pipeline.render_stats(&results, &stdout, true)?;
 
     Ok(())
 }
@@ -230,7 +231,8 @@ pub async fn run(
         args,
         global_args.concurrency,
         resources.get::<Workspace>(),
-        resources.get::<StdoutConsole>(),
+        resources.get::<StderrConsole>().clone_inner(),
+        resources.get::<StdoutConsole>().clone_inner(),
         project_graph,
     )
     .await?;

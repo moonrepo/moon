@@ -7,7 +7,7 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
-use moon_app_components::StdoutConsole;
+use moon_app_components::{StderrConsole, StdoutConsole};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
@@ -255,7 +255,12 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
 
     let results = pipeline
         .generate_report("ciReport.json")
-        .run(action_graph, Some(context))
+        .run(
+            action_graph,
+            resources.get::<StderrConsole>().clone_inner(),
+            resources.get::<StdoutConsole>().clone_inner(),
+            Some(context),
+        )
         .await?;
 
     console.print_footer()?;
@@ -263,16 +268,16 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     // Print out a summary of any failures
     console.print_header("Summary")?;
 
-    pipeline.render_summary(&results, &console.inner)?;
+    pipeline.render_summary(&results, console.inner)?;
 
     console.print_footer()?;
 
     // Print out the results and exit if an error occurs
     console.print_header("Stats")?;
 
-    let failed = pipeline.render_results(&results, &console.inner)?;
+    let failed = pipeline.render_results(&results, console.inner)?;
 
-    pipeline.render_stats(&results, &console.inner, false)?;
+    pipeline.render_stats(&results, console.inner, false)?;
 
     if failed {
         exit(1);

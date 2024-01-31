@@ -5,6 +5,7 @@ use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_console::Console;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
 use moon_project_graph::ProjectGraph;
@@ -26,6 +27,8 @@ pub async fn process_action(
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
+    stderr: Console,
+    stdout: Console,
 ) -> miette::Result<Action> {
     action.start();
 
@@ -185,6 +188,8 @@ pub async fn process_action(
                 context,
                 emitter,
                 workspace,
+                stderr,
+                stdout,
                 &project,
                 target,
                 runtime,

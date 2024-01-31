@@ -96,7 +96,13 @@ impl Console {
     }
 
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
-        let mut data = data.as_ref().to_owned();
+        let data = data.as_ref();
+
+        if data.is_empty() {
+            return Ok(());
+        }
+
+        let mut data = data.to_owned();
         data.push(b'\n');
 
         self.write(data)

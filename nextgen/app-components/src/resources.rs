@@ -46,6 +46,10 @@ impl StderrConsole {
     pub fn new(quiet: bool) -> Self {
         Self(Console::new(ConsoleStream::Stderr, quiet))
     }
+
+    pub fn clone_inner(&self) -> Console {
+        self.0.clone()
+    }
 }
 
 #[derive(Resource)]
@@ -54,6 +58,10 @@ pub struct StdoutConsole(pub Console);
 impl StdoutConsole {
     pub fn new(quiet: bool) -> Self {
         Self(Console::new(ConsoleStream::Stdout, quiet))
+    }
+
+    pub fn clone_inner(&self) -> Console {
+        self.0.clone()
     }
 }
 

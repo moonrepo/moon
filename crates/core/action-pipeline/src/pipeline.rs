@@ -70,6 +70,8 @@ impl Pipeline {
     pub async fn run(
         &mut self,
         action_graph: ActionGraph,
+        stderr: Console,
+        stdout: Console,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
@@ -161,6 +163,8 @@ impl Pipeline {
             let project_graph_clone = Arc::clone(&project_graph);
             let cancel_token_clone = cancel_token.clone();
             let sender = action_graph_iter.sender.clone();
+            let stderr_clone = stderr.clone();
+            let stdout_clone = stdout.clone();
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
@@ -181,6 +185,8 @@ impl Pipeline {
                         emitter_clone,
                         workspace_clone,
                         project_graph_clone,
+                        stderr_clone,
+                        stdout_clone,
                     ) => res
                 };
 
@@ -225,6 +231,8 @@ impl Pipeline {
             let project_graph_clone = Arc::clone(&project_graph);
             let cancel_token_clone = cancel_token.clone();
             let sender = action_graph_iter.sender.clone();
+            let stderr_clone = stderr.clone();
+            let stdout_clone = stdout.clone();
             let mut action = Action::new(node.to_owned());
             action.node_index = node_index.index();
 
@@ -241,6 +249,8 @@ impl Pipeline {
                         emitter_clone,
                         workspace_clone,
                         project_graph_clone,
+                        stderr_clone,
+                        stdout_clone,
                     ) => res
                 };
 

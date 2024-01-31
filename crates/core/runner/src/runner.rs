@@ -1,12 +1,11 @@
 use crate::run_state::{load_output_logs, save_output_logs, RunTargetState};
 use crate::target_hash::TargetHasher;
 use crate::{errors::RunnerError, inputs_collector};
-use console::Term;
-use miette::IntoDiagnostic;
 use moon_action::{ActionNode, ActionStatus, Attempt};
 use moon_action_context::{ActionContext, TargetState};
 use moon_cache_item::CacheItem;
 use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
+use moon_console::{Checkpoint, Console};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
@@ -16,7 +15,6 @@ use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
-use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_tool::get_proto_env_vars;
 use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
@@ -46,9 +44,9 @@ pub struct Runner<'a> {
 
     project: &'a Project,
 
-    stderr: Term,
+    stderr: Console,
 
-    stdout: Term,
+    stdout: Console,
 
     task: &'a Task,
 
@@ -61,6 +59,8 @@ impl<'a> Runner<'a> {
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
+        stderr: Console,
+        stdout: Console,
     ) -> miette::Result<Runner<'a>> {
         let mut cache = workspace
             .cache_engine
@@ -75,8 +75,8 @@ impl<'a> Runner<'a> {
             node: Arc::new(ActionNode::None),
             emitter,
             project,
-            stderr: Term::buffered_stderr(),
-            stdout: Term::buffered_stdout(),
+            stderr,
+            stdout,
             task,
             workspace,
         })
@@ -133,15 +133,15 @@ impl<'a> Runner<'a> {
             HydrateFrom::LocalCache => "cached",
             HydrateFrom::RemoteCache => "cached from remote",
             HydrateFrom::PreviousOutput => "cached from previous run",
-        }];
+        }
+        .to_owned()];
 
         if self.should_print_short_hash() {
-            comments.push(self.get_short_hash());
+            comments.push(self.get_short_hash().to_owned());
         }
 
-        self.print_checkpoint(Checkpoint::RunPassed, &comments)?;
+        self.print_checkpoint(Checkpoint::RunPassed, comments)?;
         self.print_cache_item()?;
-        self.flush_output()?;
 
         Ok(if matches!(from, HydrateFrom::RemoteCache) {
             ActionStatus::CachedFromRemote
@@ -429,13 +429,6 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn flush_output(&self) -> miette::Result<()> {
-        self.stdout.flush().into_diagnostic()?;
-        self.stderr.flush().into_diagnostic()?;
-
-        Ok(())
-    }
-
     pub fn get_short_hash(&self) -> &str {
         if self.cache.data.hash.is_empty() {
             "" // Empty when cache is disabled
@@ -644,6 +637,7 @@ impl<'a> Runner<'a> {
         };
 
         // For long-running process, log a message every 30 seconds to indicate it's still running
+        let stdout_clone = self.stdout.clone();
         let interval_target = self.task.target.clone();
         let interval_handle = task::spawn(async move {
             if is_persistent || is_interactive {
@@ -656,10 +650,10 @@ impl<'a> Runner<'a> {
                 sleep(Duration::from_secs(30)).await;
                 secs += 30;
 
-                println!(
-                    "{} {}",
-                    label_checkpoint(&interval_target, Checkpoint::RunStart),
-                    color::muted(format!("running for {}s", secs))
+                let _ = stdout_clone.print_checkpoint_with_comments(
+                    Checkpoint::RunStarted,
+                    &interval_target,
+                    [format!("running for {}s", secs)],
                 );
             }
         });
@@ -667,9 +661,8 @@ impl<'a> Runner<'a> {
         loop {
             let mut attempt = Attempt::new(attempt_index);
 
-            self.print_target_label(Checkpoint::RunStart, &attempt, attempt_total)?;
+            self.print_target_label(Checkpoint::RunStarted, &attempt, attempt_total)?;
             self.print_target_command(context, command)?;
-            self.flush_output()?;
 
             let possible_output = if should_stream_output {
                 if let Some(prefix) = stream_prefix {
@@ -780,7 +773,6 @@ impl<'a> Runner<'a> {
             );
 
             self.print_target_label(Checkpoint::RunPassed, &Attempt::new(0), 0)?;
-            self.flush_output()?;
 
             Ok(vec![])
         } else {
@@ -804,31 +796,13 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn print_checkpoint<T: AsRef<str>>(
+    pub fn print_checkpoint<C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
-        comments: &[T],
+        comments: C,
     ) -> miette::Result<()> {
-        let label = label_checkpoint(&self.task.target, checkpoint);
-
-        if comments.is_empty() {
-            self.stdout.write_line(&label).into_diagnostic()?;
-        } else {
-            self.stdout
-                .write_line(&format!(
-                    "{} {}",
-                    label,
-                    color::muted(format!(
-                        "({})",
-                        comments
-                            .iter()
-                            .map(|c| c.as_ref())
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    ))
-                ))
-                .into_diagnostic()?;
-        }
+        self.stdout
+            .print_checkpoint_with_comments(checkpoint, &self.task.target, comments)?;
 
         Ok(())
     }
@@ -839,21 +813,8 @@ impl<'a> Runner<'a> {
         stderr: &str,
         failed: bool,
     ) -> miette::Result<()> {
-        let print_stdout = || -> miette::Result<()> {
-            if !stdout.is_empty() {
-                self.stdout.write_line(stdout).into_diagnostic()?;
-            }
-
-            Ok(())
-        };
-
-        let print_stderr = || -> miette::Result<()> {
-            if !stderr.is_empty() {
-                self.stderr.write_line(stderr).into_diagnostic()?;
-            }
-
-            Ok(())
-        };
+        let print_stdout = || -> miette::Result<()> { self.stdout.write_line(stdout) };
+        let print_stderr = || -> miette::Result<()> { self.stderr.write_line(stderr) };
 
         match self.task.options.output_style {
             // Only show output on failure
@@ -869,7 +830,7 @@ impl<'a> Runner<'a> {
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
-                    self.stderr.write_line(hash).into_diagnostic()?;
+                    self.stderr.write_line(hash)?;
                 }
             }
             // Show nothing
@@ -913,7 +874,7 @@ impl<'a> Runner<'a> {
             }),
         ));
 
-        self.stdout.write_line(&message).into_diagnostic()?;
+        self.stdout.write_line(message)?;
 
         Ok(())
     }
@@ -940,7 +901,7 @@ impl<'a> Runner<'a> {
             comments.push(self.get_short_hash().to_owned());
         }
 
-        self.print_checkpoint(checkpoint, &comments)?;
+        self.print_checkpoint(checkpoint, comments)?;
 
         Ok(())
     }
@@ -967,7 +928,6 @@ impl<'a> Runner<'a> {
         let stderr = output_to_string(&output.stderr);
 
         self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
-        self.flush_output()?;
 
         attempt.exit_code = output.status.code();
         attempt.stdout = Some(stdout);
@@ -993,8 +953,6 @@ impl<'a> Runner<'a> {
             attempt,
             attempt_total,
         )?;
-
-        self.flush_output()?;
 
         attempt.exit_code = output.status.code();
         attempt.stdout = Some(output_to_string(&output.stdout));

@@ -13,7 +13,7 @@ pub use pipeline::*;
 pub(crate) fn label_to_the_moon() -> String {
     use starbase_styles::color::paint;
 
-    vec![
+    [
         paint(55, "❯"),
         paint(56, "❯❯"),
         paint(57, "❯ t"),
@@ -24,6 +24,6 @@ pub(crate) fn label_to_the_moon() -> String {
     ]
     .iter()
     .map(|i| i.to_string())
-    .collect::<Vec<String>>()
+    .collect::<Vec<_>>()
     .join("")
 }

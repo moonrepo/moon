@@ -30,14 +30,15 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 
+    let console = resources.get::<AppConsole>().stdout();
+
     if args.json {
-        println!("{}", serde_json::to_string_pretty(&task).into_diagnostic()?);
+        console.write_line(serde_json::to_string_pretty(&task).into_diagnostic()?)?;
 
         return Ok(());
     }
 
     let workspace = resources.get::<Workspace>();
-    let console = resources.get::<AppConsole>().stdout();
 
     console.print_header(&args.target.id)?;
     console.print_entry("Task", color::id(&args.target.task_id))?;

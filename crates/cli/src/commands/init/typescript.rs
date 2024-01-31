@@ -3,10 +3,11 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_typescript_config_template;
-use moon_terminal::label_header;
+use moon_console::Console;
 use moon_typescript_lang::TsConfigJson;
 use starbase::AppResult;
 use starbase_styles::color;
+use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -18,22 +19,38 @@ pub async fn init_typescript(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
+    console: &Console,
 ) -> AppResult<String> {
     if !options.yes {
-        println!("\n{}\n", label_header("TypeScript"));
+        console.out.print_header("TypeScript")?;
 
-        println!(
-            "Toolchain: {}",
-            color::url("https://moonrepo.dev/docs/concepts/toolchain")
-        );
-        println!(
-            "Handbook: {}",
-            color::url("https://moonrepo.dev/docs/guides/javascript/typescript-project-refs")
-        );
-        println!(
-            "Config: {}\n",
-            color::url("https://moonrepo.dev/docs/config/toolchain#typescript")
-        );
+        console.out.write_raw(|buffer| {
+            buffer.write_all(
+                format!(
+                    "Toolchain: {}\n",
+                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Handbook: {}\n",
+                    color::url(
+                        "https://moonrepo.dev/docs/guides/javascript/typescript-project-refs"
+                    )
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Config: {}\n\n",
+                    color::url("https://moonrepo.dev/docs/config/toolchain#typescript")
+                )
+                .as_bytes(),
+            )?;
+
+            Ok(())
+        })?;
     }
 
     let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {

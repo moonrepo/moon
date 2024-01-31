@@ -89,11 +89,18 @@ async fn gather_touched_files(
             default_branch: true,
             base: args.base.clone(),
             head: args.head.clone(),
-            log: true,
             ..QueryTouchedFilesOptions::default()
         },
     )
     .await?;
+
+    console.write_line(
+        results
+            .iter()
+            .map(|f| color::file(f.as_str()))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )?;
 
     console.print_footer()?;
 

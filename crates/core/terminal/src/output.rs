@@ -59,11 +59,3 @@ pub fn label_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) -> Stri
 pub fn print_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) {
     println!("{}", label_checkpoint(label, checkpoint));
 }
-
-#[inline]
-pub fn label_header<T: AsRef<str>>(label: T) -> String {
-    style(format!(" {} ", label.as_ref().to_uppercase()))
-        .bold()
-        .reverse()
-        .to_string()
-}

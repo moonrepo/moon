@@ -172,15 +172,19 @@ pub async fn run_target(
                 map_list(&args.status, |s| color::symbol(s.to_string()))
             };
 
-            println!(
-                "Target(s) {targets_list} not affected by touched files (using status {status_list})"
-            );
+            console.out.write_line(
+                format!("Target(s) {targets_list} not affected by touched files (using status {status_list})")
+            )?;
         } else {
-            println!("No tasks found for target(s) {targets_list}");
+            console
+                .out
+                .write_line(format!("No tasks found for target(s) {targets_list}"))?;
         }
 
         if let Some(query_input) = &args.query {
-            println!("Using query {}", color::shell(query_input));
+            console
+                .out
+                .write_line(format!("Using query {}", color::shell(query_input)))?;
         }
 
         return Ok(());

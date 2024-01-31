@@ -5,12 +5,13 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
+use moon_console::Console;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::package_json::PackageJson;
-use moon_terminal::label_header;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
+use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -111,22 +112,36 @@ pub async fn init_node(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
+    console: &Console,
 ) -> AppResult<String> {
     if !options.yes {
-        println!("\n{}\n", label_header("Node"));
+        console.out.print_header("Node")?;
 
-        println!(
-            "Toolchain: {}",
-            color::url("https://moonrepo.dev/docs/concepts/toolchain")
-        );
-        println!(
-            "Handbook: {}",
-            color::url("https://moonrepo.dev/docs/guides/javascript/node-handbook")
-        );
-        println!(
-            "Config: {}\n",
-            color::url("https://moonrepo.dev/docs/config/toolchain#node")
-        );
+        console.out.write_raw(|buffer| {
+            buffer.write_all(
+                format!(
+                    "Toolchain: {}\n",
+                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Handbook: {}\n",
+                    color::url("https://moonrepo.dev/docs/guides/javascript/node-handbook")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Config: {}\n\n",
+                    color::url("https://moonrepo.dev/docs/config/toolchain#node")
+                )
+                .as_bytes(),
+            )?;
+
+            Ok(())
+        })?;
     }
 
     let node_version = prompt_version("Node", options, theme, || detect_node_version(dest_dir))?;

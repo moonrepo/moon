@@ -340,7 +340,6 @@ pub async fn touched_files(
         head: args.head,
         json: args.json,
         local: args.local,
-        log: false,
         status: args.status,
     };
 

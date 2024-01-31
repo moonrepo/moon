@@ -17,8 +17,6 @@ pub struct QueryTouchedFilesOptions {
     pub head: Option<String>,
     pub json: bool,
     pub local: bool,
-    #[serde(skip)]
-    pub log: bool,
     pub status: Vec<TouchedStatus>,
 }
 
@@ -73,7 +71,6 @@ pub async fn query_touched_files(
         vcs.get_touched_files().await?
     };
 
-    let mut touched_files_to_log = vec![];
     let mut touched_files = FxHashSet::default();
 
     if options.status.is_empty() {
@@ -104,23 +101,18 @@ pub async fn query_touched_files(
 
     let touched_files: FxHashSet<WorkspaceRelativePathBuf> = touched_files
         .iter()
-        .map(|f| {
-            if options.log {
-                touched_files_to_log.push(format!("  {}", color::file(f)));
-            }
-
-            WorkspaceRelativePathBuf::from(standardize_separators(f))
-        })
+        .map(|f| WorkspaceRelativePathBuf::from(standardize_separators(f)))
         .collect();
 
-    if !touched_files_to_log.is_empty() {
-        touched_files_to_log.sort();
-
-        if options.log {
-            println!("{}", touched_files_to_log.join("\n"));
-        } else {
-            debug!("Found touched files:\n{}", touched_files_to_log.join("\n"));
-        }
+    if !touched_files.is_empty() {
+        debug!(
+            "Found touched files:\n{}",
+            touched_files
+                .iter()
+                .map(|f| f.as_str())
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
     }
 
     Ok(touched_files)

@@ -9,10 +9,11 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_app_components::MoonEnv;
+use moon_app_components::{AppConsole, MoonEnv};
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
+use moon_console::Console;
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
 use moon_vcs::{Git, Vcs};
@@ -129,6 +130,7 @@ pub async fn init_tool(
     tool: &InitTool,
     options: &InitOptions,
     theme: &ColorfulTheme,
+    console: &Console,
 ) -> AppResult {
     if !is_test_env() {
         let workspace_config_path = dest_dir
@@ -136,20 +138,20 @@ pub async fn init_tool(
             .join(CONFIG_WORKSPACE_FILENAME);
 
         if !workspace_config_path.exists() {
-            eprintln!(
+            console.err.write_line(format!(
                 "moon has not been initialized! Try running {} first?",
                 color::shell("moon init")
-            );
+            ))?;
 
             safe_exit(1);
         }
     }
 
     let tool_config = match tool {
-        InitTool::Bun => init_bun(dest_dir, options, theme).await?,
-        InitTool::Node => init_node(dest_dir, options, theme).await?,
-        InitTool::Rust => init_rust(dest_dir, options, theme).await?,
-        InitTool::TypeScript => init_typescript(dest_dir, options, theme).await?,
+        InitTool::Bun => init_bun(dest_dir, options, theme, console).await?,
+        InitTool::Node => init_node(dest_dir, options, theme, console).await?,
+        InitTool::Rust => init_rust(dest_dir, options, theme, console).await?,
+        InitTool::TypeScript => init_typescript(dest_dir, options, theme, console).await?,
     };
 
     let toolchain_config_path = dest_dir
@@ -165,13 +167,21 @@ pub async fn init_tool(
 
     fs::append_file(toolchain_config_path, format!("\n\n{}", tool_config.trim()))?;
 
-    println!("\nToolchain config has successfully been updated");
+    console.out.write_newline()?;
+
+    console
+        .out
+        .write_line("Toolchain config has successfully been updated")?;
 
     Ok(())
 }
 
 #[system]
-pub async fn init(args: ArgsRef<InitArgs>, moon_env: StateRef<MoonEnv>) {
+pub async fn init(
+    args: ArgsRef<InitArgs>,
+    moon_env: StateRef<MoonEnv>,
+    console: ResourceRef<AppConsole>,
+) {
     let options = InitOptions {
         force: args.force,
         minimal: args.minimal,
@@ -191,7 +201,7 @@ pub async fn init(args: ArgsRef<InitArgs>, moon_env: StateRef<MoonEnv>) {
 
     // Initialize a specific tool and exit early
     if let Some(tool) = &args.tool {
-        init_tool(&dest_dir, tool, &options, &theme).await?;
+        init_tool(&dest_dir, tool, &options, &theme, console).await?;
 
         return Ok(());
     }
@@ -233,21 +243,30 @@ pub async fn init(args: ArgsRef<InitArgs>, moon_env: StateRef<MoonEnv>) {
 "#,
     )?;
 
-    println!(
-        "\nSuccessfully initialized moon in {}!",
+    let stdout = console.stdout();
+
+    stdout.write_newline()?;
+
+    stdout.write_line(format!(
+        "Successfully initialized moon in {}!",
         color::path(&dest_dir),
-    );
+    ))?;
 
-    println!("Get started with these next steps.\n");
+    stdout.write_line("Get started with these next steps.")?;
 
-    println!("  Learn more: {}", color::url("https://monorepo.dev/docs"));
+    stdout.write_newline()?;
 
-    println!(
+    stdout.write_line(format!(
+        "  Learn more: {}",
+        color::url("https://monorepo.dev/docs")
+    ))?;
+
+    stdout.write_line(format!(
         "  Need help? {}",
         color::url("https://discord.gg/qCh9MEynv2")
-    );
+    ))?;
 
-    println!();
+    stdout.write_newline()?;
 }
 
 #[cfg(test)]

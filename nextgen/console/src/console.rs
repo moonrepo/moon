@@ -1,6 +1,6 @@
 use miette::IntoDiagnostic;
 use std::io::{self, BufWriter, IsTerminal, Write};
-use std::sync::mpsc::{self, Sender, TryRecvError};
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::{Arc, RwLock};
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
@@ -22,36 +22,20 @@ pub struct Console {
 }
 
 impl Console {
-    pub fn new(target: ConsoleStream, quiet: bool) -> Self {
+    pub fn new(stream: ConsoleStream, quiet: bool) -> Self {
         let buffer = Arc::new(RwLock::new(BufWriter::new(Vec::new())));
         let buffer_clone = Arc::clone(&buffer);
         let (tx, rx) = mpsc::channel();
 
         // Every 100ms, flush the buffer
-        let handle = spawn(move || loop {
-            sleep(Duration::from_millis(100));
-
-            if let Ok(mut out) = buffer_clone.write() {
-                let _ = flush(&mut out, target);
-            } else {
-                break;
-            }
-
-            // Has the thread been closed?
-            match rx.try_recv() {
-                Ok(true) | Err(TryRecvError::Disconnected) => {
-                    break;
-                }
-                _ => {}
-            }
-        });
+        let handle = spawn(move || flush_on_loop(buffer_clone, stream, rx));
 
         Self {
             buffer,
             closed: false,
             channel: tx,
             handle: Some(handle),
-            stream: target,
+            stream,
             quiet,
         }
     }
@@ -70,7 +54,9 @@ impl Console {
         let _ = self.channel.send(true);
 
         // Attempt to close the thread
-        let _ = self.handle.take().unwrap().join();
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
 
         self.closed = true;
 
@@ -78,6 +64,10 @@ impl Console {
     }
 
     pub fn flush(&self) -> miette::Result<()> {
+        if self.closed {
+            return Ok(());
+        }
+
         if let Ok(mut out) = self.buffer.write() {
             flush(&mut out, self.stream).into_diagnostic()?;
         }
@@ -97,7 +87,7 @@ impl Console {
 
         buffer.write_all(data.as_ref()).into_diagnostic()?;
 
-        // Buffer has written its data to the inner vec, so flush it
+        // Buffer has written its data to the inner vec, so drain it
         if !buffer.get_ref().is_empty() {
             drain(&mut buffer, self.stream).into_diagnostic()?;
         }
@@ -111,11 +101,28 @@ impl Console {
 
         self.write(data)
     }
+
+    pub fn write_newline(&self) -> miette::Result<()> {
+        self.write("\n")
+    }
 }
 
 impl Drop for Console {
     fn drop(&mut self) {
         self.close().unwrap();
+    }
+}
+
+impl Clone for Console {
+    fn clone(&self) -> Self {
+        Self {
+            buffer: Arc::clone(&self.buffer),
+            closed: self.closed,
+            channel: self.channel.clone(),
+            handle: None, // Ignore for clones
+            stream: self.stream,
+            quiet: self.quiet,
+        }
     }
 }
 
@@ -136,4 +143,28 @@ fn flush(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<(
     }
 
     drain(buffer, stream)
+}
+
+fn flush_on_loop(
+    buffer: Arc<RwLock<BufWriter<Vec<u8>>>>,
+    stream: ConsoleStream,
+    receiver: Receiver<bool>,
+) {
+    loop {
+        sleep(Duration::from_millis(100));
+
+        if let Ok(mut out) = buffer.write() {
+            let _ = flush(&mut out, stream);
+        } else {
+            break;
+        }
+
+        // Has the thread been closed?
+        match receiver.try_recv() {
+            Ok(true) | Err(TryRecvError::Disconnected) => {
+                break;
+            }
+            _ => {}
+        }
+    }
 }

@@ -35,7 +35,7 @@ pub async fn hash(
 
     if !args.json {
         console.write_line(format!("Hash: {}", color::hash(result.0)))?;
-        console.print_line()?;
+        console.write_newline()?;
     }
 
     console.write_line(result.1)?;
@@ -76,7 +76,7 @@ pub async fn hash_diff(
     } else {
         console.write_line(format!("Left:  {}", color::hash(&result.left_hash)))?;
         console.write_line(format!("Right: {}", color::hash(&result.right_hash)))?;
-        console.print_line()?;
+        console.write_newline()?;
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {

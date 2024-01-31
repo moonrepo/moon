@@ -349,7 +349,7 @@ impl Pipeline {
     }
 
     pub fn render_summary(&self, results: &ActionResults, console: &Console) -> miette::Result<()> {
-        console.print_line()?;
+        console.write_newline()?;
 
         let mut count = 0;
 
@@ -379,7 +379,7 @@ impl Pipeline {
 
                     if let Some(stderr) = &attempt.stderr {
                         if has_stdout {
-                            console.print_line()?;
+                            console.write_newline()?;
                         }
 
                         if !stderr.is_empty() {
@@ -389,7 +389,7 @@ impl Pipeline {
                 }
             }
 
-            console.print_line()?;
+            console.write_newline()?;
             count += 1;
         }
 
@@ -397,7 +397,7 @@ impl Pipeline {
             console.write_line("No failed actions to summarize.")?;
         }
 
-        console.print_line()?;
+        console.write_newline()?;
 
         Ok(())
     }
@@ -407,7 +407,7 @@ impl Pipeline {
         results: &ActionResults,
         console: &Console,
     ) -> miette::Result<bool> {
-        console.print_line()?;
+        console.write_newline()?;
 
         let mut failed = false;
 
@@ -449,7 +449,7 @@ impl Pipeline {
             ))?;
         }
 
-        console.print_line()?;
+        console.write_newline()?;
 
         Ok(failed)
     }
@@ -516,7 +516,7 @@ impl Pipeline {
             counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
         }
 
-        console.print_line()?;
+        console.write_newline()?;
 
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(self.duration.unwrap());
@@ -533,7 +533,7 @@ impl Pipeline {
             console.print_entry("   Time", &elapsed_time)?;
         }
 
-        console.print_line()?;
+        console.write_newline()?;
 
         Ok(())
     }

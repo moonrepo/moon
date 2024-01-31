@@ -130,6 +130,6 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         }
     }
 
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 }

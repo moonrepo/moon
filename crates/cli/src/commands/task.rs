@@ -127,6 +127,6 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         console.print_list(files)?;
     }
 
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 }

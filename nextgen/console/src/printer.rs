@@ -86,10 +86,6 @@ impl Console {
         Ok(())
     }
 
-    pub fn print_line(&self) -> miette::Result<()> {
-        self.write("\n")
-    }
-
     pub fn print_entry<K: AsRef<str>, V: AsRef<str>>(
         &self,
         key: K,
@@ -116,13 +112,13 @@ impl Console {
     pub fn print_entry_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
         let header = format!(" {} ", message.as_ref().to_uppercase());
 
-        self.print_line()?;
+        self.write_newline()?;
         self.write_line(if no_color() {
             header
         } else {
             OwoStyle::new().style(header).bold().reversed().to_string()
         })?;
-        self.print_line()?;
+        self.write_newline()?;
 
         Ok(())
     }
@@ -130,7 +126,7 @@ impl Console {
     pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
         let header = format!(" {} ", message.as_ref().to_uppercase());
 
-        self.print_line()?;
+        self.write_newline()?;
         self.write_line(if no_color() {
             header
         } else {
@@ -141,7 +137,7 @@ impl Console {
                 .on_color(XtermColors::from(Color::Purple as u8))
                 .to_string()
         })?;
-        self.print_line()?;
+        self.write_newline()?;
 
         Ok(())
     }

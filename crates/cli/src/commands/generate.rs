@@ -338,7 +338,7 @@ pub async fn generate(
     // Create the template instance
     let mut template = generator.load_template(&args.name)?;
 
-    console.print_line()?;
+    console.write_newline()?;
     console.write_line(format!(
         "{} {}",
         &template.config.title,
@@ -349,7 +349,7 @@ pub async fn generate(
         }
     ))?;
     console.write_line(&template.config.description)?;
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 
     // Gather variables
@@ -447,7 +447,7 @@ pub async fn generate(
         generator.generate(&template)?;
     }
 
-    console.print_line()?;
+    console.write_newline()?;
 
     for file in template.files.values() {
         console.write_line(format!(
@@ -472,6 +472,6 @@ pub async fn generate(
         ))?;
     }
 
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 }

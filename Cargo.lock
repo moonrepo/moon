@@ -3894,16 +3894,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_terminal"
-version = "0.0.1"
-dependencies = [
- "console",
- "dialoguer",
- "miette",
- "starbase_styles",
-]
-
-[[package]]
 name = "moon_test_utils"
 version = "0.0.1"
 dependencies = [

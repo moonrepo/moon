@@ -41,15 +41,23 @@ impl ConsoleBuffer {
             Checkpoint::Setup => SETUP_COLORS,
         };
 
-        format!(
-            "{}{}{}{} {} {}",
+        let mut out = format!(
+            "{}{}{}{} {}",
             color::paint(colors[0], STEP_CHAR),
             color::paint(colors[1], STEP_CHAR),
             color::paint(colors[2], STEP_CHAR),
             color::paint(colors[3], STEP_CHAR),
             bold(message.as_ref()),
-            self.format_comments(comments),
-        )
+        );
+
+        let suffix = self.format_comments(comments);
+
+        if !suffix.is_empty() {
+            out.push(' ');
+            out.push_str(&suffix);
+        }
+
+        out
     }
 
     pub fn format_comments<C: AsRef<[String]>>(&self, comments: C) -> String {

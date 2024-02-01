@@ -2,8 +2,8 @@
 source: crates/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
-▪▪▪▪ unix:exitNonZero
 stdout
+▪▪▪▪ unix:exitNonZero
 ▪▪▪▪ unix:exitNonZero (100ms)
 stderr
 Error: task_runner::run_failed

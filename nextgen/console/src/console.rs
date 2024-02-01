@@ -1,4 +1,5 @@
 use miette::IntoDiagnostic;
+use moon_common::is_test_env;
 use std::io::{self, BufWriter, IsTerminal, Write};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::{Arc, RwLock};
@@ -19,6 +20,7 @@ pub struct ConsoleBuffer {
     stream: ConsoleStream,
 
     pub quiet: bool,
+    pub test_mode: bool,
 }
 
 impl ConsoleBuffer {
@@ -26,17 +28,24 @@ impl ConsoleBuffer {
         let buffer = Arc::new(RwLock::new(BufWriter::new(Vec::new())));
         let buffer_clone = Arc::clone(&buffer);
         let (tx, rx) = mpsc::channel();
+        let test_mode = is_test_env();
 
         // Every 100ms, flush the buffer
-        let handle = spawn(move || flush_on_loop(buffer_clone, stream, rx));
+        // let handle = if test_mode {
+        //     None
+        // } else {
+        //     Some(spawn(move || flush_on_loop(buffer_clone, stream, rx)))
+        // };
+        let handle = Some(spawn(move || flush_on_loop(buffer_clone, stream, rx)));
 
         Self {
             buffer,
             closed: false,
             channel: tx,
-            handle: Some(handle),
+            handle,
             stream,
             quiet,
+            test_mode,
         }
     }
 
@@ -142,6 +151,7 @@ impl Clone for ConsoleBuffer {
             handle: None, // Ignore for clones
             stream: self.stream,
             quiet: self.quiet,
+            test_mode: self.test_mode,
         }
     }
 }

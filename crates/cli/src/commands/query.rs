@@ -41,7 +41,6 @@ pub async fn hash(
     }
 
     console.out.write_line(result.1)?;
-    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -112,8 +111,6 @@ pub async fn hash_diff(
             };
         }
     }
-
-    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -195,8 +192,6 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
                 .join("\n"),
         )?;
     }
-
-    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -299,8 +294,6 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
             }
         }
     }
-
-    console.out.flush()?;
 }
 
 #[derive(Args, Clone, Debug)]
@@ -364,6 +357,4 @@ pub async fn touched_files(
                 .join("\n"),
         )?;
     }
-
-    console.out.flush()?;
 }

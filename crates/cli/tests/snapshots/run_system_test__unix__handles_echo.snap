@@ -1,10 +1,9 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 21
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
-▪▪▪▪ unix:echo
 hello
+▪▪▪▪ unix:echo
 ▪▪▪▪ unix:echo (100ms)
 
 Tasks: 1 completed

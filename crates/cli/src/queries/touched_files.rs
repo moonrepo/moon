@@ -106,12 +106,8 @@ pub async fn query_touched_files(
 
     if !touched_files.is_empty() {
         debug!(
-            "Found touched files:\n{}",
-            touched_files
-                .iter()
-                .map(|f| f.as_str())
-                .collect::<Vec<_>>()
-                .join("\n")
+            files = ?touched_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
+            "Found touched files",
         );
     }
 

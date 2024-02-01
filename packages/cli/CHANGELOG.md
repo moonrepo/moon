@@ -18,6 +18,8 @@
   - Logs are now buffered and written periodically.
   - Previously they were written immediately, which required locking std each call.
   - Should see some minor performance improvements.
+- Added `unixShell` and `windowsShell` task options, so that the underlying shell can be configured
+  per task.
 
 ## 1.20.1
 

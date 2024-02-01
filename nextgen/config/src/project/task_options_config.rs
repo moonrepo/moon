@@ -122,6 +122,7 @@ derive_enum!(
     #[derive(ConfigEnum, Copy)]
     pub enum TaskWindowsShell {
         Bash,
+        #[serde(alias = "powershell")]
         Pwsh,
     }
 );

@@ -1,7 +1,8 @@
 use miette::IntoDiagnostic;
+use parking_lot::RwLock;
 use std::io::{self, BufWriter, IsTerminal, Write};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
 
@@ -88,9 +89,7 @@ impl ConsoleBuffer {
             return Ok(());
         }
 
-        if let Ok(mut out) = self.buffer.write() {
-            flush(&mut out, self.stream).into_diagnostic()?;
-        }
+        flush(&mut self.buffer.write(), self.stream).into_diagnostic()?;
 
         Ok(())
     }
@@ -115,10 +114,7 @@ impl ConsoleBuffer {
         }
 
         // Otherwise just write to the buffer
-        let mut buffer = self
-            .buffer
-            .write()
-            .expect("Failed to acquire console write lock.");
+        let mut buffer = self.buffer.write();
 
         op(&mut buffer).into_diagnostic()?;
 
@@ -251,11 +247,7 @@ fn flush_on_loop(
     loop {
         sleep(Duration::from_millis(100));
 
-        if let Ok(mut out) = buffer.write() {
-            let _ = flush(&mut out, stream);
-        } else {
-            break;
-        }
+        let _ = flush(&mut buffer.write(), stream);
 
         // Has the thread been closed?
         match receiver.try_recv() {

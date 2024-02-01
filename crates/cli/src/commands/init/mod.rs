@@ -5,6 +5,7 @@ mod rust;
 mod typescript;
 
 use crate::app_error::ExitCode;
+use crate::helpers::create_theme;
 use bun::init_bun;
 use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
@@ -15,7 +16,6 @@ use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORK
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_console::Console;
-use moon_terminal::create_theme;
 use moon_utils::path;
 use moon_vcs::{Git, Vcs};
 use node::init_node;

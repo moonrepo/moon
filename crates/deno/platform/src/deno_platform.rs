@@ -7,7 +7,7 @@ use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig, TypeScriptConfig,
 };
-use moon_console::Console;
+use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson};
 use moon_deno_tool::{get_deno_env_paths, DenoTool};
 use moon_hash::ContentHasher;
@@ -16,7 +16,6 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_proto_env_vars, prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
@@ -191,7 +190,9 @@ impl Platform for DenoPlatform {
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 
-        print_checkpoint("deno cache", Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, "deno cache")?;
 
         Command::new("deno")
             .args([
@@ -211,7 +212,9 @@ impl Platform for DenoPlatform {
 
         // Then attempt to install binaries
         if !self.config.bins.is_empty() {
-            print_checkpoint("deno install", Checkpoint::Setup);
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "deno install")?;
 
             debug!(
                 target: LOG_TARGET,

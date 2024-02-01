@@ -3,11 +3,10 @@ use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
-use moon_console::Console;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
     prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool, ToolError,
@@ -249,7 +248,10 @@ impl Tool for NodeTool {
                 };
 
                 if setup || !self.tool.get_tool_dir().exists() {
-                    print_checkpoint(format!("installing node {version}"), Checkpoint::Setup);
+                    self.console.out.print_checkpoint(
+                        Checkpoint::Setup,
+                        format!("installing node {version}"),
+                    )?;
 
                     if self.tool.setup(version, false).await? {
                         last_versions.insert("node".into(), version.to_owned());

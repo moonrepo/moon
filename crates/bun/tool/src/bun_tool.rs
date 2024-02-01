@@ -1,10 +1,9 @@
 use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
 use moon_config::BunConfig;
-use moon_console::Console;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::{output_to_string, Command};
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
     prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
@@ -111,7 +110,9 @@ impl Tool for BunTool {
             }
         }
 
-        print_checkpoint(format!("installing bun {version}"), Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
         if self.tool.setup(version, false).await? {
             last_versions.insert("bun".into(), version.to_owned());

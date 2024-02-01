@@ -7,7 +7,7 @@ use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     RustConfig, UnresolvedVersionSpec,
 };
-use moon_console::Console;
+use moon_console::{Checkpoint, Console};
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -20,7 +20,6 @@ use moon_rust_lang::{
 };
 use moon_rust_tool::{get_rust_env_paths, RustTool};
 use moon_task::Task;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{prepend_path_env_var, Tool, ToolManager};
 use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
@@ -257,7 +256,9 @@ impl Platform for RustPlatform {
         let tool = self.toolchain.get_for_version(&runtime.requirement)?;
 
         if !self.config.components.is_empty() {
-            print_checkpoint("rustup component", Checkpoint::Setup);
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "rustup component")?;
 
             debug!(
                 target: LOG_TARGET,
@@ -272,7 +273,9 @@ impl Platform for RustPlatform {
         }
 
         if !self.config.targets.is_empty() {
-            print_checkpoint("rustup target", Checkpoint::Setup);
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "rustup target")?;
 
             debug!(
                 target: LOG_TARGET,
@@ -287,13 +290,17 @@ impl Platform for RustPlatform {
         }
 
         if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
-            print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
 
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
         }
 
         if !self.config.bins.is_empty() {
-            print_checkpoint("cargo binstall", Checkpoint::Setup);
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "cargo binstall")?;
 
             let globals_dir = self.get_globals_dir(Some(tool));
 

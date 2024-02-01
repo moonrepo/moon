@@ -291,6 +291,7 @@ impl Platform for BunPlatform {
         actions::install_deps(
             self.toolchain.get_for_version(&runtime.requirement)?,
             working_dir,
+            &self.console,
         )
         .await?;
 

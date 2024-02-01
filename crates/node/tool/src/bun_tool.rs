@@ -1,11 +1,10 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::BunpmConfig;
-use moon_console::Console;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_node_lang::{bun, LockfileDependencyVersions};
 use moon_process::{output_to_string, Command};
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool,
@@ -119,7 +118,9 @@ impl Tool for BunTool {
             }
         }
 
-        print_checkpoint(format!("installing bun {version}"), Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
         if self.tool.setup(version, false).await? {
             last_versions.insert("bun".into(), version.to_owned());

@@ -142,8 +142,8 @@ impl<'cmd> AsyncCommand<'cmd> {
             .console
             .as_ref()
             .expect("A console is required when streaming output!");
-        let stderr_stream = console.stderr();
-        let stdout_stream = console.stdout();
+        let stderr_stream = Arc::new(console.stderr().to_owned());
+        let stdout_stream = Arc::new(console.stdout().to_owned());
 
         handles.push(task::spawn(async move {
             let mut lines = stderr.lines();

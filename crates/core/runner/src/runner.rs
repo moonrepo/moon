@@ -654,6 +654,8 @@ impl<'a> Runner<'a> {
             }
         });
 
+        command.with_console(self.console.clone());
+
         loop {
             let mut attempt = Attempt::new(attempt_index);
 

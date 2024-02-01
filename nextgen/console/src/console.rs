@@ -14,7 +14,7 @@ pub enum ConsoleStream {
 pub struct ConsoleBuffer {
     buffer: Arc<RwLock<BufWriter<Vec<u8>>>>,
     closed: bool,
-    channel: Sender<bool>,
+    channel: Option<Sender<bool>>,
     handle: Option<JoinHandle<()>>,
     stream: ConsoleStream,
 
@@ -38,7 +38,7 @@ impl ConsoleBuffer {
         Self {
             buffer,
             closed: false,
-            channel: tx,
+            channel: Some(tx),
             handle,
             stream,
             quiet: false,
@@ -68,15 +68,17 @@ impl ConsoleBuffer {
     pub fn close(&mut self) -> miette::Result<()> {
         self.flush()?;
 
+        self.closed = true;
+
         // Send the closed message
-        let _ = self.channel.send(true);
+        if let Some(channel) = self.channel.take() {
+            let _ = channel.send(true);
+        }
 
         // Attempt to close the thread
         if let Some(handle) = self.handle.take() {
             let _ = handle.join();
         }
-
-        self.closed = true;
 
         Ok(())
     }
@@ -168,55 +170,51 @@ impl Clone for ConsoleBuffer {
         Self {
             buffer: Arc::clone(&self.buffer),
             closed: self.closed,
-            channel: self.channel.clone(),
-            handle: None, // Ignore for clones
             stream: self.stream,
             quiet: self.quiet,
             test_mode: self.test_mode,
+            // Ignore for clones
+            channel: None,
+            handle: None,
         }
     }
 }
 
 #[derive(Clone)]
 pub struct Console {
-    pub err: Arc<ConsoleBuffer>,
-    pub out: Arc<ConsoleBuffer>,
+    pub err: ConsoleBuffer,
+    pub out: ConsoleBuffer,
 }
 
 impl Console {
     pub fn new(quiet: bool) -> Self {
         Self {
-            err: Arc::new(ConsoleBuffer::new(ConsoleStream::Stderr, quiet)),
-            out: Arc::new(ConsoleBuffer::new(ConsoleStream::Stdout, quiet)),
+            err: ConsoleBuffer::new(ConsoleStream::Stderr, quiet),
+            out: ConsoleBuffer::new(ConsoleStream::Stdout, quiet),
         }
     }
 
     pub fn new_testing() -> Self {
         Self {
-            err: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stderr)),
-            out: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stdout)),
+            err: ConsoleBuffer::new_testing(ConsoleStream::Stderr),
+            out: ConsoleBuffer::new_testing(ConsoleStream::Stdout),
         }
     }
 
     // This should be safe since there will only be one console instance
     pub fn close(&mut self) -> miette::Result<()> {
-        if let Some(err) = Arc::get_mut(&mut self.err) {
-            err.close()?
-        }
-
-        if let Some(out) = Arc::get_mut(&mut self.out) {
-            out.close()?;
-        }
+        self.err.close()?;
+        self.out.close()?;
 
         Ok(())
     }
 
-    pub fn stderr(&self) -> Arc<ConsoleBuffer> {
-        Arc::clone(&self.err)
+    pub fn stderr(&self) -> &ConsoleBuffer {
+        &self.err
     }
 
-    pub fn stdout(&self) -> Arc<ConsoleBuffer> {
-        Arc::clone(&self.out)
+    pub fn stdout(&self) -> &ConsoleBuffer {
+        &self.out
     }
 }
 

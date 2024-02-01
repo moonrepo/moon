@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:exitCodeZero
+stdout
+▪▪▪▪ deno:exitCodeZero (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+
+

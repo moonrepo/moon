@@ -83,6 +83,19 @@ bun:
 
 Enables and configures [Deno](../guides/javascript/deno-handbook).
 
+### `version`<VersionLabel version="1.21.0" />
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#version" />
+
+Defines the explicit Deno toolchain
+[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
+defined_, the global `deno` binary will be used.
+
+```yaml title=".moon/toolchain.yml" {2}
+deno:
+  version: '1.40.0'
+```
+
 ### `bins`<VersionLabel version="1.10.0" />
 
 <HeadingApiLink to="/api/types/interface/DenoConfig#bins" />

@@ -1,0 +1,15 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:envVars
+MOON_FOO=abc
+MOON_BAR=123
+MOON_BAZ=true
+▪▪▪▪ deno:envVars (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

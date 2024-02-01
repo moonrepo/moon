@@ -1,0 +1,6 @@
+language: javascript
+platform: deno
+
+toolchain:
+  deno:
+    version: '1.30.0'

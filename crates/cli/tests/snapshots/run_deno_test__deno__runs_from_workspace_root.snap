@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:runFromWorkspace
+<WORKSPACE>
+▪▪▪▪ deno:runFromWorkspace (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

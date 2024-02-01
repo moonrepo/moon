@@ -1,0 +1,50 @@
+language: javascript
+platform: deno
+
+tasks:
+  standard:
+    command: deno run ./standard.ts
+
+  # Runner cases
+  exitCodeNonZero:
+    command: deno run ./exitCodeNonZero.ts
+  exitCodeZero:
+    command: deno run ./exitCodeZero.ts
+  throwError:
+    command: deno run ./throwError.ts
+  unhandledPromise:
+    command: deno run ./unhandledPromise.ts
+  topLevelAwait:
+    command: deno run ./topLevelAwait.ts
+  passthroughArgs:
+    command: deno run  ./args.ts
+  envVars:
+    command: deno run --allow-env ./envVars.ts
+    env:
+      MOON_FOO: abc
+      MOON_BAR: '123'
+      MOON_BAZ: 'true'
+  envVarsMoon:
+    command: deno run --allow-env ./envVarsMoon.ts
+  runFromProject:
+    command: deno run --allow-read ./cwd.ts
+  runFromWorkspace:
+    command: deno run --allow-read ./base/cwd.ts
+    options:
+      runFromWorkspaceRoot: true
+  retryCount:
+    command: deno run ./exitCodeNonZero.ts
+    options:
+      retryCount: 3
+  affectedFiles:
+    command: deno run --allow-env ./affectedFiles.ts
+    options:
+      affectedFiles: true
+  affectedFilesArgs:
+    command: deno run --allow-env ./affectedFiles.ts
+    options:
+      affectedFiles: 'args'
+  affectedFilesEnvVar:
+    command: deno run --allow-env ./affectedFiles.ts
+    options:
+      affectedFiles: 'env'

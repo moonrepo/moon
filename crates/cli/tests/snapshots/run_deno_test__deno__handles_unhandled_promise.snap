@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:unhandledPromise
+stdout
+▪▪▪▪ deno:unhandledPromise (100ms)
+stderr
+error: Uncaught (in promise) "Oops"
+Error: task_runner::run_failed
+
+  × Task deno:unhandledPromise failed to run. View hash details with moon
+  │ query hash hash1234.
+  ╰─▶ Process deno failed with a 1 exit code.
+
+
+

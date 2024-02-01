@@ -11,8 +11,7 @@ use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
 use moon_platform::PlatformManager;
 use moon_platform_runtime::Runtime;
-use moon_process::shell::{create_shell, Shell};
-use moon_process::{args, output_to_error, output_to_string, Command, Output};
+use moon_process::{args, output_to_error, output_to_string, Command, Output, Shell};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
@@ -35,11 +34,10 @@ fn create_unix_shell(shell: &moon_config::TaskUnixShell) -> Shell {
     use moon_config::TaskUnixShell;
 
     match shell {
-        TaskUnixShell::Bash => create_shell("bash"),
-        TaskUnixShell::Elvish => create_shell("elvish"),
-        TaskUnixShell::Fish => create_shell("fish"),
-        TaskUnixShell::Zsh => create_shell("zsh"),
-        TaskUnixShell::System => create_shell("system"),
+        TaskUnixShell::Bash => Shell::new("bash"),
+        TaskUnixShell::Elvish => Shell::new("elvish"),
+        TaskUnixShell::Fish => Shell::new("fish"),
+        TaskUnixShell::Zsh => Shell::new("zsh"),
     }
 }
 
@@ -48,9 +46,8 @@ fn create_windows_shell(shell: &moon_config::TaskWindowsShell) -> Shell {
     use moon_config::TaskWindowsShell;
 
     match shell {
-        TaskWindowsShell::Bash => create_shell("bash"),
-        TaskWindowsShell::Pwsh => create_shell("pwsh"),
-        TaskWindowsShell::System => create_shell("system"),
+        TaskWindowsShell::Bash => Shell::new("bash"),
+        TaskWindowsShell::Pwsh => Shell::new("pwsh"),
     }
 }
 

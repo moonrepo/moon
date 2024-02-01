@@ -109,24 +109,20 @@ derive_enum!(
 );
 
 derive_enum!(
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum, Copy)]
     pub enum TaskUnixShell {
         Bash,
         Elvish,
         Fish,
         Zsh,
-        #[default]
-        System,
     }
 );
 
 derive_enum!(
-    #[derive(ConfigEnum, Copy, Default)]
+    #[derive(ConfigEnum, Copy)]
     pub enum TaskWindowsShell {
         Bash,
         Pwsh,
-        #[default]
-        System,
     }
 );
 

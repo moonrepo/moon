@@ -28,54 +28,47 @@ pub struct Shell {
     pub pass_args_stdin: bool,
 }
 
-pub fn create_shell(shell: &str) -> Shell {
-    match shell {
-        "pwsh" | "powershell" => {
-            Shell {
-                bin: find_command_on_path("pwsh".into())
-                    .or_else(|| find_command_on_path("powershell".into()))
-                    .unwrap_or_else(|| "powershell.exe".into()),
-                args: vec![
-                    "-NoLogo".into(),
-                    "-Command".into(),
-                    // We'll pass the command args via stdin, so that paths with special
-                    // characters and spaces resolve correctly.
-                    // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
-                    "-".into(),
-                ],
-                pass_args_stdin: true,
-            }
-        }
-        "bash" | "elvish" | "fish" | "sh" | "zsh" => Shell {
-            bin: find_command_on_path(shell.into()).unwrap_or_else(|| shell.into()),
-            args: vec!["-c".into()],
-            pass_args_stdin: false,
-        },
-        "system" => {
-            if consts::OS == "windows" {
-                create_shell("pwsh")
-            } else if let Ok(shell_bin) = env::var("SHELL") {
-                Shell {
-                    bin: shell_bin.into(),
-                    args: vec!["-c".into()],
-                    pass_args_stdin: false,
+impl Shell {
+    pub fn new(shell: &str) -> Self {
+        match shell {
+            "pwsh" | "powershell" => {
+                Self {
+                    bin: find_command_on_path("pwsh".into())
+                        .or_else(|| find_command_on_path("powershell".into()))
+                        .unwrap_or_else(|| "powershell.exe".into()),
+                    args: vec![
+                        "-NoLogo".into(),
+                        "-Command".into(),
+                        // We'll pass the command args via stdin, so that paths with special
+                        // characters and spaces resolve correctly.
+                        // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
+                        "-".into(),
+                    ],
+                    pass_args_stdin: true,
                 }
-            } else {
-                create_shell("sh")
             }
+            "bash" | "elvish" | "fish" | "sh" | "zsh" => Self {
+                bin: find_command_on_path(shell.into()).unwrap_or_else(|| shell.into()),
+                args: vec!["-c".into()],
+                pass_args_stdin: false,
+            },
+            _ => unimplemented!(),
         }
-        _ => unimplemented!(),
     }
 }
 
-#[cfg(windows)]
-#[inline]
-pub fn create_default_shell() -> Shell {
-    create_shell("pwsh")
-}
-
-#[cfg(not(windows))]
-#[inline]
-pub fn create_default_shell() -> Shell {
-    create_shell("bash")
+impl Default for Shell {
+    fn default() -> Self {
+        if consts::OS == "windows" {
+            Self::new("pwsh")
+        } else if let Ok(shell_bin) = env::var("SHELL") {
+            Self {
+                bin: shell_bin.into(),
+                args: vec!["-c".into()],
+                pass_args_stdin: false,
+            }
+        } else {
+            Self::new("sh")
+        }
+    }
 }

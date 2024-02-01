@@ -101,10 +101,8 @@ impl Platform for SystemPlatform {
 
         // cmd/pwsh requires an absolute path to batch files
         if cfg!(windows) {
-            use moon_process::shell::is_windows_script;
-
             for arg in &task.args {
-                if is_windows_script(arg) {
+                if moon_process::is_windows_script(arg) {
                     command.arg(working_dir.join(arg));
                 } else {
                     command.arg(arg);

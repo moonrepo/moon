@@ -1,8 +1,4 @@
-use crate::{
-    async_command::AsyncCommand,
-    command_inspector::CommandInspector,
-    shell::{create_default_shell, Shell},
-};
+use crate::{async_command::AsyncCommand, command_inspector::CommandInspector, shell::Shell};
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use rustc_hash::FxHashMap;
@@ -52,7 +48,7 @@ impl Command {
             input: vec![],
             prefix: None,
             print_command: false,
-            shell: Some(create_default_shell()),
+            shell: Some(Shell::default()),
             console: None,
         }
     }

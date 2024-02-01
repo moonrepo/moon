@@ -343,8 +343,10 @@ impl Platform for DenoPlatform {
             let resolved_dependencies = match deno {
                 Some(inst) => inst.get_resolved_dependencies(&project.root).await?,
                 None => {
-                    if self.config.lockfile {
-                        load_lockfile_dependencies(project.root.join("deno.lock"))?
+                    let lock_path = project.root.join("deno.lock");
+
+                    if self.config.lockfile && lock_path.exists() {
+                        load_lockfile_dependencies(lock_path)?
                     } else {
                         FxHashMap::default()
                     }

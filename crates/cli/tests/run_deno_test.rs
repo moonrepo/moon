@@ -43,7 +43,7 @@ mod deno {
         let output = assert.output();
 
         // Output contains arch info
-        assert!(predicate::str::contains("deno 1.38.0").eval(&output));
+        assert!(predicate::str::contains("deno 1.40.0").eval(&output));
     }
 
     #[test]
@@ -105,7 +105,7 @@ mod deno {
         let output = assert.output();
 
         // Output contains file paths that we cant snapshot
-        assert!(predicate::str::contains("Uncaught Error: Oops").eval(&output));
+        assert!(predicate::str::contains("Error: Oops").eval(&output));
     }
 
     #[test]
@@ -226,8 +226,6 @@ mod deno {
             });
 
             let output = assert.output();
-
-            println!("{output}");
 
             assert!(predicate::str::contains("1.40.0").eval(&output));
             assert!(predicate::str::contains("1.30.0").eval(&output));

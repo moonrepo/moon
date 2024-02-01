@@ -21,6 +21,11 @@
 - Added `unixShell` and `windowsShell` task options, so that the underlying shell can be configured
   per task.
 
+#### 🐞 Fixes
+
+- Fixed an issue where the action graph would create incorrect nodes when a tool utilizes
+  workspaces, and a project is not within the workspace.
+
 ## 1.20.1
 
 #### 🚀 Updates

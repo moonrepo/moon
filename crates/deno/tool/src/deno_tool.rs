@@ -54,7 +54,7 @@ impl DenoTool {
     ) -> miette::Result<DenoTool> {
         let mut deno = DenoTool {
             config: config.to_owned(),
-            global: true,
+            global: false,
             console,
             tool: load_tool_plugin(&Id::raw("deno"), &proto, config.plugin.as_ref().unwrap())
                 .await?,

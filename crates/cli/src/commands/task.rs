@@ -1,7 +1,7 @@
 use clap::Args;
 use miette::{miette, IntoDiagnostic};
 use moon::build_project_graph;
-use moon_app_components::StdoutConsole;
+use moon_app_components::AppConsole;
 use moon_target::{Target, TargetScope};
 use moon_workspace::Workspace;
 use starbase::system;
@@ -30,14 +30,15 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 
+    let console = resources.get::<AppConsole>().stdout();
+
     if args.json {
-        println!("{}", serde_json::to_string_pretty(&task).into_diagnostic()?);
+        console.write_line(serde_json::to_string_pretty(&task).into_diagnostic()?)?;
 
         return Ok(());
     }
 
     let workspace = resources.get::<Workspace>();
-    let console = resources.get::<StdoutConsole>();
 
     console.print_header(&args.target.id)?;
     console.print_entry("Task", color::id(&args.target.task_id))?;
@@ -127,6 +128,6 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         console.print_list(files)?;
     }
 
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 }

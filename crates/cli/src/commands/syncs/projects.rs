@@ -1,13 +1,15 @@
 use crate::helpers::create_progress_bar;
 use moon::{build_action_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
+use moon_app_components::AppConsole;
 use moon_workspace::Workspace;
-use starbase::{system, SystemResult};
+use starbase::{system, ResourceManager, SystemResult};
+use tokio::sync::RwLockWriteGuard;
 
-pub async fn internal_sync(workspace: &mut Workspace) -> SystemResult {
+pub async fn internal_sync(mut resources: RwLockWriteGuard<'_, ResourceManager>) -> SystemResult {
     let done = create_progress_bar("Syncing projects...");
 
-    let project_graph = generate_project_graph(workspace).await?;
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
 
     let mut project_count = 0;
     let mut action_graph_builder = build_action_graph(&project_graph)?;
@@ -19,20 +21,25 @@ pub async fn internal_sync(workspace: &mut Workspace) -> SystemResult {
 
     let action_graph = action_graph_builder.build()?;
 
-    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
-    let results = pipeline.run(action_graph, None).await?;
+    let mut pipeline = Pipeline::new(resources.get::<Workspace>().to_owned(), project_graph);
+
+    pipeline
+        .run(
+            action_graph,
+            resources.get::<AppConsole>().into_inner(),
+            None,
+        )
+        .await?;
 
     done(
         format!("Successfully synced {project_count} projects"),
         true,
     );
 
-    pipeline.render_results(&results)?;
-
     Ok(())
 }
 
 #[system]
-pub async fn sync(workspace: ResourceMut<Workspace>) {
-    internal_sync(workspace).await?;
+pub async fn sync(resources: ResourcesMut) {
+    internal_sync(resources).await?;
 }

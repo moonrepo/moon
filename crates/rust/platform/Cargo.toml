@@ -8,6 +8,7 @@ publish = false
 moon_action_context = { path = "../../core/action-context" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
+moon_console = { path = "../../../nextgen/console" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
@@ -17,7 +18,6 @@ moon_project = { path = "../../../nextgen/project" }
 moon_rust_lang = { path = "../lang" }
 moon_rust_tool = { path = "../tool" }
 moon_task = { path = "../../../nextgen/task" }
-moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }

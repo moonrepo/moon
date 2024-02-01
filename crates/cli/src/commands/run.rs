@@ -7,6 +7,7 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
+use moon_app_components::AppConsole;
 use moon_common::is_test_env;
 use moon_project_graph::ProjectGraph;
 use moon_target::TargetLocator;
@@ -105,6 +106,7 @@ pub async fn run_target(
     args: &RunArgs,
     concurrency: Option<usize>,
     workspace: &Workspace,
+    console: &AppConsole,
     project_graph: ProjectGraph,
 ) -> AppResult {
     // Force cache to update using write-only mode
@@ -170,15 +172,19 @@ pub async fn run_target(
                 map_list(&args.status, |s| color::symbol(s.to_string()))
             };
 
-            println!(
-                "Target(s) {targets_list} not affected by touched files (using status {status_list})"
-            );
+            console.out.write_line(
+                format!("Target(s) {targets_list} not affected by touched files (using status {status_list})")
+            )?;
         } else {
-            println!("No tasks found for target(s) {targets_list}");
+            console
+                .out
+                .write_line(format!("No tasks found for target(s) {targets_list}"))?;
         }
 
         if let Some(query_input) = &args.query {
-            println!("Using query {}", color::shell(query_input));
+            console
+                .out
+                .write_line(format!("Using query {}", color::shell(query_input)))?;
         }
 
         return Ok(());
@@ -206,10 +212,10 @@ pub async fn run_target(
     let results = pipeline
         .bail_on_error()
         .generate_report("runReport.json")
-        .run(action_graph, Some(context))
+        .run(action_graph, console.into_inner(), Some(context))
         .await?;
 
-    pipeline.render_stats(&results, true)?;
+    pipeline.render_stats(&results, console, true)?;
 
     Ok(())
 }
@@ -218,15 +224,16 @@ pub async fn run_target(
 pub async fn run(
     args: ArgsRef<RunArgs>,
     global_args: StateRef<GlobalArgs>,
-    workspace: ResourceMut<Workspace>,
+    resources: ResourcesMut,
 ) {
-    let project_graph = generate_project_graph(workspace).await?;
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
 
     run_target(
         &args.targets,
         args,
         global_args.concurrency,
-        workspace,
+        resources.get::<Workspace>(),
+        resources.get::<AppConsole>(),
         project_graph,
     )
     .await?;

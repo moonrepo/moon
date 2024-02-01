@@ -1,4 +1,5 @@
 use crate::app::GlobalArgs;
+use crate::app_error::ExitCode;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
 use clap::Args;
@@ -7,7 +8,7 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
-use moon_app_components::StdoutConsole;
+use moon_app_components::AppConsole;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
@@ -15,7 +16,6 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
-use std::process::exit;
 use tracing::debug;
 
 type TargetList = Vec<Target>;
@@ -41,13 +41,13 @@ pub struct CiArgs {
 }
 
 struct CiConsole<'ci> {
-    inner: &'ci StdoutConsole,
+    inner: &'ci AppConsole,
     output: CiOutput,
 }
 
 impl<'ci> CiConsole<'ci> {
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
-        self.inner.write_line(data)
+        self.inner.out.write_line(data)
     }
 
     pub fn print_header(&self, title: &str) -> miette::Result<()> {
@@ -89,11 +89,18 @@ async fn gather_touched_files(
             default_branch: true,
             base: args.base.clone(),
             head: args.head.clone(),
-            log: true,
             ..QueryTouchedFilesOptions::default()
         },
     )
     .await?;
+
+    console.write_line(
+        results
+            .iter()
+            .map(|f| color::file(f.as_str()))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    )?;
 
     console.print_footer()?;
 
@@ -212,7 +219,7 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
     let workspace = resources.get::<Workspace>();
     let console = CiConsole {
-        inner: resources.get::<StdoutConsole>(),
+        inner: resources.get::<AppConsole>(),
         output: ci_env::get_output().unwrap_or(CiOutput {
             close_log_group: "",
             open_log_group: "▪▪▪▪ ",
@@ -255,7 +262,11 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
 
     let results = pipeline
         .generate_report("ciReport.json")
-        .run(action_graph, Some(context))
+        .run(
+            action_graph,
+            resources.get::<AppConsole>().into_inner(),
+            Some(context),
+        )
         .await?;
 
     console.print_footer()?;
@@ -263,20 +274,20 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     // Print out a summary of any failures
     console.print_header("Summary")?;
 
-    pipeline.render_summary(&results)?;
+    pipeline.render_summary(&results, console.inner)?;
 
     console.print_footer()?;
 
     // Print out the results and exit if an error occurs
     console.print_header("Stats")?;
 
-    let failed = pipeline.render_results(&results)?;
+    let failed = pipeline.render_results(&results, console.inner)?;
 
-    pipeline.render_stats(&results, false)?;
+    pipeline.render_stats(&results, console.inner, false)?;
+
+    console.print_footer()?;
 
     if failed {
-        exit(1);
-    } else {
-        console.print_footer()?;
+        return Err(ExitCode(1).into());
     }
 }

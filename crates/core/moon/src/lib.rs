@@ -1,5 +1,6 @@
 use moon_action_graph::ActionGraphBuilder;
 use moon_bun_platform::BunPlatform;
+use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::{PlatformManager, PlatformType};
@@ -36,7 +37,10 @@ pub fn set_telemetry(state: bool) {
 }
 
 /// Loads the workspace from the current environment.
-pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Result<Workspace> {
+pub async fn load_workspace_from(
+    proto_env: Arc<ProtoEnvironment>,
+    console: Arc<Console>,
+) -> miette::Result<Workspace> {
     let mut workspace = match Workspace::load_from(&proto_env.cwd, &proto_env) {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
@@ -61,6 +65,7 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
                 Arc::clone(&proto_env),
+                Arc::clone(&console),
             )),
         );
     }
@@ -73,6 +78,7 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
                 Arc::clone(&proto_env),
+                Arc::clone(&console),
             )),
         );
     }
@@ -85,6 +91,7 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
                 &workspace.toolchain_config.typescript,
                 &workspace.root,
                 Arc::clone(&proto_env),
+                Arc::clone(&console),
             )),
         );
     }
@@ -96,6 +103,7 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
                 rust_config,
                 &workspace.root,
                 Arc::clone(&proto_env),
+                Arc::clone(&console),
             )),
         );
     }
@@ -103,7 +111,11 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
     // Should be last since it's the most common
     registry.register(
         PlatformType::System,
-        Box::new(SystemPlatform::new(&workspace.root, Arc::clone(&proto_env))),
+        Box::new(SystemPlatform::new(
+            &workspace.root,
+            Arc::clone(&proto_env),
+            Arc::clone(&console),
+        )),
     );
 
     if !is_test_env() {
@@ -122,7 +134,11 @@ pub async fn load_workspace_from(proto_env: Arc<ProtoEnvironment>) -> miette::Re
 }
 
 pub async fn load_workspace_from_sandbox(sandbox: &Path) -> miette::Result<Workspace> {
-    load_workspace_from(Arc::new(ProtoEnvironment::new_testing(sandbox))).await
+    load_workspace_from(
+        Arc::new(ProtoEnvironment::new_testing(sandbox)),
+        Arc::new(Console::new_testing()),
+    )
+    .await
 }
 
 pub async fn load_toolchain() -> miette::Result<()> {

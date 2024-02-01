@@ -7,6 +7,7 @@ use moon_config::{
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TypeScriptConfig,
     UnresolvedVersionSpec,
 };
+use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
 use moon_node_lang::{node::get_package_manager_workspaces, PackageJson};
@@ -32,6 +33,8 @@ const LOG_TARGET: &str = "moon:bun-platform";
 pub struct BunPlatform {
     pub config: BunConfig,
 
+    console: Arc<Console>,
+
     package_names: FxHashMap<String, Id>,
 
     packages_root: PathBuf,
@@ -52,6 +55,7 @@ impl BunPlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
     ) -> Self {
         BunPlatform {
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),
@@ -61,6 +65,7 @@ impl BunPlatform {
             toolchain: ToolManager::new(Runtime::new(PlatformType::Bun, RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
+            console,
         }
     }
 }
@@ -230,7 +235,13 @@ impl Platform for BunPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                BunTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
+                BunTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    &req,
+                )
+                .await?,
             );
         }
 
@@ -258,7 +269,13 @@ impl Platform for BunPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                BunTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
+                BunTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    req,
+                )
+                .await?,
             );
         }
 
@@ -274,6 +291,7 @@ impl Platform for BunPlatform {
         actions::install_deps(
             self.toolchain.get_for_version(&runtime.requirement)?,
             working_dir,
+            &self.console,
         )
         .await?;
 
@@ -364,6 +382,7 @@ impl Platform for BunPlatform {
         _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+        command.with_console(self.console.clone());
         command.args(&task.args);
         command.envs(&task.env);
 

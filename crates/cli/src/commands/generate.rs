@@ -1,11 +1,10 @@
-use crate::helpers::map_list;
+use crate::helpers::{create_theme, map_list};
 use clap::Args;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
-use moon_app_components::StdoutConsole;
+use moon_app_components::AppConsole;
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
-use moon_terminal::create_theme;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::{system, AppResult};
@@ -313,20 +312,21 @@ fn gather_variables(
 pub async fn generate(
     args: ArgsRef<GenerateArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<StdoutConsole>,
+    console: ResourceRef<AppConsole>,
 ) {
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
+    let console = console.stdout();
     let theme = create_theme();
 
     // This is a special case for creating a new template with the generator itself!
     if args.template {
         let template = generator.create_template(&args.name)?;
 
-        println!(
+        console.write_line(format!(
             "Created a new template {} at {}",
             color::id(template.id),
             color::path(template.root)
-        );
+        ))?;
 
         return Ok(());
     }
@@ -338,7 +338,7 @@ pub async fn generate(
     // Create the template instance
     let mut template = generator.load_template(&args.name)?;
 
-    console.print_line()?;
+    console.write_newline()?;
     console.write_line(format!(
         "{} {}",
         &template.config.title,
@@ -349,7 +349,7 @@ pub async fn generate(
         }
     ))?;
     console.write_line(&template.config.description)?;
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 
     // Gather variables
@@ -447,7 +447,7 @@ pub async fn generate(
         generator.generate(&template)?;
     }
 
-    console.print_line()?;
+    console.write_newline()?;
 
     for file in template.files.values() {
         console.write_line(format!(
@@ -472,6 +472,6 @@ pub async fn generate(
         ))?;
     }
 
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 }

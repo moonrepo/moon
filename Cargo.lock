@@ -2805,6 +2805,7 @@ dependencies = [
  "moon_actions",
  "moon_bun_platform",
  "moon_config",
+ "moon_console",
  "moon_deno_platform",
  "moon_node_platform",
  "moon_platform",
@@ -2883,6 +2884,7 @@ dependencies = [
  "moon_api",
  "moon_cache_item",
  "moon_common",
+ "moon_console",
  "moon_emitter",
  "moon_hash",
  "moon_logger",
@@ -2893,7 +2895,6 @@ dependencies = [
  "moon_project_graph",
  "moon_runner",
  "moon_target",
- "moon_terminal",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
@@ -3015,6 +3016,7 @@ dependencies = [
  "moon_bun_tool",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_hash",
  "moon_javascript_platform",
  "moon_lang",
@@ -3025,7 +3027,6 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_task",
- "moon_terminal",
  "moon_test_utils",
  "moon_tool",
  "moon_typescript_platform",
@@ -3046,10 +3047,10 @@ dependencies = [
  "miette",
  "moon_bun_lang",
  "moon_config",
+ "moon_console",
  "moon_logger",
  "moon_platform_runtime",
  "moon_process",
- "moon_terminal",
  "moon_tool",
  "moon_utils",
  "proto_core",
@@ -3132,7 +3133,6 @@ dependencies = [
  "moon_system_platform",
  "moon_target",
  "moon_task",
- "moon_terminal",
  "moon_test_utils",
  "moon_tool",
  "moon_typescript_lang",
@@ -3155,6 +3155,7 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tera",
+ "thiserror",
  "tiny_http",
  "tokio",
  "tracing",
@@ -3233,6 +3234,7 @@ name = "moon_console"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "starbase_styles",
 ]
 
@@ -3261,6 +3263,7 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_deno_lang",
  "moon_deno_tool",
  "moon_hash",
@@ -3269,7 +3272,6 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_task",
- "moon_terminal",
  "moon_tool",
  "moon_typescript_lang",
  "moon_typescript_platform",
@@ -3287,6 +3289,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_console",
  "moon_platform_runtime",
  "moon_tool",
  "proto_core",
@@ -3430,6 +3433,7 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_hash",
  "moon_javascript_platform",
  "moon_lang",
@@ -3443,7 +3447,6 @@ dependencies = [
  "moon_project_graph",
  "moon_target",
  "moon_task",
- "moon_terminal",
  "moon_test_utils",
  "moon_tool",
  "moon_typescript_lang",
@@ -3466,11 +3469,11 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_console",
  "moon_logger",
  "moon_node_lang",
  "moon_platform_runtime",
  "moon_process",
- "moon_terminal",
  "moon_tool",
  "moon_utils",
  "proto_core",
@@ -3607,6 +3610,7 @@ dependencies = [
  "miette",
  "moon_args",
  "moon_common",
+ "moon_console",
  "once_cell",
  "rustc-hash",
  "system_env",
@@ -3734,6 +3738,7 @@ dependencies = [
  "moon_cache_item",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_emitter",
  "moon_hash",
  "moon_logger",
@@ -3743,7 +3748,6 @@ dependencies = [
  "moon_project",
  "moon_target",
  "moon_task",
- "moon_terminal",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
@@ -3785,6 +3789,7 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_hash",
  "moon_lang",
  "moon_logger",
@@ -3795,7 +3800,6 @@ dependencies = [
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_task",
- "moon_terminal",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
@@ -3814,10 +3818,10 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_console",
  "moon_logger",
  "moon_platform_runtime",
  "moon_process",
- "moon_terminal",
  "moon_tool",
  "moon_utils",
  "proto_core",
@@ -3831,6 +3835,7 @@ dependencies = [
  "miette",
  "moon_action_context",
  "moon_config",
+ "moon_console",
  "moon_hash",
  "moon_platform",
  "moon_process",
@@ -3889,16 +3894,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_terminal"
-version = "0.0.1"
-dependencies = [
- "console",
- "dialoguer",
- "miette",
- "starbase_styles",
-]
-
-[[package]]
 name = "moon_test_utils"
 version = "0.0.1"
 dependencies = [
@@ -3923,6 +3918,7 @@ dependencies = [
  "miette",
  "moon_bun_platform",
  "moon_config",
+ "moon_console",
  "moon_node_platform",
  "moon_platform",
  "moon_project_graph",

@@ -45,7 +45,6 @@ moon_rust_tool = { path = "../rust/tool" }
 moon_system_platform = { path = "../system/platform" }
 moon_target = { path = "../../nextgen/target" }
 moon_task = { path = "../../nextgen/task" }
-moon_terminal = { path = "../core/terminal" }
 moon_tool = { path = "../core/tool" }
 moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
@@ -86,6 +85,7 @@ starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 tera = { workspace = true }
+thiserror = { workspace = true }
 tiny_http = "0.12.0"
 tokio = { workspace = true }
 tracing = { workspace = true }

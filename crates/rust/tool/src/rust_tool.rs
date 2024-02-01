@@ -1,8 +1,8 @@
 use moon_config::RustConfig;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
     Tool,
@@ -37,12 +37,15 @@ pub struct RustTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl RustTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &RustConfig,
         req: &RuntimeReq,
     ) -> miette::Result<RustTool> {
@@ -56,6 +59,7 @@ impl RustTool {
             )
             .await?,
             proto_env,
+            console,
         };
 
         if use_global_tool_on_path() || req.is_global() {
@@ -80,6 +84,7 @@ impl RustTool {
                 prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
             )
             .cwd(working_dir)
+            .with_console(self.console.clone())
             .create_async()
             .exec_stream_output()
             .await?;
@@ -99,6 +104,7 @@ impl RustTool {
                 prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
             )
             .cwd(working_dir)
+            .with_console(self.console.clone())
             .create_async()
             .exec_stream_output()
             .await?;
@@ -144,7 +150,9 @@ impl Tool for RustTool {
             };
 
             if setup || !self.tool.get_tool_dir().exists() {
-                print_checkpoint(format!("installing rust {version}"), Checkpoint::Setup);
+                self.console
+                    .out
+                    .print_checkpoint(Checkpoint::Setup, format!("installing rust {version}"))?;
 
                 if self.tool.setup(version, false).await? {
                     last_versions.insert("rust".into(), version.to_owned());

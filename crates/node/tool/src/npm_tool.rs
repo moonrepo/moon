@@ -1,10 +1,10 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::NpmConfig;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions};
 use moon_process::Command;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool,
@@ -24,12 +24,15 @@ pub struct NpmTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl NpmTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &NpmConfig,
     ) -> miette::Result<NpmTool> {
         Ok(NpmTool {
@@ -38,6 +41,7 @@ impl NpmTool {
             tool: load_tool_plugin(&Id::raw("npm"), &proto_env, config.plugin.as_ref().unwrap())
                 .await?,
             proto_env,
+            console,
         })
     }
 }
@@ -90,7 +94,9 @@ impl Tool for NpmTool {
             }
         }
 
-        print_checkpoint(format!("installing npm {version}"), Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, format!("installing npm {version}"))?;
 
         if self.tool.setup(version, false).await? {
             last_versions.insert("npm".into(), version.to_owned());
@@ -113,6 +119,7 @@ impl Tool for NpmTool {
 impl DependencyManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("npm");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

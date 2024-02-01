@@ -3,12 +3,12 @@ use mimalloc::MiMalloc;
 use moon_cli::commands::upgrade::is_musl;
 use moon_cli::run_cli;
 use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
-use moon_terminal::safe_exit;
 use moon_utils::is_test_env;
 use starbase::MainResult;
 use starbase_utils::dirs;
 use std::env::{self, consts};
 use std::path::{Path, PathBuf};
+use std::process::exit;
 use tokio::process::Command;
 
 #[global_allocator]
@@ -145,7 +145,7 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> miette::Result<()> {
         .into_diagnostic()?;
 
     if !result.success() {
-        safe_exit(result.code().unwrap_or(1));
+        exit(result.code().unwrap_or(1));
     }
 
     Ok(())

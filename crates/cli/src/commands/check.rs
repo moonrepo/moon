@@ -2,6 +2,7 @@ use crate::app::GlobalArgs;
 use crate::commands::run::{run_target, RunArgs};
 use clap::Args;
 use moon::generate_project_graph;
+use moon_app_components::AppConsole;
 use moon_common::Id;
 use moon_project::Project;
 use moon_target::TargetLocator;
@@ -32,9 +33,9 @@ pub struct CheckArgs {
 pub async fn check(
     args: ArgsRef<CheckArgs>,
     global_args: StateRef<GlobalArgs>,
-    workspace: ResourceMut<Workspace>,
+    resources: ResourcesMut,
 ) {
-    let project_graph = generate_project_graph(workspace).await?;
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
     let mut projects: Vec<Arc<Project>> = vec![];
 
     // Load projects
@@ -80,7 +81,8 @@ pub async fn check(
             ..RunArgs::default()
         },
         global_args.concurrency,
-        workspace,
+        resources.get::<Workspace>(),
+        resources.get::<AppConsole>(),
         project_graph,
     )
     .await?;

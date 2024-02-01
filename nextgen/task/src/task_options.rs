@@ -1,5 +1,8 @@
 use moon_common::cacheable;
-use moon_config::{InputPath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOutputStyle};
+use moon_config::{
+    InputPath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOutputStyle, TaskUnixShell,
+    TaskWindowsShell,
+};
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -38,6 +41,10 @@ cacheable!(
         pub run_from_workspace_root: bool,
 
         pub shell: Option<bool>,
+
+        pub unix_shell: TaskUnixShell,
+
+        pub windows_shell: TaskWindowsShell,
     }
 );
 
@@ -61,6 +68,8 @@ impl Default for TaskOptions {
             run_in_ci: true,
             run_from_workspace_root: false,
             shell: None,
+            unix_shell: TaskUnixShell::System,
+            windows_shell: TaskWindowsShell::System,
         }
     }
 }

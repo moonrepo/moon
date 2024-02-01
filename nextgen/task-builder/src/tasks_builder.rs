@@ -513,6 +513,14 @@ impl<'proj> TasksBuilder<'proj> {
             if let Some(shell) = &config.shell {
                 options.shell = Some(*shell);
             }
+
+            if let Some(unix_shell) = &config.unix_shell {
+                options.unix_shell = *unix_shell;
+            }
+
+            if let Some(windows_shell) = &config.windows_shell {
+                options.windows_shell = *windows_shell;
+            }
         }
 
         if options.interactive {

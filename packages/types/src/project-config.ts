@@ -50,6 +50,10 @@ export interface PartialProjectMetadataConfig {
 	owner?: string | null;
 }
 
+export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'zsh' | 'system';
+
+export type TaskWindowsShell = 'bash' | 'pwsh' | 'system';
+
 export interface PartialProjectToolchainCommonToolConfig {
 	version?: string | null;
 }

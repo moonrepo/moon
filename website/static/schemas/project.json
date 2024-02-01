@@ -1014,6 +1014,28 @@
               "type": "null"
             }
           ]
+        },
+        "unixShell": {
+          "default": "system",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskUnixShell"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windowsShell": {
+          "default": "system",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskWindowsShell"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -1094,6 +1116,26 @@
         "build",
         "run",
         "test"
+      ]
+    },
+    "TaskUnixShell": {
+      "title": "TaskUnixShell",
+      "type": "string",
+      "enum": [
+        "bash",
+        "elvish",
+        "fish",
+        "zsh",
+        "system"
+      ]
+    },
+    "TaskWindowsShell": {
+      "title": "TaskWindowsShell",
+      "type": "string",
+      "enum": [
+        "bash",
+        "pwsh",
+        "system"
       ]
     }
   }

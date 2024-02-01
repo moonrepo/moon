@@ -4,10 +4,11 @@ use crate::helpers::fully_qualify_version;
 use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
+use moon_console::Console;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
-use moon_terminal::label_header;
 use starbase::AppResult;
 use starbase_styles::color;
+use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -39,22 +40,36 @@ pub async fn init_rust(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
+    console: &Console,
 ) -> AppResult<String> {
     if !options.yes {
-        println!("\n{}\n", label_header("Rust"));
+        console.out.print_header("Rust")?;
 
-        println!(
-            "Toolchain: {}",
-            color::url("https://moonrepo.dev/docs/concepts/toolchain")
-        );
-        println!(
-            "Handbook: {}",
-            color::url("https://moonrepo.dev/docs/guides/rust/handbook")
-        );
-        println!(
-            "Config: {}\n",
-            color::url("https://moonrepo.dev/docs/config/toolchain#rust")
-        );
+        console.out.write_raw(|buffer| {
+            buffer.write_all(
+                format!(
+                    "Toolchain: {}\n",
+                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Handbook: {}\n",
+                    color::url("https://moonrepo.dev/docs/guides/rust/handbook")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Config: {}\n\n",
+                    color::url("https://moonrepo.dev/docs/config/toolchain#rust")
+                )
+                .as_bytes(),
+            )?;
+
+            Ok(())
+        })?;
     }
 
     let rust_version = prompt_version("Rust", options, theme, || detect_rust_version(dest_dir))?;

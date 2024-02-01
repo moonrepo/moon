@@ -1,4 +1,5 @@
-use crate::console::Console;
+use crate::console::ConsoleBuffer;
+use moon_common::is_unformatted_stdout;
 use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{self, no_color, Color, OwoStyle};
 
@@ -25,7 +26,7 @@ fn bold(message: &str) -> String {
     }
 }
 
-impl Console {
+impl ConsoleBuffer {
     pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
@@ -40,15 +41,23 @@ impl Console {
             Checkpoint::Setup => SETUP_COLORS,
         };
 
-        format!(
-            "{}{}{}{} {} {}",
+        let mut out = format!(
+            "{}{}{}{} {}",
             color::paint(colors[0], STEP_CHAR),
             color::paint(colors[1], STEP_CHAR),
             color::paint(colors[2], STEP_CHAR),
             color::paint(colors[3], STEP_CHAR),
             bold(message.as_ref()),
-            self.format_comments(comments),
-        )
+        );
+
+        let suffix = self.format_comments(comments);
+
+        if !suffix.is_empty() {
+            out.push(' ');
+            out.push_str(&suffix);
+        }
+
+        out
     }
 
     pub fn format_comments<C: AsRef<[String]>>(&self, comments: C) -> String {
@@ -79,15 +88,11 @@ impl Console {
         message: M,
         comments: C,
     ) -> miette::Result<()> {
-        if !self.quiet {
+        if !self.quiet && is_unformatted_stdout() {
             self.write_line(self.format_checkpoint(checkpoint, message, comments))?;
         }
 
         Ok(())
-    }
-
-    pub fn print_line(&self) -> miette::Result<()> {
-        self.write("\n")
     }
 
     pub fn print_entry<K: AsRef<str>, V: AsRef<str>>(
@@ -116,13 +121,13 @@ impl Console {
     pub fn print_entry_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
         let header = format!(" {} ", message.as_ref().to_uppercase());
 
-        self.print_line()?;
+        self.write_newline()?;
         self.write_line(if no_color() {
             header
         } else {
             OwoStyle::new().style(header).bold().reversed().to_string()
         })?;
-        self.print_line()?;
+        self.write_newline()?;
 
         Ok(())
     }
@@ -130,7 +135,7 @@ impl Console {
     pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
         let header = format!(" {} ", message.as_ref().to_uppercase());
 
-        self.print_line()?;
+        self.write_newline()?;
         self.write_line(if no_color() {
             header
         } else {
@@ -141,7 +146,7 @@ impl Console {
                 .on_color(XtermColors::from(Color::Purple as u8))
                 .to_string()
         })?;
-        self.print_line()?;
+        self.write_newline()?;
 
         Ok(())
     }

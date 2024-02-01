@@ -1,10 +1,10 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_node_lang::{yarn, LockfileDependencyVersions};
 use moon_process::Command;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool, ToolError,
@@ -25,12 +25,15 @@ pub struct YarnTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl YarnTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &Option<YarnConfig>,
     ) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -45,6 +48,7 @@ impl YarnTool {
             .await?,
             config,
             proto_env,
+            console,
         })
     }
 
@@ -160,7 +164,9 @@ impl Tool for YarnTool {
             }
         }
 
-        print_checkpoint(format!("installing yarn {version}"), Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, format!("installing yarn {version}"))?;
 
         if self.tool.setup(version, false).await? {
             last_versions.insert("yarn".into(), version.to_owned());
@@ -183,6 +189,7 @@ impl Tool for YarnTool {
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("yarn");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

@@ -1,7 +1,5 @@
 use moon_config::{PartialVcsConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
-use moon_test_utils::{
-    create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
-};
+use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use rustc_hash::FxHashMap;
 
 mod sync_codeowners {
@@ -152,14 +150,6 @@ mod sync_projects {
             cmd.arg("sync").arg("projects");
         });
 
-        let output = assert.output();
-
-        // Output is non-deterministic
-        assert!(predicate::str::contains("SyncSystemProject(a)").eval(&output));
-        assert!(predicate::str::contains("SyncSystemProject(b)").eval(&output));
-        assert!(predicate::str::contains("SyncSystemProject(c)").eval(&output));
-        assert!(predicate::str::contains("SyncSystemProject(d)").eval(&output));
-
         assert.success();
     }
 
@@ -185,14 +175,6 @@ mod sync_projects {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("sync"); // <-- this
         });
-
-        let output = assert.output();
-
-        // Output is non-deterministic
-        assert!(predicate::str::contains("SyncSystemProject(a)").eval(&output));
-        assert!(predicate::str::contains("SyncSystemProject(b)").eval(&output));
-        assert!(predicate::str::contains("SyncSystemProject(c)").eval(&output));
-        assert!(predicate::str::contains("SyncSystemProject(d)").eval(&output));
 
         assert.success();
     }

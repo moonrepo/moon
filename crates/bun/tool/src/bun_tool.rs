@@ -1,9 +1,9 @@
 use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
 use moon_config::BunConfig;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::{output_to_string, Command};
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
     prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
@@ -30,16 +30,20 @@ pub struct BunTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl BunTool {
     pub async fn new(
         proto: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &BunConfig,
         req: &RuntimeReq,
     ) -> miette::Result<BunTool> {
         let mut bun = BunTool {
+            console,
             config: config.to_owned(),
             global: false,
             tool: load_tool_plugin(&Id::raw("bun"), &proto, config.plugin.as_ref().unwrap())
@@ -106,7 +110,9 @@ impl Tool for BunTool {
             }
         }
 
-        print_checkpoint(format!("installing bun {version}"), Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
         if self.tool.setup(version, false).await? {
             last_versions.insert("bun".into(), version.to_owned());
@@ -129,6 +135,7 @@ impl Tool for BunTool {
 impl DependencyManager<()> for BunTool {
     fn create_command(&self, _parent: &()) -> miette::Result<Command> {
         let mut cmd = Command::new("bun");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

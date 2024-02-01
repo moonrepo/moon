@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 moon_action_context = { path = "../../core/action-context" }
 moon_config = { path = "../../../nextgen/config" }
+moon_console = { path = "../../../nextgen/console" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_platform = { path = "../../core/platform" }
 moon_process = { path = "../../../nextgen/process" }

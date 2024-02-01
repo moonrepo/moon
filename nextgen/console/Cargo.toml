@@ -8,5 +8,6 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
+moon_common = { path = "../common" }
 miette = { workspace = true }
 starbase_styles = { workspace = true }

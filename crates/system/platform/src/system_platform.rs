@@ -2,6 +2,7 @@ use crate::target_hash::SystemTargetHash;
 use crate::tool::SystemToolStub;
 use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig};
+use moon_console::Console;
 use moon_hash::ContentHasher;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
@@ -14,6 +15,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub struct SystemPlatform {
+    console: Arc<Console>,
+
     tool: SystemToolStub,
 
     proto_env: Arc<ProtoEnvironment>,
@@ -22,11 +25,16 @@ pub struct SystemPlatform {
 }
 
 impl SystemPlatform {
-    pub fn new(workspace_root: &Path, proto_env: Arc<ProtoEnvironment>) -> Self {
+    pub fn new(
+        workspace_root: &Path,
+        proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
+    ) -> Self {
         SystemPlatform {
             tool: SystemToolStub,
             proto_env,
             _workspace_root: workspace_root.to_path_buf(),
+            console,
         }
     }
 }
@@ -114,6 +122,8 @@ impl Platform for SystemPlatform {
                 prepend_path_env_var(get_proto_paths(&self.proto_env)),
             );
         }
+
+        command.with_console(self.console.clone());
 
         Ok(command)
     }

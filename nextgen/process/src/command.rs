@@ -1,13 +1,14 @@
 use crate::{async_command::AsyncCommand, command_inspector::CommandInspector, shell};
 use moon_common::{color, is_test_env};
+use moon_console::Console;
 use rustc_hash::FxHashMap;
 use std::{
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
+    sync::Arc,
 };
 use tokio::process::Command as TokioCommand;
 
-#[derive(Debug)]
 pub struct Command {
     pub args: Vec<OsString>,
 
@@ -31,6 +32,9 @@ pub struct Command {
 
     /// Shell to wrap executing commands in
     pub shell: Option<shell::Shell>,
+
+    /// Console to write output to
+    pub console: Option<Arc<Console>>,
 }
 
 impl Command {
@@ -45,6 +49,7 @@ impl Command {
             prefix: None,
             print_command: false,
             shell: Some(shell::create_shell()),
+            console: None,
         }
     }
 
@@ -95,6 +100,7 @@ impl Command {
         }
 
         AsyncCommand {
+            console: self.console.as_ref().map(Arc::clone),
             inner: command,
             inspector,
         }
@@ -193,6 +199,11 @@ impl Command {
             ));
         }
 
+        self
+    }
+
+    pub fn with_console(&mut self, console: Arc<Console>) -> &mut Command {
+        self.console = Some(console);
         self
     }
 

@@ -10,6 +10,7 @@ moon_bun_lang = { path = "../lang" }
 moon_bun_tool = { path = "../tool" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
+moon_console = { path = "../../../nextgen/console" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_javascript_platform = { path = "../../javascript/platform" }
 moon_lang = { path = "../../core/lang" }
@@ -19,7 +20,6 @@ moon_platform = { path = "../../core/platform" }
 moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../../nextgen/project" }
 moon_task = { path = "../../../nextgen/task" }
-moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }

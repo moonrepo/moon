@@ -1,10 +1,10 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::PnpmConfig;
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions};
 use moon_process::Command;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool,
@@ -26,12 +26,15 @@ pub struct PnpmTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl PnpmTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &Option<PnpmConfig>,
     ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -46,6 +49,7 @@ impl PnpmTool {
             .await?,
             config,
             proto_env,
+            console,
         })
     }
 }
@@ -98,7 +102,9 @@ impl Tool for PnpmTool {
             }
         }
 
-        print_checkpoint(format!("installing pnpm {version}"), Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, format!("installing pnpm {version}"))?;
 
         if self.tool.setup(version, false).await? {
             last_versions.insert("pnpm".into(), version.to_owned());
@@ -121,6 +127,7 @@ impl Tool for PnpmTool {
 impl DependencyManager<NodeTool> for PnpmTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("pnpm");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

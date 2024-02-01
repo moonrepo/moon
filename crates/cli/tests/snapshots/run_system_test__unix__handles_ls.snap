@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 51
 expression: assert.output()
 ---
 ▪▪▪▪ unix:ls

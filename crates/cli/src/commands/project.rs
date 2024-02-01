@@ -3,7 +3,7 @@ use clap::Args;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon::build_project_graph;
-use moon_app_components::StdoutConsole;
+use moon_app_components::AppConsole;
 use moon_common::Id;
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
@@ -29,16 +29,13 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     let project = project_graph.get(&args.id)?;
     let config = &project.config;
 
+    let console = resources.get::<AppConsole>().stdout();
+
     if args.json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&project).into_diagnostic()?
-        );
+        console.write_line(serde_json::to_string_pretty(&project).into_diagnostic()?)?;
 
         return Ok(());
     }
-
-    let console = resources.get::<StdoutConsole>();
 
     console.print_header(&project.id)?;
     console.print_entry("Project", color::id(&project.id))?;
@@ -130,6 +127,6 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         }
     }
 
-    console.print_line()?;
+    console.write_newline()?;
     console.flush()?;
 }

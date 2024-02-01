@@ -3,10 +3,10 @@ use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
+use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
     prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool, ToolError,
@@ -29,6 +29,8 @@ pub struct NodeTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     bun: Option<BunTool>,
 
     npm: Option<NpmTool>,
@@ -43,6 +45,7 @@ pub struct NodeTool {
 impl NodeTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &NodeConfig,
         req: &RuntimeReq,
     ) -> miette::Result<NodeTool> {
@@ -60,6 +63,7 @@ impl NodeTool {
             pnpm: None,
             yarn: None,
             proto_env: Arc::clone(&proto_env),
+            console: Arc::clone(&console),
         };
 
         if use_global_tool_on_path() || req.is_global() {
@@ -71,16 +75,26 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Bun => {
-                node.bun = Some(BunTool::new(Arc::clone(&proto_env), &config.bun).await?);
+                node.bun = Some(
+                    BunTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.bun).await?,
+                );
             }
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(Arc::clone(&proto_env), &config.npm).await?);
+                node.npm = Some(
+                    NpmTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.npm).await?,
+                );
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(Arc::clone(&proto_env), &config.pnpm).await?);
+                node.pnpm = Some(
+                    PnpmTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.pnpm)
+                        .await?,
+                );
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(Arc::clone(&proto_env), &config.yarn).await?);
+                node.yarn = Some(
+                    YarnTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.yarn)
+                        .await?,
+                );
             }
         };
 
@@ -112,6 +126,7 @@ impl NodeTool {
             // Fallthrough to npx
             _ => {
                 let mut cmd = Command::new(self.get_npx_path()?);
+                cmd.with_console(self.console.clone());
                 cmd.args(["--silent", "--", package]);
                 cmd.envs(get_proto_env_vars());
 
@@ -233,7 +248,10 @@ impl Tool for NodeTool {
                 };
 
                 if setup || !self.tool.get_tool_dir().exists() {
-                    print_checkpoint(format!("installing node {version}"), Checkpoint::Setup);
+                    self.console.out.print_checkpoint(
+                        Checkpoint::Setup,
+                        format!("installing node {version}"),
+                    )?;
 
                     if self.tool.setup(version, false).await? {
                         last_versions.insert("node".into(), version.to_owned());

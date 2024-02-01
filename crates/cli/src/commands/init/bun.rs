@@ -4,9 +4,10 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
-use moon_terminal::label_header;
+use moon_console::Console;
 use starbase::AppResult;
 use starbase_styles::color;
+use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -18,22 +19,36 @@ pub async fn init_bun(
     _dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
+    console: &Console,
 ) -> AppResult<String> {
     if !options.yes {
-        println!("\n{}\n", label_header("Bun"));
+        console.out.print_header("Bun")?;
 
-        println!(
-            "Toolchain: {}",
-            color::url("https://moonrepo.dev/docs/concepts/toolchain")
-        );
-        println!(
-            "Handbook: {}",
-            color::url("https://moonrepo.dev/docs/guides/javascript/bun-handbook")
-        );
-        println!(
-            "Config: {}\n",
-            color::url("https://moonrepo.dev/docs/config/toolchain#bun")
-        );
+        console.out.write_raw(|buffer| {
+            buffer.write_all(
+                format!(
+                    "Toolchain: {}\n",
+                    color::url("https://moonrepo.dev/docs/concepts/toolchain")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Handbook: {}\n",
+                    color::url("https://moonrepo.dev/docs/guides/javascript/bun-handbook")
+                )
+                .as_bytes(),
+            )?;
+            buffer.write_all(
+                format!(
+                    "Config: {}\n\n",
+                    color::url("https://moonrepo.dev/docs/config/toolchain#bun")
+                )
+                .as_bytes(),
+            )?;
+
+            Ok(())
+        })?;
     }
 
     let bun_version = prompt_version("Bun", options, theme, || Ok(String::new()))?;

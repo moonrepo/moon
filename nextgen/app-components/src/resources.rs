@@ -1,5 +1,5 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_console::{Console, ConsoleStream};
+use moon_console::Console;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
@@ -40,20 +40,15 @@ impl ExtensionRegistry {
 }
 
 #[derive(Resource)]
-pub struct StderrConsole(pub Console);
+pub struct AppConsole(pub Console);
 
-impl StderrConsole {
+impl AppConsole {
     pub fn new(quiet: bool) -> Self {
-        Self(Console::new(ConsoleStream::Stderr, quiet))
+        Self(Console::new(quiet))
     }
-}
 
-#[derive(Resource)]
-pub struct StdoutConsole(pub Console);
-
-impl StdoutConsole {
-    pub fn new(quiet: bool) -> Self {
-        Self(Console::new(ConsoleStream::Stdout, quiet))
+    pub fn into_inner(&self) -> Arc<Console> {
+        Arc::new(self.0.clone())
     }
 }
 

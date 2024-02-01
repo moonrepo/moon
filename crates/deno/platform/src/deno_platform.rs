@@ -7,6 +7,7 @@ use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig, TypeScriptConfig,
 };
+use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson};
 use moon_deno_tool::{get_deno_env_paths, DenoTool};
 use moon_hash::ContentHasher;
@@ -15,7 +16,6 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_proto_env_vars, prepend_path_env_var, Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
@@ -32,6 +32,8 @@ const LOG_TARGET: &str = "moon:deno-platform";
 pub struct DenoPlatform {
     config: DenoConfig,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 
     toolchain: ToolManager<DenoTool>,
@@ -47,6 +49,7 @@ impl DenoPlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
     ) -> Self {
         DenoPlatform {
             config: config.to_owned(),
@@ -54,6 +57,7 @@ impl DenoPlatform {
             toolchain: ToolManager::new(Runtime::new(PlatformType::Deno, RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
+            console,
         }
     }
 }
@@ -127,7 +131,12 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                DenoTool::new(Arc::clone(&self.proto_env), &self.config, &req)?,
+                DenoTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    &req,
+                )?,
             );
         }
 
@@ -155,7 +164,12 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                DenoTool::new(Arc::clone(&self.proto_env), &self.config, req)?,
+                DenoTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    req,
+                )?,
             );
         }
 
@@ -176,7 +190,9 @@ impl Platform for DenoPlatform {
 
         debug!(target: LOG_TARGET, "Installing dependencies");
 
-        print_checkpoint("deno cache", Checkpoint::Setup);
+        self.console
+            .out
+            .print_checkpoint(Checkpoint::Setup, "deno cache")?;
 
         Command::new("deno")
             .args([
@@ -189,13 +205,16 @@ impl Platform for DenoPlatform {
             .env("PATH", &path)
             .envs(get_proto_env_vars())
             .cwd(working_dir)
+            .with_console(self.console.clone())
             .create_async()
             .exec_stream_output()
             .await?;
 
         // Then attempt to install binaries
         if !self.config.bins.is_empty() {
-            print_checkpoint("deno install", Checkpoint::Setup);
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "deno install")?;
 
             debug!(
                 target: LOG_TARGET,
@@ -238,6 +257,7 @@ impl Platform for DenoPlatform {
                     .env("PATH", &path)
                     .envs(get_proto_env_vars())
                     .cwd(working_dir)
+                    .with_console(self.console.clone())
                     .create_async()
                     .exec_stream_output()
                     .await?;
@@ -355,6 +375,7 @@ impl Platform for DenoPlatform {
         _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+        command.with_console(self.console.clone());
         command.args(&task.args);
         command.envs(&task.env);
 

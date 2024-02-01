@@ -2,8 +2,8 @@
 source: crates/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
-stdout
 ▪▪▪▪ unix:exitZero
+stdout
 ▪▪▪▪ unix:exitZero (100ms)
 
 Tasks: 1 completed

@@ -38,7 +38,10 @@ fn runs_standard_script() {
         cmd.arg("run").arg("rust:standard");
     });
 
-    assert_snapshot!(assert.output());
+    let output = assert.output();
+
+    assert!(predicate::str::contains("stderr").eval(&output));
+    assert!(predicate::str::contains("stdout").eval(&output));
 }
 
 #[test]

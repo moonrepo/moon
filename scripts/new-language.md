@@ -214,9 +214,6 @@ released separately!
 
 Tier 3 requires a tool to be added to proto: https://github.com/moonrepo/proto
 
-We import and use the Rust crates directly instead of relying on `proto` existing in the
-environment.
-
 ### Support `version` in `moon_config` for language
 
 The toolchain requires an explicit version to function correctly, so the config struct pertaining to
@@ -227,7 +224,7 @@ toolchain to be disabled.
 #[derive(Config)]
 pub struct KotlinConfig {
   // ...
-  pub version: Option<String>,
+  pub version: Option<UnresolvedVersionSpec>,
 }
 ```
 

@@ -986,12 +986,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#shell" />
 
 Whether to run the command within a shell or not. Defaults to `true` for system platform or Windows,
-and `false` otherwise.
-
-- On Unix, will derive the shell from the `SHELL` environment variable, or default to `/bin/sh`. The
-  shell will be ran using the `-c` option.
-- On Windows, will use `pwsh.exe` or `powershell.exe`. The shell will be ran using the `-Command`
-  option, coupled with `-`, so that args are passed via stdin.
+and `false` otherwise. The shell to run is determined by the [`unixShell`](#unixshell) and
+[`windowsShell`](#windowsshell) options respectively.
 
 ```yaml title="moon.yml" {3-5}
 tasks:
@@ -1001,8 +997,8 @@ tasks:
       shell: true
 ```
 
-If you'd like to use a different shell, or customize the shell's arguments, you can set `shell` to
-false and configure a fully qualified command.
+However, if you'd like to use a different shell, or customize the shell's arguments, or have
+granular control, you can set `shell` to false and configure a fully qualified command.
 
 ```yaml title="moon.yml" {3-5}
 tasks:
@@ -1010,6 +1006,37 @@ tasks:
     command: '/bin/zsh -c "echo $SHELL"'
     options:
       shell: false
+```
+
+#### `unixShell`<VersionLabel version="1.21.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#unixShell" />
+
+Customize the shell to run with when on a Unix operating system. Accepts `bash`, `elvish`, `fish`,
+`sh`, or `zsh`. If not defined, will derive the shell from the `SHELL` environment variable, or
+defaults to `sh`.
+
+```yaml title="moon.yml" {3-5}
+tasks:
+  native:
+    command: 'echo $SHELL'
+    options:
+      unixShell: 'fish'
+```
+
+#### `windowsShell`<VersionLabel version="1.21.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#windowsShell" />
+
+Customize the shell to run with when on a Windows operating system. Accepts `bash` (typically via
+Git) or `pwsh`. If not defined, defaults to `pwsh`.
+
+```yaml title="moon.yml" {3-5}
+tasks:
+  native:
+    command: 'echo $SHELL'
+    options:
+      windowsShell: 'bash'
 ```
 
 ## Overrides

@@ -3235,6 +3235,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
+ "parking_lot",
  "starbase_styles",
 ]
 

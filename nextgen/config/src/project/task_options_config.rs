@@ -108,6 +108,25 @@ derive_enum!(
     }
 );
 
+derive_enum!(
+    #[derive(ConfigEnum, Copy)]
+    pub enum TaskUnixShell {
+        Bash,
+        Elvish,
+        Fish,
+        Zsh,
+    }
+);
+
+derive_enum!(
+    #[derive(ConfigEnum, Copy)]
+    pub enum TaskWindowsShell {
+        Bash,
+        #[serde(alias = "powershell")]
+        Pwsh,
+    }
+);
+
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskOptionsConfig {
@@ -148,5 +167,9 @@ cacheable!(
         pub run_from_workspace_root: Option<bool>,
 
         pub shell: Option<bool>,
+
+        pub unix_shell: Option<TaskUnixShell>,
+
+        pub windows_shell: Option<TaskWindowsShell>,
     }
 );

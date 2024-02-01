@@ -16,7 +16,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
-  pull_request:
+  # pull_request:
 
 permissions:
   contents: write

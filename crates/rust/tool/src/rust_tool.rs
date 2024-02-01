@@ -1,4 +1,5 @@
 use moon_config::RustConfig;
+use moon_console::Console;
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;

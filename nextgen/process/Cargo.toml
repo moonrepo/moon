@@ -10,6 +10,7 @@ repository = "https://github.com/moonrepo/moon"
 [dependencies]
 moon_args = { path = "../args" }
 moon_common = { path = "../common" }
+moon_console = { path = "../console" }
 cached = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }

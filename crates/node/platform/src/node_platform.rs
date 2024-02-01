@@ -7,6 +7,7 @@ use moon_config::{
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
     TypeScriptConfig, UnresolvedVersionSpec,
 };
+use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
 use moon_node_lang::node::get_package_manager_workspaces;
@@ -36,6 +37,8 @@ const LOG_TARGET: &str = "moon:node-platform";
 pub struct NodePlatform {
     config: NodeConfig,
 
+    console: Arc<Console>,
+
     package_names: FxHashMap<String, Id>,
 
     packages_root: PathBuf,
@@ -55,6 +58,7 @@ impl NodePlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
     ) -> Self {
         NodePlatform {
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),
@@ -64,6 +68,7 @@ impl NodePlatform {
             toolchain: ToolManager::new(Runtime::new(PlatformType::Node, RuntimeReq::Global)),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
+            console,
         }
     }
 }

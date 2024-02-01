@@ -7,6 +7,7 @@ use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     RustConfig, UnresolvedVersionSpec,
 };
+use moon_console::Console;
 use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -37,6 +38,8 @@ const LOG_TARGET: &str = "moon:rust-platform";
 pub struct RustPlatform {
     pub config: RustConfig,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 
     toolchain: ToolManager<RustTool>,
@@ -50,12 +53,14 @@ impl RustPlatform {
         config: &RustConfig,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
     ) -> Self {
         RustPlatform {
             config: config.to_owned(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(PlatformType::Rust, RuntimeReq::Global)),
             workspace_root: workspace_root.to_path_buf(),
+            console,
         }
     }
 

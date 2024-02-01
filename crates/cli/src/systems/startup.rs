@@ -22,7 +22,11 @@ pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
 
 #[system]
 pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
-    let workspace = moon::load_workspace_from(Arc::clone(states.get::<ProtoEnv>())).await?;
+    let workspace = moon::load_workspace_from(
+        Arc::clone(states.get::<ProtoEnv>()),
+        resources.get::<AppConsole>().into_inner(),
+    )
+    .await?;
 
     states.set(WorkspaceRoot(workspace.root.clone()));
 

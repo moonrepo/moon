@@ -8,6 +8,7 @@ publish = false
 moon_action_context = { path = "../../core/action-context" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
+moon_console = { path = "../../../nextgen/console" }
 moon_deno_lang = { path = "../lang" }
 moon_deno_tool = { path = "../tool" }
 moon_hash = { path = "../../../nextgen/hash" }

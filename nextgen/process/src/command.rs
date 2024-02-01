@@ -1,5 +1,6 @@
 use crate::{async_command::AsyncCommand, command_inspector::CommandInspector, shell};
 use moon_common::{color, is_test_env};
+use moon_console::Console;
 use rustc_hash::FxHashMap;
 use std::{
     ffi::{OsStr, OsString},
@@ -81,7 +82,7 @@ impl Command {
         self
     }
 
-    pub fn create_async(&self) -> AsyncCommand {
+    pub fn create_async(&self /* console: Option<Console> */) -> AsyncCommand {
         let inspector = self.inspect();
         let command_line = inspector.get_command_line();
 
@@ -95,6 +96,7 @@ impl Command {
         }
 
         AsyncCommand {
+            console: None,
             inner: command,
             inspector,
         }

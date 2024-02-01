@@ -1,6 +1,7 @@
 use crate::command_inspector::CommandInspector;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
+use moon_console::Console;
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -8,6 +9,7 @@ use tokio::process::{Child, Command};
 use tokio::task;
 
 pub struct AsyncCommand<'cmd> {
+    pub console: Option<Console>,
     pub inner: Command,
     pub inspector: CommandInspector<'cmd>,
 }
@@ -136,16 +138,23 @@ impl<'cmd> AsyncCommand<'cmd> {
         let stderr_prefix = Arc::clone(&prefix);
         let stdout_prefix = Arc::clone(&prefix);
 
+        let console = self
+            .console
+            .as_ref()
+            .expect("A console is required when streaming output!");
+        let stderr_stream = console.stderr();
+        let stdout_stream = console.stdout();
+
         handles.push(task::spawn(async move {
             let mut lines = stderr.lines();
             let mut captured_lines = vec![];
 
             while let Ok(Some(line)) = lines.next_line().await {
-                if stderr_prefix.is_empty() {
-                    eprintln!("{line}");
+                let _ = if stderr_prefix.is_empty() {
+                    stderr_stream.write_line(&line)
                 } else {
-                    eprintln!("{stderr_prefix}{line}");
-                }
+                    stderr_stream.write_line(format!("{stderr_prefix}{line}"))
+                };
 
                 captured_lines.push(line);
             }
@@ -161,11 +170,11 @@ impl<'cmd> AsyncCommand<'cmd> {
             let mut captured_lines = vec![];
 
             while let Ok(Some(line)) = lines.next_line().await {
-                if stdout_prefix.is_empty() {
-                    println!("{line}");
+                let _ = if stdout_prefix.is_empty() {
+                    stdout_stream.write_line(&line)
                 } else {
-                    println!("{stdout_prefix}{line}");
-                }
+                    stdout_stream.write_line(format!("{stdout_prefix}{line}"))
+                };
 
                 captured_lines.push(line);
             }

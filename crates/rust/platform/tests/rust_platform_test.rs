@@ -20,7 +20,7 @@ fn create_platform() -> RustPlatform {
         &RustConfig::default(),
         &PathBuf::new(),
         Arc::new(ProtoEnvironment::new().unwrap()),
-        Arc::new(Console::new(false)),
+        Arc::new(Console::new_testing()),
     )
 }
 

@@ -34,7 +34,7 @@ pub struct Command {
     pub shell: Option<shell::Shell>,
 
     /// Console to write output to
-    console: Option<Arc<Console>>,
+    pub console: Option<Arc<Console>>,
 }
 
 impl Command {

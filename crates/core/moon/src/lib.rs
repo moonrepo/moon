@@ -136,8 +136,7 @@ pub async fn load_workspace_from(
 pub async fn load_workspace_from_sandbox(sandbox: &Path) -> miette::Result<Workspace> {
     load_workspace_from(
         Arc::new(ProtoEnvironment::new_testing(sandbox)),
-        // TODO
-        Arc::new(Console::new(false)),
+        Arc::new(Console::new_testing()),
     )
     .await
 }

@@ -11,10 +11,9 @@ use std::sync::Arc;
 
 pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformManager {
     let proto = Arc::new(ProtoEnvironment::new_testing(root));
+    let console = Arc::new(Console::new_testing());
     let config = ToolchainConfig::load_from(root, &ProtoConfig::default()).unwrap();
     let mut manager = PlatformManager::default();
-    // TODO
-    let console = Arc::new(Console::new(false));
 
     if let Some(bun_config) = &config.bun {
         manager.register(

@@ -1,5 +1,4 @@
 use miette::IntoDiagnostic;
-use moon_common::is_test_env;
 use std::io::{self, BufWriter, IsTerminal, Write};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::{Arc, RwLock};
@@ -24,19 +23,17 @@ pub struct ConsoleBuffer {
 }
 
 impl ConsoleBuffer {
-    pub fn new(stream: ConsoleStream, quiet: bool) -> Self {
+    fn internal_new(stream: ConsoleStream, with_handle: bool) -> Self {
         let buffer = Arc::new(RwLock::new(BufWriter::new(Vec::new())));
         let buffer_clone = Arc::clone(&buffer);
         let (tx, rx) = mpsc::channel();
-        let test_mode = is_test_env();
 
         // Every 100ms, flush the buffer
-        // let handle = if test_mode {
-        //     None
-        // } else {
-        //     Some(spawn(move || flush_on_loop(buffer_clone, stream, rx)))
-        // };
-        let handle = Some(spawn(move || flush_on_loop(buffer_clone, stream, rx)));
+        let handle = if with_handle {
+            Some(spawn(move || flush_on_loop(buffer_clone, stream, rx)))
+        } else {
+            None
+        };
 
         Self {
             buffer,
@@ -44,9 +41,21 @@ impl ConsoleBuffer {
             channel: tx,
             handle,
             stream,
-            quiet,
-            test_mode,
+            quiet: false,
+            test_mode: false,
         }
+    }
+
+    pub fn new(stream: ConsoleStream, quiet: bool) -> Self {
+        let mut console = Self::internal_new(stream, true);
+        console.quiet = quiet;
+        console
+    }
+
+    pub fn new_testing(stream: ConsoleStream) -> Self {
+        let mut console = Self::internal_new(stream, false);
+        console.test_mode = true;
+        console
     }
 
     pub fn is_terminal(&self) -> bool {
@@ -92,6 +101,18 @@ impl ConsoleBuffer {
             return Ok(());
         }
 
+        // When testing just flush immediately
+        if self.test_mode {
+            let mut buffer = BufWriter::new(Vec::new());
+
+            op(&mut buffer).into_diagnostic()?;
+
+            drain(&mut buffer, self.stream).into_diagnostic()?;
+
+            return Ok(());
+        }
+
+        // Otherwise just write to the buffer
         let mut buffer = self
             .buffer
             .write()
@@ -167,6 +188,13 @@ impl Console {
         Self {
             err: Arc::new(ConsoleBuffer::new(ConsoleStream::Stderr, quiet)),
             out: Arc::new(ConsoleBuffer::new(ConsoleStream::Stdout, quiet)),
+        }
+    }
+
+    pub fn new_testing() -> Self {
+        Self {
+            err: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stderr)),
+            out: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stdout)),
         }
     }
 

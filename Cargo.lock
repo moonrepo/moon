@@ -3291,10 +3291,15 @@ dependencies = [
  "miette",
  "moon_config",
  "moon_console",
+ "moon_deno_lang",
  "moon_platform_runtime",
+ "moon_process",
  "moon_tool",
+ "moon_utils",
  "proto_core",
  "rustc-hash",
+ "starbase_utils",
+ "tracing",
 ]
 
 [[package]]

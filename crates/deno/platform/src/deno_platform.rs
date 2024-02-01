@@ -2,7 +2,7 @@ use crate::bins_hash::DenoBinsHash;
 use crate::deps_hash::DenoDepsHash;
 use crate::target_hash::DenoTargetHash;
 use moon_action_context::ActionContext;
-use moon_common::{color, is_ci, Id};
+use moon_common::{color, is_ci, is_test_env, Id};
 use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
     ProjectConfig, TypeScriptConfig,
@@ -16,7 +16,9 @@ use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_proto_env_vars, prepend_path_env_var, Tool, ToolManager};
+use moon_tool::{
+    get_proto_version_env, prepend_path_env_var, DependencyManager, Tool, ToolManager,
+};
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
@@ -97,7 +99,7 @@ impl Platform for DenoPlatform {
     // TOOLCHAIN
 
     fn is_toolchain_enabled(&self) -> miette::Result<bool> {
-        Ok(false)
+        Ok(self.config.version.is_some())
     }
 
     fn get_tool(&self) -> miette::Result<Box<&dyn Tool>> {
@@ -136,7 +138,8 @@ impl Platform for DenoPlatform {
                     Arc::clone(&self.console),
                     &self.config,
                     &req,
-                )?,
+                )
+                .await?,
             );
         }
 
@@ -169,7 +172,8 @@ impl Platform for DenoPlatform {
                     Arc::clone(&self.console),
                     &self.config,
                     req,
-                )?,
+                )
+                .await?,
             );
         }
 
@@ -179,38 +183,11 @@ impl Platform for DenoPlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> miette::Result<()> {
-        if !self.config.lockfile {
-            return Ok(());
-        }
+        let deno = self.toolchain.get_for_version(&runtime.requirement)?;
 
-        let path = prepend_path_env_var(get_deno_env_paths(&self.proto_env));
-
-        debug!(target: LOG_TARGET, "Installing dependencies");
-
-        self.console
-            .out
-            .print_checkpoint(Checkpoint::Setup, "deno cache")?;
-
-        Command::new("deno")
-            .args([
-                "cache",
-                "--lock",
-                "deno.lock",
-                "--lock-write",
-                &self.config.deps_file,
-            ])
-            .env("PATH", &path)
-            .envs(get_proto_env_vars())
-            .cwd(working_dir)
-            .with_console(self.console.clone())
-            .create_async()
-            .exec_stream_output()
-            .await?;
-
-        // Then attempt to install binaries
         if !self.config.bins.is_empty() {
             self.console
                 .out
@@ -252,16 +229,24 @@ impl Platform for DenoPlatform {
                     }
                 };
 
-                Command::new("deno")
+                deno.create_command(&())?
                     .args(args)
-                    .env("PATH", &path)
-                    .envs(get_proto_env_vars())
                     .cwd(working_dir)
-                    .with_console(self.console.clone())
                     .create_async()
                     .exec_stream_output()
                     .await?;
             }
+        }
+
+        if self.config.lockfile {
+            debug!(target: LOG_TARGET, "Installing dependencies");
+
+            self.console
+                .out
+                .print_checkpoint(Checkpoint::Setup, "deno cache")?;
+
+            deno.install_dependencies(&(), working_dir, !is_test_env())
+                .await?;
         }
 
         Ok(())
@@ -327,16 +312,27 @@ impl Platform for DenoPlatform {
     async fn hash_run_target(
         &self,
         project: &Project,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let mut target_hash = DenoTargetHash::new(None);
+        let deno = self.toolchain.get_for_version(&runtime.requirement).ok();
+        let mut target_hash = DenoTargetHash::new(
+            deno.map(|n| n.config.version.as_ref().map(|v| v.to_string()))
+                .unwrap_or_default(),
+        );
 
-        if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
-            && self.config.lockfile
-        {
-            let resolved_dependencies = load_lockfile_dependencies(project.root.join("deno.lock"))?;
+        if matches!(hasher_config.optimization, HasherOptimization::Accuracy) {
+            let resolved_dependencies = match deno {
+                Some(inst) => inst.get_resolved_dependencies(&project.root).await?,
+                None => {
+                    if self.config.lockfile {
+                        load_lockfile_dependencies(project.root.join("deno.lock"))?
+                    } else {
+                        FxHashMap::default()
+                    }
+                }
+            };
 
             target_hash.hash_deps(BTreeMap::from_iter(resolved_dependencies));
         };
@@ -378,6 +374,12 @@ impl Platform for DenoPlatform {
         command.with_console(self.console.clone());
         command.args(&task.args);
         command.envs(&task.env);
+
+        if let Ok(deno) = self.toolchain.get_for_version(&runtime.requirement) {
+            if let Some(version) = get_proto_version_env(&deno.tool) {
+                command.env("PROTO_DENO_VERSION", version);
+            }
+        }
 
         if !runtime.requirement.is_global() {
             command.env(

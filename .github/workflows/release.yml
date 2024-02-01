@@ -40,7 +40,6 @@ jobs:
           NIGHTLY: ${{ github.event_name == 'schedule' }}
 
   build:
-    if: ${{ needs.plan.outputs.publish == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -70,20 +69,12 @@ jobs:
             docker-platform: linux/arm64
 
           - target: x86_64-apple-darwin
-            host: macos-12
+            host: macos-11
             binary: moon
-            setup: |
-              export MACOSX_DEPLOYMENT_TARGET="10.13";
 
           - target: aarch64-apple-darwin
-            host: macos-12
+            host: macos-14
             binary: moon
-            setup: |
-              export CC=$(xcrun -f clang);
-              export CXX=$(xcrun -f clang++);
-              export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
-              export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
-              export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
 
           - target: x86_64-pc-windows-msvc
             host: windows-2022
@@ -150,14 +141,10 @@ jobs:
             setup: yarn config set supportedArchitectures.libc "musl"
 
           - target: x86_64-apple-darwin
-            host: macos-12
+            host: macos-11
 
-          # - target: aarch64-apple-darwin
-          #   host: ubuntu-20.04
-          #   image: arm64v8/node
-          #   setup: |
-          #     sudo apt-get install binfmt-support qemu qemu-user-static
-          #     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          - target: aarch64-apple-darwin
+            host: macos-14
 
           - target: x86_64-pc-windows-msvc
             host: windows-2022
@@ -194,6 +181,7 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
@@ -264,7 +252,8 @@ jobs:
 
   publish-npm:
     if:
-      ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next' }}
+      ${{ needs.plan.outputs.publish == 'true' && (needs.plan.outputs.npm-channel == 'latest' ||
+      needs.plan.outputs.npm-channel == 'next') }}
     needs:
       - plan
     name: Publish npm packages

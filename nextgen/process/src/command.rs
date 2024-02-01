@@ -5,10 +5,10 @@ use rustc_hash::FxHashMap;
 use std::{
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
+    sync::Arc,
 };
 use tokio::process::Command as TokioCommand;
 
-#[derive(Debug)]
 pub struct Command {
     pub args: Vec<OsString>,
 
@@ -32,6 +32,9 @@ pub struct Command {
 
     /// Shell to wrap executing commands in
     pub shell: Option<shell::Shell>,
+
+    /// Console to write output to
+    console: Option<Arc<Console>>,
 }
 
 impl Command {
@@ -46,6 +49,7 @@ impl Command {
             prefix: None,
             print_command: false,
             shell: Some(shell::create_shell()),
+            console: None,
         }
     }
 
@@ -82,7 +86,7 @@ impl Command {
         self
     }
 
-    pub fn create_async(&self /* console: Option<Console> */) -> AsyncCommand {
+    pub fn create_async(&self) -> AsyncCommand {
         let inspector = self.inspect();
         let command_line = inspector.get_command_line();
 
@@ -96,7 +100,7 @@ impl Command {
         }
 
         AsyncCommand {
-            console: None,
+            console: self.console.as_ref().map(Arc::clone),
             inner: command,
             inspector,
         }
@@ -195,6 +199,11 @@ impl Command {
             ));
         }
 
+        self
+    }
+
+    pub fn with_console(&mut self, console: Arc<Console>) -> &mut Command {
+        self.console = Some(console);
         self
     }
 

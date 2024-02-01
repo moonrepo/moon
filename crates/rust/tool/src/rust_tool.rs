@@ -85,6 +85,7 @@ impl RustTool {
                 prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
             )
             .cwd(working_dir)
+            .with_console(self.console.clone())
             .create_async()
             .exec_stream_output()
             .await?;
@@ -104,6 +105,7 @@ impl RustTool {
                 prepend_path_env_var(get_rust_env_paths(&self.proto_env)),
             )
             .cwd(working_dir)
+            .with_console(self.console.clone())
             .create_async()
             .exec_stream_output()
             .await?;

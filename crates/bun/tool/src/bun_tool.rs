@@ -134,6 +134,7 @@ impl Tool for BunTool {
 impl DependencyManager<()> for BunTool {
     fn create_command(&self, _parent: &()) -> miette::Result<Command> {
         let mut cmd = Command::new("bun");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

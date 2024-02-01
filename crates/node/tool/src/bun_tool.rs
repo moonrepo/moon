@@ -50,6 +50,7 @@ impl BunTool {
 
     fn internal_create_command(&self) -> miette::Result<Command> {
         let mut cmd = Command::new("bun");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

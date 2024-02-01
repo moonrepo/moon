@@ -127,6 +127,7 @@ impl NodeTool {
             // Fallthrough to npx
             _ => {
                 let mut cmd = Command::new(self.get_npx_path()?);
+                cmd.with_console(self.console.clone());
                 cmd.args(["--silent", "--", package]);
                 cmd.envs(get_proto_env_vars());
 

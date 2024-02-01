@@ -550,6 +550,7 @@ impl Platform for RustPlatform {
             }
         }
 
+        command.with_console(self.console.clone());
         command.args(&args);
         command.args(&task.args);
         command.envs(&task.env);

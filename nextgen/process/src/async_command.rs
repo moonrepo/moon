@@ -9,7 +9,7 @@ use tokio::process::{Child, Command};
 use tokio::task;
 
 pub struct AsyncCommand<'cmd> {
-    pub console: Option<Console>,
+    pub console: Option<Arc<Console>>,
     pub inner: Command,
     pub inspector: CommandInspector<'cmd>,
 }

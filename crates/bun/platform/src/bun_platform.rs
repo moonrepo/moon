@@ -381,6 +381,7 @@ impl Platform for BunPlatform {
         _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+        command.with_console(self.console.clone());
         command.args(&task.args);
         command.envs(&task.env);
 

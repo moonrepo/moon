@@ -1,5 +1,6 @@
 use moon_action_context::ActionContext;
 use moon_config::{PlatformType, RustConfig};
+use moon_console::Console;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
@@ -19,6 +20,7 @@ fn create_platform() -> RustPlatform {
         &RustConfig::default(),
         &PathBuf::new(),
         Arc::new(ProtoEnvironment::new().unwrap()),
+        Arc::new(Console::new(false)),
     )
 }
 

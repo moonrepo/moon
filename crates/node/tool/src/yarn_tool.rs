@@ -188,6 +188,7 @@ impl Tool for YarnTool {
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("yarn");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

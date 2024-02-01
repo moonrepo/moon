@@ -126,6 +126,7 @@ impl Tool for PnpmTool {
 impl DependencyManager<NodeTool> for PnpmTool {
     fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = Command::new("pnpm");
+        cmd.with_console(self.console.clone());
         cmd.envs(get_proto_env_vars());
 
         if !self.global {

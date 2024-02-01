@@ -204,6 +204,7 @@ impl Platform for DenoPlatform {
             .env("PATH", &path)
             .envs(get_proto_env_vars())
             .cwd(working_dir)
+            .with_console(self.console.clone())
             .create_async()
             .exec_stream_output()
             .await?;
@@ -253,6 +254,7 @@ impl Platform for DenoPlatform {
                     .env("PATH", &path)
                     .envs(get_proto_env_vars())
                     .cwd(working_dir)
+                    .with_console(self.console.clone())
                     .create_async()
                     .exec_stream_output()
                     .await?;
@@ -370,6 +372,7 @@ impl Platform for DenoPlatform {
         _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+        command.with_console(self.console.clone());
         command.args(&task.args);
         command.envs(&task.env);
 

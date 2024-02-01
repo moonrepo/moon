@@ -28,6 +28,7 @@ pub struct DenoTool {
 
     pub global: bool,
 
+    #[allow(dead_code)]
     console: Arc<Console>,
 }
 

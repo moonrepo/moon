@@ -123,6 +123,8 @@ impl Platform for SystemPlatform {
             );
         }
 
+        command.with_console(self.console.clone());
+
         Ok(command)
     }
 }

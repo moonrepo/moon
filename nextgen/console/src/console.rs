@@ -1,5 +1,5 @@
 use miette::IntoDiagnostic;
-use parking_lot::RwLock;
+use parking_lot::Mutex;
 use std::io::{self, BufWriter, IsTerminal, Write};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
@@ -13,7 +13,7 @@ pub enum ConsoleStream {
 }
 
 pub struct ConsoleBuffer {
-    buffer: Arc<RwLock<BufWriter<Vec<u8>>>>,
+    buffer: Arc<Mutex<BufWriter<Vec<u8>>>>,
     closed: bool,
     channel: Option<Sender<bool>>,
     handle: Option<JoinHandle<()>>,
@@ -25,7 +25,7 @@ pub struct ConsoleBuffer {
 
 impl ConsoleBuffer {
     fn internal_new(stream: ConsoleStream, with_handle: bool) -> Self {
-        let buffer = Arc::new(RwLock::new(BufWriter::new(Vec::new())));
+        let buffer = Arc::new(Mutex::new(BufWriter::new(Vec::new())));
         let buffer_clone = Arc::clone(&buffer);
         let (tx, rx) = mpsc::channel();
 
@@ -89,7 +89,7 @@ impl ConsoleBuffer {
             return Ok(());
         }
 
-        flush(&mut self.buffer.write(), self.stream).into_diagnostic()?;
+        flush(&mut self.buffer.lock(), self.stream).into_diagnostic()?;
 
         Ok(())
     }
@@ -114,7 +114,7 @@ impl ConsoleBuffer {
         }
 
         // Otherwise just write to the buffer
-        let mut buffer = self.buffer.write();
+        let mut buffer = self.buffer.lock();
 
         op(&mut buffer).into_diagnostic()?;
 
@@ -240,14 +240,14 @@ fn flush(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<(
 }
 
 fn flush_on_loop(
-    buffer: Arc<RwLock<BufWriter<Vec<u8>>>>,
+    buffer: Arc<Mutex<BufWriter<Vec<u8>>>>,
     stream: ConsoleStream,
     receiver: Receiver<bool>,
 ) {
     loop {
         sleep(Duration::from_millis(100));
 
-        let _ = flush(&mut buffer.write(), stream);
+        let _ = flush(&mut buffer.lock(), stream);
 
         // Has the thread been closed?
         match receiver.try_recv() {

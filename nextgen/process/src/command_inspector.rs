@@ -40,7 +40,7 @@ impl<'l> CommandLine<'l> {
         // If wrapped in a shell, the shell binary and arguments
         // must be placed at the start of the line.
         if let Some(shell) = &command.shell {
-            command_line.push(Cow::Borrowed(OsStr::new(shell.bin.as_str())));
+            command_line.push(Cow::Borrowed(shell.bin.as_os_str()));
             command_line.extend(shell.args.iter().map(|arg| Cow::Borrowed(OsStr::new(arg))));
 
             // If the main command should be passed via stdin,

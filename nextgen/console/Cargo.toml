@@ -10,4 +10,5 @@ repository = "https://github.com/moonrepo/moon"
 [dependencies]
 moon_common = { path = "../common" }
 miette = { workspace = true }
+parking_lot = "0.12.1"
 starbase_styles = { workspace = true }

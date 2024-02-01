@@ -43,6 +43,8 @@ fn generate_project() {
                     "TaskOptionEnvFile".into(),
                     "TaskOptionsConfig".into(),
                     "TaskOutputStyle".into(),
+                    "TaskUnixShell".into(),
+                    "TaskWindowsShell".into(),
                     "TaskType".into(),
                 ],
                 external_types: HashMap::from_iter([(

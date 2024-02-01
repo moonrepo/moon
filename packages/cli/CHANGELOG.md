@@ -10,6 +10,15 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Implemented a new console layer for writing to stdout/stderr.
+  - Logs are now buffered and written periodically.
+  - Previously they were written immediately, which required locking std each call.
+  - Should see some minor performance improvements.
+
 ## 1.20.1
 
 #### 🚀 Updates

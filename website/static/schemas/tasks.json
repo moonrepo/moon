@@ -495,7 +495,6 @@
           ]
         },
         "unixShell": {
-          "default": "system",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskUnixShell"
@@ -506,7 +505,6 @@
           ]
         },
         "windowsShell": {
-          "default": "system",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskWindowsShell"
@@ -593,8 +591,7 @@
         "bash",
         "elvish",
         "fish",
-        "zsh",
-        "system"
+        "zsh"
       ]
     },
     "TaskWindowsShell": {
@@ -602,8 +599,7 @@
       "type": "string",
       "enum": [
         "bash",
-        "pwsh",
-        "system"
+        "pwsh"
       ]
     }
   }

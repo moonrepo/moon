@@ -21,9 +21,9 @@ export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
-export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'zsh' | 'system';
+export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'zsh';
 
-export type TaskWindowsShell = 'bash' | 'pwsh' | 'system';
+export type TaskWindowsShell = 'bash' | 'pwsh';
 
 export interface PartialTaskOptionsConfig {
 	affectedFiles?: TaskOptionAffectedFiles | null;
@@ -53,9 +53,7 @@ export interface PartialTaskOptionsConfig {
 	runFromWorkspaceRoot?: boolean | null;
 	runInCI?: boolean | null;
 	shell?: boolean | null;
-	/** @default 'system' */
 	unixShell?: TaskUnixShell | null;
-	/** @default 'system' */
 	windowsShell?: TaskWindowsShell | null;
 }
 
@@ -130,9 +128,7 @@ export interface TaskOptionsConfig {
 	runFromWorkspaceRoot: boolean | null;
 	runInCI: boolean | null;
 	shell: boolean | null;
-	/** @default 'system' */
 	unixShell: TaskUnixShell | null;
-	/** @default 'system' */
 	windowsShell: TaskWindowsShell | null;
 }
 

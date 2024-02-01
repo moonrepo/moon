@@ -40,7 +40,6 @@ jobs:
           NIGHTLY: ${{ github.event_name == 'schedule' }}
 
   build:
-    if: ${{ needs.plan.outputs.publish == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -182,6 +181,7 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:
@@ -252,7 +252,8 @@ jobs:
 
   publish-npm:
     if:
-      ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next' }}
+      ${{ needs.plan.outputs.publish == 'true' && (needs.plan.outputs.npm-channel == 'latest' ||
+      needs.plan.outputs.npm-channel == 'next') }}
     needs:
       - plan
     name: Publish npm packages

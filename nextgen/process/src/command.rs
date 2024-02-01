@@ -1,4 +1,8 @@
-use crate::{async_command::AsyncCommand, command_inspector::CommandInspector, shell};
+use crate::{
+    async_command::AsyncCommand,
+    command_inspector::CommandInspector,
+    shell::{create_default_shell, Shell},
+};
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use rustc_hash::FxHashMap;
@@ -31,7 +35,7 @@ pub struct Command {
     pub print_command: bool,
 
     /// Shell to wrap executing commands in
-    pub shell: Option<shell::Shell>,
+    pub shell: Option<Shell>,
 
     /// Console to write output to
     pub console: Option<Arc<Console>>,
@@ -48,7 +52,7 @@ impl Command {
             input: vec![],
             prefix: None,
             print_command: false,
-            shell: Some(shell::create_shell()),
+            shell: Some(create_default_shell()),
             console: None,
         }
     }
@@ -204,6 +208,11 @@ impl Command {
 
     pub fn with_console(&mut self, console: Arc<Console>) -> &mut Command {
         self.console = Some(console);
+        self
+    }
+
+    pub fn with_shell(&mut self, shell: Shell) -> &mut Command {
+        self.shell = Some(shell);
         self
     }
 

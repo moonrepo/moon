@@ -42,9 +42,9 @@ cacheable!(
 
         pub shell: Option<bool>,
 
-        pub unix_shell: TaskUnixShell,
+        pub unix_shell: Option<TaskUnixShell>,
 
-        pub windows_shell: TaskWindowsShell,
+        pub windows_shell: Option<TaskWindowsShell>,
     }
 );
 
@@ -68,8 +68,8 @@ impl Default for TaskOptions {
             run_in_ci: true,
             run_from_workspace_root: false,
             shell: None,
-            unix_shell: TaskUnixShell::System,
-            windows_shell: TaskWindowsShell::System,
+            unix_shell: None,
+            windows_shell: None,
         }
     }
 }

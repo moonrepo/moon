@@ -11,6 +11,7 @@ use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
 use moon_platform::PlatformManager;
 use moon_platform_runtime::Runtime;
+use moon_process::shell::{create_shell, Shell};
 use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
@@ -28,6 +29,30 @@ use tokio::{
 };
 
 const LOG_TARGET: &str = "moon:runner";
+
+#[cfg(unix)]
+fn create_unix_shell(shell: &moon_config::TaskUnixShell) -> Shell {
+    use moon_config::TaskUnixShell;
+
+    match shell {
+        TaskUnixShell::Bash => create_shell("bash"),
+        TaskUnixShell::Elvish => create_shell("elvish"),
+        TaskUnixShell::Fish => create_shell("fish"),
+        TaskUnixShell::Zsh => create_shell("zsh"),
+        TaskUnixShell::System => create_shell("system"),
+    }
+}
+
+#[cfg(windows)]
+fn create_windows_shell(shell: &moon_config::TaskWindowsShell) -> Shell {
+    use moon_config::TaskWindowsShell;
+
+    match shell {
+        TaskWindowsShell::Bash => create_shell("bash"),
+        TaskWindowsShell::Pwsh => create_shell("pwsh"),
+        TaskWindowsShell::System => create_shell("system"),
+    }
+}
 
 pub enum HydrateFrom {
     LocalCache,
@@ -255,6 +280,16 @@ impl<'a> Runner<'a> {
         // Wrap in a shell
         if task.options.shell.is_none() || task.options.shell.is_some_and(|s| !s) {
             command.without_shell();
+        } else {
+            #[cfg(unix)]
+            if let Some(shell) = task.options.unix_shell.as_ref() {
+                command.with_shell(create_unix_shell(shell));
+            }
+
+            #[cfg(windows)]
+            if let Some(shell) = task.options.windows_shell.as_ref() {
+                command.with_shell(create_windows_shell(shell));
+            }
         }
 
         // Passthrough args

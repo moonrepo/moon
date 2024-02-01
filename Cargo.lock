@@ -3048,6 +3048,7 @@ dependencies = [
  "miette",
  "moon_bun_lang",
  "moon_config",
+ "moon_console",
  "moon_logger",
  "moon_platform_runtime",
  "moon_process",
@@ -3292,6 +3293,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_console",
  "moon_platform_runtime",
  "moon_tool",
  "proto_core",
@@ -3472,6 +3474,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_console",
  "moon_logger",
  "moon_node_lang",
  "moon_platform_runtime",

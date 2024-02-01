@@ -1,6 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::BunpmConfig;
+use moon_console::Console;
 use moon_logger::debug;
 use moon_node_lang::{bun, LockfileDependencyVersions};
 use moon_process::{output_to_string, Command};
@@ -24,12 +25,15 @@ pub struct BunTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl BunTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &Option<BunpmConfig>,
     ) -> miette::Result<BunTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -40,6 +44,7 @@ impl BunTool {
                 .await?,
             config,
             proto_env,
+            console,
         })
     }
 

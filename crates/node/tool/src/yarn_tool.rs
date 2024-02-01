@@ -1,6 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
+use moon_console::Console;
 use moon_logger::debug;
 use moon_node_lang::{yarn, LockfileDependencyVersions};
 use moon_process::Command;
@@ -25,12 +26,15 @@ pub struct YarnTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl YarnTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &Option<YarnConfig>,
     ) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -45,6 +49,7 @@ impl YarnTool {
             .await?,
             config,
             proto_env,
+            console,
         })
     }
 

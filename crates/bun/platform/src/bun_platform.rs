@@ -235,7 +235,13 @@ impl Platform for BunPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                BunTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
+                BunTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    &req,
+                )
+                .await?,
             );
         }
 
@@ -263,7 +269,13 @@ impl Platform for BunPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                BunTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
+                BunTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    req,
+                )
+                .await?,
             );
         }
 

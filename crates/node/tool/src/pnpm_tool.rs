@@ -1,6 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::PnpmConfig;
+use moon_console::Console;
 use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions};
 use moon_process::Command;
@@ -26,12 +27,15 @@ pub struct PnpmTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl PnpmTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &Option<PnpmConfig>,
     ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
@@ -46,6 +50,7 @@ impl PnpmTool {
             .await?,
             config,
             proto_env,
+            console,
         })
     }
 }

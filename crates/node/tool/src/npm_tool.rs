@@ -1,6 +1,7 @@
 use crate::get_node_env_paths;
 use crate::node_tool::NodeTool;
 use moon_config::NpmConfig;
+use moon_console::Console;
 use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions};
 use moon_process::Command;
@@ -24,12 +25,15 @@ pub struct NpmTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl NpmTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &NpmConfig,
     ) -> miette::Result<NpmTool> {
         Ok(NpmTool {
@@ -38,6 +42,7 @@ impl NpmTool {
             tool: load_tool_plugin(&Id::raw("npm"), &proto_env, config.plugin.as_ref().unwrap())
                 .await?,
             proto_env,
+            console,
         })
     }
 }

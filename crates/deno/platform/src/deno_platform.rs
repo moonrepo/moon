@@ -132,7 +132,12 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                DenoTool::new(Arc::clone(&self.proto_env), &self.config, &req)?,
+                DenoTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    &req,
+                )?,
             );
         }
 
@@ -160,7 +165,12 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                DenoTool::new(Arc::clone(&self.proto_env), &self.config, req)?,
+                DenoTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    req,
+                )?,
             );
         }
 

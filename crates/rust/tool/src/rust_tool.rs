@@ -38,12 +38,15 @@ pub struct RustTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl RustTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &RustConfig,
         req: &RuntimeReq,
     ) -> miette::Result<RustTool> {
@@ -57,6 +60,7 @@ impl RustTool {
             )
             .await?,
             proto_env,
+            console,
         };
 
         if use_global_tool_on_path() || req.is_global() {

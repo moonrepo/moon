@@ -201,7 +201,13 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                RustTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
+                RustTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    &req,
+                )
+                .await?,
             );
         }
 
@@ -229,7 +235,13 @@ impl Platform for RustPlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                RustTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
+                RustTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    req,
+                )
+                .await?,
             );
         }
 

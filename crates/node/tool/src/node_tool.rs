@@ -3,6 +3,7 @@ use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
+use moon_console::Console;
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
@@ -29,6 +30,8 @@ pub struct NodeTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     bun: Option<BunTool>,
 
     npm: Option<NpmTool>,
@@ -43,6 +46,7 @@ pub struct NodeTool {
 impl NodeTool {
     pub async fn new(
         proto_env: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &NodeConfig,
         req: &RuntimeReq,
     ) -> miette::Result<NodeTool> {
@@ -60,6 +64,7 @@ impl NodeTool {
             pnpm: None,
             yarn: None,
             proto_env: Arc::clone(&proto_env),
+            console: Arc::clone(&console),
         };
 
         if use_global_tool_on_path() || req.is_global() {
@@ -71,16 +76,26 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Bun => {
-                node.bun = Some(BunTool::new(Arc::clone(&proto_env), &config.bun).await?);
+                node.bun = Some(
+                    BunTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.bun).await?,
+                );
             }
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(Arc::clone(&proto_env), &config.npm).await?);
+                node.npm = Some(
+                    NpmTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.npm).await?,
+                );
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(Arc::clone(&proto_env), &config.pnpm).await?);
+                node.pnpm = Some(
+                    PnpmTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.pnpm)
+                        .await?,
+                );
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(Arc::clone(&proto_env), &config.yarn).await?);
+                node.yarn = Some(
+                    YarnTool::new(Arc::clone(&proto_env), Arc::clone(&console), &config.yarn)
+                        .await?,
+                );
             }
         };
 

@@ -275,7 +275,13 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&req) {
             self.toolchain.register(
                 &req,
-                NodeTool::new(Arc::clone(&self.proto_env), &self.config, &req).await?,
+                NodeTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    &req,
+                )
+                .await?,
             );
         }
 
@@ -303,7 +309,13 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
-                NodeTool::new(Arc::clone(&self.proto_env), &self.config, req).await?,
+                NodeTool::new(
+                    Arc::clone(&self.proto_env),
+                    Arc::clone(&self.console),
+                    &self.config,
+                    req,
+                )
+                .await?,
             );
         }
 

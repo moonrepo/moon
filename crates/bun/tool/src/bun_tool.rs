@@ -1,5 +1,6 @@
 use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
 use moon_config::BunConfig;
+use moon_console::Console;
 use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::{output_to_string, Command};
@@ -30,16 +31,20 @@ pub struct BunTool {
 
     pub tool: ProtoTool,
 
+    console: Arc<Console>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
 impl BunTool {
     pub async fn new(
         proto: Arc<ProtoEnvironment>,
+        console: Arc<Console>,
         config: &BunConfig,
         req: &RuntimeReq,
     ) -> miette::Result<BunTool> {
         let mut bun = BunTool {
+            console,
             config: config.to_owned(),
             global: false,
             tool: load_tool_plugin(&Id::raw("bun"), &proto, config.plugin.as_ref().unwrap())

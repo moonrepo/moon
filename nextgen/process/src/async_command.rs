@@ -226,14 +226,14 @@ impl<'cmd> AsyncCommand<'cmd> {
     }
 
     async fn write_input_to_child(&self, child: &mut Child) -> miette::Result<()> {
-        let input = self.inspector.get_command_line().input.to_string_lossy();
+        let input = &self.inspector.get_command_line().input;
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
-            panic!("Unable to write stdin: {input}");
+            panic!("Unable to write stdin: {}", input.to_string_lossy());
         });
 
         stdin
-            .write_all(input.trim().as_bytes())
+            .write_all(input.as_encoded_bytes())
             .await
             .map_err(|error| ProcessError::WriteInput {
                 bin: self.get_bin_name(),

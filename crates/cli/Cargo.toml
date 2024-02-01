@@ -22,13 +22,14 @@ moon_actions = { path = "../core/actions" }
 moon_api = { path = "../../nextgen/api" }
 moon_app_components = { path = "../../nextgen/app-components" }
 moon_bun_lang = { path = "../bun/lang" }
-# moon_bun_platform = { path = "../bun/platform" }
 moon_bun_tool = { path = "../bun/tool" }
 moon_cache = { path = "../../nextgen/cache" }
 moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config", features = ["template"] }
 moon_console = { path = "../../nextgen/console" }
+moon_deno_lang = { path = "../deno/lang" }
+moon_deno_tool = { path = "../deno/tool" }
 moon_env = { path = "../../nextgen/env" }
 moon_lang = { path = "../core/lang" }
 moon_node_lang = { path = "../node/lang" }

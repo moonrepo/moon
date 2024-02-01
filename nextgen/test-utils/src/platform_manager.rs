@@ -1,6 +1,7 @@
 use moon_bun_platform::BunPlatform;
 use moon_config::{PlatformType, ToolchainConfig};
 use moon_console::Console;
+use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_rust_platform::RustPlatform;
@@ -20,6 +21,19 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
             PlatformType::Bun,
             Box::new(BunPlatform::new(
                 bun_config,
+                &None,
+                root,
+                proto.clone(),
+                console.clone(),
+            )),
+        );
+    }
+
+    if let Some(deno_config) = &config.deno {
+        manager.register(
+            PlatformType::Deno,
+            Box::new(DenoPlatform::new(
+                deno_config,
                 &None,
                 root,
                 proto.clone(),

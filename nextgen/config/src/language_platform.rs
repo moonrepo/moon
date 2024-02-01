@@ -70,6 +70,13 @@ derive_enum!(
 );
 
 impl PlatformType {
+    pub fn is_javascript(&self) -> bool {
+        matches!(
+            self,
+            PlatformType::Bun | PlatformType::Deno | PlatformType::Node
+        )
+    }
+
     pub fn is_system(&self) -> bool {
         matches!(self, PlatformType::System)
     }

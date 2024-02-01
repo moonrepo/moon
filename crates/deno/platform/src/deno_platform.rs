@@ -70,7 +70,25 @@ impl Platform for DenoPlatform {
         PlatformType::Deno
     }
 
-    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
+        if let Some(config) = &project_config {
+            if let Some(deno_config) = &config.toolchain.deno {
+                if let Some(version) = &deno_config.version {
+                    return Runtime::new_override(
+                        PlatformType::Deno,
+                        RuntimeReq::Toolchain(version.to_owned()),
+                    );
+                }
+            }
+        }
+
+        if let Some(version) = &self.config.version {
+            return Runtime::new(
+                PlatformType::Deno,
+                RuntimeReq::Toolchain(version.to_owned()),
+            );
+        }
+
         Runtime::new(PlatformType::Deno, RuntimeReq::Global)
     }
 
@@ -122,12 +140,11 @@ impl Platform for DenoPlatform {
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
-        // let version = match &self.config.version {
-        //     Some(v) => Version::new(v),
-        //     None => Version::new_global(),
-        // };
+        let req = match &self.config.version {
+            Some(v) => RuntimeReq::Toolchain(v.to_owned()),
+            None => RuntimeReq::Global,
+        };
 
-        let req = RuntimeReq::Global;
         let mut last_versions = FxHashMap::default();
 
         if !self.toolchain.has(&req) {

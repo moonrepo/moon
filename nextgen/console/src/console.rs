@@ -1,4 +1,5 @@
 use miette::IntoDiagnostic;
+use moon_common::is_formatted_output;
 use parking_lot::Mutex;
 use std::io::{self, IsTerminal, Write};
 use std::mem;
@@ -187,7 +188,7 @@ pub struct Console {
 
 impl Console {
     pub fn new(quiet: bool) -> Self {
-        let quiet = Arc::new(AtomicBool::new(quiet));
+        let quiet = Arc::new(AtomicBool::new(quiet || is_formatted_output()));
 
         let mut err = ConsoleBuffer::new(ConsoleStream::Stderr);
         err.quiet = Some(Arc::clone(&quiet));

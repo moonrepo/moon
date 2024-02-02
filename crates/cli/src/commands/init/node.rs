@@ -11,7 +11,6 @@ use moon_node_lang::package_json::PackageJson;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
-use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -118,29 +117,27 @@ pub async fn init_node(
         console.out.print_header("Node")?;
 
         console.out.write_raw(|buffer| {
-            buffer.write_all(
+            buffer.extend_from_slice(
                 format!(
                     "Toolchain: {}\n",
                     color::url("https://moonrepo.dev/docs/concepts/toolchain")
                 )
                 .as_bytes(),
-            )?;
-            buffer.write_all(
+            );
+            buffer.extend_from_slice(
                 format!(
                     "Handbook: {}\n",
                     color::url("https://moonrepo.dev/docs/guides/javascript/node-handbook")
                 )
                 .as_bytes(),
-            )?;
-            buffer.write_all(
+            );
+            buffer.extend_from_slice(
                 format!(
                     "Config: {}\n\n",
                     color::url("https://moonrepo.dev/docs/config/toolchain#node")
                 )
                 .as_bytes(),
-            )?;
-
-            Ok(())
+            );
         })?;
     }
 

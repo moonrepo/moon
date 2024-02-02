@@ -1,6 +1,9 @@
 use miette::IntoDiagnostic;
+use moon_common::is_formatted_output;
 use parking_lot::Mutex;
-use std::io::{self, BufWriter, IsTerminal, Write};
+use std::io::{self, IsTerminal, Write};
+use std::mem;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
@@ -13,19 +16,19 @@ pub enum ConsoleStream {
 }
 
 pub struct ConsoleBuffer {
-    buffer: Arc<Mutex<BufWriter<Vec<u8>>>>,
+    buffer: Arc<Mutex<Vec<u8>>>,
     closed: bool,
     channel: Option<Sender<bool>>,
     handle: Option<JoinHandle<()>>,
     stream: ConsoleStream,
 
-    pub quiet: bool,
-    pub test_mode: bool,
+    quiet: Option<Arc<AtomicBool>>,
+    test_mode: bool,
 }
 
 impl ConsoleBuffer {
     fn internal_new(stream: ConsoleStream, with_handle: bool) -> Self {
-        let buffer = Arc::new(Mutex::new(BufWriter::new(Vec::new())));
+        let buffer = Arc::new(Mutex::new(Vec::new()));
         let buffer_clone = Arc::clone(&buffer);
         let (tx, rx) = mpsc::channel();
 
@@ -42,15 +45,13 @@ impl ConsoleBuffer {
             channel: Some(tx),
             handle,
             stream,
-            quiet: false,
+            quiet: None,
             test_mode: false,
         }
     }
 
-    pub fn new(stream: ConsoleStream, quiet: bool) -> Self {
-        let mut console = Self::internal_new(stream, true);
-        console.quiet = quiet;
-        console
+    pub fn new(stream: ConsoleStream) -> Self {
+        Self::internal_new(stream, true)
     }
 
     pub fn new_testing(stream: ConsoleStream) -> Self {
@@ -64,6 +65,12 @@ impl ConsoleBuffer {
             ConsoleStream::Stderr => io::stderr().is_terminal(),
             ConsoleStream::Stdout => io::stdout().is_terminal(),
         }
+    }
+
+    pub fn is_quiet(&self) -> bool {
+        self.quiet
+            .as_ref()
+            .is_some_and(|quiet| quiet.load(Ordering::Relaxed))
     }
 
     pub fn close(&mut self) -> miette::Result<()> {
@@ -94,33 +101,29 @@ impl ConsoleBuffer {
         Ok(())
     }
 
-    pub fn write_raw<F: FnMut(&mut BufWriter<Vec<u8>>) -> io::Result<()>>(
-        &self,
-        mut op: F,
-    ) -> miette::Result<()> {
+    pub fn write_raw<F: FnMut(&mut Vec<u8>)>(&self, mut op: F) -> miette::Result<()> {
         if self.closed {
             return Ok(());
         }
 
         // When testing just flush immediately
         if self.test_mode {
-            let mut buffer = BufWriter::new(Vec::new());
+            let mut buffer = Vec::new();
 
-            op(&mut buffer).into_diagnostic()?;
+            op(&mut buffer);
 
-            drain(&mut buffer, self.stream).into_diagnostic()?;
-
-            return Ok(());
+            flush(&mut buffer, self.stream).into_diagnostic()?;
         }
+        // Otherwise just write to the buffer and flush
+        // when its length grows too large
+        else {
+            let mut buffer = self.buffer.lock();
 
-        // Otherwise just write to the buffer
-        let mut buffer = self.buffer.lock();
+            op(&mut buffer);
 
-        op(&mut buffer).into_diagnostic()?;
-
-        // Buffer has written its data to the inner vec, so drain it
-        if !buffer.get_ref().is_empty() {
-            drain(&mut buffer, self.stream).into_diagnostic()?;
+            if buffer.len() >= 1024 {
+                flush(&mut buffer, self.stream).into_diagnostic()?;
+            }
         }
 
         Ok(())
@@ -133,7 +136,7 @@ impl ConsoleBuffer {
             return Ok(());
         }
 
-        self.write_raw(|buffer| buffer.write_all(data))
+        self.write_raw(|buffer| buffer.extend_from_slice(data))
     }
 
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
@@ -144,9 +147,8 @@ impl ConsoleBuffer {
         }
 
         self.write_raw(|buffer| {
-            buffer.write_all(data)?;
-            buffer.write_all(b"\n")?;
-            Ok(())
+            buffer.extend_from_slice(data);
+            buffer.push(b'\n');
         })
     }
 
@@ -167,7 +169,7 @@ impl Clone for ConsoleBuffer {
             buffer: Arc::clone(&self.buffer),
             closed: self.closed,
             stream: self.stream,
-            quiet: self.quiet,
+            quiet: self.quiet.clone(),
             test_mode: self.test_mode,
             // Ignore for clones
             channel: None,
@@ -180,29 +182,40 @@ impl Clone for ConsoleBuffer {
 pub struct Console {
     pub err: ConsoleBuffer,
     pub out: ConsoleBuffer,
+
+    quiet: Arc<AtomicBool>,
 }
 
 impl Console {
     pub fn new(quiet: bool) -> Self {
-        Self {
-            err: ConsoleBuffer::new(ConsoleStream::Stderr, quiet),
-            out: ConsoleBuffer::new(ConsoleStream::Stdout, quiet),
-        }
+        let quiet = Arc::new(AtomicBool::new(quiet || is_formatted_output()));
+
+        let mut err = ConsoleBuffer::new(ConsoleStream::Stderr);
+        err.quiet = Some(Arc::clone(&quiet));
+
+        let mut out = ConsoleBuffer::new(ConsoleStream::Stdout);
+        out.quiet = Some(Arc::clone(&quiet));
+
+        Self { err, out, quiet }
     }
 
     pub fn new_testing() -> Self {
         Self {
             err: ConsoleBuffer::new_testing(ConsoleStream::Stderr),
             out: ConsoleBuffer::new_testing(ConsoleStream::Stdout),
+            quiet: Arc::new(AtomicBool::new(false)),
         }
     }
 
-    // This should be safe since there will only be one console instance
     pub fn close(&mut self) -> miette::Result<()> {
         self.err.close()?;
         self.out.close()?;
 
         Ok(())
+    }
+
+    pub fn quiet(&self) {
+        self.quiet.store(true, Ordering::Release);
     }
 
     pub fn stderr(&self) -> &ConsoleBuffer {
@@ -220,8 +233,12 @@ impl Drop for Console {
     }
 }
 
-fn drain(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<()> {
-    let data = buffer.get_mut().drain(0..).collect::<Vec<_>>();
+fn flush(buffer: &mut Vec<u8>, stream: ConsoleStream) -> io::Result<()> {
+    if buffer.is_empty() {
+        return Ok(());
+    }
+
+    let data = mem::take(buffer);
 
     match stream {
         ConsoleStream::Stderr => io::stderr().lock().write_all(&data),
@@ -229,21 +246,7 @@ fn drain(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<(
     }
 }
 
-fn flush(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<()> {
-    buffer.flush()?;
-
-    if buffer.get_ref().is_empty() {
-        return Ok(());
-    }
-
-    drain(buffer, stream)
-}
-
-fn flush_on_loop(
-    buffer: Arc<Mutex<BufWriter<Vec<u8>>>>,
-    stream: ConsoleStream,
-    receiver: Receiver<bool>,
-) {
+fn flush_on_loop(buffer: Arc<Mutex<Vec<u8>>>, stream: ConsoleStream, receiver: Receiver<bool>) {
     loop {
         sleep(Duration::from_millis(100));
 

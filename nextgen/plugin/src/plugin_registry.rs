@@ -214,8 +214,12 @@ impl<T: Plugin> PluginRegistry<T> {
             id.to_owned(),
             T::new(
                 id.to_owned(),
-                PluginContainer::new(id.to_owned(), manifest, functions)?,
-            ),
+                PluginRegistration {
+                    container: PluginContainer::new(id.to_owned(), manifest, functions)?,
+                    moon_env: Arc::clone(&self.moon_env),
+                    proto_env: Arc::clone(&self.proto_env),
+                },
+            )?,
         );
 
         Ok(())

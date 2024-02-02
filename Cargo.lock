@@ -3592,6 +3592,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_platform_plugin"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_pdk_api",
+ "moon_plugin",
+ "proto_core",
+]
+
+[[package]]
 name = "moon_platform_runtime"
 version = "0.0.1"
 dependencies = [

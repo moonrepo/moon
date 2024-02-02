@@ -20,10 +20,11 @@ use warpgate::{
 
 #[allow(dead_code)]
 pub struct PluginRegistry<T: Plugin> {
+    pub moon_env: Arc<MoonEnvironment>,
+    pub proto_env: Arc<ProtoEnvironment>,
+
     loader: PluginLoader,
-    moon_env: Arc<MoonEnvironment>,
     plugins: Arc<DashMap<Id, T>>,
-    proto_env: Arc<ProtoEnvironment>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }

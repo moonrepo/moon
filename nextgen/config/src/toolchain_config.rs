@@ -2,13 +2,30 @@
 
 use crate::language_platform::PlatformType;
 use crate::toolchain::*;
+use moon_common::Id;
+use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
+use version_spec::UnresolvedVersionSpec;
+use warpgate_api::PluginLocator;
 
+use std::collections::BTreeMap;
 #[cfg(feature = "proto")]
 use std::path::Path;
 
 #[cfg(feature = "proto")]
 use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
+
+#[derive(Clone, Config, Debug, PartialEq)]
+#[config(allow_unknown_fields)]
+pub struct ToolConfig {
+    #[setting(required)]
+    pub plugin: Option<PluginLocator>,
+
+    pub version: Option<UnresolvedVersionSpec>,
+
+    #[setting(flatten)]
+    pub config: BTreeMap<String, serde_json::Value>,
+}
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Config, Debug)]
@@ -36,6 +53,9 @@ pub struct ToolchainConfig {
 
     #[setting(nested)]
     pub typescript: Option<TypeScriptConfig>,
+
+    #[setting(flatten, nested)]
+    pub tools: FxHashMap<Id, ToolConfig>,
 }
 
 impl ToolchainConfig {

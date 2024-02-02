@@ -1,7 +1,6 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
-use moon_platform_plugin::PlatformPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
 use proto_core::{ProtoConfig, ProtoEnvironment};
 use semver::Version;

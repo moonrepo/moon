@@ -1,6 +1,6 @@
 use moon_env::MoonEnvironment;
 use moon_plugin::{
-    Plugin, PluginContainer, PluginId as Id, PluginLocator, PluginRegistry, PluginType,
+    Plugin, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry, PluginType,
 };
 use proto_core::ProtoEnvironment;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
@@ -11,8 +11,8 @@ use std::sync::Arc;
 struct TestPlugin;
 
 impl Plugin for TestPlugin {
-    fn new(_id: Id, _plugin: PluginContainer) -> Self {
-        TestPlugin
+    fn new(_id: Id, _reg: PluginRegistration) -> miette::Result<Self> {
+        Ok(TestPlugin)
     }
 
     fn get_type(&self) -> PluginType {

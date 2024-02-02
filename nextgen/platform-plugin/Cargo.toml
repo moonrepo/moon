@@ -8,7 +8,11 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
+moon_config = { path = "../config" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 miette = { workspace = true }
 proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+starbase = { workspace = true }
+tracing = { workspace = true }

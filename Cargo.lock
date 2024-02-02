@@ -2978,7 +2978,6 @@ dependencies = [
  "moon_console",
  "moon_env",
  "moon_extension_plugin",
- "moon_platform_plugin",
  "moon_plugin",
  "proto_core",
  "semver",
@@ -3127,6 +3126,7 @@ dependencies = [
  "moon_notifier",
  "moon_platform",
  "moon_platform_detector",
+ "moon_platform_plugin",
  "moon_plugin",
  "moon_project",
  "moon_project_graph",
@@ -3597,9 +3597,13 @@ name = "moon_platform_plugin"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_config",
  "moon_pdk_api",
  "moon_plugin",
  "proto_core",
+ "rustc-hash",
+ "starbase",
+ "tracing",
 ]
 
 [[package]]

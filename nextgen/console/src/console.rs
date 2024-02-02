@@ -1,6 +1,7 @@
 use miette::IntoDiagnostic;
 use parking_lot::Mutex;
 use std::io::{self, IsTerminal, Write};
+use std::mem;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
@@ -220,7 +221,7 @@ fn flush(buffer: &mut Vec<u8>, stream: ConsoleStream) -> io::Result<()> {
         return Ok(());
     }
 
-    let data = buffer.drain(0..).collect::<Vec<_>>();
+    let data = mem::take(buffer);
 
     match stream {
         ConsoleStream::Stderr => io::stderr().lock().write_all(&data),

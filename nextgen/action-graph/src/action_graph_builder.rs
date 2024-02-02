@@ -92,10 +92,11 @@ impl<'app> ActionGraphBuilder<'app> {
         task: Option<&Task>,
     ) -> miette::Result<Option<NodeIndex>> {
         let mut in_project = false;
+        let platform_type = task.map(|t| t.platform).unwrap_or_else(|| project.platform);
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Ok(platform) = self.platform_manager.get(project.language.clone()) {
+        if let Ok(platform) = self.platform_manager.get(platform_type) {
             if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
                 in_project = true;
 

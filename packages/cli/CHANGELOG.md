@@ -14,12 +14,24 @@
 
 #### 🚀 Updates
 
+- Added Deno tier 3 support.
+  - Will download and install Deno into the toolchain when a `version` is configured.
+  - Will parse the `deno.lock` lockfile to extract and resolve dependencies.
+  - Will hash manifests and inputs for Deno specific caching.
+  - Added a `deno.version` setting to `.moon/toolchain.yml`.
+  - Added a `toolchain.deno` setting to `moon.yml`.
+  - Updated `moon bin` and `moon docker` commands to support Deno.
+- Added `unixShell` and `windowsShell` task options, so that the underlying shell can be configured
+  per task.
 - Implemented a new console layer for writing to stdout/stderr.
   - Logs are now buffered and written periodically.
   - Previously they were written immediately, which required locking std each call.
   - Should see some minor performance improvements.
-- Added `unixShell` and `windowsShell` task options, so that the underlying shell can be configured
-  per task.
+
+#### 🐞 Fixes
+
+- Fixed an issue where the action graph would create incorrect nodes when a tool utilizes
+  workspaces, and a project is not within the workspace.
 
 ## 1.20.1
 

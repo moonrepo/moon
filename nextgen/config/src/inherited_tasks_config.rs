@@ -91,13 +91,6 @@ impl InheritedTasksConfig {
     }
 }
 
-fn is_js_platform(platform: &PlatformType) -> bool {
-    matches!(
-        platform,
-        PlatformType::Bun | PlatformType::Deno | PlatformType::Node
-    )
-}
-
 cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
@@ -131,13 +124,13 @@ impl InheritedTasksManager {
     ) -> Vec<String> {
         let mut lookup = vec!["*".to_string()];
 
-        if is_js_platform(platform) {
+        if platform.is_javascript() {
             lookup.push(format!("{platform}"));
         }
 
         lookup.push(format!("{language}"));
 
-        if is_js_platform(platform) {
+        if platform.is_javascript() {
             lookup.push(format!("{platform}-{project}"));
         }
 
@@ -289,7 +282,7 @@ impl InheritedTasksManager {
             .map_err(|error| ConfigError::Validator {
                 config: format!(
                     "inherited tasks {}",
-                    if is_js_platform(platform) {
+                    if platform.is_javascript() {
                         format!("({}, {}, {})", platform, language, project)
                     } else {
                         format!("({}, {})", language, project)

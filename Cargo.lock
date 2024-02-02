@@ -3115,6 +3115,8 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_deno_lang",
+ "moon_deno_tool",
  "moon_env",
  "moon_lang",
  "moon_node_lang",
@@ -3291,10 +3293,15 @@ dependencies = [
  "miette",
  "moon_config",
  "moon_console",
+ "moon_deno_lang",
  "moon_platform_runtime",
+ "moon_process",
  "moon_tool",
+ "moon_utils",
  "proto_core",
  "rustc-hash",
+ "starbase_utils",
+ "tracing",
 ]
 
 [[package]]
@@ -3920,6 +3927,7 @@ dependencies = [
  "moon_bun_platform",
  "moon_config",
  "moon_console",
+ "moon_deno_platform",
  "moon_node_platform",
  "moon_platform",
  "moon_project_graph",

@@ -1,11 +1,5 @@
 use crate::create_input_paths;
-use moon_config::{
-    InputPath, NodePackageManager, PartialBunConfig, PartialBunpmConfig,
-    PartialInheritedTasksConfig, PartialNodeConfig, PartialNpmConfig, PartialPnpmConfig,
-    PartialTaskArgs, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
-    PartialWorkspaceConfig, PartialWorkspaceProjects, PartialWorkspaceProjectsConfig,
-    PartialYarnConfig, UnresolvedVersionSpec,
-};
+use moon_config::*;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -303,6 +297,50 @@ pub fn get_bun_fixture_configs() -> (
                 "version".into(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("bun".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
+                    ..PartialTaskConfig::default()
+                },
+            ),
+            (
+                "noop".into(),
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::String("noop".into())),
+                    ..PartialTaskConfig::default()
+                },
+            ),
+        ])),
+        ..PartialInheritedTasksConfig::default()
+    };
+
+    (workspace_config, toolchain_config, tasks_config)
+}
+
+pub fn get_deno_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("deno".into(), "base".to_owned()),
+            ("versionOverride".into(), "version-override".to_owned()),
+        ]))),
+        ..PartialWorkspaceConfig::default()
+    };
+
+    let mut toolchain_config = get_default_toolchain();
+    toolchain_config.node = None;
+    toolchain_config.deno = Some(PartialDenoConfig {
+        version: Some(UnresolvedVersionSpec::parse("1.40.0").unwrap()),
+        ..PartialDenoConfig::default()
+    });
+
+    let tasks_config = PartialInheritedTasksConfig {
+        tasks: Some(BTreeMap::from_iter([
+            (
+                "version".into(),
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::String("deno".into())),
                     args: Some(PartialTaskArgs::String("--version".into())),
                     ..PartialTaskConfig::default()
                 },

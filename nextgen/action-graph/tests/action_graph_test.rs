@@ -358,7 +358,8 @@ mod action_graph {
                     ActionNode::SetupTool {
                         runtime: create_rust_runtime()
                     },
-                    ActionNode::InstallDeps {
+                    ActionNode::InstallProjectDeps {
+                        project: Id::raw("bar"),
                         runtime: create_rust_runtime()
                     },
                     ActionNode::SetupTool {

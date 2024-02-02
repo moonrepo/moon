@@ -1,5 +1,6 @@
 # These are used by tests that require the tools
 # to exist in the environment!
 # bun = "1.0.15"
+deno = "1.40.0"
 node = "20.8.0"
 npm = "10.1.0"

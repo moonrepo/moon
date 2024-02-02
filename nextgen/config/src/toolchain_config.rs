@@ -66,7 +66,7 @@ impl ToolchainConfig {
 impl ToolchainConfig {
     inherit_tool!(BunConfig, bun, "bun", inherit_proto_bun);
 
-    inherit_tool_without_version!(DenoConfig, deno, "deno", inherit_proto_deno);
+    inherit_tool!(DenoConfig, deno, "deno", inherit_proto_deno);
 
     inherit_tool!(NodeConfig, node, "node", inherit_proto_node);
 
@@ -81,6 +81,7 @@ impl ToolchainConfig {
 
     pub fn should_install_proto(&self) -> bool {
         is_using_tool_version!(self, bun);
+        is_using_tool_version!(self, deno);
         is_using_tool_version!(self, node);
         is_using_tool_version!(self, node, pnpm);
         is_using_tool_version!(self, node, yarn);

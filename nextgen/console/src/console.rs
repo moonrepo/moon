@@ -1,6 +1,6 @@
 use miette::IntoDiagnostic;
 use parking_lot::Mutex;
-use std::io::{self, BufWriter, IsTerminal, Write};
+use std::io::{self, IsTerminal, Write};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
@@ -13,7 +13,7 @@ pub enum ConsoleStream {
 }
 
 pub struct ConsoleBuffer {
-    buffer: Arc<Mutex<BufWriter<Vec<u8>>>>,
+    buffer: Arc<Mutex<Vec<u8>>>,
     closed: bool,
     channel: Option<Sender<bool>>,
     handle: Option<JoinHandle<()>>,
@@ -25,7 +25,7 @@ pub struct ConsoleBuffer {
 
 impl ConsoleBuffer {
     fn internal_new(stream: ConsoleStream, with_handle: bool) -> Self {
-        let buffer = Arc::new(Mutex::new(BufWriter::new(Vec::new())));
+        let buffer = Arc::new(Mutex::new(Vec::new()));
         let buffer_clone = Arc::clone(&buffer);
         let (tx, rx) = mpsc::channel();
 
@@ -94,33 +94,29 @@ impl ConsoleBuffer {
         Ok(())
     }
 
-    pub fn write_raw<F: FnMut(&mut BufWriter<Vec<u8>>) -> io::Result<()>>(
-        &self,
-        mut op: F,
-    ) -> miette::Result<()> {
+    pub fn write_raw<F: FnMut(&mut Vec<u8>)>(&self, mut op: F) -> miette::Result<()> {
         if self.closed {
             return Ok(());
         }
 
         // When testing just flush immediately
         if self.test_mode {
-            let mut buffer = BufWriter::new(Vec::new());
+            let mut buffer = Vec::new();
 
-            op(&mut buffer).into_diagnostic()?;
+            op(&mut buffer);
 
-            drain(&mut buffer, self.stream).into_diagnostic()?;
-
-            return Ok(());
+            flush(&mut buffer, self.stream).into_diagnostic()?;
         }
+        // Otherwise just write to the buffer and flush
+        // when its length grows too large
+        else {
+            let mut buffer = self.buffer.lock();
 
-        // Otherwise just write to the buffer
-        let mut buffer = self.buffer.lock();
+            op(&mut buffer);
 
-        op(&mut buffer).into_diagnostic()?;
-
-        // Buffer has written its data to the inner vec, so drain it
-        if !buffer.get_ref().is_empty() {
-            drain(&mut buffer, self.stream).into_diagnostic()?;
+            if buffer.len() >= 1024 {
+                flush(&mut buffer, self.stream).into_diagnostic()?;
+            }
         }
 
         Ok(())
@@ -133,7 +129,7 @@ impl ConsoleBuffer {
             return Ok(());
         }
 
-        self.write_raw(|buffer| buffer.write_all(data))
+        self.write_raw(|buffer| buffer.extend_from_slice(data))
     }
 
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
@@ -144,9 +140,8 @@ impl ConsoleBuffer {
         }
 
         self.write_raw(|buffer| {
-            buffer.write_all(data)?;
-            buffer.write_all(b"\n")?;
-            Ok(())
+            buffer.extend_from_slice(data);
+            buffer.push(b'\n');
         })
     }
 
@@ -220,8 +215,12 @@ impl Drop for Console {
     }
 }
 
-fn drain(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<()> {
-    let data = buffer.get_mut().drain(0..).collect::<Vec<_>>();
+fn flush(buffer: &mut Vec<u8>, stream: ConsoleStream) -> io::Result<()> {
+    if buffer.is_empty() {
+        return Ok(());
+    }
+
+    let data = buffer.drain(0..).collect::<Vec<_>>();
 
     match stream {
         ConsoleStream::Stderr => io::stderr().lock().write_all(&data),
@@ -229,21 +228,7 @@ fn drain(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<(
     }
 }
 
-fn flush(buffer: &mut BufWriter<Vec<u8>>, stream: ConsoleStream) -> io::Result<()> {
-    buffer.flush()?;
-
-    if buffer.get_ref().is_empty() {
-        return Ok(());
-    }
-
-    drain(buffer, stream)
-}
-
-fn flush_on_loop(
-    buffer: Arc<Mutex<BufWriter<Vec<u8>>>>,
-    stream: ConsoleStream,
-    receiver: Receiver<bool>,
-) {
+fn flush_on_loop(buffer: Arc<Mutex<Vec<u8>>>, stream: ConsoleStream, receiver: Receiver<bool>) {
     loop {
         sleep(Duration::from_millis(100));
 

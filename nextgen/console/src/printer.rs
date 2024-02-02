@@ -88,7 +88,7 @@ impl ConsoleBuffer {
         message: M,
         comments: C,
     ) -> miette::Result<()> {
-        if !self.quiet && is_unformatted_stdout() {
+        if !self.is_quiet() && is_unformatted_stdout() {
             self.write_line(self.format_checkpoint(checkpoint, message, comments))?;
         }
 

@@ -2,6 +2,7 @@ use miette::IntoDiagnostic;
 use parking_lot::Mutex;
 use std::io::{self, IsTerminal, Write};
 use std::mem;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
@@ -20,8 +21,8 @@ pub struct ConsoleBuffer {
     handle: Option<JoinHandle<()>>,
     stream: ConsoleStream,
 
-    pub quiet: bool,
-    pub test_mode: bool,
+    quiet: Option<Arc<AtomicBool>>,
+    test_mode: bool,
 }
 
 impl ConsoleBuffer {
@@ -43,15 +44,13 @@ impl ConsoleBuffer {
             channel: Some(tx),
             handle,
             stream,
-            quiet: false,
+            quiet: None,
             test_mode: false,
         }
     }
 
-    pub fn new(stream: ConsoleStream, quiet: bool) -> Self {
-        let mut console = Self::internal_new(stream, true);
-        console.quiet = quiet;
-        console
+    pub fn new(stream: ConsoleStream) -> Self {
+        Self::internal_new(stream, true)
     }
 
     pub fn new_testing(stream: ConsoleStream) -> Self {
@@ -65,6 +64,12 @@ impl ConsoleBuffer {
             ConsoleStream::Stderr => io::stderr().is_terminal(),
             ConsoleStream::Stdout => io::stdout().is_terminal(),
         }
+    }
+
+    pub fn is_quiet(&self) -> bool {
+        self.quiet
+            .as_ref()
+            .is_some_and(|quiet| quiet.load(Ordering::Relaxed))
     }
 
     pub fn close(&mut self) -> miette::Result<()> {
@@ -163,7 +168,7 @@ impl Clone for ConsoleBuffer {
             buffer: Arc::clone(&self.buffer),
             closed: self.closed,
             stream: self.stream,
-            quiet: self.quiet,
+            quiet: self.quiet.clone(),
             test_mode: self.test_mode,
             // Ignore for clones
             channel: None,
@@ -176,29 +181,40 @@ impl Clone for ConsoleBuffer {
 pub struct Console {
     pub err: ConsoleBuffer,
     pub out: ConsoleBuffer,
+
+    quiet: Arc<AtomicBool>,
 }
 
 impl Console {
     pub fn new(quiet: bool) -> Self {
-        Self {
-            err: ConsoleBuffer::new(ConsoleStream::Stderr, quiet),
-            out: ConsoleBuffer::new(ConsoleStream::Stdout, quiet),
-        }
+        let quiet = Arc::new(AtomicBool::new(quiet));
+
+        let mut err = ConsoleBuffer::new(ConsoleStream::Stderr);
+        err.quiet = Some(Arc::clone(&quiet));
+
+        let mut out = ConsoleBuffer::new(ConsoleStream::Stdout);
+        out.quiet = Some(Arc::clone(&quiet));
+
+        Self { err, out, quiet }
     }
 
     pub fn new_testing() -> Self {
         Self {
             err: ConsoleBuffer::new_testing(ConsoleStream::Stderr),
             out: ConsoleBuffer::new_testing(ConsoleStream::Stdout),
+            quiet: Arc::new(AtomicBool::new(false)),
         }
     }
 
-    // This should be safe since there will only be one console instance
     pub fn close(&mut self) -> miette::Result<()> {
         self.err.close()?;
         self.out.close()?;
 
         Ok(())
+    }
+
+    pub fn quiet(&self) {
+        self.quiet.store(true, Ordering::Release);
     }
 
     pub fn stderr(&self) -> &ConsoleBuffer {

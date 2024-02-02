@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:runFromProject
+<WORKSPACE>/base
+▪▪▪▪ deno:runFromProject (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

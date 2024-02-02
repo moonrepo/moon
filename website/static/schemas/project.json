@@ -454,6 +454,16 @@
             }
           ]
         },
+        "deno": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "node": {
           "anyOf": [
             {

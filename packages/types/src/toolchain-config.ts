@@ -41,6 +41,8 @@ export interface PartialDenoConfig {
 	depsFile?: string | null;
 	lockfile?: boolean | null;
 	plugin?: string | null;
+	/** @envvar MOON_DENO_VERSION */
+	version?: string | null;
 }
 
 export interface PartialBunpmConfig {
@@ -169,6 +171,8 @@ export interface DenoConfig {
 	depsFile: string;
 	lockfile: boolean;
 	plugin: string | null;
+	/** @envvar MOON_DENO_VERSION */
+	version: string | null;
 }
 
 export interface BunpmConfig {

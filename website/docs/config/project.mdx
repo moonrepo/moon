@@ -1064,6 +1064,23 @@ toolchain:
     version: '1.0.0'
 ```
 
+### `deno`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#deno" />
+
+Configures Deno for this project and overrides the top-level [`deno`](./toolchain#deno) setting.
+
+#### `version`
+
+Defines the explicit Deno [version specification](../concepts/toolchain#version-specification) to
+use when _running tasks_ for this project.
+
+```yaml title="moon.yml" {2,3}
+toolchain:
+  deno:
+    version: '1.40.0'
+```
+
 ### `node`
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#node" />

@@ -30,6 +30,9 @@ cacheable!(
         pub bun: Option<ProjectToolchainCommonToolConfig>,
 
         #[setting(nested)]
+        pub deno: Option<ProjectToolchainCommonToolConfig>,
+
+        #[setting(nested)]
         pub node: Option<ProjectToolchainCommonToolConfig>,
 
         #[setting(nested)]

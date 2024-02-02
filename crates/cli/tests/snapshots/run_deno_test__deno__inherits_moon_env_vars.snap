@@ -1,0 +1,24 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:envVarsMoon
+MOON_CACHE=read-write
+MOON_CACHE_DIR=<WORKSPACE>/.moon/cache
+MOON_HOME=<WORKSPACE>/.moon-home
+MOON_LOG=trace
+MOON_PROJECT_ID=deno
+MOON_PROJECT_ROOT=<WORKSPACE>/base
+MOON_PROJECT_SNAPSHOT=<WORKSPACE>/.moon/cache/states/deno/snapshot.json
+MOON_PROJECT_SOURCE=base
+MOON_RUNNING_ACTION=run-task
+MOON_TARGET=deno:envVarsMoon
+MOON_WORKING_DIR=<WORKSPACE>
+MOON_WORKSPACE_ROOT=<WORKSPACE>
+▪▪▪▪ deno:envVarsMoon (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

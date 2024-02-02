@@ -65,6 +65,7 @@ export interface PartialProjectToolchainTypeScriptConfig {
 
 export interface PartialProjectToolchainConfig {
 	bun?: PartialProjectToolchainCommonToolConfig | null;
+	deno?: PartialProjectToolchainCommonToolConfig | null;
 	node?: PartialProjectToolchainCommonToolConfig | null;
 	rust?: PartialProjectToolchainCommonToolConfig | null;
 	typescript?: PartialProjectToolchainTypeScriptConfig | null;
@@ -149,6 +150,7 @@ export interface ProjectToolchainTypeScriptConfig {
 
 export interface ProjectToolchainConfig {
 	bun: ProjectToolchainCommonToolConfig | null;
+	deno: ProjectToolchainCommonToolConfig | null;
 	node: ProjectToolchainCommonToolConfig | null;
 	rust: ProjectToolchainCommonToolConfig | null;
 	typescript: ProjectToolchainTypeScriptConfig | null;

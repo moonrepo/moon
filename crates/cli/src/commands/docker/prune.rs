@@ -4,6 +4,7 @@ use miette::miette;
 use moon::generate_project_graph;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
+use moon_deno_tool::DenoTool;
 use moon_node_lang::PackageJson;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
@@ -47,6 +48,17 @@ pub async fn prune_bun(
     // Install production only dependencies for focused projects
     bun.install_focused_dependencies(&(), &package_names, true)
         .await?;
+
+    Ok(())
+}
+
+pub async fn prune_deno(
+    deno: &DenoTool,
+    _workspace_root: &Path,
+    _project_graph: &ProjectGraph,
+    _manifest: &DockerManifest,
+) -> AppResult {
+    deno.install_focused_dependencies(&(), &[], true).await?;
 
     Ok(())
 }
@@ -135,6 +147,19 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
                 )
                 .await?;
             }
+            PlatformType::Deno => {
+                prune_deno(
+                    platform
+                        .get_tool()?
+                        .as_any()
+                        .downcast_ref::<DenoTool>()
+                        .unwrap(),
+                    &workspace.root,
+                    &project_graph,
+                    &manifest,
+                )
+                .await?;
+            }
             PlatformType::Node => {
                 prune_node(
                     platform
@@ -159,7 +184,7 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
                 )
                 .await?;
             }
-            PlatformType::Deno | PlatformType::System | PlatformType::Unknown => {}
+            PlatformType::System | PlatformType::Unknown => {}
         }
     }
 }

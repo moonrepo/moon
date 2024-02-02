@@ -5,10 +5,10 @@ use crate::toolchain::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
+use std::collections::BTreeMap;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
-use std::collections::BTreeMap;
 #[cfg(feature = "proto")]
 use std::path::Path;
 

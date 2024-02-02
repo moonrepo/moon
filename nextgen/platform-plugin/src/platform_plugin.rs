@@ -1,6 +1,8 @@
-use moon_pdk_api::{MoonContext, SyncWorkspaceInput};
+use moon_common::Id;
+use moon_pdk_api::{MoonContext, SyncProjectInput, SyncProjectRecord, SyncWorkspaceInput};
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
+use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tracing::debug;
 
@@ -8,17 +10,45 @@ pub struct PlatformPlugin {
     pub id: PluginId,
 
     plugin: Arc<PluginContainer>,
+
+    #[]
     tool: Option<Tool>,
 }
 
 impl PlatformPlugin {
     pub fn sync_workspace(&self, context: MoonContext) -> miette::Result<()> {
-        if self.plugin.has_func("sync_workspace") {
-            debug!(tool = self.id.as_str(), "Syncing workspace");
-
-            self.plugin
-                .call_func_without_output("sync_workspace", SyncWorkspaceInput { context })?;
+        if !self.plugin.has_func("sync_workspace") {
+            return Ok(());
         }
+
+        debug!(platform = self.id.as_str(), "Syncing workspace");
+
+        self.plugin
+            .call_func_without_output("sync_workspace", SyncWorkspaceInput { context })?;
+
+        Ok(())
+    }
+
+    pub fn sync_project(
+        &self,
+        project: SyncProjectRecord,
+        dependencies: FxHashMap<Id, SyncProjectRecord>,
+        context: MoonContext,
+    ) -> miette::Result<()> {
+        if !self.plugin.has_func("sync_project") {
+            return Ok(());
+        }
+
+        debug!(platform = self.id.as_str(), "Syncing project");
+
+        self.plugin.call_func_without_output(
+            "sync_project",
+            SyncProjectInput {
+                context,
+                dependencies,
+                project,
+            },
+        )?;
 
         Ok(())
     }

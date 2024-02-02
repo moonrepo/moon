@@ -5,14 +5,14 @@ use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectToolchainCommonToolConfig {
         pub version: Option<UnresolvedVersionSpec>,
     }
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectToolchainTypeScriptConfig {
         pub disabled: bool,
         pub include_project_reference_sources: Option<bool>,
@@ -24,7 +24,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectToolchainConfig {
         #[setting(nested)]
         pub bun: Option<ProjectToolchainCommonToolConfig>,
@@ -53,7 +53,7 @@ impl ProjectToolchainConfig {
 }
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
         pub exclude: Vec<Id>,
 
@@ -67,7 +67,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectWorkspaceConfig {
         #[setting(nested)]
         pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,

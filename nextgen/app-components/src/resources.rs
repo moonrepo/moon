@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub use moon_console::Console;
+pub use moon_platform_plugin::PlatformRegistry;
 
 #[derive(Debug, Resource)]
 pub struct AppInfo {
@@ -34,19 +35,6 @@ impl ExtensionRegistry {
     pub fn new(moon_env: Arc<MoonEnvironment>, proto_env: Arc<ProtoEnvironment>) -> Self {
         Self(PluginRegistry::new(
             PluginType::Extension,
-            moon_env,
-            proto_env,
-        ))
-    }
-}
-
-#[derive(Resource)]
-pub struct PlatformRegistry(pub PluginRegistry<PlatformPlugin>);
-
-impl PlatformRegistry {
-    pub fn new(moon_env: Arc<MoonEnvironment>, proto_env: Arc<ProtoEnvironment>) -> Self {
-        Self(PluginRegistry::new(
-            PluginType::Platform,
             moon_env,
             proto_env,
         ))

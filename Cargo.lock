@@ -2978,6 +2978,7 @@ dependencies = [
  "moon_console",
  "moon_env",
  "moon_extension_plugin",
+ "moon_platform_plugin",
  "moon_plugin",
  "proto_core",
  "semver",
@@ -3532,6 +3533,9 @@ dependencies = [
 name = "moon_pdk_api"
 version = "0.0.2"
 dependencies = [
+ "moon_common",
+ "moon_config",
+ "rustc-hash",
  "serde",
  "warpgate_api",
 ]
@@ -3597,6 +3601,7 @@ name = "moon_platform_plugin"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "moon_config",
  "moon_pdk_api",
  "moon_plugin",

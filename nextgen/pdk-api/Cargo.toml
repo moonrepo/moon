@@ -8,5 +8,8 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
+moon_common = { version = "0.0.2", path = "../common" }
+moon_config = { version = "0.0.2", path = "../config" }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 warpgate_api = { workspace = true }

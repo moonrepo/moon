@@ -1,8 +1,8 @@
-mod actions;
 mod extension;
+mod platform;
 
-pub use actions::*;
 pub use extension::*;
+pub use platform::*;
 pub use warpgate_api::*;
 
 api_struct!(

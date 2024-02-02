@@ -32,7 +32,7 @@ derive_enum!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct ProjectMetadataConfig {
         pub name: Option<String>,
 
@@ -63,7 +63,7 @@ cacheable!(
 
 cacheable!(
     /// Docs: https://moonrepo.dev/docs/config/project
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/project.json",

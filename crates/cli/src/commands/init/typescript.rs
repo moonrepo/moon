@@ -7,7 +7,6 @@ use moon_console::Console;
 use moon_typescript_lang::TsConfigJson;
 use starbase::AppResult;
 use starbase_styles::color;
-use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -25,14 +24,14 @@ pub async fn init_typescript(
         console.out.print_header("TypeScript")?;
 
         console.out.write_raw(|buffer| {
-            buffer.write_all(
+            buffer.extend_from_slice(
                 format!(
                     "Toolchain: {}\n",
                     color::url("https://moonrepo.dev/docs/concepts/toolchain")
                 )
                 .as_bytes(),
-            )?;
-            buffer.write_all(
+            );
+            buffer.extend_from_slice(
                 format!(
                     "Handbook: {}\n",
                     color::url(
@@ -40,16 +39,14 @@ pub async fn init_typescript(
                     )
                 )
                 .as_bytes(),
-            )?;
-            buffer.write_all(
+            );
+            buffer.extend_from_slice(
                 format!(
                     "Config: {}\n\n",
                     color::url("https://moonrepo.dev/docs/config/toolchain#typescript")
                 )
                 .as_bytes(),
-            )?;
-
-            Ok(())
+            );
         })?;
     }
 

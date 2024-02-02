@@ -1,5 +1,4 @@
 use crate::console::ConsoleBuffer;
-use moon_common::is_unformatted_stdout;
 use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{self, no_color, Color, OwoStyle};
 
@@ -88,7 +87,7 @@ impl ConsoleBuffer {
         message: M,
         comments: C,
     ) -> miette::Result<()> {
-        if !self.quiet && is_unformatted_stdout() {
+        if !self.is_quiet() {
             self.write_line(self.format_checkpoint(checkpoint, message, comments))?;
         }
 

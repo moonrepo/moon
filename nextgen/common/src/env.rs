@@ -20,6 +20,6 @@ pub fn is_test_env() -> bool {
 }
 
 #[inline]
-pub fn is_unformatted_stdout() -> bool {
-    !env::args().any(|arg| arg == "--json" || arg == "--dot")
+pub fn is_formatted_output() -> bool {
+    env::args().any(|arg| arg == "--json" || arg == "--dot")
 }

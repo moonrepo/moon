@@ -1,6 +1,6 @@
 use moon_api::Launchpad;
 use moon_app_components::{AppConsole, MoonEnv};
-use moon_common::{color, is_test_env, is_unformatted_stdout};
+use moon_common::{color, is_formatted_output, is_test_env};
 use moon_console::Checkpoint;
 use moon_workspace::Workspace;
 use starbase::system;
@@ -12,7 +12,7 @@ pub async fn check_for_new_version(
     workspace: ResourceRef<Workspace>,
     console: ResourceRef<AppConsole>,
 ) {
-    if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
+    if is_test_env() || is_formatted_output() || !moon::is_telemetry_enabled() {
         return Ok(());
     }
 

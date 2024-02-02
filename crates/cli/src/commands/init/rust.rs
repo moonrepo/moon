@@ -8,7 +8,6 @@ use moon_console::Console;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
 use starbase::AppResult;
 use starbase_styles::color;
-use std::io::Write;
 use std::path::Path;
 use tera::{Context, Tera};
 
@@ -46,29 +45,27 @@ pub async fn init_rust(
         console.out.print_header("Rust")?;
 
         console.out.write_raw(|buffer| {
-            buffer.write_all(
+            buffer.extend_from_slice(
                 format!(
                     "Toolchain: {}\n",
                     color::url("https://moonrepo.dev/docs/concepts/toolchain")
                 )
                 .as_bytes(),
-            )?;
-            buffer.write_all(
+            );
+            buffer.extend_from_slice(
                 format!(
                     "Handbook: {}\n",
                     color::url("https://moonrepo.dev/docs/guides/rust/handbook")
                 )
                 .as_bytes(),
-            )?;
-            buffer.write_all(
+            );
+            buffer.extend_from_slice(
                 format!(
                     "Config: {}\n\n",
                     color::url("https://moonrepo.dev/docs/config/toolchain#rust")
                 )
                 .as_bytes(),
-            )?;
-
-            Ok(())
+            );
         })?;
     }
 

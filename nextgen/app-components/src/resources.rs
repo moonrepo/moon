@@ -1,6 +1,7 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
+use moon_platform_plugin::PlatformPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
 use proto_core::{ProtoConfig, ProtoEnvironment};
 use semver::Version;
@@ -34,6 +35,19 @@ impl ExtensionRegistry {
     pub fn new(moon_env: Arc<MoonEnvironment>, proto_env: Arc<ProtoEnvironment>) -> Self {
         Self(PluginRegistry::new(
             PluginType::Extension,
+            moon_env,
+            proto_env,
+        ))
+    }
+}
+
+#[derive(Resource)]
+pub struct PlatformRegistry(pub PluginRegistry<PlatformPlugin>);
+
+impl PlatformRegistry {
+    pub fn new(moon_env: Arc<MoonEnvironment>, proto_env: Arc<ProtoEnvironment>) -> Self {
+        Self(PluginRegistry::new(
+            PluginType::Platform,
             moon_env,
             proto_env,
         ))

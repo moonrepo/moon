@@ -2978,6 +2978,7 @@ dependencies = [
  "moon_console",
  "moon_env",
  "moon_extension_plugin",
+ "moon_platform_plugin",
  "moon_plugin",
  "proto_core",
  "semver",

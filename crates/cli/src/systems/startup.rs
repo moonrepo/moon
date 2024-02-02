@@ -52,6 +52,10 @@ pub async fn create_plugin_registries(
         Arc::clone(moon_env),
         Arc::clone(proto_env),
     ));
+    resources.set(PlatformRegistry::new(
+        Arc::clone(moon_env),
+        Arc::clone(proto_env),
+    ));
 }
 
 #[system]

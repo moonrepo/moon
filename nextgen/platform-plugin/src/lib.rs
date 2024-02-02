@@ -1,7 +1,6 @@
-use std::sync::Arc;
-
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
+use std::sync::Arc;
 
 pub struct PlatformPlugin {
     pub id: PluginId,

@@ -141,7 +141,12 @@ mod deno {
                 .arg("123");
         });
 
-        assert_snapshot!(assert.output());
+        // Quoting is handled differently between unix and windows,
+        // so only check part of the arg string
+        assert!(
+            predicate::str::contains("Args: -aBc --opt value --optCamel=value foo")
+                .eval(&assert.output())
+        );
     }
 
     #[test]

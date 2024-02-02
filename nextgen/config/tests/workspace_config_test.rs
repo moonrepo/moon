@@ -3,7 +3,6 @@ mod utils;
 use moon_config::{ExtensionConfig, FilePath, VcsProvider, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
-use std::collections::BTreeMap;
 use utils::*;
 
 const FILENAME: &str = ".moon/workspace.yml";
@@ -640,7 +639,7 @@ extensions:
             assert_eq!(
                 config.extensions.get("test-id").unwrap(),
                 &ExtensionConfig {
-                    config: BTreeMap::default(),
+                    config: FxHashMap::default(),
                     plugin: Some(PluginLocator::SourceUrl {
                         url: "https://domain.com".into()
                     }),
@@ -665,7 +664,7 @@ extensions:
             assert_eq!(
                 config.extensions.get("test-id").unwrap(),
                 &ExtensionConfig {
-                    config: BTreeMap::from_iter([
+                    config: FxHashMap::from_iter([
                         ("fooBar".into(), serde_json::Value::String("abc".into())),
                         ("bar-baz".into(), serde_json::Value::Bool(true)),
                     ]),

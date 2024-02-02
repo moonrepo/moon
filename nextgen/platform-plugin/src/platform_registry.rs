@@ -21,7 +21,7 @@ impl PlatformRegistry {
                 .load_with_config(id, config.plugin.as_ref().unwrap(), move |manifest| {
                     manifest.config.insert(
                         "moon_platform_config".to_owned(),
-                        serialize_config(&config.config)?,
+                        serialize_config(config.config.iter())?,
                     );
 
                     inject_proto_manifest_config(id, proto_env, manifest)?;

@@ -1,7 +1,6 @@
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::Config;
-use std::collections::BTreeMap;
 use warpgate_api::PluginLocator;
 
 #[derive(Clone, Config, Debug, PartialEq)]
@@ -11,7 +10,7 @@ pub struct ExtensionConfig {
     pub plugin: Option<PluginLocator>,
 
     #[setting(flatten)]
-    pub config: BTreeMap<String, serde_json::Value>,
+    pub config: FxHashMap<String, serde_json::Value>,
 }
 
 impl ExtensionConfig {
@@ -26,14 +25,14 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
             Id::raw("download"),
             ExtensionConfig {
                 plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_download_extension-v0.0.2/moon_download_extension.wasm".into() }),
-                config: BTreeMap::new(),
+                config: FxHashMap::default(),
             },
         ),
         (
             Id::raw("migrate-turborepo"),
             ExtensionConfig {
                 plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_turborepo_extension-v0.0.2/moon_migrate_turborepo_extension.wasm".into() }),
-                config: BTreeMap::new(),
+                config: FxHashMap::default(),
             },
         ),
     ])

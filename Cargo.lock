@@ -3629,6 +3629,7 @@ dependencies = [
  "moon_env",
  "moon_pdk_api",
  "proto_core",
+ "rustc-hash",
  "serde_json",
  "starbase_sandbox",
  "starbase_styles",

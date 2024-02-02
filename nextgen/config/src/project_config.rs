@@ -32,7 +32,7 @@ derive_enum!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectMetadataConfig {
         pub name: Option<String>,
 
@@ -49,7 +49,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"

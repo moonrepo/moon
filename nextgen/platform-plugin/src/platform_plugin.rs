@@ -11,7 +11,7 @@ pub struct PlatformPlugin {
 
     plugin: Arc<PluginContainer>,
 
-    #[]
+    #[allow(dead_code)]
     tool: Option<Tool>,
 }
 

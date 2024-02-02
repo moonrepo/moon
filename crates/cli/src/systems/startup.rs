@@ -4,7 +4,7 @@ use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_console::Checkpoint;
 use moon_env::MoonEnvironment;
 use moon_platform_plugin::PlatformRegistry;
-use moon_plugin::{PluginId, PluginRegistry, PluginType};
+use moon_plugin::{PluginRegistry, PluginType};
 use moon_workspace::Workspace;
 use proto_core::{is_offline, ProtoEnvironment, ProtoError};
 use proto_installer::*;
@@ -51,15 +51,16 @@ pub async fn create_plugin_registries(
     moon_env: StateRef<MoonEnv>,
     proto_env: StateRef<ProtoEnv>,
 ) {
-    let configs = {
-        resources
-            .get::<Workspace>()
-            .toolchain_config
-            .tools
-            .iter()
-            .map(|(k, v)| (PluginId::raw(k), v.to_owned()))
-            .collect::<FxHashMap<_, _>>()
-    };
+    // TODO fix starbase
+    // let configs = {
+    //     resources
+    //         .get::<Workspace>()
+    //         .toolchain_config
+    //         .tools
+    //         .iter()
+    //         .map(|(k, v)| (PluginId::raw(k), v.to_owned()))
+    //         .collect::<FxHashMap<_, _>>()
+    // };
 
     resources.set(ExtensionRegistry::new(
         Arc::clone(moon_env),
@@ -67,7 +68,7 @@ pub async fn create_plugin_registries(
     ));
 
     resources.set(PlatformRegistry {
-        configs,
+        configs: FxHashMap::default(),
         registry: PluginRegistry::new(
             PluginType::Platform,
             Arc::clone(moon_env),

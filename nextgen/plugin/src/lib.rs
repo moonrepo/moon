@@ -13,8 +13,8 @@ use convert_case::{Case, Casing};
 use miette::IntoDiagnostic;
 use std::collections::BTreeMap;
 
-pub fn serialize_config(
-    base_config: &BTreeMap<String, serde_json::Value>,
+pub fn serialize_config<'cfg>(
+    base_config: impl Iterator<Item = (&'cfg String, &'cfg serde_json::Value)>,
 ) -> miette::Result<String> {
     let mut config = BTreeMap::new();
 
@@ -25,7 +25,7 @@ pub fn serialize_config(
             } else {
                 key.to_owned()
             },
-            value.to_owned(),
+            value,
         );
     }
 

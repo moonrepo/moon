@@ -5,7 +5,6 @@ use crate::toolchain::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
-use std::collections::BTreeMap;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
@@ -24,7 +23,7 @@ pub struct ToolConfig {
     pub version: Option<UnresolvedVersionSpec>,
 
     #[setting(flatten)]
-    pub config: BTreeMap<String, serde_json::Value>,
+    pub config: FxHashMap<String, serde_json::Value>,
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain

@@ -1,6 +1,5 @@
+use crate::MoonContext;
 use warpgate_api::*;
-
-pub use crate::MoonContext;
 
 api_struct!(
     /// Input passed to the `execute_extension` function.

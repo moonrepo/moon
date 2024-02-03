@@ -1,5 +1,4 @@
-use moon_pdk_api::extension::ExecuteExtensionInput;
-use moon_pdk_api::MoonContext;
+use moon_pdk_api::{ExecuteExtensionInput, MoonContext};
 use std::path::Path;
 use warpgate::PluginContainer;
 
@@ -15,16 +14,7 @@ impl ExtensionTestWrapper {
         }
     }
 
-    pub fn prepare_context(&self, context: MoonContext) -> MoonContext {
-        MoonContext {
-            working_dir: self.plugin.to_virtual_path(context.working_dir),
-            workspace_root: self.plugin.to_virtual_path(context.workspace_root),
-        }
-    }
-
-    pub fn execute_extension(&self, mut input: ExecuteExtensionInput) {
-        input.context = self.prepare_context(input.context);
-
+    pub fn execute_extension(&self, input: ExecuteExtensionInput) {
         self.plugin
             .call_func_without_output("execute_extension", input)
             .unwrap();

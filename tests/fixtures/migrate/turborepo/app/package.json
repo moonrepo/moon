@@ -1,6 +1,0 @@
-{
-  "name": "turborepo-app",
-  "scripts": {
-    "build": "next build"
-  }
-}

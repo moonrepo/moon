@@ -1,8 +1,9 @@
-pub mod extension;
+mod extension;
+
+pub use extension::*;
+pub use warpgate_api::*;
 
 use std::path::Path;
-
-pub use warpgate_api::*;
 
 api_struct!(
     /// Information about the current moon workspace.

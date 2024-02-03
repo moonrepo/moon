@@ -3,29 +3,5 @@ title: migrate from-turborepo
 sidebar_label: from-turborepo
 ---
 
-Use the `moon migrate from-turborepo` command to migrate a Turborepo powered repository to moon.
-This process will convert the root `turbo.json` file to moon applicable configuration files:
-
-- Migrates `pipeline` global tasks to [`.moon/tasks/node.yml`](../../config/tasks#tasks) and project
-  scoped tasks to [`moon.yml`](../../config/project#tasks).
-- Migrates `globalDependencies` and `globalEnv` to
-  [`.moon/tasks/node.yml`](../../config/tasks#implicitinputs) (via `implicitInputs`).
-
-```shell
-$ moon migrate from-turborepo
-```
-
-:::caution
-
-moon must be [initialized](../init) and [`node`](../../config/toolchain#node) must be configured in
-the toolchain before this command is ran!
-
-Furthermore, this process does not change existing `package.json` scripts, so if you're looking to
-migrate them as well, use the [`moon migrate from-package-json`](./from-package-json) command.
-
-:::
-
-## Caveats
-
-- This process _will not_ migrate root-level Turborepo tasks (those starting with `//#`). You'll
-  need to manually create a moon [root-level project](../../guides/root-project) and migrate tasks.
+This command has been deprecated, use the
+[`moon ext migrate-turborepo`](../../guides/extensions#migrate-turborepo) command instead.

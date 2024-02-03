@@ -1,4 +1,4 @@
-use moon_pdk_api::extension::*;
+use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginType};
 
 pub struct ExtensionPlugin {

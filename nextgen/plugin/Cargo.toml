@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_env = { path = "../env" }
-moon_pdk_api = { version = "0.0.1", path = "../pdk-api" }
+moon_pdk_api = { version = "0.0.2", path = "../pdk-api" }
 convert_case = "0.6.0"
 dashmap = "5.5.3"
 miette = { workspace = true }

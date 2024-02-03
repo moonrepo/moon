@@ -15,17 +15,6 @@ use warpgate::{
 pub use moon_pdk_api::*;
 pub use wrappers::*;
 
-pub fn find_wasm_file(sandbox: &Path) -> PathBuf {
-    let wasm_file = test_utils::find_wasm_file();
-
-    // Folders must exists for WASM to compile correctly!
-    fs::create_dir_all(sandbox.join(".home")).unwrap();
-    fs::create_dir_all(sandbox.join(".moon")).unwrap();
-    fs::create_dir_all(sandbox.join(".proto")).unwrap();
-
-    wasm_file
-}
-
 pub fn create_plugin_container_with_config(
     id: &str,
     sandbox: &Path,
@@ -41,7 +30,12 @@ pub fn create_plugin_container_with_config(
         (sandbox.join(".proto"), "/proto".into()),
     ]);
 
-    let wasm_file = find_wasm_file(sandbox);
+    // Folders must exists for WASM to compile correctly!
+    fs::create_dir_all(sandbox.join(".home")).unwrap();
+    fs::create_dir_all(sandbox.join(".moon")).unwrap();
+    fs::create_dir_all(sandbox.join(".proto")).unwrap();
+
+    let wasm_file = test_utils::find_wasm_file();
     let mut log_file = wasm_file.clone();
     log_file.set_extension("log");
 
@@ -59,6 +53,12 @@ pub fn create_plugin_container_with_config(
         working_dir: sandbox.to_path_buf(),
     });
 
+    // Remove the file otherwise it keeps growing
+    if log_file.exists() {
+        let _ = fs::remove_file(&log_file);
+    }
+
+    // TODO redo
     let _ = extism::set_log_callback(
         move |line| {
             let mut file = OpenOptions::new()

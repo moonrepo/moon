@@ -1,6 +1,6 @@
 [package]
 name = "moon_pdk_test_utils"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 license = "MIT"
 description = "Utilities for testing moon WASM plugins."
@@ -8,7 +8,7 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_pdk_api = { version = "0.0.1", path = "../pdk-api" }
+moon_pdk_api = { version = "0.0.2", path = "../pdk-api" }
 warpgate = { workspace = true }
 extism = { workspace = true }
 serde = { workspace = true }

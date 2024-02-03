@@ -1,0 +1,50 @@
+---
+slug: moon-v1.21
+title: moon v1.21 - ???
+authors: [milesj]
+tags: [task, options, extensions, plugins]
+# image: ./img/moon/v1.20.png
+---
+
+In this release, we're excited to introduce extensions, our first type of plugin!
+
+<!--truncate-->
+
+## New `migrate-turborepo` extension
+
+In our previous release, we added support for [extensions, a new kind of WASM plugin](./moon-v1.20).
+Since this is a new experimental feature, we really wanted to show off what it can do, and stress
+test its boundaries. To do that, we chose to migrate the old `moon migrate from-turborepo` command
+into an extension
+([source can be found here](https://github.com/moonrepo/moon-extensions/tree/master/crates/migrate-turborepo)).
+This is our most complex extension so far, as it:
+
+- Loads and parses files on the file system.
+- Reads and writes JSON and YAML files.
+- Supports deserializing data into structs.
+- Extracts project graph information by executing `moon project-graph`.
+
+Do you currently have a Turborepo powered repository? And want to migrate to moon? Then simply
+execute the extension as such. View our
+[guide for more information](/docs/guides/extensions#migrate-turborepo)!
+
+```shell
+$ moon ext migrate-turborepo
+```
+
+As part of the migration from moon's Rust core into a WASM plugin, we've added support for the
+following new features:
+
+- Added Bun support behind a new `--bun` flag.
+- Added support for Turbo's `globalDotEnv`, `dotEnv`, and `outputMode`.
+- Added support for root-level tasks (`//#`) through a root `moon.yml`, instead of logging a
+  warning.
+- Updated migrated task commands to run through a package manager, instead of
+  `moon node run-script`.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.21.0) for a full list
+of changes.
+
+- Implemented a new buffered console layer for writing to stdout/stderr.

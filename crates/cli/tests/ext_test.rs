@@ -21,6 +21,10 @@ mod ext {
                 "The extension unknown does not exist.",
             ));
     }
+}
+
+mod ext_download {
+    use super::*;
 
     #[test]
     fn errors_if_no_args() {
@@ -103,5 +107,26 @@ mod ext {
             })
             .success()
             .stdout(predicates::str::contains("Downloaded to"));
+    }
+}
+
+mod ext_migrate_turborepo {
+    use super::*;
+
+    #[test]
+    fn executes_the_plugin() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+        sandbox.create_file("turbo.json", "{}");
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("ext").arg("migrate-turborepo");
+            })
+            .success()
+            .stdout(predicates::str::contains(
+                "Successfully migrated from Turborepo",
+            ));
+
+        assert!(!sandbox.path().join("turbo.json").exists());
     }
 }

@@ -21,11 +21,20 @@ impl ExtensionConfig {
 }
 
 pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
-    FxHashMap::from_iter([(
-        Id::raw("download"),
-        ExtensionConfig {
-            plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_download_extension-v0.0.1/moon_download_extension.wasm".into() }),
-            config: BTreeMap::new(),
-        },
-    )])
+    FxHashMap::from_iter([
+        (
+            Id::raw("download"),
+            ExtensionConfig {
+                plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_download_extension-v0.0.2/moon_download_extension.wasm".into() }),
+                config: BTreeMap::new(),
+            },
+        ),
+        (
+            Id::raw("migrate-turborepo"),
+            ExtensionConfig {
+                plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_turborepo_extension-v0.0.1/moon_migrate_turborepo_extension.wasm".into() }),
+                config: BTreeMap::new(),
+            },
+        ),
+    ])
 }

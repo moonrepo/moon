@@ -21,6 +21,12 @@
   - Added a `deno.version` setting to `.moon/toolchain.yml`.
   - Added a `toolchain.deno` setting to `moon.yml`.
   - Updated `moon bin` and `moon docker` commands to support Deno.
+- Added a new built-in extension, `migrate-turborepo`, with new functionality.
+  - Replaces the previous `moon migrate from-turborepo` command.
+  - Added Bun support behind a new `--bun` flag.
+  - Added support for `globalDotEnv`, `dotEnv`, and `outputMode`.
+  - Scripts now run through a package manager, instead of `moon node run-script`.
+  - Root-level tasks will now create a root `moon.yml`, instead of warning.
 - Added `unixShell` and `windowsShell` task options, so that the underlying shell can be configured
   per task.
 - Implemented a new console layer for writing to stdout/stderr.
@@ -30,7 +36,7 @@
 
 #### 🐞 Fixes
 
-- Fixed an issue where the action graph would create incorrect nodes when a tool utilizes
+- Fixed an issue where the action graph would create incorrect nodes when a tool utilizes dependency
   workspaces, and a project is not within the workspace.
 
 ## 1.20.1

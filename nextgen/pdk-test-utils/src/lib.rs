@@ -4,27 +4,16 @@ mod wrappers;
 
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use warpgate::host_funcs::{create_host_functions, HostData};
 use warpgate::{
     inject_default_manifest_config, test_utils, Id, PluginContainer, PluginManifest, Wasm,
 };
 
-pub use moon_pdk_api::extension::*;
 pub use moon_pdk_api::*;
 pub use wrappers::*;
-
-pub fn find_wasm_file(sandbox: &Path) -> PathBuf {
-    let wasm_file = test_utils::find_wasm_file();
-
-    // Folders must exists for WASM to compile correctly!
-    fs::create_dir_all(sandbox.join(".home")).unwrap();
-    fs::create_dir_all(sandbox.join(".moon")).unwrap();
-    fs::create_dir_all(sandbox.join(".proto")).unwrap();
-
-    wasm_file
-}
 
 pub fn create_plugin_container_with_config(
     id: &str,
@@ -41,7 +30,16 @@ pub fn create_plugin_container_with_config(
         (sandbox.join(".proto"), "/proto".into()),
     ]);
 
-    let mut manifest = PluginManifest::new([Wasm::file(find_wasm_file(sandbox))]);
+    // Folders must exists for WASM to compile correctly!
+    fs::create_dir_all(sandbox.join(".home")).unwrap();
+    fs::create_dir_all(sandbox.join(".moon")).unwrap();
+    fs::create_dir_all(sandbox.join(".proto")).unwrap();
+
+    let wasm_file = test_utils::find_wasm_file();
+    let mut log_file = wasm_file.clone();
+    log_file.set_extension("log");
+
+    let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
     manifest.timeout_ms = None;
     manifest = manifest.with_allowed_host("*");
     manifest = manifest.with_allowed_paths(virtual_paths.clone().into_iter());
@@ -54,6 +52,25 @@ pub fn create_plugin_container_with_config(
         virtual_paths,
         working_dir: sandbox.to_path_buf(),
     });
+
+    // Remove the file otherwise it keeps growing
+    if log_file.exists() {
+        let _ = fs::remove_file(&log_file);
+    }
+
+    // TODO redo
+    let _ = extism::set_log_callback(
+        move |line| {
+            let mut file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&log_file)
+                .unwrap();
+
+            file.write_all(line.as_bytes()).unwrap();
+        },
+        "trace",
+    );
 
     PluginContainer::new(id, manifest, funcs).unwrap()
 }

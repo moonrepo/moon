@@ -65,6 +65,34 @@ $ moon ext download --\
 - `--dest` - Destination folder to save the file. Defaults to the current working directory.
 - `--name` - Override the file name. Defaults to the file name in the URL.
 
+### `migrate-turborepo`<VersionLabel version="1.21.0" />
+
+The `migrate-turborepo` extension can be used to migrate a Turborepo powered repository to moon.
+This process will convert the root `turbo.json` file, and any `turbo.json` files found within
+packages (must be configured as projects in moon). The following changes are made:
+
+- Migrates `pipeline` global tasks to [`.moon/tasks/node.yml`](../config/tasks#tasks) (or `bun.yml`)
+  and project scoped tasks to [`moon.yml`](../config/project#tasks). Task commands will execute
+  `package.json` scripts through a package manager.
+- Migrates root `global*` settings to [`.moon/tasks/node.yml`](../config/tasks#implicitinputs) (or
+  `bun.yml`) as `implicitInputs`.
+
+```shell
+$ moon ext migrate-turborepo
+```
+
+:::info
+
+moon must be [initialized](../commands/init) and [`node`](../config/toolchain#node) or
+[`bun`](../config/toolchain#bun) must be configured in the toolchain before this command is ran!
+This is required for extracting `package.json` information.
+
+:::
+
+#### Arguments
+
+- `--bun` - Migrate to Bun based commands instead of Node.js.
+
 ## Creating an extension
 
 Refer to our [official WASM guide](./wasm-plugins) for more information on how our WASM plugins

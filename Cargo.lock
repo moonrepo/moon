@@ -3511,7 +3511,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -3522,7 +3522,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "serde",
  "warpgate_api",
@@ -3530,7 +3530,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "extism",
  "moon_pdk_api",

@@ -34,7 +34,6 @@ use crate::helpers::setup_colors;
 use app::App as CLI;
 use app_error::ExitCode;
 use clap::Parser;
-use commands::migrate::FromTurborepoArgs;
 use enums::{CacheMode, LogLevel};
 use moon_common::consts::BIN_NAME;
 use starbase::{tracing::TracingOptions, App, AppResult};
@@ -191,12 +190,7 @@ pub async fn run_cli() -> AppResult {
                 args.skip_touched_files_check = skip_touched_files_check;
                 app.execute_with_args(migrate::from_package_json, args)
             }
-            MigrateCommands::FromTurborepo => app.execute_with_args(
-                migrate::from_turborepo,
-                FromTurborepoArgs {
-                    skip_touched_files_check,
-                },
-            ),
+            MigrateCommands::FromTurborepo => app.execute(migrate::from_turborepo),
         },
         Commands::Node { command } => match command {
             NodeCommands::RunScript(args) => app.execute_with_args(node::run_script, args),

@@ -101,17 +101,7 @@ rm -rf "$download_file" "$temp_dir"
 # Run setup script to update shells
 
 export PROTO_LOG=error
-profile_path=$($bin_path setup --profile)
-
-if [[ -z "$profile_path" ]]; then
-	echo "Successfully installed proto to $bin_path"
-else
-	echo "Successfully installed proto to $bin_path and updated $profile_path"
-fi
-
-echo "Launch a new terminal window to start using proto!"
-echo
-echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+$bin_path setup
 
 if [[ "$PROTO_DEBUG" == "true" ]]; then
 	echo

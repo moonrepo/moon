@@ -64,12 +64,17 @@ Remove-Item $DownloadFile -Force
 # Run setup script to update shells
 
 $env:PROTO_LOG = "error"
-& $BinPath @('setup')
 
-Write-Output "Successfully installed proto to ${BinPath}"
-Write-Output "Launch a new terminal window to start using proto!"
-Write-Output ""
-Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+$SetupArgs = New-Object System.Collections.Generic.List[System.Object]
+$SetupArgs.Add('setup')
+
+ForEach ($Arg in $Args){
+    if ($Arg --eq "--no-profile" || $Arg --eq "--yes" || $Arg --eq "-y") {
+        $SetupArgs.Add($Arg)
+    }
+}
+
+$BinPath $SetupArgs
 
 if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output ""

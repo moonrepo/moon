@@ -65,16 +65,28 @@ Remove-Item $DownloadFile -Force
 
 $env:PROTO_LOG = "error"
 
-$SetupArgs = New-Object -TypeName "System.Collections.ArrayList"
-$SetupArgs.Add("setup")
+# Versions >= 0.30 handle the messaging
+if ($Version -eq "latest" -or $Version -match "^0\.[0-2]{1}[0-9]{1}\.") {
+  $SetupArgs = New-Object -TypeName "System.Collections.ArrayList"
+  $SetupArgs.Add("setup")
 
-ForEach ($Arg in $Args){
-    if ($Arg.StartsWith("-")) {
-        $SetupArgs.Add($Arg)
-    }
+  ForEach ($Arg in $Args){
+      if ($Arg.StartsWith("-")) {
+          $SetupArgs.Add($Arg)
+      }
+  }
+
+  Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
+
+# While older versions do not
+} else {
+  & $BinPath @('setup')
+
+  Write-Output "Successfully installed proto to ${BinPath}"
+  Write-Output "Launch a new terminal window to start using proto!"
+  Write-Output ""
+  Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 }
-
-Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
 
 if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output ""

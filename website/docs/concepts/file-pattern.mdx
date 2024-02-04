@@ -38,9 +38,10 @@ logs/<[0-9]:4>-<[0-9]:2>-<[0-9]:2>.log
 
 ## Project relative
 
-When configuring [`fileGroups`](../config/project#filegroups), [`inputs`](../config/project#inputs),
-and [`outputs`](../config/project#outputs), all listed file paths and globs are relative from the
-project root they will be ran in. They _must not_ start with `./`, or traverse upwards with `..`.
+When configuring [`inputGroups`](../config/project#inputgroups),
+[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs), all listed file
+paths and globs are relative from the project root they will be ran in. They _must not_ start with
+`./`, or traverse upwards with `..`.
 
 ```bash
 # Valid
@@ -54,9 +55,10 @@ package.json
 
 ## Workspace relative
 
-When configuring [`fileGroups`](../config/project#filegroups), [`inputs`](../config/project#inputs),
-and [`outputs`](../config/project#outputs), a listed file path or glob can be prefixed with `/` to
-resolve relative from the workspace root, and _not_ the project root.
+When configuring [`inputGroups`](../config/project#inputgroups),
+[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs), a listed file path
+or glob can be prefixed with `/` to resolve relative from the workspace root, and _not_ the project
+root.
 
 ```bash
 # In project

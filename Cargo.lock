@@ -3349,23 +3349,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_file_group"
-version = "0.0.1"
-dependencies = [
- "common-path",
- "miette",
- "moon_common",
- "moon_config",
- "once_cell",
- "relative-path",
- "serde",
- "starbase_sandbox",
- "starbase_utils 0.4.2",
- "thiserror",
- "tracing",
-]
-
-[[package]]
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [

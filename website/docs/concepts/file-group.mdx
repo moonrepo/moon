@@ -24,7 +24,7 @@ _override_ file groups defined at the workspace-level. For example, say we want 
 file groups as followed.
 
 ```yaml title=".moon/tasks.yml"
-fileGroups:
+inputGroups:
   sources:
     - 'src/**/*'
     - 'types/**/*'
@@ -34,7 +34,7 @@ fileGroups:
 ```
 
 ```yaml title="moon.yml"
-fileGroups:
+inputGroups:
   # Overrides global
   sources:
     - 'lib/**/*'

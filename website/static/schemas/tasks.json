@@ -25,25 +25,6 @@
         }
       ]
     },
-    "fileGroups": {
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "implicitDeps": {
       "anyOf": [
         {
@@ -62,6 +43,25 @@
         {
           "type": "array",
           "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "inputGroups": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
             "type": "string"
           }
         },

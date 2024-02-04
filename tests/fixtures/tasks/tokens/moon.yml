@@ -3,7 +3,7 @@ language: javascript
 tasks:
   commandVars:
     command: '$workspaceRoot/$task-script.sh'
-  argsFileGroups:
+  argsInputGroups:
     args:
       - '--dirs'
       - '@dirs(static)'
@@ -13,7 +13,7 @@ tasks:
       - '@globs(globs)'
       - '--root'
       - '@root(static)'
-  argsFileGroupsWorkspace:
+  argsInputGroupsWorkspace:
     args:
       - '--dirs'
       - '@dirs(static)'
@@ -49,7 +49,7 @@ tasks:
       - '$FOO_BAR'
       - '/glob.*'
       - '/path/dir'
-  inputsFileGroups:
+  inputsinputGroups:
     inputs:
       - 'file.ts'
       - '@dirs(static)'
@@ -68,7 +68,7 @@ tasks:
   outputsGlobs:
     outputs:
       - 'glob/**/*.js'
-  outputsFileGroups:
+  outputsinputGroups:
     outputs:
       - 'file.ts'
       - '@dirs(static)'

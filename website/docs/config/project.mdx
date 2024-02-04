@@ -307,9 +307,9 @@ env:
 
 > View the task [`env`](#env-1) setting for more usage examples and information.
 
-## `fileGroups`
+## `inputGroups`
 
-<HeadingApiLink to="/api/types/interface/ProjectConfig#fileGroups" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#inputGroups" />
 
 Defines [file groups](../concepts/file-group) to be used by local tasks. By default, this setting
 _is not required_ for the following reasons:
@@ -323,7 +323,7 @@ list of [globs or paths](../concepts/file-pattern). Globs and paths are
 [globally](./tasks)).
 
 ```yaml title="moon.yml"
-fileGroups:
+inputGroups:
   configs:
     - '*.config.{js,cjs,mjs}'
     - '*.json'

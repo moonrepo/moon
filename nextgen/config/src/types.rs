@@ -5,7 +5,7 @@ use moon_common::Id;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
-pub type FileGroupsMap = FxHashMap<Id, Vec<InputPath>>;
+pub type InputGroupsMap = FxHashMap<Id, Vec<InputPath>>;
 
 pub type ProjectSourceEntry = (Id, WorkspaceRelativePathBuf);
 

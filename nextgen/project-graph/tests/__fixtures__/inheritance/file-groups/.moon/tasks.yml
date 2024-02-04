@@ -1,4 +1,4 @@
-fileGroups:
+inputGroups:
   sources:
     - 'sources/**/*'
   tests:

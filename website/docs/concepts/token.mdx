@@ -33,7 +33,7 @@ The `@group(file_group)` token is a standard token that will be replaced with th
 as-is, for both file paths and globs. This token merely exists for reusability purposes.
 
 ```yaml
-fileGroups:
+inputGroups:
   storybook:
     - '.storybook/**/*'
     - 'src/**/*'
@@ -80,7 +80,7 @@ If using within `outputs`, you're better off using [`@group`](#group) instead.
 :::
 
 ```yaml
-fileGroups:
+inputGroups:
   lintable:
     - 'src'
     - 'tests'
@@ -125,7 +125,7 @@ using within `outputs`, you're better off using [`@group`](#group) instead.
 :::
 
 ```yaml
-fileGroups:
+inputGroups:
   config:
     - '*.config.js'
     - 'package.json'
@@ -161,7 +161,7 @@ the file group of the same name. If a non-glob pattern is detected within the fi
 ignored.
 
 ```yaml
-fileGroups:
+inputGroups:
   tests:
     - 'tests/**/*'
     - '**/__tests__/**/*'
@@ -195,7 +195,7 @@ file group of the same name. If a glob pattern is detected within the file group
 file system and aggregate all directories found before reducing.
 
 ```yaml
-fileGroups:
+inputGroups:
   sources:
     - 'src/app'
     - 'src/packages'

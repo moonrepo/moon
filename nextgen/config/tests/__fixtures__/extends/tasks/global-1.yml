@@ -1,6 +1,6 @@
 extends: './global-0.yml'
 
-fileGroups:
+inputGroups:
   sources:
     - 'src/**/*'
   tests:

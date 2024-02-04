@@ -14,7 +14,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `env`, `fileGroups`, `id`, `language`, `owners`, `platform`, `project`, `tags`, `tasks`, `toolchain`, `type`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `env`, `id`, `inputGroups`, `language`, `owners`, `platform`, `project`, `tags`, `tasks`, `toolchain`, `type`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config(CONFIG_PROJECT_FILENAME, "unknown: 123", |path| {
@@ -207,7 +207,7 @@ dependsOn:
             let config = test_load_config(
                 CONFIG_PROJECT_FILENAME,
                 r"
-fileGroups:
+inputGroups:
   files:
     - /ws/relative
     - proj/relative

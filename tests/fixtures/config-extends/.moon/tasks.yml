@@ -1,6 +1,6 @@
 # NOTE: This is used to test config extending. Changing this will definitely break something!
 
-fileGroups:
+inputGroups:
   sources:
     - src/**/*
   tests:

@@ -3,7 +3,7 @@ use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
     TaskDependencyConfig, WorkspaceProjects, WorkspaceProjectsConfig,
 };
-use moon_project::{FileGroup, Project};
+use moon_project::{InputGroup, Project};
 use moon_project_graph::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
     ProjectGraph, ProjectGraphBuilder,
@@ -534,24 +534,24 @@ mod project_graph {
             let project = graph.get("project").unwrap();
 
             assert_eq!(
-                project.file_groups.get("sources").unwrap(),
-                &FileGroup::new_with_source(
+                project.input_groups.get("sources").unwrap(),
+                &InputGroup::new_with_source(
                     "sources",
                     [WorkspaceRelativePathBuf::from("project/src/**/*")]
                 )
                 .unwrap()
             );
             assert_eq!(
-                project.file_groups.get("tests").unwrap(),
-                &FileGroup::new_with_source(
+                project.input_groups.get("tests").unwrap(),
+                &InputGroup::new_with_source(
                     "tests",
                     [WorkspaceRelativePathBuf::from("project/tests/**/*")]
                 )
                 .unwrap()
             );
             assert_eq!(
-                project.file_groups.get("configs").unwrap(),
-                &FileGroup::new_with_source(
+                project.input_groups.get("configs").unwrap(),
+                &InputGroup::new_with_source(
                     "configs",
                     [WorkspaceRelativePathBuf::from("project/config.*")]
                 )

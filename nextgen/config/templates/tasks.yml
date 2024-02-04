@@ -12,7 +12,7 @@ $schema: 'https://moonrepo.dev/schemas/tasks.json'
 # This setting requires a map, where the key is the file group name, and the value is a list of
 # globs. Globs are relative to a project, even though they are defined globally. This enables
 # enforcement of organizational patterns across all projects in the workspace.
-fileGroups:
+inputGroups:
   configs:
     - '*.{js,json}'
   sources:

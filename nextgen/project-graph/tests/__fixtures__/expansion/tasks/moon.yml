@@ -1,7 +1,7 @@
 dependsOn:
   - 'project'
 
-fileGroups:
+inputGroups:
   sources:
     - 'file.*'
     - 'config.json'

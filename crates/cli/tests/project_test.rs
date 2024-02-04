@@ -61,7 +61,7 @@ fn no_config() {
 
 #[test]
 fn basic_config() {
-    // with dependsOn and fileGroups
+    // with dependsOn and inputGroups
     let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
     let sandbox = create_sandbox_with_config(

@@ -1,6 +1,6 @@
 language: 'rust'
 
-fileGroups:
+inputGroups:
   other:
     - 'bar'
 

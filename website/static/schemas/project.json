@@ -44,7 +44,17 @@
         }
       ]
     },
-    "fileGroups": {
+    "id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "inputGroups": {
       "anyOf": [
         {
           "type": "object",
@@ -57,16 +67,6 @@
           "propertyNames": {
             "type": "string"
           }
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "id": {
-      "anyOf": [
-        {
-          "type": "string"
         },
         {
           "type": "null"

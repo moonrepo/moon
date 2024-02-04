@@ -22,7 +22,7 @@ mod tasks_config {
         use super::*;
 
         const SHARED_TASKS: &str = r"
-fileGroups:
+inputGroups:
   sources:
     - src/**/*
   tests:
@@ -154,7 +154,7 @@ tasks:
                 r"
 extends: ./shared/tasks.yml
 
-fileGroups:
+inputGroups:
   sources:
     - sources/**/*
   configs:
@@ -205,7 +205,7 @@ fileGroups:
                     r"
 extends: '{url}'
 
-fileGroups:
+inputGroups:
   sources:
     - sources/**/*
   configs:
@@ -248,7 +248,7 @@ fileGroups:
             let config = test_load_config(
                 FILENAME,
                 r"
-fileGroups:
+inputGroups:
   files:
     - /ws/relative
     - proj/relative

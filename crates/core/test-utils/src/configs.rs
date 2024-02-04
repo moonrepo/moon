@@ -192,7 +192,7 @@ pub fn get_tasks_fixture_configs() -> (
             ("expandEnv".into(), "expand-env".to_owned()),
             ("expandEnvProject".into(), "expand-env-project".to_owned()),
             ("expandOutputs".into(), "expand-outputs".to_owned()),
-            ("fileGroups".into(), "file-groups".to_owned()),
+            ("inputGroups".into(), "input-groups".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };

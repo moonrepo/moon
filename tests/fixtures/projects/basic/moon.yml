@@ -1,7 +1,7 @@
 dependsOn:
   - noConfig
 
-fileGroups:
+inputGroups:
   tests:
     - '**/*_test.rs'
 

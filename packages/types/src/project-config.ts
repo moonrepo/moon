@@ -89,8 +89,8 @@ export interface PartialProjectConfig {
 	$schema?: string | null;
 	dependsOn?: PartialProjectDependsOn[] | null;
 	env?: Record<string, string> | null;
-	fileGroups?: Record<string, string[]> | null;
 	id?: string | null;
+	inputGroups?: Record<string, string[]> | null;
 	/** @default 'unknown' */
 	language?: LanguageType | null;
 	owners?: PartialOwnersConfig | null;
@@ -172,8 +172,8 @@ export interface ProjectConfig {
 	$schema: string;
 	dependsOn: ProjectDependsOn[];
 	env: Record<string, string>;
-	fileGroups: Record<string, string[]>;
 	id: string | null;
+	inputGroups: Record<string, string[]>;
 	/** @default 'unknown' */
 	language: LanguageType;
 	owners: OwnersConfig;

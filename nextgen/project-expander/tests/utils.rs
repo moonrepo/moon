@@ -2,7 +2,7 @@
 
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_project::{FileGroup, Project};
+use moon_project::{InputGroup, Project};
 use moon_project_expander::ExpanderContext;
 use moon_task::{Target, Task};
 use rustc_hash::FxHashMap;
@@ -39,10 +39,10 @@ pub fn create_project(workspace_root: &Path) -> Project {
     let mut project = Project {
         id: Id::raw("project"),
         root: workspace_root.join(source.as_str()),
-        file_groups: FxHashMap::from_iter([
+        input_groups: FxHashMap::from_iter([
             (
                 "all".into(),
-                FileGroup::new_with_source(
+                InputGroup::new_with_source(
                     "all",
                     [
                         source.join("*.md"),
@@ -55,7 +55,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
             ),
             (
                 "dirs".into(),
-                FileGroup::new_with_source(
+                InputGroup::new_with_source(
                     "dirs",
                     [
                         source.join("other"),

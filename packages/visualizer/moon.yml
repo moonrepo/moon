@@ -1,7 +1,7 @@
 language: typescript
 type: library
 
-fileGroups:
+inputGroups:
   vite:
     - 'src/**/*'
     - 'env.d.ts'

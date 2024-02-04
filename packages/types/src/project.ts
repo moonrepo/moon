@@ -55,7 +55,7 @@ export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
 	dependencies: Record<string, DependencyConfig>;
-	fileGroups: Record<string, FileGroup>;
+	inputGroups: Record<string, FileGroup>;
 	id: string;
 	inherited: {
 		order: string[];

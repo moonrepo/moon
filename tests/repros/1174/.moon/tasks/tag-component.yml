@@ -1,4 +1,4 @@
-fileGroups:
+inputGroups:
   sources:
     - '**/*'
   projectConfigs:

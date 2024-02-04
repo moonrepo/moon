@@ -3,7 +3,7 @@ $schema: '../../website/static/schemas/tasks.json'
 implicitDeps:
   - '^:build'
 
-fileGroups:
+inputGroups:
   configs:
     - '*.{js,json}'
   sources:

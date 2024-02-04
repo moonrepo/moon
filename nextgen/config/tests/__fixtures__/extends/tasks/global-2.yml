@@ -1,6 +1,6 @@
 extends: './global-1.yml'
 
-fileGroups:
+inputGroups:
   sources:
     - 'sources/**/*'
 

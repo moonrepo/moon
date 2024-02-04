@@ -49,7 +49,8 @@ cacheable!(
         #[setting(merge = merge::append_vec)]
         pub implicit_inputs: Vec<InputPath>,
 
-        #[setting(alias = "fileGroups", merge = merge_fxhashmap)]
+        #[setting(merge = merge_fxhashmap)]
+        #[serde(alias = "fileGroups")]
         pub input_groups: FxHashMap<Id, Vec<InputPath>>,
 
         #[setting(nested, merge = merge::merge_btreemap)]

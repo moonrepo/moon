@@ -10,7 +10,7 @@ Source: no-config
 Language: unknown
 Type: unknown
 
- FILE GROUPS 
+ INPUT GROUPS 
 
 sources:
  - no-config/src/**/*

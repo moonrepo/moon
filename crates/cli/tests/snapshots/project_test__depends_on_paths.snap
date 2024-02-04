@@ -16,7 +16,7 @@ Tags: react
  - bar (explicit, production)
  - baz (explicit, production)
 
- FILE GROUPS 
+ INPUT GROUPS 
 
 sources:
  - deps/foo/src/**/*

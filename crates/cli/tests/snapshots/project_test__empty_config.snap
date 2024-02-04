@@ -10,7 +10,7 @@ Source: empty-config
 Language: unknown
 Type: unknown
 
- FILE GROUPS 
+ INPUT GROUPS 
 
 sources:
  - empty-config/src/**/*

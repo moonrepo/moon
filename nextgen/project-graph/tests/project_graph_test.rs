@@ -530,7 +530,7 @@ mod project_graph {
 
         #[tokio::test]
         async fn inherits_input_groups() {
-            let graph = generate_inheritance_project_graph("inheritance/file-groups").await;
+            let graph = generate_inheritance_project_graph("inheritance/input-groups").await;
             let project = graph.get("project").unwrap();
 
             assert_eq!(

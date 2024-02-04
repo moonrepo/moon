@@ -100,7 +100,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_token_funcs() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -124,7 +124,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_token_funcs_from_workspace_root() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -952,7 +952,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_tokens() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -976,7 +976,7 @@ mod tasks_expander {
 
         #[test]
         fn can_use_env_vars_and_token_vars() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1087,7 +1087,7 @@ mod tasks_expander {
 
         #[test]
         fn extracts_env_var() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1105,7 +1105,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_token_funcs() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1132,7 +1132,7 @@ mod tasks_expander {
 
         #[test]
         fn splits_token_func_into_files_globs() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1160,7 +1160,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_token_vars() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1187,7 +1187,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_token_funcs() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1216,7 +1216,7 @@ mod tasks_expander {
 
         #[test]
         fn splits_token_func_into_files_globs() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1246,7 +1246,7 @@ mod tasks_expander {
 
         #[test]
         fn replaces_token_vars() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1269,7 +1269,7 @@ mod tasks_expander {
 
         #[test]
         fn doesnt_overlap_input_file() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -1290,7 +1290,7 @@ mod tasks_expander {
 
         #[test]
         fn doesnt_overlap_input_glob() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
 
             let mut task = create_task();

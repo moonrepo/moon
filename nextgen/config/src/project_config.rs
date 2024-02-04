@@ -78,7 +78,7 @@ cacheable!(
 
         pub id: Option<Id>,
 
-        #[setting(alias = "inputGroups")]
+        #[serde(alias = "fileGroups")]
         pub input_groups: FxHashMap<Id, Vec<InputPath>>,
 
         pub language: LanguageType,

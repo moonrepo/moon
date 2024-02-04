@@ -15,7 +15,7 @@ Tags: vue
 
  - noConfig (explicit, production)
 
- FILE GROUPS 
+ INPUT GROUPS 
 
 sources:
  - basic/src/**/*

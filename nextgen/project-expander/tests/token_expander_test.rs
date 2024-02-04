@@ -376,7 +376,7 @@ mod token_expander {
 
         #[test]
         fn supports_group_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -393,7 +393,7 @@ mod token_expander {
 
         #[test]
         fn supports_dirs_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -413,7 +413,7 @@ mod token_expander {
 
         #[test]
         fn supports_files_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -433,7 +433,7 @@ mod token_expander {
 
         #[test]
         fn supports_globs_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -453,7 +453,7 @@ mod token_expander {
 
         #[test]
         fn supports_root_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -471,7 +471,7 @@ mod token_expander {
         #[test]
         #[should_panic(expected = "Token @in(0) cannot be used within task env.")]
         fn errors_for_in_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -486,7 +486,7 @@ mod token_expander {
         #[test]
         #[should_panic(expected = "Token @out(0) cannot be used within task env.")]
         fn errors_for_out_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -518,7 +518,7 @@ mod token_expander {
 
         #[test]
         fn supports_group_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -544,7 +544,7 @@ mod token_expander {
 
         #[test]
         fn supports_dirs_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -567,7 +567,7 @@ mod token_expander {
 
         #[test]
         fn supports_files_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -592,7 +592,7 @@ mod token_expander {
 
         #[test]
         fn supports_globs_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -615,7 +615,7 @@ mod token_expander {
 
         #[test]
         fn supports_root_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -636,7 +636,7 @@ mod token_expander {
         #[test]
         #[should_panic(expected = "Token @in(0) cannot be used within task inputs.")]
         fn errors_for_in_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -651,7 +651,7 @@ mod token_expander {
         #[test]
         #[should_panic(expected = "Token @out(0) cannot be used within task inputs.")]
         fn errors_for_out_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -750,7 +750,7 @@ mod token_expander {
 
         #[test]
         fn supports_group_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -776,7 +776,7 @@ mod token_expander {
 
         #[test]
         fn supports_dirs_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -799,7 +799,7 @@ mod token_expander {
 
         #[test]
         fn supports_files_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -824,7 +824,7 @@ mod token_expander {
 
         #[test]
         fn supports_globs_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -847,7 +847,7 @@ mod token_expander {
 
         #[test]
         fn supports_root_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -868,7 +868,7 @@ mod token_expander {
         #[test]
         #[should_panic(expected = "Token @in(0) cannot be used within task outputs.")]
         fn errors_for_in_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -883,7 +883,7 @@ mod token_expander {
         #[test]
         #[should_panic(expected = "Token @out(0) cannot be used within task outputs.")]
         fn errors_for_out_func() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -897,7 +897,7 @@ mod token_expander {
 
         #[test]
         fn converts_variables() {
-            let sandbox = create_sandbox("file-group");
+            let sandbox = create_sandbox("input-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
 

@@ -15,7 +15,7 @@ Type: unknown
 lint: eslint --cache --report-unused-disable-directives
 test: jest --cache --color
 
- FILE GROUPS 
+ INPUT GROUPS 
 
 sources:
  - tasks/src/**/*

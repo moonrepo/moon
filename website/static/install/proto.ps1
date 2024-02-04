@@ -69,7 +69,7 @@ $SetupArgs = New-Object System.Collections.Generic.List[System.Object]
 $SetupArgs.Add('setup')
 
 ForEach ($Arg in $Args){
-    if ($Arg --eq "--no-profile" || $Arg --eq "--yes" || $Arg --eq "-y") {
+    if ($Arg -eq "--no-profile" || $Arg -eq "--yes" || $Arg -eq "-y") {
         $SetupArgs.Add($Arg)
     }
 }

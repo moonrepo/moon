@@ -43,14 +43,14 @@ cacheable!(
         #[setting(extend, validate = validate::extends_string)]
         pub extends: Option<String>,
 
-        #[setting(merge = merge_fxhashmap)]
-        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
-
         #[setting(nested, merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<TaskDependency>,
 
         #[setting(merge = merge::append_vec)]
         pub implicit_inputs: Vec<InputPath>,
+
+        #[setting(alias = "fileGroups", merge = merge_fxhashmap)]
+        pub input_groups: FxHashMap<Id, Vec<InputPath>>,
 
         #[setting(nested, merge = merge::merge_btreemap)]
         pub tasks: BTreeMap<Id, TaskConfig>,

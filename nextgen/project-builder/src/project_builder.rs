@@ -5,7 +5,7 @@ use moon_config::{
     InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig,
     ToolchainConfig,
 };
-use moon_file_group::FileGroup;
+use moon_input_group::InputGroup;
 use moon_platform_detector::detect_project_language;
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
@@ -65,7 +65,7 @@ impl<'app> ProjectBuilder<'app> {
         })
     }
 
-    /// Inherit tasks, file groups, and more from global `.moon/tasks` configs.
+    /// Inherit tasks, input groups, and more from global `.moon/tasks` configs.
     pub fn inherit_global_config(
         &mut self,
         tasks_manager: &InheritedTasksManager,
@@ -85,7 +85,7 @@ impl<'app> ProjectBuilder<'app> {
         trace!(
             id = self.id.as_str(),
             lookup = ?global_config.order,
-            "Inheriting global file groups and tasks",
+            "Inheriting global input groups and tasks",
         );
 
         self.global_config = Some(global_config);
@@ -209,7 +209,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut project = Project {
             alias: self.alias.map(|a| a.to_owned()),
             dependencies: self.build_dependencies(&tasks)?,
-            file_groups: self.build_file_groups()?,
+            input_groups: self.build_input_groups()?,
             tasks,
             id: self.id.into_owned(),
             language: self.language,
@@ -299,21 +299,21 @@ impl<'app> ProjectBuilder<'app> {
         Ok(deps.into_values().collect::<Vec<_>>())
     }
 
-    fn build_file_groups(&self) -> miette::Result<FxHashMap<Id, FileGroup>> {
+    fn build_input_groups(&self) -> miette::Result<FxHashMap<Id, InputGroup>> {
         let mut file_inputs = FxHashMap::default();
         let project_source = &self.source;
 
-        trace!(id = self.id.as_str(), "Building file groups");
+        trace!(id = self.id.as_str(), "Building input groups");
 
         // Inherit global first
         if let Some(global) = &self.global_config {
             trace!(
                 id = self.id.as_str(),
-                groups = ?global.config.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
-                "Inheriting global file groups",
+                groups = ?global.config.input_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+                "Inheriting global input groups",
             );
 
-            for (id, inputs) in &global.config.file_groups {
+            for (id, inputs) in &global.config.input_groups {
                 file_inputs.insert(id, inputs);
             }
         }
@@ -322,31 +322,26 @@ impl<'app> ProjectBuilder<'app> {
         if let Some(local) = &self.local_config {
             trace!(
                 id = self.id.as_str(),
-                groups = ?local.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
-                "Using local file groups",
+                groups = ?local.input_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+                "Using local input groups",
             );
 
-            for (id, inputs) in &local.file_groups {
+            for (id, inputs) in &local.input_groups {
                 file_inputs.insert(id, inputs);
             }
         }
 
-        // And finally convert to a file group instance
-        let mut file_groups = FxHashMap::default();
+        // And finally convert to a input group instance
+        let mut input_groups = FxHashMap::default();
 
         for (id, inputs) in file_inputs {
-            file_groups.insert(
-                id.to_owned(),
-                FileGroup::new_with_source(
-                    id,
-                    inputs
-                        .iter()
-                        .map(|i| i.to_workspace_relative(project_source)),
-                )?,
-            );
+            let mut group = InputGroup::new(id)?;
+            group.add_many(inputs, project_source.as_str())?;
+
+            input_groups.insert(id.to_owned(), group);
         }
 
-        Ok(file_groups)
+        Ok(input_groups)
     }
 
     async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {

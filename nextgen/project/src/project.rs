@@ -3,7 +3,7 @@ use moon_common::{cacheable, path::WorkspaceRelativePathBuf, Id};
 use moon_config::{
     DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
 };
-use moon_file_group::FileGroup;
+use moon_input_group::InputGroup;
 use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
 use moon_task::Task;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -23,8 +23,8 @@ cacheable!(
         /// List of other projects this project depends on.
         pub dependencies: Vec<DependencyConfig>,
 
-        /// File groups specific to the project. Inherits all file groups from the global config.
-        pub file_groups: FxHashMap<Id, FileGroup>,
+        /// Input groups specific to the project. Inherits all groups from the global config.
+        pub input_groups: FxHashMap<Id, InputGroup>,
 
         /// Unique ID for the project. Is the LHS of the `projects` setting.
         pub id: Id,
@@ -208,7 +208,7 @@ impl Queryable for Project {
 impl PartialEq for Project {
     fn eq(&self, other: &Self) -> bool {
         self.alias == other.alias
-            && self.file_groups == other.file_groups
+            && self.input_groups == other.input_groups
             && self.id == other.id
             && self.language == other.language
             && self.root == other.root

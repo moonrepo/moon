@@ -76,10 +76,10 @@ cacheable!(
 
         pub env: FxHashMap<String, String>,
 
-        #[serde(alias = "inputGroups")]
-        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
-
         pub id: Option<Id>,
+
+        #[setting(alias = "inputGroups")]
+        pub input_groups: FxHashMap<Id, Vec<InputPath>>,
 
         pub language: LanguageType,
 

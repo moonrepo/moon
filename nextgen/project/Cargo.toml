@@ -10,7 +10,7 @@ repository = "https://github.com/moonrepo/moon"
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
-moon_file_group = { path = "../file-group" }
+moon_input_group = { path = "../input-group" }
 moon_task = { path = "../task" }
 moon_query = { path = "../query" }
 miette = { workspace = true }

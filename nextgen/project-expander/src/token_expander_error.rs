@@ -30,13 +30,13 @@ pub enum TokenExpanderError {
     #[error("Output index {index} does not exist for token {}.", .token.style(Style::Symbol))]
     MissingOutIndex { index: usize, token: String },
 
-    #[diagnostic(code(token_expander::unknown_file_group))]
+    #[diagnostic(code(token_expander::unknown_input_group))]
     #[error(
-        "Unknown file group {} used in token {}.",
+        "Unknown input group {} used in token {}.",
         .group.style(Style::Id),
         .token.style(Style::Symbol),
     )]
-    UnknownFileGroup { group: String, token: String },
+    UnknownInputGroup { group: String, token: String },
 
     #[diagnostic(
         code(token_expander::unknown),

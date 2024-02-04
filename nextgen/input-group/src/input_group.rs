@@ -214,6 +214,9 @@ impl InputGroup {
 
 impl PartialEq for InputGroup {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.files == other.files && self.globs == other.globs
+        self.id == other.id
+            && self.env == other.env
+            && self.files == other.files
+            && self.globs == other.globs
     }
 }

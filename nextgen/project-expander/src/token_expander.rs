@@ -2,7 +2,7 @@ use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::token_expander_error::TokenExpanderError;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{patterns, InputPath, OutputPath};
-use moon_project::FileGroup;
+use moon_project::InputGroup;
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
@@ -266,7 +266,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
         let loose_check = matches!(self.scope, TokenScope::Outputs);
-        let file_group = || -> miette::Result<&FileGroup> {
+        let input_group = || -> miette::Result<&InputGroup> {
             self.check_scope(
                 token,
                 &[
@@ -277,8 +277,8 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 ],
             )?;
 
-            Ok(self.context.project.file_groups.get(arg).ok_or_else(|| {
-                TokenExpanderError::UnknownFileGroup {
+            Ok(self.context.project.input_groups.get(arg).ok_or_else(|| {
+                TokenExpanderError::UnknownInputGroup {
                     group: arg.to_owned(),
                     token: token.to_owned(),
                 }
@@ -286,18 +286,20 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         };
 
         match func {
-            // File groups
+            // Input groups
             "root" => {
                 files.push(
-                    file_group()?
+                    input_group()?
                         .root(self.context.workspace_root, &self.context.project.source)?,
                 );
             }
-            "dirs" => files.extend(file_group()?.dirs(self.context.workspace_root, loose_check)?),
-            "files" => files.extend(file_group()?.files(self.context.workspace_root, loose_check)?),
-            "globs" => globs.extend(file_group()?.globs()?.to_owned()),
+            "dirs" => files.extend(input_group()?.dirs(self.context.workspace_root, loose_check)?),
+            "files" => {
+                files.extend(input_group()?.files(self.context.workspace_root, loose_check)?)
+            }
+            "globs" => globs.extend(input_group()?.globs()?.to_owned()),
             "group" => {
-                let group = file_group()?;
+                let group = input_group()?;
                 files.extend(group.files.clone());
                 globs.extend(group.globs.clone());
             }

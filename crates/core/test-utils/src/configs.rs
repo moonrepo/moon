@@ -104,7 +104,7 @@ pub fn get_projects_fixture_configs() -> (
     let toolchain_config = get_default_toolchain();
 
     let tasks_config = PartialInheritedTasksConfig {
-        file_groups: Some(FxHashMap::from_iter([
+        input_groups: Some(FxHashMap::from_iter([
             (
                 "sources".into(),
                 create_input_paths(["src/**/*", "types/**/*"]),
@@ -200,7 +200,7 @@ pub fn get_tasks_fixture_configs() -> (
     let toolchain_config = get_default_toolchain();
 
     let tasks_config = PartialInheritedTasksConfig {
-        file_groups: Some(FxHashMap::from_iter([
+        input_groups: Some(FxHashMap::from_iter([
             (
                 "static".into(),
                 create_input_paths([

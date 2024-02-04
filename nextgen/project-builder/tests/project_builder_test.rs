@@ -4,7 +4,7 @@ use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, LanguageType,
     PlatformType, TaskArgs, TaskConfig, ToolchainConfig,
 };
-use moon_file_group::FileGroup;
+use moon_input_group::InputGroup;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use rustc_hash::FxHashMap;
@@ -129,11 +129,11 @@ mod project_builder {
             let project = build_project("foo", sandbox.path()).await;
 
             assert_eq!(
-                project.file_groups,
+                project.input_groups,
                 FxHashMap::from_iter([
                     (
                         "sources".into(),
-                        FileGroup::new_with_source(
+                        InputGroup::new_with_source(
                             "sources",
                             [WorkspaceRelativePathBuf::from("foo/node")]
                         )
@@ -141,7 +141,7 @@ mod project_builder {
                     ),
                     (
                         "tests".into(),
-                        FileGroup::new_with_source(
+                        InputGroup::new_with_source(
                             "tests",
                             [WorkspaceRelativePathBuf::from("foo/global")]
                         )
@@ -149,7 +149,7 @@ mod project_builder {
                     ),
                     (
                         "other".into(),
-                        FileGroup::new_with_source(
+                        InputGroup::new_with_source(
                             "other",
                             [WorkspaceRelativePathBuf::from("foo/global")]
                         )
@@ -165,11 +165,11 @@ mod project_builder {
             let project = build_project("bar", sandbox.path()).await;
 
             assert_eq!(
-                project.file_groups,
+                project.input_groups,
                 FxHashMap::from_iter([
                     (
                         "sources".into(),
-                        FileGroup::new_with_source(
+                        InputGroup::new_with_source(
                             "sources",
                             // Not node since the language is rust
                             [WorkspaceRelativePathBuf::from("bar/global")]
@@ -178,7 +178,7 @@ mod project_builder {
                     ),
                     (
                         "tests".into(),
-                        FileGroup::new_with_source(
+                        InputGroup::new_with_source(
                             "tests",
                             [WorkspaceRelativePathBuf::from("bar/global")]
                         )
@@ -186,7 +186,7 @@ mod project_builder {
                     ),
                     (
                         "other".into(),
-                        FileGroup::new_with_source(
+                        InputGroup::new_with_source(
                             "other",
                             [WorkspaceRelativePathBuf::from("bar/bar")]
                         )

@@ -108,12 +108,12 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         }
     }
 
-    if !project.file_groups.is_empty() {
-        console.print_entry_header("File groups")?;
+    if !project.input_groups.is_empty() {
+        console.print_entry_header("Input groups")?;
 
-        for group_name in project.file_groups.keys().sorted() {
+        for group_name in project.input_groups.keys().sorted() {
             let mut files = vec![];
-            let group = project.file_groups.get(group_name).unwrap();
+            let group = project.input_groups.get(group_name).unwrap();
 
             for file in &group.files {
                 files.push(color::file(file));

@@ -311,13 +311,13 @@ env:
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#inputGroups" />
 
-Defines [file groups](../concepts/file-group) to be used by local tasks. By default, this setting
+Defines [input groups](../concepts/input-group) to be used by local tasks. By default, this setting
 _is not required_ for the following reasons:
 
-- File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
+- Input groups are an optional feature, and are designed for advanced use cases.
+- Input groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
 
-When defined this setting requires a map, where the key is the file group name, and the value is a
+When defined this setting requires a map, where the key is the input group name, and the value is a
 list of [globs or paths](../concepts/file-pattern). Globs and paths are
 [relative to a project](../concepts/file-pattern#project-relative) (even when defined
 [globally](./tasks)).
@@ -340,7 +340,7 @@ inputGroups:
     - '**/*.{scss,css}'
 ```
 
-> The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
+> The code snippet above is merely an example of input groups. Feel free to use those groups as-is,
 > modify the glob lists, add and remove groups, or implement completely new groups. The choice is
 > yours!
 

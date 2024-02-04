@@ -177,7 +177,7 @@ const projectsRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Project-level file groups',
+		feature: 'Project-level input groups',
 		support: {
 			moon: SUPPORTED,
 			nx: [SUPPORTED, 'via `namedInputs`'],
@@ -325,7 +325,7 @@ const tasksRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'File groups',
+		feature: 'Input groups',
 		support: {
 			moon: SUPPORTED,
 			nx: [SUPPORTED, 'via `namedInputs`'],

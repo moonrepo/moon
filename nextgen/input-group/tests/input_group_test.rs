@@ -178,7 +178,7 @@ mod globs {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "No globs defined in file group id.")]
+    #[should_panic(expected = "No globs defined in input group id.")]
     fn errors_if_no_globs() {
         let input_group =
             InputGroup::new_with_source("id", [file("file.js"), file("docs.md")]).unwrap();

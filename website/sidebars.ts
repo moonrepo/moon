@@ -47,8 +47,8 @@ const sidebars: SidebarsConfig = {
 			label: 'Concepts',
 			items: [
 				'concepts/cache',
-				'concepts/file-group',
 				'concepts/file-pattern',
+				'concepts/input-group',
 				'concepts/query-lang',
 				'concepts/project',
 				'concepts/target',

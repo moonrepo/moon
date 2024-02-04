@@ -5,7 +5,7 @@ title: Tokens
 Tokens are variables and functions that can be used by [`command`](../config/project#command),
 [`args`](../config/project#args), [`env`](../config/project#env) (>= v1.12),
 [`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
-task. They provide a way of accessing file group paths, referencing values from other task fields,
+task. They provide a way of accessing input group paths, referencing values from other task fields,
 and referencing metadata about the project and task itself.
 
 ## Functions
@@ -21,15 +21,15 @@ used in an `env` value, multiple files are joined with a comma (`,`).
 
 :::
 
-### File groups
+### Input groups
 
-These functions reference file groups by name, where the name is passed as the argument.
+These functions reference input groups by name, where the name is passed as the argument.
 
 ### `@group`
 
 > Usable in `args`, `env`, `inputs`, and `outputs`.
 
-The `@group(file_group)` token is a standard token that will be replaced with the file group items
+The `@group(input_group)` token is a standard token that will be replaced with the input group items
 as-is, for both file paths and globs. This token merely exists for reusability purposes.
 
 ```yaml
@@ -68,8 +68,8 @@ tasks:
 
 > Usable in `args`, `env`, `inputs`, and `outputs`.
 
-The `@dirs(file_group)` token will be replaced with an expanded list of directory paths, derived
-from the file group of the same name. If a glob pattern is detected within the file group, it will
+The `@dirs(input_group)` token will be replaced with an expanded list of directory paths, derived
+from the input group of the same name. If a glob pattern is detected within the input group, it will
 aggregate all directories found.
 
 :::warning
@@ -113,8 +113,8 @@ tasks:
 
 > Usable in `args`, `env`, `inputs`, and `outputs`.
 
-The `@files(file_group)` token will be replaced with an expanded list of file paths, derived from
-the file group of the same name. If a glob pattern is detected within the file group, it will
+The `@files(input_group)` token will be replaced with an expanded list of file paths, derived from
+the input group of the same name. If a glob pattern is detected within the input group, it will
 aggregate all files found.
 
 :::warning
@@ -156,9 +156,9 @@ tasks:
 
 > Usable in `args`, `env`, `inputs`, and `outputs`.
 
-The `@globs(file_group)` token will be replaced with the list of glob patterns as-is, derived from
-the file group of the same name. If a non-glob pattern is detected within the file group, it will be
-ignored.
+The `@globs(input_group)` token will be replaced with the list of glob patterns as-is, derived from
+the input group of the same name. If a non-glob pattern is detected within the input group, it will
+be ignored.
 
 ```yaml
 inputGroups:
@@ -190,8 +190,8 @@ tasks:
 
 > Usable in `args`, `env`, `inputs`, and `outputs`.
 
-The `@root(file_group)` token will be replaced with the lowest common directory, derived from the
-file group of the same name. If a glob pattern is detected within the file group, it will walk the
+The `@root(input_group)` token will be replaced with the lowest common directory, derived from the
+input group of the same name. If a glob pattern is detected within the input group, it will walk the
 file system and aggregate all directories found before reducing.
 
 ```yaml

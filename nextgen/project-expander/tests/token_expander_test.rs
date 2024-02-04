@@ -24,8 +24,8 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Unknown file group unknown used in token @files(unknown).")]
-    fn errors_for_unknown_file_group() {
+    #[should_panic(expected = "Unknown input group unknown used in token @files(unknown).")]
+    fn errors_for_unknown_input_group() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();

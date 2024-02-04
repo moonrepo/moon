@@ -104,7 +104,7 @@ tasks:
             });
 
             assert_eq!(
-                config.file_groups,
+                config.input_groups,
                 FxHashMap::from_iter([
                     (
                         "tests".into(),
@@ -167,7 +167,7 @@ inputGroups:
             });
 
             assert_eq!(
-                config.file_groups,
+                config.input_groups,
                 FxHashMap::from_iter([
                     (
                         "tests".into(),
@@ -219,7 +219,7 @@ inputGroups:
             });
 
             assert_eq!(
-                config.file_groups,
+                config.input_groups,
                 FxHashMap::from_iter([
                     (
                         "tests".into(),
@@ -240,7 +240,7 @@ inputGroups:
         }
     }
 
-    mod file_groups {
+    mod input_groups {
         use super::*;
 
         #[test]
@@ -262,7 +262,7 @@ inputGroups:
             );
 
             assert_eq!(
-                config.file_groups,
+                config.input_groups,
                 FxHashMap::from_iter([
                     (
                         "files".into(),

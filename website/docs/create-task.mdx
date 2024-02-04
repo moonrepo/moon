@@ -181,16 +181,16 @@ tasks:
       - '^:build'
 ```
 
-## Using file groups
+## Using input groups
 
 Once you're familiar with configuring tasks, you may notice certain inputs being repeated
 constantly, like source files, test files, and configuration. To reduce the amount of boilerplate
-required, moon provides a feature known as [file groups](./concepts/file-group), which enables
+required, moon provides a feature known as [input groups](./concepts/input-group), which enables
 grouping of similar file types within a project using
 [file glob patterns or literal file paths](./concepts/file-pattern).
 
-File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
-list of file paths/globs to a group, like so.
+Input groups are defined with the [`inputGroups`](./config/project#inputgroups) setting, which maps
+a list of file paths/globs to a group, like so.
 
 ```yaml title="<project>/moon.yml"
 inputGroups:
@@ -203,19 +203,19 @@ inputGroups:
     - 'tests/**/*'
 ```
 
-We can then replace the inputs in our task above with these new file groups using a syntax known as
+We can then replace the inputs in our task above with these new input groups using a syntax known as
 [tokens](./concepts/token), specifically the [`@globs`](./concepts/token#globs) and
 [`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
 to their documentation for more information!
 
-import FilegroupsBun from './__partials__/create-task/bun/filegroups.mdx';
-import FilegroupsDeno from './__partials__/create-task/deno/filegroups.mdx';
-import FilegroupsGo from './__partials__/create-task/go/filegroups.mdx';
-import FilegroupsNode from './__partials__/create-task/node/filegroups.mdx';
-import FilegroupsPHP from './__partials__/create-task/php/filegroups.mdx';
-import FilegroupsPython from './__partials__/create-task/python/filegroups.mdx';
-import FilegroupsRuby from './__partials__/create-task/ruby/filegroups.mdx';
-import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
+import FilegroupsBun from './__partials__/create-task/bun/inputgroups.mdx';
+import FilegroupsDeno from './__partials__/create-task/deno/inputgroups.mdx';
+import FilegroupsGo from './__partials__/create-task/go/inputgroups.mdx';
+import FilegroupsNode from './__partials__/create-task/node/inputgroups.mdx';
+import FilegroupsPHP from './__partials__/create-task/php/inputgroups.mdx';
+import FilegroupsPython from './__partials__/create-task/python/inputgroups.mdx';
+import FilegroupsRuby from './__partials__/create-task/ruby/inputgroups.mdx';
+import FilegroupsRust from './__partials__/create-task/rust/inputgroups.mdx';
 
 <LangPartials>
   <FilegroupsBun key="bun" />
@@ -228,7 +228,7 @@ import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
   <FilegroupsRust key="rust" />
 </LangPartials>
 
-With file groups (and tokens), you're able to reduce the amount of configuration required _and_
+With input groups (and tokens), you're able to reduce the amount of configuration required _and_
 encourage certain file structures for consuming projects!
 
 ## Next steps

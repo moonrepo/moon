@@ -120,7 +120,7 @@ mod project_builder {
         assert_eq!(c.tasks.len(), 5);
     }
 
-    mod file_groups {
+    mod input_groups {
         use super::*;
 
         #[tokio::test]

@@ -35,7 +35,7 @@ project:
 # in `package.json` and project references in `tsconfig.json`, respectively.
 dependsOn: []
 
-# File groups are a mechanism for grouping similar types of files within
+# Input groups are a mechanism for grouping similar types of files within
 # a project using file glob patterns. View `.moon/tasks.yml` for more info.
 inputGroups: {}
 

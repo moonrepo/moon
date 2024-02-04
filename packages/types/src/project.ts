@@ -8,7 +8,8 @@ import type {
 	TaskType,
 } from './tasks-config';
 
-export interface FileGroup {
+export interface InputGroup {
+	env: string[];
 	files: string[];
 	globs: string[];
 	id: string;
@@ -55,7 +56,7 @@ export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
 	dependencies: Record<string, DependencyConfig>;
-	inputGroups: Record<string, FileGroup>;
+	inputGroups: Record<string, InputGroup>;
 	id: string;
 	inherited: {
 		order: string[];

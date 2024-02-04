@@ -65,16 +65,16 @@ Remove-Item $DownloadFile -Force
 
 $env:PROTO_LOG = "error"
 
-$SetupArgs = New-Object System.Collections.Generic.List[System.Object]
-$SetupArgs.Add('setup')
+$SetupArgs = New-Object -TypeName "System.Collections.ArrayList"
+$SetupArgs.Add("setup")
 
 ForEach ($Arg in $Args){
-    if ($Arg -eq "--no-profile" || $Arg -eq "--yes" || $Arg -eq "-y") {
+    if ($Arg.StartsWith("-")) {
         $SetupArgs.Add($Arg)
     }
 }
 
-$BinPath $SetupArgs
+Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
 
 if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output ""

@@ -41,6 +41,10 @@
 - Fixed an issue where the action graph would create incorrect nodes when a tool utilizes dependency
   workspaces, and a project is not within the workspace.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.30.0 (from v0.29.1).
+
 ## 1.20.1
 
 #### 🚀 Updates

@@ -66,7 +66,7 @@ Remove-Item $DownloadFile -Force
 $env:PROTO_LOG = "error"
 
 # Versions >= 0.30 handle the messaging
-if ($Version -eq "latest" -or $Version -match "^0\.[0-2]{1}[0-9]{1}\.") {
+if ($Version -eq "latest" -or $Version -notmatch '^0\.[0-2]{1}[0-9]{1}\.') {
   $SetupArgs = New-Object -TypeName "System.Collections.ArrayList"
   $SetupArgs.Add("setup")
 

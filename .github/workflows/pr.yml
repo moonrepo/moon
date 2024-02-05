@@ -41,9 +41,9 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/moon.sh 1.20.0
         if: ${{ runner.os != 'Windows' }}
-      - run: bash ./website/static/install/proto.sh
-        if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/proto.sh 0.30.0-rc.0
+        if: ${{ runner.os != 'Windows' }}
+      - run: bash ./website/static/install/proto.sh
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/proto.sh 0.29.0
         if: ${{ runner.os != 'Windows' }}
@@ -52,9 +52,9 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/moon.ps1 1.20.0
         if: ${{ runner.os == 'Windows' }}
-      - run: pwsh.exe ./website/static/install/proto.ps1
-        if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/proto.ps1 0.30.0-rc.0
+        if: ${{ runner.os == 'Windows' }}
+      - run: pwsh.exe ./website/static/install/proto.ps1
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/proto.ps1 0.29.0
         if: ${{ runner.os == 'Windows' }}

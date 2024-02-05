@@ -347,6 +347,36 @@ mod tasks_builder {
             assert_eq!(task.command, "global-test");
             assert_eq!(task.args, vec!["--with", "args", "extra", "args"]);
         }
+
+        #[tokio::test]
+        async fn handles_args_with_globs() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "args-glob/moon.yml").await;
+
+            let task = tasks.get("no-glob-string").unwrap();
+
+            assert_eq!(task.command, "test");
+            assert_eq!(task.args, vec!["./tests"]);
+            assert_eq!(task.options.shell, None);
+
+            let task = tasks.get("with-glob-string").unwrap();
+
+            assert_eq!(task.command, "test");
+            assert_eq!(task.args, vec!["./tests/**/*.js"]);
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("no-glob-list").unwrap();
+
+            assert_eq!(task.command, "test");
+            assert_eq!(task.args, vec!["./tests"]);
+            assert_eq!(task.options.shell, None);
+
+            let task = tasks.get("with-glob-list").unwrap();
+
+            assert_eq!(task.command, "test");
+            assert_eq!(task.args, vec!["./tests/**/*.js"]);
+            assert_eq!(task.options.shell, Some(true));
+        }
     }
 
     mod detect_platforms {

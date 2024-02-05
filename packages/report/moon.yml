@@ -1,18 +1,2 @@
 language: typescript
 type: library
-
-tasks:
-  test-integration:
-    command: 'jest ./tests/*.test.ts'
-    env:
-      TEST_TYPE: integration
-    platform: node
-    options:
-      shell: true
-  test-unit:
-    command:
-      - 'jest'
-      - './tests/*.test.ts'
-    env:
-      TEST_TYPE: unit
-    platform: node

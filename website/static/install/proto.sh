@@ -9,8 +9,17 @@ set -eo pipefail
 bin="proto"
 shim_bin="proto-shim"
 arch=$(uname -sm)
-version="${1:-latest}"
+version="latest"
 ext=".tar.xz"
+setup_args=()
+
+for arg in "$@"; do
+	if [[ $arg = -* ]]; then
+		setup_args+=("$arg")
+	else
+		version="$arg"
+	fi
+done
 
 if [[ "$OS" == "Windows_NT" ]]; then
 	target="proto_cli-x86_64-pc-windows-msvc"
@@ -101,17 +110,26 @@ rm -rf "$download_file" "$temp_dir"
 # Run setup script to update shells
 
 export PROTO_LOG=error
-profile_path=$($bin_path setup --profile)
+version_pattern="^0\.[0-2]{1}[0-9]{1}\."
 
-if [[ -z "$profile_path" ]]; then
-	echo "Successfully installed proto to $bin_path"
+# Versions >= 0.30 handle the messaging
+if [[ "$version" == "latest" ]] || [[ ! "$version" =~ $version_pattern ]]; then
+	$bin_path setup "${setup_args[@]}"
+
+# While older versions do not
 else
-	echo "Successfully installed proto to $bin_path and updated $profile_path"
-fi
+	profile_path=$($bin_path setup --profile)
 
-echo "Launch a new terminal window to start using proto!"
-echo
-echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+	if [[ -z "$profile_path" ]]; then
+		echo "Successfully installed proto to $bin_path"
+	else
+		echo "Successfully installed proto to $bin_path and updated $profile_path"
+	fi
+
+	echo "Launch a new terminal window to start using proto!"
+	echo
+	echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+fi
 
 if [[ "$PROTO_DEBUG" == "true" ]]; then
 	echo

@@ -3,7 +3,7 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::{color, Id};
 use moon_config::{
-    InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
+    is_glob, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
 };
@@ -415,6 +415,11 @@ impl<'proj> TasksBuilder<'proj> {
         if task.options.shell.is_none() {
             // Windows requires a shell for path resolution to work correctly
             if cfg!(windows) || task.platform.is_system() {
+                task.options.shell = Some(true);
+            }
+
+            // If an arg contains a glob, we must run in a shell for expansion to work
+            if task.args.iter().any(is_glob) {
                 task.options.shell = Some(true);
             }
         }

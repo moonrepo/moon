@@ -69,7 +69,7 @@ console = { workspace = true }
 dialoguer = { version = "0.11.0", default-features = false }
 diff = "0.1.13"
 indicatif = "0.17.7"
-itertools = "0.12.0"
+itertools = "0.12.1"
 miette = { workspace = true }
 mimalloc = { version = "0.1.39", default-features = false }
 open = "5.0.1"

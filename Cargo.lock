@@ -3349,6 +3349,7 @@ dependencies = [
  "common-path",
  "miette",
  "moon_common",
+ "moon_config",
  "once_cell",
  "relative-path",
  "serde",

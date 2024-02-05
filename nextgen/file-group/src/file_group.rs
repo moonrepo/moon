@@ -2,15 +2,17 @@ use crate::file_group_error::FileGroupError;
 use common_path::common_path_all;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
+use moon_config::InputPath;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
-use tracing::trace;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct FileGroup {
+    pub env: Vec<String>,
+
     pub files: Vec<WorkspaceRelativePathBuf>,
 
     pub globs: Vec<WorkspaceRelativePathBuf>,
@@ -26,12 +28,11 @@ impl FileGroup {
     where
         T: AsRef<str>,
     {
-        let id = Id::new(id)?;
-
         Ok(FileGroup {
+            env: vec![],
             files: vec![],
             globs: vec![],
-            id,
+            id: Id::new(id)?,
             walk_cache: OnceCell::new(),
         })
     }
@@ -42,40 +43,49 @@ impl FileGroup {
         I: IntoIterator<Item = WorkspaceRelativePathBuf>,
     {
         let mut file_group = FileGroup::new(id)?;
-        file_group.set_patterns(patterns);
+
+        for path in patterns {
+            if glob::is_glob(&path) {
+                file_group.globs.push(path);
+            } else {
+                file_group.files.push(path);
+            }
+        }
 
         Ok(file_group)
     }
 
-    /// Add patterns (file paths or globs) to the file group, while expanding to a
+    /// Add inputs (file paths, globs, or env) to the input group, while expanding to a
     /// workspace relative path based on the provided project source.
-    /// This will overwrite any existing patterns!
-    pub fn set_patterns<I>(&mut self, patterns: I) -> &mut Self
-    where
-        I: IntoIterator<Item = WorkspaceRelativePathBuf>,
-    {
-        self.files = vec![];
-        self.globs = vec![];
-
-        let mut log_patterns = vec![];
-
-        for path in patterns {
-            log_patterns.push(path.as_str().to_owned());
-
-            if glob::is_glob(&path) {
-                self.globs.push(path);
-            } else {
-                self.files.push(path);
+    pub fn add(&mut self, input: &InputPath, project_source: &str) -> miette::Result<()> {
+        match input {
+            InputPath::EnvVar(var) => {
+                self.env.push(var.to_owned());
             }
+            InputPath::TokenFunc(_) | InputPath::TokenVar(_) => {
+                return Err(FileGroupError::NoTokens(self.id.clone()).into());
+            }
+            _ => {
+                let path = input.to_workspace_relative(project_source);
+
+                if glob::is_glob(&path) {
+                    self.globs.push(path);
+                } else {
+                    self.files.push(path);
+                }
+            }
+        };
+
+        Ok(())
+    }
+
+    /// Add multiple inputs into the input group.
+    pub fn add_many(&mut self, inputs: &[InputPath], project_source: &str) -> miette::Result<()> {
+        for input in inputs {
+            self.add(input, project_source)?;
         }
 
-        trace!(
-            id = self.id.as_str(),
-            patterns = ?log_patterns,
-            "Creating file group"
-        );
-
-        self
+        Ok(())
     }
 
     /// Return the file group as an expanded list of directory paths.
@@ -86,6 +96,11 @@ impl FileGroup {
         loose_check: bool,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         self.walk(true, workspace_root, loose_check)
+    }
+
+    /// Return the list of environment variables.
+    pub fn env(&self) -> miette::Result<&Vec<String>> {
+        Ok(&self.env)
     }
 
     /// Return the file group as an expanded list of file paths.
@@ -102,7 +117,7 @@ impl FileGroup {
     /// relative to the project root.
     pub fn globs(&self) -> miette::Result<&Vec<WorkspaceRelativePathBuf>> {
         if self.globs.is_empty() {
-            return Err(FileGroupError::NoGlobs(self.id.clone()).into());
+            return Err(FileGroupError::MissingGlobs(self.id.clone()).into());
         }
 
         Ok(&self.globs)

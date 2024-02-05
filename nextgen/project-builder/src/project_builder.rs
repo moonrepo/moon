@@ -335,15 +335,10 @@ impl<'app> ProjectBuilder<'app> {
         let mut file_groups = FxHashMap::default();
 
         for (id, inputs) in file_inputs {
-            file_groups.insert(
-                id.to_owned(),
-                FileGroup::new_with_source(
-                    id,
-                    inputs
-                        .iter()
-                        .map(|i| i.to_workspace_relative(project_source)),
-                )?,
-            );
+            let mut group = FileGroup::new(id)?;
+            group.add_many(inputs, project_source.as_str())?;
+
+            file_groups.insert(id.to_owned(), group);
         }
 
         Ok(file_groups)

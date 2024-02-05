@@ -55,7 +55,7 @@ impl FileGroup {
         Ok(file_group)
     }
 
-    /// Add inputs (file paths, globs, or env) to the input group, while expanding to a
+    /// Add inputs (file paths, globs, or env) to the file group, while expanding to a
     /// workspace relative path based on the provided project source.
     pub fn add(&mut self, input: &InputPath, project_source: &str) -> miette::Result<()> {
         match input {

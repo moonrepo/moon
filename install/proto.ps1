@@ -6,11 +6,21 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Version = "latest"
 $Target = "proto_cli-x86_64-pc-windows-msvc"
 
-if ($Args.Length -eq 1) {
-  $Version = $Args.Get(0)
+# Determine version and arguments
+
+$Version = "latest"
+
+$SetupArgs = New-Object -TypeName "System.Collections.ArrayList"
+$SetupArgs.Add("setup") | Out-Null
+
+ForEach ($Arg in $Args){
+  if ($Arg.StartsWith("-")) {
+    $SetupArgs.Add($Arg) | Out-Null
+  } else {
+    $Version = $Arg;
+  }
 }
 
 $DownloadUrl = if ($Version -eq "latest") {
@@ -64,12 +74,20 @@ Remove-Item $DownloadFile -Force
 # Run setup script to update shells
 
 $env:PROTO_LOG = "error"
-& $BinPath @('setup')
 
-Write-Output "Successfully installed proto to ${BinPath}"
-Write-Output "Launch a new terminal window to start using proto!"
-Write-Output ""
-Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+# Versions >= 0.30 handle the messaging
+if ($Version -eq "latest" -or $Version -notmatch '^0\.[0-2]{1}[0-9]{1}\.') {
+  Start-Process -FilePath $BinPath -ArgumentList $SetupArgs -NoNewWindow -Wait
+
+# While older versions do not
+} else {
+  & $BinPath @('setup')
+
+  Write-Output "Successfully installed proto to ${BinPath}"
+  Write-Output "Launch a new terminal window to start using proto!"
+  Write-Output ""
+  Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+}
 
 if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output ""

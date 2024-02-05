@@ -321,7 +321,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     result.env.extend(group.env.clone());
                 }
             }
-            "env" => {
+            "envs" => {
                 self.check_scope(token, &[TokenScope::Inputs])?;
 
                 result.env.extend(file_group()?.env()?.to_owned());

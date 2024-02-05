@@ -10,6 +10,32 @@ In this release, we're excited to introduce extensions, our first type of plugin
 
 <!--truncate-->
 
+## File groups now support environment variables
+
+Task inputs have supported environment variables for a while now, but file groups have not. The main
+reason for this is that file groups were implemented far before environment variables in task
+inputs! To bridge this gap, we've added support for environment variables in file groups.
+
+```yaml
+fileGroups:
+  vite:
+    - '...'
+    - '$VITE_SECRET_KEY'
+    - '$NODE_ENV'
+
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '@group(vite)'
+```
+
+Environment variables can be referenced using the
+[`@group` token function](/docs/concepts/token#group), or the new
+[`@envs` token function](/docs/concepts/token#envs). The latter is only supported for `inputs` and
+will error for other locations, while the former is supported in `args`, `inputs`, and `outputs`,
+but will filter out environment variables when they are not supported.
+
 ## New `migrate-turborepo` extension
 
 In our previous release, we added support for [extensions, a new kind of WASM plugin](./moon-v1.20).

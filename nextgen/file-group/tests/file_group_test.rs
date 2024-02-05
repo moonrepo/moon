@@ -33,6 +33,30 @@ mod file_group {
     }
 
     #[test]
+    #[should_panic(expected = "Token functions and variables are not supported in file groups.")]
+    fn errors_for_token_funcs() {
+        let mut file_group = FileGroup::new("id").unwrap();
+
+        file_group
+            .add(&InputPath::TokenFunc("@group(name)".into()), "")
+            .unwrap();
+
+        assert_eq!(file_group.env, ["FOO_BAR"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Token functions and variables are not supported in file groups.")]
+    fn errors_for_token_vars() {
+        let mut file_group = FileGroup::new("id").unwrap();
+
+        file_group
+            .add(&InputPath::TokenVar("$var".into()), "")
+            .unwrap();
+
+        assert_eq!(file_group.env, ["FOO_BAR"]);
+    }
+
+    #[test]
     fn can_set_env_vars() {
         let mut file_group = FileGroup::new("id").unwrap();
 

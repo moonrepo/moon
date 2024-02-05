@@ -497,6 +497,21 @@ mod token_expander {
 
             expander.expand_env(&task).unwrap();
         }
+
+        #[test]
+        #[should_panic(expected = "Token @envs(envs) cannot be used within task env.")]
+        fn errors_for_envs_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("OUT".into(), "@envs(envs)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            expander.expand_env(&task).unwrap();
+        }
     }
 
     mod inputs {
@@ -639,6 +654,26 @@ mod token_expander {
                 ExpandedResult {
                     files: vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
                     globs: vec![],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
+
+        #[test]
+        fn supports_envs_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![InputPath::TokenFunc("@envs(envs)".into())];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    env: vec!["FOO_BAR".into()],
                     ..ExpandedResult::default()
                 }
             );
@@ -907,6 +942,21 @@ mod token_expander {
             let mut task = create_task();
 
             task.outputs = vec![OutputPath::TokenFunc("@out(0)".into())];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            expander.expand_outputs(&task).unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Token @envs(envs) cannot be used within task outputs.")]
+        fn errors_for_envs_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs = vec![OutputPath::TokenFunc("@envs(envs)".into())];
 
             let context = create_context(&project, sandbox.path());
             let mut expander = TokenExpander::new(&context);

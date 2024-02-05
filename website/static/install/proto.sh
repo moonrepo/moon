@@ -9,8 +9,17 @@ set -eo pipefail
 bin="proto"
 shim_bin="proto-shim"
 arch=$(uname -sm)
-version="${1:-latest}"
+version="latest"
 ext=".tar.xz"
+setup_args=()
+
+for arg in "$@"; do
+	if [[ $arg = -* ]]; then
+		setup_args+=("$arg")
+	else
+		version="$arg"
+	fi
+done
 
 if [[ "$OS" == "Windows_NT" ]]; then
 	target="proto_cli-x86_64-pc-windows-msvc"
@@ -105,14 +114,6 @@ version_pattern="^0\.[0-2]{1}[0-9]{1}\."
 
 # Versions >= 0.30 handle the messaging
 if [[ "$version" == "latest" ]] || [[ ! "$version" =~ $version_pattern ]]; then
-	setup_args=()
-
-	for arg in "$@"; do
-		if [[ $arg = -* ]]; then
-			setup_args+=("$arg")
-		fi
-	done
-
 	$bin_path setup "${setup_args[@]}"
 
 # While older versions do not

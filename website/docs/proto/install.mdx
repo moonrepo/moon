@@ -20,21 +20,32 @@ scripts to download and install proto.
 
 :::info
 
-The install location can be customized with the `PROTO_INSTALL_DIR` environment variable.
+The install location can be customized with the `PROTO_INSTALL_DIR` environment variable. If not
+provided, the default location is `~/.proto`.
 
 :::
 
 ### Linux, macOS, WSL
 
-In a terminal that supports Bash, run:
+In a terminal that supports Bash, run the following command. This will download and install proto,
+then open an interactive prompt to complete the installation.
 
 ```shell
 curl -fsSL https://moonrepo.dev/install/proto.sh | bash
 ```
 
+Furthermore, the version of proto to install can be passed as an argument to the install script. We
+also accept `--no-profile` to avoid modifying your shell profile, and `--yes` to avoid interactive
+prompts.
+
+```shell
+curl -fsSL https://moonrepo.dev/install/proto.sh | bash -s -- 1.2.3 --yes
+```
+
 ### Windows
 
-In an _administrator_ Powershell or Windows Terminal, run:
+In an _administrator_ Powershell or Windows Terminal, run the following command. This will download
+and install proto, then open an interactive prompt to complete the installation.
 
 ```
 irm https://moonrepo.dev/install/proto.ps1 | iex

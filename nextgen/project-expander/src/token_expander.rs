@@ -10,7 +10,12 @@ use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use tracing::warn;
 
-pub type ExpandedPaths = (Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>);
+#[derive(Debug, Default, PartialEq)]
+pub struct ExpandedResult {
+    pub env: Vec<String>,
+    pub files: Vec<WorkspaceRelativePathBuf>,
+    pub globs: Vec<WorkspaceRelativePathBuf>,
+}
 
 #[derive(PartialEq)]
 pub enum TokenScope {
@@ -104,13 +109,13 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         for arg in &task.args {
             // Token functions
             if self.has_token_function(arg) {
-                let (files, globs) = self.replace_function(task, arg)?;
+                let result = self.replace_function(task, arg)?;
 
-                for file in files {
+                for file in result.files {
                     args.push(handle_path(file)?);
                 }
 
-                for glob in globs {
+                for glob in result.globs {
                     args.push(handle_path(glob)?);
                 }
 
@@ -138,11 +143,11 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
         for (key, value) in &task.env {
             if self.has_token_function(value) {
-                let (files, globs) = self.replace_function(task, value)?;
+                let result = self.replace_function(task, value)?;
 
                 let mut list = vec![];
-                list.extend(files);
-                list.extend(globs);
+                list.extend(result.files);
+                list.extend(result.globs);
 
                 env.insert(
                     key.to_owned(),
@@ -161,24 +166,25 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(env)
     }
 
-    pub fn expand_inputs(&mut self, task: &Task) -> miette::Result<ExpandedPaths> {
+    pub fn expand_inputs(&mut self, task: &Task) -> miette::Result<ExpandedResult> {
         self.scope = TokenScope::Inputs;
 
-        let mut files: Vec<WorkspaceRelativePathBuf> = vec![];
-        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut result = ExpandedResult::default();
 
         for input in &task.inputs {
             match input {
-                InputPath::EnvVar(_) => {
-                    continue;
+                InputPath::EnvVar(var) => {
+                    result.env.push(var.to_owned());
                 }
                 InputPath::TokenFunc(func) => {
-                    let result = self.replace_function(task, func)?;
-                    files.extend(result.0);
-                    globs.extend(result.1);
+                    let inner_result = self.replace_function(task, func)?;
+
+                    result.env.extend(inner_result.env);
+                    result.files.extend(inner_result.files);
+                    result.globs.extend(inner_result.globs);
                 }
                 InputPath::TokenVar(var) => {
-                    files.push(
+                    result.files.push(
                         self.context
                             .project
                             .source
@@ -199,9 +205,9 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     // This is a special case that converts "foo" to "foo/**/*",
                     // when the input is a directory. This is necessary for VCS hashing.
                     if abs_file.exists() && abs_file.is_dir() {
-                        globs.push(file.join("**/*"));
+                        result.globs.push(file.join("**/*"));
                     } else {
-                        files.push(file);
+                        result.files.push(file);
                     }
                 }
                 InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
@@ -212,26 +218,26 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                             .as_str(),
                     )?;
 
-                    globs.push(WorkspaceRelativePathBuf::from(glob));
+                    result.globs.push(WorkspaceRelativePathBuf::from(glob));
                 }
             };
         }
 
-        Ok((files, globs))
+        Ok(result)
     }
 
-    pub fn expand_outputs(&mut self, task: &Task) -> miette::Result<ExpandedPaths> {
+    pub fn expand_outputs(&mut self, task: &Task) -> miette::Result<ExpandedResult> {
         self.scope = TokenScope::Outputs;
 
-        let mut files: Vec<WorkspaceRelativePathBuf> = vec![];
-        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut result = ExpandedResult::default();
 
         for output in &task.outputs {
             match output {
                 OutputPath::TokenFunc(func) => {
-                    let result = self.replace_function(task, func)?;
-                    files.extend(result.0);
-                    globs.extend(result.1);
+                    let inner_result = self.replace_function(task, func)?;
+
+                    result.files.extend(inner_result.files);
+                    result.globs.extend(inner_result.globs);
                 }
                 _ => {
                     let path = WorkspaceRelativePathBuf::from(
@@ -245,25 +251,23 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     );
 
                     if output.is_glob() {
-                        globs.push(path);
+                        result.globs.push(path);
                     } else {
-                        files.push(path);
+                        result.files.push(path);
                     }
                 }
             };
         }
 
-        Ok((files, globs))
+        Ok(result)
     }
 
-    pub fn replace_function(&self, task: &Task, value: &str) -> miette::Result<ExpandedPaths> {
+    pub fn replace_function(&self, task: &Task, value: &str) -> miette::Result<ExpandedResult> {
         let matches = patterns::TOKEN_FUNC.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
         let func = matches.get(1).unwrap().as_str(); // name
         let arg = matches.get(2).unwrap().as_str(); // arg
-
-        let mut files: Vec<WorkspaceRelativePathBuf> = vec![];
-        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut result = ExpandedResult::default();
 
         let loose_check = matches!(self.scope, TokenScope::Outputs);
         let file_group = || -> miette::Result<&FileGroup> {
@@ -288,18 +292,39 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         match func {
             // File groups
             "root" => {
-                files.push(
+                result.files.push(
                     file_group()?
                         .root(self.context.workspace_root, &self.context.project.source)?,
                 );
             }
-            "dirs" => files.extend(file_group()?.dirs(self.context.workspace_root, loose_check)?),
-            "files" => files.extend(file_group()?.files(self.context.workspace_root, loose_check)?),
-            "globs" => globs.extend(file_group()?.globs()?.to_owned()),
+            "dirs" => {
+                result
+                    .files
+                    .extend(file_group()?.dirs(self.context.workspace_root, loose_check)?);
+            }
+            "files" => {
+                result
+                    .files
+                    .extend(file_group()?.files(self.context.workspace_root, loose_check)?);
+            }
+            "globs" => {
+                result.globs.extend(file_group()?.globs()?.to_owned());
+            }
             "group" => {
                 let group = file_group()?;
-                files.extend(group.files.clone());
-                globs.extend(group.globs.clone());
+                result.files.extend(group.files.clone());
+                result.globs.extend(group.globs.clone());
+
+                // Only inputs can use env vars, but instead of failing for other
+                // scopes, just ignore them
+                if self.scope == TokenScope::Inputs {
+                    result.env.extend(group.env.clone());
+                }
+            }
+            "env" => {
+                self.check_scope(token, &[TokenScope::Inputs])?;
+
+                result.env.extend(file_group()?.env()?.to_owned());
             }
             // Inputs, outputs
             "in" => {
@@ -316,10 +341,14 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
                 match input {
                     InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
-                        files.push(input.to_workspace_relative(&self.context.project.source));
+                        result
+                            .files
+                            .push(input.to_workspace_relative(&self.context.project.source));
                     }
                     InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
-                        globs.push(input.to_workspace_relative(&self.context.project.source));
+                        result
+                            .globs
+                            .push(input.to_workspace_relative(&self.context.project.source));
                     }
                     _ => {
                         return Err(TokenExpanderError::InvalidTokenIndexReference {
@@ -343,14 +372,14 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
                 match output {
                     OutputPath::ProjectFile(_) | OutputPath::WorkspaceFile(_) => {
-                        files.push(
+                        result.files.push(
                             output
                                 .to_workspace_relative(&self.context.project.source)
                                 .unwrap(),
                         );
                     }
                     OutputPath::ProjectGlob(_) | OutputPath::WorkspaceGlob(_) => {
-                        globs.push(
+                        result.globs.push(
                             output
                                 .to_workspace_relative(&self.context.project.source)
                                 .unwrap(),
@@ -372,7 +401,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         };
 
-        Ok((files, globs))
+        Ok(result)
     }
 
     pub fn replace_variables(&self, task: &Task, value: &str) -> miette::Result<String> {

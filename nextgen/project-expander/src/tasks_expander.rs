@@ -2,10 +2,9 @@ use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::{InputPath, TaskDependencyConfig};
+use moon_config::TaskDependencyConfig;
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
-use rustc_hash::FxHashSet;
 use tracing::{trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
@@ -276,19 +275,11 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         );
 
         // Expand inputs to file system paths and environment variables
-        let mut vars = FxHashSet::default();
+        let result = self.token.expand_inputs(task)?;
 
-        for input in &task.inputs {
-            if let InputPath::EnvVar(var) = input {
-                vars.insert(var.to_owned());
-            }
-        }
-
-        let (files, globs) = self.token.expand_inputs(task)?;
-
-        task.input_vars.extend(vars);
-        task.input_files.extend(files);
-        task.input_globs.extend(globs);
+        task.input_vars.extend(result.env);
+        task.input_files.extend(result.files);
+        task.input_globs.extend(result.globs);
 
         Ok(())
     }
@@ -305,10 +296,10 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         );
 
         // Expand outputs to file system paths
-        let (files, globs) = self.token.expand_outputs(task)?;
+        let result = self.token.expand_outputs(task)?;
 
         // Aggregate paths first before globbing, as they are literal
-        for file in files {
+        for file in result.files {
             // Outputs must *not* be considered an input,
             // so if there's an input that matches an output,
             // remove it! Is there a better way to do this?
@@ -320,7 +311,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         }
 
         // Aggregate globs second so we can match against the paths
-        for glob in globs {
+        for glob in result.globs {
             if task.input_globs.contains(&glob) {
                 task.input_globs.remove(&glob);
             }

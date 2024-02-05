@@ -2,7 +2,7 @@ mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
-use moon_project_expander::TokenExpander;
+use moon_project_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
@@ -503,7 +503,7 @@ mod token_expander {
         use super::*;
 
         #[test]
-        fn skips_env_var() {
+        fn supports_env_var() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
             let mut task = create_task();
@@ -513,7 +513,13 @@ mod token_expander {
             let context = create_context(&project, sandbox.path());
             let mut expander = TokenExpander::new(&context);
 
-            assert_eq!(expander.expand_inputs(&task).unwrap(), (vec![], vec![]));
+            assert_eq!(
+                expander.expand_inputs(&task).unwrap(),
+                ExpandedResult {
+                    env: vec!["FOO_BAR".into()],
+                    ..ExpandedResult::default()
+                }
+            );
         }
 
         #[test]
@@ -529,16 +535,17 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
-                    vec![
+                    globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                    ]
-                )
+                    ],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -555,13 +562,14 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
                         WorkspaceRelativePathBuf::from("project/source/other"),
                     ],
-                    vec![]
-                )
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -578,15 +586,16 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
                         WorkspaceRelativePathBuf::from("project/source/docs.md"),
                         WorkspaceRelativePathBuf::from("project/source/other/file.json"),
                     ],
-                    vec![]
-                )
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -603,13 +612,14 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![],
-                    vec![
+                ExpandedResult {
+                    files: vec![],
+                    globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                    ]
-                )
+                    ],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -626,10 +636,11 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
-                    vec![]
-                )
+                ExpandedResult {
+                    files: vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -679,13 +690,14 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/project:task"),
                         WorkspaceRelativePathBuf::from("project/source/unknown"),
                     ],
-                    vec![]
-                )
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -707,16 +719,17 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/task/file.txt"),
                         WorkspaceRelativePathBuf::from("cache/project:task/file.txt"),
                     ],
-                    vec![
+                    globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/task/files/**/*"),
                         WorkspaceRelativePathBuf::from("cache/project:task/files/**/*"),
-                    ]
-                )
+                    ],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -737,10 +750,11 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
-                (
-                    vec![],
-                    vec![WorkspaceRelativePathBuf::from("project/source/dir/**/*"),]
-                )
+                ExpandedResult {
+                    files: vec![],
+                    globs: vec![WorkspaceRelativePathBuf::from("project/source/dir/**/*"),],
+                    ..ExpandedResult::default()
+                }
             );
         }
     }
@@ -761,16 +775,17 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
-                    vec![
+                    globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                    ]
-                )
+                    ],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -787,13 +802,14 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
                         WorkspaceRelativePathBuf::from("project/source/other"),
                     ],
-                    vec![]
-                )
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -810,15 +826,16 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
                         WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
                         WorkspaceRelativePathBuf::from("project/source/docs.md"),
                         WorkspaceRelativePathBuf::from("project/source/other/file.json"),
                     ],
-                    vec![]
-                )
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -835,13 +852,14 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
-                (
-                    vec![],
-                    vec![
+                ExpandedResult {
+                    files: vec![],
+                    globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
-                    ]
-                )
+                    ],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -858,10 +876,11 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
-                (
-                    vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
-                    vec![]
-                )
+                ExpandedResult {
+                    files: vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
+                    globs: vec![],
+                    ..ExpandedResult::default()
+                }
             );
         }
 
@@ -913,16 +932,17 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
-                (
-                    vec![
+                ExpandedResult {
+                    files: vec![
                         WorkspaceRelativePathBuf::from("project/source/task/file.txt"),
                         WorkspaceRelativePathBuf::from("cache/project:task/file.txt"),
                     ],
-                    vec![
+                    globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/task/files/**/*"),
                         WorkspaceRelativePathBuf::from("cache/project:task/files/**/*"),
-                    ]
-                )
+                    ],
+                    ..ExpandedResult::default()
+                }
             );
         }
     }

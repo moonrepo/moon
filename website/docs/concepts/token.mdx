@@ -2,6 +2,8 @@
 title: Tokens
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Tokens are variables and functions that can be used by [`command`](../config/project#command),
 [`args`](../config/project#args), [`env`](../config/project#env) (>= v1.12),
 [`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
@@ -221,6 +223,27 @@ tasks:
 
 > When there's no directies, or too many directories, this function will return the project root
 > using `.`.
+
+### `@envs`<VersionLabel version="1.21.0" />
+
+> Usable in `inputs`.
+
+The `@envs(file_group)` token will be replaced with all environment variables that have been
+configured in the group of the provided name.
+
+```yaml
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - '$NODE_ENV'
+
+# Configured as
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '@envs(sources)'
+```
 
 ### Inputs & outputs
 

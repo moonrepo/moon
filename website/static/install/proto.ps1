@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $Version = "latest"
 $Target = "proto_cli-x86_64-pc-windows-msvc"
 
-if ($Args.Length -eq 1) {
+if ($Args.Length -gt 0) {
   $Version = $Args.Get(0)
 }
 
@@ -68,11 +68,11 @@ $env:PROTO_LOG = "error"
 # Versions >= 0.30 handle the messaging
 if ($Version -eq "latest" -or $Version -notmatch '^0\.[0-2]{1}[0-9]{1}\.') {
   $SetupArgs = New-Object -TypeName "System.Collections.ArrayList"
-  $SetupArgs.Add("setup")
+  $SetupArgs.Add("setup") | Out-Null
 
   ForEach ($Arg in $Args){
       if ($Arg.StartsWith("-")) {
-          $SetupArgs.Add($Arg)
+          $SetupArgs.Add($Arg) | Out-Null
       }
   }
 

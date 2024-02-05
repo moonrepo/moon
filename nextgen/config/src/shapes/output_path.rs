@@ -1,7 +1,7 @@
 #![allow(clippy::from_over_into)]
 
 use crate::patterns;
-use crate::portable_path::is_glob;
+use crate::portable_path::is_glob_like;
 use crate::validate::validate_child_relative_path;
 use moon_common::path::{
     expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
@@ -93,7 +93,7 @@ impl FromStr for OutputPath {
         if let Some(workspace_path) = value.strip_prefix('/') {
             validate_child_relative_path(workspace_path)?;
 
-            return Ok(if is_glob(workspace_path) {
+            return Ok(if is_glob_like(workspace_path) {
                 OutputPath::WorkspaceGlob(workspace_path.to_owned())
             } else {
                 OutputPath::WorkspaceFile(workspace_path.to_owned())
@@ -105,7 +105,7 @@ impl FromStr for OutputPath {
 
         validate_child_relative_path(project_path)?;
 
-        Ok(if is_glob(project_path) {
+        Ok(if is_glob_like(project_path) {
             OutputPath::ProjectGlob(project_path.to_owned())
         } else {
             OutputPath::ProjectFile(project_path.to_owned())

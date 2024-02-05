@@ -3,7 +3,7 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::{color, Id};
 use moon_config::{
-    is_glob, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
+    is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
 };
@@ -419,7 +419,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             // If an arg contains a glob, we must run in a shell for expansion to work
-            if task.args.iter().any(is_glob) {
+            if task.args.iter().any(|a| is_glob_like(a)) {
                 task.options.shell = Some(true);
             }
         }

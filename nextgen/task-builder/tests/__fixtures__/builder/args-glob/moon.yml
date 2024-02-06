@@ -1,0 +1,18 @@
+tasks:
+  no-glob-string:
+    command: 'test ./tests'
+    platform: node
+  with-glob-string:
+    command: 'test ./tests/**/*.js'
+    platform: node
+
+  no-glob-list:
+    command:
+      - 'test'
+      - './tests'
+    platform: node
+  with-glob-list:
+    command:
+      - 'test'
+      - './tests/**/*.js'
+    platform: node

@@ -31,6 +31,8 @@
   per task.
 - Added environment variable support to `fileGroups`.
 - Added a `@envs(group)` token function for referencing environment variables.
+- Updated tasks with glob-like arguments to automatically enabled the `shell` option, so that glob
+  expansion works correctly.
 - Implemented a new console layer for writing to stdout/stderr.
   - Logs are now buffered and written periodically.
   - Previously they were written immediately, which required locking std each call.
@@ -40,6 +42,7 @@
 
 - Fixed an issue where the action graph would create incorrect nodes when a tool utilizes dependency
   workspaces, and a project is not within the workspace.
+- Fixed an issue where glob based arguments were overlay escaped.
 
 #### ⚙️ Internal
 

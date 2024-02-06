@@ -68,7 +68,7 @@ impl FileGroup {
             _ => {
                 let path = input.to_workspace_relative(project_source);
 
-                if glob::is_glob(&path) {
+                if input.is_glob() {
                     self.globs.push(path);
                 } else {
                     self.files.push(path);

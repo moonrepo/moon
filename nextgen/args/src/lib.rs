@@ -50,7 +50,14 @@ where
                 line.push(' ');
             }
             _ => {
-                if arg.starts_with('$') || arg.starts_with('\'') || arg.starts_with('"') {
+                if
+                // env var
+                arg.starts_with('$') ||
+                // already quoted
+                arg.starts_with('\'') || arg.starts_with('"') ||
+                // glob expansion
+                arg.contains('*') || arg.contains('[') || arg.contains('{') || arg.contains('?')
+                {
                     line.push_str(arg);
                 } else {
                     let quoted = shell_words::quote(arg);
@@ -96,9 +103,16 @@ where
             single_chars.iter().any(|c| bytes.contains(&c[0]));
 
         if has_special_chars
+            // env var
             || bytes.starts_with(&[b'$'])
+            // already quoted
             || bytes.starts_with(&[b'\''])
             || bytes.starts_with(&[b'"'])
+            // glob expansion
+            || bytes.contains(&b'*')
+            || bytes.contains(&b'[')
+            || bytes.contains(&b'{')
+            || bytes.contains(&b'?')
         {
             line.push(arg);
         } else {

@@ -2,7 +2,6 @@
 
 use crate::language_platform::PlatformType;
 use crate::toolchain::*;
-use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
 use version_spec::UnresolvedVersionSpec;
@@ -52,9 +51,9 @@ pub struct ToolchainConfig {
 
     #[setting(nested)]
     pub typescript: Option<TypeScriptConfig>,
-
-    #[setting(flatten, nested)]
-    pub tools: FxHashMap<Id, ToolConfig>,
+    // TODO: enable once platforms are live!
+    // #[setting(flatten, nested)]
+    // pub tools: FxHashMap<Id, ToolConfig>,
 }
 
 impl ToolchainConfig {

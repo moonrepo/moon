@@ -18,9 +18,9 @@ impl ExtensionPlugin {
 }
 
 impl Plugin for ExtensionPlugin {
-    fn new(id: PluginId, registration: PluginRegistration) -> miette::Result<Self> {
+    fn new(registration: PluginRegistration) -> miette::Result<Self> {
         Ok(Self {
-            id,
+            id: registration.id,
             plugin: registration.container,
         })
     }

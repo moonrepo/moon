@@ -11,7 +11,7 @@ use std::sync::Arc;
 struct TestPlugin;
 
 impl Plugin for TestPlugin {
-    fn new(_id: Id, _reg: PluginRegistration) -> miette::Result<Self> {
+    fn new(_reg: PluginRegistration) -> miette::Result<Self> {
         Ok(TestPlugin)
     }
 

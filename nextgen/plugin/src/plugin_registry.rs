@@ -213,14 +213,12 @@ impl<T: Plugin> PluginRegistry<T> {
         // Combine everything into the container and register
         self.register(
             id.to_owned(),
-            T::new(
-                id.to_owned(),
-                PluginRegistration {
-                    container: PluginContainer::new(id.to_owned(), manifest, functions)?,
-                    moon_env: Arc::clone(&self.moon_env),
-                    proto_env: Arc::clone(&self.proto_env),
-                },
-            )?,
+            T::new(PluginRegistration {
+                container: PluginContainer::new(id.to_owned(), manifest, functions)?,
+                id: id.to_owned(),
+                moon_env: Arc::clone(&self.moon_env),
+                proto_env: Arc::clone(&self.proto_env),
+            })?,
         );
 
         Ok(())

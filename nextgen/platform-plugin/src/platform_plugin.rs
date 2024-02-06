@@ -55,7 +55,7 @@ impl PlatformPlugin {
 }
 
 impl Plugin for PlatformPlugin {
-    fn new(id: PluginId, registration: PluginRegistration) -> miette::Result<Self> {
+    fn new(registration: PluginRegistration) -> miette::Result<Self> {
         let plugin = Arc::new(registration.container);
 
         Ok(Self {
@@ -63,14 +63,14 @@ impl Plugin for PlatformPlugin {
             // the WASM file has support for it!
             tool: if plugin.has_func("register_tool") {
                 Some(Tool::new(
-                    id.clone(),
+                    registration.id.clone(),
                     Arc::clone(&registration.proto_env),
                     Arc::clone(&plugin),
                 )?)
             } else {
                 None
             },
-            id,
+            id: registration.id,
             plugin,
         })
     }

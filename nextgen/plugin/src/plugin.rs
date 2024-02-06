@@ -5,6 +5,7 @@ use warpgate::{Id, PluginContainer};
 
 pub struct PluginRegistration {
     pub container: PluginContainer,
+    pub id: Id,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
 }
@@ -32,6 +33,6 @@ impl PluginType {
 }
 
 pub trait Plugin: Sized {
-    fn new(id: Id, registration: PluginRegistration) -> miette::Result<Self>;
+    fn new(registration: PluginRegistration) -> miette::Result<Self>;
     fn get_type(&self) -> PluginType;
 }

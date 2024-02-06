@@ -357,7 +357,10 @@ mod tasks_builder {
 
             assert_eq!(task.command, "test");
             assert_eq!(task.args, vec!["./tests"]);
-            assert_eq!(task.options.shell, None);
+            assert_eq!(
+                task.options.shell,
+                if cfg!(windows) { Some(true) } else { None }
+            );
 
             let task = tasks.get("with-glob-string").unwrap();
 
@@ -369,7 +372,10 @@ mod tasks_builder {
 
             assert_eq!(task.command, "test");
             assert_eq!(task.args, vec!["./tests"]);
-            assert_eq!(task.options.shell, None);
+            assert_eq!(
+                task.options.shell,
+                if cfg!(windows) { Some(true) } else { None }
+            );
 
             let task = tasks.get("with-glob-list").unwrap();
 

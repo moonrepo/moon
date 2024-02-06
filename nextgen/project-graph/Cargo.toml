@@ -6,6 +6,7 @@ license = "MIT"
 description = "Project graph for moon represented as a DAG."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = false
 
 [dependencies]
 moon_cache = { path = "../cache" }

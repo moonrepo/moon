@@ -28,6 +28,7 @@ fn validate_paths<C>(
     value: &PartialOwnersPaths,
     data: &PartialOwnersConfig,
     _context: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     match value {
         PartialOwnersPaths::List(list) => {
@@ -56,6 +57,7 @@ fn validate_required_approvals<C>(
     value: &u8,
     _data: &PartialOwnersConfig,
     _context: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     if *value == 0 {
         return Err(ValidateError::new("at least 1 approver is required"));

@@ -16,6 +16,7 @@ fn validate_projects<D, C>(
     projects: &PartialWorkspaceProjects,
     _data: &D,
     _ctx: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     match projects {
         PartialWorkspaceProjects::Both(cfg) => {

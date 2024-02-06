@@ -11,7 +11,12 @@ use std::collections::BTreeMap;
 #[cfg(feature = "loader")]
 use std::path::Path;
 
-fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
+fn validate_channel<D, C>(
+    value: &str,
+    _data: &D,
+    _ctx: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
         return Err(ValidateError::new("must start with a `#`"));
     }

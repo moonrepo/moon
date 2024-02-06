@@ -171,10 +171,11 @@ impl Pipeline {
             };
 
             action_handles.push(tokio::spawn(async move {
+                let interactive = action.node.is_interactive();
                 let result = tokio::select! {
                     biased;
 
-                    _ = cancel_token_clone.cancelled() => {
+                    _ = cancel_token_clone.cancelled(), if !interactive => {
                         Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
                     }
                     res = process_action(
@@ -233,10 +234,11 @@ impl Pipeline {
             action.node_index = node_index.index();
 
             action_handles.push(tokio::spawn(async move {
+                let interactive = action.node.is_interactive();
                 let result = tokio::select! {
                     biased;
 
-                    _ = cancel_token_clone.cancelled() => {
+                    _ = cancel_token_clone.cancelled(), if !interactive => {
                         Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
                     }
                     res = process_action(

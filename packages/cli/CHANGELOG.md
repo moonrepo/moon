@@ -38,6 +38,8 @@
   like `npm run` or `yarn run`.
 - Updated tasks with glob-like arguments to automatically enabled the `shell` option, so that glob
   expansion works correctly.
+- Updated interactive tasks to not be shutdown when receiving a CTRL+C signal, and instead allow
+  them to handle it themselves, and cleanup if necessary.
 - Implemented a new console layer for writing to stdout/stderr.
   - Logs are now buffered and written periodically.
   - Previously they were written immediately, which required locking std each call.

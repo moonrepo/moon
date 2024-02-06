@@ -1,14 +1,14 @@
 use crate::sandbox::{debug_sandbox_files, Sandbox};
 use assert_cmd::assert::Assert;
+use assert_cmd::cargo::cargo_bin;
 use starbase_utils::dirs::home_dir;
 use std::path::Path;
 
-pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
+pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command {
     let path = path.as_ref();
 
-    let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
+    let mut cmd = std::process::Command::new(cargo_bin("moon"));
     cmd.current_dir(path);
-    cmd.timeout(std::time::Duration::from_secs(90));
     cmd.env("RUST_BACKTRACE", "1");
     cmd.env("NO_COLOR", "1");
     // Store plugins in the sandbox
@@ -26,6 +26,14 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     // Enable logging for code coverage
     cmd.env("MOON_LOG", "trace");
     // cmd.env("PROTO_LOG", "trace");
+    cmd
+}
+
+pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
+    let path = path.as_ref();
+
+    let mut cmd = assert_cmd::Command::from_std(create_moon_command_std(path));
+    cmd.timeout(std::time::Duration::from_secs(90));
     cmd
 }
 

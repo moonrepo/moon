@@ -9,7 +9,7 @@ pub use crate::queries::touched_files::{
 };
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon_app_components::AppConsole;
+use moon_app_components::Console;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::system;
@@ -29,7 +29,7 @@ pub struct QueryHashArgs {
 pub async fn hash(
     args: ArgsRef<QueryHashArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     let result = query_hash(workspace, &args.hash).await?;
 
@@ -59,7 +59,7 @@ pub struct QueryHashDiffArgs {
 pub async fn hash_diff(
     args: ArgsRef<QueryHashDiffArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     let mut result = query_hash_diff(workspace, &args.left, &args.right).await?;
     let is_tty = console.out.is_terminal();
@@ -175,7 +175,7 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
-    let console = resources.get::<AppConsole>();
+    let console = resources.get::<Console>();
 
     if args.json {
         let result = QueryProjectsResult { projects, options };
@@ -273,7 +273,7 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
     }
 
     // Write to stdout directly to avoid broken pipe panics
-    let console = resources.get::<AppConsole>();
+    let console = resources.get::<Console>();
 
     if options.json {
         console.out.write_line(
@@ -324,7 +324,7 @@ pub struct QueryTouchedFilesArgs {
 pub async fn touched_files(
     args: ArgsRef<QueryTouchedFilesArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     let args = args.to_owned();
     let options = QueryTouchedFilesOptions {

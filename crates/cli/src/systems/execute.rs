@@ -1,5 +1,5 @@
 use moon_api::Launchpad;
-use moon_app_components::{AppConsole, MoonEnv};
+use moon_app_components::{Console, MoonEnv};
 use moon_common::{color, is_formatted_output, is_test_env};
 use moon_console::Checkpoint;
 use moon_workspace::Workspace;
@@ -10,7 +10,7 @@ use tracing::debug;
 pub async fn check_for_new_version(
     moon_env: StateRef<MoonEnv>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     if is_test_env() || is_formatted_output() || !moon::is_telemetry_enabled() {
         return Ok(());

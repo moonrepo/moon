@@ -465,6 +465,10 @@ impl Pipeline {
         console: &Console,
         compact: bool,
     ) -> miette::Result<()> {
+        if console.out.is_quiet() {
+            return Ok(());
+        }
+
         let mut cached_count = 0;
         let mut pass_count = 0;
         let mut fail_count = 0;

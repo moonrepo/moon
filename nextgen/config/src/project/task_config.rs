@@ -10,6 +10,7 @@ fn validate_command<D, C>(
     command: &PartialTaskArgs,
     _task: &D,
     _ctx: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     let invalid = match command {
         PartialTaskArgs::None => false,
@@ -34,6 +35,7 @@ pub(crate) fn validate_deps<D, C>(
     deps: &[PartialTaskDependency],
     _task: &D,
     _context: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
         let scope;

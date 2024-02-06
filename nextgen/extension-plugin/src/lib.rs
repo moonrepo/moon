@@ -1,5 +1,5 @@
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginId, PluginType};
+use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 
 pub struct ExtensionPlugin {
     pub id: PluginId,
@@ -18,8 +18,11 @@ impl ExtensionPlugin {
 }
 
 impl Plugin for ExtensionPlugin {
-    fn new(id: PluginId, plugin: PluginContainer) -> Self {
-        Self { id, plugin }
+    fn new(registration: PluginRegistration) -> miette::Result<Self> {
+        Ok(Self {
+            id: registration.id,
+            plugin: registration.container,
+        })
     }
 
     fn get_type(&self) -> PluginType {

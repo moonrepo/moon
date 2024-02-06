@@ -3,7 +3,7 @@ use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
 
 cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a list of paths, or a map of paths to owners"
@@ -28,6 +28,7 @@ fn validate_paths<C>(
     value: &PartialOwnersPaths,
     data: &PartialOwnersConfig,
     _context: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     match value {
         PartialOwnersPaths::List(list) => {
@@ -56,6 +57,7 @@ fn validate_required_approvals<C>(
     value: &u8,
     _data: &PartialOwnersConfig,
     _context: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     if *value == 0 {
         return Err(ValidateError::new("at least 1 approver is required"));
@@ -65,7 +67,7 @@ fn validate_required_approvals<C>(
 }
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct OwnersConfig {
         // Bitbucket
         pub custom_groups: FxHashMap<String, Vec<String>>,

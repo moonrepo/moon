@@ -11,7 +11,12 @@ use std::collections::BTreeMap;
 #[cfg(feature = "loader")]
 use std::path::Path;
 
-fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
+fn validate_channel<D, C>(
+    value: &str,
+    _data: &D,
+    _ctx: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
         return Err(ValidateError::new("must start with a `#`"));
     }
@@ -32,7 +37,7 @@ derive_enum!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectMetadataConfig {
         pub name: Option<String>,
 
@@ -49,7 +54,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"
@@ -63,7 +68,7 @@ cacheable!(
 
 cacheable!(
     /// Docs: https://moonrepo.dev/docs/config/project
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/project.json",

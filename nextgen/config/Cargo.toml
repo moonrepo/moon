@@ -27,11 +27,11 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
-	"json_schema",
+	"renderer_json_schema",
+	"renderer_typescript",
 	"schema",
 	"type_semver",
 	"type_serde_json",
-	"typescript",
 	"valid_url",
 	"yaml",
 ] }

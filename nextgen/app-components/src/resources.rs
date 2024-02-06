@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 pub use moon_console::Console;
+pub use moon_platform_plugin::PlatformRegistry;
 
 #[derive(Debug, Resource)]
 pub struct AppInfo {

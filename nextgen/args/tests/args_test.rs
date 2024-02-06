@@ -125,6 +125,15 @@ mod join_args {
     }
 
     #[test]
+    fn globs_dont_quote() {
+        assert_eq!(join_args(vec!["test", "./tests/*.js"]), "test ./tests/*.js");
+        assert_eq!(
+            join_args(vec!["test", "./{test,spec}/**/*.tsx?"]),
+            "test ./{test,spec}/**/*.tsx?"
+        );
+    }
+
+    #[test]
     fn special_chars() {
         assert_eq!(join_args(vec!["bin", "@dir/path"]), "bin @dir/path");
     }

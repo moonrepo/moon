@@ -5,13 +5,25 @@ use schematic::{SchemaType, Schematic, ValidateError};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-// Not accurate at all but good enough...
-pub(crate) fn is_glob(value: &str) -> bool {
-    value.contains("**")
-        || value.contains('*')
-        || value.contains('{')
-        || value.contains('[')
-        || value.starts_with('!')
+/// Return true of the provided file looks like a glob pattern.
+pub fn is_glob_like(value: &str) -> bool {
+    if value.starts_with('!') || value.contains("**") || value.contains('*') {
+        return true;
+    }
+
+    if let (Some(l), Some(r)) = (value.find('{'), value.find('}')) {
+        if l < r {
+            return true;
+        }
+    }
+
+    if let (Some(l), Some(r)) = (value.find('['), value.find(']')) {
+        if l < r {
+            return true;
+        }
+    }
+
+    value.contains('?')
 }
 
 pub trait PortablePath: Sized {
@@ -100,7 +112,7 @@ path_type!(FilePath);
 
 impl PortablePath for FilePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
-        if is_glob(value) {
+        if is_glob_like(value) {
             return Err(ValidateError::new(
                 "globs are not supported, expected a literal file path",
             ));
@@ -126,7 +138,7 @@ path_type!(ProjectFilePath);
 
 impl PortablePath for ProjectFilePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
-        if is_glob(value) {
+        if is_glob_like(value) {
             return Err(ValidateError::new(
                 "globs are not supported, expected a literal file path",
             ));

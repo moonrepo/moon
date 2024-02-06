@@ -3,7 +3,7 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::{color, Id};
 use moon_config::{
-    InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
+    is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
 };
@@ -402,8 +402,6 @@ impl<'proj> TasksBuilder<'proj> {
             };
         }
 
-        task.target = target;
-
         task.type_of = if !task.outputs.is_empty() {
             TaskType::Build
         } else if is_local {
@@ -417,7 +415,19 @@ impl<'proj> TasksBuilder<'proj> {
             if cfg!(windows) || task.platform.is_system() {
                 task.options.shell = Some(true);
             }
+
+            // If an arg contains a glob, we must run in a shell for expansion to work
+            if task.args.iter().any(|a| is_glob_like(a)) {
+                trace!(
+                    target = target.as_str(),
+                    "Task has a glob-like argument, wrapping in a shell so glob expansion works",
+                );
+
+                task.options.shell = Some(true);
+            }
         }
+
+        task.target = target;
 
         Ok(task)
     }

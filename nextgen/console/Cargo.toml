@@ -11,4 +11,5 @@ repository = "https://github.com/moonrepo/moon"
 moon_common = { path = "../common" }
 miette = { workspace = true }
 parking_lot = "0.12.1"
+starbase = { workspace = true }
 starbase_styles = { workspace = true }

@@ -1,4 +1,5 @@
-use moon_app_components::{AppConsole, ExtensionRegistry, MoonEnv, ProtoEnv, WorkspaceRoot};
+use crate::app::GlobalArgs;
+use moon_app_components::{Console, ExtensionRegistry, MoonEnv, ProtoEnv, WorkspaceRoot};
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_console::Checkpoint;
 use moon_env::MoonEnvironment;
@@ -14,17 +15,19 @@ use tracing::debug;
 
 #[system]
 pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
+    let quiet = { states.get::<GlobalArgs>().quiet };
+
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
     states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
 
-    resources.set(AppConsole::new(false));
+    resources.set(Console::new(quiet));
 }
 
 #[system]
 pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
     let workspace = moon::load_workspace_from(
         Arc::clone(states.get::<ProtoEnv>()),
-        resources.get::<AppConsole>().into_inner(),
+        Arc::new(resources.get::<Console>().to_owned()),
     )
     .await?;
 
@@ -55,7 +58,7 @@ pub async fn create_plugin_registries(
 pub async fn install_proto(
     proto_env: StateRef<ProtoEnv>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     let bin_name = exe_name("proto");
     let install_dir = proto_env.tools_dir.join("proto").join(PROTO_CLI_VERSION);

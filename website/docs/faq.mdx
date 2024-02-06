@@ -230,6 +230,21 @@ the following popular tools:
 - [Changesets](https://github.com/changesets/changesets)
 - [Lerna](https://github.com/lerna/lerna)
 
+### Why is npm/pnpm/yarn install running twice when running a task?
+
+moon will automatically install dependencies in a project or in the workspace root (when using
+package workspaces) when the lockfile or `package.json` has been modified since the last time the
+install ran. If you are running a task and multiple installs are occurring (and it's causing
+issues), it can mean 1 of 2 things:
+
+- If you are using package workspaces, then 1 of the project's triggering the install is not listed
+  within the `workspaces` field in the root `package.json` (for npm and yarn), or in
+  `pnpm-workspace.yml` (for pnpm).
+- If the install is triggering in a non-JavaScript related project, then this project is incorrectly
+  listed as a package workspace.
+- If you don't want a package included in the workspace, but do want to install its dependencies,
+  then it'll need its own lockfile.
+
 ## Troubleshooting
 
 ### How to resolve the "version 'GLIBC_X.XX' not found" error?

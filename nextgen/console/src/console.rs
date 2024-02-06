@@ -1,6 +1,7 @@
 use miette::IntoDiagnostic;
 use moon_common::is_formatted_output;
 use parking_lot::Mutex;
+use starbase::Resource;
 use std::io::{self, IsTerminal, Write};
 use std::mem;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -178,7 +179,7 @@ impl Clone for ConsoleBuffer {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Resource)]
 pub struct Console {
     pub err: ConsoleBuffer,
     pub out: ConsoleBuffer,

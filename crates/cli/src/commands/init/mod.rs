@@ -11,11 +11,10 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_app_components::{AppConsole, MoonEnv};
+use moon_app_components::{Console, MoonEnv};
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
-use moon_console::Console;
 use moon_utils::path;
 use moon_vcs::{Git, Vcs};
 use node::init_node;
@@ -181,7 +180,7 @@ pub async fn init_tool(
 pub async fn init(
     args: ArgsRef<InitArgs>,
     moon_env: StateRef<MoonEnv>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     let options = InitOptions {
         force: args.force,

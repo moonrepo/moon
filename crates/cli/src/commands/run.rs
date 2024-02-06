@@ -7,7 +7,7 @@ use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
-use moon_app_components::AppConsole;
+use moon_app_components::Console;
 use moon_common::is_test_env;
 use moon_project_graph::ProjectGraph;
 use moon_target::TargetLocator;
@@ -18,6 +18,7 @@ use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::env;
 use std::string::ToString;
+use std::sync::Arc;
 
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_DEBUGGING: &str = "Debugging";
@@ -106,7 +107,7 @@ pub async fn run_target(
     args: &RunArgs,
     concurrency: Option<usize>,
     workspace: &Workspace,
-    console: &AppConsole,
+    console: &Console,
     project_graph: ProjectGraph,
 ) -> AppResult {
     // Force cache to update using write-only mode
@@ -212,7 +213,7 @@ pub async fn run_target(
     let results = pipeline
         .bail_on_error()
         .generate_report("runReport.json")
-        .run(action_graph, console.into_inner(), Some(context))
+        .run(action_graph, Arc::new(console.to_owned()), Some(context))
         .await?;
 
     pipeline.render_stats(&results, console, true)?;
@@ -233,7 +234,7 @@ pub async fn run(
         args,
         global_args.concurrency,
         resources.get::<Workspace>(),
-        resources.get::<AppConsole>(),
+        resources.get::<Console>(),
         project_graph,
     )
     .await?;

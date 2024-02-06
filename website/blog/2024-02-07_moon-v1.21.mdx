@@ -80,4 +80,8 @@ If you'd like to help in this endeavor, let us know!
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.21.0) for a full list
 of changes.
 
+- Added `bun.inferTasksFromScripts` setting to `.moon/toolchain.yml`, for compatibility with
+  Node.js.
+- Updated tasks with glob-like arguments to automatically enabled the `shell` option, so that glob
+  expansion works correctly.
 - Implemented a new buffered console layer for writing to stdout/stderr.

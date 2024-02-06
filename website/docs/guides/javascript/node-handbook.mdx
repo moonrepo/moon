@@ -90,6 +90,14 @@ node:
   inferTasksFromScripts: true
 ```
 
+Or you can run scripts through `npm run` (or `pnpm`, `yarn`) calls.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'npm run build'
+```
+
 ## Repository structure
 
 JavaScript monorepo's work best when projects are split into applications and packages, with each

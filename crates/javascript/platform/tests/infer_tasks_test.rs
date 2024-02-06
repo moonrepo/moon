@@ -185,6 +185,230 @@ mod should_run_in_ci {
 mod create_task {
     use super::*;
 
+    mod package_managers {
+        use super::*;
+
+        #[test]
+        fn supports_bun() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::ConvertToTask,
+                PlatformType::Bun,
+                NodePackageManager::Bun,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["bun", "./test.js"])),
+                    platform: Some(PlatformType::Bun),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn wraps_bun() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::WrapRunScript,
+                PlatformType::Bun,
+                NodePackageManager::Bun,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["bun", "run", "script"])),
+                    platform: Some(PlatformType::Bun),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn supports_bun_via_node() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::ConvertToTask,
+                PlatformType::Node,
+                NodePackageManager::Bun,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn wraps_bun_via_node() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::WrapRunScript,
+                PlatformType::Node,
+                NodePackageManager::Bun,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["bun", "run", "script"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn supports_npm() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::ConvertToTask,
+                PlatformType::Node,
+                NodePackageManager::Npm,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn wraps_npm() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::WrapRunScript,
+                PlatformType::Node,
+                NodePackageManager::Npm,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["npm", "run", "script"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn supports_pnpm() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::ConvertToTask,
+                PlatformType::Node,
+                NodePackageManager::Pnpm,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn wraps_pnpm() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::WrapRunScript,
+                PlatformType::Node,
+                NodePackageManager::Pnpm,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["pnpm", "run", "script"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn supports_yarn() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::ConvertToTask,
+                PlatformType::Node,
+                NodePackageManager::Yarn,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["node", "./test.js"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+
+        #[test]
+        fn wraps_yarn() {
+            let task = create_task(
+                "project:task",
+                "script",
+                "./test.js",
+                TaskContext::WrapRunScript,
+                PlatformType::Node,
+                NodePackageManager::Yarn,
+            )
+            .unwrap();
+
+            assert_eq!(
+                task,
+                PartialTaskConfig {
+                    command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "script"])),
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
+                }
+            )
+        }
+    }
+
     mod script_files {
         use super::*;
 
@@ -521,9 +745,8 @@ mod infer_tasks_from_scripts {
                     "build-app".into(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
-                            "moon",
-                            "node",
-                            "run-script",
+                            "yarn",
+                            "run",
                             "build:app"
                         ])),
                         outputs: Some(vec![OutputPath::ProjectFile("dist".into())]),
@@ -534,12 +757,7 @@ mod infer_tasks_from_scripts {
                 (
                     "dev".into(),
                     PartialTaskConfig {
-                        command: Some(PartialTaskArgs::List(string_vec![
-                            "moon",
-                            "node",
-                            "run-script",
-                            "dev"
-                        ])),
+                        command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "dev"])),
                         local: Some(true),
                         platform: Some(PlatformType::Node),
                         ..PartialTaskConfig::default()
@@ -548,12 +766,7 @@ mod infer_tasks_from_scripts {
                 (
                     "test".into(),
                     PartialTaskConfig {
-                        command: Some(PartialTaskArgs::List(string_vec![
-                            "moon",
-                            "node",
-                            "run-script",
-                            "test"
-                        ])),
+                        command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "test"])),
                         platform: Some(PlatformType::Node),
                         ..PartialTaskConfig::default()
                     }
@@ -561,12 +774,7 @@ mod infer_tasks_from_scripts {
                 (
                     "lint".into(),
                     PartialTaskConfig {
-                        command: Some(PartialTaskArgs::List(string_vec![
-                            "moon",
-                            "node",
-                            "run-script",
-                            "lint"
-                        ])),
+                        command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "lint"])),
                         platform: Some(PlatformType::Node),
                         ..PartialTaskConfig::default()
                     }
@@ -575,9 +783,8 @@ mod infer_tasks_from_scripts {
                     "typecheck".into(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
-                            "moon",
-                            "node",
-                            "run-script",
+                            "yarn",
+                            "run",
                             "typecheck"
                         ])),
                         platform: Some(PlatformType::Node),

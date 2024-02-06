@@ -279,6 +279,7 @@ pub fn get_bun_fixture_configs() -> (
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("bun".into(), "base".to_owned()),
             ("packageManager".into(), "package-manager".to_owned()),
+            ("scripts".into(), "scripts".to_owned()),
             ("versionOverride".into(), "version-override".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
@@ -287,6 +288,7 @@ pub fn get_bun_fixture_configs() -> (
     let mut toolchain_config = get_default_toolchain();
     toolchain_config.node = None;
     toolchain_config.bun = Some(PartialBunConfig {
+        infer_tasks_from_scripts: Some(true),
         version: Some(UnresolvedVersionSpec::parse("1.0.0").unwrap()),
         ..PartialBunConfig::default()
     });

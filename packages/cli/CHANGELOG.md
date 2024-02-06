@@ -33,6 +33,8 @@
   Node.js.
 - Added environment variable support to `fileGroups`.
 - Added a `@envs(group)` token function for referencing environment variables.
+- Deprecated the `moon node run-script` command. Run the task through a package manager instead,
+  like `npm run` or `yarn run`.
 - Updated tasks with glob-like arguments to automatically enabled the `shell` option, so that glob
   expansion works correctly.
 - Implemented a new console layer for writing to stdout/stderr.

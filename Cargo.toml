@@ -29,7 +29,7 @@ clap = { version = "4.4.18", default-features = false, features = [
 	"std",
 	"error-context",
 ] }
-clap_complete = "4.4.9"
+clap_complete = "4.4.10"
 console = "0.15.8"
 dirs = "5.0.1"
 miette = "5.10.0"
@@ -44,36 +44,38 @@ regex = { version = "1.10.3", default-features = false, features = [
 	"std",
 	"perf",
 ] }
-reqwest = { version = "0.11.23", default-features = false, features = [
+reqwest = { version = "0.11.24", default-features = false, features = [
 	"rustls-tls-native-roots",
 	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.13.5", default-features = false, features = [
+schematic = { version = "0.13.7", default-features = false, features = [
 	"schema",
 ] }
 semver = "1.0.21"
-serde = { version = "1.0.195", features = ["derive"] }
-serde_json = "1.0.111"
-serde_yaml = "0.9.30"
-starbase = "0.2.15"
-starbase_archive = { version = "0.2.5", default-features = false, features = [
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = "1.0.113"
+serde_yaml = "0.9.31"
+starbase = "0.4.0"
+starbase_archive = { version = "0.4.0", default-features = false, features = [
+	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.2.2"
-starbase_sandbox = "0.1.13"
-starbase_styles = { version = "0.1.18", features = ["relative-path"] }
-starbase_utils = { version = "0.3.11", default-features = false, features = [
+starbase_events = "0.4.0"
+starbase_sandbox = "0.3.0"
+starbase_styles = { version = "0.2.0", features = ["relative-path"] }
+starbase_utils = { version = "0.4.2", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
+	"miette",
 	"toml",
 	"yaml",
 ] }
 tera = { version = "1.19.1", features = ["preserve_order"] }
 thiserror = "1.0.56"
-tokio = { version = "1.35.1", default-features = false, features = [
+tokio = { version = "1.36.0", default-features = false, features = [
 	"macros",
 	"process",
 	"rt-multi-thread",
@@ -89,14 +91,14 @@ uuid = { version = "1.7.0", features = ["v4"] }
 
 # proto/plugin related
 extism = "1.0.3"
-extism-pdk = "1.0.0"
-proto_core = "0.29.3"
-proto_installer = "0.2.0"
+extism-pdk = "1.0.1"
+proto_core = "0.30.1"
+proto_installer = "0.2.1"
 system_env = "0.2.0"
 version_spec = "0.2.0"
-warpgate = "0.10.4"
-warpgate_api = "0.3.2"
-warpgate_pdk = "0.1.0"
+warpgate = "0.11.0"
+warpgate_api = "0.4.0"
+warpgate_pdk = "0.2.0"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

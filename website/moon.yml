@@ -30,6 +30,11 @@ tasks:
       - '*.js'
       - 'tsconfig.json'
 
+  # ctrlc:
+  #   command: 'node ./cases/ctrlc.mjs'
+  #   options:
+  #     interactive: true
+
 workspace:
   inheritedTasks:
     exclude:

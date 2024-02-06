@@ -83,3 +83,9 @@ tasks:
     command: node ./affectedFiles.js
     options:
       affectedFiles: 'env'
+  ctrlc:
+    command: node ./ctrlc.js
+  ctrlcInteractive:
+    command: node ./ctrlc.js
+    options:
+      interactive: true

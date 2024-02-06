@@ -29,6 +29,8 @@
   - Root-level tasks will now create a root `moon.yml`, instead of warning.
 - Added `unixShell` and `windowsShell` task options, so that the underlying shell can be configured
   per task.
+- Added `bun.inferTasksFromScripts` setting to `.moon/toolchain.yml`, for compatibility with
+  Node.js.
 - Added environment variable support to `fileGroups`.
 - Added a `@envs(group)` token function for referencing environment variables.
 - Updated tasks with glob-like arguments to automatically enabled the `shell` option, so that glob

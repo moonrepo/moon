@@ -3,7 +3,7 @@ use clap::Args;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon::build_project_graph;
-use moon_app_components::AppConsole;
+use moon_app_components::Console;
 use moon_common::Id;
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
@@ -29,7 +29,7 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     let project = project_graph.get(&args.id)?;
     let config = &project.config;
 
-    let console = resources.get::<AppConsole>().stdout();
+    let console = resources.get::<Console>().stdout();
 
     if args.json {
         console.write_line(serde_json::to_string_pretty(&project).into_diagnostic()?)?;

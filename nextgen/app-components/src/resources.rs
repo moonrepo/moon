@@ -1,5 +1,4 @@
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_console::Console;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
@@ -8,6 +7,8 @@ use semver::Version;
 use starbase::Resource;
 use std::path::PathBuf;
 use std::sync::Arc;
+
+pub use moon_console::Console;
 
 #[derive(Debug, Resource)]
 pub struct AppInfo {
@@ -36,19 +37,6 @@ impl ExtensionRegistry {
             moon_env,
             proto_env,
         ))
-    }
-}
-
-#[derive(Resource)]
-pub struct AppConsole(pub Console);
-
-impl AppConsole {
-    pub fn new(quiet: bool) -> Self {
-        Self(Console::new(quiet))
-    }
-
-    pub fn into_inner(&self) -> Arc<Console> {
-        Arc::new(self.0.clone())
     }
 }
 

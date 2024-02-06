@@ -3239,6 +3239,7 @@ dependencies = [
  "miette",
  "moon_common",
  "parking_lot",
+ "starbase",
  "starbase_styles",
 ]
 

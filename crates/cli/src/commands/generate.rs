@@ -2,7 +2,7 @@ use crate::helpers::{create_theme, map_list};
 use clap::Args;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
-use moon_app_components::AppConsole;
+use moon_app_components::Console;
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_workspace::Workspace;
@@ -312,7 +312,7 @@ fn gather_variables(
 pub async fn generate(
     args: ArgsRef<GenerateArgs>,
     workspace: ResourceRef<Workspace>,
-    console: ResourceRef<AppConsole>,
+    console: ResourceRef<Console>,
 ) {
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let console = console.stdout();

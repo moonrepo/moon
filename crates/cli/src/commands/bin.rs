@@ -1,7 +1,7 @@
 use crate::app_error::ExitCode;
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon_app_components::AppConsole;
+use moon_app_components::Console;
 use moon_tool::{get_proto_env_vars, get_proto_paths, prepend_path_env_var};
 use proto_core::ProtoEnvironment;
 use starbase::system;
@@ -14,7 +14,7 @@ pub struct BinArgs {
 }
 
 #[system]
-pub async fn bin(args: ArgsRef<BinArgs>, console: ResourceRef<AppConsole>) {
+pub async fn bin(args: ArgsRef<BinArgs>, console: ResourceRef<Console>) {
     console.quiet();
 
     let proto = ProtoEnvironment::new()?;

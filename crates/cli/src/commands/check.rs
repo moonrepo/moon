@@ -2,7 +2,7 @@ use crate::app::GlobalArgs;
 use crate::commands::run::{run_target, RunArgs};
 use clap::Args;
 use moon::generate_project_graph;
-use moon_app_components::AppConsole;
+use moon_app_components::Console;
 use moon_common::Id;
 use moon_project::Project;
 use moon_target::TargetLocator;
@@ -82,7 +82,7 @@ pub async fn check(
         },
         global_args.concurrency,
         resources.get::<Workspace>(),
-        resources.get::<AppConsole>(),
+        resources.get::<Console>(),
         project_graph,
     )
     .await?;

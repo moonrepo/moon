@@ -391,6 +391,15 @@ pub struct App {
     )]
     pub log_file: Option<PathBuf>,
 
+    #[arg(
+        long,
+        short = 'q',
+        global = true,
+        env = "MOON_QUIET",
+        help = "Hide all non-important moon specific terminal output"
+    )]
+    pub quiet: bool,
+
     #[command(subcommand)]
     pub command: Commands,
 }
@@ -399,6 +408,7 @@ impl App {
     pub fn global_args(&self) -> GlobalArgs {
         GlobalArgs {
             concurrency: self.concurrency,
+            quiet: self.quiet,
         }
     }
 }
@@ -406,4 +416,5 @@ impl App {
 #[derive(State)]
 pub struct GlobalArgs {
     pub concurrency: Option<usize>,
+    pub quiet: bool,
 }

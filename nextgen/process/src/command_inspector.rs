@@ -200,7 +200,9 @@ impl<'cmd> CommandInspector<'cmd> {
                 let cmd_line = self.format_command(cmd_line, &workspace_root, None);
 
                 if let Some(console) = self.command.console.as_ref() {
-                    let _ = console.out.write_line(cmd_line);
+                    if !console.out.is_quiet() {
+                        let _ = console.out.write_line(cmd_line);
+                    }
                 } else {
                     println!("{cmd_line}"); // Hrmm?
                 }

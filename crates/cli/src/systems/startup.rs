@@ -1,3 +1,4 @@
+use crate::app::GlobalArgs;
 use moon_app_components::{AppConsole, ExtensionRegistry, MoonEnv, ProtoEnv, WorkspaceRoot};
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_console::Checkpoint;
@@ -14,10 +15,12 @@ use tracing::debug;
 
 #[system]
 pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
+    let quiet = { states.get::<GlobalArgs>().quiet };
+
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
     states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
 
-    resources.set(AppConsole::new(false));
+    resources.set(AppConsole::new(quiet));
 }
 
 #[system]

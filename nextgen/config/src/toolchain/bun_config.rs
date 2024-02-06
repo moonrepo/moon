@@ -8,6 +8,8 @@ use warpgate_api::PluginLocator;
 pub struct BunConfig {
     pub dependency_version_format: NodeVersionFormat,
 
+    pub infer_tasks_from_scripts: bool,
+
     #[setting(default = ".", skip)]
     pub packages_root: String,
 

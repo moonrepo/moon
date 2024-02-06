@@ -4,6 +4,7 @@
   "workspaces": [
     "base",
     "package-manager",
+    "scripts",
     "version-override"
   ]
 }

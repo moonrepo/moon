@@ -1,11 +1,11 @@
+use moon_args::split_args;
 use moon_common::Id;
 use moon_config::{
-    OutputPath, PartialTaskArgs, PartialTaskConfig, PartialTaskDependency, PlatformType,
+    NodePackageManager, OutputPath, PartialTaskArgs, PartialTaskConfig, PartialTaskDependency,
+    PlatformType,
 };
-use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_platform_detector::{UNIX_SYSTEM_COMMANDS, WINDOWS_SYSTEM_COMMANDS};
-use moon_process::args::split_args;
 use moon_target::Target;
 use moon_utils::regex::ID_CLEAN;
 use moon_utils::{regex, string_vec};
@@ -13,8 +13,7 @@ use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::collections::BTreeMap;
-
-const LOG_TARGET: &str = "moon:node-platform:tasks";
+use tracing::{debug, warn};
 
 pub type ScriptsMap = FxHashMap<String, String>;
 
@@ -127,7 +126,7 @@ fn clean_script_name(name: &str) -> String {
     ID_CLEAN.replace_all(name, "-").to_string()
 }
 
-fn detect_platform_type(command: &str) -> PlatformType {
+fn detect_platform_type(command: &str, fallback: PlatformType) -> PlatformType {
     if UNIX_SYSTEM_COMMANDS.is_match(command)
         || WINDOWS_SYSTEM_COMMANDS.is_match(command)
         || command == "noop"
@@ -135,7 +134,7 @@ fn detect_platform_type(command: &str) -> PlatformType {
         return PlatformType::System;
     }
 
-    PlatformType::Node
+    fallback
 }
 
 pub enum TaskContext {
@@ -143,15 +142,16 @@ pub enum TaskContext {
     WrapRunScript,
 }
 
-#[track_caller]
 pub fn create_task(
     target_id: &str,
     script_name: &str,
     script: &str,
     context: TaskContext,
+    platform: PlatformType,
+    pm: NodePackageManager,
 ) -> miette::Result<PartialTaskConfig> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
-    let script_args = split_args(script).unwrap();
+    let script_args = split_args(script)?;
     let mut task_config = PartialTaskConfig::default();
     let mut args = vec![];
     let mut outputs = vec![];
@@ -186,11 +186,15 @@ pub fn create_task(
     }
 
     if is_wrapping {
-        task_config.platform = Some(PlatformType::Node);
+        task_config.platform = Some(platform);
         task_config.command = Some(PartialTaskArgs::List(string_vec![
-            "moon",
-            "node",
-            "run-script",
+            match pm {
+                NodePackageManager::Bun => "bun",
+                NodePackageManager::Npm => "npm",
+                NodePackageManager::Pnpm => "pnpm",
+                NodePackageManager::Yarn => "yarn",
+            },
+            "run",
             script_name
         ]));
     } else {
@@ -198,7 +202,14 @@ pub fn create_task(
             if is_bash_script(command) {
                 args.insert(0, "bash".to_owned());
             } else if is_node_script(command) {
-                args.insert(0, "node".to_owned());
+                args.insert(
+                    0,
+                    if platform == PlatformType::Bun {
+                        "bun".to_owned()
+                    } else {
+                        "node".to_owned()
+                    },
+                );
             } else {
                 // Already there
             }
@@ -206,7 +217,7 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.platform = Some(detect_platform_type(&args[0]));
+        task_config.platform = Some(detect_platform_type(&args[0], platform));
         task_config.command = Some(if args.len() == 1 {
             PartialTaskArgs::String(args.remove(0))
         } else {
@@ -227,7 +238,6 @@ pub fn create_task(
     }
 
     debug!(
-        target: LOG_TARGET,
         "Creating task {} {}",
         color::label(target_id),
         color::muted_light(format!("(for script {})", color::symbol(script_name)))
@@ -260,10 +270,13 @@ pub struct ScriptParser<'a> {
 
     /// Scripts that ran into issues while parsing.
     unresolved_scripts: ScriptsMap,
+
+    platform: PlatformType,
+    pm: NodePackageManager,
 }
 
 impl<'a> ScriptParser<'a> {
-    pub fn new(project_id: &'a str) -> Self {
+    pub fn new(project_id: &'a str, platform: PlatformType, pm: NodePackageManager) -> Self {
         ScriptParser {
             life_cycles: FxHashMap::default(),
             names_to_ids: FxHashMap::default(),
@@ -273,6 +286,8 @@ impl<'a> ScriptParser<'a> {
             scripts: FxHashMap::default(),
             tasks: BTreeMap::new(),
             unresolved_scripts: FxHashMap::default(),
+            platform,
+            pm,
         }
     }
 
@@ -295,7 +310,14 @@ impl<'a> ScriptParser<'a> {
 
             self.tasks.insert(
                 Id::new(&task_id)?,
-                create_task(&target_id, name, script, TaskContext::WrapRunScript)?,
+                create_task(
+                    &target_id,
+                    name,
+                    script,
+                    TaskContext::WrapRunScript,
+                    self.platform,
+                    self.pm,
+                )?,
             );
         }
 
@@ -335,24 +357,19 @@ impl<'a> ScriptParser<'a> {
                 continue;
             }
 
-            if name.starts_with("pre") {
-                self.pre
-                    .insert(name.strip_prefix("pre").unwrap().to_owned(), script.clone());
+            if let Some(real_name) = name.strip_prefix("pre") {
+                self.pre.insert(real_name.to_owned(), script.clone());
                 continue;
             }
 
-            if name.starts_with("post") {
-                self.post.insert(
-                    name.strip_prefix("post").unwrap().to_owned(),
-                    script.clone(),
-                );
+            if let Some(real_name) = name.strip_prefix("post") {
+                self.post.insert(real_name.to_owned(), script.clone());
                 continue;
             }
 
             // Do not allow "cd ..."
             if INVALID_CD.is_match(script) {
                 warn!(
-                    target: LOG_TARGET,
                     "Changing directories (cd ...) is not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable to handle it: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -364,7 +381,6 @@ impl<'a> ScriptParser<'a> {
             // Rust commands do not support redirects natively
             if INVALID_REDIRECT.is_match(script) {
                 warn!(
-                    target: LOG_TARGET,
                     "Redirects (<, >, etc) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable that does the redirect: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -376,7 +392,6 @@ impl<'a> ScriptParser<'a> {
             // Rust commands do not support pipes natively
             if INVALID_PIPE.is_match(script) {
                 warn!(
-                    target: LOG_TARGET,
                     "Pipes (|) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable that does the piping: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -388,7 +403,6 @@ impl<'a> ScriptParser<'a> {
             // Rust commands do not support operators natively
             if INVALID_OPERATOR.is_match(script) {
                 warn!(
-                    target: LOG_TARGET,
                     "OR operator (||) is not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable to handle it: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -483,7 +497,14 @@ impl<'a> ScriptParser<'a> {
 
         self.tasks.insert(
             task_id.clone(),
-            create_task(&target_id, name, value, TaskContext::ConvertToTask)?,
+            create_task(
+                &target_id,
+                name,
+                value,
+                TaskContext::ConvertToTask,
+                self.platform,
+                self.pm,
+            )?,
         );
 
         Ok(task_id)

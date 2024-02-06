@@ -94,7 +94,16 @@ tasks:
 ### Using `package.json` scripts
 
 If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
-moon tasks to execute `package.json` scripts using `bun run`, instead of migrating everything.
+moon to inherit `package.json` scripts, and internally convert them to moon tasks. This can be
+achieved with the [`bun.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
+setting.
+
+```yaml title=".moon/toolchain.yml"
+bun:
+  inferTasksFromScripts: true
+```
+
+Or you can run scripts through `bun run` calls.
 
 ```yaml title="moon.yml"
 tasks:

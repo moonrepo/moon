@@ -1,9 +1,9 @@
 mod extension;
+mod platform;
 
 pub use extension::*;
+pub use platform::*;
 pub use warpgate_api::*;
-
-use std::path::Path;
 
 api_struct!(
     /// Information about the current moon workspace.
@@ -20,7 +20,7 @@ impl MoonContext {
     /// Return the provided file path as an absolute path (using virtual paths).
     /// If the path is already absolute (either real or virtual), return it.
     /// Otherwise prefix the path with the current working directory.
-    pub fn get_absolute_path<T: AsRef<Path>>(&self, path: T) -> VirtualPath {
+    pub fn get_absolute_path<T: AsRef<std::path::Path>>(&self, path: T) -> VirtualPath {
         let path = path.as_ref();
 
         if path.is_absolute() {

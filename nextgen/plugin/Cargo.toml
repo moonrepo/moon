@@ -14,6 +14,7 @@ convert_case = "0.6.0"
 dashmap = "5.5.3"
 miette = { workspace = true }
 proto_core = { workspace = true }
+rustc-hash = { workspace = true }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

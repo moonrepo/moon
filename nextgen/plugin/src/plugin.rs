@@ -1,4 +1,14 @@
+use moon_env::MoonEnvironment;
+use proto_core::ProtoEnvironment;
+use std::sync::Arc;
 use warpgate::{Id, PluginContainer};
+
+pub struct PluginRegistration {
+    pub container: PluginContainer,
+    pub id: Id,
+    pub moon_env: Arc<MoonEnvironment>,
+    pub proto_env: Arc<ProtoEnvironment>,
+}
 
 #[derive(Clone, Copy, Debug)]
 pub enum PluginType {
@@ -22,7 +32,7 @@ impl PluginType {
     }
 }
 
-pub trait Plugin {
-    fn new(id: Id, plugin: PluginContainer) -> Self;
+pub trait Plugin: Sized {
+    fn new(registration: PluginRegistration) -> miette::Result<Self>;
     fn get_type(&self) -> PluginType;
 }

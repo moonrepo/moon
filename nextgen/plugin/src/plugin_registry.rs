@@ -20,10 +20,11 @@ use warpgate::{
 
 #[allow(dead_code)]
 pub struct PluginRegistry<T: Plugin> {
+    pub moon_env: Arc<MoonEnvironment>,
+    pub proto_env: Arc<ProtoEnvironment>,
+
     loader: PluginLoader,
-    moon_env: Arc<MoonEnvironment>,
     plugins: Arc<DashMap<Id, T>>,
-    proto_env: Arc<ProtoEnvironment>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
@@ -212,10 +213,12 @@ impl<T: Plugin> PluginRegistry<T> {
         // Combine everything into the container and register
         self.register(
             id.to_owned(),
-            T::new(
-                id.to_owned(),
-                PluginContainer::new(id.to_owned(), manifest, functions)?,
-            ),
+            T::new(PluginRegistration {
+                container: PluginContainer::new(id.to_owned(), manifest, functions)?,
+                id: id.to_owned(),
+                moon_env: Arc::clone(&self.moon_env),
+                proto_env: Arc::clone(&self.proto_env),
+            })?,
         );
 
         Ok(())

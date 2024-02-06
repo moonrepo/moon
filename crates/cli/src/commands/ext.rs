@@ -39,7 +39,7 @@ pub async fn ext(
         .load_with_config(&id, config.get_plugin_locator(), move |manifest| {
             manifest.config.insert(
                 "moon_extension_config".to_owned(),
-                serialize_config(&config.config)?,
+                serialize_config(config.config.iter())?,
             );
 
             Ok(())

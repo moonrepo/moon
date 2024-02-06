@@ -1,0 +1,19 @@
+[package]
+name = "moon_platform_plugin"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "A platform plugin, enabling new language support."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_pdk_api = { path = "../pdk-api" }
+moon_plugin = { path = "../plugin" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+starbase = { workspace = true }
+tracing = { workspace = true }

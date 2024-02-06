@@ -11,6 +11,7 @@ fn validate_interactive<C>(
     enabled: &bool,
     options: &PartialTaskOptionsConfig,
     _ctx: &C,
+    _finalize: bool,
 ) -> Result<(), ValidateError> {
     if *enabled && options.persistent.is_some_and(|v| v) {
         return Err(ValidateError::new(

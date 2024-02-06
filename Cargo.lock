@@ -3033,6 +3033,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash",
+ "schematic",
  "serde",
  "serde_json",
  "starbase_styles",

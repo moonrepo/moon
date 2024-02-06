@@ -26,6 +26,7 @@ moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }

@@ -1,11 +1,12 @@
 use crate::actions;
+use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_bun_tool::{get_bun_env_paths, BunTool};
 use moon_common::Id;
 use moon_config::{
     BunConfig, DependencyConfig, DependencyScope, DependencySource, HasherConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TypeScriptConfig,
-    UnresolvedVersionSpec,
+    ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
+    TypeScriptConfig, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
@@ -20,6 +21,7 @@ use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::{async_trait, path};
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
+use schematic::Config;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
 use std::{
@@ -200,6 +202,33 @@ impl Platform for BunPlatform {
         }
 
         Ok(implicit_deps)
+    }
+
+    fn load_project_tasks(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<TasksConfigsMap> {
+        let mut tasks = BTreeMap::new();
+
+        if !self.config.infer_tasks_from_scripts {
+            return Ok(tasks);
+        }
+
+        debug!(
+            target: LOG_TARGET,
+            "Inferring {} tasks from {}",
+            color::id(project_id),
+            color::file("package.json")
+        );
+
+        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
+            for (id, partial_task) in infer_tasks_from_scripts(project_id, &package_json)? {
+                tasks.insert(id, TaskConfig::from_partial(partial_task));
+            }
+        }
+
+        Ok(tasks)
     }
 
     // TOOLCHAIN

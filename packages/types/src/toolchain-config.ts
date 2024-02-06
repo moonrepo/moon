@@ -17,6 +17,7 @@ export type NodeVersionFormat =
 export interface PartialBunConfig {
 	/** @default 'workspace' */
 	dependencyVersionFormat?: NodeVersionFormat | null;
+	inferTasksFromScripts?: boolean | null;
 	plugin?: string | null;
 	rootPackageOnly?: boolean | null;
 	/** @default true */
@@ -147,6 +148,7 @@ export interface PartialToolchainConfig {
 export interface BunConfig {
 	/** @default 'workspace' */
 	dependencyVersionFormat: NodeVersionFormat;
+	inferTasksFromScripts: boolean;
 	plugin: string | null;
 	rootPackageOnly: boolean;
 	/** @default true */

@@ -4,7 +4,8 @@ use moon::generate_project_graph;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
-    DependencyScope, PartialDependencyConfig, PartialProjectDependsOn, ProjectConfig,
+    DependencyScope, NodePackageManager, PartialDependencyConfig, PartialProjectDependsOn,
+    ProjectConfig,
 };
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
@@ -71,7 +72,16 @@ pub async fn from_package_json(
 
     PackageJson::sync(&project.root, |package_json| {
         // Create tasks from `package.json` scripts
-        for (task_id, task_config) in create_tasks_from_scripts(&project.id, package_json)? {
+        for (task_id, task_config) in create_tasks_from_scripts(
+            &project.id,
+            package_json,
+            workspace
+                .toolchain_config
+                .node
+                .as_ref()
+                .map(|cfg| cfg.package_manager)
+                .unwrap_or(NodePackageManager::Npm),
+        )? {
             partial_config
                 .tasks
                 .get_or_insert(BTreeMap::new())

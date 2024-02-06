@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+
+ SCRIPTS 
+
+Project: scripts
+Alias: test-bun-scripts
+Source: scripts
+Language: javascript
+Type: unknown
+
+ TASKS 
+
+build: bun run build
+lint-all: bun run lint:all
+noop: noop 
+version: bun --version
+
+
+

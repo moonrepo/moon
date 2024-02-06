@@ -7,7 +7,9 @@ use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_workspace::Workspace;
 use starbase::system;
+use starbase_styles::color;
 use std::env;
+use tracing::warn;
 
 #[derive(Args, Clone, Debug)]
 pub struct RunScriptArgs {
@@ -26,6 +28,12 @@ pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Wor
         .as_any()
         .downcast_ref::<NodeTool>()
         .unwrap();
+
+    warn!(
+        "The command {} is deprecated, update your task to run through a package manager instead. For example, {}.",
+        color::shell("moon node run-script"),
+        color::shell(format!("{} run {}", node.config.package_manager, &args.name)),
+    );
 
     let mut command = node.get_package_manager().create_command(node)?;
 

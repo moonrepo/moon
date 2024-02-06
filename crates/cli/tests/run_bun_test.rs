@@ -424,4 +424,19 @@ mod bun {
             assert!(predicate::str::contains("Env: input1.js,input2.js\n").eval(&output));
         }
     }
+
+    mod infer_tasks {
+        use super::*;
+
+        #[test]
+        fn inherits_tasks() {
+            let sandbox = bun_sandbox();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("project").arg("scripts");
+            });
+
+            assert_snapshot!(assert.output());
+        }
+    }
 }

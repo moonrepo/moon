@@ -228,7 +228,9 @@ impl Platform for NodePlatform {
         );
 
         if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
-            for (id, partial_task) in infer_tasks_from_scripts(project_id, &package_json)? {
+            for (id, partial_task) in
+                infer_tasks_from_scripts(project_id, &package_json, self.config.package_manager)?
+            {
                 tasks.insert(id, TaskConfig::from_partial(partial_task));
             }
         }

@@ -197,7 +197,8 @@ impl<'cmd> CommandInspector<'cmd> {
 
         if self.command.print_command {
             if let Some(cmd_line) = command_line.main_command.to_str() {
-                let cmd_line = self.format_command(cmd_line, &workspace_root, None);
+                let cmd_line =
+                    self.format_command(cmd_line, &workspace_root, self.command.cwd.as_deref());
 
                 if let Some(console) = self.command.console.as_ref() {
                     if !console.out.is_quiet() {

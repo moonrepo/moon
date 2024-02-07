@@ -1,20 +1,40 @@
 ---
 slug: moon-v1.21
-title: moon v1.21 - ???
+title: moon v1.21 - Deno tier 3, file group improvements, task shells, and more!
 authors: [milesj]
-tags: [task, options, extensions, plugins]
-# image: ./img/moon/v1.20.png
+tags: [deno, file-groups, env, shell, tasks, turborepo]
+image: ./img/moon/v1.21.png
 ---
 
-In this release, we're excited to introduce extensions, our first type of plugin!
+With this release, get ready for Deno tier 3 support, file group and task improvements, a new
+extension, and more.
 
 <!--truncate-->
 
+## Deno tier 3 support
+
+We've supported Deno tier 1 and 2 for almost a year now, but were hesitant to support tier 3 until
+[proto](/proto) stabilizes further. Now that proto is _almost_ at an official v1 release, and other
+tools in the toolchain (like Node.js, Bun, and Rust) are powered by proto, we're confident in
+supporting Deno tier 3. To make use of this, simply set the
+[`deno.version`](/docs/config/toolchain#deno) setting in
+[`.moon/toolchain.yml`](/docs/config/toolchain).
+
+```yaml title=".moon/toolchain.yml"
+deno:
+  version: '1.40.0'
+```
+
+When enabled, moon will download and install that version of Deno in the background, and run all
+subsequent tasks with it. This is great for ensuring that your project is always using the same
+version of Deno, across all machines.
+
 ## File groups now support environment variables
 
-Task inputs have supported environment variables for a while now, but file groups have not. The main
-reason for this is that file groups were implemented far before environment variables in task
-inputs! To bridge this gap, we've added support for environment variables in file groups.
+Task [`inputs`](/docs/config/project#inputs) have supported environment variables for a while now,
+but file groups have not. The main reason for this is that file groups were implemented far before
+environment variables in task inputs! To bridge this gap, we've added support for environment
+variables in file groups.
 
 ```yaml
 fileGroups:
@@ -35,6 +55,27 @@ Environment variables can be referenced using the
 [`@envs` token function](/docs/concepts/token#envs). The latter is only supported for `inputs` and
 will error for other locations, while the former is supported in `args`, `inputs`, and `outputs`,
 but will filter out environment variables when they are not supported.
+
+## New `unixShell` and `windowsShell` task options
+
+When the [`shell`](/docs/config/project#shell) task option is enabled, we run the task within a
+shell. However, the chosen shell was hard-coded to `$SHELL` on Unix machines and PowerShell on
+Windows, but what if you wanted to run it with a different shell? Or the same shell across all
+operating systems? Well, you couldn't.
+
+But not anymore! With this release, we're introducing [`unixShell`](/docs/config/project#unixshell)
+and [`windowsShell`](/docs/config/project#windowsshell) task options. When paired with `shell`, the
+task will run in a shell of your choice. For example, why not Bash everywhere?
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'vite build'
+    options:
+      shell: true
+      unixShell: 'bash'
+      windowsShell: 'bash'
+```
 
 ## New `migrate-turborepo` extension
 

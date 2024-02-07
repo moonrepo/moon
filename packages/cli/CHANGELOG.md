@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added shallow checkout detection to help avoid failing Git commands.
+  - If detected in `moon ci`, is a hard failure.
+  - If detected in `moon run`, will disable affected checks.
+
 ## 1.21.0
 
 #### 🚀 Updates

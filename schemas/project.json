@@ -454,6 +454,16 @@
             }
           ]
         },
+        "deno": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "node": {
           "anyOf": [
             {
@@ -1014,6 +1024,26 @@
               "type": "null"
             }
           ]
+        },
+        "unixShell": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskUnixShell"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windowsShell": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskWindowsShell"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -1094,6 +1124,24 @@
         "build",
         "run",
         "test"
+      ]
+    },
+    "TaskUnixShell": {
+      "title": "TaskUnixShell",
+      "type": "string",
+      "enum": [
+        "bash",
+        "elvish",
+        "fish",
+        "zsh"
+      ]
+    },
+    "TaskWindowsShell": {
+      "title": "TaskWindowsShell",
+      "type": "string",
+      "enum": [
+        "bash",
+        "pwsh"
       ]
     }
   }

@@ -2,11 +2,101 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-01-26T00:00:00.000Z</updated>
+    <updated>2024-02-07T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.21 - Deno tier 3, file group improvements, task shells, and more!]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.21</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.21"/>
+        <updated>2024-02-07T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[With this release, get ready for Deno tier 3 support, file group and task improvements, a new]]></summary>
+        <content type="html"><![CDATA[<p>With this release, get ready for Deno tier 3 support, file group and task improvements, a new
+extension, and more.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="deno-tier-3-support">Deno tier 3 support<a href="https://moonrepo.dev/blog/moon-v1.21#deno-tier-3-support" class="hash-link" aria-label="Direct link to Deno tier 3 support" title="Direct link to Deno tier 3 support">​</a></h2>
+<p>We've supported Deno tier 1 and 2 for almost a year now, but were hesitant to support tier 3 until
+<a href="https://moonrepo.dev/proto">proto</a> stabilizes further. Now that proto is <em>almost</em> at an official v1 release, and other
+tools in the toolchain (like Node.js, Bun, and Rust) are powered by proto, we're confident in
+supporting Deno tier 3. To make use of this, simply set the
+<a href="https://moonrepo.dev/docs/config/toolchain#deno"><code>deno.version</code></a> setting in
+<a href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/toolchain.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">deno</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'1.40.0'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>When enabled, moon will download and install that version of Deno in the background, and run all
+subsequent tasks with it. This is great for ensuring that your project is always using the same
+version of Deno, across all machines.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="file-groups-now-support-environment-variables">File groups now support environment variables<a href="https://moonrepo.dev/blog/moon-v1.21#file-groups-now-support-environment-variables" class="hash-link" aria-label="Direct link to File groups now support environment variables" title="Direct link to File groups now support environment variables">​</a></h2>
+<p>Task <a href="https://moonrepo.dev/docs/config/project#inputs"><code>inputs</code></a> have supported environment variables for a while now,
+but file groups have not. The main reason for this is that file groups were implemented far before
+environment variables in task inputs! To bridge this gap, we've added support for environment
+variables in file groups.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">fileGroups</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">vite</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'...'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'$VITE_SECRET_KEY'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'$NODE_ENV'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'@group(vite)'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Environment variables can be referenced using the
+<a href="https://moonrepo.dev/docs/concepts/token#group"><code>@group</code> token function</a>, or the new
+<a href="https://moonrepo.dev/docs/concepts/token#envs"><code>@envs</code> token function</a>. The latter is only supported for <code>inputs</code> and
+will error for other locations, while the former is supported in <code>args</code>, <code>inputs</code>, and <code>outputs</code>,
+but will filter out environment variables when they are not supported.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-unixshell-and-windowsshell-task-options">New <code>unixShell</code> and <code>windowsShell</code> task options<a href="https://moonrepo.dev/blog/moon-v1.21#new-unixshell-and-windowsshell-task-options" class="hash-link" aria-label="Direct link to new-unixshell-and-windowsshell-task-options" title="Direct link to new-unixshell-and-windowsshell-task-options">​</a></h2>
+<p>When the <a href="https://moonrepo.dev/docs/config/project#shell"><code>shell</code></a> task option is enabled, we run the task within a
+shell. However, the chosen shell was hard-coded to <code>$SHELL</code> on Unix machines and PowerShell on
+Windows, but what if you wanted to run it with a different shell? Or the same shell across all
+operating systems? Well, you couldn't.</p>
+<p>But not anymore! With this release, we're introducing <a href="https://moonrepo.dev/docs/config/project#unixshell"><code>unixShell</code></a>
+and <a href="https://moonrepo.dev/docs/config/project#windowsshell"><code>windowsShell</code></a> task options. When paired with <code>shell</code>, the
+task will run in a shell of your choice. For example, why not Bash everywhere?</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">shell</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">unixShell</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'bash'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">windowsShell</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'bash'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-migrate-turborepo-extension">New <code>migrate-turborepo</code> extension<a href="https://moonrepo.dev/blog/moon-v1.21#new-migrate-turborepo-extension" class="hash-link" aria-label="Direct link to new-migrate-turborepo-extension" title="Direct link to new-migrate-turborepo-extension">​</a></h2>
+<p>In our previous release, we added support for <a href="https://moonrepo.dev/blog/moon-v1.20">extensions, a new kind of WASM plugin</a>.
+Since this is a new experimental feature, we really wanted to show off what it can do, and stress
+test its boundaries. To do that, we chose to migrate the old <code>moon migrate from-turborepo</code> command
+into an extension
+(<a href="https://github.com/moonrepo/moon-extensions/tree/master/crates/migrate-turborepo" target="_blank" rel="noopener noreferrer">source can be found here</a>).
+This is our most complex extension so far, as it:</p>
+<ul>
+<li>Loads and parses files on the file system.</li>
+<li>Reads and writes JSON and YAML files.</li>
+<li>Supports deserializing data into structs.</li>
+<li>Extracts project graph information by executing <code>moon project-graph</code>.</li>
+</ul>
+<p>Do you currently have a Turborepo powered repository? And want to migrate to moon? Then simply
+execute the extension as such. View our
+<a href="https://moonrepo.dev/docs/guides/extensions#migrate-turborepo">guide for more information</a>!</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ext migrate-turborepo</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>As part of the migration from moon's Rust core into a WASM plugin, we've added support for the
+following new features:</p>
+<ul>
+<li>Added Bun support behind a new <code>--bun</code> flag.</li>
+<li>Added support for Turbo's <code>globalDotEnv</code>, <code>dotEnv</code>, and <code>outputMode</code>.</li>
+<li>Added support for root-level tasks (<code>//#</code>) through a root <code>moon.yml</code>, instead of logging a
+warning.</li>
+<li>Updated migrated task commands to run through a package manager, instead of
+<code>moon node run-script</code>.</li>
+</ul>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Based on the success of this extension, we plan to support a <code>migrate-nx</code> extension in the future!
+If you'd like to help in this endeavor, let us know!</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.21#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.21.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added <code>bun.inferTasksFromScripts</code> setting to <code>.moon/toolchain.yml</code>, for compatibility with
+Node.js.</li>
+<li>Added a <code>--quiet</code> global argument, for hiding non-critical moon output.</li>
+<li>Updated tasks with glob-like arguments to automatically enabled the <code>shell</code> option, so that glob
+expansion works correctly.</li>
+<li>Implemented a new buffered console layer for writing to stdout/stderr.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="deno" term="deno"/>
+        <category label="file-groups" term="file-groups"/>
+        <category label="env" term="env"/>
+        <category label="shell" term="shell"/>
+        <category label="tasks" term="tasks"/>
+        <category label="turborepo" term="turborepo"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.20 - Extension plugins, default task options, and more]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.20</id>
@@ -1386,54 +1476,5 @@ of changes.</p>
         <category label="version" term="version"/>
         <category label="ci" term="ci"/>
         <category label="shorthand" term="shorthand"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.18 - List installed tools and configure HTTP client]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.18</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.18"/>
-        <updated>2023-09-18T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[Today we've got a small release that includes some helpful features.]]></summary>
-        <content type="html"><![CDATA[<p>Today we've got a small release that includes some helpful features.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-tools-command">New <code>proto tools</code> command<a href="https://moonrepo.dev/blog/proto-v0.18#new-proto-tools-command" class="hash-link" aria-label="Direct link to new-proto-tools-command" title="Direct link to new-proto-tools-command">​</a></h2>
-<p>Are you curious what tools you have installed? And more specifically, which versions? What about
-configured aliases? Until now, you had to manually check the <code>~/.proto/tools</code> directory for this
-information, but now, you can simply run <a href="https://moonrepo.dev/docs/proto/commands/tool/list"><code>proto tools</code></a> to get a
-list of all installed tools.</p>
-<p>This command will list all tools that have been installed, along with their installed versions,
-relevant timestamps, available aliases, and store location.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto tools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">go - Go</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Store: ~/.proto/tools/go</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Versions:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">1.20</span><span class="token plain">.0 - installed 08/24/23, last used 09/18/23</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">1.20</span><span class="token plain">.2 - installed 01/01/70, last used 09/18/23, default version</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> - Node.js</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Store: ~/.proto/tools/node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Aliases:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    ~20 </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> stable</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Versions:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">18.0</span><span class="token plain">.0 - installed 09/03/23, last used 09/18/23, default version</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">18.14</span><span class="token plain">.0 - installed 09/04/23, last used 09/04/23</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">18.17</span><span class="token plain">.1 - installed 09/04/23, last used 09/04/23</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">19.0</span><span class="token plain">.0 - installed 09/03/23</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">20.0</span><span class="token plain">.0 - installed 09/03/23</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token number" style="color:#94dded">20.6</span><span class="token plain">.0 - installed 09/04/23, last used 09/18/23</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<blockquote>
-<p>This information can also be represented as JSON by passing the <code>--json</code> flag.</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-http-user-settings">New <code>[http]</code> user settings<a href="https://moonrepo.dev/blog/proto-v0.18#new-http-user-settings" class="hash-link" aria-label="Direct link to new-http-user-settings" title="Direct link to new-http-user-settings">​</a></h2>
-<p>Furthermore, we've added a new
-<a href="https://moonrepo.dev/docs/proto/config#settingshttp"><code>[http]</code> setting to <code>~/.proto/config.toml</code></a> that allows you to
-configure aspects of the HTTP client, which is primarily used for downloading tools.</p>
-<p>This may useful if you're behind a proxy, a VPN, or corporate network, and certain requests and
-certificates are blocked.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">~/.proto/config.toml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">http</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">proxies</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"http://intra.net/proxy"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">root-cert</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"/path/to/root/cert.pem"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="index-for-third-party-tools">Index for third-party tools<a href="https://moonrepo.dev/blog/proto-v0.18#index-for-third-party-tools" class="hash-link" aria-label="Direct link to Index for third-party tools" title="Direct link to Index for third-party tools">​</a></h2>
-<p>Now that our TOML and WASM plugins have stabilized, we felt the time was right to start working on a
-third-party index, a registry of all available tools. We've updated the official
-<a href="https://moonrepo.dev/docs/proto/tools">Supported tools</a> documentation to now include third-party tools.</p>
-<p>At this time, the list of tools is powered by a JS/JSON object,
-<a href="https://github.com/moonrepo/moon/blob/master/website/src/data/proto-tools.tsx" target="_blank" rel="noopener noreferrer">which can be found here</a>.
-In the future, we may move this to a database, add filtering, sorting, and everything else necessary
-for showcasing tools maintained by the community!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.18#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.18.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>For TOML plugins, we updated the schema internally to be represented as JSON instead of TOML,
-which may cause breakages depending on a version mismatch between proto and the plugin.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="http" term="http"/>
-        <category label="registry" term="registry"/>
-        <category label="index" term="index"/>
     </entry>
 </feed>

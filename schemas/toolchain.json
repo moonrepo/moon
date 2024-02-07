@@ -185,6 +185,16 @@
             }
           ]
         },
+        "inferTasksFromScripts": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "plugin": {
           "anyOf": [
             {
@@ -296,6 +306,16 @@
           ]
         },
         "plugin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
           "anyOf": [
             {
               "type": "string"

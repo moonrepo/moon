@@ -1,5 +1,6 @@
 use crate::enums::TouchedStatus;
 use crate::helpers::map_list;
+use moon_common::is_ci;
 use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,17 +21,38 @@ pub struct QueryTouchedFilesOptions {
     pub status: Vec<TouchedStatus>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct QueryTouchedFilesResult {
     pub files: FxHashSet<WorkspaceRelativePathBuf>,
     pub options: QueryTouchedFilesOptions,
+    pub shallow: bool,
+}
+
+// If we're in a shallow checkout, many diff commands will fail
+macro_rules! check_shallow {
+    ($vcs:ident) => {
+        if $vcs.is_shallow_checkout().await? {
+            warn!("Detected a shallow checkout, unable to run Git commands to determine touched files.");
+
+            if is_ci() {
+                warn!("A full Git history is required for affected checks, falling back to an empty files list.");
+            } else {
+                warn!("A full Git history is required for affected checks, disabling for now.");
+            }
+
+            let mut result = QueryTouchedFilesResult::default();
+            result.shallow = true;
+
+            return Ok(result);
+        }
+    };
 }
 
 /// Query a list of files that have been modified between branches.
 pub async fn query_touched_files(
     workspace: &Workspace,
     options: &QueryTouchedFilesOptions,
-) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
+) -> AppResult<QueryTouchedFilesResult> {
     debug!("Querying for touched files");
 
     let vcs = &workspace.vcs;
@@ -39,6 +61,8 @@ pub async fn query_touched_files(
 
     // On default branch, so compare against self -1 revision
     let touched_files_map = if options.default_branch && vcs.is_default_branch(current_branch) {
+        check_shallow!(vcs);
+
         trace!(
             "On default branch {}, comparing against previous revision",
             current_branch
@@ -49,6 +73,8 @@ pub async fn query_touched_files(
 
         // On a branch, so compare branch against remote base/default branch
     } else if !options.local {
+        check_shallow!(vcs);
+
         let base = env::var("MOON_BASE")
             .unwrap_or_else(|_| options.base.as_deref().unwrap_or(default_branch).to_owned());
 
@@ -111,5 +137,9 @@ pub async fn query_touched_files(
         );
     }
 
-    Ok(touched_files)
+    Ok(QueryTouchedFilesResult {
+        files: touched_files,
+        options: options.to_owned(),
+        shallow: false,
+    })
 }

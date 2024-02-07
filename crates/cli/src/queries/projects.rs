@@ -90,14 +90,16 @@ pub async fn load_touched_files(
         }
     }
 
-    query_touched_files(
+    let result = query_touched_files(
         workspace,
         &QueryTouchedFilesOptions {
             local: !is_ci(),
             ..QueryTouchedFilesOptions::default()
         },
     )
-    .await
+    .await?;
+
+    Ok(result.files)
 }
 
 pub async fn query_projects(

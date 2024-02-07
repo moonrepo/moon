@@ -664,6 +664,23 @@ impl Vcs for Git {
             false
         }
     }
+
+    async fn is_shallow_checkout(&self) -> miette::Result<bool> {
+        let result = if self.is_version_supported(">=2.15.0").await? {
+            let result = self
+                .process
+                .run(["rev-parse", "--is-shallow-repository"], true)
+                .await?;
+
+            result == "true"
+        } else {
+            let result = self.process.run(["rev-parse", "--git-dir"], true).await?;
+
+            result.contains("shallow")
+        };
+
+        Ok(result)
+    }
 }
 
 fn extract_gitdir_from_worktree(git_file: &Path) -> miette::Result<PathBuf> {

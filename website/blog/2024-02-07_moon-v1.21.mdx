@@ -1,22 +1,40 @@
 ---
 slug: moon-v1.21
-title: moon v1.21 - Deno tier 3, shell options, and more!
+title: moon v1.21 - Deno tier 3, file group improvements, task shells, and more!
 authors: [milesj]
-tags: [deno, file-groups, env, turborepo]
-# image: ./img/moon/v1.20.png
+tags: [deno, file-groups, env, shell, tasks, turborepo]
+image: ./img/moon/v1.21.png
 ---
 
-In this release, we're excited to introduce extensions, our first type of plugin!
+With this release, get ready for Deno tier 3 support, file group and task improvements, a new
+extension, and more.
 
 <!--truncate-->
 
 ## Deno tier 3 support
 
+We've supported Deno tier 1 and 2 for almost a year now, but were hesitant to support tier 3 until
+[proto](/proto) stabilizes further. Now that proto is _almost_ at an official v1 release, and other
+tools in the toolchain (like Node.js, Bun, and Rust) are powered by proto, we're confident in
+supporting Deno tier 3. To make use of this, simply set the
+[`deno.version`](/docs/config/toolchain#deno) setting in
+[`.moon/toolchain.yml`](/docs/config/toolchain).
+
+```yaml title=".moon/toolchain.yml"
+deno:
+  version: '1.40.0'
+```
+
+When enabled, moon will download and install that version of Deno in the background, and run all
+subsequent tasks with it. This is great for ensuring that your project is always using the same
+version of Deno, across all machines.
+
 ## File groups now support environment variables
 
-Task inputs have supported environment variables for a while now, but file groups have not. The main
-reason for this is that file groups were implemented far before environment variables in task
-inputs! To bridge this gap, we've added support for environment variables in file groups.
+Task [`inputs`](/docs/config/project#inputs) have supported environment variables for a while now,
+but file groups have not. The main reason for this is that file groups were implemented far before
+environment variables in task inputs! To bridge this gap, we've added support for environment
+variables in file groups.
 
 ```yaml
 fileGroups:

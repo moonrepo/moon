@@ -50,6 +50,7 @@
 - Fixed an issue where the action graph would create incorrect nodes when a tool utilizes dependency
   workspaces, and a project is not within the workspace.
 - Fixed an issue where glob based arguments were overlay escaped.
+- Fixed console checkpoints (the 4 squares) showing the wrong working directory.
 
 #### ⚙️ Internal
 

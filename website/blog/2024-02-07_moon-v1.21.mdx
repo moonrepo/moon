@@ -1,14 +1,16 @@
 ---
 slug: moon-v1.21
-title: moon v1.21 - ???
+title: moon v1.21 - Deno tier 3, shell options, and more!
 authors: [milesj]
-tags: [task, options, extensions, plugins]
+tags: [deno, file-groups, env, turborepo]
 # image: ./img/moon/v1.20.png
 ---
 
 In this release, we're excited to introduce extensions, our first type of plugin!
 
 <!--truncate-->
+
+## Deno tier 3 support
 
 ## File groups now support environment variables
 
@@ -35,6 +37,27 @@ Environment variables can be referenced using the
 [`@envs` token function](/docs/concepts/token#envs). The latter is only supported for `inputs` and
 will error for other locations, while the former is supported in `args`, `inputs`, and `outputs`,
 but will filter out environment variables when they are not supported.
+
+## New `unixShell` and `windowsShell` task options
+
+When the [`shell`](/docs/config/project#shell) task option is enabled, we run the task within a
+shell. However, the chosen shell was hard-coded to `$SHELL` on Unix machines and PowerShell on
+Windows, but what if you wanted to run it with a different shell? Or the same shell across all
+operating systems? Well, you couldn't.
+
+But not anymore! With this release, we're introducing [`unixShell`](/docs/config/project#unixshell)
+and [`windowsShell`](/docs/config/project#windowsshell) task options. When paired with `shell`, the
+task will run in a shell of your choice. For example, why not Bash everywhere?
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'vite build'
+    options:
+      shell: true
+      unixShell: 'bash'
+      windowsShell: 'bash'
+```
 
 ## New `migrate-turborepo` extension
 

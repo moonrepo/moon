@@ -1,5 +1,9 @@
 language: rust
 
+env:
+  # Disable sccache
+  RUSTC_WRAPPER: ''
+
 tasks:
   envVars:
     command: 'cargo run --quiet --bin env_vars'

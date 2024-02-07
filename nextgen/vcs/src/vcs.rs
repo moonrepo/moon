@@ -71,6 +71,9 @@ pub trait Vcs: Debug {
     /// Return true if the provided file path has been ignored.
     fn is_ignored(&self, file: &Path) -> bool;
 
+    /// Return true if the current repository is a shallow checkout.
+    async fn is_shallow_checkout(&self) -> miette::Result<bool>;
+
     /// Return true if the current binary version matches the provided requirement.
     async fn is_version_supported(&self, req: &str) -> miette::Result<bool> {
         let version = self.get_version().await?;

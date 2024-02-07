@@ -115,13 +115,12 @@ pub async fn run_target(
         env::set_var("MOON_CACHE", CacheMode::Write.to_string());
     }
 
-    let should_run_affected = !args.force && args.affected;
+    let mut should_run_affected = !args.force && args.affected;
 
     // Always query for a touched files list as it'll be used by many actions
-    let touched_files = if should_run_affected || workspace.vcs.is_enabled() {
+    let touched_files = if workspace.vcs.is_enabled() {
         let local = is_local(args);
-
-        query_touched_files(
+        let result = query_touched_files(
             workspace,
             &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),
@@ -130,7 +129,13 @@ pub async fn run_target(
                 ..QueryTouchedFilesOptions::default()
             },
         )
-        .await?
+        .await?;
+
+        if result.shallow {
+            should_run_affected = false;
+        }
+
+        result.files
     } else {
         FxHashSet::default()
     };

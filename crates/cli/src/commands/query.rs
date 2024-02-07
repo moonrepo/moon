@@ -336,21 +336,17 @@ pub async fn touched_files(
         status: args.status,
     };
 
-    let files = query_touched_files(workspace, &options).await?;
+    let result = query_touched_files(workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     if args.json {
-        let result = QueryTouchedFilesResult {
-            files,
-            options: options.clone(),
-        };
-
         console
             .out
             .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
-    } else if !files.is_empty() {
+    } else if !result.files.is_empty() {
         console.out.write_line(
-            files
+            result
+                .files
                 .iter()
                 .map(|f| f.to_string())
                 .collect::<Vec<_>>()

@@ -1,5 +1,5 @@
 use crate::app::GlobalArgs;
-use crate::app_error::ExitCode;
+use crate::app_error::{AppError, ExitCode};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
 use clap::Args;
@@ -84,7 +84,7 @@ async fn gather_touched_files(
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     console.print_header("Gathering touched files")?;
 
-    let results = query_touched_files(
+    let result = query_touched_files(
         workspace,
         &QueryTouchedFilesOptions {
             default_branch: true,
@@ -95,8 +95,13 @@ async fn gather_touched_files(
     )
     .await?;
 
+    if result.shallow {
+        return Err(AppError::CiNoShallowHistory.into());
+    }
+
     console.write_line(
-        results
+        result
+            .files
             .iter()
             .map(|f| color::file(f.as_str()))
             .collect::<Vec<_>>()
@@ -105,7 +110,7 @@ async fn gather_touched_files(
 
     console.print_footer()?;
 
-    Ok(results)
+    Ok(result.files)
 }
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.

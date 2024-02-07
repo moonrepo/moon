@@ -6,6 +6,7 @@ license = "MIT"
 description = "VCS adapters."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = false
 
 [dependencies]
 moon_common = { path = "../common" }

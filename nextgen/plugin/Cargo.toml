@@ -6,6 +6,7 @@ license = "MIT"
 description = "Plugin registry and system."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = false
 
 [dependencies]
 moon_env = { path = "../env" }

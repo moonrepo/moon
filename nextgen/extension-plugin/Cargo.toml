@@ -6,6 +6,7 @@ license = "MIT"
 description = "An extension plugin, allowing unique functionality."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = false
 
 [dependencies]
 moon_pdk_api = { path = "../pdk-api" }

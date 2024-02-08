@@ -67,20 +67,29 @@ fn validate_required_approvals<C>(
 }
 
 cacheable!(
+    /// Defines ownership of source code within the current project, by mapping
+    /// file paths and globs to owners. An owner is either a user, team, or group.
     #[derive(Clone, Config, Debug, PartialEq)]
     pub struct OwnersConfig {
-        // Bitbucket
+        /// Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
+        /// to a list of user and normal groups.
         pub custom_groups: FxHashMap<String, Vec<String>>,
 
+        /// The default owner for `paths`.
         pub default_owner: Option<String>,
 
-        // GitLab
+        /// GitLab only. Marks the code owners section as optional.
         pub optional: bool,
 
+        /// A mapping of file paths and file globs to owners.
+        /// When a list, the `defaultOwner` is the owner, and each item is a path.
+        /// When an object, the key is a path, and the value is a list of owners.
         #[setting(nested, validate = validate_paths)]
         pub paths: OwnersPaths,
 
-        // GitLab
+        /// Bitbucket and GitLab only. The number of approvals required for the
+        /// request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
+        /// For GitLab, marks the code owners section as required.
         #[setting(default = 1, validate = validate_required_approvals)]
         pub required_approvals: u8,
     }

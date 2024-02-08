@@ -8,12 +8,23 @@ export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 
 
 export type DependencySource = 'explicit' | 'implicit';
 
+/** Expanded information about a project dependency. */
 export interface PartialDependencyConfig {
+	/** ID of the depended on project. */
 	id?: string | null;
-	/** @default 'production' */
+	/**
+	 * Scope of the dependency relationship.
+	 *
+	 * @default 'production'
+	 */
 	scope?: DependencyScope | null;
-	/** @default 'explicit' */
+	/**
+	 * Source of where the dependeny came from.
+	 *
+	 * @default 'explicit'
+	 */
 	source?: DependencySource | null;
+	/** Metadata about the source. */
 	via?: string | null;
 }
 
@@ -33,12 +44,33 @@ export type LanguageType =
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
+/**
+ * Defines ownership of source code within the current project, by mapping
+ * file paths and globs to owners. An owner is either a user, team, or group.
+ */
 export interface PartialOwnersConfig {
+	/**
+	 * Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
+	 * to a list of user and normal groups.
+	 */
 	customGroups?: Record<string, string[]> | null;
+	/** The default owner for `paths`. */
 	defaultOwner?: string | null;
+	/** GitLab only. Marks the code owners section as optional. */
 	optional?: boolean | null;
+	/**
+	 * A mapping of file paths and file globs to owners.
+	 * When a list, the `defaultOwner` is the owner, and each item is a path.
+	 * When an object, the key is a path, and the value is a list of owners.
+	 */
 	paths?: PartialOwnersPaths | null;
-	/** @default 1 */
+	/**
+	 * Bitbucket and GitLab only. The number of approvals required for the
+	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
+	 * For GitLab, marks the code owners section as required.
+	 *
+	 * @default 1
+	 */
 	requiredApprovals?: number | null;
 }
 
@@ -50,36 +82,61 @@ export interface PartialProjectMetadataConfig {
 	owner?: string | null;
 }
 
+/** Overrides top-level toolchain settings. */
 export interface PartialProjectToolchainCommonToolConfig {
+	/** Version of the tool this project will use. */
 	version?: string | null;
 }
 
+/** Overrides top-level `typescript` settings. */
 export interface PartialProjectToolchainTypeScriptConfig {
+	/** Disable all TypeScript functionality for this project. */
 	disabled?: boolean | null;
+	/** Append project reference sources to `include` in `tsconfig.json`. */
 	includeProjectReferenceSources?: boolean | null;
+	/** Append shared types to `include` in `tsconfig.json`. */
 	includeSharedTypes?: boolean | null;
+	/** Update and route `outDir` in `tsconfig.json` to moon's cache. */
 	routeOutDirToCache?: boolean | null;
+	/** Sync all project dependencies as `references` in `tsconfig.json`. */
 	syncProjectReferences?: boolean | null;
+	/** Sync all project dependencies as `paths` in `tsconfig.json`. */
 	syncProjectReferencesToPaths?: boolean | null;
 }
 
+/** Overrides top-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainConfig {
+	/** Overrides `bun` settings. */
 	bun?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides `deno` settings. */
 	deno?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides `node` settings. */
 	node?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides `rust` settings. */
 	rust?: PartialProjectToolchainCommonToolConfig | null;
+	/** Overrides `typescript` settings. */
 	typescript?: PartialProjectToolchainTypeScriptConfig | null;
 }
 
 export type ProjectType = 'application' | 'automation' | 'library' | 'tool' | 'unknown';
 
+/** Controls how tasks are inherited. */
 export interface PartialProjectWorkspaceInheritedTasksConfig {
+	/** Excludes inheriting tasks by ID. */
 	exclude?: string[] | null;
+	/**
+	 * Only inherits tasks by ID, and ignores the rest.
+	 * When not defined, inherits all matching tasks.
+	 * When an empty list, inherits no tasks.
+	 */
 	include?: string[] | null;
+	/** Renames inherited tasks to a new ID. */
 	rename?: Record<string, string> | null;
 }
 
+/** Overrides top-level workspace settings, scoped to this project. */
 export interface PartialProjectWorkspaceConfig {
+	/** Controls how tasks are inherited. */
 	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
 }
 
@@ -105,12 +162,23 @@ export interface PartialProjectConfig {
 	workspace?: PartialProjectWorkspaceConfig | null;
 }
 
+/** Expanded information about a project dependency. */
 export interface DependencyConfig {
+	/** ID of the depended on project. */
 	id: string;
-	/** @default 'production' */
+	/**
+	 * Scope of the dependency relationship.
+	 *
+	 * @default 'production'
+	 */
 	scope: DependencyScope;
-	/** @default 'explicit' */
+	/**
+	 * Source of where the dependeny came from.
+	 *
+	 * @default 'explicit'
+	 */
 	source: DependencySource;
+	/** Metadata about the source. */
 	via: string | null;
 }
 
@@ -118,12 +186,33 @@ export type ProjectDependsOn = string | DependencyConfig;
 
 export type OwnersPaths = string[] | Record<string, string[]>;
 
+/**
+ * Defines ownership of source code within the current project, by mapping
+ * file paths and globs to owners. An owner is either a user, team, or group.
+ */
 export interface OwnersConfig {
+	/**
+	 * Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
+	 * to a list of user and normal groups.
+	 */
 	customGroups: Record<string, string[]>;
+	/** The default owner for `paths`. */
 	defaultOwner: string | null;
+	/** GitLab only. Marks the code owners section as optional. */
 	optional: boolean;
+	/**
+	 * A mapping of file paths and file globs to owners.
+	 * When a list, the `defaultOwner` is the owner, and each item is a path.
+	 * When an object, the key is a path, and the value is a list of owners.
+	 */
 	paths: OwnersPaths;
-	/** @default 1 */
+	/**
+	 * Bitbucket and GitLab only. The number of approvals required for the
+	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
+	 * For GitLab, marks the code owners section as required.
+	 *
+	 * @default 1
+	 */
 	requiredApprovals: number;
 }
 
@@ -135,34 +224,59 @@ export interface ProjectMetadataConfig {
 	owner: string | null;
 }
 
+/** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
+	/** Version of the tool this project will use. */
 	version: string | null;
 }
 
+/** Overrides top-level `typescript` settings. */
 export interface ProjectToolchainTypeScriptConfig {
+	/** Disable all TypeScript functionality for this project. */
 	disabled: boolean;
+	/** Append project reference sources to `include` in `tsconfig.json`. */
 	includeProjectReferenceSources: boolean | null;
+	/** Append shared types to `include` in `tsconfig.json`. */
 	includeSharedTypes: boolean | null;
+	/** Update and route `outDir` in `tsconfig.json` to moon's cache. */
 	routeOutDirToCache: boolean | null;
+	/** Sync all project dependencies as `references` in `tsconfig.json`. */
 	syncProjectReferences: boolean | null;
+	/** Sync all project dependencies as `paths` in `tsconfig.json`. */
 	syncProjectReferencesToPaths: boolean | null;
 }
 
+/** Overrides top-level toolchain settings, scoped to this project. */
 export interface ProjectToolchainConfig {
+	/** Overrides `bun` settings. */
 	bun: ProjectToolchainCommonToolConfig | null;
+	/** Overrides `deno` settings. */
 	deno: ProjectToolchainCommonToolConfig | null;
+	/** Overrides `node` settings. */
 	node: ProjectToolchainCommonToolConfig | null;
+	/** Overrides `rust` settings. */
 	rust: ProjectToolchainCommonToolConfig | null;
+	/** Overrides `typescript` settings. */
 	typescript: ProjectToolchainTypeScriptConfig | null;
 }
 
+/** Controls how tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
+	/** Excludes inheriting tasks by ID. */
 	exclude: string[];
+	/**
+	 * Only inherits tasks by ID, and ignores the rest.
+	 * When not defined, inherits all matching tasks.
+	 * When an empty list, inherits no tasks.
+	 */
 	include: string[] | null;
+	/** Renames inherited tasks to a new ID. */
 	rename: Record<string, string>;
 }
 
+/** Overrides top-level workspace settings, scoped to this project. */
 export interface ProjectWorkspaceConfig {
+	/** Controls how tasks are inherited. */
 	inheritedTasks: ProjectWorkspaceInheritedTasksConfig;
 }
 

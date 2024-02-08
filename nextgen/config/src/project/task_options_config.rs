@@ -22,6 +22,7 @@ fn validate_interactive<C>(
     Ok(())
 }
 
+/// The pattern in which affected files will be passed to the affected task.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(untagged, rename_all = "kebab-case")]
 pub enum TaskOptionAffectedFiles {
@@ -62,6 +63,7 @@ impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
 }
 
 derive_enum!(
+    /// The pattern in which a task is dependent on a .env file.
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
         Enabled(bool),
@@ -88,6 +90,7 @@ impl Schematic for TaskOptionEnvFile {
 }
 
 derive_enum!(
+    /// The strategy in which to merge a specific task option.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskMergeStrategy {
         #[default]
@@ -98,6 +101,7 @@ derive_enum!(
 );
 
 derive_enum!(
+    /// The style in which task output will be printed to the console.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskOutputStyle {
         #[default]
@@ -110,6 +114,7 @@ derive_enum!(
 );
 
 derive_enum!(
+    /// A list of available shells on Unix.
     #[derive(ConfigEnum, Copy)]
     pub enum TaskUnixShell {
         Bash,
@@ -120,6 +125,7 @@ derive_enum!(
 );
 
 derive_enum!(
+    /// A list of available shells on Windows.
     #[derive(ConfigEnum, Copy)]
     pub enum TaskWindowsShell {
         Bash,
@@ -129,48 +135,73 @@ derive_enum!(
 );
 
 cacheable!(
+    /// Options to control task inheritance and execution.
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskOptionsConfig {
+        /// The pattern in which affected files will be passed to the task.
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
+        /// Allows the task to fail without failing the entire pipeline.
         pub allow_failure: Option<bool>,
 
+        /// Caches the `outputs` of the task
         pub cache: Option<bool>,
 
+        /// Loads and sets environment variables from the `.env` file when
+        /// running the task.
         pub env_file: Option<TaskOptionEnvFile>,
 
+        /// Marks the task as interactive, so that it will run in isolation,
+        /// and have direct access to stdin.
         #[setting(validate = validate_interactive)]
         pub interactive: Option<bool>,
 
+        /// The strategy to use when merging `args` with an inherited task.
         pub merge_args: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `deps` with an inherited task.
         pub merge_deps: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `env` with an inherited task.
         pub merge_env: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `inputs` with an inherited task.
         pub merge_inputs: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `outputs` with an inherited task.
         pub merge_outputs: Option<TaskMergeStrategy>,
 
+        /// The style in which task output will be printed to the console.
         #[setting(env = "MOON_OUTPUT_STYLE")]
         pub output_style: Option<TaskOutputStyle>,
 
+        /// Marks the task as persistent (continuously running). This is ideal
+        /// for watchers, servers, or never-ending processes.
         pub persistent: Option<bool>,
 
+        /// The number of times a failing task will be retried to succeed.
         #[setting(env = "MOON_RETRY_COUNT")]
         pub retry_count: Option<u8>,
 
+        /// Runs direct task dependencies (via `deps`) in sequential order.
+        /// This _does not_ apply to indirect or transient dependencies.
         pub run_deps_in_parallel: Option<bool>,
 
+        /// Whether to run the task in CI or not, when executing `moon ci`.
         #[serde(rename = "runInCI")]
         pub run_in_ci: Option<bool>,
 
+        /// Runs the task from the workspace root, instead of the project root.
         pub run_from_workspace_root: Option<bool>,
 
+        /// Runs the task within a shell. When not defined, runs the task
+        /// directly while relying on `PATH` resolution.
         pub shell: Option<bool>,
 
+        /// The shell to run the task in when on a Unix-based machine.
         pub unix_shell: Option<TaskUnixShell>,
 
+        /// The shell to run the task in when on a Windows machine.
         pub windows_shell: Option<TaskWindowsShell>,
     }
 );

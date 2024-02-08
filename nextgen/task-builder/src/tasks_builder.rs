@@ -469,7 +469,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env_file) = &config.env_file {
-                options.env_file = env_file.to_input_path();
+                options.env_file = env_file.to_input_paths();
             }
 
             if let Some(interactive) = &config.interactive {
@@ -575,7 +575,7 @@ impl<'proj> TasksBuilder<'proj> {
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
 
         if let Some(env_file) = &options.env_file {
-            global_inputs.push(env_file.to_owned());
+            global_inputs.extend(env_file.to_owned());
         }
 
         if !global_inputs.is_empty() {

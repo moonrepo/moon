@@ -13,7 +13,7 @@ cacheable!(
 
         pub cache: bool,
 
-        pub env_file: Option<InputPath>,
+        pub env_file: Option<Vec<InputPath>>,
 
         pub interactive: bool,
 

@@ -225,37 +225,37 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Load variables from an .env file
         if let Some(env_file) = &task.options.env_file {
-            let env_path = env_file
-                .to_workspace_relative(self.context.project.source.as_str())
-                .to_path(self.context.workspace_root);
+            // let env_path = env_file
+            //     .to_workspace_relative(self.context.project.source.as_str())
+            //     .to_path(self.context.workspace_root);
 
-            trace!(
-                target = task.target.as_str(),
-                env_file = ?env_path,
-                "Loading environment variables from dotenv",
-            );
+            // trace!(
+            //     target = task.target.as_str(),
+            //     env_file = ?env_path,
+            //     "Loading environment variables from dotenv",
+            // );
 
-            // The `.env` file may not have been committed, so avoid crashing
-            if env_path.exists() {
-                let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
-                    path: env_path.to_path_buf(),
-                    error,
-                };
+            // // The `.env` file may not have been committed, so avoid crashing
+            // if env_path.exists() {
+            //     let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
+            //         path: env_path.to_path_buf(),
+            //         error,
+            //     };
 
-                for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
-                    let (key, val) = line.map_err(handle_error)?;
+            //     for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
+            //         let (key, val) = line.map_err(handle_error)?;
 
-                    // Don't override task-level variables
-                    env.entry(key).or_insert(val);
-                }
-            } else {
-                warn!(
-                    target = task.target.as_str(),
-                    env_file = ?env_path,
-                    "Setting {} is enabled but file doesn't exist, skipping as this may be intentional",
-                    color::property("options.envFile"),
-                );
-            }
+            //         // Don't override task-level variables
+            //         env.entry(key).or_insert(val);
+            //     }
+            // } else {
+            //     warn!(
+            //         target = task.target.as_str(),
+            //         env_file = ?env_path,
+            //         "Setting {} is enabled but file doesn't exist, skipping as this may be intentional",
+            //         color::property("options.envFile"),
+            //     );
+            // }
         }
 
         task.env = env;

@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `envFile` task option to support a list of file paths.
+
 ## 1.21.3
 
 #### 🐞 Fixes

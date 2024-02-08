@@ -541,7 +541,26 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected a boolean or a file system path")]
+            fn can_set_a_list() {
+                let config = test_parse_config(
+                    r"
+options:
+  envFile: [.env.file, /.env.shared]
+",
+                    |code| TaskConfig::parse(code),
+                );
+
+                assert_eq!(
+                    config.options.env_file,
+                    Some(TaskOptionEnvFile::Files(vec![
+                        FilePath(".env.file".to_owned()),
+                        FilePath("/.env.shared".to_owned())
+                    ]))
+                );
+            }
+
+            #[test]
+            #[should_panic(expected = "expected a boolean, a file path, or a list of file paths")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

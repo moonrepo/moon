@@ -554,13 +554,13 @@ options:
                     config.options.env_file,
                     Some(TaskOptionEnvFile::Files(vec![
                         FilePath(".env.file".to_owned()),
-                        FilePath("/.env.root".to_owned())
+                        FilePath("/.env.shared".to_owned())
                     ]))
                 );
             }
 
             #[test]
-            #[should_panic(expected = "expected a boolean or a file system path")]
+            #[should_panic(expected = "expected a boolean, a file path, or a list of file paths")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

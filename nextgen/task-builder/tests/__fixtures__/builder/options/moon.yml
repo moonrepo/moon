@@ -21,6 +21,11 @@ tasks:
   env-file-workspace:
     options:
       envFile: '/.env.shared'
+  env-file-list:
+    options:
+      envFile:
+        - '.env.test'
+        - '/.env.shared'
   no-env-file:
     options:
       envFile: false

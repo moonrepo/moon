@@ -1004,7 +1004,7 @@ mod tasks_expander {
             let mut task = create_task();
             task.env.insert("KEY1".into(), "value1".into());
             task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_file = Some(InputPath::ProjectFile(".env".into()));
+            task.options.env_files = Some(vec![InputPath::ProjectFile(".env".into())]);
 
             let context = create_context(&project, sandbox.path());
             TasksExpander::new(&context).expand_env(&mut task).unwrap();
@@ -1025,7 +1025,7 @@ mod tasks_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_file = Some(InputPath::WorkspaceFile(".env-shared".into()));
+            task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
 
             env::set_var("EXTERNAL", "external-value");
 
@@ -1047,6 +1047,38 @@ mod tasks_expander {
         }
 
         #[test]
+        fn loads_from_multiple_env_file() {
+            let sandbox = create_sandbox("env-file");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.env.insert("KEY1".into(), "value1".into());
+            task.env.insert("KEY2".into(), "value2".into());
+            task.options.env_files = Some(vec![
+                InputPath::ProjectFile(".env".into()),
+                InputPath::WorkspaceFile(".env-shared".into()),
+            ]);
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("KEY1".into(), "value1".into()),
+                    ("KEY2".into(), "value2".into()), // Not overridden by env file
+                    ("KEY3".into(), "value3".into()),
+                    // shared
+                    ("ROOT".into(), "true".into()),
+                    ("BASE".into(), "value".into()),
+                    ("FROM_SELF1".into(), "value".into()),
+                    ("FROM_SELF2".into(), "value".into()),
+                    ("FROM_SYSTEM".into(), "".into()),
+                ])
+            );
+        }
+
+        #[test]
         fn skips_missing_env_file() {
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());
@@ -1054,7 +1086,7 @@ mod tasks_expander {
             let mut task = create_task();
             task.env.insert("KEY1".into(), "value1".into());
             task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_file = Some(InputPath::ProjectFile(".env-missing".into()));
+            task.options.env_files = Some(vec![InputPath::ProjectFile(".env-missing".into())]);
 
             let context = create_context(&project, sandbox.path());
             TasksExpander::new(&context).expand_env(&mut task).unwrap();
@@ -1075,7 +1107,7 @@ mod tasks_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_file = Some(InputPath::ProjectFile(".env-invalid".into()));
+            task.options.env_files = Some(vec![InputPath::ProjectFile(".env-invalid".into())]);
 
             let context = create_context(&project, sandbox.path());
             TasksExpander::new(&context).expand_env(&mut task).unwrap();

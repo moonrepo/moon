@@ -13,7 +13,7 @@ cacheable!(
 
         pub cache: bool,
 
-        pub env_file: Option<Vec<InputPath>>,
+        pub env_files: Option<Vec<InputPath>>,
 
         pub interactive: bool,
 
@@ -54,7 +54,7 @@ impl Default for TaskOptions {
             affected_files: None,
             allow_failure: false,
             cache: true,
-            env_file: None,
+            env_files: None,
             interactive: false,
             merge_args: TaskMergeStrategy::Append,
             merge_deps: TaskMergeStrategy::Append,

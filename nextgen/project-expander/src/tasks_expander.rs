@@ -5,6 +5,7 @@ use moon_common::color;
 use moon_config::TaskDependencyConfig;
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
+use rustc_hash::FxHashMap;
 use tracing::{trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
@@ -224,35 +225,53 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         }
 
         // Load variables from an .env file
-        if let Some(env_file) = &task.options.env_file {
-            let env_path = env_file
-                .to_workspace_relative(self.context.project.source.as_str())
-                .to_path(self.context.workspace_root);
+        if let Some(env_files) = &task.options.env_files {
+            let env_paths = env_files
+                .iter()
+                .map(|file| {
+                    file.to_workspace_relative(self.context.project.source.as_str())
+                        .to_path(self.context.workspace_root)
+                })
+                .collect::<Vec<_>>();
 
             trace!(
                 target = task.target.as_str(),
-                env_file = ?env_path,
-                "Loading environment variables from dotenv",
+                env_files = ?env_paths,
+                "Loading environment variables from dotenv files",
             );
 
-            // The `.env` file may not have been committed, so avoid crashing
-            if env_path.exists() {
-                let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
-                    path: env_path.to_path_buf(),
-                    error,
-                };
+            let mut missing_paths = vec![];
+            let mut env_vars = FxHashMap::default();
 
-                for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
-                    let (key, val) = line.map_err(handle_error)?;
+            // The file may not have been committed, so avoid crashing
+            for env_path in env_paths {
+                if env_path.exists() {
+                    let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
+                        path: env_path.to_path_buf(),
+                        error,
+                    };
 
-                    // Don't override task-level variables
-                    env.entry(key).or_insert(val);
+                    for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
+                        let (key, val) = line.map_err(handle_error)?;
+
+                        // Overwrite previous values
+                        env_vars.insert(key, val);
+                    }
+                } else {
+                    missing_paths.push(env_path);
                 }
-            } else {
+            }
+
+            // Don't override task-level variables
+            for (key, val) in env_vars {
+                env.entry(key).or_insert(val);
+            }
+
+            if !missing_paths.is_empty() {
                 warn!(
                     target = task.target.as_str(),
-                    env_file = ?env_path,
-                    "Setting {} is enabled but file doesn't exist, skipping as this may be intentional",
+                    env_files = ?missing_paths,
+                    "Setting {} is enabled but file(s) don't exist, skipping as this may be intentional",
                     color::property("options.envFile"),
                 );
             }

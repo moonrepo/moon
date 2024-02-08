@@ -6,6 +6,7 @@ use warpgate_api::PluginLocator;
 use crate::{inherit_tool, inherit_tool_required};
 
 derive_enum!(
+    /// Formats that a `package.json` version dependency can be.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionFormat {
         File,         // file:..
@@ -57,6 +58,7 @@ impl NodeVersionFormat {
 }
 
 derive_enum!(
+    /// The available package managers for Node.js.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum NodePackageManager {
         Bun,
@@ -68,6 +70,7 @@ derive_enum!(
 );
 
 derive_enum!(
+    /// The available version managers for Node.js.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionManager {
         Nodenv,
@@ -78,34 +81,43 @@ derive_enum!(
 
 #[derive(Clone, Config, Debug)]
 pub struct BunpmConfig {
+    /// Location of the WASM plugin to use for Bun support.
     pub plugin: Option<PluginLocator>,
 
+    /// The version of Bun to download, install, and run `bun` tasks with.
     #[setting(env = "MOON_BUN_VERSION")]
     pub version: Option<UnresolvedVersionSpec>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
+    /// Location of the WASM plugin to use for npm support.
     pub plugin: Option<PluginLocator>,
 
+    /// The version of npm to download, install, and run `npm` tasks with.
     #[setting(env = "MOON_NPM_VERSION")]
     pub version: Option<UnresolvedVersionSpec>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
+    /// Location of the WASM plugin to use for pnpm support.
     pub plugin: Option<PluginLocator>,
 
+    /// The version of pnpm to download, install, and run `pnpm` tasks with.
     #[setting(env = "MOON_PNPM_VERSION")]
     pub version: Option<UnresolvedVersionSpec>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct YarnConfig {
+    /// Location of the WASM plugin to use for Yarn support.
     pub plugin: Option<PluginLocator>,
 
+    /// Plugins to automatically install for Yarn v2 and above.
     pub plugins: Vec<String>,
 
+    /// The version of Yarn to download, install, and run `yarn` tasks with.
     #[setting(env = "MOON_YARN_VERSION")]
     pub version: Option<UnresolvedVersionSpec>,
 }
@@ -113,44 +125,66 @@ pub struct YarnConfig {
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
 #[derive(Clone, Config, Debug)]
 pub struct NodeConfig {
+    /// When `version` is defined, syncs the version as a constraint to
+    /// `package.json` engines.
     #[setting(default = true)]
     pub add_engines_constraint: bool,
 
+    /// Arguments to automatically pass to all tasks that execute the
+    /// `node` binary.
     pub bin_exec_args: Vec<String>,
 
+    /// Options for Bun, when used as a package manager.
     #[setting(nested)]
     pub bun: Option<BunpmConfig>,
 
+    /// Automatically dedupes the lockfile when dependencies have changed.
     #[setting(default = true)]
     pub dedupe_on_lockfile_change: bool,
 
+    /// The dependency version format to use when syncing projects
+    /// as dependencies.
     pub dependency_version_format: NodeVersionFormat,
 
+    /// Automatically infer moon tasks from `package.json` scripts.
     pub infer_tasks_from_scripts: bool,
 
+    /// Options for npm, when used as a package manager.
     #[setting(nested)]
     pub npm: NpmConfig,
 
+    /// The package manager to use for installing dependencies.
     pub package_manager: NodePackageManager,
 
+    /// The relative root of the packages workspace. Defaults to moon's
+    /// workspace root, but should be defined when nested.
     #[setting(default = ".", skip)]
     pub packages_root: String,
 
+    /// Location of the WASM plugin to use for Node.js support.
     pub plugin: Option<PluginLocator>,
 
+    /// Options for pnpm, when used as a package manager.
     #[setting(nested)]
     pub pnpm: Option<PnpmConfig>,
 
+    /// Assumes only the root `package.json` is used for dependencies.
+    /// Can be used to support the "one version policy" pattern.
     pub root_package_only: bool,
 
+    /// Automatically syncs moon project-to-project relationships as
+    /// dependencies for each `package.json` in the workspace.
     #[setting(default = true)]
     pub sync_project_workspace_dependencies: bool,
 
+    /// When `version` is defined, syncs the version to the chosen config.
     pub sync_version_manager_config: Option<NodeVersionManager>,
 
+    /// The version of Node.js to download, install, and run `node` tasks with.
     #[setting(env = "MOON_NODE_VERSION")]
     pub version: Option<UnresolvedVersionSpec>,
 
+    /// Options for Yarn, when used as a package manager.
     #[setting(nested)]
     pub yarn: Option<YarnConfig>,
 }

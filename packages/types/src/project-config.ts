@@ -90,17 +90,17 @@ export interface PartialProjectToolchainCommonToolConfig {
 
 /** Overrides top-level `typescript` settings. */
 export interface PartialProjectToolchainTypeScriptConfig {
-	/** Disable all TypeScript functionality for this project. */
+	/** Disables all TypeScript functionality for this project. */
 	disabled?: boolean | null;
-	/** Append project reference sources to `include` in `tsconfig.json`. */
+	/** Appends sources of project reference to `include` in `tsconfig.json`. */
 	includeProjectReferenceSources?: boolean | null;
-	/** Append shared types to `include` in `tsconfig.json`. */
+	/** Appends shared types to `include` in `tsconfig.json`. */
 	includeSharedTypes?: boolean | null;
-	/** Update and route `outDir` in `tsconfig.json` to moon's cache. */
+	/** Updates and routes `outDir` in `tsconfig.json` to moon's cache. */
 	routeOutDirToCache?: boolean | null;
-	/** Sync all project dependencies as `references` in `tsconfig.json`. */
+	/** Syncs all project dependencies as `references` in `tsconfig.json`. */
 	syncProjectReferences?: boolean | null;
-	/** Sync all project dependencies as `paths` in `tsconfig.json`. */
+	/** Syncs all project dependencies as `paths` in `tsconfig.json`. */
 	syncProjectReferencesToPaths?: boolean | null;
 }
 
@@ -232,17 +232,17 @@ export interface ProjectToolchainCommonToolConfig {
 
 /** Overrides top-level `typescript` settings. */
 export interface ProjectToolchainTypeScriptConfig {
-	/** Disable all TypeScript functionality for this project. */
+	/** Disables all TypeScript functionality for this project. */
 	disabled: boolean;
-	/** Append project reference sources to `include` in `tsconfig.json`. */
+	/** Appends sources of project reference to `include` in `tsconfig.json`. */
 	includeProjectReferenceSources: boolean | null;
-	/** Append shared types to `include` in `tsconfig.json`. */
+	/** Appends shared types to `include` in `tsconfig.json`. */
 	includeSharedTypes: boolean | null;
-	/** Update and route `outDir` in `tsconfig.json` to moon's cache. */
+	/** Updates and routes `outDir` in `tsconfig.json` to moon's cache. */
 	routeOutDirToCache: boolean | null;
-	/** Sync all project dependencies as `references` in `tsconfig.json`. */
+	/** Syncs all project dependencies as `references` in `tsconfig.json`. */
 	syncProjectReferences: boolean | null;
-	/** Sync all project dependencies as `paths` in `tsconfig.json`. */
+	/** Syncs all project dependencies as `paths` in `tsconfig.json`. */
 	syncProjectReferencesToPaths: boolean | null;
 }
 

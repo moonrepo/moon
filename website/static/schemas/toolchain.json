@@ -116,6 +116,7 @@
       "type": "object",
       "properties": {
         "bin": {
+          "description": "Name of the binary, with optional version separated by `@`.",
           "anyOf": [
             {
               "type": "string"
@@ -126,6 +127,7 @@
           ]
         },
         "force": {
+          "description": "Force install the binary if it already exists.",
           "anyOf": [
             {
               "type": "boolean"
@@ -136,6 +138,7 @@
           ]
         },
         "local": {
+          "description": "Only install the binary locally, and not within CI.",
           "anyOf": [
             {
               "type": "boolean"
@@ -146,6 +149,7 @@
           ]
         },
         "name": {
+          "description": "For supported tools, a custom name to use.",
           "anyOf": [
             {
               "type": "string"
@@ -175,6 +179,7 @@
       "type": "object",
       "properties": {
         "dependencyVersionFormat": {
+          "description": "The dependency version format to use when syncing projects as dependencies.",
           "default": "workspace",
           "anyOf": [
             {
@@ -186,6 +191,7 @@
           ]
         },
         "inferTasksFromScripts": {
+          "description": "Automatically infer moon tasks from `package.json` scripts.",
           "anyOf": [
             {
               "type": "boolean"
@@ -196,6 +202,7 @@
           ]
         },
         "plugin": {
+          "description": "Location of the WASM plugin to use for Bun support.",
           "anyOf": [
             {
               "type": "string"
@@ -206,6 +213,7 @@
           ]
         },
         "rootPackageOnly": {
+          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
           "anyOf": [
             {
               "type": "boolean"
@@ -216,6 +224,7 @@
           ]
         },
         "syncProjectWorkspaceDependencies": {
+          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
           "default": true,
           "anyOf": [
             {
@@ -227,6 +236,7 @@
           ]
         },
         "version": {
+          "description": "The version of Bun to download, install, and run `bun` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -244,6 +254,7 @@
       "type": "object",
       "properties": {
         "plugin": {
+          "description": "Location of the WASM plugin to use for Bun support.",
           "anyOf": [
             {
               "type": "string"
@@ -254,6 +265,7 @@
           ]
         },
         "version": {
+          "description": "The version of Bun to download, install, and run `bun` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -272,6 +284,7 @@
       "type": "object",
       "properties": {
         "bins": {
+          "description": "List of binaries to install into the environment using `deno install`.",
           "anyOf": [
             {
               "type": "array",
@@ -285,6 +298,7 @@
           ]
         },
         "depsFile": {
+          "description": "Relative path to a dependency management file. Used for content hashing.",
           "default": "deps.ts",
           "anyOf": [
             {
@@ -296,6 +310,7 @@
           ]
         },
         "lockfile": {
+          "description": "Requires and forces the use of `deno.lock` files.",
           "anyOf": [
             {
               "type": "boolean"
@@ -306,6 +321,7 @@
           ]
         },
         "plugin": {
+          "description": "Location of the WASM plugin to use for Deno support.",
           "anyOf": [
             {
               "type": "string"
@@ -316,6 +332,7 @@
           ]
         },
         "version": {
+          "description": "The version of Deno to download, install, and run `deno` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -334,6 +351,7 @@
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
+          "description": "When `version` is defined, syncs the version as a constraint to `package.json` engines.",
           "default": true,
           "anyOf": [
             {
@@ -345,6 +363,7 @@
           ]
         },
         "binExecArgs": {
+          "description": "Arguments to automatically pass to all tasks that execute the `node` binary.",
           "anyOf": [
             {
               "type": "array",
@@ -358,6 +377,7 @@
           ]
         },
         "bun": {
+          "description": "Options for Bun, when used as a package manager.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialBunpmConfig"
@@ -368,6 +388,7 @@
           ]
         },
         "dedupeOnLockfileChange": {
+          "description": "Automatically dedupes the lockfile when dependencies have changed.",
           "default": true,
           "anyOf": [
             {
@@ -379,6 +400,7 @@
           ]
         },
         "dependencyVersionFormat": {
+          "description": "The dependency version format to use when syncing projects as dependencies.",
           "default": "workspace",
           "anyOf": [
             {
@@ -390,6 +412,7 @@
           ]
         },
         "inferTasksFromScripts": {
+          "description": "Automatically infer moon tasks from `package.json` scripts.",
           "anyOf": [
             {
               "type": "boolean"
@@ -400,6 +423,7 @@
           ]
         },
         "npm": {
+          "description": "Options for npm, when used as a package manager.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialNpmConfig"
@@ -410,6 +434,7 @@
           ]
         },
         "packageManager": {
+          "description": "The package manager to use for installing dependencies.",
           "default": "npm",
           "anyOf": [
             {
@@ -421,6 +446,7 @@
           ]
         },
         "plugin": {
+          "description": "Location of the WASM plugin to use for Node.js support.",
           "anyOf": [
             {
               "type": "string"
@@ -431,6 +457,7 @@
           ]
         },
         "pnpm": {
+          "description": "Options for pnpm, when used as a package manager.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialPnpmConfig"
@@ -441,6 +468,7 @@
           ]
         },
         "rootPackageOnly": {
+          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
           "anyOf": [
             {
               "type": "boolean"
@@ -451,6 +479,7 @@
           ]
         },
         "syncProjectWorkspaceDependencies": {
+          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
           "default": true,
           "anyOf": [
             {
@@ -462,6 +491,7 @@
           ]
         },
         "syncVersionManagerConfig": {
+          "description": "When `version` is defined, syncs the version to the chosen config.",
           "default": "nvm",
           "anyOf": [
             {
@@ -473,6 +503,7 @@
           ]
         },
         "version": {
+          "description": "The version of Node.js to download, install, and run `node` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -483,6 +514,7 @@
           ]
         },
         "yarn": {
+          "description": "Options for Yarn, when used as a package manager.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialYarnConfig"
@@ -500,6 +532,7 @@
       "type": "object",
       "properties": {
         "plugin": {
+          "description": "Location of the WASM plugin to use for npm support.",
           "anyOf": [
             {
               "type": "string"
@@ -510,6 +543,7 @@
           ]
         },
         "version": {
+          "description": "The version of npm to download, install, and run `npm` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -527,6 +561,7 @@
       "type": "object",
       "properties": {
         "plugin": {
+          "description": "Location of the WASM plugin to use for pnpm support.",
           "anyOf": [
             {
               "type": "string"
@@ -537,6 +572,7 @@
           ]
         },
         "version": {
+          "description": "The version of pnpm to download, install, and run `pnpm` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -555,6 +591,7 @@
       "type": "object",
       "properties": {
         "bins": {
+          "description": "List of binaries to install into the environment using `cargo install`.",
           "anyOf": [
             {
               "type": "array",
@@ -568,6 +605,7 @@
           ]
         },
         "components": {
+          "description": "Rust components to automatically install.",
           "anyOf": [
             {
               "type": "array",
@@ -581,6 +619,7 @@
           ]
         },
         "plugin": {
+          "description": "Location of the WASM plugin to use for Rust support.",
           "anyOf": [
             {
               "type": "string"
@@ -591,6 +630,7 @@
           ]
         },
         "syncToolchainConfig": {
+          "description": "When `version` is defined, syncs the version to `rust-toolchain.toml`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -601,6 +641,7 @@
           ]
         },
         "targets": {
+          "description": "Rust targets to automatically install.",
           "anyOf": [
             {
               "type": "array",
@@ -614,6 +655,7 @@
           ]
         },
         "version": {
+          "description": "The version of Rust to download, install, and run `cargo` tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -632,6 +674,7 @@
       "type": "object",
       "properties": {
         "createMissingConfig": {
+          "description": "When `syncProjectReferences` is enabled, will create a `tsconfig.json` in referenced projects if it does not exist.",
           "default": true,
           "anyOf": [
             {
@@ -643,6 +686,7 @@
           ]
         },
         "includeProjectReferenceSources": {
+          "description": "Appends sources of project reference to `include` in `tsconfig.json`, for each project.",
           "anyOf": [
             {
               "type": "boolean"
@@ -653,6 +697,7 @@
           ]
         },
         "includeSharedTypes": {
+          "description": "Appends shared types to `include` in `tsconfig.json`, for each project.",
           "anyOf": [
             {
               "type": "boolean"
@@ -663,6 +708,7 @@
           ]
         },
         "projectConfigFileName": {
+          "description": "Name of the `tsconfig.json` file within each project.",
           "default": "tsconfig.json",
           "anyOf": [
             {
@@ -674,6 +720,7 @@
           ]
         },
         "root": {
+          "description": "The relative root to the TypeScript root. Primarily used for resolving project references.",
           "default": ".",
           "anyOf": [
             {
@@ -685,6 +732,7 @@
           ]
         },
         "rootConfigFileName": {
+          "description": "Name of the `tsconfig.json` file at the workspace root.",
           "default": "tsconfig.json",
           "anyOf": [
             {
@@ -696,6 +744,7 @@
           ]
         },
         "rootOptionsConfigFileName": {
+          "description": "Name of the shared compiler options `tsconfig.json` file at the workspace root.",
           "default": "tsconfig.options.json",
           "anyOf": [
             {
@@ -707,6 +756,7 @@
           ]
         },
         "routeOutDirToCache": {
+          "description": "Updates and routes `outDir` in `tsconfig.json` to moon's cache, for each project.",
           "anyOf": [
             {
               "type": "boolean"
@@ -717,6 +767,7 @@
           ]
         },
         "syncProjectReferences": {
+          "description": "Syncs all project dependencies as `references` in `tsconfig.json`, for each project.",
           "default": true,
           "anyOf": [
             {
@@ -728,6 +779,7 @@
           ]
         },
         "syncProjectReferencesToPaths": {
+          "description": "Syncs all project dependencies as `paths` in `tsconfig.json`, for each project.",
           "anyOf": [
             {
               "type": "boolean"
@@ -745,6 +797,7 @@
       "type": "object",
       "properties": {
         "plugin": {
+          "description": "Location of the WASM plugin to use for Yarn support.",
           "anyOf": [
             {
               "type": "string"
@@ -755,6 +808,7 @@
           ]
         },
         "plugins": {
+          "description": "Plugins to automatically install for Yarn v2 and above.",
           "anyOf": [
             {
               "type": "array",
@@ -768,6 +822,7 @@
           ]
         },
         "version": {
+          "description": "The version of Yarn to download, install, and run `yarn` tasks with.",
           "anyOf": [
             {
               "type": "string"

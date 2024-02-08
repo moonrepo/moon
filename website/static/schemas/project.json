@@ -522,7 +522,7 @@
       "type": "object",
       "properties": {
         "disabled": {
-          "description": "Disable all TypeScript functionality for this project.",
+          "description": "Disables all TypeScript functionality for this project.",
           "anyOf": [
             {
               "type": "boolean"
@@ -533,7 +533,7 @@
           ]
         },
         "includeProjectReferenceSources": {
-          "description": "Append project reference sources to `include` in `tsconfig.json`.",
+          "description": "Appends sources of project reference to `include` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -544,7 +544,7 @@
           ]
         },
         "includeSharedTypes": {
-          "description": "Append shared types to `include` in `tsconfig.json`.",
+          "description": "Appends shared types to `include` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -555,7 +555,7 @@
           ]
         },
         "routeOutDirToCache": {
-          "description": "Update and route `outDir` in `tsconfig.json` to moon's cache.",
+          "description": "Updates and routes `outDir` in `tsconfig.json` to moon's cache.",
           "anyOf": [
             {
               "type": "boolean"
@@ -566,7 +566,7 @@
           ]
         },
         "syncProjectReferences": {
-          "description": "Sync all project dependencies as `references` in `tsconfig.json`.",
+          "description": "Syncs all project dependencies as `references` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -577,7 +577,7 @@
           ]
         },
         "syncProjectReferencesToPaths": {
-          "description": "Sync all project dependencies as `paths` in `tsconfig.json`.",
+          "description": "Syncs all project dependencies as `paths` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"

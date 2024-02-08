@@ -3,12 +3,16 @@ use serde::Serialize;
 
 #[derive(Clone, Config, Debug, Eq, PartialEq, Serialize)]
 pub struct BinConfig {
+    /// Name of the binary, with optional version separated by `@`.
     pub bin: String,
 
+    /// Force install the binary if it already exists.
     pub force: bool,
 
+    /// Only install the binary locally, and not within CI.
     pub local: bool,
 
+    /// For supported tools, a custom name to use.
     pub name: Option<String>,
 }
 

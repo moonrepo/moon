@@ -17,17 +17,17 @@ cacheable!(
     /// Overrides top-level `typescript` settings.
     #[derive(Clone, Config, Debug, PartialEq)]
     pub struct ProjectToolchainTypeScriptConfig {
-        /// Disable all TypeScript functionality for this project.
+        /// Disables all TypeScript functionality for this project.
         pub disabled: bool,
-        /// Append project reference sources to `include` in `tsconfig.json`.
+        /// Appends sources of project reference to `include` in `tsconfig.json`.
         pub include_project_reference_sources: Option<bool>,
-        /// Append shared types to `include` in `tsconfig.json`.
+        /// Appends shared types to `include` in `tsconfig.json`.
         pub include_shared_types: Option<bool>,
-        /// Update and route `outDir` in `tsconfig.json` to moon's cache.
+        /// Updates and routes `outDir` in `tsconfig.json` to moon's cache.
         pub route_out_dir_to_cache: Option<bool>,
-        /// Sync all project dependencies as `references` in `tsconfig.json`.
+        /// Syncs all project dependencies as `references` in `tsconfig.json`.
         pub sync_project_references: Option<bool>,
-        /// Sync all project dependencies as `paths` in `tsconfig.json`.
+        /// Syncs all project dependencies as `paths` in `tsconfig.json`.
         pub sync_project_references_to_paths: Option<bool>,
     }
 );

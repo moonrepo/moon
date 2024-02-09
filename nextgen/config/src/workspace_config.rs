@@ -95,6 +95,7 @@ pub struct WorkspaceConfig {
     )]
     pub schema: String,
 
+    /// Configures code ownership rules for generating a `CODEOWNERS` file.
     #[setting(nested)]
     pub codeowners: CodeownersConfig,
 

@@ -72,7 +72,7 @@ jobs:
             host: macos-11
             binary: moon
             setup: |
-              export MACOSX_DEPLOYMENT_TARGET="10.12";
+              export MACOSX_DEPLOYMENT_TARGET="10.13";
 
           - target: aarch64-apple-darwin
             host: macos-11

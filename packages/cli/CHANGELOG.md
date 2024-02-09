@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Attempted fix for `liblzma.5.dylib` issues on macOS arm64.
+
 ## 1.21.1
 
 #### 🚀 Updates

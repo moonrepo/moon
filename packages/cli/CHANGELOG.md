@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a panic that would occur when running an action and path stripping would fail.
+
 ## 1.21.2
 
 #### 🐞 Fixes

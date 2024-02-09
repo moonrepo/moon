@@ -177,7 +177,7 @@ impl<'cmd> CommandInspector<'cmd> {
                 MAIN_SEPARATOR,
                 working_dir
                     .strip_prefix(workspace_root)
-                    .unwrap()
+                    .unwrap_or(working_dir)
                     .to_string_lossy(),
             )
         };

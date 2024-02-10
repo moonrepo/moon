@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialProjectConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/project",
+  "description": "Configures information and tasks for a project. Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
     "$schema": {
@@ -16,6 +16,7 @@
       ]
     },
     "dependsOn": {
+      "description": "Other projects that this project depends on.",
       "anyOf": [
         {
           "type": "array",
@@ -29,6 +30,7 @@
       ]
     },
     "env": {
+      "description": "A mapping of environment variables that will be set for all tasks within the project.",
       "anyOf": [
         {
           "type": "object",
@@ -45,6 +47,7 @@
       ]
     },
     "fileGroups": {
+      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "anyOf": [
         {
           "type": "object",
@@ -64,6 +67,7 @@
       ]
     },
     "id": {
+      "description": "Overrides the ID within the project graph, as defined in the workspace `projects` setting.",
       "anyOf": [
         {
           "type": "string"
@@ -74,6 +78,7 @@
       ]
     },
     "language": {
+      "description": "The primary programming language of the project.",
       "default": "unknown",
       "anyOf": [
         {
@@ -85,6 +90,7 @@
       ]
     },
     "owners": {
+      "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialOwnersConfig"
@@ -95,6 +101,7 @@
       ]
     },
     "platform": {
+      "description": "The default platform for all tasks within the project, if their platform is unknown.",
       "default": "unknown",
       "anyOf": [
         {
@@ -106,6 +113,7 @@
       ]
     },
     "project": {
+      "description": "Expanded information about the project.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialProjectMetadataConfig"
@@ -116,6 +124,7 @@
       ]
     },
     "tags": {
+      "description": "A list of tags that this project blongs to, for categorizing, boundary enforcement, and task inheritance.",
       "anyOf": [
         {
           "type": "array",
@@ -129,6 +138,7 @@
       ]
     },
     "tasks": {
+      "description": "A mapping of tasks by ID to parameters required for running the task.",
       "anyOf": [
         {
           "type": "object",
@@ -145,6 +155,7 @@
       ]
     },
     "toolchain": {
+      "description": "Overrides top-level toolchain settings, scoped to this project.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialProjectToolchainConfig"
@@ -155,6 +166,7 @@
       ]
     },
     "type": {
+      "description": "The type of project.",
       "default": "unknown",
       "anyOf": [
         {
@@ -166,6 +178,7 @@
       ]
     },
     "workspace": {
+      "description": "Overrides top-level workspace settings, scoped to this project.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialProjectWorkspaceConfig"
@@ -215,9 +228,11 @@
     },
     "PartialDependencyConfig": {
       "title": "PartialDependencyConfig",
+      "description": "Expanded information about a project dependency.",
       "type": "object",
       "properties": {
         "id": {
+          "description": "ID of the depended on project.",
           "anyOf": [
             {
               "type": "string"
@@ -228,6 +243,7 @@
           ]
         },
         "scope": {
+          "description": "Scope of the dependency relationship.",
           "default": "production",
           "anyOf": [
             {
@@ -239,6 +255,7 @@
           ]
         },
         "source": {
+          "description": "Source of where the dependeny came from.",
           "default": "explicit",
           "anyOf": [
             {
@@ -250,6 +267,7 @@
           ]
         },
         "via": {
+          "description": "Metadata about the source.",
           "anyOf": [
             {
               "type": "string"
@@ -264,9 +282,11 @@
     },
     "PartialOwnersConfig": {
       "title": "PartialOwnersConfig",
+      "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
       "type": "object",
       "properties": {
         "customGroups": {
+          "description": "Bitbucket only. A mapping of custom groups (prefixed with `@@@`), to a list of user and normal groups.",
           "anyOf": [
             {
               "type": "object",
@@ -286,6 +306,7 @@
           ]
         },
         "defaultOwner": {
+          "description": "The default owner for `paths`.",
           "anyOf": [
             {
               "type": "string"
@@ -296,6 +317,7 @@
           ]
         },
         "optional": {
+          "description": "GitLab only. Marks the code owners section as optional.",
           "anyOf": [
             {
               "type": "boolean"
@@ -306,6 +328,7 @@
           ]
         },
         "paths": {
+          "description": "A mapping of file paths and file globs to owners. When a list, the `defaultOwner` is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialOwnersPaths"
@@ -316,6 +339,7 @@
           ]
         },
         "requiredApprovals": {
+          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required.",
           "default": 1,
           "anyOf": [
             {
@@ -365,9 +389,11 @@
     },
     "PartialProjectMetadataConfig": {
       "title": "PartialProjectMetadataConfig",
+      "description": "Expanded information about the project.",
       "type": "object",
       "properties": {
         "channel": {
+          "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`.",
           "anyOf": [
             {
               "type": "string"
@@ -378,6 +404,7 @@
           ]
         },
         "description": {
+          "description": "A description on what the project does, and why it exists.",
           "anyOf": [
             {
               "type": "string"
@@ -388,6 +415,7 @@
           ]
         },
         "maintainers": {
+          "description": "The individual maintainers of the project. The format is unspecified.",
           "anyOf": [
             {
               "type": "array",
@@ -401,6 +429,7 @@
           ]
         },
         "name": {
+          "description": "A human-readable name of the project.",
           "anyOf": [
             {
               "type": "string"
@@ -411,6 +440,7 @@
           ]
         },
         "owner": {
+          "description": "The owner of the project. Can be an individual, team, or organization. The format is unspecified.",
           "anyOf": [
             {
               "type": "string"
@@ -425,9 +455,11 @@
     },
     "PartialProjectToolchainCommonToolConfig": {
       "title": "PartialProjectToolchainCommonToolConfig",
+      "description": "Overrides top-level toolchain settings.",
       "type": "object",
       "properties": {
         "version": {
+          "description": "Version of the tool this project will use.",
           "anyOf": [
             {
               "type": "string"
@@ -442,9 +474,11 @@
     },
     "PartialProjectToolchainConfig": {
       "title": "PartialProjectToolchainConfig",
+      "description": "Overrides top-level toolchain settings, scoped to this project.",
       "type": "object",
       "properties": {
         "bun": {
+          "description": "Overrides `bun` settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
@@ -455,6 +489,7 @@
           ]
         },
         "deno": {
+          "description": "Overrides `deno` settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
@@ -465,6 +500,7 @@
           ]
         },
         "node": {
+          "description": "Overrides `node` settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
@@ -475,6 +511,7 @@
           ]
         },
         "rust": {
+          "description": "Overrides `rust` settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
@@ -485,6 +522,7 @@
           ]
         },
         "typescript": {
+          "description": "Overrides `typescript` settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
@@ -499,9 +537,11 @@
     },
     "PartialProjectToolchainTypeScriptConfig": {
       "title": "PartialProjectToolchainTypeScriptConfig",
+      "description": "Overrides top-level `typescript` settings.",
       "type": "object",
       "properties": {
         "disabled": {
+          "description": "Disables all TypeScript functionality for this project.",
           "anyOf": [
             {
               "type": "boolean"
@@ -512,6 +552,7 @@
           ]
         },
         "includeProjectReferenceSources": {
+          "description": "Appends sources of project reference to `include` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -522,6 +563,7 @@
           ]
         },
         "includeSharedTypes": {
+          "description": "Appends shared types to `include` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -532,6 +574,7 @@
           ]
         },
         "routeOutDirToCache": {
+          "description": "Updates and routes `outDir` in `tsconfig.json` to moon's cache.",
           "anyOf": [
             {
               "type": "boolean"
@@ -542,6 +585,7 @@
           ]
         },
         "syncProjectReferences": {
+          "description": "Syncs all project dependencies as `references` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -552,6 +596,7 @@
           ]
         },
         "syncProjectReferencesToPaths": {
+          "description": "Syncs all project dependencies as `paths` in `tsconfig.json`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -566,9 +611,11 @@
     },
     "PartialProjectWorkspaceConfig": {
       "title": "PartialProjectWorkspaceConfig",
+      "description": "Overrides top-level workspace settings, scoped to this project.",
       "type": "object",
       "properties": {
         "inheritedTasks": {
+          "description": "Controls how tasks are inherited.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialProjectWorkspaceInheritedTasksConfig"
@@ -583,9 +630,11 @@
     },
     "PartialProjectWorkspaceInheritedTasksConfig": {
       "title": "PartialProjectWorkspaceInheritedTasksConfig",
+      "description": "Controls how tasks are inherited.",
       "type": "object",
       "properties": {
         "exclude": {
+          "description": "Excludes inheriting tasks by ID.",
           "anyOf": [
             {
               "type": "array",
@@ -599,6 +648,7 @@
           ]
         },
         "include": {
+          "description": "Only inherits tasks by ID, and ignores the rest. When not defined, inherits all matching tasks. When an empty list, inherits no tasks.",
           "anyOf": [
             {
               "type": "array",
@@ -612,6 +662,7 @@
           ]
         },
         "rename": {
+          "description": "Renames inherited tasks to a new ID.",
           "anyOf": [
             {
               "type": "object",
@@ -649,9 +700,11 @@
     },
     "PartialTaskConfig": {
       "title": "PartialTaskConfig",
+      "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
       "properties": {
         "args": {
+          "description": "Arguments to pass to the command when it's ran. Can be defined as a string, or a list of individual arguments.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialTaskArgs"
@@ -662,6 +715,7 @@
           ]
         },
         "command": {
+          "description": "The command or command line to execute when the task is ran. Supports the command name, with or without arguments. Can be defined as a string, or a list of individual arguments.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialTaskArgs"
@@ -672,6 +726,7 @@
           ]
         },
         "deps": {
+          "description": "Other tasks that this task depends on, and must run to completion, before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
           "anyOf": [
             {
               "type": "array",
@@ -685,6 +740,7 @@
           ]
         },
         "env": {
+          "description": "A mapping of environment variables that will be set when the task is ran.",
           "anyOf": [
             {
               "type": "object",
@@ -701,6 +757,7 @@
           ]
         },
         "extends": {
+          "description": "Extends settings from a sibling task by ID.",
           "anyOf": [
             {
               "type": "string"
@@ -711,6 +768,7 @@
           ]
         },
         "inputs": {
+          "description": "Inputs and sources that will mark the task as affected when comparing against touched files. When not provided, all files within the project are considered an input. When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
           "anyOf": [
             {
               "type": "array",
@@ -724,6 +782,7 @@
           ]
         },
         "local": {
+          "description": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -734,6 +793,7 @@
           ]
         },
         "options": {
+          "description": "Options to control task inheritance and execution.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialTaskOptionsConfig"
@@ -744,6 +804,7 @@
           ]
         },
         "outputs": {
+          "description": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs.",
           "anyOf": [
             {
               "type": "array",
@@ -757,6 +818,7 @@
           ]
         },
         "platform": {
+          "description": "The platform in which the task will be ran in. The platform determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
           "default": "unknown",
           "anyOf": [
             {
@@ -768,6 +830,7 @@
           ]
         },
         "type": {
+          "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",
           "default": "test",
           "anyOf": [
             {
@@ -794,9 +857,11 @@
     },
     "PartialTaskDependencyConfig": {
       "title": "PartialTaskDependencyConfig",
+      "description": "Expanded information about a task dependency.",
       "type": "object",
       "properties": {
         "args": {
+          "description": "Additional arguments to pass to this dependency when it's ran.",
           "anyOf": [
             {
               "$ref": "#/definitions/PartialTaskArgs"
@@ -807,6 +872,7 @@
           ]
         },
         "env": {
+          "description": "A mapping of environment variables specific to this dependency.",
           "anyOf": [
             {
               "type": "object",
@@ -823,6 +889,7 @@
           ]
         },
         "optional": {
+          "description": "Marks the dependency is optional when being inherited from the top-level.",
           "anyOf": [
             {
               "type": "boolean"
@@ -833,6 +900,7 @@
           ]
         },
         "target": {
+          "description": "The target of the depended on task.",
           "anyOf": [
             {
               "type": "string"
@@ -847,9 +915,11 @@
     },
     "PartialTaskOptionsConfig": {
       "title": "PartialTaskOptionsConfig",
+      "description": "Options to control task inheritance and execution.",
       "type": "object",
       "properties": {
         "affectedFiles": {
+          "description": "The pattern in which affected files will be passed to the task.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionAffectedFiles"
@@ -860,6 +930,7 @@
           ]
         },
         "allowFailure": {
+          "description": "Allows the task to fail without failing the entire pipeline.",
           "anyOf": [
             {
               "type": "boolean"
@@ -870,6 +941,7 @@
           ]
         },
         "cache": {
+          "description": "Caches the `outputs` of the task",
           "anyOf": [
             {
               "type": "boolean"
@@ -880,6 +952,7 @@
           ]
         },
         "envFile": {
+          "description": "Loads and sets environment variables from the `.env` file when running the task.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -890,6 +963,7 @@
           ]
         },
         "interactive": {
+          "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin.",
           "anyOf": [
             {
               "type": "boolean"
@@ -900,6 +974,7 @@
           ]
         },
         "mergeArgs": {
+          "description": "The strategy to use when merging `args` with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -911,6 +986,7 @@
           ]
         },
         "mergeDeps": {
+          "description": "The strategy to use when merging `deps` with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -922,6 +998,7 @@
           ]
         },
         "mergeEnv": {
+          "description": "The strategy to use when merging `env` with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -933,6 +1010,7 @@
           ]
         },
         "mergeInputs": {
+          "description": "The strategy to use when merging `inputs` with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -944,6 +1022,7 @@
           ]
         },
         "mergeOutputs": {
+          "description": "The strategy to use when merging `outputs` with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -955,6 +1034,7 @@
           ]
         },
         "outputStyle": {
+          "description": "The style in which task output will be printed to the console.",
           "default": "buffer",
           "anyOf": [
             {
@@ -966,6 +1046,7 @@
           ]
         },
         "persistent": {
+          "description": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes.",
           "anyOf": [
             {
               "type": "boolean"
@@ -976,6 +1057,7 @@
           ]
         },
         "retryCount": {
+          "description": "The number of times a failing task will be retried to succeed.",
           "anyOf": [
             {
               "type": "number"
@@ -986,6 +1068,7 @@
           ]
         },
         "runDepsInParallel": {
+          "description": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies.",
           "anyOf": [
             {
               "type": "boolean"
@@ -996,6 +1079,7 @@
           ]
         },
         "runFromWorkspaceRoot": {
+          "description": "Runs the task from the workspace root, instead of the project root.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1006,6 +1090,7 @@
           ]
         },
         "runInCI": {
+          "description": "Whether to run the task in CI or not, when executing `moon ci`.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1016,6 +1101,7 @@
           ]
         },
         "shell": {
+          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1026,6 +1112,7 @@
           ]
         },
         "unixShell": {
+          "description": "The shell to run the task in when on a Unix-based machine.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskUnixShell"
@@ -1036,6 +1123,7 @@
           ]
         },
         "windowsShell": {
+          "description": "The shell to run the task in when on a Windows machine.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskWindowsShell"

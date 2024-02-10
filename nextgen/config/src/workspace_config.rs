@@ -67,7 +67,11 @@ fn validate_projects<D, C>(
 
 #[derive(Clone, Config, Debug)]
 pub struct WorkspaceProjectsConfig {
+    /// A list of globs in which to locate project directories.
+    /// Can be suffixed with `moon.yml` to only find distinct projects.
     pub globs: Vec<String>,
+
+    /// A mapping of project IDs to relative file paths to each project directory.
     pub sources: FxHashMap<Id, String>,
 }
 
@@ -86,6 +90,7 @@ pub enum WorkspaceProjects {
     Sources(FxHashMap<Id, String>),
 }
 
+/// Configures all aspects of the moon workspace.
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Config, Debug)]
 pub struct WorkspaceConfig {
@@ -99,39 +104,54 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub codeowners: CodeownersConfig,
 
+    /// Configures boundaries and constraints between projects.
     #[setting(nested)]
     pub constraints: ConstraintsConfig,
 
+    /// Configures experiments across the entire moon workspace.
     #[setting(nested)]
     pub experiments: ExperimentsConfig,
 
+    /// Extends another workspace configuration file. Supports a relative
+    /// file path or a secure URL.
     #[setting(extend, validate = validate::extends_string)]
     pub extends: Option<String>,
 
+    /// Configures extensions that can be executed with `moon ext`.
     #[setting(nested)]
     pub extensions: FxHashMap<Id, ExtensionConfig>,
 
+    /// Configures the generator for scaffolding from templates.
     #[setting(nested)]
     pub generator: GeneratorConfig,
 
+    /// Configures aspects of the content hashing engine.
     #[setting(nested)]
     pub hasher: HasherConfig,
 
+    /// Configures how and where notifications are sent.
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
+    /// Configures all projects within the workspace to create a project graph.
+    /// Accepts a list of globs, a mapping of projects to relative file paths,
+    /// or both values.
     #[setting(nested, validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
+    /// Configures aspects of the task runner (also known as the action pipeline).
     #[setting(nested)]
     pub runner: RunnerConfig,
 
+    /// Collects anonymous usage information, and checks for new moon versions.
     #[setting(default = true)]
     pub telemetry: bool,
 
+    /// Configures the version control system (VCS).
     #[setting(nested)]
     pub vcs: VcsConfig,
 
+    /// Requires a specific version of the `moon` binary.
     pub version_constraint: Option<VersionReq>,
 }
 

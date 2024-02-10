@@ -74,11 +74,23 @@ export interface PartialOwnersConfig {
 	requiredApprovals?: number | null;
 }
 
+/** Expanded information about the project. */
 export interface PartialProjectMetadataConfig {
+	/**
+	 * The Slack, Discord, etc, channel to discuss the project.
+	 * Must start with a `#`.
+	 */
 	channel?: string | null;
+	/** A description on what the project does, and why it exists. */
 	description?: string | null;
+	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers?: string[] | null;
+	/** A human-readable name of the project. */
 	name?: string | null;
+	/**
+	 * The owner of the project. Can be an individual, team, or
+	 * organization. The format is unspecified.
+	 */
 	owner?: string | null;
 }
 
@@ -140,25 +152,66 @@ export interface PartialProjectWorkspaceConfig {
 	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/project */
+/**
+ * Configures information and tasks for a project.
+ * Docs: https://moonrepo.dev/docs/config/project
+ */
 export interface PartialProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
+	/** Other projects that this project depends on. */
 	dependsOn?: PartialProjectDependsOn[] | null;
+	/**
+	 * A mapping of environment variables that will be set for
+	 * all tasks within the project.
+	 */
 	env?: Record<string, string> | null;
+	/**
+	 * A mapping of group IDs to a list of file paths, globs, and
+	 * environment variables, that can be referenced from tasks.
+	 */
 	fileGroups?: Record<string, string[]> | null;
+	/**
+	 * Overrides the ID within the project graph, as defined in
+	 * the workspace `projects` setting.
+	 */
 	id?: string | null;
-	/** @default 'unknown' */
+	/**
+	 * The primary programming language of the project.
+	 *
+	 * @default 'unknown'
+	 */
 	language?: LanguageType | null;
+	/**
+	 * Defines ownership of source code within the current project, by mapping
+	 * file paths and globs to owners. An owner is either a user, team, or group.
+	 */
 	owners?: PartialOwnersConfig | null;
-	/** @default 'unknown' */
+	/**
+	 * The default platform for all tasks within the project,
+	 * if their platform is unknown.
+	 *
+	 * @default 'unknown'
+	 */
 	platform?: PlatformType | null;
+	/** Expanded information about the project. */
 	project?: PartialProjectMetadataConfig | null;
+	/**
+	 * A list of tags that this project blongs to, for categorizing,
+	 * boundary enforcement, and task inheritance.
+	 */
 	tags?: string[] | null;
+	/** A mapping of tasks by ID to parameters required for running the task. */
 	tasks?: Record<string, PartialTaskConfig> | null;
+	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain?: PartialProjectToolchainConfig | null;
-	/** @default 'unknown' */
+	/**
+	 * The type of project.
+	 *
+	 * @default 'unknown'
+	 */
 	type?: ProjectType | null;
+	/** Overrides top-level workspace settings, scoped to this project. */
 	workspace?: PartialProjectWorkspaceConfig | null;
 }
 
@@ -216,11 +269,23 @@ export interface OwnersConfig {
 	requiredApprovals: number;
 }
 
+/** Expanded information about the project. */
 export interface ProjectMetadataConfig {
+	/**
+	 * The Slack, Discord, etc, channel to discuss the project.
+	 * Must start with a `#`.
+	 */
 	channel: string | null;
+	/** A description on what the project does, and why it exists. */
 	description: string;
+	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers: string[];
+	/** A human-readable name of the project. */
 	name: string | null;
+	/**
+	 * The owner of the project. Can be an individual, team, or
+	 * organization. The format is unspecified.
+	 */
 	owner: string | null;
 }
 
@@ -280,24 +345,65 @@ export interface ProjectWorkspaceConfig {
 	inheritedTasks: ProjectWorkspaceInheritedTasksConfig;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/project */
+/**
+ * Configures information and tasks for a project.
+ * Docs: https://moonrepo.dev/docs/config/project
+ */
 export interface ProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema: string;
+	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
+	/**
+	 * A mapping of environment variables that will be set for
+	 * all tasks within the project.
+	 */
 	env: Record<string, string>;
+	/**
+	 * A mapping of group IDs to a list of file paths, globs, and
+	 * environment variables, that can be referenced from tasks.
+	 */
 	fileGroups: Record<string, string[]>;
+	/**
+	 * Overrides the ID within the project graph, as defined in
+	 * the workspace `projects` setting.
+	 */
 	id: string | null;
-	/** @default 'unknown' */
+	/**
+	 * The primary programming language of the project.
+	 *
+	 * @default 'unknown'
+	 */
 	language: LanguageType;
+	/**
+	 * Defines ownership of source code within the current project, by mapping
+	 * file paths and globs to owners. An owner is either a user, team, or group.
+	 */
 	owners: OwnersConfig;
-	/** @default 'unknown' */
+	/**
+	 * The default platform for all tasks within the project,
+	 * if their platform is unknown.
+	 *
+	 * @default 'unknown'
+	 */
 	platform: PlatformType | null;
+	/** Expanded information about the project. */
 	project: ProjectMetadataConfig | null;
+	/**
+	 * A list of tags that this project blongs to, for categorizing,
+	 * boundary enforcement, and task inheritance.
+	 */
 	tags: string[];
+	/** A mapping of tasks by ID to parameters required for running the task. */
 	tasks: Record<string, TaskConfig>;
+	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchain: ProjectToolchainConfig;
-	/** @default 'unknown' */
+	/**
+	 * The type of project.
+	 *
+	 * @default 'unknown'
+	 */
 	type: ProjectType;
+	/** Overrides top-level workspace settings, scoped to this project. */
 	workspace: ProjectWorkspaceConfig;
 }

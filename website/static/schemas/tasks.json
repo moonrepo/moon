@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialInheritedTasksConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/tasks",
+  "description": "Configures tasks and task related settings that'll be inherited by all matching projects. Docs: https://moonrepo.dev/docs/config/tasks",
   "type": "object",
   "properties": {
     "$schema": {
@@ -16,6 +16,7 @@
       ]
     },
     "extends": {
+      "description": "Extends another tasks configuration file. Supports a relative file path or a secure URL.",
       "anyOf": [
         {
           "type": "string"
@@ -26,6 +27,7 @@
       ]
     },
     "fileGroups": {
+      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "anyOf": [
         {
           "type": "object",
@@ -45,6 +47,7 @@
       ]
     },
     "implicitDeps": {
+      "description": "Task dependencies that'll automatically be injected into every task that inherits this configuration.",
       "anyOf": [
         {
           "type": "array",
@@ -58,6 +61,7 @@
       ]
     },
     "implicitInputs": {
+      "description": "Task inputs that'll automatically be injected into every task that inherits this configuration.",
       "anyOf": [
         {
           "type": "array",
@@ -71,6 +75,7 @@
       ]
     },
     "taskOptions": {
+      "description": "Default task options for all inherited tasks.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialTaskOptionsConfig"
@@ -81,6 +86,7 @@
       ]
     },
     "tasks": {
+      "description": "A mapping of tasks by ID to parameters required for running the task.",
       "anyOf": [
         {
           "type": "object",

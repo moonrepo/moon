@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialProjectConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/project",
+  "description": "Configures information and tasks for a project. Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
     "$schema": {
@@ -16,6 +16,7 @@
       ]
     },
     "dependsOn": {
+      "description": "Other projects that this project depends on.",
       "anyOf": [
         {
           "type": "array",
@@ -29,6 +30,7 @@
       ]
     },
     "env": {
+      "description": "A mapping of environment variables that will be set for all tasks within the project.",
       "anyOf": [
         {
           "type": "object",
@@ -45,6 +47,7 @@
       ]
     },
     "fileGroups": {
+      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "anyOf": [
         {
           "type": "object",
@@ -64,6 +67,7 @@
       ]
     },
     "id": {
+      "description": "Overrides the ID within the project graph, as defined in the workspace `projects` setting.",
       "anyOf": [
         {
           "type": "string"
@@ -74,6 +78,7 @@
       ]
     },
     "language": {
+      "description": "The primary programming language of the project.",
       "default": "unknown",
       "anyOf": [
         {
@@ -85,6 +90,7 @@
       ]
     },
     "owners": {
+      "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialOwnersConfig"
@@ -95,6 +101,7 @@
       ]
     },
     "platform": {
+      "description": "The default platform for all tasks within the project, if their platform is unknown.",
       "default": "unknown",
       "anyOf": [
         {
@@ -106,6 +113,7 @@
       ]
     },
     "project": {
+      "description": "Expanded information about the project.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialProjectMetadataConfig"
@@ -116,6 +124,7 @@
       ]
     },
     "tags": {
+      "description": "A list of tags that this project blongs to, for categorizing, boundary enforcement, and task inheritance.",
       "anyOf": [
         {
           "type": "array",
@@ -129,6 +138,7 @@
       ]
     },
     "tasks": {
+      "description": "A mapping of tasks by ID to parameters required for running the task.",
       "anyOf": [
         {
           "type": "object",
@@ -145,6 +155,7 @@
       ]
     },
     "toolchain": {
+      "description": "Overrides top-level toolchain settings, scoped to this project.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialProjectToolchainConfig"
@@ -155,6 +166,7 @@
       ]
     },
     "type": {
+      "description": "The type of project.",
       "default": "unknown",
       "anyOf": [
         {
@@ -166,6 +178,7 @@
       ]
     },
     "workspace": {
+      "description": "Overrides top-level workspace settings, scoped to this project.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialProjectWorkspaceConfig"
@@ -376,9 +389,11 @@
     },
     "PartialProjectMetadataConfig": {
       "title": "PartialProjectMetadataConfig",
+      "description": "Expanded information about the project.",
       "type": "object",
       "properties": {
         "channel": {
+          "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`.",
           "anyOf": [
             {
               "type": "string"
@@ -389,6 +404,7 @@
           ]
         },
         "description": {
+          "description": "A description on what the project does, and why it exists.",
           "anyOf": [
             {
               "type": "string"
@@ -399,6 +415,7 @@
           ]
         },
         "maintainers": {
+          "description": "The individual maintainers of the project. The format is unspecified.",
           "anyOf": [
             {
               "type": "array",
@@ -412,6 +429,7 @@
           ]
         },
         "name": {
+          "description": "A human-readable name of the project.",
           "anyOf": [
             {
               "type": "string"
@@ -422,6 +440,7 @@
           ]
         },
         "owner": {
+          "description": "The owner of the project. Can be an individual, team, or organization. The format is unspecified.",
           "anyOf": [
             {
               "type": "string"

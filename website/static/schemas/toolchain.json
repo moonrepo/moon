@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialToolchainConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/toolchain",
+  "description": "Configures all tools and platforms required for tasks. Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
     "$schema": {
@@ -16,6 +16,7 @@
       ]
     },
     "bun": {
+      "description": "Configures and enables the Bun platform.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialBunConfig"
@@ -26,6 +27,7 @@
       ]
     },
     "deno": {
+      "description": "Configures and enables the Deno platform.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialDenoConfig"
@@ -36,6 +38,7 @@
       ]
     },
     "extends": {
+      "description": "Extends another toolchain configuration file. Supports a relative file path or a secure URL.",
       "anyOf": [
         {
           "type": "string"
@@ -46,6 +49,7 @@
       ]
     },
     "node": {
+      "description": "Configures and enables the Node.js platform.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialNodeConfig"
@@ -56,6 +60,7 @@
       ]
     },
     "rust": {
+      "description": "Configures and enables the Rust platform.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialRustConfig"
@@ -66,6 +71,7 @@
       ]
     },
     "typescript": {
+      "description": "Configures and enables the TypeScript platform.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialTypeScriptConfig"
@@ -175,7 +181,7 @@
     },
     "PartialBunConfig": {
       "title": "PartialBunConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#bun",
+      "description": "Configures and enables the Bun platform. Docs: https://moonrepo.dev/docs/config/toolchain#bun",
       "type": "object",
       "properties": {
         "dependencyVersionFormat": {
@@ -251,6 +257,7 @@
     },
     "PartialBunpmConfig": {
       "title": "PartialBunpmConfig",
+      "description": "Options for Bun, when used as a package manager.",
       "type": "object",
       "properties": {
         "plugin": {
@@ -280,7 +287,7 @@
     },
     "PartialDenoConfig": {
       "title": "PartialDenoConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
+      "description": "Configures and enables the Deno platform. Docs: https://moonrepo.dev/docs/config/toolchain#deno",
       "type": "object",
       "properties": {
         "bins": {
@@ -347,7 +354,7 @@
     },
     "PartialNodeConfig": {
       "title": "PartialNodeConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#node",
+      "description": "Configures and enables the Node.js platform. Docs: https://moonrepo.dev/docs/config/toolchain#node",
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
@@ -529,6 +536,7 @@
     },
     "PartialNpmConfig": {
       "title": "PartialNpmConfig",
+      "description": "Options for npm, when used as a package manager.",
       "type": "object",
       "properties": {
         "plugin": {
@@ -558,6 +566,7 @@
     },
     "PartialPnpmConfig": {
       "title": "PartialPnpmConfig",
+      "description": "Options for pnpm, when used as a package manager.",
       "type": "object",
       "properties": {
         "plugin": {
@@ -587,7 +596,7 @@
     },
     "PartialRustConfig": {
       "title": "PartialRustConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#rust",
+      "description": "Configures and enables the Rust platform. Docs: https://moonrepo.dev/docs/config/toolchain#rust",
       "type": "object",
       "properties": {
         "bins": {
@@ -670,7 +679,7 @@
     },
     "PartialTypeScriptConfig": {
       "title": "PartialTypeScriptConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
+      "description": "Configures and enables the TypeScript platform. Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
       "type": "object",
       "properties": {
         "createMissingConfig": {
@@ -794,6 +803,7 @@
     },
     "PartialYarnConfig": {
       "title": "PartialYarnConfig",
+      "description": "Options for Yarn, when used as a package manager.",
       "type": "object",
       "properties": {
         "plugin": {

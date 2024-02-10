@@ -1,6 +1,7 @@
 use schematic::Config;
 use warpgate_api::PluginLocator;
 
+/// Configures and enables the TypeScript platform.
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
 #[derive(Clone, Config, Debug)]
 pub struct TypeScriptConfig {

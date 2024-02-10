@@ -3,6 +3,7 @@ use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
+/// Configures and enables the Bun platform.
 /// Docs: https://moonrepo.dev/docs/config/toolchain#bun
 #[derive(Clone, Config, Debug)]
 pub struct BunConfig {

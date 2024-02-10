@@ -3,6 +3,7 @@ use schematic::Config;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
+/// Configures and enables the Deno platform.
 /// Docs: https://moonrepo.dev/docs/config/toolchain#deno
 #[derive(Clone, Config, Debug)]
 pub struct DenoConfig {

@@ -128,7 +128,12 @@ export interface PartialNotifierConfig {
 }
 
 export interface PartialWorkspaceProjectsConfig {
+	/**
+	 * A list of globs in which to locate project directories.
+	 * Can be suffixed with `moon.yml` to only find distinct projects.
+	 */
 	globs?: string[] | null;
+	/** A mapping of project IDs to relative file paths to each project directory. */
 	sources?: Record<string, string> | null;
 }
 
@@ -190,24 +195,49 @@ export interface PartialVcsConfig {
 	syncHooks?: boolean | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/workspace */
+/**
+ * Configures all aspects of the moon workspace.
+ * Docs: https://moonrepo.dev/docs/config/workspace
+ */
 export interface PartialWorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema?: string | null;
 	/** Configures code ownership rules for generating a `CODEOWNERS` file. */
 	codeowners?: PartialCodeownersConfig | null;
+	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
+	/** Configures experiments across the entire moon workspace. */
 	experiments?: PartialExperimentsConfig | null;
+	/**
+	 * Extends another workspace configuration file. Supports a relative
+	 * file path or a secure URL.
+	 */
 	extends?: string | null;
+	/** Configures extensions that can be executed with `moon ext`. */
 	extensions?: Record<string, PartialExtensionConfig> | null;
+	/** Configures the generator for scaffolding from templates. */
 	generator?: PartialGeneratorConfig | null;
+	/** Configures aspects of the content hashing engine. */
 	hasher?: PartialHasherConfig | null;
+	/** Configures how and where notifications are sent. */
 	notifier?: PartialNotifierConfig | null;
+	/**
+	 * Configures all projects within the workspace to create a project graph.
+	 * Accepts a list of globs, a mapping of projects to relative file paths,
+	 * or both values.
+	 */
 	projects?: PartialWorkspaceProjects | null;
+	/** Configures aspects of the task runner (also known as the action pipeline). */
 	runner?: PartialRunnerConfig | null;
-	/** @default true */
+	/**
+	 * Collects anonymous usage information, and checks for new moon versions.
+	 *
+	 * @default true
+	 */
 	telemetry?: boolean | null;
+	/** Configures the version control system (VCS). */
 	vcs?: PartialVcsConfig | null;
+	/** Requires a specific version of the `moon` binary. */
 	versionConstraint?: string | null;
 }
 
@@ -331,7 +361,12 @@ export interface NotifierConfig {
 }
 
 export interface WorkspaceProjectsConfig {
+	/**
+	 * A list of globs in which to locate project directories.
+	 * Can be suffixed with `moon.yml` to only find distinct projects.
+	 */
 	globs: string[];
+	/** A mapping of project IDs to relative file paths to each project directory. */
 	sources: Record<string, string>;
 }
 
@@ -389,23 +424,48 @@ export interface VcsConfig {
 	syncHooks: boolean;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/workspace */
+/**
+ * Configures all aspects of the moon workspace.
+ * Docs: https://moonrepo.dev/docs/config/workspace
+ */
 export interface WorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema: string;
 	/** Configures code ownership rules for generating a `CODEOWNERS` file. */
 	codeowners: CodeownersConfig;
+	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
+	/** Configures experiments across the entire moon workspace. */
 	experiments: ExperimentsConfig;
+	/**
+	 * Extends another workspace configuration file. Supports a relative
+	 * file path or a secure URL.
+	 */
 	extends: string | null;
+	/** Configures extensions that can be executed with `moon ext`. */
 	extensions: Record<string, ExtensionConfig>;
+	/** Configures the generator for scaffolding from templates. */
 	generator: GeneratorConfig;
+	/** Configures aspects of the content hashing engine. */
 	hasher: HasherConfig;
+	/** Configures how and where notifications are sent. */
 	notifier: NotifierConfig;
+	/**
+	 * Configures all projects within the workspace to create a project graph.
+	 * Accepts a list of globs, a mapping of projects to relative file paths,
+	 * or both values.
+	 */
 	projects: WorkspaceProjects;
+	/** Configures aspects of the task runner (also known as the action pipeline). */
 	runner: RunnerConfig;
-	/** @default true */
+	/**
+	 * Collects anonymous usage information, and checks for new moon versions.
+	 *
+	 * @default true
+	 */
 	telemetry: boolean;
+	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
+	/** Requires a specific version of the `moon` binary. */
 	versionConstraint: string | null;
 }

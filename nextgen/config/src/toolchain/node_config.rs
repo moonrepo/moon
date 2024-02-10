@@ -79,6 +79,7 @@ derive_enum!(
     }
 );
 
+/// Options for Bun, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct BunpmConfig {
     /// Location of the WASM plugin to use for Bun support.
@@ -89,6 +90,7 @@ pub struct BunpmConfig {
     pub version: Option<UnresolvedVersionSpec>,
 }
 
+/// Options for npm, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
     /// Location of the WASM plugin to use for npm support.
@@ -99,6 +101,7 @@ pub struct NpmConfig {
     pub version: Option<UnresolvedVersionSpec>,
 }
 
+/// Options for pnpm, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
     /// Location of the WASM plugin to use for pnpm support.
@@ -109,6 +112,7 @@ pub struct PnpmConfig {
     pub version: Option<UnresolvedVersionSpec>,
 }
 
+/// Options for Yarn, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct YarnConfig {
     /// Location of the WASM plugin to use for Yarn support.
@@ -122,6 +126,7 @@ pub struct YarnConfig {
     pub version: Option<UnresolvedVersionSpec>,
 }
 
+/// Configures and enables the Node.js platform.
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
 #[derive(Clone, Config, Debug)]
 pub struct NodeConfig {

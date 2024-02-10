@@ -182,15 +182,37 @@ export interface PartialTaskConfig {
 	type?: TaskType | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/tasks */
+/**
+ * Configures tasks and task related settings that'll be inherited by all
+ * matching projects.
+ * Docs: https://moonrepo.dev/docs/config/tasks
+ */
 export interface PartialInheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
+	/**
+	 * Extends another tasks configuration file. Supports a relative
+	 * file path or a secure URL.
+	 */
 	extends?: string | null;
+	/**
+	 * A mapping of group IDs to a list of file paths, globs, and
+	 * environment variables, that can be referenced from tasks.
+	 */
 	fileGroups?: Record<string, string[]> | null;
+	/**
+	 * Task dependencies that'll automatically be injected into every
+	 * task that inherits this configuration.
+	 */
 	implicitDeps?: PartialTaskDependency[] | null;
+	/**
+	 * Task inputs that'll automatically be injected into every
+	 * task that inherits this configuration.
+	 */
 	implicitInputs?: string[] | null;
+	/** Default task options for all inherited tasks. */
 	taskOptions?: PartialTaskOptionsConfig | null;
+	/** A mapping of tasks by ID to parameters required for running the task. */
 	tasks?: Record<string, PartialTaskConfig> | null;
 }
 
@@ -358,14 +380,36 @@ export interface TaskConfig {
 	type: TaskType | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/tasks */
+/**
+ * Configures tasks and task related settings that'll be inherited by all
+ * matching projects.
+ * Docs: https://moonrepo.dev/docs/config/tasks
+ */
 export interface InheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema: string;
+	/**
+	 * Extends another tasks configuration file. Supports a relative
+	 * file path or a secure URL.
+	 */
 	extends: string | null;
+	/**
+	 * A mapping of group IDs to a list of file paths, globs, and
+	 * environment variables, that can be referenced from tasks.
+	 */
 	fileGroups: Record<string, string[]>;
+	/**
+	 * Task dependencies that'll automatically be injected into every
+	 * task that inherits this configuration.
+	 */
 	implicitDeps: TaskDependency[];
+	/**
+	 * Task inputs that'll automatically be injected into every
+	 * task that inherits this configuration.
+	 */
 	implicitInputs: string[];
+	/** Default task options for all inherited tasks. */
 	taskOptions: TaskOptionsConfig | null;
+	/** A mapping of tasks by ID to parameters required for running the task. */
 	tasks: Record<string, TaskConfig>;
 }

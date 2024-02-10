@@ -13,7 +13,10 @@ export type NodeVersionFormat =
 	| 'workspace-caret'
 	| 'workspace-tilde';
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
+/**
+ * Configures and enables the Bun platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#bun
+ */
 export interface PartialBunConfig {
 	/**
 	 * The dependency version format to use when syncing projects
@@ -59,7 +62,10 @@ export interface PartialBinConfig {
 
 export type PartialBinEntry = string | PartialBinConfig;
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#deno */
+/**
+ * Configures and enables the Deno platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#deno
+ */
 export interface PartialDenoConfig {
 	/** List of binaries to install into the environment using `deno install`. */
 	bins?: PartialBinEntry[] | null;
@@ -81,6 +87,7 @@ export interface PartialDenoConfig {
 	version?: string | null;
 }
 
+/** Options for Bun, when used as a package manager. */
 export interface PartialBunpmConfig {
 	/** Location of the WASM plugin to use for Bun support. */
 	plugin?: string | null;
@@ -92,6 +99,7 @@ export interface PartialBunpmConfig {
 	version?: string | null;
 }
 
+/** Options for npm, when used as a package manager. */
 export interface PartialNpmConfig {
 	/** Location of the WASM plugin to use for npm support. */
 	plugin?: string | null;
@@ -105,6 +113,7 @@ export interface PartialNpmConfig {
 
 export type NodePackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
 
+/** Options for pnpm, when used as a package manager. */
 export interface PartialPnpmConfig {
 	/** Location of the WASM plugin to use for pnpm support. */
 	plugin?: string | null;
@@ -118,6 +127,7 @@ export interface PartialPnpmConfig {
 
 export type NodeVersionManager = 'nodenv' | 'nvm';
 
+/** Options for Yarn, when used as a package manager. */
 export interface PartialYarnConfig {
 	/** Location of the WASM plugin to use for Yarn support. */
 	plugin?: string | null;
@@ -131,7 +141,10 @@ export interface PartialYarnConfig {
 	version?: string | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#node */
+/**
+ * Configures and enables the Node.js platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#node
+ */
 export interface PartialNodeConfig {
 	/**
 	 * When `version` is defined, syncs the version as a constraint to
@@ -202,7 +215,10 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#rust */
+/**
+ * Configures and enables the Rust platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#rust
+ */
 export interface PartialRustConfig {
 	/** List of binaries to install into the environment using `cargo install`. */
 	bins?: PartialBinEntry[] | null;
@@ -222,7 +238,10 @@ export interface PartialRustConfig {
 	version?: string | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#typescript */
+/**
+ * Configures and enables the TypeScript platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#typescript
+ */
 export interface PartialTypeScriptConfig {
 	/**
 	 * When `syncProjectReferences` is enabled, will create a `tsconfig.json`
@@ -283,19 +302,34 @@ export interface PartialTypeScriptConfig {
 	syncProjectReferencesToPaths?: boolean | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain */
+/**
+ * Configures all tools and platforms required for tasks.
+ * Docs: https://moonrepo.dev/docs/config/toolchain
+ */
 export interface PartialToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema?: string | null;
+	/** Configures and enables the Bun platform. */
 	bun?: PartialBunConfig | null;
+	/** Configures and enables the Deno platform. */
 	deno?: PartialDenoConfig | null;
+	/**
+	 * Extends another toolchain configuration file. Supports a relative
+	 * file path or a secure URL.
+	 */
 	extends?: string | null;
+	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
+	/** Configures and enables the Rust platform. */
 	rust?: PartialRustConfig | null;
+	/** Configures and enables the TypeScript platform. */
 	typescript?: PartialTypeScriptConfig | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#bun */
+/**
+ * Configures and enables the Bun platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#bun
+ */
 export interface BunConfig {
 	/**
 	 * The dependency version format to use when syncing projects
@@ -341,7 +375,10 @@ export interface BinConfig {
 
 export type BinEntry = string | BinConfig;
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#deno */
+/**
+ * Configures and enables the Deno platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#deno
+ */
 export interface DenoConfig {
 	/** List of binaries to install into the environment using `deno install`. */
 	bins: BinEntry[];
@@ -363,6 +400,7 @@ export interface DenoConfig {
 	version: string | null;
 }
 
+/** Options for Bun, when used as a package manager. */
 export interface BunpmConfig {
 	/** Location of the WASM plugin to use for Bun support. */
 	plugin: string | null;
@@ -374,6 +412,7 @@ export interface BunpmConfig {
 	version: string | null;
 }
 
+/** Options for npm, when used as a package manager. */
 export interface NpmConfig {
 	/** Location of the WASM plugin to use for npm support. */
 	plugin: string | null;
@@ -385,6 +424,7 @@ export interface NpmConfig {
 	version: string | null;
 }
 
+/** Options for pnpm, when used as a package manager. */
 export interface PnpmConfig {
 	/** Location of the WASM plugin to use for pnpm support. */
 	plugin: string | null;
@@ -396,6 +436,7 @@ export interface PnpmConfig {
 	version: string | null;
 }
 
+/** Options for Yarn, when used as a package manager. */
 export interface YarnConfig {
 	/** Location of the WASM plugin to use for Yarn support. */
 	plugin: string | null;
@@ -409,7 +450,10 @@ export interface YarnConfig {
 	version: string | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#node */
+/**
+ * Configures and enables the Node.js platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#node
+ */
 export interface NodeConfig {
 	/**
 	 * When `version` is defined, syncs the version as a constraint to
@@ -480,7 +524,10 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#rust */
+/**
+ * Configures and enables the Rust platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#rust
+ */
 export interface RustConfig {
 	/** List of binaries to install into the environment using `cargo install`. */
 	bins: BinEntry[];
@@ -500,7 +547,10 @@ export interface RustConfig {
 	version: string | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain#typescript */
+/**
+ * Configures and enables the TypeScript platform.
+ * Docs: https://moonrepo.dev/docs/config/toolchain#typescript
+ */
 export interface TypeScriptConfig {
 	/**
 	 * When `syncProjectReferences` is enabled, will create a `tsconfig.json`
@@ -561,14 +611,26 @@ export interface TypeScriptConfig {
 	syncProjectReferencesToPaths: boolean;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/toolchain */
+/**
+ * Configures all tools and platforms required for tasks.
+ * Docs: https://moonrepo.dev/docs/config/toolchain
+ */
 export interface ToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
 	$schema: string;
+	/** Configures and enables the Bun platform. */
 	bun: BunConfig | null;
+	/** Configures and enables the Deno platform. */
 	deno: DenoConfig | null;
+	/**
+	 * Extends another toolchain configuration file. Supports a relative
+	 * file path or a secure URL.
+	 */
 	extends: string | null;
+	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
+	/** Configures and enables the Rust platform. */
 	rust: RustConfig | null;
+	/** Configures and enables the TypeScript platform. */
 	typescript: TypeScriptConfig | null;
 }

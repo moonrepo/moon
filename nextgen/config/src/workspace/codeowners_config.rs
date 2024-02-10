@@ -6,8 +6,10 @@ derive_enum!(
     /// How to order ownership rules within the generated file.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum CodeownersOrderBy {
+        /// By file source path.
         #[default]
         FileSource,
+        /// By project name.
         ProjectName,
     }
 );

@@ -98,7 +98,7 @@ export interface PartialHasherConfig {
 	/**
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
-	 * so prefixing with `**/*` is recommended.
+	 * so prefixing with `**` is recommended.
 	 */
 	ignorePatterns?: string[] | null;
 	/**
@@ -137,7 +137,10 @@ export interface PartialWorkspaceProjectsConfig {
 	sources?: Record<string, string> | null;
 }
 
-export type PartialWorkspaceProjects = PartialWorkspaceProjectsConfig | string[] | Record<string, string>;
+export type PartialWorkspaceProjects =
+	| PartialWorkspaceProjectsConfig
+	| string[]
+	| Record<string, string>;
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PartialRunnerConfig {
@@ -331,7 +334,7 @@ export interface HasherConfig {
 	/**
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
-	 * so prefixing with `**/*` is recommended.
+	 * so prefixing with `**` is recommended.
 	 */
 	ignorePatterns: string[];
 	/**

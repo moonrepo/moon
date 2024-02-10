@@ -34,7 +34,7 @@ pub struct HasherConfig {
 
     /// Filters file paths that match a configured glob pattern
     /// when a hash is being generated. Patterns are workspace relative,
-    /// so prefixing with `**/*` is recommended.
+    /// so prefixing with `**` is recommended.
     pub ignore_patterns: Vec<GlobPath>,
 
     /// When `warnOnMissingInputs` is enabled, filters missing file

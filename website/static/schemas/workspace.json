@@ -424,7 +424,7 @@
           ]
         },
         "ignorePatterns": {
-          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**/*` is recommended.",
+          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended.",
           "anyOf": [
             {
               "type": "array",

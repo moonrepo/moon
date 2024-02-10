@@ -31,6 +31,8 @@ where
 }
 
 cacheable!(
+    /// Configures tasks and task related settings that'll be inherited by all
+    /// matching projects.
     /// Docs: https://moonrepo.dev/docs/config/tasks
     #[derive(Clone, Config, Debug)]
     pub struct InheritedTasksConfig {
@@ -40,21 +42,31 @@ cacheable!(
         )]
         pub schema: String,
 
+        /// Extends another tasks configuration file. Supports a relative
+        /// file path or a secure URL.
         #[setting(extend, validate = validate::extends_string)]
         pub extends: Option<String>,
 
+        /// A mapping of group IDs to a list of file paths, globs, and
+        /// environment variables, that can be referenced from tasks.
         #[setting(merge = merge_fxhashmap)]
         pub file_groups: FxHashMap<Id, Vec<InputPath>>,
 
+        /// Task dependencies that'll automatically be injected into every
+        /// task that inherits this configuration.
         #[setting(nested, merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<TaskDependency>,
 
+        /// Task inputs that'll automatically be injected into every
+        /// task that inherits this configuration.
         #[setting(merge = merge::append_vec)]
         pub implicit_inputs: Vec<InputPath>,
 
+        /// A mapping of tasks by ID to parameters required for running the task.
         #[setting(nested, merge = merge::merge_btreemap)]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
+        /// Default task options for all inherited tasks.
         #[setting(nested)]
         pub task_options: Option<TaskOptionsConfig>,
     }

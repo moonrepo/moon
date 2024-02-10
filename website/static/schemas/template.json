@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialTemplateConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/template",
+  "description": "Configures a template and its files to be scaffolded. Docs: https://moonrepo.dev/docs/config/template",
   "type": "object",
   "properties": {
     "$schema": {
@@ -16,6 +16,7 @@
       ]
     },
     "description": {
+      "description": "A description on what the template scaffolds.",
       "anyOf": [
         {
           "type": "string"
@@ -26,6 +27,7 @@
       ]
     },
     "destination": {
+      "description": "A pre-populated destination to scaffold to, relative from the workspace root.",
       "anyOf": [
         {
           "type": "string"
@@ -36,6 +38,7 @@
       ]
     },
     "extends": {
+      "description": "Extends one or many other templates.",
       "anyOf": [
         {
           "type": "array",
@@ -49,6 +52,7 @@
       ]
     },
     "title": {
+      "description": "A human-readable title for the template.",
       "anyOf": [
         {
           "type": "string"
@@ -59,6 +63,7 @@
       ]
     },
     "variables": {
+      "description": "A mapping of variables that'll be interpolated within each template file. Variables can also be populated by passing command line arguments.",
       "anyOf": [
         {
           "type": "object",
@@ -79,6 +84,7 @@
   "definitions": {
     "PartialTemplateVariable": {
       "title": "PartialTemplateVariable",
+      "description": "Each type of template variable.",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialTemplateVariableBoolSetting"
@@ -99,6 +105,7 @@
       "type": "object",
       "properties": {
         "default": {
+          "description": "The default value of the variable if none was provided.",
           "anyOf": [
             {
               "type": "boolean"
@@ -109,6 +116,7 @@
           ]
         },
         "prompt": {
+          "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
               "type": "string"
@@ -119,6 +127,7 @@
           ]
         },
         "required": {
+          "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
               "type": "boolean"
@@ -146,6 +155,7 @@
       "type": "object",
       "properties": {
         "default": {
+          "description": "The default value of the variable if none was provided.",
           "anyOf": [
             {
               "type": "string"
@@ -156,6 +166,7 @@
           ]
         },
         "multiple": {
+          "description": "Allows multiple values to be selected.",
           "anyOf": [
             {
               "type": "boolean"
@@ -166,6 +177,7 @@
           ]
         },
         "prompt": {
+          "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
               "type": "string"
@@ -186,6 +198,7 @@
           ]
         },
         "values": {
+          "description": "List of acceptable values for this variable.",
           "anyOf": [
             {
               "type": "array",
@@ -217,6 +230,7 @@
       "type": "object",
       "properties": {
         "label": {
+          "description": "A human-readable label for the value.",
           "anyOf": [
             {
               "type": "string"
@@ -227,6 +241,7 @@
           ]
         },
         "value": {
+          "description": "The literal enumerable value.",
           "anyOf": [
             {
               "type": "string"
@@ -244,6 +259,7 @@
       "type": "object",
       "properties": {
         "default": {
+          "description": "The default value of the variable if none was provided.",
           "anyOf": [
             {
               "type": "number"
@@ -254,6 +270,7 @@
           ]
         },
         "prompt": {
+          "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
               "type": "string"
@@ -264,6 +281,7 @@
           ]
         },
         "required": {
+          "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
               "type": "boolean"
@@ -291,6 +309,7 @@
       "type": "object",
       "properties": {
         "default": {
+          "description": "The default value of the variable if none was provided.",
           "anyOf": [
             {
               "type": "string"
@@ -301,6 +320,7 @@
           ]
         },
         "prompt": {
+          "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
               "type": "string"
@@ -311,6 +331,7 @@
           ]
         },
         "required": {
+          "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
               "type": "boolean"

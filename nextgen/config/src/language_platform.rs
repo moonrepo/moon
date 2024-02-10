@@ -3,6 +3,7 @@ use schematic::{derive_enum, ConfigEnum};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
+/// Supported programming languages that each project can be written in.
 #[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq)]
 pub enum LanguageType {
     Bash,
@@ -17,11 +18,11 @@ pub enum LanguageType {
     #[variant(value = "typescript")]
     TypeScript,
 
-    // Not explicitly set or detected
+    /// Not explicitly set or detected.
     #[default]
     Unknown,
 
-    // An unsupported language
+    /// An unsupported language.
     #[variant(fallback)]
     Other(Id),
 }
@@ -57,6 +58,7 @@ impl Serialize for LanguageType {
 }
 
 derive_enum!(
+    /// Platforms that each programming language can belong to.
     #[derive(ConfigEnum, Copy, Default, Hash)]
     pub enum PlatformType {
         Bun,

@@ -3,37 +3,52 @@
 /* eslint-disable */
 
 export interface PartialTemplateVariableBoolSetting {
+	/** The default value of the variable if none was provided. */
 	default?: boolean | null;
+	/** Prompt the user for a value when the generate is running. */
 	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
 	type?: 'boolean' | null;
 }
 
 export interface PartialTemplateVariableEnumValueConfig {
+	/** A human-readable label for the value. */
 	label?: string | null;
+	/** The literal enumerable value. */
 	value?: string | null;
 }
 
 export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
 
 export interface PartialTemplateVariableEnumSetting {
+	/** The default value of the variable if none was provided. */
 	default?: string | null;
+	/** Allows multiple values to be selected. */
 	multiple?: boolean | null;
+	/** Prompt the user for a value when the generate is running. */
 	prompt?: string | null;
 	type?: 'enum' | null;
+	/** List of acceptable values for this variable. */
 	values?: PartialTemplateVariableEnumValue[] | null;
 }
 
 export interface PartialTemplateVariableNumberSetting {
+	/** The default value of the variable if none was provided. */
 	default?: number | null;
+	/** Prompt the user for a value when the generate is running. */
 	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
 	type?: 'number' | null;
 }
 
 export interface PartialTemplateVariableStringSetting {
+	/** The default value of the variable if none was provided. */
 	default?: string | null;
+	/** Prompt the user for a value when the generate is running. */
 	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
 	type?: 'string' | null;
 }
@@ -44,14 +59,28 @@ export type PartialTemplateVariable =
 	| PartialTemplateVariableNumberSetting
 	| PartialTemplateVariableStringSetting;
 
-/** Docs: https://moonrepo.dev/docs/config/template */
+/**
+ * Configures a template and its files to be scaffolded.
+ * Docs: https://moonrepo.dev/docs/config/template
+ */
 export interface PartialTemplateConfig {
 	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema?: string | null;
+	/** A description on what the template scaffolds. */
 	description?: string | null;
+	/**
+	 * A pre-populated destination to scaffold to, relative from the
+	 * workspace root.
+	 */
 	destination?: string | null;
+	/** Extends one or many other templates. */
 	extends?: string[] | null;
+	/** A human-readable title for the template. */
 	title?: string | null;
+	/**
+	 * A mapping of variables that'll be interpolated within each template file.
+	 * Variables can also be populated by passing command line arguments.
+	 */
 	variables?: Record<string, PartialTemplateVariable> | null;
 }
 
@@ -65,37 +94,52 @@ export interface PartialTemplateFrontmatterConfig {
 }
 
 export interface TemplateVariableBoolSetting {
+	/** The default value of the variable if none was provided. */
 	default: boolean;
+	/** Prompt the user for a value when the generate is running. */
 	prompt: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
 	required: boolean | null;
 	type: 'boolean';
 }
 
 export interface TemplateVariableEnumValueConfig {
+	/** A human-readable label for the value. */
 	label: string;
+	/** The literal enumerable value. */
 	value: string;
 }
 
 export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig;
 
 export interface TemplateVariableEnumSetting {
+	/** The default value of the variable if none was provided. */
 	default: string;
+	/** Allows multiple values to be selected. */
 	multiple: boolean | null;
+	/** Prompt the user for a value when the generate is running. */
 	prompt: string;
 	type: 'enum';
+	/** List of acceptable values for this variable. */
 	values: TemplateVariableEnumValue[];
 }
 
 export interface TemplateVariableNumberSetting {
+	/** The default value of the variable if none was provided. */
 	default: number;
+	/** Prompt the user for a value when the generate is running. */
 	prompt: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
 	required: boolean | null;
 	type: 'number';
 }
 
 export interface TemplateVariableStringSetting {
+	/** The default value of the variable if none was provided. */
 	default: string;
+	/** Prompt the user for a value when the generate is running. */
 	prompt: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
 	required: boolean | null;
 	type: 'string';
 }
@@ -106,14 +150,28 @@ export type TemplateVariable =
 	| TemplateVariableNumberSetting
 	| TemplateVariableStringSetting;
 
-/** Docs: https://moonrepo.dev/docs/config/template */
+/**
+ * Configures a template and its files to be scaffolded.
+ * Docs: https://moonrepo.dev/docs/config/template
+ */
 export interface TemplateConfig {
 	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema: string;
+	/** A description on what the template scaffolds. */
 	description: string;
+	/**
+	 * A pre-populated destination to scaffold to, relative from the
+	 * workspace root.
+	 */
 	destination: string | null;
+	/** Extends one or many other templates. */
 	extends: string[];
+	/** A human-readable title for the template. */
 	title: string;
+	/**
+	 * A mapping of variables that'll be interpolated within each template file.
+	 * Variables can also be populated by passing command line arguments.
+	 */
 	variables: Record<string, TemplateVariable>;
 }
 

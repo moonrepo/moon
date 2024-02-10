@@ -13,18 +13,23 @@ use std::path::Path;
 #[cfg(feature = "proto")]
 use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 
+/// Configures an individual platform.
 #[derive(Clone, Config, Debug, PartialEq)]
 #[config(allow_unknown_fields)]
 pub struct ToolConfig {
+    /// Location of the WASM plugin to use.
     #[setting(required)]
     pub plugin: Option<PluginLocator>,
 
+    /// The version to download, install, and run tasks with.
     pub version: Option<UnresolvedVersionSpec>,
 
+    /// Arbitrary configuration that'll be passed to the WASM plugin.
     #[setting(flatten)]
     pub config: FxHashMap<String, serde_json::Value>,
 }
 
+/// Configures all tools and platforms required for tasks.
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Config, Debug)]
 pub struct ToolchainConfig {
@@ -34,21 +39,28 @@ pub struct ToolchainConfig {
     )]
     pub schema: String,
 
+    /// Extends another toolchain configuration file. Supports a relative
+    /// file path or a secure URL.
     #[setting(extend, validate = validate::extends_string)]
     pub extends: Option<String>,
 
+    /// Configures and enables the Bun platform.
     #[setting(nested)]
     pub bun: Option<BunConfig>,
 
+    /// Configures and enables the Deno platform.
     #[setting(nested)]
     pub deno: Option<DenoConfig>,
 
+    /// Configures and enables the Node.js platform.
     #[setting(nested)]
     pub node: Option<NodeConfig>,
 
+    /// Configures and enables the Rust platform.
     #[setting(nested)]
     pub rust: Option<RustConfig>,
 
+    /// Configures and enables the TypeScript platform.
     #[setting(nested)]
     pub typescript: Option<TypeScriptConfig>,
     // TODO: enable once platforms are live!

@@ -10,6 +10,7 @@ use schematic::{derive_enum, SchemaType, Schematic, ValidateError};
 use std::str::FromStr;
 
 derive_enum!(
+    /// The different patterns a task input can be defined.
     #[serde(untagged, into = "String", try_from = "String")]
     pub enum InputPath {
         EnvVar(String),

@@ -1,0 +1,7 @@
+releases:
+  "@moonrepo/types": minor
+
+declined:
+  - "@moonrepo/report"
+  - "@moonrepo/runtime"
+  - website

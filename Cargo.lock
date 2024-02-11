@@ -3904,6 +3904,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_target",
+ "once_cell",
  "rustc-hash",
  "serde",
  "starbase_utils",

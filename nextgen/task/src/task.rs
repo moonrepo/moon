@@ -6,9 +6,13 @@ use moon_common::{
 };
 use moon_config::{InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskType};
 use moon_target::Target;
+use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
-use std::{env, path::PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 use tracing::debug;
 
 cacheable!(
@@ -62,6 +66,9 @@ cacheable!(
 
         #[serde(rename = "type")]
         pub type_of: TaskType,
+
+        #[serde(skip)]
+        pub walk_cache: OnceCell<Vec<PathBuf>>,
     }
 );
 
@@ -157,6 +164,47 @@ impl Task {
         );
 
         Ok(false)
+    }
+
+    pub fn get_input_files<S: AsRef<str>>(
+        &self,
+        workspace_root: &Path,
+        project_source: S,
+    ) -> miette::Result<Vec<ProjectRelativePathBuf>> {
+        let mut list = vec![];
+        let project_source = project_source.as_ref();
+
+        for path in &self.input_files {
+            let file = path.to_path(workspace_root);
+            if file.is_file() {
+                list.push(path.strip_prefix(project_source).unwrap().to_owned());
+            }
+        }
+
+        if !self.input_globs.is_empty() {
+            let globs = &self.input_globs;
+            let walk_paths = self
+                .walk_cache
+                .get_or_try_init(|| glob::walk_files(workspace_root, globs))?;
+
+            // Glob results are absolute paths!
+            for file in walk_paths {
+                if file.is_file() {
+                    let path = WorkspaceRelativePathBuf::from_path(
+                        file.strip_prefix(workspace_root).unwrap(),
+                    )
+                    .unwrap();
+
+                    if let Ok(project_file) = path.strip_prefix(project_source) {
+                        list.push(project_file.to_owned());
+                    }
+                }
+            }
+        }
+
+        list.sort();
+
+        Ok(list)
     }
 
     /// Return true if the task is a "build" type.

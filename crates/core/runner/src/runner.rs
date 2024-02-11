@@ -307,14 +307,15 @@ impl<'a> Runner<'a> {
 
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
-            let mut affected_files = if context.affected_only {
+            let mut files = if context.affected_only {
                 self.task
                     .get_affected_files(&context.touched_files, self.project.source.as_str())?
             } else {
-                Vec::with_capacity(0)
+                self.task
+                    .get_input_files(&self.workspace.root, self.project.source.as_str())?
             };
 
-            affected_files.sort();
+            files.sort();
 
             if matches!(
                 check_affected,
@@ -322,15 +323,11 @@ impl<'a> Runner<'a> {
             ) {
                 command.env(
                     "MOON_AFFECTED_FILES",
-                    if affected_files.is_empty() {
-                        ".".into()
-                    } else {
-                        affected_files
-                            .iter()
-                            .map(|f| f.as_str().to_string())
-                            .collect::<Vec<_>>()
-                            .join(",")
-                    },
+                    files
+                        .iter()
+                        .map(|f| f.as_str().to_string())
+                        .collect::<Vec<_>>()
+                        .join(","),
                 );
             }
 
@@ -338,12 +335,8 @@ impl<'a> Runner<'a> {
                 check_affected,
                 TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
             ) {
-                if affected_files.is_empty() {
-                    command.arg_if_missing(".");
-                } else {
-                    // Mimic relative from ("./")
-                    command.args(affected_files.iter().map(|f| format!("./{f}")));
-                }
+                // Mimic relative from ("./")
+                command.args(files.iter().map(|f| format!("./{f}")));
             }
         }
 

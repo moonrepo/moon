@@ -166,6 +166,8 @@ impl Task {
         Ok(false)
     }
 
+    /// Return a list of all project-relative input files for
+    /// the task
     pub fn get_input_files<S: AsRef<str>>(
         &self,
         workspace_root: &Path,

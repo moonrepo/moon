@@ -177,10 +177,7 @@ impl Task {
         let project_source = project_source.as_ref();
 
         for path in &self.input_files {
-            let file = path.to_path(workspace_root);
-            if file.is_file() {
-                list.push(path.strip_prefix(project_source).unwrap().to_owned());
-            }
+            list.push(path.strip_prefix(project_source).unwrap().to_owned());
         }
 
         if !self.input_globs.is_empty() {
@@ -191,15 +188,12 @@ impl Task {
 
             // Glob results are absolute paths!
             for file in walk_paths {
-                if file.is_file() {
-                    let path = WorkspaceRelativePathBuf::from_path(
-                        file.strip_prefix(workspace_root).unwrap(),
-                    )
-                    .unwrap();
+                let path =
+                    WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
+                        .unwrap();
 
-                    if let Ok(project_file) = path.strip_prefix(project_source) {
-                        list.push(project_file.to_owned());
-                    }
+                if let Ok(project_file) = path.strip_prefix(project_source) {
+                    list.push(project_file.to_owned());
                 }
             }
         }

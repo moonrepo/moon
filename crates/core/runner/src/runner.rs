@@ -311,9 +311,14 @@ impl<'a> Runner<'a> {
                 self.task
                     .get_affected_files(&context.touched_files, self.project.source.as_str())?
             } else {
-                self.task
-                    .get_input_files(&self.workspace.root, self.project.source.as_str())?
+                Vec::with_capacity(0)
             };
+
+            if files.is_empty() {
+                files = self
+                    .task
+                    .get_input_files(&self.workspace.root, self.project.source.as_str())?;
+            }
 
             files.sort();
 

@@ -37,7 +37,10 @@ pub fn enforce_project_type_relationships(
     source: &Project,
     dependency: &Project,
 ) -> miette::Result<()> {
-    let mut allowed = vec![];
+    let mut allowed = vec![
+        ProjectType::Configuration.to_string(),
+        ProjectType::Scaffolding.to_string(),
+    ];
 
     let valid = match source.type_of {
         ProjectType::Application => {
@@ -62,6 +65,12 @@ pub fn enforce_project_type_relationships(
             matches!(
                 dependency.type_of,
                 ProjectType::Library | ProjectType::Unknown
+            )
+        }
+        ProjectType::Configuration | ProjectType::Scaffolding => {
+            matches!(
+                dependency.type_of,
+                ProjectType::Configuration | ProjectType::Scaffolding
             )
         }
         ProjectType::Unknown => {

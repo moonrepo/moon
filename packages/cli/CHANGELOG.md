@@ -14,6 +14,11 @@
 
 #### 🚀 Updates
 
+- Added `configuration` and `scaffolding` variants to the project `type` setting in `moon.yml`.
+  - Updated project constraints to support these new variants.
+- Added a `stack` setting to `moon.yml`, for categorizing which tech stack it belongs to.
+  - Supports `frontend`, `backend`, `infrastructure`, and `systems`.
+  - Added a `projectStack` field to the query language (MQL).
 - Updated `envFile` task option to support a list of file paths.
 
 ## 1.21.3

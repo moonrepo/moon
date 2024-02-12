@@ -252,9 +252,26 @@ A human readable name of the project. This is _different_ from the unique projec
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
 
+## `stack`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#stack" />
+
+The technology stack this project belongs to, primarily for categorization. Supports the following
+values:
+
+- `frontend` - Client-side user interfaces, etc.
+- `backend` - Server-side APIs, database layers, etc.
+- `infrastructure` - Cloud/server infrastructure, Docker, etc.
+- `systems` - Low-level systems programming.
+- `unknown` (default) - When not configured.
+
+```yaml title="moon.yml"
+stack: 'frontend'
+```
+
 ## `tags`
 
-<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#tags" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#tags" />
 
 Tags are a simple mechanism for categorizing projects. They can be used to group projects together
 for [easier querying](../commands/query/projects), enforcing of
@@ -269,14 +286,18 @@ tags:
 
 ## `type`
 
-<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#type" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#type" />
 
 The type of project. Supports the following values:
 
-- `application` - A backend, frontend, or CLI application.
-- `automation` - Automated testing suite, like E2E, integration, or visual tests.
+- `application` - An application of any kind.
+- `automation` - An automated testing suite, like E2E, integration, or visual tests.
   <VersionLabel version="1.16.0" />
+- `configuration` - Configuration files or infrastructure.
+  <VersionLabel version="1.22.0" />
 - `library` - A self-contained, shareable, and publishable set of code.
+- `scaffolding` - Templates or generators for scaffolding.
+  <VersionLabel version="1.22.0" />
 - `tool` - An internal tool, one-off script, etc.
 - `unknown` (default) - When not configured.
 

@@ -49,7 +49,11 @@ pub fn enforce_project_type_relationships(
 
             matches!(
                 dependency.type_of,
-                ProjectType::Library | ProjectType::Tool | ProjectType::Unknown
+                ProjectType::Configuration
+                    | ProjectType::Scaffolding
+                    | ProjectType::Library
+                    | ProjectType::Tool
+                    | ProjectType::Unknown
             )
         }
         ProjectType::Automation => {
@@ -64,7 +68,10 @@ pub fn enforce_project_type_relationships(
 
             matches!(
                 dependency.type_of,
-                ProjectType::Library | ProjectType::Unknown
+                ProjectType::Configuration
+                    | ProjectType::Scaffolding
+                    | ProjectType::Library
+                    | ProjectType::Unknown
             )
         }
         ProjectType::Configuration | ProjectType::Scaffolding => {

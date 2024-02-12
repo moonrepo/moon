@@ -8,6 +8,7 @@ expression: assert.output()
 Project: advanced
 Source: advanced
 Language: typescript
+Stack: frontend
 Type: application
 Tags: react
 Name: Advanced

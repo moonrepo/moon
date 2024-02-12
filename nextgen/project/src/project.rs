@@ -218,6 +218,7 @@ impl PartialEq for Project {
             && self.language == other.language
             && self.root == other.root
             && self.source == other.source
+            && self.stack == other.stack
             && self.tasks == other.tasks
             && self.type_of == other.type_of
     }

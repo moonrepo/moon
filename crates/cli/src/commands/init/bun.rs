@@ -46,6 +46,8 @@ pub async fn init_bun(
                 .as_bytes(),
             );
         })?;
+
+        console.out.flush()?;
     }
 
     let bun_version = prompt_version("Bun", options, theme, || Ok(String::new()))?;

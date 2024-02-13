@@ -139,6 +139,8 @@ pub async fn init_node(
                 .as_bytes(),
             );
         })?;
+
+        console.out.flush()?;
     }
 
     let node_version = prompt_version("Node", options, theme, || detect_node_version(dest_dir))?;

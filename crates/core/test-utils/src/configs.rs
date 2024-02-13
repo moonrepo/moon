@@ -91,6 +91,7 @@ pub fn get_projects_fixture_configs() -> (
             ("basic".into(), "basic".to_owned()),
             ("emptyConfig".into(), "empty-config".to_owned()),
             ("noConfig".into(), "no-config".to_owned()),
+            ("metadata".into(), "metadata".to_owned()),
             ("tasks".into(), "tasks".to_owned()),
             ("platforms".into(), "platforms".to_owned()),
             // Deps

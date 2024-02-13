@@ -8,5 +8,8 @@ platforms
 tasks
 	:lint | eslint
 	:test | jest
+metadata
+	:build | noop
+	:test | noop
 
 

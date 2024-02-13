@@ -7,5 +7,6 @@ project:
 
 type: 'application'
 language: 'typescript'
+stack: 'frontend'
 
 tags: ['react']

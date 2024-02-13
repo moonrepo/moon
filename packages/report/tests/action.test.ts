@@ -1,7 +1,8 @@
-import type { Action } from '@moonrepo/types';
+import type { Action, Attempt } from '@moonrepo/types';
 import { isFlaky, isSlow } from '../src';
 
 const action: Action = {
+	allowFailure: false,
 	attempts: null,
 	createdAt: '2022-09-12T22:50:12.932311Z',
 	duration: {
@@ -11,10 +12,20 @@ const action: Action = {
 	error: null,
 	flaky: false,
 	label: 'RunTask(app:build)',
-	nodeIndex: 8,
 	status: 'passed',
 	finishedAt: '2022-09-12T22:50:12.932311Z',
 	startedAt: '2022-09-12T22:50:12.932311Z',
+};
+
+const attempt: Attempt = {
+	duration: null,
+	exitCode: 0,
+	finishedAt: null,
+	index: 1,
+	startedAt: '',
+	status: 'running',
+	stdout: null,
+	stderr: null,
 };
 
 describe('isFlaky()', () => {
@@ -29,10 +40,7 @@ describe('isFlaky()', () => {
 				...action,
 				attempts: [
 					{
-						duration: null,
-						finishedAt: null,
-						index: 1,
-						startedAt: '',
+						...attempt,
 						status: 'failed',
 					},
 				],

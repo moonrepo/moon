@@ -166,10 +166,11 @@ Enforces allowed relationships between a project its dependencies based on the p
 error will be thrown when attempting to run a task. The following relationships are enforced when
 this setting is enabled, which defaults to `true`.
 
-- Applications can _only_ depend on libraries or tools.
+- Applications can depend on all types _except other_ applications or automation.
 - Automation can depend on all types _except other_ automation.
-- Libraries can _only_ depend on other libraries.
-- Tools can _only_ depend on libraries.
+- Libraries can _only_ depend on other libraries, configuration, or scaffolding.
+- Tools can _only_ depend on libraries, configuration, or scaffolding.
+- Configuration and scaffolding can _only_ depend on other configuration and scaffolding.
 
 ```yaml title=".moon/workspace.yml" {2}
 constraints:

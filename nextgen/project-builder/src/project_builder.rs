@@ -223,6 +223,7 @@ impl<'app> ProjectBuilder<'app> {
 
         let config = self.local_config.take().unwrap_or_default();
 
+        project.stack = config.stack;
         project.type_of = config.type_of;
         project.config = config;
 

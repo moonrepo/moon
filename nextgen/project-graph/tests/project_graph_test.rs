@@ -22,11 +22,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(path.as_ref())
-        .unwrap();
+    let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
 
     writeln!(file, "\n\n{data}").unwrap();
 }
@@ -1067,9 +1063,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project app of type application cannot"
-        )]
+        #[should_panic(expected = "Invalid project relationship. Project app of type application")]
         async fn app_cannot_use_app() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1103,9 +1097,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project library of type library cannot"
-        )]
+        #[should_panic(expected = "Invalid project relationship. Project library of type library")]
         async fn library_cannot_use_app() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [app]");
@@ -1114,9 +1106,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project library of type library cannot"
-        )]
+        #[should_panic(expected = "Invalid project relationship. Project library of type library")]
         async fn library_cannot_use_tool() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
@@ -1141,7 +1131,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
+        #[should_panic(expected = "Invalid project relationship. Project tool of type tool")]
         async fn tool_cannot_use_app() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
@@ -1150,7 +1140,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
+        #[should_panic(expected = "Invalid project relationship. Project tool of type tool")]
         async fn tool_cannot_use_tool() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1230,7 +1220,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior")]
         async fn errors_for_no_source_tag_match() {
             generate_tag_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1255,7 +1245,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior")]
         async fn errors_for_no_allowed_tag_match() {
             generate_tag_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1268,7 +1258,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage cannot")]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage")]
         async fn errors_for_depon_empty_tags() {
             generate_tag_constraints_project_graph(|sandbox| {
                 append_file(

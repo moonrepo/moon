@@ -26,6 +26,7 @@ pub struct QueryProjectsOptions {
     pub json: bool,
     pub language: Option<String>,
     pub query: Option<String>,
+    pub stack: Option<String>,
     pub source: Option<String>,
     pub tags: Option<String>,
     pub tasks: Option<String>,
@@ -130,6 +131,7 @@ pub async fn query_projects(
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
+    let stack_regex = convert_to_regex("stack", &options.stack)?;
     let source_regex = convert_to_regex("source", &options.source)?;
     let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
@@ -179,6 +181,12 @@ pub async fn query_projects(
 
         if let Some(regex) = &language_regex {
             if !regex.is_match(&project.language.to_string()) {
+                continue;
+            }
+        }
+
+        if let Some(regex) = &stack_regex {
+            if !regex.is_match(&project.stack.to_string()) {
                 continue;
             }
         }

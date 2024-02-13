@@ -42,7 +42,7 @@ const workspaceRows: Comparison[] = [
 		feature: 'Project list configured in',
 		support: {
 			moon: '`.moon/workspace.yml`',
-			nx: '`workspace.json`',
+			nx: '`workspace.json` / `package.json` workspaces',
 			turborepo: '`package.json` workspaces',
 		},
 	},
@@ -122,7 +122,7 @@ const toolchainRows: Comparison[] = [
 	{
 		feature: 'Supported toolchain languages (automatic dev envs)',
 		support: {
-			moon: 'Bun, Deno*, Node.js, Rust',
+			moon: 'Bun, Deno, Node.js, Rust',
 		},
 	},
 	{
@@ -172,8 +172,14 @@ const projectsRows: Comparison[] = [
 	{
 		feature: 'Project type (app, lib, etc)',
 		support: {
-			moon: [SUPPORTED, 'app, lib, tool, automation'],
+			moon: [SUPPORTED, 'app, lib, tool, automation, config, scaffold'],
 			nx: [SUPPORTED, 'app, lib'],
+		},
+	},
+	{
+		feature: 'Project tech stack',
+		support: {
+			moon: [SUPPORTED, 'frontend, backend, infra, systems'],
 		},
 	},
 	{
@@ -244,7 +250,7 @@ const tasksRows: Comparison[] = [
 		feature: 'Can define tasks globally',
 		support: {
 			moon: [SUPPORTED, 'with `.moon/tasks.yml`'],
-			nx: [SUPPORTED, 'with `targetDefaults`'],
+			nx: [PARTIALLY_SUPPORTED, 'with `targetDefaults`'],
 		},
 	},
 	{
@@ -271,7 +277,7 @@ const tasksRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Supports pipes, redirects, etc',
+		feature: 'Supports pipes, redirects, etc, in configured tasks',
 		support: {
 			moon: [PARTIALLY_SUPPORTED, 'encapsulated in a file'],
 			nx: [PARTIALLY_SUPPORTED, 'within the executor or script'],
@@ -334,7 +340,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Environment variables',
 		support: {
-			moon: [SUPPORTED, 'via `env`'],
+			moon: [SUPPORTED, 'via `env`, `envFile`'],
 			nx: [SUPPORTED, 'automatically via `.env` files and/or inherited from shell'],
 			turborepo: [PARTIALLY_SUPPORTED, 'within the script'],
 		},
@@ -350,9 +356,9 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Outputs',
 		support: {
-			moon: [SUPPORTED, 'files'],
+			moon: [SUPPORTED, 'files, globs'],
 			nx: [SUPPORTED, 'files, globs'],
-			turborepo: [SUPPORTED, 'files'],
+			turborepo: [SUPPORTED, 'files, globs'],
 		},
 	},
 	{

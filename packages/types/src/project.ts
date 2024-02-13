@@ -3,21 +3,27 @@ import type {
 	InheritedTasksConfig,
 	PartialInheritedTasksConfig,
 	PlatformType,
+	TaskDependencyConfig,
 	TaskMergeStrategy,
 	TaskOutputStyle,
 	TaskType,
+	TaskUnixShell,
+	TaskWindowsShell,
 } from './tasks-config';
 
 export interface FileGroup {
+	env: string[];
 	files: string[];
 	globs: string[];
 	id: string;
 }
 
 export interface TaskOptions {
-	affectedFiles: boolean | 'args' | 'env';
+	affectedFiles: boolean | 'args' | 'env' | null;
+	allowFailure: boolean;
 	cache: boolean;
-	envFile: string | null;
+	envFiles: string[] | null;
+	interactive: boolean;
 	mergeArgs: TaskMergeStrategy;
 	mergeDeps: TaskMergeStrategy;
 	mergeEnv: TaskMergeStrategy;
@@ -30,12 +36,14 @@ export interface TaskOptions {
 	runInCI: boolean;
 	runFromWorkspaceRoot: boolean;
 	shell: boolean;
+	unixShell: TaskUnixShell | null;
+	windowsShell: TaskWindowsShell | null;
 }
 
 export interface Task {
 	args: string[];
 	command: string;
-	deps: string[];
+	deps: TaskDependencyConfig[];
 	env: Record<string, string>;
 	id: string;
 	inputs: string[];
@@ -54,7 +62,7 @@ export interface Task {
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: Record<string, DependencyConfig>;
+	dependencies: DependencyConfig[];
 	fileGroups: Record<string, FileGroup>;
 	id: string;
 	inherited: {

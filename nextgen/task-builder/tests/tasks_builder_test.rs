@@ -520,26 +520,36 @@ mod tasks_builder {
             let task = tasks.get("env-file").unwrap();
 
             assert_eq!(
-                task.options.env_file,
-                Some(InputPath::ProjectFile(".env".into()))
+                task.options.env_files,
+                Some(vec![InputPath::ProjectFile(".env".into())])
             );
 
             let task = tasks.get("no-env-file").unwrap();
 
-            assert_eq!(task.options.env_file, None);
+            assert_eq!(task.options.env_files, None);
 
             let task = tasks.get("env-file-project").unwrap();
 
             assert_eq!(
-                task.options.env_file,
-                Some(InputPath::ProjectFile(".env.test".into()))
+                task.options.env_files,
+                Some(vec![InputPath::ProjectFile(".env.test".into())])
             );
 
             let task = tasks.get("env-file-workspace").unwrap();
 
             assert_eq!(
-                task.options.env_file,
-                Some(InputPath::WorkspaceFile(".env.shared".into()))
+                task.options.env_files,
+                Some(vec![InputPath::WorkspaceFile(".env.shared".into())])
+            );
+
+            let task = tasks.get("env-file-list").unwrap();
+
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![
+                    InputPath::ProjectFile(".env.test".into()),
+                    InputPath::WorkspaceFile(".env.shared".into())
+                ])
             );
         }
 

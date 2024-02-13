@@ -12,14 +12,17 @@ export type ActionStatus =
 
 export interface Attempt {
 	duration: Duration | null;
+	exitCode: number | null;
 	finishedAt: string | null;
 	index: number;
 	startedAt: string;
 	status: ActionStatus;
+	stderr: string | null;
+	stdout: string | null;
 }
 
 export interface Action {
-	allowFailure?: boolean;
+	allowFailure: boolean;
 	attempts: Attempt[] | null;
 	createdAt: string;
 	duration: Duration | null;
@@ -27,7 +30,6 @@ export interface Action {
 	finishedAt: string | null;
 	flaky: boolean;
 	label: string | null;
-	nodeIndex: number;
 	startedAt: string | null;
 	status: ActionStatus;
 }

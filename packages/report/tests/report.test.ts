@@ -5,6 +5,7 @@ function mockReport(): RunReport {
 	return {
 		actions: [
 			{
+				allowFailure: false,
 				attempts: null,
 				createdAt: '2022-09-12T22:50:12.621680Z',
 				duration: {
@@ -14,12 +15,12 @@ function mockReport(): RunReport {
 				error: null,
 				flaky: false,
 				label: 'RunTask(types:build)',
-				nodeIndex: 5,
 				status: 'cached',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 			{
+				allowFailure: false,
 				attempts: null,
 				createdAt: '2022-09-12T22:50:12.932177Z',
 				duration: {
@@ -29,12 +30,12 @@ function mockReport(): RunReport {
 				error: null,
 				flaky: true,
 				label: 'RunTask(runtime:typecheck)',
-				nodeIndex: 4,
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 			{
+				allowFailure: false,
 				attempts: null,
 				createdAt: '2022-09-12T22:50:12.932228Z',
 				duration: {
@@ -44,12 +45,12 @@ function mockReport(): RunReport {
 				error: null,
 				flaky: false,
 				label: 'RunTask(types:typecheck)',
-				nodeIndex: 6,
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 			{
+				allowFailure: false,
 				attempts: null,
 				createdAt: '2022-09-12T22:50:12.932311Z',
 				duration: {
@@ -59,7 +60,6 @@ function mockReport(): RunReport {
 				error: null,
 				flaky: false,
 				label: 'RunTask(website:typecheck)',
-				nodeIndex: 8,
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',

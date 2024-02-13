@@ -8,6 +8,7 @@ expression: assert.output()
 Project: basic
 Source: basic
 Language: javascript
+Stack: unknown
 Type: unknown
 Tags: vue
 

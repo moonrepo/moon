@@ -3709,6 +3709,7 @@ dependencies = [
  "moon_task",
  "moon_time",
  "pathdiff",
+ "regex",
  "rustc-hash",
  "starbase_sandbox",
  "starbase_utils",

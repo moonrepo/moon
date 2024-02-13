@@ -6,6 +6,7 @@ use moon_project_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
+use std::env;
 use utils::{create_context, create_project, create_task};
 
 mod token_expander {
@@ -319,7 +320,7 @@ mod token_expander {
         }
     }
 
-    mod env {
+    mod envs {
         use super::*;
 
         #[test]
@@ -535,6 +536,39 @@ mod token_expander {
                     ..ExpandedResult::default()
                 }
             );
+        }
+
+        #[test]
+        fn supports_env_var_glob() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![InputPath::EnvVarGlob("FOO_*".into())];
+
+            env::set_var("FOO_ONE", "1");
+            env::set_var("FOO_TWO", "2");
+            env::set_var("FOO_THREE", "3");
+            env::set_var("BAR_ONE", "1");
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            let mut result = expander.expand_inputs(&task).unwrap();
+            result.env.sort();
+
+            assert_eq!(
+                result,
+                ExpandedResult {
+                    env: vec!["FOO_ONE".into(), "FOO_THREE".into(), "FOO_TWO".into()],
+                    ..ExpandedResult::default()
+                }
+            );
+
+            env::remove_var("FOO_ONE");
+            env::remove_var("FOO_TWO");
+            env::remove_var("FOO_THREE");
+            env::remove_var("BAR_ONE");
         }
 
         #[test]

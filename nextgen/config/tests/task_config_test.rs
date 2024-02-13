@@ -261,6 +261,7 @@ inputs:
                 r"
 inputs:
   - $FOO_BAR
+  - $FOO_*
   - file/path
 ",
                 |code| TaskConfig::parse(code),
@@ -270,6 +271,7 @@ inputs:
                 config.inputs.unwrap(),
                 vec![
                     InputPath::EnvVar("FOO_BAR".into()),
+                    InputPath::EnvVarGlob("FOO_*".into()),
                     InputPath::ProjectFile("file/path".into()),
                 ]
             );

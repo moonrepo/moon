@@ -18,6 +18,7 @@ moon_time = { path = "../time" }
 dotenvy = "0.15.7"
 miette = { workspace = true }
 pathdiff = { workspace = true }
+regex = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

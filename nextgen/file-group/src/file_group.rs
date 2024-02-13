@@ -59,7 +59,6 @@ impl FileGroup {
     /// workspace relative path based on the provided project source.
     pub fn add(&mut self, input: &InputPath, project_source: &str) -> miette::Result<()> {
         match input {
-            // TODO
             InputPath::EnvVar(var) | InputPath::EnvVarGlob(var) => {
                 self.env.push(var.to_owned());
             }

@@ -274,11 +274,9 @@ mod scaffold_sources {
             Some(tasks_config),
         );
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("docker").arg("scaffold").arg("tasks").arg("bar");
         });
-
-        assert.debug();
 
         let docker = sandbox.path().join(".moon/docker/sources");
 

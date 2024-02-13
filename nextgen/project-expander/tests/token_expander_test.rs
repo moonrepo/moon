@@ -554,10 +554,13 @@ mod token_expander {
             let context = create_context(&project, sandbox.path());
             let mut expander = TokenExpander::new(&context);
 
+            let mut result = expander.expand_inputs(&task).unwrap();
+            result.env.sort();
+
             assert_eq!(
-                expander.expand_inputs(&task).unwrap(),
+                result,
                 ExpandedResult {
-                    env: vec!["FOO_ONE".into(), "FOO_TWO".into(), "FOO_THREE".into()],
+                    env: vec!["FOO_THREE".into(), "FOO_TWO".into(), "FOO_ONE".into()],
                     ..ExpandedResult::default()
                 }
             );

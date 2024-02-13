@@ -173,7 +173,8 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
         for input in &task.inputs {
             match input {
-                InputPath::EnvVar(var) => {
+                // TODO
+                InputPath::EnvVar(var) | InputPath::EnvVarGlob(var) => {
                     result.env.push(var.to_owned());
                 }
                 InputPath::TokenFunc(func) => {

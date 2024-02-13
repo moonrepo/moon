@@ -22,11 +22,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(path.as_ref())
-        .unwrap();
+    let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
 
     writeln!(file, "\n\n{data}").unwrap();
 }

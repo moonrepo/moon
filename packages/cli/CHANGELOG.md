@@ -25,6 +25,10 @@
   - Updated the `moon project` command to include the stack in the output.
 - Updated the `envFile` task option to support a list of file paths.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.76.
+
 ## 1.21.3
 
 #### 🐞 Fixes

@@ -104,7 +104,8 @@ projectAlias~@scope/*
 
 ### `projectName`
 
-Name of the project, as defined in [`.moon/workspace.yml`](../config/workspace).
+Name of the project, as defined in [`.moon/workspace.yml`](../config/workspace), or `id` in
+[`moon.yml`](../config/project#id).
 
 ```
 project=server
@@ -117,6 +118,14 @@ Relative file path from the workspace root to the project root, as defined in
 
 ```
 projectSource~packages/*
+```
+
+### `projectStack`<VersionLabel version="1.22.0" />
+
+The stack of the project, as defined in [`moon.yml`](../config/project#stack).
+
+```
+projectStack=frontend
 ```
 
 ### `projectType`

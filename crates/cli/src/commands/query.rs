@@ -137,6 +137,9 @@ pub struct QueryProjectsArgs {
     language: Option<String>,
 
     #[arg(long, help = "Filter projects that match this source path")]
+    stack: Option<String>,
+
+    #[arg(long, help = "Filter projects of this tech stack")]
     source: Option<String>,
 
     #[arg(long, help = "Filter projects that have the following tags")]
@@ -159,6 +162,7 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
         json: args.json,
         language: args.language,
         query: args.query,
+        stack: args.stack,
         source: args.source,
         tags: args.tags,
         tasks: args.tasks,
@@ -187,7 +191,12 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
         console.out.write_line(
             projects
                 .iter()
-                .map(|p| format!("{} | {} | {} | {}", p.id, p.source, p.type_of, p.language))
+                .map(|p| {
+                    format!(
+                        "{} | {} | {} | {} | {}",
+                        p.id, p.source, p.stack, p.type_of, p.language
+                    )
+                })
                 .collect::<Vec<_>>()
                 .join("\n"),
         )?;

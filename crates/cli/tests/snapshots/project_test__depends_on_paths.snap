@@ -8,6 +8,7 @@ expression: assert.output_standardized()
 Project: foo
 Source: deps/foo
 Language: javascript
+Stack: unknown
 Type: application
 Tags: react
 

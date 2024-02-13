@@ -8,6 +8,7 @@ expression: assert.output()
 Project: noConfig
 Source: no-config
 Language: unknown
+Stack: unknown
 Type: unknown
 
  FILE GROUPS 

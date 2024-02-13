@@ -9,6 +9,7 @@ Project: root
 Alias: test-cases
 Source: .
 Language: typescript
+Stack: unknown
 Type: unknown
 
  TASKS 

@@ -1,4 +1,4 @@
-use moon_config::{LanguageType, PlatformType, ProjectType, TaskType};
+use moon_config::{LanguageType, PlatformType, ProjectStack, ProjectType, TaskType};
 use moon_query::{
     build_query, ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator,
 };
@@ -474,6 +474,65 @@ mod mql_build {
         )]
         fn errors_for_not_like() {
             build_query("projectType!~tool").unwrap();
+        }
+    }
+
+    mod project_stack {
+        use super::*;
+
+        #[test]
+        fn valid_value() {
+            assert_eq!(
+                build_query("projectStack=frontend").unwrap(),
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
+                        field: Field::ProjectStack(vec![ProjectStack::Frontend]),
+                        op: ComparisonOperator::Equal,
+                    }],
+                    input: Some("projectStack=frontend".into())
+                }
+            );
+        }
+
+        #[test]
+        fn valid_value_list() {
+            assert_eq!(
+                build_query("projectStack!=[frontend, backend]").unwrap(),
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
+                        field: Field::ProjectStack(vec![
+                            ProjectStack::Frontend,
+                            ProjectStack::Backend
+                        ]),
+                        op: ComparisonOperator::NotEqual,
+                    }],
+                    input: Some("projectStack!=[frontend, backend]".into())
+                }
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Unknown query value midend for field projectStack.")]
+        fn invalid_value() {
+            build_query("projectStack=midend").unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field projectStack."
+        )]
+        fn errors_for_like() {
+            build_query("projectStack~systems").unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field projectStack."
+        )]
+        fn errors_for_not_like() {
+            build_query("projectStack!~systems").unwrap();
         }
     }
 

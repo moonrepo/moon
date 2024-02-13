@@ -185,7 +185,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 }
                 InputPath::EnvVarGlob(var_glob) => {
                     let pattern =
-                        Regex::new(format!("^{}$", var_glob.replace("*", "[A-Z0-9_]+")).as_str())
+                        Regex::new(format!("^{}$", var_glob.replace('*', "[A-Z0-9_]+")).as_str())
                             .unwrap();
 
                     for var_name in &self.env_vars {

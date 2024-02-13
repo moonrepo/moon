@@ -23,6 +23,9 @@
   - Updated the `moon query projects` command to support a `--stack` option, and include the stack
     in the output.
   - Updated the `moon project` command to include the stack in the output.
+- Updated task input environment variables to support a wildcard match using `*`, for example
+  `$VITE_*`.
+  - This will include all environment variables in the current process that start with `VITE_`.
 - Updated the `envFile` task option to support a list of file paths.
 
 ## 1.21.3

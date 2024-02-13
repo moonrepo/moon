@@ -339,8 +339,8 @@ _is not required_ for the following reasons:
 - File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
-list of [globs or paths](../concepts/file-pattern). Globs and paths are
-[relative to a project](../concepts/file-pattern#project-relative) (even when defined
+list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
+are [relative to a project](../concepts/file-pattern#project-relative) (even when defined
 [globally](./tasks)).
 
 ```yaml title="moon.yml"
@@ -601,7 +601,9 @@ defined or inherited, then all files within a project are considered an input (`
 Inputs support the following source types:
 
 - Environment variables (must start with a `$`)
-- Files, folders, globs
+- Environment variable wildcards (must start with a `$` and contain `*`)
+  <VersionLabel version="1.22.0" />
+- Files, folders, and globs
   ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 
 ```yaml title="moon.yml" {4-12}
@@ -617,6 +619,7 @@ tasks:
       - '/.eslintrc.js'
       # Environment variables
       - '$ESLINT_CACHE'
+      - '$ESLINT_*'
 ```
 
 :::caution

@@ -94,6 +94,8 @@ export interface ProjectMetadataConfig {
 	owner: string | null;
 }
 
+export type ProjectStack = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
+
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */
@@ -130,7 +132,14 @@ export interface ProjectToolchainConfig {
 	typescript: ProjectToolchainTypeScriptConfig | null;
 }
 
-export type ProjectType = 'application' | 'automation' | 'library' | 'tool' | 'unknown';
+export type ProjectType =
+	| 'application'
+	| 'automation'
+	| 'configuration'
+	| 'library'
+	| 'scaffolding'
+	| 'tool'
+	| 'unknown';
 
 /** Controls how tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
@@ -395,6 +404,12 @@ export interface PartialProjectConfig {
 	platform?: PlatformType | null;
 	/** Expanded information about the project. */
 	project?: PartialProjectMetadataConfig | null;
+	/**
+	 * The technology stack of the project, for categorizing.
+	 *
+	 * @default 'unknown'
+	 */
+	stack?: ProjectStack | null;
 	/**
 	 * A list of tags that this project blongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.

@@ -67,6 +67,8 @@ pub async fn init_rust(
                 .as_bytes(),
             );
         })?;
+
+        console.out.flush()?;
     }
 
     let rust_version = prompt_version("Rust", options, theme, || detect_rust_version(dest_dir))?;

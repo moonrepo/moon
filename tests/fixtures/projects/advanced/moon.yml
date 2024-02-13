@@ -1,10 +1,3 @@
-project:
-  name: 'Advanced'
-  description: 'Advanced example.'
-  channel: '#batcave'
-  owner: 'Batman'
-  maintainers: ['Bruce Wayne']
-
 type: 'application'
 language: 'typescript'
 stack: 'frontend'

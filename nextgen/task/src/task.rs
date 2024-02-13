@@ -34,6 +34,8 @@ cacheable!(
 
         pub deps: Vec<TaskDependencyConfig>,
 
+        pub description: Option<String>,
+
         pub env: FxHashMap<String, String>,
 
         pub flags: TaskFlags,

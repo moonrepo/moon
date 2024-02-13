@@ -14,10 +14,10 @@ Type: unknown
  FILE GROUPS 
 
 sources:
- - empty-config/src/**/*
- - empty-config/types/**/*
+  - empty-config/src/**/*
+  - empty-config/types/**/*
 tests:
- - empty-config/tests/**/*
+  - empty-config/tests/**/*
 
 
 

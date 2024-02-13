@@ -345,6 +345,10 @@ impl<'proj> TasksBuilder<'proj> {
             if !config.platform.is_unknown() {
                 task.platform = config.platform;
             }
+
+            if config.description.is_some() {
+                task.description = config.description.clone();
+            }
         }
 
         // Inputs are tricky, as they come from many sources. We need to ensure that user configured

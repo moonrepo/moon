@@ -99,14 +99,12 @@
       ]
     },
     "stack": {
+      "title": "stack",
       "description": "The technology stack of the project, for categorizing.",
       "default": "unknown",
-      "anyOf": [
+      "allOf": [
         {
           "$ref": "#/definitions/ProjectStack"
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -398,6 +396,16 @@
       },
       "additionalProperties": false
     },
+    "ProjectStack": {
+      "type": "string",
+      "enum": [
+        "backend",
+        "frontend",
+        "infrastructure",
+        "systems",
+        "unknown"
+      ]
+    },
     "ProjectToolchainCommonToolConfig": {
       "description": "Overrides top-level toolchain settings.",
       "type": "object",
@@ -574,7 +582,9 @@
       "enum": [
         "application",
         "automation",
+        "configuration",
         "library",
+        "scaffolding",
         "tool",
         "unknown"
       ]
@@ -683,6 +693,18 @@
           "items": {
             "$ref": "#/definitions/TaskDependency"
           }
+        },
+        "description": {
+          "title": "description",
+          "description": "A human-readable description about the task.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "env": {
           "title": "env",

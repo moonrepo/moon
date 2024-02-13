@@ -23,6 +23,8 @@
   - Updated the `moon query projects` command to support a `--stack` option, and include the stack
     in the output.
   - Updated the `moon project` command to include the stack in the output.
+- Added a `description` setting for tasks, for providing human-readable information.
+  - Updated the `moon project` and `moon task` commands to include the description in the output.
 - Updated task input environment variables to support a wildcard match using `*`, for example
   `$VITE_*`.
   - This will include all environment variables in the current process that starts with `VITE_`.

@@ -11,20 +11,14 @@ Language: typescript
 Stack: frontend
 Type: application
 Tags: react
-Name: Advanced
-Description: Advanced example.
-Owner: Batman
-Maintainers:
- - Bruce Wayne
-Channel: #batcave
 
  FILE GROUPS 
 
 sources:
- - advanced/src/**/*
- - advanced/types/**/*
+  - advanced/src/**/*
+  - advanced/types/**/*
 tests:
- - advanced/tests/**/*
+  - advanced/tests/**/*
 
 
 

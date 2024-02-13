@@ -1,0 +1,41 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+
+ METADATA 
+
+Advanced example.
+
+Name: Advanced
+Owner: @infra
+Maintainers:
+  - @user1
+  - @user2
+Channel: #infra
+
+Project: metadata
+Source: metadata
+Language: unknown
+Stack: infrastructure
+Type: configuration
+
+ TASKS 
+
+build: 
+  › noop 
+    Builds the project!
+test: 
+  › noop 
+    Runs the test runner!
+
+ FILE GROUPS 
+
+sources:
+  - metadata/src/**/*
+  - metadata/types/**/*
+tests:
+  - metadata/tests/**/*
+
+
+

@@ -166,19 +166,13 @@ impl Task {
         Ok(false)
     }
 
-    /// Return a list of all project-relative input files for
+    /// Return a list of all workspace-relative input files for
     /// the task
-    pub fn get_input_files<S: AsRef<str>>(
+    pub fn get_input_files(
         &self,
         workspace_root: &Path,
-        project_source: S,
-    ) -> miette::Result<Vec<ProjectRelativePathBuf>> {
-        let mut list = vec![];
-        let project_source = project_source.as_ref();
-
-        for path in &self.input_files {
-            list.push(path.strip_prefix(project_source).unwrap().to_owned());
-        }
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
+        let mut list: Vec<_> = self.input_files.iter().cloned().collect();
 
         if !self.input_globs.is_empty() {
             let globs = &self.input_globs;
@@ -192,9 +186,7 @@ impl Task {
                     WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
                         .unwrap();
 
-                if let Ok(project_file) = path.strip_prefix(project_source) {
-                    list.push(project_file.to_owned());
-                }
+                list.push(path);
             }
         }
 

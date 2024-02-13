@@ -317,7 +317,14 @@ impl<'a> Runner<'a> {
             if files.is_empty() {
                 files = self
                     .task
-                    .get_input_files(&self.workspace.root, self.project.source.as_str())?;
+                    .get_input_files(&self.workspace.root)?
+                    .into_iter()
+                    .filter_map(|f| {
+                        f.strip_prefix(&self.project.source)
+                            .ok()
+                            .map(ToOwned::to_owned)
+                    })
+                    .collect();
             }
 
             files.sort();

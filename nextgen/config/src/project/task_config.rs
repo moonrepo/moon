@@ -147,6 +147,9 @@ cacheable!(
         /// Extends settings from a sibling task by ID.
         pub extends: Option<Id>,
 
+        /// A human-readable description about the task.
+        pub description: Option<String>,
+
         /// The command or command line to execute when the task is ran.
         /// Supports the command name, with or without arguments. Can be
         /// defined as a string, or a list of individual arguments.

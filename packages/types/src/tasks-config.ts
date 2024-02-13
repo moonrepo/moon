@@ -139,6 +139,8 @@ export interface PartialTaskConfig {
 	 * other projects, using targets.
 	 */
 	deps?: PartialTaskDependency[] | null;
+	/** A human-readable description about the task. */
+	description?: string | null;
 	/**
 	 * A mapping of environment variables that will be set when the
 	 * task is ran.
@@ -337,6 +339,8 @@ export interface TaskConfig {
 	 * other projects, using targets.
 	 */
 	deps: TaskDependency[];
+	/** A human-readable description about the task. */
+	description: string | null;
 	/**
 	 * A mapping of environment variables that will be set when the
 	 * task is ran.

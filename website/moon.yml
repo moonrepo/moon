@@ -9,6 +9,7 @@ dependsOn:
 
 tasks:
   build:
+    description: 'Builds the Docusaurus app.'
     command: 'docusaurus build'
     deps:
       - '^:build'

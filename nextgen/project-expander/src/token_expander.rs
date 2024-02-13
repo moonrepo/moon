@@ -449,6 +449,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             },
             "projectRoot" => Cow::Owned(path::to_string(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
+            "projectStack" => Cow::Owned(project.stack.to_string()),
             "projectType" => Cow::Owned(project.type_of.to_string()),
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),

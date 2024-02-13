@@ -345,7 +345,7 @@ mod projects {
 
         assert_eq!(
             assert.output(),
-            "advanced | advanced | application | typescript\nnoConfig | no-config | unknown | unknown\n\n"
+            "advanced | advanced | frontend | application | typescript\nnoConfig | no-config | unknown | unknown | unknown\n\n"
         );
     }
 
@@ -548,6 +548,31 @@ mod projects {
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
         assert_eq!(json.options.type_of.unwrap(), "app".to_string());
+    }
+
+    #[test]
+    fn can_filter_by_stack() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query")
+                .arg("projects")
+                .arg("--json")
+                .args(["--stack", "frontend"]);
+        });
+
+        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
+
+        assert_eq!(ids, string_vec!["advanced"]);
+        assert_eq!(json.options.stack.unwrap(), "frontend".to_string());
     }
 
     mod mql {

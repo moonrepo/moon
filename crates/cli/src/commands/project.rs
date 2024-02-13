@@ -52,6 +52,7 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     }
 
     console.print_entry("Language", format!("{}", &project.language))?;
+    console.print_entry("Stack", format!("{}", &project.stack))?;
     console.print_entry("Type", format!("{}", &project.type_of))?;
 
     if !config.tags.is_empty() {

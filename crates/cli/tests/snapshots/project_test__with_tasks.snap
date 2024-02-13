@@ -8,6 +8,7 @@ expression: assert.output()
 Project: tasks
 Source: tasks
 Language: typescript
+Stack: unknown
 Type: unknown
 
  TASKS 

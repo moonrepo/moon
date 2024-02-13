@@ -9,6 +9,7 @@ Project: scripts
 Alias: test-bun-scripts
 Source: scripts
 Language: javascript
+Stack: unknown
 Type: unknown
 
  TASKS 

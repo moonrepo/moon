@@ -8,6 +8,7 @@ expression: assert.output()
 Project: emptyConfig
 Source: empty-config
 Language: unknown
+Stack: unknown
 Type: unknown
 
  FILE GROUPS 

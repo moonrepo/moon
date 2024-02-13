@@ -98,6 +98,18 @@
         }
       ]
     },
+    "stack": {
+      "description": "The technology stack of the project, for categorizing.",
+      "default": "unknown",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ProjectStack"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tags": {
       "title": "tags",
       "description": "A list of tags that this project blongs to, for categorizing, boundary enforcement, and task inheritance.",

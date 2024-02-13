@@ -197,6 +197,12 @@ export interface ProjectConfig {
 	/** Expanded information about the project. */
 	project: ProjectMetadataConfig | null;
 	/**
+	 * The technology stack of the project, for categorizing.
+	 *
+	 * @default 'unknown'
+	 */
+	stack: ProjectStack;
+	/**
 	 * A list of tags that this project blongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */

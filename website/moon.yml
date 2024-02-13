@@ -1,6 +1,9 @@
 language: typescript
 type: application
 
+project:
+  description: 'A static website powered by Docusaurus.'
+
 dependsOn:
   - id: 'runtime'
     scope: 'development'

@@ -29,7 +29,6 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     let project_graph = project_graph_builder.build().await?;
     let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
-    let task_config = project.config.tasks.get(&args.target.task_id).unwrap();
 
     let console = resources.get::<Console>().stdout();
 
@@ -43,7 +42,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
 
     console.print_header(&args.target.id)?;
 
-    if let Some(desc) = &task_config.description {
+    if let Some(desc) = &task.description {
         console.write_line(desc)?;
         console.write_newline()?;
     }

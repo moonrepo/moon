@@ -560,7 +560,7 @@ mod token_expander {
             assert_eq!(
                 result,
                 ExpandedResult {
-                    env: vec!["FOO_THREE".into(), "FOO_TWO".into(), "FOO_ONE".into()],
+                    env: vec!["FOO_ONE".into(), "FOO_THREE".into(), "FOO_TWO".into()],
                     ..ExpandedResult::default()
                 }
             );

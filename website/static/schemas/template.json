@@ -1,32 +1,21 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PartialTemplateConfig",
+  "title": "TemplateConfig",
   "description": "Configures a template and its files to be scaffolded. Docs: https://moonrepo.dev/docs/config/template",
   "type": "object",
   "properties": {
     "$schema": {
+      "title": "$schema",
       "default": "https://moonrepo.dev/schemas/template.json",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "description": {
+      "title": "description",
       "description": "A description on what the template scaffolds.",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "destination": {
+      "title": "destination",
       "description": "A pre-populated destination to scaffold to, relative from the workspace root.",
       "anyOf": [
         {
@@ -38,84 +27,61 @@
       ]
     },
     "extends": {
+      "title": "extends",
       "description": "Extends one or many other templates.",
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "title": {
+      "title": "title",
       "description": "A human-readable title for the template.",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "variables": {
+      "title": "variables",
       "description": "A mapping of variables that'll be interpolated within each template file. Variables can also be populated by passing command line arguments.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PartialTemplateVariable"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TemplateVariable"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     }
   },
   "additionalProperties": false,
   "definitions": {
-    "PartialTemplateVariable": {
-      "title": "PartialTemplateVariable",
+    "TemplateVariable": {
+      "title": "TemplateVariable",
       "description": "Each type of template variable.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialTemplateVariableBoolSetting"
+          "$ref": "#/definitions/TemplateVariableBoolSetting"
         },
         {
-          "$ref": "#/definitions/PartialTemplateVariableEnumSetting"
+          "$ref": "#/definitions/TemplateVariableEnumSetting"
         },
         {
-          "$ref": "#/definitions/PartialTemplateVariableNumberSetting"
+          "$ref": "#/definitions/TemplateVariableNumberSetting"
         },
         {
-          "$ref": "#/definitions/PartialTemplateVariableStringSetting"
+          "$ref": "#/definitions/TemplateVariableStringSetting"
         }
       ]
     },
-    "PartialTemplateVariableBoolSetting": {
-      "title": "PartialTemplateVariableBoolSetting",
+    "TemplateVariableBoolSetting": {
+      "title": "TemplateVariableBoolSetting",
       "type": "object",
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
@@ -127,6 +93,7 @@
           ]
         },
         "required": {
+          "title": "required",
           "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
@@ -138,34 +105,23 @@
           ]
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "title": "type",
+          "const": "boolean"
         }
       },
       "additionalProperties": false
     },
-    "PartialTemplateVariableEnumSetting": {
-      "title": "PartialTemplateVariableEnumSetting",
+    "TemplateVariableEnumSetting": {
+      "title": "TemplateVariableEnumSetting",
       "type": "object",
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "multiple": {
+          "title": "multiple",
           "description": "Allows multiple values to be selected.",
           "anyOf": [
             {
@@ -177,99 +133,64 @@
           ]
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "enum"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "title": "type",
+          "const": "enum"
         },
         "values": {
+          "title": "values",
           "description": "List of acceptable values for this variable.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PartialTemplateVariableEnumValue"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TemplateVariableEnumValue"
+          }
         }
       },
       "additionalProperties": false
     },
-    "PartialTemplateVariableEnumValue": {
-      "title": "PartialTemplateVariableEnumValue",
+    "TemplateVariableEnumValue": {
+      "title": "TemplateVariableEnumValue",
       "anyOf": [
         {
           "type": "string"
         },
         {
-          "$ref": "#/definitions/PartialTemplateVariableEnumValueConfig"
+          "$ref": "#/definitions/TemplateVariableEnumValueConfig"
         }
       ]
     },
-    "PartialTemplateVariableEnumValueConfig": {
-      "title": "PartialTemplateVariableEnumValueConfig",
+    "TemplateVariableEnumValueConfig": {
+      "title": "TemplateVariableEnumValueConfig",
       "type": "object",
       "properties": {
         "label": {
+          "title": "label",
           "description": "A human-readable label for the value.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "value": {
+          "title": "value",
           "description": "The literal enumerable value.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         }
       },
       "additionalProperties": false
     },
-    "PartialTemplateVariableNumberSetting": {
-      "title": "PartialTemplateVariableNumberSetting",
+    "TemplateVariableNumberSetting": {
+      "title": "TemplateVariableNumberSetting",
       "type": "object",
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "number"
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
@@ -281,6 +202,7 @@
           ]
         },
         "required": {
+          "title": "required",
           "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
@@ -292,34 +214,23 @@
           ]
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "number"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "title": "type",
+          "const": "number"
         }
       },
       "additionalProperties": false
     },
-    "PartialTemplateVariableStringSetting": {
-      "title": "PartialTemplateVariableStringSetting",
+    "TemplateVariableStringSetting": {
+      "title": "TemplateVariableStringSetting",
       "type": "object",
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
@@ -331,6 +242,7 @@
           ]
         },
         "required": {
+          "title": "required",
           "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
@@ -342,14 +254,8 @@
           ]
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "title": "type",
+          "const": "string"
         }
       },
       "additionalProperties": false

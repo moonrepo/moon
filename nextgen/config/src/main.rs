@@ -3,25 +3,33 @@
 use moon_config::*;
 use schematic::schema::json_schema::JsonSchemaRenderer;
 use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
-use schematic::schema::SchemaGenerator;
+use schematic::schema::{JsonSchemaOptions, SchemaGenerator};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 
+fn create_jsonschema_renderer() -> JsonSchemaRenderer {
+    JsonSchemaRenderer::new(JsonSchemaOptions {
+        mark_struct_fields_required: false,
+        set_field_name_as_title: true,
+        ..JsonSchemaOptions::default()
+    })
+}
+
 fn generate_project() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialProjectConfig>();
+    generator.add::<ProjectConfig>();
 
     generator
         .generate(
             PathBuf::from("website/static/schemas/project.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
     generator.add::<DependencyConfig>();
-    generator.add::<ProjectConfig>();
+    generator.add::<PartialProjectConfig>();
 
     generator
         .generate(
@@ -64,16 +72,16 @@ fn generate_project() {
 fn generate_tasks() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialInheritedTasksConfig>();
+    generator.add::<InheritedTasksConfig>();
 
     generator
         .generate(
             PathBuf::from("website/static/schemas/tasks.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
-    generator.add::<InheritedTasksConfig>();
+    generator.add::<PartialInheritedTasksConfig>();
 
     generator
         .generate(
@@ -85,20 +93,20 @@ fn generate_tasks() {
 
 fn generate_template() {
     let mut generator = SchemaGenerator::default();
-    generator.add::<PartialTemplateConfig>();
+    generator.add::<TemplateConfig>();
     generator
         .generate(
             PathBuf::from("website/static/schemas/template.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
     let mut generator = SchemaGenerator::default();
-    generator.add::<PartialTemplateFrontmatterConfig>();
+    generator.add::<TemplateFrontmatterConfig>();
     generator
         .generate(
             PathBuf::from("website/static/schemas/template-frontmatter.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
@@ -118,16 +126,16 @@ fn generate_template() {
 fn generate_toolchain() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialToolchainConfig>();
+    generator.add::<ToolchainConfig>();
 
     generator
         .generate(
             PathBuf::from("website/static/schemas/toolchain.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
-    generator.add::<ToolchainConfig>();
+    generator.add::<PartialToolchainConfig>();
 
     generator
         .generate(
@@ -140,16 +148,16 @@ fn generate_toolchain() {
 fn generate_workspace() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialWorkspaceConfig>();
+    generator.add::<WorkspaceConfig>();
 
     generator
         .generate(
             PathBuf::from("website/static/schemas/workspace.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
-    generator.add::<WorkspaceConfig>();
+    generator.add::<PartialWorkspaceConfig>();
 
     generator
         .generate(

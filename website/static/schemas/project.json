@@ -1,70 +1,58 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PartialProjectConfig",
+  "title": "ProjectConfig",
   "description": "Configures information and tasks for a project. Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
+  "required": [
+    "$schema",
+    "dependsOn",
+    "env",
+    "fileGroups",
+    "id",
+    "language",
+    "owners",
+    "platform",
+    "project",
+    "tags",
+    "tasks",
+    "toolchain",
+    "type",
+    "workspace"
+  ],
   "properties": {
     "$schema": {
       "default": "https://moonrepo.dev/schemas/project.json",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "dependsOn": {
       "description": "Other projects that this project depends on.",
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/PartialProjectDependsOn"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ProjectDependsOn"
+      }
     },
     "env": {
       "description": "A mapping of environment variables that will be set for all tasks within the project.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     },
     "fileGroups": {
       "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
         }
-      ]
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     },
     "id": {
       "description": "Overrides the ID within the project graph, as defined in the workspace `projects` setting.",
@@ -80,23 +68,17 @@
     "language": {
       "description": "The primary programming language of the project.",
       "default": "unknown",
-      "anyOf": [
+      "allOf": [
         {
           "$ref": "#/definitions/LanguageType"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "owners": {
       "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialOwnersConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/OwnersConfig"
         }
       ]
     },
@@ -116,7 +98,7 @@
       "description": "Expanded information about the project.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialProjectMetadataConfig"
+          "$ref": "#/definitions/ProjectMetadataConfig"
         },
         {
           "type": "null"
@@ -125,72 +107,96 @@
     },
     "tags": {
       "description": "A list of tags that this project blongs to, for categorizing, boundary enforcement, and task inheritance.",
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "tasks": {
       "description": "A mapping of tasks by ID to parameters required for running the task.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PartialTaskConfig"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TaskConfig"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     },
     "toolchain": {
       "description": "Overrides top-level toolchain settings, scoped to this project.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialProjectToolchainConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/ProjectToolchainConfig"
         }
       ]
     },
     "type": {
       "description": "The type of project.",
       "default": "unknown",
-      "anyOf": [
+      "allOf": [
         {
           "$ref": "#/definitions/ProjectType"
-        },
-        {
-          "type": "null"
         }
       ]
     },
     "workspace": {
       "description": "Overrides top-level workspace settings, scoped to this project.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialProjectWorkspaceConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/ProjectWorkspaceConfig"
         }
       ]
     }
   },
   "additionalProperties": false,
   "definitions": {
+    "DependencyConfig": {
+      "title": "DependencyConfig",
+      "description": "Expanded information about a project dependency.",
+      "type": "object",
+      "required": [
+        "id",
+        "scope",
+        "source",
+        "via"
+      ],
+      "properties": {
+        "id": {
+          "description": "ID of the depended on project.",
+          "type": "string"
+        },
+        "scope": {
+          "description": "Scope of the dependency relationship.",
+          "default": "production",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencyScope"
+            }
+          ]
+        },
+        "source": {
+          "description": "Source of where the dependeny came from.",
+          "default": "explicit",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencySource"
+            }
+          ]
+        },
+        "via": {
+          "description": "Metadata about the source.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "DependencyScope": {
       "title": "DependencyScope",
       "type": "string",
@@ -226,84 +232,30 @@
         "unknown"
       ]
     },
-    "PartialDependencyConfig": {
-      "title": "PartialDependencyConfig",
-      "description": "Expanded information about a project dependency.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "description": "ID of the depended on project.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "scope": {
-          "description": "Scope of the dependency relationship.",
-          "default": "production",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/DependencyScope"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "source": {
-          "description": "Source of where the dependeny came from.",
-          "default": "explicit",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/DependencySource"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "via": {
-          "description": "Metadata about the source.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialOwnersConfig": {
-      "title": "PartialOwnersConfig",
+    "OwnersConfig": {
+      "title": "OwnersConfig",
       "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
       "type": "object",
+      "required": [
+        "customGroups",
+        "defaultOwner",
+        "optional",
+        "paths",
+        "requiredApprovals"
+      ],
       "properties": {
         "customGroups": {
           "description": "Bitbucket only. A mapping of custom groups (prefixed with `@@@`), to a list of user and normal groups.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
-          ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         },
         "defaultOwner": {
           "description": "The default owner for `paths`.",
@@ -318,43 +270,26 @@
         },
         "optional": {
           "description": "GitLab only. Marks the code owners section as optional.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "paths": {
           "description": "A mapping of file paths and file globs to owners. When a list, the `defaultOwner` is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialOwnersPaths"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/OwnersPaths"
             }
           ]
         },
         "requiredApprovals": {
           "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required.",
           "default": 1,
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "number"
         }
       },
       "additionalProperties": false
     },
-    "PartialOwnersPaths": {
-      "title": "PartialOwnersPaths",
+    "OwnersPaths": {
+      "title": "OwnersPaths",
       "anyOf": [
         {
           "type": "array",
@@ -376,21 +311,40 @@
         }
       ]
     },
-    "PartialProjectDependsOn": {
-      "title": "PartialProjectDependsOn",
+    "PlatformType": {
+      "title": "PlatformType",
+      "type": "string",
+      "enum": [
+        "bun",
+        "deno",
+        "node",
+        "rust",
+        "system",
+        "unknown"
+      ]
+    },
+    "ProjectDependsOn": {
+      "title": "ProjectDependsOn",
       "anyOf": [
         {
           "type": "string"
         },
         {
-          "$ref": "#/definitions/PartialDependencyConfig"
+          "$ref": "#/definitions/DependencyConfig"
         }
       ]
     },
-    "PartialProjectMetadataConfig": {
-      "title": "PartialProjectMetadataConfig",
+    "ProjectMetadataConfig": {
+      "title": "ProjectMetadataConfig",
       "description": "Expanded information about the project.",
       "type": "object",
+      "required": [
+        "channel",
+        "description",
+        "maintainers",
+        "name",
+        "owner"
+      ],
       "properties": {
         "channel": {
           "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`.",
@@ -405,28 +359,14 @@
         },
         "description": {
           "description": "A description on what the project does, and why it exists.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "maintainers": {
           "description": "The individual maintainers of the project. The format is unspecified.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "name": {
           "description": "A human-readable name of the project.",
@@ -453,10 +393,13 @@
       },
       "additionalProperties": false
     },
-    "PartialProjectToolchainCommonToolConfig": {
-      "title": "PartialProjectToolchainCommonToolConfig",
+    "ProjectToolchainCommonToolConfig": {
+      "title": "ProjectToolchainCommonToolConfig",
       "description": "Overrides top-level toolchain settings.",
       "type": "object",
+      "required": [
+        "version"
+      ],
       "properties": {
         "version": {
           "description": "Version of the tool this project will use.",
@@ -472,16 +415,23 @@
       },
       "additionalProperties": false
     },
-    "PartialProjectToolchainConfig": {
-      "title": "PartialProjectToolchainConfig",
+    "ProjectToolchainConfig": {
+      "title": "ProjectToolchainConfig",
       "description": "Overrides top-level toolchain settings, scoped to this project.",
       "type": "object",
+      "required": [
+        "bun",
+        "deno",
+        "node",
+        "rust",
+        "typescript"
+      ],
       "properties": {
         "bun": {
           "description": "Overrides `bun` settings.",
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -492,7 +442,7 @@
           "description": "Overrides `deno` settings.",
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -503,7 +453,7 @@
           "description": "Overrides `node` settings.",
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -514,7 +464,7 @@
           "description": "Overrides `rust` settings.",
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -525,7 +475,7 @@
           "description": "Overrides `typescript` settings.",
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
+              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
             },
             {
               "type": "null"
@@ -535,21 +485,22 @@
       },
       "additionalProperties": false
     },
-    "PartialProjectToolchainTypeScriptConfig": {
-      "title": "PartialProjectToolchainTypeScriptConfig",
+    "ProjectToolchainTypeScriptConfig": {
+      "title": "ProjectToolchainTypeScriptConfig",
       "description": "Overrides top-level `typescript` settings.",
       "type": "object",
+      "required": [
+        "disabled",
+        "includeProjectReferenceSources",
+        "includeSharedTypes",
+        "routeOutDirToCache",
+        "syncProjectReferences",
+        "syncProjectReferencesToPaths"
+      ],
       "properties": {
         "disabled": {
           "description": "Disables all TypeScript functionality for this project.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "includeProjectReferenceSources": {
           "description": "Appends sources of project reference to `include` in `tsconfig.json`.",
@@ -609,43 +560,52 @@
       },
       "additionalProperties": false
     },
-    "PartialProjectWorkspaceConfig": {
-      "title": "PartialProjectWorkspaceConfig",
+    "ProjectType": {
+      "title": "ProjectType",
+      "type": "string",
+      "enum": [
+        "application",
+        "automation",
+        "library",
+        "tool",
+        "unknown"
+      ]
+    },
+    "ProjectWorkspaceConfig": {
+      "title": "ProjectWorkspaceConfig",
       "description": "Overrides top-level workspace settings, scoped to this project.",
       "type": "object",
+      "required": [
+        "inheritedTasks"
+      ],
       "properties": {
         "inheritedTasks": {
           "description": "Controls how tasks are inherited.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialProjectWorkspaceInheritedTasksConfig"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
             }
           ]
         }
       },
       "additionalProperties": false
     },
-    "PartialProjectWorkspaceInheritedTasksConfig": {
-      "title": "PartialProjectWorkspaceInheritedTasksConfig",
+    "ProjectWorkspaceInheritedTasksConfig": {
+      "title": "ProjectWorkspaceInheritedTasksConfig",
       "description": "Controls how tasks are inherited.",
       "type": "object",
+      "required": [
+        "exclude",
+        "include",
+        "rename"
+      ],
       "properties": {
         "exclude": {
           "description": "Excludes inheriting tasks by ID.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "include": {
           "description": "Only inherits tasks by ID, and ignores the rest. When not defined, inherits all matching tasks. When an empty list, inherits no tasks.",
@@ -663,26 +623,19 @@
         },
         "rename": {
           "description": "Renames inherited tasks to a new ID.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false
     },
-    "PartialTaskArgs": {
-      "title": "PartialTaskArgs",
+    "TaskArgs": {
+      "title": "TaskArgs",
       "anyOf": [
         {
           "type": "null"
@@ -698,63 +651,56 @@
         }
       ]
     },
-    "PartialTaskConfig": {
-      "title": "PartialTaskConfig",
+    "TaskConfig": {
+      "title": "TaskConfig",
       "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
+      "required": [
+        "args",
+        "command",
+        "deps",
+        "env",
+        "extends",
+        "inputs",
+        "local",
+        "options",
+        "outputs",
+        "platform",
+        "type"
+      ],
       "properties": {
         "args": {
           "description": "Arguments to pass to the command when it's ran. Can be defined as a string, or a list of individual arguments.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskArgs"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskArgs"
             }
           ]
         },
         "command": {
           "description": "The command or command line to execute when the task is ran. Supports the command name, with or without arguments. Can be defined as a string, or a list of individual arguments.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskArgs"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskArgs"
             }
           ]
         },
         "deps": {
           "description": "Other tasks that this task depends on, and must run to completion, before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PartialTaskDependency"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskDependency"
+          }
         },
         "env": {
           "description": "A mapping of environment variables that will be set when the task is ran.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         },
         "extends": {
           "description": "Extends settings from a sibling task by ID.",
@@ -794,12 +740,9 @@
         },
         "options": {
           "description": "Options to control task inheritance and execution.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskOptionsConfig"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskOptionsConfig"
             }
           ]
         },
@@ -820,12 +763,9 @@
         "platform": {
           "description": "The platform in which the task will be ran in. The platform determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
           "default": "unknown",
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/PlatformType"
-            },
-            {
-              "type": "null"
             }
           ]
         },
@@ -844,49 +784,45 @@
       },
       "additionalProperties": false
     },
-    "PartialTaskDependency": {
-      "title": "PartialTaskDependency",
+    "TaskDependency": {
+      "title": "TaskDependency",
       "anyOf": [
         {
           "type": "string"
         },
         {
-          "$ref": "#/definitions/PartialTaskDependencyConfig"
+          "$ref": "#/definitions/TaskDependencyConfig"
         }
       ]
     },
-    "PartialTaskDependencyConfig": {
-      "title": "PartialTaskDependencyConfig",
+    "TaskDependencyConfig": {
+      "title": "TaskDependencyConfig",
       "description": "Expanded information about a task dependency.",
       "type": "object",
+      "required": [
+        "args",
+        "env",
+        "optional",
+        "target"
+      ],
       "properties": {
         "args": {
           "description": "Additional arguments to pass to this dependency when it's ran.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskArgs"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskArgs"
             }
           ]
         },
         "env": {
           "description": "A mapping of environment variables specific to this dependency.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         },
         "optional": {
           "description": "Marks the dependency is optional when being inherited from the top-level.",
@@ -901,22 +837,71 @@
         },
         "target": {
           "description": "The target of the depended on task.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         }
       },
       "additionalProperties": false
     },
-    "PartialTaskOptionsConfig": {
-      "title": "PartialTaskOptionsConfig",
+    "TaskMergeStrategy": {
+      "title": "TaskMergeStrategy",
+      "type": "string",
+      "enum": [
+        "append",
+        "prepend",
+        "replace"
+      ]
+    },
+    "TaskOptionAffectedFiles": {
+      "title": "TaskOptionAffectedFiles",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "args",
+            "env"
+          ]
+        }
+      ]
+    },
+    "TaskOptionEnvFile": {
+      "title": "TaskOptionEnvFile",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "TaskOptionsConfig": {
+      "title": "TaskOptionsConfig",
       "description": "Options to control task inheritance and execution.",
       "type": "object",
+      "required": [
+        "affectedFiles",
+        "allowFailure",
+        "cache",
+        "envFile",
+        "interactive",
+        "mergeArgs",
+        "mergeDeps",
+        "mergeEnv",
+        "mergeInputs",
+        "mergeOutputs",
+        "outputStyle",
+        "persistent",
+        "retryCount",
+        "runDepsInParallel",
+        "runFromWorkspaceRoot",
+        "runInCI",
+        "shell",
+        "unixShell",
+        "windowsShell"
+      ],
       "properties": {
         "affectedFiles": {
           "description": "The pattern in which affected files will be passed to the task.",
@@ -1135,64 +1120,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "PlatformType": {
-      "title": "PlatformType",
-      "type": "string",
-      "enum": [
-        "bun",
-        "deno",
-        "node",
-        "rust",
-        "system",
-        "unknown"
-      ]
-    },
-    "ProjectType": {
-      "title": "ProjectType",
-      "type": "string",
-      "enum": [
-        "application",
-        "automation",
-        "library",
-        "tool",
-        "unknown"
-      ]
-    },
-    "TaskMergeStrategy": {
-      "title": "TaskMergeStrategy",
-      "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "replace"
-      ]
-    },
-    "TaskOptionAffectedFiles": {
-      "title": "TaskOptionAffectedFiles",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string",
-          "enum": [
-            "args",
-            "env"
-          ]
-        }
-      ]
-    },
-    "TaskOptionEnvFile": {
-      "title": "TaskOptionEnvFile",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string"
-        }
-      ]
     },
     "TaskOutputStyle": {
       "title": "TaskOutputStyle",

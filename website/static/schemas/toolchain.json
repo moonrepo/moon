@@ -1,25 +1,27 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PartialToolchainConfig",
+  "title": "ToolchainConfig",
   "description": "Configures all tools and platforms required for tasks. Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
+  "required": [
+    "$schema",
+    "bun",
+    "deno",
+    "extends",
+    "node",
+    "rust",
+    "typescript"
+  ],
   "properties": {
     "$schema": {
       "default": "https://moonrepo.dev/schemas/toolchain.json",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "bun": {
       "description": "Configures and enables the Bun platform.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialBunConfig"
+          "$ref": "#/definitions/BunConfig"
         },
         {
           "type": "null"
@@ -30,7 +32,7 @@
       "description": "Configures and enables the Deno platform.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialDenoConfig"
+          "$ref": "#/definitions/DenoConfig"
         },
         {
           "type": "null"
@@ -52,7 +54,7 @@
       "description": "Configures and enables the Node.js platform.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialNodeConfig"
+          "$ref": "#/definitions/NodeConfig"
         },
         {
           "type": "null"
@@ -63,7 +65,7 @@
       "description": "Configures and enables the Rust platform.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialRustConfig"
+          "$ref": "#/definitions/RustConfig"
         },
         {
           "type": "null"
@@ -74,7 +76,7 @@
       "description": "Configures and enables the TypeScript platform.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialTypeScriptConfig"
+          "$ref": "#/definitions/TypeScriptConfig"
         },
         {
           "type": "null"
@@ -84,6 +86,348 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "BinConfig": {
+      "title": "BinConfig",
+      "type": "object",
+      "required": [
+        "bin",
+        "force",
+        "local",
+        "name"
+      ],
+      "properties": {
+        "bin": {
+          "description": "Name of the binary, with optional version separated by `@`.",
+          "type": "string"
+        },
+        "force": {
+          "description": "Force install the binary if it already exists.",
+          "type": "boolean"
+        },
+        "local": {
+          "description": "Only install the binary locally, and not within CI.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "For supported tools, a custom name to use.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BinEntry": {
+      "title": "BinEntry",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/BinConfig"
+        }
+      ]
+    },
+    "BunConfig": {
+      "title": "BunConfig",
+      "description": "Configures and enables the Bun platform. Docs: https://moonrepo.dev/docs/config/toolchain#bun",
+      "type": "object",
+      "required": [
+        "dependencyVersionFormat",
+        "inferTasksFromScripts",
+        "plugin",
+        "rootPackageOnly",
+        "syncProjectWorkspaceDependencies",
+        "version"
+      ],
+      "properties": {
+        "dependencyVersionFormat": {
+          "description": "The dependency version format to use when syncing projects as dependencies.",
+          "default": "workspace",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            }
+          ]
+        },
+        "inferTasksFromScripts": {
+          "description": "Automatically infer moon tasks from `package.json` scripts.",
+          "type": "boolean"
+        },
+        "plugin": {
+          "description": "Location of the WASM plugin to use for Bun support.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootPackageOnly": {
+          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "type": "boolean"
+        },
+        "syncProjectWorkspaceDependencies": {
+          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
+          "default": true,
+          "type": "boolean"
+        },
+        "version": {
+          "description": "The version of Bun to download, install, and run `bun` tasks with.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BunpmConfig": {
+      "title": "BunpmConfig",
+      "description": "Options for Bun, when used as a package manager.",
+      "type": "object",
+      "required": [
+        "plugin",
+        "version"
+      ],
+      "properties": {
+        "plugin": {
+          "description": "Location of the WASM plugin to use for Bun support.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "description": "The version of Bun to download, install, and run `bun` tasks with.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DenoConfig": {
+      "title": "DenoConfig",
+      "description": "Configures and enables the Deno platform. Docs: https://moonrepo.dev/docs/config/toolchain#deno",
+      "type": "object",
+      "required": [
+        "bins",
+        "depsFile",
+        "lockfile",
+        "plugin",
+        "version"
+      ],
+      "properties": {
+        "bins": {
+          "description": "List of binaries to install into the environment using `deno install`.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BinEntry"
+          }
+        },
+        "depsFile": {
+          "description": "Relative path to a dependency management file. Used for content hashing.",
+          "default": "deps.ts",
+          "type": "string"
+        },
+        "lockfile": {
+          "description": "Requires and forces the use of `deno.lock` files.",
+          "type": "boolean"
+        },
+        "plugin": {
+          "description": "Location of the WASM plugin to use for Deno support.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "description": "The version of Deno to download, install, and run `deno` tasks with.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "NodeConfig": {
+      "title": "NodeConfig",
+      "description": "Configures and enables the Node.js platform. Docs: https://moonrepo.dev/docs/config/toolchain#node",
+      "type": "object",
+      "required": [
+        "addEnginesConstraint",
+        "binExecArgs",
+        "bun",
+        "dedupeOnLockfileChange",
+        "dependencyVersionFormat",
+        "inferTasksFromScripts",
+        "npm",
+        "packageManager",
+        "plugin",
+        "pnpm",
+        "rootPackageOnly",
+        "syncProjectWorkspaceDependencies",
+        "syncVersionManagerConfig",
+        "version",
+        "yarn"
+      ],
+      "properties": {
+        "addEnginesConstraint": {
+          "description": "When `version` is defined, syncs the version as a constraint to `package.json` engines.",
+          "default": true,
+          "type": "boolean"
+        },
+        "binExecArgs": {
+          "description": "Arguments to automatically pass to all tasks that execute the `node` binary.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bun": {
+          "description": "Options for Bun, when used as a package manager.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BunpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dedupeOnLockfileChange": {
+          "description": "Automatically dedupes the lockfile when dependencies have changed.",
+          "default": true,
+          "type": "boolean"
+        },
+        "dependencyVersionFormat": {
+          "description": "The dependency version format to use when syncing projects as dependencies.",
+          "default": "workspace",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            }
+          ]
+        },
+        "inferTasksFromScripts": {
+          "description": "Automatically infer moon tasks from `package.json` scripts.",
+          "type": "boolean"
+        },
+        "npm": {
+          "description": "Options for npm, when used as a package manager.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NpmConfig"
+            }
+          ]
+        },
+        "packageManager": {
+          "description": "The package manager to use for installing dependencies.",
+          "default": "npm",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodePackageManager"
+            }
+          ]
+        },
+        "plugin": {
+          "description": "Location of the WASM plugin to use for Node.js support.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pnpm": {
+          "description": "Options for pnpm, when used as a package manager.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rootPackageOnly": {
+          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "type": "boolean"
+        },
+        "syncProjectWorkspaceDependencies": {
+          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
+          "default": true,
+          "type": "boolean"
+        },
+        "syncVersionManagerConfig": {
+          "description": "When `version` is defined, syncs the version to the chosen config.",
+          "default": "nvm",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "description": "The version of Node.js to download, install, and run `node` tasks with.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "yarn": {
+          "description": "Options for Yarn, when used as a package manager.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/YarnConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "NodePackageManager": {
       "title": "NodePackageManager",
       "type": "string",
@@ -117,427 +461,14 @@
         "nvm"
       ]
     },
-    "PartialBinConfig": {
-      "title": "PartialBinConfig",
-      "type": "object",
-      "properties": {
-        "bin": {
-          "description": "Name of the binary, with optional version separated by `@`.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "force": {
-          "description": "Force install the binary if it already exists.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "local": {
-          "description": "Only install the binary locally, and not within CI.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "name": {
-          "description": "For supported tools, a custom name to use.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialBinEntry": {
-      "title": "PartialBinEntry",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "$ref": "#/definitions/PartialBinConfig"
-        }
-      ]
-    },
-    "PartialBunConfig": {
-      "title": "PartialBunConfig",
-      "description": "Configures and enables the Bun platform. Docs: https://moonrepo.dev/docs/config/toolchain#bun",
-      "type": "object",
-      "properties": {
-        "dependencyVersionFormat": {
-          "description": "The dependency version format to use when syncing projects as dependencies.",
-          "default": "workspace",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeVersionFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "inferTasksFromScripts": {
-          "description": "Automatically infer moon tasks from `package.json` scripts.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "plugin": {
-          "description": "Location of the WASM plugin to use for Bun support.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "rootPackageOnly": {
-          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectWorkspaceDependencies": {
-          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "description": "The version of Bun to download, install, and run `bun` tasks with.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialBunpmConfig": {
-      "title": "PartialBunpmConfig",
-      "description": "Options for Bun, when used as a package manager.",
-      "type": "object",
-      "properties": {
-        "plugin": {
-          "description": "Location of the WASM plugin to use for Bun support.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "description": "The version of Bun to download, install, and run `bun` tasks with.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialDenoConfig": {
-      "title": "PartialDenoConfig",
-      "description": "Configures and enables the Deno platform. Docs: https://moonrepo.dev/docs/config/toolchain#deno",
-      "type": "object",
-      "properties": {
-        "bins": {
-          "description": "List of binaries to install into the environment using `deno install`.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PartialBinEntry"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "depsFile": {
-          "description": "Relative path to a dependency management file. Used for content hashing.",
-          "default": "deps.ts",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "lockfile": {
-          "description": "Requires and forces the use of `deno.lock` files.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "plugin": {
-          "description": "Location of the WASM plugin to use for Deno support.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "description": "The version of Deno to download, install, and run `deno` tasks with.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialNodeConfig": {
-      "title": "PartialNodeConfig",
-      "description": "Configures and enables the Node.js platform. Docs: https://moonrepo.dev/docs/config/toolchain#node",
-      "type": "object",
-      "properties": {
-        "addEnginesConstraint": {
-          "description": "When `version` is defined, syncs the version as a constraint to `package.json` engines.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "binExecArgs": {
-          "description": "Arguments to automatically pass to all tasks that execute the `node` binary.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "bun": {
-          "description": "Options for Bun, when used as a package manager.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PartialBunpmConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "dedupeOnLockfileChange": {
-          "description": "Automatically dedupes the lockfile when dependencies have changed.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "dependencyVersionFormat": {
-          "description": "The dependency version format to use when syncing projects as dependencies.",
-          "default": "workspace",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeVersionFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "inferTasksFromScripts": {
-          "description": "Automatically infer moon tasks from `package.json` scripts.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "npm": {
-          "description": "Options for npm, when used as a package manager.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PartialNpmConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "packageManager": {
-          "description": "The package manager to use for installing dependencies.",
-          "default": "npm",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodePackageManager"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "plugin": {
-          "description": "Location of the WASM plugin to use for Node.js support.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "pnpm": {
-          "description": "Options for pnpm, when used as a package manager.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PartialPnpmConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "rootPackageOnly": {
-          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectWorkspaceDependencies": {
-          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncVersionManagerConfig": {
-          "description": "When `version` is defined, syncs the version to the chosen config.",
-          "default": "nvm",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeVersionManager"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "description": "The version of Node.js to download, install, and run `node` tasks with.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "yarn": {
-          "description": "Options for Yarn, when used as a package manager.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PartialYarnConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialNpmConfig": {
-      "title": "PartialNpmConfig",
+    "NpmConfig": {
+      "title": "NpmConfig",
       "description": "Options for npm, when used as a package manager.",
       "type": "object",
+      "required": [
+        "plugin",
+        "version"
+      ],
       "properties": {
         "plugin": {
           "description": "Location of the WASM plugin to use for npm support.",
@@ -564,10 +495,14 @@
       },
       "additionalProperties": false
     },
-    "PartialPnpmConfig": {
-      "title": "PartialPnpmConfig",
+    "PnpmConfig": {
+      "title": "PnpmConfig",
       "description": "Options for pnpm, when used as a package manager.",
       "type": "object",
+      "required": [
+        "plugin",
+        "version"
+      ],
       "properties": {
         "plugin": {
           "description": "Location of the WASM plugin to use for pnpm support.",
@@ -594,38 +529,32 @@
       },
       "additionalProperties": false
     },
-    "PartialRustConfig": {
-      "title": "PartialRustConfig",
+    "RustConfig": {
+      "title": "RustConfig",
       "description": "Configures and enables the Rust platform. Docs: https://moonrepo.dev/docs/config/toolchain#rust",
       "type": "object",
+      "required": [
+        "bins",
+        "components",
+        "plugin",
+        "syncToolchainConfig",
+        "targets",
+        "version"
+      ],
       "properties": {
         "bins": {
           "description": "List of binaries to install into the environment using `cargo install`.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PartialBinEntry"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BinEntry"
+          }
         },
         "components": {
           "description": "Rust components to automatically install.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "plugin": {
           "description": "Location of the WASM plugin to use for Rust support.",
@@ -640,28 +569,14 @@
         },
         "syncToolchainConfig": {
           "description": "When `version` is defined, syncs the version to `rust-toolchain.toml`.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "targets": {
           "description": "Rust targets to automatically install.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "version": {
           "description": "The version of Rust to download, install, and run `cargo` tasks with.",
@@ -677,134 +592,81 @@
       },
       "additionalProperties": false
     },
-    "PartialTypeScriptConfig": {
-      "title": "PartialTypeScriptConfig",
+    "TypeScriptConfig": {
+      "title": "TypeScriptConfig",
       "description": "Configures and enables the TypeScript platform. Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
       "type": "object",
+      "required": [
+        "createMissingConfig",
+        "includeProjectReferenceSources",
+        "includeSharedTypes",
+        "projectConfigFileName",
+        "root",
+        "rootConfigFileName",
+        "rootOptionsConfigFileName",
+        "routeOutDirToCache",
+        "syncProjectReferences",
+        "syncProjectReferencesToPaths"
+      ],
       "properties": {
         "createMissingConfig": {
           "description": "When `syncProjectReferences` is enabled, will create a `tsconfig.json` in referenced projects if it does not exist.",
           "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "includeProjectReferenceSources": {
           "description": "Appends sources of project reference to `include` in `tsconfig.json`, for each project.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "includeSharedTypes": {
           "description": "Appends shared types to `include` in `tsconfig.json`, for each project.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "projectConfigFileName": {
           "description": "Name of the `tsconfig.json` file within each project.",
           "default": "tsconfig.json",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "root": {
           "description": "The relative root to the TypeScript root. Primarily used for resolving project references.",
           "default": ".",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "rootConfigFileName": {
           "description": "Name of the `tsconfig.json` file at the workspace root.",
           "default": "tsconfig.json",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "rootOptionsConfigFileName": {
           "description": "Name of the shared compiler options `tsconfig.json` file at the workspace root.",
           "default": "tsconfig.options.json",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "routeOutDirToCache": {
           "description": "Updates and routes `outDir` in `tsconfig.json` to moon's cache, for each project.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "syncProjectReferences": {
           "description": "Syncs all project dependencies as `references` in `tsconfig.json`, for each project.",
           "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "syncProjectReferencesToPaths": {
           "description": "Syncs all project dependencies as `paths` in `tsconfig.json`, for each project.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         }
       },
       "additionalProperties": false
     },
-    "PartialYarnConfig": {
-      "title": "PartialYarnConfig",
+    "YarnConfig": {
+      "title": "YarnConfig",
       "description": "Options for Yarn, when used as a package manager.",
       "type": "object",
+      "required": [
+        "plugin",
+        "plugins",
+        "version"
+      ],
       "properties": {
         "plugin": {
           "description": "Location of the WASM plugin to use for Yarn support.",
@@ -819,17 +681,10 @@
         },
         "plugins": {
           "description": "Plugins to automatically install for Yarn v2 and above.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "version": {
           "description": "The version of Yarn to download, install, and run `yarn` tasks with.",

@@ -1,50 +1,50 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PartialWorkspaceConfig",
+  "title": "WorkspaceConfig",
   "description": "Configures all aspects of the moon workspace. Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
+  "required": [
+    "$schema",
+    "codeowners",
+    "constraints",
+    "experiments",
+    "extends",
+    "extensions",
+    "generator",
+    "hasher",
+    "notifier",
+    "projects",
+    "runner",
+    "telemetry",
+    "vcs",
+    "versionConstraint"
+  ],
   "properties": {
     "$schema": {
       "default": "https://moonrepo.dev/schemas/workspace.json",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "codeowners": {
       "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialCodeownersConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/CodeownersConfig"
         }
       ]
     },
     "constraints": {
       "description": "Configures boundaries and constraints between projects.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialConstraintsConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/ConstraintsConfig"
         }
       ]
     },
     "experiments": {
       "description": "Configures experiments across the entire moon workspace.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialExperimentsConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/ExperimentsConfig"
         }
       ]
     },
@@ -61,96 +61,64 @@
     },
     "extensions": {
       "description": "Configures extensions that can be executed with `moon ext`.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PartialExtensionConfig"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ExtensionConfig"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     },
     "generator": {
       "description": "Configures the generator for scaffolding from templates.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialGeneratorConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/GeneratorConfig"
         }
       ]
     },
     "hasher": {
       "description": "Configures aspects of the content hashing engine.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialHasherConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/HasherConfig"
         }
       ]
     },
     "notifier": {
       "description": "Configures how and where notifications are sent.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialNotifierConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/NotifierConfig"
         }
       ]
     },
     "projects": {
       "description": "Configures all projects within the workspace to create a project graph. Accepts a list of globs, a mapping of projects to relative file paths, or both values.",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialWorkspaceProjects"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/WorkspaceProjects"
         }
       ]
     },
     "runner": {
       "description": "Configures aspects of the task runner (also known as the action pipeline).",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialRunnerConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/RunnerConfig"
         }
       ]
     },
     "telemetry": {
       "description": "Collects anonymous usage information, and checks for new moon versions.",
       "default": true,
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "boolean"
     },
     "vcs": {
       "description": "Configures the version control system (VCS).",
-      "anyOf": [
+      "allOf": [
         {
-          "$ref": "#/definitions/PartialVcsConfig"
-        },
-        {
-          "type": "null"
+          "$ref": "#/definitions/VcsConfig"
         }
       ]
     },
@@ -168,6 +136,45 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "CodeownersConfig": {
+      "title": "CodeownersConfig",
+      "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
+      "type": "object",
+      "required": [
+        "globalPaths",
+        "orderBy",
+        "syncOnRun"
+      ],
+      "properties": {
+        "globalPaths": {
+          "description": "Paths that are applied globally to all projects. Can be relative from the workspace root, or a wildcard match for any depth.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "orderBy": {
+          "description": "How to order ownership rules within the generated file.",
+          "default": "file-source",
+          "allOf": [
+            {
+              "$ref": "#/definitions/CodeownersOrderBy"
+            }
+          ]
+        },
+        "syncOnRun": {
+          "description": "Generates a `CODEOWNERS` file after aggregating all ownership rules from each project in the workspace.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "CodeownersOrderBy": {
       "title": "CodeownersOrderBy",
       "type": "string",
@@ -175,6 +182,180 @@
         "file-source",
         "project-name"
       ]
+    },
+    "ConstraintsConfig": {
+      "title": "ConstraintsConfig",
+      "description": "Configures boundaries and constraints between projects.",
+      "type": "object",
+      "required": [
+        "enforceProjectTypeRelationships",
+        "tagRelationships"
+      ],
+      "properties": {
+        "enforceProjectTypeRelationships": {
+          "description": "Enforces relationships between projects based on each project's `type` setting.",
+          "default": true,
+          "type": "boolean"
+        },
+        "tagRelationships": {
+          "description": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExperimentsConfig": {
+      "title": "ExperimentsConfig",
+      "description": "Configures experiments across the entire moon workspace.",
+      "type": "object",
+      "required": [
+        "interweavedTaskInheritance",
+        "strictProjectAliases",
+        "taskOutputBoundaries"
+      ],
+      "properties": {
+        "interweavedTaskInheritance": {
+          "default": true,
+          "deprecated": true,
+          "type": "boolean"
+        },
+        "strictProjectAliases": {
+          "description": "Ensure that the a project alias is only used once. Duplicate aliases will trigger a hard failure.",
+          "default": true,
+          "type": "boolean"
+        },
+        "taskOutputBoundaries": {
+          "default": true,
+          "deprecated": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ExtensionConfig": {
+      "title": "ExtensionConfig",
+      "description": "Configures an individual extension.",
+      "type": "object",
+      "required": [
+        "config",
+        "plugin"
+      ],
+      "properties": {
+        "config": {
+          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "plugin": {
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "GeneratorConfig": {
+      "title": "GeneratorConfig",
+      "description": "Configures the generator for scaffolding from templates.",
+      "type": "object",
+      "required": [
+        "templates"
+      ],
+      "properties": {
+        "templates": {
+          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "HasherConfig": {
+      "title": "HasherConfig",
+      "description": "Configures aspects of the content hashing engine.",
+      "type": "object",
+      "required": [
+        "batchSize",
+        "ignoreMissingPatterns",
+        "ignorePatterns",
+        "optimization",
+        "walkStrategy",
+        "warnOnMissingInputs"
+      ],
+      "properties": {
+        "batchSize": {
+          "description": "The number of files to include in each hash operation.",
+          "default": 2500,
+          "type": "number"
+        },
+        "ignoreMissingPatterns": {
+          "description": "When `warnOnMissingInputs` is enabled, filters missing file paths from logging a warning.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignorePatterns": {
+          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "optimization": {
+          "description": "The optimization to use when hashing.",
+          "default": "accuracy",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HasherOptimization"
+            }
+          ]
+        },
+        "walkStrategy": {
+          "description": "The strategy to use when walking the file system.",
+          "default": "vcs",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HasherWalkStrategy"
+            }
+          ]
+        },
+        "warnOnMissingInputs": {
+          "description": "Logs a warning when a task has configured an explicit file path input, and that file does not exist when hashing.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     },
     "HasherOptimization": {
       "title": "HasherOptimization",
@@ -192,294 +373,13 @@
         "vcs"
       ]
     },
-    "PartialCodeownersConfig": {
-      "title": "PartialCodeownersConfig",
-      "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
-      "type": "object",
-      "properties": {
-        "globalPaths": {
-          "description": "Paths that are applied globally to all projects. Can be relative from the workspace root, or a wildcard match for any depth.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "orderBy": {
-          "description": "How to order ownership rules within the generated file.",
-          "default": "file-source",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/CodeownersOrderBy"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncOnRun": {
-          "description": "Generates a `CODEOWNERS` file after aggregating all ownership rules from each project in the workspace.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialConstraintsConfig": {
-      "title": "PartialConstraintsConfig",
-      "description": "Configures boundaries and constraints between projects.",
-      "type": "object",
-      "properties": {
-        "enforceProjectTypeRelationships": {
-          "description": "Enforces relationships between projects based on each project's `type` setting.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "tagRelationships": {
-          "description": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialExperimentsConfig": {
-      "title": "PartialExperimentsConfig",
-      "description": "Configures experiments across the entire moon workspace.",
-      "type": "object",
-      "properties": {
-        "interweavedTaskInheritance": {
-          "default": true,
-          "deprecated": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "strictProjectAliases": {
-          "description": "Ensure that the a project alias is only used once. Duplicate aliases will trigger a hard failure.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "taskOutputBoundaries": {
-          "default": true,
-          "deprecated": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialExtensionConfig": {
-      "title": "PartialExtensionConfig",
-      "description": "Configures an individual extension.",
-      "type": "object",
-      "properties": {
-        "config": {
-          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": [
-                  "boolean",
-                  "object",
-                  "array",
-                  "number",
-                  "string",
-                  "integer"
-                ]
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "plugin": {
-          "description": "Location of the WASM plugin to use.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialGeneratorConfig": {
-      "title": "PartialGeneratorConfig",
-      "description": "Configures the generator for scaffolding from templates.",
-      "type": "object",
-      "properties": {
-        "templates": {
-          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialHasherConfig": {
-      "title": "PartialHasherConfig",
-      "description": "Configures aspects of the content hashing engine.",
-      "type": "object",
-      "properties": {
-        "batchSize": {
-          "description": "The number of files to include in each hash operation.",
-          "default": 2500,
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "ignoreMissingPatterns": {
-          "description": "When `warnOnMissingInputs` is enabled, filters missing file paths from logging a warning.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "ignorePatterns": {
-          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "optimization": {
-          "description": "The optimization to use when hashing.",
-          "default": "accuracy",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/HasherOptimization"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "walkStrategy": {
-          "description": "The strategy to use when walking the file system.",
-          "default": "vcs",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/HasherWalkStrategy"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "warnOnMissingInputs": {
-          "description": "Logs a warning when a task has configured an explicit file path input, and that file does not exist when hashing.",
-          "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialNotifierConfig": {
-      "title": "PartialNotifierConfig",
+    "NotifierConfig": {
+      "title": "NotifierConfig",
       "description": "Configures how and where notifications are sent.",
       "type": "object",
+      "required": [
+        "webhookUrl"
+      ],
       "properties": {
         "webhookUrl": {
           "anyOf": [
@@ -494,209 +394,100 @@
       },
       "additionalProperties": false
     },
-    "PartialRunnerConfig": {
-      "title": "PartialRunnerConfig",
+    "RunnerConfig": {
+      "title": "RunnerConfig",
       "description": "Configures aspects of the task runner (also known as the action pipeline).",
       "type": "object",
+      "required": [
+        "archivableTargets",
+        "cacheLifetime",
+        "inheritColorsForPipedTasks",
+        "logRunningCommand"
+      ],
       "properties": {
         "archivableTargets": {
           "description": "List of target's for tasks without outputs, that should be cached and persisted.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "cacheLifetime": {
           "description": "The lifetime in which task outputs will be cached.",
           "default": "7 days",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "inheritColorsForPipedTasks": {
           "description": "Automatically inherit color settings for all tasks being ran.",
           "default": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         },
         "logRunningCommand": {
           "description": "Logs the task's command and arguments when running the task.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "boolean"
         }
       },
       "additionalProperties": false
     },
-    "PartialVcsConfig": {
-      "title": "PartialVcsConfig",
+    "VcsConfig": {
+      "title": "VcsConfig",
       "description": "Configures the version control system (VCS).",
       "type": "object",
+      "required": [
+        "defaultBranch",
+        "hooks",
+        "manager",
+        "provider",
+        "remoteCandidates",
+        "syncHooks"
+      ],
       "properties": {
         "defaultBranch": {
           "description": "The default branch / base.",
           "default": "master",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "hooks": {
           "description": "A mapping of hooks to commands to run when the hook is triggered.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
-          ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         },
         "manager": {
           "description": "The VCS client being utilized by the repository.",
           "default": "git",
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/VcsManager"
-            },
-            {
-              "type": "null"
             }
           ]
         },
         "provider": {
           "description": "The upstream version control provider, where the repository source code is stored.",
           "default": "github",
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/VcsProvider"
-            },
-            {
-              "type": "null"
             }
           ]
         },
         "remoteCandidates": {
           "description": "List of remote's in which to compare branches against.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncHooks": {
-          "description": "Generates hooks and scripts based on the `hooks` setting.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialWorkspaceProjects": {
-      "title": "PartialWorkspaceProjects",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/PartialWorkspaceProjectsConfig"
-        },
-        {
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        }
-      ]
-    },
-    "PartialWorkspaceProjectsConfig": {
-      "title": "PartialWorkspaceProjectsConfig",
-      "type": "object",
-      "properties": {
-        "globs": {
-          "description": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "sources": {
-          "description": "A mapping of project IDs to relative file paths to each project directory.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+        "syncHooks": {
+          "description": "Generates hooks and scripts based on the `hooks` setting.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -717,6 +508,57 @@
         "gitlab",
         "other"
       ]
+    },
+    "WorkspaceProjects": {
+      "title": "WorkspaceProjects",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/WorkspaceProjectsConfig"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "WorkspaceProjectsConfig": {
+      "title": "WorkspaceProjectsConfig",
+      "type": "object",
+      "required": [
+        "globs",
+        "sources"
+      ],
+      "properties": {
+        "globs": {
+          "description": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sources": {
+          "description": "A mapping of project IDs to relative file paths to each project directory.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

@@ -11,7 +11,7 @@ use std::process::Command;
 fn generate_project() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialProjectConfig>();
+    generator.add::<ProjectConfig>();
 
     generator
         .generate(
@@ -21,7 +21,7 @@ fn generate_project() {
         .unwrap();
 
     generator.add::<DependencyConfig>();
-    generator.add::<ProjectConfig>();
+    generator.add::<PartialProjectConfig>();
 
     generator
         .generate(
@@ -64,7 +64,7 @@ fn generate_project() {
 fn generate_tasks() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialInheritedTasksConfig>();
+    generator.add::<InheritedTasksConfig>();
 
     generator
         .generate(
@@ -73,7 +73,7 @@ fn generate_tasks() {
         )
         .unwrap();
 
-    generator.add::<InheritedTasksConfig>();
+    generator.add::<PartialInheritedTasksConfig>();
 
     generator
         .generate(
@@ -85,7 +85,7 @@ fn generate_tasks() {
 
 fn generate_template() {
     let mut generator = SchemaGenerator::default();
-    generator.add::<PartialTemplateConfig>();
+    generator.add::<TemplateConfig>();
     generator
         .generate(
             PathBuf::from("website/static/schemas/template.json"),
@@ -94,7 +94,7 @@ fn generate_template() {
         .unwrap();
 
     let mut generator = SchemaGenerator::default();
-    generator.add::<PartialTemplateFrontmatterConfig>();
+    generator.add::<TemplateFrontmatterConfig>();
     generator
         .generate(
             PathBuf::from("website/static/schemas/template-frontmatter.json"),
@@ -118,7 +118,7 @@ fn generate_template() {
 fn generate_toolchain() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialToolchainConfig>();
+    generator.add::<ToolchainConfig>();
 
     generator
         .generate(
@@ -127,7 +127,7 @@ fn generate_toolchain() {
         )
         .unwrap();
 
-    generator.add::<ToolchainConfig>();
+    generator.add::<PartialToolchainConfig>();
 
     generator
         .generate(
@@ -140,7 +140,7 @@ fn generate_toolchain() {
 fn generate_workspace() {
     let mut generator = SchemaGenerator::default();
 
-    generator.add::<PartialWorkspaceConfig>();
+    generator.add::<WorkspaceConfig>();
 
     generator
         .generate(
@@ -149,7 +149,7 @@ fn generate_workspace() {
         )
         .unwrap();
 
-    generator.add::<WorkspaceConfig>();
+    generator.add::<PartialWorkspaceConfig>();
 
     generator
         .generate(

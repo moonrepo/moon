@@ -1,19 +1,21 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PartialInheritedTasksConfig",
+  "title": "InheritedTasksConfig",
   "description": "Configures tasks and task related settings that'll be inherited by all matching projects. Docs: https://moonrepo.dev/docs/config/tasks",
   "type": "object",
+  "required": [
+    "$schema",
+    "extends",
+    "fileGroups",
+    "implicitDeps",
+    "implicitInputs",
+    "taskOptions",
+    "tasks"
+  ],
   "properties": {
     "$schema": {
       "default": "https://moonrepo.dev/schemas/tasks.json",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "extends": {
       "description": "Extends another tasks configuration file. Supports a relative file path or a secure URL.",
@@ -28,57 +30,36 @@
     },
     "fileGroups": {
       "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
         }
-      ]
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     },
     "implicitDeps": {
       "description": "Task dependencies that'll automatically be injected into every task that inherits this configuration.",
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/PartialTaskDependency"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TaskDependency"
+      }
     },
     "implicitInputs": {
       "description": "Task inputs that'll automatically be injected into every task that inherits this configuration.",
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "taskOptions": {
       "description": "Default task options for all inherited tasks.",
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialTaskOptionsConfig"
+          "$ref": "#/definitions/TaskOptionsConfig"
         },
         {
           "type": "null"
@@ -87,26 +68,31 @@
     },
     "tasks": {
       "description": "A mapping of tasks by ID to parameters required for running the task.",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PartialTaskConfig"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TaskConfig"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     }
   },
   "additionalProperties": false,
   "definitions": {
-    "PartialTaskArgs": {
-      "title": "PartialTaskArgs",
+    "PlatformType": {
+      "title": "PlatformType",
+      "type": "string",
+      "enum": [
+        "bun",
+        "deno",
+        "node",
+        "rust",
+        "system",
+        "unknown"
+      ]
+    },
+    "TaskArgs": {
+      "title": "TaskArgs",
       "anyOf": [
         {
           "type": "null"
@@ -122,63 +108,56 @@
         }
       ]
     },
-    "PartialTaskConfig": {
-      "title": "PartialTaskConfig",
+    "TaskConfig": {
+      "title": "TaskConfig",
       "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
+      "required": [
+        "args",
+        "command",
+        "deps",
+        "env",
+        "extends",
+        "inputs",
+        "local",
+        "options",
+        "outputs",
+        "platform",
+        "type"
+      ],
       "properties": {
         "args": {
           "description": "Arguments to pass to the command when it's ran. Can be defined as a string, or a list of individual arguments.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskArgs"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskArgs"
             }
           ]
         },
         "command": {
           "description": "The command or command line to execute when the task is ran. Supports the command name, with or without arguments. Can be defined as a string, or a list of individual arguments.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskArgs"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskArgs"
             }
           ]
         },
         "deps": {
           "description": "Other tasks that this task depends on, and must run to completion, before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/PartialTaskDependency"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskDependency"
+          }
         },
         "env": {
           "description": "A mapping of environment variables that will be set when the task is ran.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         },
         "extends": {
           "description": "Extends settings from a sibling task by ID.",
@@ -218,12 +197,9 @@
         },
         "options": {
           "description": "Options to control task inheritance and execution.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskOptionsConfig"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskOptionsConfig"
             }
           ]
         },
@@ -244,12 +220,9 @@
         "platform": {
           "description": "The platform in which the task will be ran in. The platform determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
           "default": "unknown",
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/PlatformType"
-            },
-            {
-              "type": "null"
             }
           ]
         },
@@ -268,49 +241,45 @@
       },
       "additionalProperties": false
     },
-    "PartialTaskDependency": {
-      "title": "PartialTaskDependency",
+    "TaskDependency": {
+      "title": "TaskDependency",
       "anyOf": [
         {
           "type": "string"
         },
         {
-          "$ref": "#/definitions/PartialTaskDependencyConfig"
+          "$ref": "#/definitions/TaskDependencyConfig"
         }
       ]
     },
-    "PartialTaskDependencyConfig": {
-      "title": "PartialTaskDependencyConfig",
+    "TaskDependencyConfig": {
+      "title": "TaskDependencyConfig",
       "description": "Expanded information about a task dependency.",
       "type": "object",
+      "required": [
+        "args",
+        "env",
+        "optional",
+        "target"
+      ],
       "properties": {
         "args": {
           "description": "Additional arguments to pass to this dependency when it's ran.",
-          "anyOf": [
+          "allOf": [
             {
-              "$ref": "#/definitions/PartialTaskArgs"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/TaskArgs"
             }
           ]
         },
         "env": {
           "description": "A mapping of environment variables specific to this dependency.",
-          "anyOf": [
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "propertyNames": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         },
         "optional": {
           "description": "Marks the dependency is optional when being inherited from the top-level.",
@@ -325,22 +294,71 @@
         },
         "target": {
           "description": "The target of the depended on task.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         }
       },
       "additionalProperties": false
     },
-    "PartialTaskOptionsConfig": {
-      "title": "PartialTaskOptionsConfig",
+    "TaskMergeStrategy": {
+      "title": "TaskMergeStrategy",
+      "type": "string",
+      "enum": [
+        "append",
+        "prepend",
+        "replace"
+      ]
+    },
+    "TaskOptionAffectedFiles": {
+      "title": "TaskOptionAffectedFiles",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "args",
+            "env"
+          ]
+        }
+      ]
+    },
+    "TaskOptionEnvFile": {
+      "title": "TaskOptionEnvFile",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "TaskOptionsConfig": {
+      "title": "TaskOptionsConfig",
       "description": "Options to control task inheritance and execution.",
       "type": "object",
+      "required": [
+        "affectedFiles",
+        "allowFailure",
+        "cache",
+        "envFile",
+        "interactive",
+        "mergeArgs",
+        "mergeDeps",
+        "mergeEnv",
+        "mergeInputs",
+        "mergeOutputs",
+        "outputStyle",
+        "persistent",
+        "retryCount",
+        "runDepsInParallel",
+        "runFromWorkspaceRoot",
+        "runInCI",
+        "shell",
+        "unixShell",
+        "windowsShell"
+      ],
       "properties": {
         "affectedFiles": {
           "description": "The pattern in which affected files will be passed to the task.",
@@ -559,53 +577,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "PlatformType": {
-      "title": "PlatformType",
-      "type": "string",
-      "enum": [
-        "bun",
-        "deno",
-        "node",
-        "rust",
-        "system",
-        "unknown"
-      ]
-    },
-    "TaskMergeStrategy": {
-      "title": "TaskMergeStrategy",
-      "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "replace"
-      ]
-    },
-    "TaskOptionAffectedFiles": {
-      "title": "TaskOptionAffectedFiles",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string",
-          "enum": [
-            "args",
-            "env"
-          ]
-        }
-      ]
-    },
-    "TaskOptionEnvFile": {
-      "title": "TaskOptionEnvFile",
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string"
-        }
-      ]
     },
     "TaskOutputStyle": {
       "title": "TaskOutputStyle",

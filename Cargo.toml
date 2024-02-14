@@ -50,7 +50,7 @@ reqwest = { version = "0.11.24", default-features = false, features = [
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.14.0", default-features = false, features = [
+schematic = { version = "0.14.1", default-features = false, features = [
 	"schema",
 ] }
 semver = "1.0.21"

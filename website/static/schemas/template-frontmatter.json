@@ -3,24 +3,22 @@
   "title": "TemplateFrontmatterConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/template#frontmatter",
   "type": "object",
-  "required": [
-    "$schema",
-    "force",
-    "skip",
-    "to"
-  ],
   "properties": {
     "$schema": {
+      "title": "$schema",
       "default": "https://moonrepo.dev/schemas/template-frontmatter.json",
       "type": "string"
     },
     "force": {
+      "title": "force",
       "type": "boolean"
     },
     "skip": {
+      "title": "skip",
       "type": "boolean"
     },
     "to": {
+      "title": "to",
       "anyOf": [
         {
           "type": "string"

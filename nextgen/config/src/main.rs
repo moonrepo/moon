@@ -3,10 +3,18 @@
 use moon_config::*;
 use schematic::schema::json_schema::JsonSchemaRenderer;
 use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
-use schematic::schema::SchemaGenerator;
+use schematic::schema::{JsonSchemaOptions, SchemaGenerator};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
+
+fn create_jsonschema_renderer() -> JsonSchemaRenderer {
+    JsonSchemaRenderer::new(JsonSchemaOptions {
+        mark_struct_fields_required: false,
+        set_field_name_as_title: true,
+        ..JsonSchemaOptions::default()
+    })
+}
 
 fn generate_project() {
     let mut generator = SchemaGenerator::default();
@@ -16,7 +24,7 @@ fn generate_project() {
     generator
         .generate(
             PathBuf::from("website/static/schemas/project.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
@@ -69,7 +77,7 @@ fn generate_tasks() {
     generator
         .generate(
             PathBuf::from("website/static/schemas/tasks.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
@@ -89,7 +97,7 @@ fn generate_template() {
     generator
         .generate(
             PathBuf::from("website/static/schemas/template.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
@@ -98,7 +106,7 @@ fn generate_template() {
     generator
         .generate(
             PathBuf::from("website/static/schemas/template-frontmatter.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
@@ -123,7 +131,7 @@ fn generate_toolchain() {
     generator
         .generate(
             PathBuf::from("website/static/schemas/toolchain.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 
@@ -145,7 +153,7 @@ fn generate_workspace() {
     generator
         .generate(
             PathBuf::from("website/static/schemas/workspace.json"),
-            JsonSchemaRenderer::default(),
+            create_jsonschema_renderer(),
         )
         .unwrap();
 

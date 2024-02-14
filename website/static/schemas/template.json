@@ -3,24 +3,19 @@
   "title": "TemplateConfig",
   "description": "Configures a template and its files to be scaffolded. Docs: https://moonrepo.dev/docs/config/template",
   "type": "object",
-  "required": [
-    "$schema",
-    "description",
-    "destination",
-    "extends",
-    "title",
-    "variables"
-  ],
   "properties": {
     "$schema": {
+      "title": "$schema",
       "default": "https://moonrepo.dev/schemas/template.json",
       "type": "string"
     },
     "description": {
+      "title": "description",
       "description": "A description on what the template scaffolds.",
       "type": "string"
     },
     "destination": {
+      "title": "destination",
       "description": "A pre-populated destination to scaffold to, relative from the workspace root.",
       "anyOf": [
         {
@@ -32,6 +27,7 @@
       ]
     },
     "extends": {
+      "title": "extends",
       "description": "Extends one or many other templates.",
       "type": "array",
       "items": {
@@ -39,10 +35,12 @@
       }
     },
     "title": {
+      "title": "title",
       "description": "A human-readable title for the template.",
       "type": "string"
     },
     "variables": {
+      "title": "variables",
       "description": "A mapping of variables that'll be interpolated within each template file. Variables can also be populated by passing command line arguments.",
       "type": "object",
       "additionalProperties": {
@@ -76,18 +74,14 @@
     "TemplateVariableBoolSetting": {
       "title": "TemplateVariableBoolSetting",
       "type": "object",
-      "required": [
-        "default",
-        "prompt",
-        "required",
-        "type"
-      ],
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
           "type": "boolean"
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
@@ -99,6 +93,7 @@
           ]
         },
         "required": {
+          "title": "required",
           "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
@@ -110,6 +105,7 @@
           ]
         },
         "type": {
+          "title": "type",
           "const": "boolean"
         }
       },
@@ -118,19 +114,14 @@
     "TemplateVariableEnumSetting": {
       "title": "TemplateVariableEnumSetting",
       "type": "object",
-      "required": [
-        "default",
-        "multiple",
-        "prompt",
-        "type",
-        "values"
-      ],
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
           "type": "string"
         },
         "multiple": {
+          "title": "multiple",
           "description": "Allows multiple values to be selected.",
           "anyOf": [
             {
@@ -142,13 +133,16 @@
           ]
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "type": "string"
         },
         "type": {
+          "title": "type",
           "const": "enum"
         },
         "values": {
+          "title": "values",
           "description": "List of acceptable values for this variable.",
           "type": "array",
           "items": {
@@ -172,16 +166,14 @@
     "TemplateVariableEnumValueConfig": {
       "title": "TemplateVariableEnumValueConfig",
       "type": "object",
-      "required": [
-        "label",
-        "value"
-      ],
       "properties": {
         "label": {
+          "title": "label",
           "description": "A human-readable label for the value.",
           "type": "string"
         },
         "value": {
+          "title": "value",
           "description": "The literal enumerable value.",
           "type": "string"
         }
@@ -191,18 +183,14 @@
     "TemplateVariableNumberSetting": {
       "title": "TemplateVariableNumberSetting",
       "type": "object",
-      "required": [
-        "default",
-        "prompt",
-        "required",
-        "type"
-      ],
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
           "type": "number"
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
@@ -214,6 +202,7 @@
           ]
         },
         "required": {
+          "title": "required",
           "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
@@ -225,6 +214,7 @@
           ]
         },
         "type": {
+          "title": "type",
           "const": "number"
         }
       },
@@ -233,18 +223,14 @@
     "TemplateVariableStringSetting": {
       "title": "TemplateVariableStringSetting",
       "type": "object",
-      "required": [
-        "default",
-        "prompt",
-        "required",
-        "type"
-      ],
       "properties": {
         "default": {
+          "title": "default",
           "description": "The default value of the variable if none was provided.",
           "type": "string"
         },
         "prompt": {
+          "title": "prompt",
           "description": "Prompt the user for a value when the generate is running.",
           "anyOf": [
             {
@@ -256,6 +242,7 @@
           ]
         },
         "required": {
+          "title": "required",
           "description": "Marks the variable as required, and will not accept an empty value.",
           "anyOf": [
             {
@@ -267,6 +254,7 @@
           ]
         },
         "type": {
+          "title": "type",
           "const": "string"
         }
       },

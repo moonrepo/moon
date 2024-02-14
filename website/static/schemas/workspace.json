@@ -3,28 +3,14 @@
   "title": "WorkspaceConfig",
   "description": "Configures all aspects of the moon workspace. Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
-  "required": [
-    "$schema",
-    "codeowners",
-    "constraints",
-    "experiments",
-    "extends",
-    "extensions",
-    "generator",
-    "hasher",
-    "notifier",
-    "projects",
-    "runner",
-    "telemetry",
-    "vcs",
-    "versionConstraint"
-  ],
   "properties": {
     "$schema": {
+      "title": "$schema",
       "default": "https://moonrepo.dev/schemas/workspace.json",
       "type": "string"
     },
     "codeowners": {
+      "title": "codeowners",
       "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
       "allOf": [
         {
@@ -33,6 +19,7 @@
       ]
     },
     "constraints": {
+      "title": "constraints",
       "description": "Configures boundaries and constraints between projects.",
       "allOf": [
         {
@@ -41,6 +28,7 @@
       ]
     },
     "experiments": {
+      "title": "experiments",
       "description": "Configures experiments across the entire moon workspace.",
       "allOf": [
         {
@@ -49,6 +37,7 @@
       ]
     },
     "extends": {
+      "title": "extends",
       "description": "Extends another workspace configuration file. Supports a relative file path or a secure URL.",
       "anyOf": [
         {
@@ -60,6 +49,7 @@
       ]
     },
     "extensions": {
+      "title": "extensions",
       "description": "Configures extensions that can be executed with `moon ext`.",
       "type": "object",
       "additionalProperties": {
@@ -70,6 +60,7 @@
       }
     },
     "generator": {
+      "title": "generator",
       "description": "Configures the generator for scaffolding from templates.",
       "allOf": [
         {
@@ -78,6 +69,7 @@
       ]
     },
     "hasher": {
+      "title": "hasher",
       "description": "Configures aspects of the content hashing engine.",
       "allOf": [
         {
@@ -86,6 +78,7 @@
       ]
     },
     "notifier": {
+      "title": "notifier",
       "description": "Configures how and where notifications are sent.",
       "allOf": [
         {
@@ -94,6 +87,7 @@
       ]
     },
     "projects": {
+      "title": "projects",
       "description": "Configures all projects within the workspace to create a project graph. Accepts a list of globs, a mapping of projects to relative file paths, or both values.",
       "allOf": [
         {
@@ -102,6 +96,7 @@
       ]
     },
     "runner": {
+      "title": "runner",
       "description": "Configures aspects of the task runner (also known as the action pipeline).",
       "allOf": [
         {
@@ -110,11 +105,13 @@
       ]
     },
     "telemetry": {
+      "title": "telemetry",
       "description": "Collects anonymous usage information, and checks for new moon versions.",
       "default": true,
       "type": "boolean"
     },
     "vcs": {
+      "title": "vcs",
       "description": "Configures the version control system (VCS).",
       "allOf": [
         {
@@ -123,6 +120,7 @@
       ]
     },
     "versionConstraint": {
+      "title": "versionConstraint",
       "description": "Requires a specific version of the `moon` binary.",
       "anyOf": [
         {
@@ -140,13 +138,9 @@
       "title": "CodeownersConfig",
       "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
       "type": "object",
-      "required": [
-        "globalPaths",
-        "orderBy",
-        "syncOnRun"
-      ],
       "properties": {
         "globalPaths": {
+          "title": "globalPaths",
           "description": "Paths that are applied globally to all projects. Can be relative from the workspace root, or a wildcard match for any depth.",
           "type": "object",
           "additionalProperties": {
@@ -160,6 +154,7 @@
           }
         },
         "orderBy": {
+          "title": "orderBy",
           "description": "How to order ownership rules within the generated file.",
           "default": "file-source",
           "allOf": [
@@ -169,6 +164,7 @@
           ]
         },
         "syncOnRun": {
+          "title": "syncOnRun",
           "description": "Generates a `CODEOWNERS` file after aggregating all ownership rules from each project in the workspace.",
           "type": "boolean"
         }
@@ -187,17 +183,15 @@
       "title": "ConstraintsConfig",
       "description": "Configures boundaries and constraints between projects.",
       "type": "object",
-      "required": [
-        "enforceProjectTypeRelationships",
-        "tagRelationships"
-      ],
       "properties": {
         "enforceProjectTypeRelationships": {
+          "title": "enforceProjectTypeRelationships",
           "description": "Enforces relationships between projects based on each project's `type` setting.",
           "default": true,
           "type": "boolean"
         },
         "tagRelationships": {
+          "title": "tagRelationships",
           "description": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags.",
           "type": "object",
           "additionalProperties": {
@@ -217,23 +211,21 @@
       "title": "ExperimentsConfig",
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
-      "required": [
-        "interweavedTaskInheritance",
-        "strictProjectAliases",
-        "taskOutputBoundaries"
-      ],
       "properties": {
         "interweavedTaskInheritance": {
+          "title": "interweavedTaskInheritance",
           "default": true,
           "deprecated": true,
           "type": "boolean"
         },
         "strictProjectAliases": {
+          "title": "strictProjectAliases",
           "description": "Ensure that the a project alias is only used once. Duplicate aliases will trigger a hard failure.",
           "default": true,
           "type": "boolean"
         },
         "taskOutputBoundaries": {
+          "title": "taskOutputBoundaries",
           "default": true,
           "deprecated": true,
           "type": "boolean"
@@ -245,12 +237,9 @@
       "title": "ExtensionConfig",
       "description": "Configures an individual extension.",
       "type": "object",
-      "required": [
-        "config",
-        "plugin"
-      ],
       "properties": {
         "config": {
+          "title": "config",
           "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
           "type": "object",
           "additionalProperties": {
@@ -268,6 +257,7 @@
           }
         },
         "plugin": {
+          "title": "plugin",
           "description": "Location of the WASM plugin to use.",
           "anyOf": [
             {
@@ -285,11 +275,9 @@
       "title": "GeneratorConfig",
       "description": "Configures the generator for scaffolding from templates.",
       "type": "object",
-      "required": [
-        "templates"
-      ],
       "properties": {
         "templates": {
+          "title": "templates",
           "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
           "type": "array",
           "items": {
@@ -303,21 +291,15 @@
       "title": "HasherConfig",
       "description": "Configures aspects of the content hashing engine.",
       "type": "object",
-      "required": [
-        "batchSize",
-        "ignoreMissingPatterns",
-        "ignorePatterns",
-        "optimization",
-        "walkStrategy",
-        "warnOnMissingInputs"
-      ],
       "properties": {
         "batchSize": {
+          "title": "batchSize",
           "description": "The number of files to include in each hash operation.",
           "default": 2500,
           "type": "number"
         },
         "ignoreMissingPatterns": {
+          "title": "ignoreMissingPatterns",
           "description": "When `warnOnMissingInputs` is enabled, filters missing file paths from logging a warning.",
           "type": "array",
           "items": {
@@ -325,6 +307,7 @@
           }
         },
         "ignorePatterns": {
+          "title": "ignorePatterns",
           "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended.",
           "type": "array",
           "items": {
@@ -332,6 +315,7 @@
           }
         },
         "optimization": {
+          "title": "optimization",
           "description": "The optimization to use when hashing.",
           "default": "accuracy",
           "allOf": [
@@ -341,6 +325,7 @@
           ]
         },
         "walkStrategy": {
+          "title": "walkStrategy",
           "description": "The strategy to use when walking the file system.",
           "default": "vcs",
           "allOf": [
@@ -350,6 +335,7 @@
           ]
         },
         "warnOnMissingInputs": {
+          "title": "warnOnMissingInputs",
           "description": "Logs a warning when a task has configured an explicit file path input, and that file does not exist when hashing.",
           "default": true,
           "type": "boolean"
@@ -377,11 +363,9 @@
       "title": "NotifierConfig",
       "description": "Configures how and where notifications are sent.",
       "type": "object",
-      "required": [
-        "webhookUrl"
-      ],
       "properties": {
         "webhookUrl": {
+          "title": "webhookUrl",
           "anyOf": [
             {
               "type": "string"
@@ -398,14 +382,9 @@
       "title": "RunnerConfig",
       "description": "Configures aspects of the task runner (also known as the action pipeline).",
       "type": "object",
-      "required": [
-        "archivableTargets",
-        "cacheLifetime",
-        "inheritColorsForPipedTasks",
-        "logRunningCommand"
-      ],
       "properties": {
         "archivableTargets": {
+          "title": "archivableTargets",
           "description": "List of target's for tasks without outputs, that should be cached and persisted.",
           "type": "array",
           "items": {
@@ -413,16 +392,19 @@
           }
         },
         "cacheLifetime": {
+          "title": "cacheLifetime",
           "description": "The lifetime in which task outputs will be cached.",
           "default": "7 days",
           "type": "string"
         },
         "inheritColorsForPipedTasks": {
+          "title": "inheritColorsForPipedTasks",
           "description": "Automatically inherit color settings for all tasks being ran.",
           "default": true,
           "type": "boolean"
         },
         "logRunningCommand": {
+          "title": "logRunningCommand",
           "description": "Logs the task's command and arguments when running the task.",
           "type": "boolean"
         }
@@ -433,21 +415,15 @@
       "title": "VcsConfig",
       "description": "Configures the version control system (VCS).",
       "type": "object",
-      "required": [
-        "defaultBranch",
-        "hooks",
-        "manager",
-        "provider",
-        "remoteCandidates",
-        "syncHooks"
-      ],
       "properties": {
         "defaultBranch": {
+          "title": "defaultBranch",
           "description": "The default branch / base.",
           "default": "master",
           "type": "string"
         },
         "hooks": {
+          "title": "hooks",
           "description": "A mapping of hooks to commands to run when the hook is triggered.",
           "type": "object",
           "additionalProperties": {
@@ -461,6 +437,7 @@
           }
         },
         "manager": {
+          "title": "manager",
           "description": "The VCS client being utilized by the repository.",
           "default": "git",
           "allOf": [
@@ -470,6 +447,7 @@
           ]
         },
         "provider": {
+          "title": "provider",
           "description": "The upstream version control provider, where the repository source code is stored.",
           "default": "github",
           "allOf": [
@@ -479,6 +457,7 @@
           ]
         },
         "remoteCandidates": {
+          "title": "remoteCandidates",
           "description": "List of remote's in which to compare branches against.",
           "type": "array",
           "items": {
@@ -486,6 +465,7 @@
           }
         },
         "syncHooks": {
+          "title": "syncHooks",
           "description": "Generates hooks and scripts based on the `hooks` setting.",
           "type": "boolean"
         }
@@ -535,12 +515,9 @@
     "WorkspaceProjectsConfig": {
       "title": "WorkspaceProjectsConfig",
       "type": "object",
-      "required": [
-        "globs",
-        "sources"
-      ],
       "properties": {
         "globs": {
+          "title": "globs",
           "description": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects.",
           "type": "array",
           "items": {
@@ -548,6 +525,7 @@
           }
         },
         "sources": {
+          "title": "sources",
           "description": "A mapping of project IDs to relative file paths to each project directory.",
           "type": "object",
           "additionalProperties": {

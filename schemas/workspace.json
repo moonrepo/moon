@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "WorkspaceConfig",
   "description": "Configures all aspects of the moon workspace. Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
@@ -135,7 +134,6 @@
   "additionalProperties": false,
   "definitions": {
     "CodeownersConfig": {
-      "title": "CodeownersConfig",
       "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
       "type": "object",
       "properties": {
@@ -172,7 +170,6 @@
       "additionalProperties": false
     },
     "CodeownersOrderBy": {
-      "title": "CodeownersOrderBy",
       "type": "string",
       "enum": [
         "file-source",
@@ -180,7 +177,6 @@
       ]
     },
     "ConstraintsConfig": {
-      "title": "ConstraintsConfig",
       "description": "Configures boundaries and constraints between projects.",
       "type": "object",
       "properties": {
@@ -208,7 +204,6 @@
       "additionalProperties": false
     },
     "ExperimentsConfig": {
-      "title": "ExperimentsConfig",
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
       "properties": {
@@ -234,7 +229,6 @@
       "additionalProperties": false
     },
     "ExtensionConfig": {
-      "title": "ExtensionConfig",
       "description": "Configures an individual extension.",
       "type": "object",
       "properties": {
@@ -272,7 +266,6 @@
       "additionalProperties": false
     },
     "GeneratorConfig": {
-      "title": "GeneratorConfig",
       "description": "Configures the generator for scaffolding from templates.",
       "type": "object",
       "properties": {
@@ -288,7 +281,6 @@
       "additionalProperties": false
     },
     "HasherConfig": {
-      "title": "HasherConfig",
       "description": "Configures aspects of the content hashing engine.",
       "type": "object",
       "properties": {
@@ -344,7 +336,6 @@
       "additionalProperties": false
     },
     "HasherOptimization": {
-      "title": "HasherOptimization",
       "type": "string",
       "enum": [
         "accuracy",
@@ -352,7 +343,6 @@
       ]
     },
     "HasherWalkStrategy": {
-      "title": "HasherWalkStrategy",
       "type": "string",
       "enum": [
         "glob",
@@ -360,12 +350,12 @@
       ]
     },
     "NotifierConfig": {
-      "title": "NotifierConfig",
       "description": "Configures how and where notifications are sent.",
       "type": "object",
       "properties": {
         "webhookUrl": {
           "title": "webhookUrl",
+          "description": "A secure URL in which to send webhooks to.",
           "anyOf": [
             {
               "type": "string"
@@ -379,7 +369,6 @@
       "additionalProperties": false
     },
     "RunnerConfig": {
-      "title": "RunnerConfig",
       "description": "Configures aspects of the task runner (also known as the action pipeline).",
       "type": "object",
       "properties": {
@@ -412,7 +401,6 @@
       "additionalProperties": false
     },
     "VcsConfig": {
-      "title": "VcsConfig",
       "description": "Configures the version control system (VCS).",
       "type": "object",
       "properties": {
@@ -473,14 +461,12 @@
       "additionalProperties": false
     },
     "VcsManager": {
-      "title": "VcsManager",
       "type": "string",
       "enum": [
         "git"
       ]
     },
     "VcsProvider": {
-      "title": "VcsProvider",
       "type": "string",
       "enum": [
         "bitbucket",
@@ -490,7 +476,7 @@
       ]
     },
     "WorkspaceProjects": {
-      "title": "WorkspaceProjects",
+      "description": "Configures projects in the workspace.",
       "anyOf": [
         {
           "$ref": "#/definitions/WorkspaceProjectsConfig"
@@ -513,7 +499,7 @@
       ]
     },
     "WorkspaceProjectsConfig": {
-      "title": "WorkspaceProjectsConfig",
+      "description": "Configures projects in the workspace, using both globs and explicit source paths.",
       "type": "object",
       "properties": {
         "globs": {

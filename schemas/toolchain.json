@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ToolchainConfig",
   "description": "Configures all tools and platforms required for tasks. Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
@@ -85,7 +84,7 @@
   "additionalProperties": false,
   "definitions": {
     "BinConfig": {
-      "title": "BinConfig",
+      "description": "Configures to a tool-specific binary to install.",
       "type": "object",
       "properties": {
         "bin": {
@@ -119,7 +118,7 @@
       "additionalProperties": false
     },
     "BinEntry": {
-      "title": "BinEntry",
+      "description": "Configures to a tool-specific binary to install.",
       "anyOf": [
         {
           "type": "string"
@@ -130,7 +129,6 @@
       ]
     },
     "BunConfig": {
-      "title": "BunConfig",
       "description": "Configures and enables the Bun platform. Docs: https://moonrepo.dev/docs/config/toolchain#bun",
       "type": "object",
       "properties": {
@@ -188,7 +186,6 @@
       "additionalProperties": false
     },
     "BunpmConfig": {
-      "title": "BunpmConfig",
       "description": "Options for Bun, when used as a package manager.",
       "type": "object",
       "properties": {
@@ -220,7 +217,6 @@
       "additionalProperties": false
     },
     "DenoConfig": {
-      "title": "DenoConfig",
       "description": "Configures and enables the Deno platform. Docs: https://moonrepo.dev/docs/config/toolchain#deno",
       "type": "object",
       "properties": {
@@ -271,7 +267,6 @@
       "additionalProperties": false
     },
     "NodeConfig": {
-      "title": "NodeConfig",
       "description": "Configures and enables the Node.js platform. Docs: https://moonrepo.dev/docs/config/toolchain#node",
       "type": "object",
       "properties": {
@@ -417,7 +412,6 @@
       "additionalProperties": false
     },
     "NodePackageManager": {
-      "title": "NodePackageManager",
       "type": "string",
       "enum": [
         "bun",
@@ -427,7 +421,6 @@
       ]
     },
     "NodeVersionFormat": {
-      "title": "NodeVersionFormat",
       "type": "string",
       "enum": [
         "file",
@@ -442,7 +435,6 @@
       ]
     },
     "NodeVersionManager": {
-      "title": "NodeVersionManager",
       "type": "string",
       "enum": [
         "nodenv",
@@ -450,7 +442,6 @@
       ]
     },
     "NpmConfig": {
-      "title": "NpmConfig",
       "description": "Options for npm, when used as a package manager.",
       "type": "object",
       "properties": {
@@ -482,7 +473,6 @@
       "additionalProperties": false
     },
     "PnpmConfig": {
-      "title": "PnpmConfig",
       "description": "Options for pnpm, when used as a package manager.",
       "type": "object",
       "properties": {
@@ -514,7 +504,6 @@
       "additionalProperties": false
     },
     "RustConfig": {
-      "title": "RustConfig",
       "description": "Configures and enables the Rust platform. Docs: https://moonrepo.dev/docs/config/toolchain#rust",
       "type": "object",
       "properties": {
@@ -575,7 +564,6 @@
       "additionalProperties": false
     },
     "TypeScriptConfig": {
-      "title": "TypeScriptConfig",
       "description": "Configures and enables the TypeScript platform. Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
       "type": "object",
       "properties": {
@@ -639,7 +627,6 @@
       "additionalProperties": false
     },
     "YarnConfig": {
-      "title": "YarnConfig",
       "description": "Options for Yarn, when used as a package manager.",
       "type": "object",
       "properties": {

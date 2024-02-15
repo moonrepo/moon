@@ -124,9 +124,11 @@ export interface HasherConfig {
 
 /** Configures how and where notifications are sent. */
 export interface NotifierConfig {
+	/** A secure URL in which to send webhooks to. */
 	webhookUrl: string | null;
 }
 
+/** Configures projects in the workspace, using both globs and explicit source paths. */
 export interface WorkspaceProjectsConfig {
 	/**
 	 * A list of globs in which to locate project directories.
@@ -357,9 +359,11 @@ export interface PartialHasherConfig {
 
 /** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
+	/** A secure URL in which to send webhooks to. */
 	webhookUrl?: string | null;
 }
 
+/** Configures projects in the workspace, using both globs and explicit source paths. */
 export interface PartialWorkspaceProjectsConfig {
 	/**
 	 * A list of globs in which to locate project directories.

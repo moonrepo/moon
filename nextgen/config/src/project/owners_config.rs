@@ -3,14 +3,17 @@ use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
 
 cacheable!(
+    /// A mapping of file paths and file globs to owners.
     #[derive(Clone, Config, Debug, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a list of paths, or a map of paths to owners"
     )]
     pub enum OwnersPaths {
+        /// A list of file paths. The owner is the `defaultOwner`.
         #[setting(default)]
         List(Vec<String>),
+        /// A mapping of file paths to owners.
         Map(FxHashMap<String, Vec<String>>),
     }
 );

@@ -134,7 +134,7 @@ export interface TaskConfig {
 	 */
 	command: TaskArgs;
 	/**
-	 * Other tasks that this task depends on, and must run to completion,
+	 * Other tasks that this task depends on, and must run to completion
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
 	 * other projects, using targets.
 	 */
@@ -332,7 +332,7 @@ export interface PartialTaskConfig {
 	 */
 	command?: PartialTaskArgs | null;
 	/**
-	 * Other tasks that this task depends on, and must run to completion,
+	 * Other tasks that this task depends on, and must run to completion
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
 	 * other projects, using targets.
 	 */

@@ -2,6 +2,7 @@
 
 /* eslint-disable */
 
+/** Configuration for a template variable. */
 export interface PartialTemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default?: boolean | null;
@@ -33,6 +34,7 @@ export interface PartialTemplateVariableEnumSetting {
 	values?: PartialTemplateVariableEnumValue[] | null;
 }
 
+/** Configuration for a template variable. */
 export interface PartialTemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default?: number | null;
@@ -43,6 +45,7 @@ export interface PartialTemplateVariableNumberSetting {
 	type?: 'number' | null;
 }
 
+/** Configuration for a template variable. */
 export interface PartialTemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default?: string | null;
@@ -93,6 +96,7 @@ export interface PartialTemplateFrontmatterConfig {
 	to?: string | null;
 }
 
+/** Configuration for a template variable. */
 export interface TemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default: boolean;
@@ -124,6 +128,7 @@ export interface TemplateVariableEnumSetting {
 	values: TemplateVariableEnumValue[];
 }
 
+/** Configuration for a template variable. */
 export interface TemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default: number;
@@ -134,6 +139,7 @@ export interface TemplateVariableNumberSetting {
 	type: 'number';
 }
 
+/** Configuration for a template variable. */
 export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default: string;

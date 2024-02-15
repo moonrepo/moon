@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "TemplateConfig",
   "description": "Configures a template and its files to be scaffolded. Docs: https://moonrepo.dev/docs/config/template",
   "type": "object",
   "properties": {
@@ -54,7 +53,6 @@
   "additionalProperties": false,
   "definitions": {
     "TemplateVariable": {
-      "title": "TemplateVariable",
       "description": "Each type of template variable.",
       "anyOf": [
         {
@@ -72,7 +70,7 @@
       ]
     },
     "TemplateVariableBoolSetting": {
-      "title": "TemplateVariableBoolSetting",
+      "description": "Configuration for a template variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -112,7 +110,6 @@
       "additionalProperties": false
     },
     "TemplateVariableEnumSetting": {
-      "title": "TemplateVariableEnumSetting",
       "type": "object",
       "properties": {
         "default": {
@@ -153,7 +150,6 @@
       "additionalProperties": false
     },
     "TemplateVariableEnumValue": {
-      "title": "TemplateVariableEnumValue",
       "anyOf": [
         {
           "type": "string"
@@ -164,7 +160,6 @@
       ]
     },
     "TemplateVariableEnumValueConfig": {
-      "title": "TemplateVariableEnumValueConfig",
       "type": "object",
       "properties": {
         "label": {
@@ -181,7 +176,7 @@
       "additionalProperties": false
     },
     "TemplateVariableNumberSetting": {
-      "title": "TemplateVariableNumberSetting",
+      "description": "Configuration for a template variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -221,7 +216,7 @@
       "additionalProperties": false
     },
     "TemplateVariableStringSetting": {
-      "title": "TemplateVariableStringSetting",
+      "description": "Configuration for a template variable.",
       "type": "object",
       "properties": {
         "default": {

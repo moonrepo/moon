@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ProjectConfig",
   "description": "Configures information and tasks for a project. Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
@@ -149,7 +148,6 @@
   "additionalProperties": false,
   "definitions": {
     "DependencyConfig": {
-      "title": "DependencyConfig",
       "description": "Expanded information about a project dependency.",
       "type": "object",
       "properties": {
@@ -194,7 +192,6 @@
       "additionalProperties": false
     },
     "DependencyScope": {
-      "title": "DependencyScope",
       "type": "string",
       "enum": [
         "build",
@@ -205,7 +202,6 @@
       ]
     },
     "DependencySource": {
-      "title": "DependencySource",
       "type": "string",
       "enum": [
         "explicit",
@@ -213,7 +209,6 @@
       ]
     },
     "LanguageType": {
-      "title": "LanguageType",
       "type": "string",
       "enum": [
         "bash",
@@ -229,7 +224,6 @@
       ]
     },
     "OwnersConfig": {
-      "title": "OwnersConfig",
       "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
       "type": "object",
       "properties": {
@@ -283,7 +277,7 @@
       "additionalProperties": false
     },
     "OwnersPaths": {
-      "title": "OwnersPaths",
+      "description": "A mapping of file paths and file globs to owners.",
       "anyOf": [
         {
           "type": "array",
@@ -306,7 +300,6 @@
       ]
     },
     "PlatformType": {
-      "title": "PlatformType",
       "type": "string",
       "enum": [
         "bun",
@@ -318,7 +311,7 @@
       ]
     },
     "ProjectDependsOn": {
-      "title": "ProjectDependsOn",
+      "description": "Expanded information about a project dependency.",
       "anyOf": [
         {
           "type": "string"
@@ -329,7 +322,6 @@
       ]
     },
     "ProjectMetadataConfig": {
-      "title": "ProjectMetadataConfig",
       "description": "Expanded information about the project.",
       "type": "object",
       "properties": {
@@ -386,7 +378,6 @@
       "additionalProperties": false
     },
     "ProjectToolchainCommonToolConfig": {
-      "title": "ProjectToolchainCommonToolConfig",
       "description": "Overrides top-level toolchain settings.",
       "type": "object",
       "properties": {
@@ -406,7 +397,6 @@
       "additionalProperties": false
     },
     "ProjectToolchainConfig": {
-      "title": "ProjectToolchainConfig",
       "description": "Overrides top-level toolchain settings, scoped to this project.",
       "type": "object",
       "properties": {
@@ -474,7 +464,6 @@
       "additionalProperties": false
     },
     "ProjectToolchainTypeScriptConfig": {
-      "title": "ProjectToolchainTypeScriptConfig",
       "description": "Overrides top-level `typescript` settings.",
       "type": "object",
       "properties": {
@@ -547,7 +536,6 @@
       "additionalProperties": false
     },
     "ProjectType": {
-      "title": "ProjectType",
       "type": "string",
       "enum": [
         "application",
@@ -558,7 +546,6 @@
       ]
     },
     "ProjectWorkspaceConfig": {
-      "title": "ProjectWorkspaceConfig",
       "description": "Overrides top-level workspace settings, scoped to this project.",
       "type": "object",
       "properties": {
@@ -575,7 +562,6 @@
       "additionalProperties": false
     },
     "ProjectWorkspaceInheritedTasksConfig": {
-      "title": "ProjectWorkspaceInheritedTasksConfig",
       "description": "Controls how tasks are inherited.",
       "type": "object",
       "properties": {
@@ -617,7 +603,7 @@
       "additionalProperties": false
     },
     "TaskArgs": {
-      "title": "TaskArgs",
+      "description": "Configures a command to execute, and its arguments.",
       "anyOf": [
         {
           "type": "null"
@@ -634,7 +620,6 @@
       ]
     },
     "TaskConfig": {
-      "title": "TaskConfig",
       "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
       "properties": {
@@ -658,7 +643,7 @@
         },
         "deps": {
           "title": "deps",
-          "description": "Other tasks that this task depends on, and must run to completion, before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
+          "description": "Other tasks that this task depends on, and must run to completion before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/TaskDependency"
@@ -765,7 +750,7 @@
       "additionalProperties": false
     },
     "TaskDependency": {
-      "title": "TaskDependency",
+      "description": "Configures another task that a task depends on.",
       "anyOf": [
         {
           "type": "string"
@@ -776,7 +761,6 @@
       ]
     },
     "TaskDependencyConfig": {
-      "title": "TaskDependencyConfig",
       "description": "Expanded information about a task dependency.",
       "type": "object",
       "properties": {
@@ -821,7 +805,6 @@
       "additionalProperties": false
     },
     "TaskMergeStrategy": {
-      "title": "TaskMergeStrategy",
       "type": "string",
       "enum": [
         "append",
@@ -830,7 +813,6 @@
       ]
     },
     "TaskOptionAffectedFiles": {
-      "title": "TaskOptionAffectedFiles",
       "anyOf": [
         {
           "type": "boolean"
@@ -845,7 +827,6 @@
       ]
     },
     "TaskOptionEnvFile": {
-      "title": "TaskOptionEnvFile",
       "anyOf": [
         {
           "type": "boolean"
@@ -856,7 +837,6 @@
       ]
     },
     "TaskOptionsConfig": {
-      "title": "TaskOptionsConfig",
       "description": "Options to control task inheritance and execution.",
       "type": "object",
       "properties": {
@@ -1098,7 +1078,6 @@
       "additionalProperties": false
     },
     "TaskOutputStyle": {
-      "title": "TaskOutputStyle",
       "type": "string",
       "enum": [
         "buffer",
@@ -1109,7 +1088,6 @@
       ]
     },
     "TaskType": {
-      "title": "TaskType",
       "type": "string",
       "enum": [
         "build",
@@ -1118,7 +1096,6 @@
       ]
     },
     "TaskUnixShell": {
-      "title": "TaskUnixShell",
       "type": "string",
       "enum": [
         "bash",
@@ -1128,7 +1105,6 @@
       ]
     },
     "TaskWindowsShell": {
-      "title": "TaskWindowsShell",
       "type": "string",
       "enum": [
         "bash",

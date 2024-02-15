@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InheritedTasksConfig",
   "description": "Configures tasks and task related settings that'll be inherited by all matching projects. Docs: https://moonrepo.dev/docs/config/tasks",
   "type": "object",
   "properties": {
@@ -78,7 +77,6 @@
   "additionalProperties": false,
   "definitions": {
     "PlatformType": {
-      "title": "PlatformType",
       "type": "string",
       "enum": [
         "bun",
@@ -90,7 +88,7 @@
       ]
     },
     "TaskArgs": {
-      "title": "TaskArgs",
+      "description": "Configures a command to execute, and its arguments.",
       "anyOf": [
         {
           "type": "null"
@@ -107,7 +105,6 @@
       ]
     },
     "TaskConfig": {
-      "title": "TaskConfig",
       "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
       "properties": {
@@ -131,7 +128,7 @@
         },
         "deps": {
           "title": "deps",
-          "description": "Other tasks that this task depends on, and must run to completion, before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
+          "description": "Other tasks that this task depends on, and must run to completion before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/TaskDependency"
@@ -238,7 +235,7 @@
       "additionalProperties": false
     },
     "TaskDependency": {
-      "title": "TaskDependency",
+      "description": "Configures another task that a task depends on.",
       "anyOf": [
         {
           "type": "string"
@@ -249,7 +246,6 @@
       ]
     },
     "TaskDependencyConfig": {
-      "title": "TaskDependencyConfig",
       "description": "Expanded information about a task dependency.",
       "type": "object",
       "properties": {
@@ -294,7 +290,6 @@
       "additionalProperties": false
     },
     "TaskMergeStrategy": {
-      "title": "TaskMergeStrategy",
       "type": "string",
       "enum": [
         "append",
@@ -303,7 +298,6 @@
       ]
     },
     "TaskOptionAffectedFiles": {
-      "title": "TaskOptionAffectedFiles",
       "anyOf": [
         {
           "type": "boolean"
@@ -318,7 +312,6 @@
       ]
     },
     "TaskOptionEnvFile": {
-      "title": "TaskOptionEnvFile",
       "anyOf": [
         {
           "type": "boolean"
@@ -329,7 +322,6 @@
       ]
     },
     "TaskOptionsConfig": {
-      "title": "TaskOptionsConfig",
       "description": "Options to control task inheritance and execution.",
       "type": "object",
       "properties": {
@@ -571,7 +563,6 @@
       "additionalProperties": false
     },
     "TaskOutputStyle": {
-      "title": "TaskOutputStyle",
       "type": "string",
       "enum": [
         "buffer",
@@ -582,7 +573,6 @@
       ]
     },
     "TaskType": {
-      "title": "TaskType",
       "type": "string",
       "enum": [
         "build",
@@ -591,7 +581,6 @@
       ]
     },
     "TaskUnixShell": {
-      "title": "TaskUnixShell",
       "type": "string",
       "enum": [
         "bash",
@@ -601,7 +590,6 @@
       ]
     },
     "TaskWindowsShell": {
-      "title": "TaskWindowsShell",
       "type": "string",
       "enum": [
         "bash",

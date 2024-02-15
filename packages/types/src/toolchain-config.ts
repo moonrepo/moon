@@ -49,6 +49,7 @@ export interface BunConfig {
 	version: string | null;
 }
 
+/** Configures to a tool-specific binary to install. */
 export interface BinConfig {
 	/** Name of the binary, with optional version separated by `@`. */
 	bin: string;
@@ -362,6 +363,7 @@ export interface PartialBunConfig {
 	version?: string | null;
 }
 
+/** Configures to a tool-specific binary to install. */
 export interface PartialBinConfig {
 	/** Name of the binary, with optional version separated by `@`. */
 	bin?: string | null;

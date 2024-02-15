@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "TemplateFrontmatterConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/template#frontmatter",
   "type": "object",
   "properties": {

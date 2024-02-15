@@ -1,6 +1,6 @@
 [package]
 name = "moon_config"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 license = "MIT"
 description = "Core workspace, project, and moon configuration."

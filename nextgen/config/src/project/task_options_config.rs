@@ -26,8 +26,11 @@ fn validate_interactive<C>(
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(untagged, rename_all = "kebab-case")]
 pub enum TaskOptionAffectedFiles {
+    /// Passed as command line arguments.
     Args,
+    /// Passed as environment variables.
     Env,
+    /// Passed as command line arguments and environment variables.
     Enabled(bool),
 }
 
@@ -63,10 +66,12 @@ impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
 }
 
 derive_enum!(
-    /// The pattern in which a task is dependent on a .env file.
+    /// The pattern in which a task is dependent on a `.env` file.
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
+        /// Uses an `.env` file in the project root.
         Enabled(bool),
+        /// Explicit path to an `.env` file.
         File(FilePath),
     }
 );

@@ -43,7 +43,7 @@
     },
     "id": {
       "title": "id",
-      "description": "Overrides the ID within the project graph, as defined in the workspace `projects` setting.",
+      "description": "Overrides the ID within the project graph, as defined in the workspace projects setting.",
       "anyOf": [
         {
           "type": "string"
@@ -51,7 +51,8 @@
         {
           "type": "null"
         }
-      ]
+      ],
+      "markdownDescription": "Overrides the ID within the project graph, as defined in the workspace `projects` setting."
     },
     "language": {
       "title": "language",
@@ -123,7 +124,8 @@
         {
           "$ref": "#/definitions/ProjectToolchainConfig"
         }
-      ]
+      ],
+      "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
     "type": {
       "title": "type",
@@ -142,7 +144,8 @@
         {
           "$ref": "#/definitions/ProjectWorkspaceConfig"
         }
-      ]
+      ],
+      "markdownDescription": "Overrides top-level workspace settings, scoped to this project."
     }
   },
   "additionalProperties": false,
@@ -229,7 +232,7 @@
       "properties": {
         "customGroups": {
           "title": "customGroups",
-          "description": "Bitbucket only. A mapping of custom groups (prefixed with `@@@`), to a list of user and normal groups.",
+          "description": "Bitbucket only. A mapping of custom groups (prefixed with @@@), to a list of user and normal groups.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -239,11 +242,12 @@
           },
           "propertyNames": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Bitbucket only. A mapping of custom groups (prefixed with `@@@`), to a list of user and normal groups."
         },
         "defaultOwner": {
           "title": "defaultOwner",
-          "description": "The default owner for `paths`.",
+          "description": "The default owner for paths.",
           "anyOf": [
             {
               "type": "string"
@@ -251,7 +255,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The default owner for `paths`."
         },
         "optional": {
           "title": "optional",
@@ -260,18 +265,20 @@
         },
         "paths": {
           "title": "paths",
-          "description": "A mapping of file paths and file globs to owners. When a list, the `defaultOwner` is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners.",
+          "description": "A mapping of file paths and file globs to owners. When a list, the defaultOwner is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners.",
           "allOf": [
             {
               "$ref": "#/definitions/OwnersPaths"
             }
-          ]
+          ],
+          "markdownDescription": "A mapping of file paths and file globs to owners. When a list, the `defaultOwner` is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners."
         },
         "requiredApprovals": {
           "title": "requiredApprovals",
-          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required.",
+          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
           "default": 1,
-          "type": "number"
+          "type": "number",
+          "markdownDescription": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
         }
       },
       "additionalProperties": false
@@ -327,7 +334,7 @@
       "properties": {
         "channel": {
           "title": "channel",
-          "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`.",
+          "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a #.",
           "anyOf": [
             {
               "type": "string"
@@ -335,7 +342,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`."
         },
         "description": {
           "title": "description",
@@ -360,7 +368,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "A human-readable name of the project."
         },
         "owner": {
           "title": "owner",
@@ -394,7 +403,8 @@
           ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Overrides top-level toolchain settings."
     },
     "ProjectToolchainConfig": {
       "description": "Overrides top-level toolchain settings, scoped to this project.",
@@ -402,7 +412,7 @@
       "properties": {
         "bun": {
           "title": "bun",
-          "description": "Overrides `bun` settings.",
+          "description": "Overrides bun settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
@@ -410,11 +420,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Overrides `bun` settings."
         },
         "deno": {
           "title": "deno",
-          "description": "Overrides `deno` settings.",
+          "description": "Overrides deno settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
@@ -422,11 +433,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Overrides `deno` settings."
         },
         "node": {
           "title": "node",
-          "description": "Overrides `node` settings.",
+          "description": "Overrides node settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
@@ -434,11 +446,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Overrides `node` settings."
         },
         "rust": {
           "title": "rust",
-          "description": "Overrides `rust` settings.",
+          "description": "Overrides rust settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
@@ -446,11 +459,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Overrides `rust` settings."
         },
         "typescript": {
           "title": "typescript",
-          "description": "Overrides `typescript` settings.",
+          "description": "Overrides typescript settings.",
           "anyOf": [
             {
               "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
@@ -458,13 +472,15 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Overrides `typescript` settings."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
     "ProjectToolchainTypeScriptConfig": {
-      "description": "Overrides top-level `typescript` settings.",
+      "description": "Overrides top-level typescript settings.",
       "type": "object",
       "properties": {
         "disabled": {
@@ -474,7 +490,7 @@
         },
         "includeProjectReferenceSources": {
           "title": "includeProjectReferenceSources",
-          "description": "Appends sources of project reference to `include` in `tsconfig.json`.",
+          "description": "Appends sources of project reference to include in tsconfig.json.",
           "anyOf": [
             {
               "type": "boolean"
@@ -482,11 +498,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Appends sources of project reference to `include` in `tsconfig.json`."
         },
         "includeSharedTypes": {
           "title": "includeSharedTypes",
-          "description": "Appends shared types to `include` in `tsconfig.json`.",
+          "description": "Appends shared types to include in tsconfig.json.",
           "anyOf": [
             {
               "type": "boolean"
@@ -494,11 +511,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Appends shared types to `include` in `tsconfig.json`."
         },
         "routeOutDirToCache": {
           "title": "routeOutDirToCache",
-          "description": "Updates and routes `outDir` in `tsconfig.json` to moon's cache.",
+          "description": "Updates and routes outDir in tsconfig.json to moon's cache.",
           "anyOf": [
             {
               "type": "boolean"
@@ -506,11 +524,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Updates and routes `outDir` in `tsconfig.json` to moon's cache."
         },
         "syncProjectReferences": {
           "title": "syncProjectReferences",
-          "description": "Syncs all project dependencies as `references` in `tsconfig.json`.",
+          "description": "Syncs all project dependencies as references in tsconfig.json.",
           "anyOf": [
             {
               "type": "boolean"
@@ -518,11 +537,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Syncs all project dependencies as `references` in `tsconfig.json`."
         },
         "syncProjectReferencesToPaths": {
           "title": "syncProjectReferencesToPaths",
-          "description": "Syncs all project dependencies as `paths` in `tsconfig.json`.",
+          "description": "Syncs all project dependencies as paths in tsconfig.json.",
           "anyOf": [
             {
               "type": "boolean"
@@ -530,10 +550,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Syncs all project dependencies as `paths` in `tsconfig.json`."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Overrides top-level `typescript` settings."
     },
     "ProjectType": {
       "type": "string",
@@ -559,7 +581,8 @@
           ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Overrides top-level workspace settings, scoped to this project."
     },
     "ProjectWorkspaceInheritedTasksConfig": {
       "description": "Controls how tasks are inherited.",
@@ -689,7 +712,7 @@
         },
         "local": {
           "title": "local",
-          "description": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`.",
+          "description": "Marks the task as local only. Local tasks do not run in CI, do not have options.cache enabled, and are marked as options.persistent.",
           "anyOf": [
             {
               "type": "boolean"
@@ -697,7 +720,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`."
         },
         "options": {
           "title": "options",
@@ -710,7 +734,7 @@
         },
         "outputs": {
           "title": "outputs",
-          "description": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs.",
+          "description": "Outputs that will be created when the task has successfully ran. When cache is enabled, the outputs will be persisted for subsequent runs.",
           "anyOf": [
             {
               "type": "array",
@@ -721,7 +745,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs."
         },
         "platform": {
           "title": "platform",
@@ -794,7 +819,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Marks the dependency is optional when being inherited from the top-level."
         },
         "target": {
           "title": "target",
@@ -866,7 +892,7 @@
         },
         "cache": {
           "title": "cache",
-          "description": "Caches the `outputs` of the task",
+          "description": "Caches the outputs of the task",
           "anyOf": [
             {
               "type": "boolean"
@@ -874,11 +900,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Caches the `outputs` of the task"
         },
         "envFile": {
           "title": "envFile",
-          "description": "Loads and sets environment variables from the `.env` file when running the task.",
+          "description": "Loads and sets environment variables from the .env file when running the task.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -886,7 +913,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Loads and sets environment variables from the `.env` file when running the task."
         },
         "interactive": {
           "title": "interactive",
@@ -902,7 +930,7 @@
         },
         "mergeArgs": {
           "title": "mergeArgs",
-          "description": "The strategy to use when merging `args` with an inherited task.",
+          "description": "The strategy to use when merging args with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -911,11 +939,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `args` with an inherited task."
         },
         "mergeDeps": {
           "title": "mergeDeps",
-          "description": "The strategy to use when merging `deps` with an inherited task.",
+          "description": "The strategy to use when merging deps with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -924,11 +953,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `deps` with an inherited task."
         },
         "mergeEnv": {
           "title": "mergeEnv",
-          "description": "The strategy to use when merging `env` with an inherited task.",
+          "description": "The strategy to use when merging env with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -937,11 +967,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `env` with an inherited task."
         },
         "mergeInputs": {
           "title": "mergeInputs",
-          "description": "The strategy to use when merging `inputs` with an inherited task.",
+          "description": "The strategy to use when merging inputs with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -950,11 +981,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `inputs` with an inherited task."
         },
         "mergeOutputs": {
           "title": "mergeOutputs",
-          "description": "The strategy to use when merging `outputs` with an inherited task.",
+          "description": "The strategy to use when merging outputs with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -963,7 +995,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
         },
         "outputStyle": {
           "title": "outputStyle",
@@ -988,7 +1021,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes."
         },
         "retryCount": {
           "title": "retryCount",
@@ -1004,7 +1038,7 @@
         },
         "runDepsInParallel": {
           "title": "runDepsInParallel",
-          "description": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies.",
+          "description": "Runs direct task dependencies (via deps) in sequential order. This does not apply to indirect or transient dependencies.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1012,7 +1046,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies."
         },
         "runFromWorkspaceRoot": {
           "title": "runFromWorkspaceRoot",
@@ -1028,7 +1063,7 @@
         },
         "runInCI": {
           "title": "runInCI",
-          "description": "Whether to run the task in CI or not, when executing `moon ci`.",
+          "description": "Whether to run the task in CI or not, when executing moon ci.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1036,11 +1071,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`."
         },
         "shell": {
           "title": "shell",
-          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution.",
+          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on PATH resolution.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1048,7 +1084,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution."
         },
         "unixShell": {
           "title": "unixShell",
@@ -1060,7 +1097,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The shell to run the task in when on a Unix-based machine."
         },
         "windowsShell": {
           "title": "windowsShell",

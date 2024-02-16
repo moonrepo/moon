@@ -89,8 +89,9 @@
       "properties": {
         "bin": {
           "title": "bin",
-          "description": "Name of the binary, with optional version separated by `@`.",
-          "type": "string"
+          "description": "Name of the binary, with optional version separated by @.",
+          "type": "string",
+          "markdownDescription": "Name of the binary, with optional version separated by `@`."
         },
         "force": {
           "title": "force",
@@ -115,7 +116,8 @@
           ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Configures to a tool-specific binary to install."
     },
     "BinEntry": {
       "description": "Configures to a tool-specific binary to install.",
@@ -126,7 +128,8 @@
         {
           "$ref": "#/definitions/BinConfig"
         }
-      ]
+      ],
+      "markdownDescription": "Configures to a tool-specific binary to install."
     },
     "BunConfig": {
       "description": "Configures and enables the Bun platform. Docs: https://moonrepo.dev/docs/config/toolchain#bun",
@@ -144,8 +147,9 @@
         },
         "inferTasksFromScripts": {
           "title": "inferTasksFromScripts",
-          "description": "Automatically infer moon tasks from `package.json` scripts.",
-          "type": "boolean"
+          "description": "Automatically infer moon tasks from package.json scripts.",
+          "type": "boolean",
+          "markdownDescription": "Automatically infer moon tasks from `package.json` scripts."
         },
         "plugin": {
           "title": "plugin",
@@ -161,18 +165,20 @@
         },
         "rootPackageOnly": {
           "title": "rootPackageOnly",
-          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
-          "type": "boolean"
+          "description": "Assumes only the root package.json is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "type": "boolean",
+          "markdownDescription": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern."
         },
         "syncProjectWorkspaceDependencies": {
           "title": "syncProjectWorkspaceDependencies",
-          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
+          "description": "Automatically syncs moon project-to-project relationships as dependencies for each package.json in the workspace.",
           "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "markdownDescription": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace."
         },
         "version": {
           "title": "version",
-          "description": "The version of Bun to download, install, and run `bun` tasks with.",
+          "description": "The version of Bun to download, install, and run bun tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -180,7 +186,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of Bun to download, install, and run `bun` tasks with."
         }
       },
       "additionalProperties": false
@@ -203,7 +210,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version of Bun to download, install, and run `bun` tasks with.",
+          "description": "The version of Bun to download, install, and run bun tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -211,7 +218,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of Bun to download, install, and run `bun` tasks with."
         }
       },
       "additionalProperties": false
@@ -222,11 +230,12 @@
       "properties": {
         "bins": {
           "title": "bins",
-          "description": "List of binaries to install into the environment using `deno install`.",
+          "description": "List of binaries to install into the environment using deno install.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/BinEntry"
-          }
+          },
+          "markdownDescription": "List of binaries to install into the environment using `deno install`."
         },
         "depsFile": {
           "title": "depsFile",
@@ -236,8 +245,9 @@
         },
         "lockfile": {
           "title": "lockfile",
-          "description": "Requires and forces the use of `deno.lock` files.",
-          "type": "boolean"
+          "description": "Requires and forces the use of deno.lock files.",
+          "type": "boolean",
+          "markdownDescription": "Requires and forces the use of `deno.lock` files."
         },
         "plugin": {
           "title": "plugin",
@@ -253,7 +263,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version of Deno to download, install, and run `deno` tasks with.",
+          "description": "The version of Deno to download, install, and run deno tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -261,7 +271,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of Deno to download, install, and run `deno` tasks with."
         }
       },
       "additionalProperties": false
@@ -272,17 +283,19 @@
       "properties": {
         "addEnginesConstraint": {
           "title": "addEnginesConstraint",
-          "description": "When `version` is defined, syncs the version as a constraint to `package.json` engines.",
+          "description": "When version is defined, syncs the version as a constraint to package.json engines.",
           "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "markdownDescription": "When `version` is defined, syncs the version as a constraint to `package.json` engines."
         },
         "binExecArgs": {
           "title": "binExecArgs",
-          "description": "Arguments to automatically pass to all tasks that execute the `node` binary.",
+          "description": "Arguments to automatically pass to all tasks that execute the node binary.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Arguments to automatically pass to all tasks that execute the `node` binary."
         },
         "bun": {
           "title": "bun",
@@ -314,8 +327,9 @@
         },
         "inferTasksFromScripts": {
           "title": "inferTasksFromScripts",
-          "description": "Automatically infer moon tasks from `package.json` scripts.",
-          "type": "boolean"
+          "description": "Automatically infer moon tasks from package.json scripts.",
+          "type": "boolean",
+          "markdownDescription": "Automatically infer moon tasks from `package.json` scripts."
         },
         "npm": {
           "title": "npm",
@@ -362,18 +376,20 @@
         },
         "rootPackageOnly": {
           "title": "rootPackageOnly",
-          "description": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern.",
-          "type": "boolean"
+          "description": "Assumes only the root package.json is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "type": "boolean",
+          "markdownDescription": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern."
         },
         "syncProjectWorkspaceDependencies": {
           "title": "syncProjectWorkspaceDependencies",
-          "description": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace.",
+          "description": "Automatically syncs moon project-to-project relationships as dependencies for each package.json in the workspace.",
           "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "markdownDescription": "Automatically syncs moon project-to-project relationships as dependencies for each `package.json` in the workspace."
         },
         "syncVersionManagerConfig": {
           "title": "syncVersionManagerConfig",
-          "description": "When `version` is defined, syncs the version to the chosen config.",
+          "description": "When version is defined, syncs the version to the chosen config.",
           "default": "nvm",
           "anyOf": [
             {
@@ -382,11 +398,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "When `version` is defined, syncs the version to the chosen config."
         },
         "version": {
           "title": "version",
-          "description": "The version of Node.js to download, install, and run `node` tasks with.",
+          "description": "The version of Node.js to download, install, and run node tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -394,7 +411,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of Node.js to download, install, and run `node` tasks with."
         },
         "yarn": {
           "title": "yarn",
@@ -459,7 +477,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version of npm to download, install, and run `npm` tasks with.",
+          "description": "The version of npm to download, install, and run npm tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -467,7 +485,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of npm to download, install, and run `npm` tasks with."
         }
       },
       "additionalProperties": false
@@ -490,7 +509,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version of pnpm to download, install, and run `pnpm` tasks with.",
+          "description": "The version of pnpm to download, install, and run pnpm tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -498,7 +517,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of pnpm to download, install, and run `pnpm` tasks with."
         }
       },
       "additionalProperties": false
@@ -509,11 +529,12 @@
       "properties": {
         "bins": {
           "title": "bins",
-          "description": "List of binaries to install into the environment using `cargo install`.",
+          "description": "List of binaries to install into the environment using cargo install.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/BinEntry"
-          }
+          },
+          "markdownDescription": "List of binaries to install into the environment using `cargo install`."
         },
         "components": {
           "title": "components",
@@ -537,8 +558,9 @@
         },
         "syncToolchainConfig": {
           "title": "syncToolchainConfig",
-          "description": "When `version` is defined, syncs the version to `rust-toolchain.toml`.",
-          "type": "boolean"
+          "description": "When version is defined, syncs the version to rust-toolchain.toml.",
+          "type": "boolean",
+          "markdownDescription": "When `version` is defined, syncs the version to `rust-toolchain.toml`."
         },
         "targets": {
           "title": "targets",
@@ -550,7 +572,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version of Rust to download, install, and run `cargo` tasks with.",
+          "description": "The version of Rust to download, install, and run cargo tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -558,7 +580,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of Rust to download, install, and run `cargo` tasks with."
         }
       },
       "additionalProperties": false
@@ -569,25 +592,29 @@
       "properties": {
         "createMissingConfig": {
           "title": "createMissingConfig",
-          "description": "When `syncProjectReferences` is enabled, will create a `tsconfig.json` in referenced projects if it does not exist.",
+          "description": "When syncProjectReferences is enabled, will create a tsconfig.json in referenced projects if it does not exist.",
           "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "markdownDescription": "When `syncProjectReferences` is enabled, will create a `tsconfig.json` in referenced projects if it does not exist."
         },
         "includeProjectReferenceSources": {
           "title": "includeProjectReferenceSources",
-          "description": "Appends sources of project reference to `include` in `tsconfig.json`, for each project.",
-          "type": "boolean"
+          "description": "Appends sources of project reference to include in tsconfig.json, for each project.",
+          "type": "boolean",
+          "markdownDescription": "Appends sources of project reference to `include` in `tsconfig.json`, for each project."
         },
         "includeSharedTypes": {
           "title": "includeSharedTypes",
-          "description": "Appends shared types to `include` in `tsconfig.json`, for each project.",
-          "type": "boolean"
+          "description": "Appends shared types to include in tsconfig.json, for each project.",
+          "type": "boolean",
+          "markdownDescription": "Appends shared types to `include` in `tsconfig.json`, for each project."
         },
         "projectConfigFileName": {
           "title": "projectConfigFileName",
-          "description": "Name of the `tsconfig.json` file within each project.",
+          "description": "Name of the tsconfig.json file within each project.",
           "default": "tsconfig.json",
-          "type": "string"
+          "type": "string",
+          "markdownDescription": "Name of the `tsconfig.json` file within each project."
         },
         "root": {
           "title": "root",
@@ -597,31 +624,36 @@
         },
         "rootConfigFileName": {
           "title": "rootConfigFileName",
-          "description": "Name of the `tsconfig.json` file at the workspace root.",
+          "description": "Name of the tsconfig.json file at the workspace root.",
           "default": "tsconfig.json",
-          "type": "string"
+          "type": "string",
+          "markdownDescription": "Name of the `tsconfig.json` file at the workspace root."
         },
         "rootOptionsConfigFileName": {
           "title": "rootOptionsConfigFileName",
-          "description": "Name of the shared compiler options `tsconfig.json` file at the workspace root.",
+          "description": "Name of the shared compiler options tsconfig.json file at the workspace root.",
           "default": "tsconfig.options.json",
-          "type": "string"
+          "type": "string",
+          "markdownDescription": "Name of the shared compiler options `tsconfig.json` file at the workspace root."
         },
         "routeOutDirToCache": {
           "title": "routeOutDirToCache",
-          "description": "Updates and routes `outDir` in `tsconfig.json` to moon's cache, for each project.",
-          "type": "boolean"
+          "description": "Updates and routes outDir in tsconfig.json to moon's cache, for each project.",
+          "type": "boolean",
+          "markdownDescription": "Updates and routes `outDir` in `tsconfig.json` to moon's cache, for each project."
         },
         "syncProjectReferences": {
           "title": "syncProjectReferences",
-          "description": "Syncs all project dependencies as `references` in `tsconfig.json`, for each project.",
+          "description": "Syncs all project dependencies as references in tsconfig.json, for each project.",
           "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "markdownDescription": "Syncs all project dependencies as `references` in `tsconfig.json`, for each project."
         },
         "syncProjectReferencesToPaths": {
           "title": "syncProjectReferencesToPaths",
-          "description": "Syncs all project dependencies as `paths` in `tsconfig.json`, for each project.",
-          "type": "boolean"
+          "description": "Syncs all project dependencies as paths in tsconfig.json, for each project.",
+          "type": "boolean",
+          "markdownDescription": "Syncs all project dependencies as `paths` in `tsconfig.json`, for each project."
         }
       },
       "additionalProperties": false
@@ -652,7 +684,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version of Yarn to download, install, and run `yarn` tasks with.",
+          "description": "The version of Yarn to download, install, and run yarn tasks with.",
           "anyOf": [
             {
               "type": "string"
@@ -660,7 +692,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The version of Yarn to download, install, and run `yarn` tasks with."
         }
       },
       "additionalProperties": false

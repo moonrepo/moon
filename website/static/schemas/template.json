@@ -23,7 +23,8 @@
         {
           "type": "null"
         }
-      ]
+      ],
+      "markdownDescription": "A pre-populated destination to scaffold to, relative from the workspace root."
     },
     "extends": {
       "title": "extends",
@@ -36,7 +37,8 @@
     "title": {
       "title": "title",
       "description": "A human-readable title for the template.",
-      "type": "string"
+      "type": "string",
+      "markdownDescription": "A human-readable title for the template."
     },
     "variables": {
       "title": "variables",
@@ -165,7 +167,8 @@
         "label": {
           "title": "label",
           "description": "A human-readable label for the value.",
-          "type": "string"
+          "type": "string",
+          "markdownDescription": "A human-readable label for the value."
         },
         "value": {
           "title": "value",

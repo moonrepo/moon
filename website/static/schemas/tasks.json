@@ -174,7 +174,7 @@
         },
         "local": {
           "title": "local",
-          "description": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`.",
+          "description": "Marks the task as local only. Local tasks do not run in CI, do not have options.cache enabled, and are marked as options.persistent.",
           "anyOf": [
             {
               "type": "boolean"
@@ -182,7 +182,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`."
         },
         "options": {
           "title": "options",
@@ -195,7 +196,7 @@
         },
         "outputs": {
           "title": "outputs",
-          "description": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs.",
+          "description": "Outputs that will be created when the task has successfully ran. When cache is enabled, the outputs will be persisted for subsequent runs.",
           "anyOf": [
             {
               "type": "array",
@@ -206,7 +207,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs."
         },
         "platform": {
           "title": "platform",
@@ -279,7 +281,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Marks the dependency is optional when being inherited from the top-level."
         },
         "target": {
           "title": "target",
@@ -351,7 +354,7 @@
         },
         "cache": {
           "title": "cache",
-          "description": "Caches the `outputs` of the task",
+          "description": "Caches the outputs of the task",
           "anyOf": [
             {
               "type": "boolean"
@@ -359,11 +362,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Caches the `outputs` of the task"
         },
         "envFile": {
           "title": "envFile",
-          "description": "Loads and sets environment variables from the `.env` file when running the task.",
+          "description": "Loads and sets environment variables from the .env file when running the task.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -371,7 +375,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Loads and sets environment variables from the `.env` file when running the task."
         },
         "interactive": {
           "title": "interactive",
@@ -387,7 +392,7 @@
         },
         "mergeArgs": {
           "title": "mergeArgs",
-          "description": "The strategy to use when merging `args` with an inherited task.",
+          "description": "The strategy to use when merging args with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -396,11 +401,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `args` with an inherited task."
         },
         "mergeDeps": {
           "title": "mergeDeps",
-          "description": "The strategy to use when merging `deps` with an inherited task.",
+          "description": "The strategy to use when merging deps with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -409,11 +415,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `deps` with an inherited task."
         },
         "mergeEnv": {
           "title": "mergeEnv",
-          "description": "The strategy to use when merging `env` with an inherited task.",
+          "description": "The strategy to use when merging env with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -422,11 +429,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `env` with an inherited task."
         },
         "mergeInputs": {
           "title": "mergeInputs",
-          "description": "The strategy to use when merging `inputs` with an inherited task.",
+          "description": "The strategy to use when merging inputs with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -435,11 +443,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `inputs` with an inherited task."
         },
         "mergeOutputs": {
           "title": "mergeOutputs",
-          "description": "The strategy to use when merging `outputs` with an inherited task.",
+          "description": "The strategy to use when merging outputs with an inherited task.",
           "default": "append",
           "anyOf": [
             {
@@ -448,7 +457,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
         },
         "outputStyle": {
           "title": "outputStyle",
@@ -473,7 +483,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes."
         },
         "retryCount": {
           "title": "retryCount",
@@ -489,7 +500,7 @@
         },
         "runDepsInParallel": {
           "title": "runDepsInParallel",
-          "description": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies.",
+          "description": "Runs direct task dependencies (via deps) in sequential order. This does not apply to indirect or transient dependencies.",
           "anyOf": [
             {
               "type": "boolean"
@@ -497,7 +508,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies."
         },
         "runFromWorkspaceRoot": {
           "title": "runFromWorkspaceRoot",
@@ -513,7 +525,7 @@
         },
         "runInCI": {
           "title": "runInCI",
-          "description": "Whether to run the task in CI or not, when executing `moon ci`.",
+          "description": "Whether to run the task in CI or not, when executing moon ci.",
           "anyOf": [
             {
               "type": "boolean"
@@ -521,11 +533,12 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`."
         },
         "shell": {
           "title": "shell",
-          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution.",
+          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on PATH resolution.",
           "anyOf": [
             {
               "type": "boolean"
@@ -533,7 +546,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution."
         },
         "unixShell": {
           "title": "unixShell",
@@ -545,7 +559,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "The shell to run the task in when on a Unix-based machine."
         },
         "windowsShell": {
           "title": "windowsShell",

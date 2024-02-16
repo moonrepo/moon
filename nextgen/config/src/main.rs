@@ -10,6 +10,7 @@ use std::process::Command;
 
 fn create_jsonschema_renderer() -> JsonSchemaRenderer {
     JsonSchemaRenderer::new(JsonSchemaOptions {
+        markdown_description: true,
         mark_struct_fields_required: false,
         set_field_name_as_title: true,
         ..JsonSchemaOptions::default()

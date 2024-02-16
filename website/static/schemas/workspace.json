@@ -10,12 +10,13 @@
     },
     "codeowners": {
       "title": "codeowners",
-      "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
+      "description": "Configures code ownership rules for generating a CODEOWNERS file.",
       "allOf": [
         {
           "$ref": "#/definitions/CodeownersConfig"
         }
-      ]
+      ],
+      "markdownDescription": "Configures code ownership rules for generating a `CODEOWNERS` file."
     },
     "constraints": {
       "title": "constraints",
@@ -49,14 +50,15 @@
     },
     "extensions": {
       "title": "extensions",
-      "description": "Configures extensions that can be executed with `moon ext`.",
+      "description": "Configures extensions that can be executed with moon ext.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/ExtensionConfig"
       },
       "propertyNames": {
         "type": "string"
-      }
+      },
+      "markdownDescription": "Configures extensions that can be executed with `moon ext`."
     },
     "generator": {
       "title": "generator",
@@ -120,7 +122,7 @@
     },
     "versionConstraint": {
       "title": "versionConstraint",
-      "description": "Requires a specific version of the `moon` binary.",
+      "description": "Requires a specific version of the moon binary.",
       "anyOf": [
         {
           "type": "string"
@@ -128,13 +130,14 @@
         {
           "type": "null"
         }
-      ]
+      ],
+      "markdownDescription": "Requires a specific version of the `moon` binary."
     }
   },
   "additionalProperties": false,
   "definitions": {
     "CodeownersConfig": {
-      "description": "Configures code ownership rules for generating a `CODEOWNERS` file.",
+      "description": "Configures code ownership rules for generating a CODEOWNERS file.",
       "type": "object",
       "properties": {
         "globalPaths": {
@@ -163,11 +166,13 @@
         },
         "syncOnRun": {
           "title": "syncOnRun",
-          "description": "Generates a `CODEOWNERS` file after aggregating all ownership rules from each project in the workspace.",
-          "type": "boolean"
+          "description": "Generates a CODEOWNERS file after aggregating all ownership rules from each project in the workspace.",
+          "type": "boolean",
+          "markdownDescription": "Generates a `CODEOWNERS` file after aggregating all ownership rules from each project in the workspace."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Configures code ownership rules for generating a `CODEOWNERS` file."
     },
     "CodeownersOrderBy": {
       "type": "string",
@@ -182,13 +187,14 @@
       "properties": {
         "enforceProjectTypeRelationships": {
           "title": "enforceProjectTypeRelationships",
-          "description": "Enforces relationships between projects based on each project's `type` setting.",
+          "description": "Enforces relationships between projects based on each project's type setting.",
           "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "markdownDescription": "Enforces relationships between projects based on each project's `type` setting."
         },
         "tagRelationships": {
           "title": "tagRelationships",
-          "description": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags.",
+          "description": "Enforces relationships between projects based on each project's tags setting. Requires a mapping of tags, to acceptable tags.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -198,7 +204,8 @@
           },
           "propertyNames": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags."
         }
       },
       "additionalProperties": false
@@ -292,19 +299,21 @@
         },
         "ignoreMissingPatterns": {
           "title": "ignoreMissingPatterns",
-          "description": "When `warnOnMissingInputs` is enabled, filters missing file paths from logging a warning.",
+          "description": "When warnOnMissingInputs is enabled, filters missing file paths from logging a warning.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "When `warnOnMissingInputs` is enabled, filters missing file paths from logging a warning."
         },
         "ignorePatterns": {
           "title": "ignorePatterns",
-          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended.",
+          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with ** is recommended.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended."
         },
         "optimization": {
           "title": "optimization",
@@ -454,8 +463,9 @@
         },
         "syncHooks": {
           "title": "syncHooks",
-          "description": "Generates hooks and scripts based on the `hooks` setting.",
-          "type": "boolean"
+          "description": "Generates hooks and scripts based on the hooks setting.",
+          "type": "boolean",
+          "markdownDescription": "Generates hooks and scripts based on the `hooks` setting."
         }
       },
       "additionalProperties": false
@@ -504,11 +514,12 @@
       "properties": {
         "globs": {
           "title": "globs",
-          "description": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects.",
+          "description": "A list of globs in which to locate project directories. Can be suffixed with moon.yml to only find distinct projects.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects."
         },
         "sources": {
           "title": "sources",

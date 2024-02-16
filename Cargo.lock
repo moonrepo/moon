@@ -3095,7 +3095,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "1.21.3"
+version = "1.21.4"
 dependencies = [
  "bytes",
  "ci_env",

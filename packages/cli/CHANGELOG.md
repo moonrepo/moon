@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed VCS hooks on Windows generating invalid PowerShell commands.
+
 ## 1.21.3
 
 #### 🐞 Fixes

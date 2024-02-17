@@ -1,30 +1,28 @@
-use moon_common::path::RelativePathBuf;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_task::Task;
 use rustc_hash::FxHashSet;
 use starbase_sandbox::create_sandbox;
 
 mod task {
+
     use super::*;
 
     #[test]
     fn gets_all_input_files() {
         let sandbox = create_sandbox("files");
 
-        let input_files = FxHashSet::from_iter([RelativePathBuf::from("c.jsx")]);
-        let input_globs = FxHashSet::from_iter([RelativePathBuf::from("*.js")]);
-
         let task = Task {
-            input_files,
-            input_globs,
+            input_files: FxHashSet::from_iter([WorkspaceRelativePathBuf::from("c.jsx")]),
+            input_globs: FxHashSet::from_iter([WorkspaceRelativePathBuf::from("*.js")]),
             ..Default::default()
         };
 
         let files = task.get_input_files(sandbox.path()).unwrap();
 
-        assert!(files.len() == 3);
-        assert!(files.contains(&RelativePathBuf::from("a.js")));
-        assert!(files.contains(&RelativePathBuf::from("b.js")));
-        assert!(files.contains(&RelativePathBuf::from("c.jsx")));
-        assert!(!files.contains(&RelativePathBuf::from("d.rs")));
+        assert_eq!(files.len(), 3);
+        assert!(files.contains(&WorkspaceRelativePathBuf::from("a.js")));
+        assert!(files.contains(&WorkspaceRelativePathBuf::from("b.js")));
+        assert!(files.contains(&WorkspaceRelativePathBuf::from("c.jsx")));
+        assert!(!files.contains(&WorkspaceRelativePathBuf::from("d.rs")));
     }
 }

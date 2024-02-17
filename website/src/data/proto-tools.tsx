@@ -156,6 +156,17 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/buf.toml',
 	},
+	dotnet: {
+		author: 'Phault',
+		bins: ['dotnet'],
+		description:
+			'.NET is the free, open-source, cross-platform framework for building modern apps and powerful cloud services.',
+		homepageUrl: 'https://dotnet.microsoft.com',
+		name: '.NET',
+		pluginLocator: 'github:Phault/proto-dotnet-plugin',
+		pluginType: 'wasm',
+		repoUrl: 'https://github.com/Phault/proto-dotnet-plugin',
+	},
 	earthly: {
 		author: 'theomessin',
 		bins: ['earthly'],

@@ -167,6 +167,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'wasm',
 		repoUrl: 'https://github.com/Phault/proto-dotnet-plugin',
 	},
+	dprint: {
+		author: 'Phault',
+		bins: ['dprint'],
+		description: 'A pluggable and configurable code formatting platform written in Rust.',
+		homepageUrl: 'https://dprint.dev',
+		name: 'dprint',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/dprint/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	earthly: {
 		author: 'theomessin',
 		bins: ['earthly'],

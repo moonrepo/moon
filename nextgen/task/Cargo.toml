@@ -22,4 +22,3 @@ once_cell = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
-tokio = { workspace = true }

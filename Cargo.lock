@@ -3910,7 +3910,6 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
- "tokio",
  "tracing",
 ]
 

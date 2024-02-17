@@ -1,11 +1,13 @@
-mod task {
-    use moon_common::path::RelativePathBuf;
-    use moon_task::Task;
-    use rustc_hash::FxHashSet;
-    use starbase_sandbox::create_sandbox;
+use moon_common::path::RelativePathBuf;
+use moon_task::Task;
+use rustc_hash::FxHashSet;
+use starbase_sandbox::create_sandbox;
 
-    #[tokio::test]
-    async fn gets_all_input_files() {
+mod task {
+    use super::*;
+
+    #[test]
+    fn gets_all_input_files() {
         let sandbox = create_sandbox("files");
 
         let input_files = FxHashSet::from_iter([RelativePathBuf::from("c.jsx")]);

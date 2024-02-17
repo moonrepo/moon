@@ -4,7 +4,6 @@ use rustc_hash::FxHashSet;
 use starbase_sandbox::create_sandbox;
 
 mod task {
-
     use super::*;
 
     #[test]

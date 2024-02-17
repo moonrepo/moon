@@ -25,12 +25,27 @@ fn validate_channel<D, C>(
 }
 
 derive_enum!(
+    /// The technology stack of the project, for categorizing.
+    #[derive(ConfigEnum, Copy, Default)]
+    pub enum ProjectStack {
+        Backend,
+        Frontend,
+        Infrastructure,
+        Systems,
+        #[default]
+        Unknown,
+    }
+);
+
+derive_enum!(
     /// The type of project, for categorizing.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum ProjectType {
         Application,
         Automation,
+        Configuration,
         Library,
+        Scaffolding,
         Tool,
         #[default]
         Unknown,
@@ -117,6 +132,9 @@ cacheable!(
         /// Expanded information about the project.
         #[setting(nested)]
         pub project: Option<ProjectMetadataConfig>,
+
+        /// The technology stack of the project, for categorizing.
+        pub stack: ProjectStack,
 
         /// A list of tags that this project blongs to, for categorizing,
         /// boundary enforcement, and task inheritance.

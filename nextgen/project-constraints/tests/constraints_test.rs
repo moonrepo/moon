@@ -43,6 +43,24 @@ mod by_type {
     }
 
     #[test]
+    fn app_use_config() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Application),
+            &create_project("bar", ProjectType::Configuration),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn app_use_scaffold() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Application),
+            &create_project("bar", ProjectType::Scaffolding),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn app_use_unknown() {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
@@ -76,6 +94,24 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Library),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn lib_use_config() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Library),
+            &create_project("bar", ProjectType::Configuration),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn lib_use_scaffold() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Library),
+            &create_project("bar", ProjectType::Scaffolding),
         )
         .unwrap();
     }
@@ -124,6 +160,24 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Library),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn tool_use_config() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Tool),
+            &create_project("bar", ProjectType::Configuration),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn tool_use_scaffold() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Tool),
+            &create_project("bar", ProjectType::Scaffolding),
         )
         .unwrap();
     }
@@ -195,6 +249,24 @@ mod by_type {
     }
 
     #[test]
+    fn e2e_use_config() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Configuration),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn e2e_use_scaffold() {
+        enforce_project_type_relationships(
+            &create_project("foo", ProjectType::Automation),
+            &create_project("bar", ProjectType::Scaffolding),
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn e2e_use_unknown() {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
@@ -211,6 +283,138 @@ mod by_type {
             &create_project("bar", ProjectType::Automation),
         )
         .unwrap();
+    }
+
+    mod config {
+        use super::*;
+
+        #[test]
+        fn config_use_config() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Configuration),
+                &create_project("bar", ProjectType::Configuration),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn config_use_scaffold() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Configuration),
+                &create_project("bar", ProjectType::Scaffolding),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project foo of type configuration"
+        )]
+        fn config_cant_use_app() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Configuration),
+                &create_project("bar", ProjectType::Application),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project foo of type configuration"
+        )]
+        fn config_cant_use_e2e() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Configuration),
+                &create_project("bar", ProjectType::Automation),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project foo of type configuration"
+        )]
+        fn config_cant_use_lib() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Configuration),
+                &create_project("bar", ProjectType::Library),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project foo of type configuration"
+        )]
+        fn config_cant_use_tool() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Configuration),
+                &create_project("bar", ProjectType::Tool),
+            )
+            .unwrap();
+        }
+    }
+
+    mod scaffold {
+        use super::*;
+
+        #[test]
+        fn scaffold_use_config() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Scaffolding),
+                &create_project("bar", ProjectType::Configuration),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn scaffold_use_scaffold() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Scaffolding),
+                &create_project("bar", ProjectType::Scaffolding),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        fn scaffold_cant_use_app() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Scaffolding),
+                &create_project("bar", ProjectType::Application),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        fn scaffold_cant_use_e2e() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Scaffolding),
+                &create_project("bar", ProjectType::Automation),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        fn scaffold_cant_use_lib() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Scaffolding),
+                &create_project("bar", ProjectType::Library),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid project relationship. Project foo of type scaffolding")]
+        fn scaffold_cant_use_tool() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Scaffolding),
+                &create_project("bar", ProjectType::Tool),
+            )
+            .unwrap();
+        }
     }
 }
 

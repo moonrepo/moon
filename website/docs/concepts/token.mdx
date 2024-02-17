@@ -243,6 +243,14 @@ tasks:
     command: 'vite build'
     inputs:
       - '@envs(sources)'
+
+
+# Resolves to
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '$NODE_ENV'
 ```
 
 ### Inputs & outputs
@@ -449,6 +457,27 @@ tasks:
       - 'example'
       - '--cache-dir'
       - '../../.cache/apps/web'
+```
+
+### `$projectStack`<VersionLabel version="1.22.0" />
+
+The stack of the project, as defined in [`moon.yml`](../config/project#stack). If the project has
+not defined the [`stack`](../config/project#stack) setting, or does not have a config, this defaults
+to "unknown".
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example debug $projectStack'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - 'debug'
+      - 'backend'
 ```
 
 ### `$projectType`

@@ -6,8 +6,10 @@ use moon_project::FileGroup;
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
+use regex::Regex;
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
+use std::env;
 use tracing::warn;
 
 #[derive(Debug, Default, PartialEq)]
@@ -40,8 +42,12 @@ impl TokenScope {
 }
 
 pub struct TokenExpander<'graph, 'query> {
-    context: &'graph ExpanderContext<'graph, 'query>,
     pub scope: TokenScope,
+
+    context: &'graph ExpanderContext<'graph, 'query>,
+
+    // In the current process
+    env_vars: Vec<String>,
 }
 
 impl<'graph, 'query> TokenExpander<'graph, 'query> {
@@ -49,6 +55,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Self {
             scope: TokenScope::Args,
             context,
+            env_vars: env::vars().map(|var| var.0).collect::<Vec<_>>(),
         }
     }
 
@@ -175,6 +182,17 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             match input {
                 InputPath::EnvVar(var) => {
                     result.env.push(var.to_owned());
+                }
+                InputPath::EnvVarGlob(var_glob) => {
+                    let pattern =
+                        Regex::new(format!("^{}$", var_glob.replace('*', "[A-Z0-9_]+")).as_str())
+                            .unwrap();
+
+                    for var_name in &self.env_vars {
+                        if pattern.is_match(var_name) {
+                            result.env.push(var_name.to_owned());
+                        }
+                    }
                 }
                 InputPath::TokenFunc(func) => {
                     let inner_result = self.replace_function(task, func)?;
@@ -449,6 +467,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             },
             "projectRoot" => Cow::Owned(path::to_string(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
+            "projectStack" => Cow::Owned(project.stack.to_string()),
             "projectType" => Cow::Owned(project.type_of.to_string()),
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),

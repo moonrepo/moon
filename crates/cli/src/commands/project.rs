@@ -38,6 +38,38 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     }
 
     console.print_header(&project.id)?;
+
+    if let Some(meta) = &config.project {
+        let mut has_other_meta = false;
+
+        console.write_line(&meta.description)?;
+        console.write_newline()?;
+
+        if let Some(name) = &meta.name {
+            console.print_entry("Name", name)?;
+            has_other_meta = true;
+        }
+
+        if let Some(owner) = &meta.owner {
+            console.print_entry("Owner", owner)?;
+            has_other_meta = true;
+        }
+
+        if !meta.maintainers.is_empty() {
+            console.print_entry_list("Maintainers", &meta.maintainers)?;
+            has_other_meta = true;
+        }
+
+        if let Some(channel) = &meta.channel {
+            console.print_entry("Channel", channel)?;
+            has_other_meta = true;
+        }
+
+        if has_other_meta {
+            console.write_newline()?;
+        }
+    }
+
     console.print_entry("Project", color::id(&project.id))?;
 
     if let Some(alias) = &project.alias {
@@ -59,33 +91,13 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         console.print_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
     }
 
-    if let Some(meta) = &config.project {
-        if let Some(name) = &meta.name {
-            console.print_entry("Name", name)?;
-        }
-
-        console.print_entry("Description", &meta.description)?;
-
-        if let Some(owner) = &meta.owner {
-            console.print_entry("Owner", owner)?;
-        }
-
-        if !meta.maintainers.is_empty() {
-            console.print_entry_list("Maintainers", &meta.maintainers)?;
-        }
-
-        if let Some(channel) = &meta.channel {
-            console.print_entry("Channel", channel)?;
-        }
-    }
-
     let mut deps = vec![];
 
     for dep_config in &project.dependencies {
         deps.push(format!(
             "{} {}",
             color::id(&dep_config.id),
-            color::muted_light(format!("({}, {})", dep_config.source, dep_config.scope)),
+            color::muted(format!("({}, {})", dep_config.source, dep_config.scope)),
         ));
     }
 
@@ -102,10 +114,17 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         for name in project.tasks.keys().sorted() {
             let task = project.tasks.get(name).unwrap();
 
-            console.print_entry(
-                name,
+            console.print_entry(name, "")?;
+
+            console.write_line(format!(
+                "  {} {}",
+                color::muted("›"),
                 color::shell(format!("{} {}", task.command, task.args.join(" "))),
-            )?;
+            ))?;
+
+            if let Some(description) = &task.description {
+                console.write_line(format!("    {description}"))?;
+            }
         }
     }
 

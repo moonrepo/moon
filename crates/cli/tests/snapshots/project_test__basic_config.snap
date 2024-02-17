@@ -14,15 +14,15 @@ Tags: vue
 
  DEPENDS ON 
 
- - noConfig (explicit, production)
+  - noConfig (explicit, production)
 
  FILE GROUPS 
 
 sources:
- - basic/src/**/*
- - basic/types/**/*
+  - basic/src/**/*
+  - basic/types/**/*
 tests:
- - basic/**/*_test.rs
+  - basic/**/*_test.rs
 
 
 

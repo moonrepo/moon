@@ -19,8 +19,8 @@ Runs in CI: Yes
 
  INPUTS 
 
- - .moon/*.yml
- - tasks/tests/**/*
+  - .moon/*.yml
+  - tasks/tests/**/*
 
 
 

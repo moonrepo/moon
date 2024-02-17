@@ -245,6 +245,19 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
 	},
+	oxlint: {
+		author: 'Phault',
+		bins: ['oxlint'],
+		description:
+			'Oxlint is a JavaScript linter designed to catch erroneous or useless code without requiring any configurations by default.',
+		homepageUrl: 'https://oxc-project.github.io',
+		name: 'oxlint',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/oxlint/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	sops: {
 		author: 'stk0vrfl0w',
 		bins: ['sops'],

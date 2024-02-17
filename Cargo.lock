@@ -3907,7 +3907,9 @@ dependencies = [
  "once_cell",
  "rustc-hash",
  "serde",
+ "starbase_sandbox",
  "starbase_utils",
+ "tokio",
  "tracing",
 ]
 

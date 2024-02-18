@@ -172,7 +172,16 @@ impl Task {
         &self,
         workspace_root: &Path,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
-        let mut list: Vec<_> = self.input_files.iter().cloned().collect();
+        let mut list = vec![];
+
+        for path in &self.input_files {
+            let file = path.to_path(workspace_root);
+
+            // Detect if file actually exists
+            if file.is_file() {
+                list.push(path.to_owned());
+            }
+        }
 
         if !self.input_globs.is_empty() {
             let globs = &self.input_globs;

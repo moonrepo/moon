@@ -24,4 +24,19 @@ mod task {
         assert!(files.contains(&WorkspaceRelativePathBuf::from("c.jsx")));
         assert!(!files.contains(&WorkspaceRelativePathBuf::from("d.rs")));
     }
+
+    #[test]
+    fn filters_out_nonexistent_files() {
+        let sandbox = create_sandbox("files");
+
+        let task = Task {
+            input_files: FxHashSet::from_iter([WorkspaceRelativePathBuf::from("nonexistent.jsx")]),
+            input_globs: FxHashSet::from_iter([WorkspaceRelativePathBuf::from("*.py")]),
+            ..Default::default()
+        };
+
+        let files = task.get_input_files(sandbox.path()).unwrap();
+
+        assert_eq!(files.len(), 0);
+    }
 }

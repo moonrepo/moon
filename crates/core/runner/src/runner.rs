@@ -329,17 +329,25 @@ impl<'a> Runner<'a> {
 
             files.sort();
 
+            if files.is_empty() {
+                warn!("No input files detected, defaulting to '.'. This will be deprecated in a future version")
+            }
+
             if matches!(
                 check_affected,
                 TaskOptionAffectedFiles::Env | TaskOptionAffectedFiles::Enabled(true)
             ) {
                 command.env(
                     "MOON_AFFECTED_FILES",
-                    files
-                        .iter()
-                        .map(|f| f.as_str().to_string())
-                        .collect::<Vec<_>>()
-                        .join(","),
+                    if files.is_empty() {
+                        ".".into()
+                    } else {
+                        files
+                            .iter()
+                            .map(|f| f.as_str().to_string())
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    },
                 );
             }
 
@@ -347,8 +355,12 @@ impl<'a> Runner<'a> {
                 check_affected,
                 TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
             ) {
-                // Mimic relative from ("./")
-                command.args(files.iter().map(|f| format!("./{f}")));
+                if files.is_empty() {
+                    command.arg_if_missing(".");
+                } else {
+                    // Mimic relative from ("./")
+                    command.args(files.iter().map(|f| format!("./{f}")));
+                }
             }
         }
 

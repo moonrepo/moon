@@ -58,3 +58,40 @@ async fn all_inputs_when_no_files_affected() {
 
     assert_eq!(cmd.args, vec!["./affected.js", "./file.txt"]);
 }
+
+#[tokio::test]
+async fn dot_if_no_input_files() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
+
+    let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    let project = project_graph.get("noAffected").unwrap();
+    let task = project.get_task("misconfigured").unwrap();
+    let emitter = Emitter::new(Arc::new(RwLock::new(workspace.clone())));
+
+    let runner = Runner::new(
+        &emitter,
+        &workspace,
+        &project,
+        task,
+        Arc::new(Console::new_testing()),
+    )
+    .unwrap();
+
+    let cmd = runner
+        .create_command(
+            &ActionContext {
+                affected_only: true,
+                touched_files: FxHashSet::from_iter([]),
+                ..Default::default()
+            },
+            &Runtime::new(PlatformType::Node, RuntimeReq::Global),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(cmd.args, vec!["./affected.js", "."]);
+}

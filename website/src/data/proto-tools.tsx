@@ -156,6 +156,29 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/buf.toml',
 	},
+	dotnet: {
+		author: 'Phault',
+		bins: ['dotnet'],
+		description:
+			'.NET is the free, open-source, cross-platform framework for building modern apps and powerful cloud services.',
+		homepageUrl: 'https://dotnet.microsoft.com',
+		name: '.NET',
+		pluginLocator: 'github:Phault/proto-dotnet-plugin',
+		pluginType: 'wasm',
+		repoUrl: 'https://github.com/Phault/proto-dotnet-plugin',
+	},
+	dprint: {
+		author: 'Phault',
+		bins: ['dprint'],
+		description: 'A pluggable and configurable code formatting platform written in Rust.',
+		homepageUrl: 'https://dprint.dev',
+		name: 'dprint',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/dprint/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	earthly: {
 		author: 'theomessin',
 		bins: ['earthly'],
@@ -221,6 +244,19 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
+	},
+	oxlint: {
+		author: 'Phault',
+		bins: ['oxlint'],
+		description:
+			'Oxlint is a JavaScript linter designed to catch erroneous or useless code without requiring any configurations by default.',
+		homepageUrl: 'https://oxc-project.github.io',
+		name: 'oxlint',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/oxlint/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
 	sops: {
 		author: 'stk0vrfl0w',

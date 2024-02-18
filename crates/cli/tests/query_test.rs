@@ -279,6 +279,7 @@ mod projects {
                 "baz",
                 "emptyConfig",
                 "foo",
+                "metadata",
                 "noConfig",
                 "platforms",
                 "tasks",
@@ -683,7 +684,7 @@ mod tasks {
         projects.sort();
 
         assert_eq!(tasks, string_vec!["lint", "test"]);
-        assert_eq!(projects, string_vec!["platforms", "tasks"]);
+        assert_eq!(projects, string_vec!["metadata", "platforms", "tasks"]);
     }
 }
 

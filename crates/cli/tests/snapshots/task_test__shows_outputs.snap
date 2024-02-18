@@ -19,12 +19,12 @@ Runs in CI: Yes
 
  INPUTS 
 
- - .moon/*.yml
- - tasks/**/*
+  - .moon/*.yml
+  - tasks/**/*
 
  OUTPUTS 
 
- - tasks/cache
+  - tasks/cache
 
 
 

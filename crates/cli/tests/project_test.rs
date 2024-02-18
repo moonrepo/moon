@@ -151,3 +151,22 @@ fn root_level() {
 
     assert_snapshot!(assert.output());
 }
+
+#[test]
+fn includes_metadata() {
+    // with project metadata
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "projects",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project").arg("metadata");
+    });
+
+    assert_snapshot!(assert.output());
+}

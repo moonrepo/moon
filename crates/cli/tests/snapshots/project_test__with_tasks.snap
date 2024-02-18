@@ -13,16 +13,18 @@ Type: unknown
 
  TASKS 
 
-lint: eslint --cache --report-unused-disable-directives
-test: jest --cache --color
+lint: 
+  › eslint --cache --report-unused-disable-directives
+test: 
+  › jest --cache --color
 
  FILE GROUPS 
 
 sources:
- - tasks/src/**/*
- - tasks/types/**/*
+  - tasks/src/**/*
+  - tasks/types/**/*
 tests:
- - tasks/tests/**/*
+  - tasks/tests/**/*
 
 
 

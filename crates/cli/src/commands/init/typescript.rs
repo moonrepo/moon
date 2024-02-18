@@ -48,6 +48,8 @@ pub async fn init_typescript(
                 .as_bytes(),
             );
         })?;
+
+        console.out.flush()?;
     }
 
     let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {

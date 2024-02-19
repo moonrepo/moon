@@ -198,15 +198,14 @@ impl DependencyManager<NodeTool> for NpmTool {
                 args.clear();
                 args.push("ci");
             }
-        } else {
-            args.push("--no-audit");
         }
-
-        args.push("--no-fund");
 
         let mut cmd = self.create_command(node)?;
 
-        cmd.args(args).cwd(working_dir).set_print_command(log);
+        cmd.args(args)
+            .args(&self.config.install_args)
+            .cwd(working_dir)
+            .set_print_command(log);
 
         let mut cmd = cmd.create_async();
 

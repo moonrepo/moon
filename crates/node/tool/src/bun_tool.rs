@@ -217,6 +217,7 @@ impl DependencyManager<NodeTool> for BunTool {
         let mut cmd = self.create_command(node)?;
 
         cmd.args(["install"])
+            .args(&self.config.install_args)
             .cwd(working_dir)
             .set_print_command(log);
 

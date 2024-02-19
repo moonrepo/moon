@@ -1,3 +1,4 @@
+use crate::task_hash::TaskHash;
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
@@ -20,12 +21,57 @@ pub struct TaskHasher<'task> {
     pub vcs: &'task BoxedVcs,
     pub workspace_root: &'task Path,
 
-    aggregated_files: FxHashSet<PathBuf>,
-    processed_files: FxHashSet<WorkspaceRelativePathBuf>,
+    content: TaskHash<'task>,
 }
 
 impl<'task> TaskHasher<'task> {
-    pub async fn aggregate_inputs(&mut self) -> miette::Result<()> {
+    pub fn new(
+        project: &'task Project,
+        task: &'task Task,
+        vcs: &'task BoxedVcs,
+        workspace_root: &'task Path,
+        hasher_config: &'task HasherConfig,
+    ) -> Self {
+        Self {
+            hasher_config,
+            project,
+            task,
+            vcs,
+            workspace_root,
+            content: TaskHash::new(project, task),
+        }
+    }
+
+    pub async fn hash(mut self) -> miette::Result<TaskHash<'task>> {
+        self.hash_inputs().await?;
+
+        Ok(self.content)
+    }
+
+    pub async fn hash_inputs(&mut self) -> miette::Result<()> {
+        let absolute_inputs = self.aggregate_inputs().await?;
+        let processed_inputs = self.process_inputs(absolute_inputs)?;
+
+        if !processed_inputs.is_empty() {
+            let mut hashed_inputs = BTreeMap::default();
+            let files = processed_inputs
+                .into_iter()
+                .map(|file| file.to_string())
+                .collect::<Vec<_>>();
+
+            hashed_inputs.extend(
+                self.vcs
+                    .get_file_hashes(&files, true, self.hasher_config.batch_size)
+                    .await?,
+            );
+
+            self.content.inputs = hashed_inputs;
+        }
+
+        Ok(())
+    }
+
+    async fn aggregate_inputs(&mut self) -> miette::Result<FxHashSet<PathBuf>> {
         let mut files = FxHashSet::default();
 
         if !self.task.input_files.is_empty() {
@@ -81,17 +127,45 @@ impl<'task> TaskHasher<'task> {
             }
         }
 
-        self.aggregated_files = files;
-
-        Ok(())
+        Ok(files)
     }
 
-    pub fn process_files(&mut self) -> miette::Result<()> {
+    fn is_valid_input_source(
+        &self,
+        sources_globset: &GlobSet,
+        workspace_relative_path: &WorkspaceRelativePath,
+    ) -> bool {
+        // Don't invalidate existing hashes when moon.yml changes
+        // as we already hash the contents of each task!
+        if workspace_relative_path.ends_with(CONFIG_PROJECT_FILENAME) {
+            return false;
+        }
+
+        // Remove outputs first
+        if sources_globset.is_negated(workspace_relative_path.as_str()) {
+            return false;
+        }
+
+        for output in &self.task.output_files {
+            if workspace_relative_path == output || workspace_relative_path.starts_with(output) {
+                return false;
+            }
+        }
+
+        // Filter inputs second
+        self.task.input_files.contains(workspace_relative_path)
+            || sources_globset.matches(workspace_relative_path.as_str())
+    }
+
+    fn process_inputs(
+        &mut self,
+        inputs: FxHashSet<PathBuf>,
+    ) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
         let mut files = FxHashSet::default();
         let ignore = GlobSet::new(&self.hasher_config.ignore_patterns)?;
         let ignore_missing = GlobSet::new(&self.hasher_config.ignore_missing_patterns)?;
 
-        for path in &self.aggregated_files {
+        for path in inputs {
             // We need to use relative paths from the workspace root
             // so that it works the same across all machines
             let rel_path = path.relative_to(&self.workspace_root).into_diagnostic()?;
@@ -136,57 +210,6 @@ impl<'task> TaskHasher<'task> {
             files.retain(|file| self.is_valid_input_source(&globset, file));
         }
 
-        self.processed_files = files;
-
-        Ok(())
-    }
-
-    pub async fn generate_hashes(
-        self,
-    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        let mut hashed_files = BTreeMap::default();
-
-        if !self.processed_files.is_empty() {
-            let files = self
-                .processed_files
-                .into_iter()
-                .map(|file| file.to_string())
-                .collect::<Vec<_>>();
-
-            hashed_files.extend(
-                self.vcs
-                    .get_file_hashes(&files, true, self.hasher_config.batch_size)
-                    .await?,
-            );
-        }
-
-        Ok(hashed_files)
-    }
-
-    fn is_valid_input_source(
-        &self,
-        sources_globset: &GlobSet,
-        workspace_relative_path: &WorkspaceRelativePath,
-    ) -> bool {
-        // Don't invalidate existing hashes when moon.yml changes
-        // as we already hash the contents of each task!
-        if workspace_relative_path.ends_with(CONFIG_PROJECT_FILENAME) {
-            return false;
-        }
-
-        // Remove outputs first
-        if sources_globset.is_negated(workspace_relative_path.as_str()) {
-            return false;
-        }
-
-        for output in &self.task.output_files {
-            if workspace_relative_path == output || workspace_relative_path.starts_with(output) {
-                return false;
-            }
-        }
-
-        // Filter inputs second
-        self.task.input_files.contains(workspace_relative_path)
-            || sources_globset.matches(workspace_relative_path.as_str())
+        Ok(files)
     }
 }

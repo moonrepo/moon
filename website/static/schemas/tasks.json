@@ -146,17 +146,6 @@
             }
           ]
         },
-        "description": {
-          "description": "A human-readable description about the task.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
         "env": {
           "title": "env",
           "description": "A mapping of environment variables that will be set when the task is ran.",

@@ -304,8 +304,6 @@ export interface PartialProjectMetadataConfig {
 	owner?: string | null;
 }
 
-export type ProjectStack = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
-
 /** Overrides top-level toolchain settings. */
 export interface PartialProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */

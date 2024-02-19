@@ -65,6 +65,7 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
+/// Configures projects in the workspace, using both globs and explicit source paths.
 #[derive(Clone, Config, Debug)]
 pub struct WorkspaceProjectsConfig {
     /// A list of globs in which to locate project directories.
@@ -75,17 +76,21 @@ pub struct WorkspaceProjectsConfig {
     pub sources: FxHashMap<Id, String>,
 }
 
+/// Configures projects in the workspace.
 #[derive(Clone, Config, Debug)]
 #[config(serde(
     untagged,
     expecting = "expected a list of globs, a map of projects, or both"
 ))]
 pub enum WorkspaceProjects {
+    /// Using both globs and explicit source paths.
     #[setting(nested)]
     Both(WorkspaceProjectsConfig),
 
+    /// Using globs. Suffix with `moon.yml` to be distinct.
     Globs(Vec<String>),
 
+    /// Using a mapping of IDs to source paths.
     #[setting(default)]
     Sources(FxHashMap<Id, String>),
 }

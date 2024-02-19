@@ -78,13 +78,17 @@ cacheable!(
 );
 
 cacheable!(
+    /// Expanded information about a project dependency.
     #[derive(Clone, Config, Debug, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"
     )]
     pub enum ProjectDependsOn {
+        /// A project referenced by ID.
         String(Id),
+
+        /// A project referenced by ID, with additional parameters to pass through.
         #[setting(nested)]
         Object(DependencyConfig),
     }

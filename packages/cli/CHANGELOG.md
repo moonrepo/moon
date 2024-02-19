@@ -34,6 +34,12 @@
 
 - Updated Rust to v1.76.
 
+## 1.21.4
+
+#### 🐞 Fixes
+
+- Fixed VCS hooks on Windows generating invalid PowerShell commands.
+
 ## 1.21.3
 
 #### 🐞 Fixes

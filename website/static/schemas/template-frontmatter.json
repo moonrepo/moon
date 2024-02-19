@@ -1,41 +1,23 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "PartialTemplateFrontmatterConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/template#frontmatter",
   "type": "object",
   "properties": {
     "$schema": {
+      "title": "$schema",
       "default": "https://moonrepo.dev/schemas/template-frontmatter.json",
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "type": "string"
     },
     "force": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "title": "force",
+      "type": "boolean"
     },
     "skip": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "title": "skip",
+      "type": "boolean"
     },
     "to": {
+      "title": "to",
       "anyOf": [
         {
           "type": "string"

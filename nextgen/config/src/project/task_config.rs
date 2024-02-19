@@ -79,12 +79,16 @@ derive_enum!(
 );
 
 cacheable!(
+    /// Configures a command to execute, and its arguments.
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(untagged, expecting = "expected a string or a list of strings")]
     pub enum TaskArgs {
+        /// No value defined.
         #[setting(default, null)]
         None,
+        /// A command and arguments as a string. Will be parsed into a list.
         String(String),
+        /// A command and arguments as a list of individual values.
         List(Vec<String>),
     }
 );
@@ -118,14 +122,17 @@ impl TaskDependencyConfig {
 }
 
 cacheable!(
+    /// Configures another task that a task depends on.
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a valid target or dependency config object"
     )]
     pub enum TaskDependency {
+        /// A task referenced by target.
         Target(Target),
 
+        /// A task referenced by target, with additional parameters to pass through.
         #[setting(nested)]
         Config(TaskDependencyConfig),
     }
@@ -161,7 +168,7 @@ cacheable!(
         #[setting(nested)]
         pub args: TaskArgs,
 
-        /// Other tasks that this task depends on, and must run to completion,
+        /// Other tasks that this task depends on, and must run to completion
         /// before this task is ran. Can depend on sibling tasks, or tasks in
         /// other projects, using targets.
         #[setting(nested, validate = validate_deps)]

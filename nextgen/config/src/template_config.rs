@@ -9,6 +9,7 @@ use std::path::Path;
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
+        /// Configuration for a template variable.
         #[derive(Clone, Config, Debug, Eq, PartialEq)]
         pub struct $name {
             /// The default value of the variable if none was provided.

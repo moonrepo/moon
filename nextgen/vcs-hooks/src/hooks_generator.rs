@@ -136,7 +136,7 @@ impl<'app> HooksGenerator<'app> {
                 self.create_file(
                     &external_path,
                     format!(
-                        "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{} $1 $2 $3\"",
+                        "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{}\" $1 $2 $3",
                         powershell_exe, external_command
                     ),
                 )?;

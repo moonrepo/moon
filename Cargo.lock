@@ -3938,6 +3938,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_task_hasher"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_config",
+ "moon_task",
+ "moon_vcs",
+ "rustc-hash",
+ "starbase_utils",
+]
+
+[[package]]
 name = "moon_test_utils"
 version = "0.0.1"
 dependencies = [

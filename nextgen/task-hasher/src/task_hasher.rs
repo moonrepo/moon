@@ -5,7 +5,7 @@ use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf
 use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Target, Task};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_utils::glob::{self, GlobSet};
@@ -42,10 +42,22 @@ impl<'task> TaskHasher<'task> {
         }
     }
 
-    pub async fn hash(mut self) -> miette::Result<TaskHash<'task>> {
-        self.hash_inputs().await?;
-
+    pub async fn hash(self) -> miette::Result<TaskHash<'task>> {
         Ok(self.content)
+    }
+
+    pub fn hash_args(&mut self, args: &'task [String]) {
+        if !args.is_empty() {
+            for arg in args {
+                self.content.args.push(arg);
+            }
+        }
+    }
+
+    pub fn hash_deps(&mut self, deps: &BTreeMap<&'task Target, &'task str>) {
+        if !deps.is_empty() {
+            self.content.deps.extend(deps);
+        }
     }
 
     pub async fn hash_inputs(&mut self) -> miette::Result<()> {

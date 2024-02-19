@@ -25,6 +25,8 @@
   - Updated the `moon project` command to include the stack in the output.
 - Added a `description` setting for tasks, for providing human-readable information.
   - Updated the `moon project` and `moon task` commands to include the description in the output.
+- Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
+  args used when installing dependencies.
 - Updated task input environment variables to support a wildcard match using `*`, for example
   `$VITE_*`.
   - This will include all environment variables in the current process that starts with `VITE_`.

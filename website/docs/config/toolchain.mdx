@@ -61,6 +61,18 @@ bun:
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
+### `installArgs`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/BunConfig#installArgs" />
+
+Customize the arguments that will be passed to the `bun install` command, when the `InstallDeps`
+action is triggered in the pipeline. These arguments are used both locally and in CI.
+
+```yaml title=".moon/toolchain.yml" {2}
+bun:
+  installArgs: ['--frozen-lockfile']
+```
+
 ### Inherited from `node`
 
 Since Bun and Node.js have a lot of overlap in functionality, the following [`node`](#node) settings
@@ -187,7 +199,7 @@ latest version of the active package manager will be used (when applicable).
 
 #### `version`
 
-<HeadingApiLink to="/api/types/interface/NodePackageManagerConfig#version" />
+<HeadingApiLink to="/api/types/interface/NpmConfig#version" />
 
 The `version` setting defines the explicit package manager
 [version specification](../concepts/toolchain#version-specification) to use. If this field is _not
@@ -202,6 +214,20 @@ node:
 
 > Version can also be defined with [`.prototools`](../proto/config) or with the `MOON_NPM_VERSION`,
 > `MOON_PNPM_VERSION`, `MOON_YARN_VERSION`, or `MOON_BUN_VERSION` environment variables.
+
+#### `installArgs`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/NpmConfig#installArgs" />
+
+Customize the arguments that will be passed to the package manager's install command, when the
+`InstallDeps` action is triggered in the pipeline. These arguments are used both locally and in CI.
+
+```yaml title=".moon/toolchain.yml" {4}
+node:
+  packageManager: 'yarn'
+  yarn:
+    installArgs: ['--immutable']
+```
 
 ### `yarn`
 

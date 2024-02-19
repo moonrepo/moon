@@ -42,8 +42,8 @@ impl<'task> TaskHasher<'task> {
         }
     }
 
-    pub async fn hash(self) -> miette::Result<TaskHash<'task>> {
-        Ok(self.content)
+    pub fn hash(self) -> TaskHash<'task> {
+        self.content
     }
 
     pub fn hash_args(&mut self, args: &'task [String]) {
@@ -180,7 +180,7 @@ impl<'task> TaskHasher<'task> {
         for path in inputs {
             // We need to use relative paths from the workspace root
             // so that it works the same across all machines
-            let rel_path = path.relative_to(&self.workspace_root).into_diagnostic()?;
+            let rel_path = path.relative_to(self.workspace_root).into_diagnostic()?;
 
             // `git hash-object` will fail if you pass an unknown file
             if !path.exists() && self.hasher_config.warn_on_missing_inputs {

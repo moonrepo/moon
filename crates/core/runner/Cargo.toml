@@ -20,6 +20,7 @@ moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../../nextgen/project" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../../../nextgen/task" }
+moon_task_hasher = { path = "../../../nextgen/task-hasher" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }

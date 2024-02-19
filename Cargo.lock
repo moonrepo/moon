@@ -3792,6 +3792,7 @@ dependencies = [
  "moon_project",
  "moon_target",
  "moon_task",
+ "moon_task_hasher",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",

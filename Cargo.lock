@@ -3944,10 +3944,12 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
+ "moon_project",
  "moon_task",
  "moon_vcs",
  "rustc-hash",
  "starbase_utils",
+ "tracing",
 ]
 
 [[package]]

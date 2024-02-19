@@ -11,8 +11,10 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_utils = { workspace = true }
+tracing = { workspace = true }

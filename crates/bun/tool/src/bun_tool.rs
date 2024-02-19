@@ -206,6 +206,7 @@ impl DependencyManager<()> for BunTool {
         let mut cmd = self.create_command(parent)?;
 
         cmd.args(["install"])
+            .args(&self.config.install_args)
             .cwd(working_dir)
             .set_print_command(log);
 

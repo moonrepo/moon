@@ -3942,6 +3942,7 @@ name = "moon_task_hasher"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "moon_config",
  "moon_task",
  "moon_vcs",

@@ -1,8 +1,10 @@
+use itertools::Itertools;
 use moon_config::PartialBunConfig;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_bun_fixture_configs, predicates::prelude::*,
     Sandbox,
 };
+use std::fs;
 
 fn bun_sandbox() -> Sandbox {
     bun_sandbox_with_config(|_| {})
@@ -356,17 +358,33 @@ mod bun {
         use super::*;
 
         #[test]
-        fn uses_dot_when_not_affected() {
+        fn all_files_when_not_affected() {
             let sandbox = bun_sandbox();
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("bun:affectedFiles");
             });
 
+            let mut files = fs::read_dir(sandbox.path().join("base"))
+                .unwrap()
+                .map(|f| {
+                    f.unwrap()
+                        .path()
+                        .strip_prefix(sandbox.path().join("base"))
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_owned()
+                })
+                .sorted();
+
+            let args = files.clone().map(|f| "./".to_owned() + &f).join(" ");
+            let envs = files.join(",");
+
             let output = assert.output();
 
-            assert!(predicate::str::contains("Args: .\n").eval(&output));
-            assert!(predicate::str::contains("Env: .\n").eval(&output));
+            assert!(predicate::str::contains(format!("Args: {}\n", args)).eval(&output));
+            assert!(predicate::str::contains(format!("Env: {}\n", envs)).eval(&output));
         }
 
         #[test]

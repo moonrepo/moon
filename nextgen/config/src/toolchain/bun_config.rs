@@ -14,6 +14,9 @@ pub struct BunConfig {
     /// Automatically infer moon tasks from `package.json` scripts.
     pub infer_tasks_from_scripts: bool,
 
+    /// List of arguments to append to `bun install` commands.
+    pub install_args: Vec<String>,
+
     /// The relative root of the packages workspace. Defaults to moon's
     /// workspace root, but should be defined when nested.
     #[setting(default = ".", skip)]

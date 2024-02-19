@@ -82,6 +82,9 @@ derive_enum!(
 /// Options for Bun, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct BunpmConfig {
+    /// List of arguments to append to `bun install` commands.
+    pub install_args: Vec<String>,
+
     /// Location of the WASM plugin to use for Bun support.
     pub plugin: Option<PluginLocator>,
 
@@ -93,6 +96,10 @@ pub struct BunpmConfig {
 /// Options for npm, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
+    /// List of arguments to append to `npm install` commands.
+    #[setting(default = vec!["--no-audit".into(), "--no-fund".into()])]
+    pub install_args: Vec<String>,
+
     /// Location of the WASM plugin to use for npm support.
     pub plugin: Option<PluginLocator>,
 

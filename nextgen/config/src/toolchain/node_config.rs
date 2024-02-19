@@ -111,6 +111,9 @@ pub struct NpmConfig {
 /// Options for pnpm, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
+    /// List of arguments to append to `pnpm install` commands.
+    pub install_args: Vec<String>,
+
     /// Location of the WASM plugin to use for pnpm support.
     pub plugin: Option<PluginLocator>,
 
@@ -122,6 +125,9 @@ pub struct PnpmConfig {
 /// Options for Yarn, when used as a package manager.
 #[derive(Clone, Config, Debug)]
 pub struct YarnConfig {
+    /// List of arguments to append to `yarn install` commands.
+    pub install_args: Vec<String>,
+
     /// Location of the WASM plugin to use for Yarn support.
     pub plugin: Option<PluginLocator>,
 

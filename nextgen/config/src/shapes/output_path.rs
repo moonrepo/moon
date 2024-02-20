@@ -70,7 +70,7 @@ impl AsRef<OutputPath> for OutputPath {
 
 impl PartialOrd<OutputPath> for OutputPath {
     fn partial_cmp(&self, other: &OutputPath) -> Option<Ordering> {
-        self.as_str().partial_cmp(other.as_str())
+        Some(self.cmp(other))
     }
 }
 

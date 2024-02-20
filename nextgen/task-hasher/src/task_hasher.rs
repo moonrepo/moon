@@ -122,7 +122,7 @@ impl<'task> TaskHasher<'task> {
                     .task
                     .input_globs
                     .iter()
-                    .filter(|g| !g.starts_with(self.project.source.as_str()))
+                    .filter(|g| !g.starts_with(&self.project.source))
                     .collect::<Vec<_>>();
 
                 if !workspace_globs.is_empty() {

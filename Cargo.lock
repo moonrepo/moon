@@ -3792,6 +3792,7 @@ dependencies = [
  "moon_project",
  "moon_target",
  "moon_task",
+ "moon_task_hasher",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
@@ -3933,6 +3934,26 @@ dependencies = [
  "rustc-hash",
  "starbase_sandbox",
  "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_task_hasher"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_hash",
+ "moon_project",
+ "moon_task",
+ "moon_test_utils2",
+ "moon_vcs",
+ "rustc-hash",
+ "serde",
+ "starbase_sandbox",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

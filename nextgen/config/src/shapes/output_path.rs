@@ -7,6 +7,7 @@ use moon_common::path::{
     expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
 };
 use schematic::{derive_enum, SchemaType, Schematic, ValidateError};
+use std::cmp::Ordering;
 use std::str::FromStr;
 
 derive_enum!(
@@ -64,6 +65,18 @@ impl AsRef<str> for OutputPath {
 impl AsRef<OutputPath> for OutputPath {
     fn as_ref(&self) -> &OutputPath {
         self
+    }
+}
+
+impl PartialOrd<OutputPath> for OutputPath {
+    fn partial_cmp(&self, other: &OutputPath) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OutputPath {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_str().cmp(other.as_str())
     }
 }
 

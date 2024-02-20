@@ -4,8 +4,7 @@ use moon_config::{
     WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
-    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphBuilder,
-    ProjectGraphBuilderContext,
+    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphBuilder, ProjectGraphBuilderContext,
 };
 use moon_vcs::{BoxedVcs, Git};
 use proto_core::ProtoConfig;
@@ -13,6 +12,8 @@ use starbase_events::Emitter;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+
+pub use moon_project_graph::ProjectGraph;
 
 #[derive(Default)]
 pub struct ProjectGraphContainer {

@@ -3948,10 +3948,13 @@ dependencies = [
  "moon_hash",
  "moon_project",
  "moon_task",
+ "moon_test_utils2",
  "moon_vcs",
  "rustc-hash",
  "serde",
+ "starbase_sandbox",
  "starbase_utils",
+ "tokio",
  "tracing",
 ]
 

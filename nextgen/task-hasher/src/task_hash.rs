@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::OutputPath;
+use moon_config::{OutputPath, PlatformType};
 use moon_hash::hash_content;
 use moon_project::Project;
 use moon_task::{Target, Task};
@@ -18,13 +18,16 @@ hash_content!(
         pub deps: BTreeMap<&'task Target, &'task str>,
 
         // Environment variables
-        pub env_vars: BTreeMap<&'task str, &'task str>,
+        pub env: BTreeMap<&'task str, &'task str>,
 
         // Input files and globs mapped to a unique hash
         pub inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
         // Relative output paths
         pub outputs: Vec<&'task OutputPath>,
+
+        // Task `platform`
+        pub platform: &'task PlatformType,
 
         // `moon.yml` `dependsOn`
         pub project_deps: Vec<&'task Id>,
@@ -46,13 +49,14 @@ impl<'task> TaskHash<'task> {
             command: &task.command,
             args: task.args.iter().map(|a| a.as_str()).collect(),
             deps: BTreeMap::new(),
-            env_vars: task
+            env: task
                 .env
                 .iter()
                 .map(|(k, v)| (k.as_str(), v.as_str()))
                 .collect(),
             inputs: BTreeMap::new(),
             outputs: task.outputs.iter().collect(),
+            platform: &task.platform,
             project_deps,
             target: &task.target,
             version: "1".into(),

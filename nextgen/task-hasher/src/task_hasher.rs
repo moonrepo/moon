@@ -42,7 +42,13 @@ impl<'task> TaskHasher<'task> {
         }
     }
 
-    pub fn hash(self) -> TaskHash<'task> {
+    pub fn hash(mut self) -> TaskHash<'task> {
+        // Ensure hashing is deterministic
+        self.content.args.sort();
+        self.content.outputs.sort();
+        self.content.project_deps.sort();
+
+        // Consume the hasher and return the content
         self.content
     }
 

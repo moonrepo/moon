@@ -42,9 +42,6 @@ hash_content!(
 
 impl<'task> TaskHash<'task> {
     pub fn new(project: &'task Project, task: &'task Task) -> Self {
-        let mut project_deps = project.get_dependency_ids();
-        project_deps.sort();
-
         Self {
             command: &task.command,
             args: task.args.iter().map(|a| a.as_str()).collect(),
@@ -57,7 +54,7 @@ impl<'task> TaskHash<'task> {
             inputs: BTreeMap::new(),
             outputs: task.outputs.iter().collect(),
             platform: &task.platform,
-            project_deps,
+            project_deps: project.get_dependency_ids(),
             target: &task.target,
             version: "1".into(),
         }

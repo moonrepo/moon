@@ -1,5 +1,6 @@
 use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
-use moon_task_hasher::TaskHasher;
+use moon_project::Project;
+use moon_task_hasher::{TaskHash, TaskHasher};
 use moon_test_utils2::{ProjectGraph, ProjectGraphContainer};
 use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
@@ -41,6 +42,24 @@ async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, BoxedVc
     (graph, vcs)
 }
 
+async fn generate_hash<'a>(
+    project: &'a Project,
+    task_name: &'a str,
+    vcs: &'a BoxedVcs,
+    workspace_root: &'a Path,
+    hasher_config: &'a HasherConfig,
+) -> TaskHash<'a> {
+    let mut hasher = TaskHasher::new(
+        project,
+        project.get_task(task_name).unwrap(),
+        vcs,
+        workspace_root,
+        hasher_config,
+    );
+    hasher.hash_inputs().await.unwrap();
+    hasher.hash()
+}
+
 mod task_hasher {
     use super::*;
 
@@ -57,17 +76,17 @@ mod task_hasher {
             ..HasherConfig::default()
         };
 
-        let mut hasher = TaskHasher::new(
+        let result = generate_hash(
             &project,
-            project.get_task("testPatterns").unwrap(),
+            "testPatterns",
             &vcs,
             sandbox.path(),
             &hasher_config,
-        );
-        hasher.hash_inputs().await.unwrap();
+        )
+        .await;
 
         assert_eq!(
-            hasher.hash().inputs.keys().collect::<Vec<_>>(),
+            result.inputs.keys().collect::<Vec<_>>(),
             [".gitignore", "package.json"]
         );
     }
@@ -87,28 +106,14 @@ mod task_hasher {
             let expected = ["2.txt", "dir/abc.txt"];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("files").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result = generate_hash(&project, "files", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("files").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result = generate_hash(&project, "files", &vcs, sandbox.path(), &glob_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -123,28 +128,14 @@ mod task_hasher {
             let expected = ["dir/abc.txt", "dir/az.txt", "dir/xyz.txt"];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("dirs").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result = generate_hash(&project, "dirs", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("dirs").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result = generate_hash(&project, "dirs", &vcs, sandbox.path(), &glob_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -159,28 +150,16 @@ mod task_hasher {
             let expected = ["1.txt", "2.txt", "3.txt"];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("globStar").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "globStar", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("globStar").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "globStar", &vcs, sandbox.path(), &glob_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -202,28 +181,28 @@ mod task_hasher {
             ];
 
             // VCS
-            let mut hasher = TaskHasher::new(
+            let result = generate_hash(
                 &project,
-                project.get_task("globNestedStar").unwrap(),
+                "globNestedStar",
                 &vcs,
                 sandbox.path(),
                 &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            )
+            .await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
+            let result = generate_hash(
                 &project,
-                project.get_task("globNestedStar").unwrap(),
+                "globNestedStar",
                 &vcs,
                 sandbox.path(),
                 &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            )
+            .await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -238,28 +217,16 @@ mod task_hasher {
             let expected = ["dir/az.txt", "dir/xyz.txt"];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("globGroup").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "globGroup", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("globGroup").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "globGroup", &vcs, sandbox.path(), &glob_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -271,19 +238,10 @@ mod task_hasher {
             let project = project_graph.get("root").unwrap();
             let hasher_config = HasherConfig::default();
 
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("none").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &hasher_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "none", &vcs, sandbox.path(), &hasher_config).await;
 
-            assert_eq!(
-                hasher.hash().inputs.keys().collect::<Vec<_>>(),
-                Vec::<&str>::new()
-            );
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), Vec::<&str>::new());
         }
 
         #[tokio::test]
@@ -300,19 +258,10 @@ mod task_hasher {
             let project = project_graph.get("root").unwrap();
             let hasher_config = HasherConfig::default();
 
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("touched").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &hasher_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "touched", &vcs, sandbox.path(), &hasher_config).await;
 
-            assert_eq!(
-                hasher.hash().inputs.keys().collect::<Vec<_>>(),
-                ["created.txt"]
-            );
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["created.txt"]);
         }
     }
 
@@ -336,28 +285,22 @@ mod task_hasher {
             ];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inFileOutFile").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inFileOutFile", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
+            let result = generate_hash(
                 &project,
-                project.get_task("inFileOutFile").unwrap(),
+                "inFileOutFile",
                 &vcs,
                 sandbox.path(),
                 &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            )
+            .await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -372,28 +315,16 @@ mod task_hasher {
             let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inFileOutDir").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inFileOutDir", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inFileOutDir").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inFileOutDir", &vcs, sandbox.path(), &glob_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -408,28 +339,22 @@ mod task_hasher {
             let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inFileOutGlob").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inFileOutGlob", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
+            let result = generate_hash(
                 &project,
-                project.get_task("inFileOutGlob").unwrap(),
+                "inFileOutGlob",
                 &vcs,
                 sandbox.path(),
                 &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            )
+            .await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -452,28 +377,22 @@ mod task_hasher {
             ];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inGlobOutFile").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inGlobOutFile", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
+            let result = generate_hash(
                 &project,
-                project.get_task("inGlobOutFile").unwrap(),
+                "inGlobOutFile",
                 &vcs,
                 sandbox.path(),
                 &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            )
+            .await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -493,28 +412,16 @@ mod task_hasher {
             ];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inGlobOutDir").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inGlobOutDir", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inGlobOutDir").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inGlobOutDir", &vcs, sandbox.path(), &glob_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
 
         #[tokio::test]
@@ -534,28 +441,22 @@ mod task_hasher {
             ];
 
             // VCS
-            let mut hasher = TaskHasher::new(
-                &project,
-                project.get_task("inGlobOutGlob").unwrap(),
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            let result =
+                generate_hash(&project, "inGlobOutGlob", &vcs, sandbox.path(), &vcs_config).await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let mut hasher = TaskHasher::new(
+            let result = generate_hash(
                 &project,
-                project.get_task("inGlobOutGlob").unwrap(),
+                "inGlobOutGlob",
                 &vcs,
                 sandbox.path(),
                 &glob_config,
-            );
-            hasher.hash_inputs().await.unwrap();
+            )
+            .await;
 
-            assert_eq!(hasher.hash().inputs.keys().collect::<Vec<_>>(), expected);
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
     }
 }

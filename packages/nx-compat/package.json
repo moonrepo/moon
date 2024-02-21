@@ -1,0 +1,36 @@
+{
+  "name": "@moonrepo/nx-compat",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "description": "Execute Nx targets from the moon.",
+  "keywords": [
+    "moon",
+    "nx",
+    "compat"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "main": "./cjs/index.cjs",
+  "types": "./cjs/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/nx-compat"
+  },
+  "files": [
+    "cjs/**/*",
+    "src/**/*"
+  ],
+  "packemon": {
+    "format": "mjs",
+    "platform": "node",
+    "bundle": true
+  },
+  "dependencies": {
+    "@boost/common": "^5.0.0-alpha.1",
+    "@moonrepo/types": "workspace:^"
+  },
+  "engines": {
+    "node": ">=16.12.0"
+  }
+}

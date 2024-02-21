@@ -1,0 +1,11 @@
+language: typescript
+type: library
+
+dependsOn: [types]
+
+tasks:
+  build:
+    outputs:
+      - mjs
+    options:
+      mergeOutputs: replace

@@ -3433,6 +3433,8 @@ __metadata:
     execa: "npm:^8.0.1"
     nx: "npm:^18.0.4"
     yargs-parser: "npm:^21.1.1"
+  bin:
+    moon-nx: ./mjs/bin.mjs
   languageName: unknown
   linkType: soft
 

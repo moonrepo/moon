@@ -10,6 +10,9 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
+  "bin": {
+    "moon-nx": "./mjs/bin.mjs"
+  },
   "main": "./mjs/index.mjs",
   "types": "./mjs/index.d.ts",
   "repository": {
@@ -25,7 +28,10 @@
   "packemon": {
     "format": "mjs",
     "platform": "node",
-    "bundle": true
+    "inputs": {
+      "index": "src/index.ts",
+      "bin": "src/bin.ts"
+    }
   },
   "dependencies": {
     "@boost/common": "^5.0.0-alpha.1",
@@ -46,6 +52,12 @@
       "node": {
         "types": "./mjs/index.d.ts",
         "import": "./mjs/index.mjs"
+      }
+    },
+    "./*": {
+      "node": {
+        "types": "./mjs/*.d.ts",
+        "import": "./mjs/*.mjs"
       }
     }
   }

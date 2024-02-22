@@ -6,13 +6,22 @@ import type {
 	ProjectGraph as NxProjectGraph,
 	ProjectGraphProjectNode,
 } from 'nx/src/config/project-graph';
+import type { TaskGraph as NxTaskGraph } from 'nx/src/config/task-graph';
 import type {
 	ProjectConfiguration as NxProject,
 	TargetConfiguration as NxTarget,
 } from 'nx/src/config/workspace-json-project-json';
 import { json } from '@boost/common';
-import type { Project, ProjectGraph, Task } from '@moonrepo/types';
+import type { ActionGraph, Project, ProjectGraph, Task } from '@moonrepo/types';
 import { env, loadAndCacheJson } from './helpers';
+
+export async function loadActionGraph(root: string): Promise<ActionGraph> {
+	return loadAndCacheJson('action-graph', root, async () => {
+		const result = await execa('moon', ['action-graph', '--json', '--log', 'off'], { cwd: root });
+
+		return json.parse(result.stdout);
+	});
+}
 
 export async function loadProjectSnapshot(): Promise<Project> {
 	return json.load(env('MOON_PROJECT_SNAPSHOT'));
@@ -124,4 +133,56 @@ export function createNxTargetFromSnapshot(
 	target.executor = executorTarget;
 
 	return target;
+}
+
+export function createNxTaskGraphFromMoonGraphs(
+	actionGraph: ActionGraph,
+	projectGraph: ProjectGraph,
+): NxTaskGraph {
+	const graph: NxTaskGraph = {
+		dependencies: {},
+		roots: [],
+		tasks: {},
+	};
+
+	actionGraph.nodes.forEach((node) => {
+		if (!node.label.startsWith('Run')) {
+			return;
+		}
+
+		const target = node.label
+			.replace('RunTarget(', '')
+			.replace('RunTask(', '')
+			.replace('RunInteractiveTask(', '')
+			.replace('RunPersistentTask(', '')
+			.replace(')', '');
+		const [projectId, taskId] = target.split(':');
+		const project = projectGraph.projects[projectId];
+
+		if (!project) {
+			return;
+		}
+
+		const task = project.tasks[taskId];
+
+		if (!task) {
+			return;
+		}
+
+		graph.tasks[String(node.id)] = {
+			id: String(node.id),
+			outputs: [...task.outputFiles, ...task.outputGlobs],
+			overrides: {},
+			projectRoot: project.root,
+			target: { project: projectId, target: taskId },
+		};
+	});
+
+	actionGraph.edges.forEach((edge) => {
+		if (graph.tasks[String(edge.source)]) {
+			(graph.dependencies[edge.source] ||= []).push(String(edge.target));
+		}
+	});
+
+	return graph;
 }

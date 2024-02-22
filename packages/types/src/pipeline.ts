@@ -126,3 +126,22 @@ export interface ActionNodeSyncWorkspace {
 	action: 'SyncWorkspace';
 	params: {};
 }
+
+// GRAPH
+
+export interface ActionGraphNode {
+	id: number;
+	label: string;
+}
+
+export interface ActionGraphEdge {
+	id: number;
+	label: string;
+	source: number;
+	target: number;
+}
+
+export interface ActionGraph {
+	edges: ActionGraphEdge[];
+	nodes: ActionGraphNode[];
+}

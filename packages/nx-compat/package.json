@@ -10,8 +10,8 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "main": "./cjs/index.cjs",
-  "types": "./cjs/index.d.ts",
+  "main": "./mjs/index.mjs",
+  "types": "./mjs/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/moonrepo/moon",
@@ -19,6 +19,7 @@
   },
   "files": [
     "cjs/**/*",
+    "mjs/**/*",
     "src/**/*"
   ],
   "packemon": {
@@ -38,5 +39,14 @@
   },
   "engines": {
     "node": ">=16.12.0"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "node": {
+        "types": "./mjs/index.d.ts",
+        "import": "./mjs/index.mjs"
+      }
+    }
   }
 }

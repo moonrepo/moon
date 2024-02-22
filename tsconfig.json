@@ -3,6 +3,9 @@
   "files": [],
   "references": [
     {
+      "path": "packages/nx-compat"
+    },
+    {
       "path": "packages/report"
     },
     {

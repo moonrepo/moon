@@ -7,22 +7,25 @@ import type {
 import parser from 'yargs-parser';
 import { json, type PackageStructure, Path } from '@boost/common';
 import { env, findPackageRoot } from './helpers';
-import { loadNxJson, loadWorkspaceJson } from './nx';
 import {
 	createNxProjectGraphFromMoonProjectGraph,
 	createNxTargetFromSnapshot,
+	createNxTaskGraphFromMoonGraphs,
+	loadActionGraph,
 	loadProjectGraph,
 	loadProjectSnapshot,
-} from './project';
+} from './moon';
+import { loadNxJson, loadWorkspaceJson } from './nx';
 
 async function createExecutorContext(executorTarget: string): Promise<ExecutorContext> {
 	const root = env('MOON_WORKSPACE_ROOT');
 	const [projectName, targetName] = env('MOON_TARGET').split(':');
-	const [nxJson, workspaceJson, snapshot, projectGraph] = await Promise.all([
+	const [nxJson, workspaceJson, snapshot, projectGraph, actionGraph] = await Promise.all([
 		loadNxJson(root),
 		loadWorkspaceJson(root),
 		loadProjectSnapshot(),
 		loadProjectGraph(root),
+		loadActionGraph(root),
 	]);
 
 	return {
@@ -35,11 +38,7 @@ async function createExecutorContext(executorTarget: string): Promise<ExecutorCo
 		root,
 		target: createNxTargetFromSnapshot(snapshot, executorTarget, targetName),
 		targetName,
-		get taskGraph() {
-			throw new Error(
-				`The \`taskGraph\` context property is not available when executed through moon.`,
-			);
-		},
+		taskGraph: createNxTaskGraphFromMoonGraphs(actionGraph, projectGraph),
 		workspace: {
 			...nxJson,
 			...workspaceJson,

@@ -319,14 +319,31 @@ impl<'a> Runner<'a> {
 
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
-            let mut affected_files = if context.affected_only {
+            let mut files = if context.affected_only {
                 self.task
                     .get_affected_files(&context.touched_files, self.project.source.as_str())?
             } else {
                 Vec::with_capacity(0)
             };
 
-            affected_files.sort();
+            if files.is_empty() {
+                files = self
+                    .task
+                    .get_input_files(&self.workspace.root)?
+                    .into_iter()
+                    .filter_map(|f| {
+                        f.strip_prefix(&self.project.source)
+                            .ok()
+                            .map(ToOwned::to_owned)
+                    })
+                    .collect();
+            }
+
+            files.sort();
+
+            if files.is_empty() {
+                warn!("No input files detected, defaulting to '.'. This will be deprecated in a future version")
+            }
 
             if matches!(
                 check_affected,
@@ -334,10 +351,10 @@ impl<'a> Runner<'a> {
             ) {
                 command.env(
                     "MOON_AFFECTED_FILES",
-                    if affected_files.is_empty() {
+                    if files.is_empty() {
                         ".".into()
                     } else {
-                        affected_files
+                        files
                             .iter()
                             .map(|f| f.as_str().to_string())
                             .collect::<Vec<_>>()
@@ -350,11 +367,11 @@ impl<'a> Runner<'a> {
                 check_affected,
                 TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
             ) {
-                if affected_files.is_empty() {
+                if files.is_empty() {
                     command.arg_if_missing(".");
                 } else {
                     // Mimic relative from ("./")
-                    command.args(affected_files.iter().map(|f| format!("./{f}")));
+                    command.args(files.iter().map(|f| format!("./{f}")));
                 }
             }
         }

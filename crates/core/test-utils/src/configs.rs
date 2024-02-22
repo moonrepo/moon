@@ -39,6 +39,7 @@ pub fn get_cases_fixture_configs() -> (
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("root".into(), ".".to_owned()),
             ("affected".into(), "affected".to_owned()),
+            ("noAffected".into(), "no-affected".to_owned()),
             ("base".into(), "base".to_owned()),
             ("noop".into(), "noop".to_owned()),
             ("files".into(), "files".to_owned()),

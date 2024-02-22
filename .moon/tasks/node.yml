@@ -61,7 +61,7 @@ tasks:
       - '@globs(sources)'
       - '@globs(tests)'
       - '*.js'
-      - '.eslintrc.js'
+      - '.eslintrc.*'
       - 'tsconfig.json'
       - '/.eslintignore'
       - '/.eslintrc.js'

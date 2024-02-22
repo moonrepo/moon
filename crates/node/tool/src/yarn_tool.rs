@@ -9,7 +9,7 @@ use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
-use moon_utils::{get_workspace_root, is_ci};
+use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -276,27 +276,12 @@ impl DependencyManager<NodeTool> for YarnTool {
         working_dir: &Path,
         log: bool,
     ) -> miette::Result<()> {
-        let mut args = vec!["install"];
-
-        if !self.global {
-            if !self.is_berry() {
-                args.push("--ignore-engines");
-            }
-
-            if is_ci() {
-                if self.is_berry() {
-                    args.push("--immutable");
-                } else {
-                    args.push("--check-files");
-                    args.push("--frozen-lockfile");
-                    args.push("--non-interactive");
-                }
-            }
-        }
-
         let mut cmd = self.create_command(node)?;
 
-        cmd.args(args).cwd(working_dir).set_print_command(log);
+        cmd.args(["install"])
+            .args(&self.config.install_args)
+            .cwd(working_dir)
+            .set_print_command(log);
 
         let mut cmd = cmd.create_async();
 

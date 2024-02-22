@@ -9,7 +9,7 @@ use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_version_env, load_tool_plugin, prepend_path_env_var,
     use_global_tool_on_path, DependencyManager, Tool,
 };
-use moon_utils::{get_workspace_root, is_ci};
+use moon_utils::get_workspace_root;
 use proto_core::{
     Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq, VersionSpec,
 };
@@ -218,20 +218,12 @@ impl DependencyManager<NodeTool> for PnpmTool {
         working_dir: &Path,
         log: bool,
     ) -> miette::Result<()> {
-        let mut args = vec!["install"];
-
-        if !self.global && is_ci() {
-            let lockfile = working_dir.join(self.get_lock_filename());
-
-            // Will fail with "Headless installation requires a pnpm-lock.yaml file"
-            if lockfile.exists() {
-                args.push("--frozen-lockfile");
-            }
-        }
-
         let mut cmd = self.create_command(node)?;
 
-        cmd.args(args).cwd(working_dir).set_print_command(log);
+        cmd.args(["install"])
+            .args(&self.config.install_args)
+            .cwd(working_dir)
+            .set_print_command(log);
 
         let mut cmd = cmd.create_async();
 

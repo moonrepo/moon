@@ -1,0 +1,37 @@
+language: javascript
+
+tasks:
+  none:
+    command: noop
+    inputs: []
+
+  touched:
+    command: noop
+    inputs:
+      - 'created.txt'
+
+  files:
+    command: noop
+    inputs:
+      - '2.txt'
+      - 'dir/abc.txt'
+
+  dirs:
+    command: noop
+    inputs:
+      - 'dir'
+
+  globStar:
+    command: noop
+    inputs:
+      - '*.txt'
+
+  globNestedStar:
+    command: noop
+    inputs:
+      - '**/*.txt'
+
+  globGroup:
+    command: noop
+    inputs:
+      - 'dir/{a,xy}z.txt'

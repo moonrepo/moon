@@ -1,8 +1,9 @@
-import parser from 'yargs-parser';
+import { execute } from './execute';
 
-const [bin, command, ...argv] = process.argv;
-const args = parser(argv, {
-	configuration: {
-		'populate--': true,
-	},
-});
+const [, command, ...argv] = process.argv;
+
+if (command === 'execute') {
+	void execute(argv);
+} else {
+	throw new Error(`Unknown command \`${command}\`.`);
+}

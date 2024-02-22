@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
+    "experimentalDecorators": true,
     "outDir": "../../.moon/cache/types/packages/runtime"
   },
   "include": [

@@ -30,11 +30,11 @@
     "@boost/common": "^5.0.0-alpha.1",
     "@moonrepo/types": "workspace:^",
     "enhanced-resolve": "^5.15.0",
-    "yargs": "^17.7.2",
+    "execa": "^8.0.1",
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
-    "@types/yargs": "^17.0.32"
+    "nx": "^18.0.4"
   },
   "engines": {
     "node": ">=16.12.0"

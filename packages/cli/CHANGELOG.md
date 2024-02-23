@@ -35,6 +35,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where `bun install` was not running with `--production` in Docker prune.
+- Fixed an issue where invalid IDs passed to certain commands would trigger a panic.
 
 #### 🧩 Plugins
 

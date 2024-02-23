@@ -122,9 +122,9 @@ tasks:
             assert_eq!(
                 config.depends_on,
                 vec![
-                    ProjectDependsOn::String("a".into()),
-                    ProjectDependsOn::String("b".into()),
-                    ProjectDependsOn::String("c".into())
+                    ProjectDependsOn::String(Id::raw("a")),
+                    ProjectDependsOn::String(Id::raw("b")),
+                    ProjectDependsOn::String(Id::raw("c"))
                 ]
             );
         }
@@ -146,12 +146,12 @@ dependsOn:
                 config.depends_on,
                 vec![
                     ProjectDependsOn::Object(DependencyConfig {
-                        id: "a".into(),
+                        id: Id::raw("a"),
                         scope: DependencyScope::Development,
                         ..DependencyConfig::default()
                     }),
                     ProjectDependsOn::Object(DependencyConfig {
-                        id: "b".into(),
+                        id: Id::raw("b"),
                         scope: DependencyScope::Production,
                         ..DependencyConfig::default()
                     })
@@ -174,9 +174,9 @@ dependsOn:
             assert_eq!(
                 config.depends_on,
                 vec![
-                    ProjectDependsOn::String("a".into()),
+                    ProjectDependsOn::String(Id::raw("a")),
                     ProjectDependsOn::Object(DependencyConfig {
-                        id: "b".into(),
+                        id: Id::raw("b"),
                         scope: DependencyScope::Production,
                         ..DependencyConfig::default()
                     })
@@ -224,14 +224,14 @@ fileGroups:
                 config.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "files".into(),
+                        Id::raw("files"),
                         vec![
                             InputPath::WorkspaceFile("ws/relative".into()),
                             InputPath::ProjectFile("proj/relative".into())
                         ]
                     ),
                     (
-                        "globs".into(),
+                        Id::raw("globs"),
                         vec![
                             InputPath::WorkspaceGlob("ws/**/*".into()),
                             InputPath::WorkspaceGlob("!ws/**/*".into()),

@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use moon_common::Id;
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_runner::RunTargetState;
 use moon_test_utils::{
@@ -11,8 +12,8 @@ use std::fs;
 fn system_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("unix".into(), "unix".to_owned()),
-            ("windows".into(), "windows".to_owned()),
+            (Id::raw("unix"), "unix".to_owned()),
+            (Id::raw("windows"), "windows".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };

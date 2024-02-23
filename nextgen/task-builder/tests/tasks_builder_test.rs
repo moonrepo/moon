@@ -1066,7 +1066,7 @@ mod tasks_builder {
                 sandbox.path(),
                 "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
-                    include: Some(vec!["global-build".into(), "global-run".into()]),
+                    include: Some(vec![Id::raw("global-build"), Id::raw("global-run")]),
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
@@ -1087,7 +1087,7 @@ mod tasks_builder {
                 sandbox.path(),
                 "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
-                    exclude: vec!["global-build".into(), "global-run".into()],
+                    exclude: vec![Id::raw("global-build"), Id::raw("global-run")],
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
@@ -1108,8 +1108,8 @@ mod tasks_builder {
                 sandbox.path(),
                 "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
-                    include: Some(vec!["global-build".into(), "global-run".into()]),
-                    exclude: vec!["global-build".into()],
+                    include: Some(vec![Id::raw("global-build"), Id::raw("global-run")]),
+                    exclude: vec![Id::raw("global-build")],
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
@@ -1131,9 +1131,9 @@ mod tasks_builder {
                 "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
                     rename: FxHashMap::from_iter([
-                        ("global-build".into(), "renamed-build".into()),
-                        ("global-test".into(), "renamedTest".into()),
-                        ("global-run".into(), "renamed.test".into()),
+                        (Id::raw("global-build"), Id::raw("renamed-build")),
+                        (Id::raw("global-test"), Id::raw("renamedTest")),
+                        (Id::raw("global-run"), Id::raw("renamed.test")),
                     ]),
                     ..Default::default()
                 }),
@@ -1153,13 +1153,13 @@ mod tasks_builder {
             let sandbox = create_sandbox("builder");
 
             let mut project_config = create_overrides(ProjectWorkspaceInheritedTasksConfig {
-                exclude: vec!["test".into()],
-                rename: FxHashMap::from_iter([("build".into(), "compile".into())]),
+                exclude: vec![Id::raw("test")],
+                rename: FxHashMap::from_iter([(Id::raw("build"), Id::raw("compile"))]),
                 ..Default::default()
             });
 
             project_config.tasks.insert(
-                "build".into(),
+                Id::raw("build"),
                 TaskConfig {
                     command: TaskArgs::String("build-local".into()),
                     ..Default::default()
@@ -1167,7 +1167,7 @@ mod tasks_builder {
             );
 
             project_config.tasks.insert(
-                "test".into(),
+                Id::raw("test"),
                 TaskConfig {
                     command: TaskArgs::String("test-local".into()),
                     ..Default::default()

@@ -1,4 +1,5 @@
 use moon_cli::commands::docker::DockerManifest;
+use moon_common::Id;
 use moon_config::{PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
     create_sandbox_with_config, get_cases_fixture_configs, get_node_depman_fixture_configs,
@@ -11,7 +12,7 @@ fn write_manifest(path: &Path, id: &str) {
     fs::write(
         path.join("dockerManifest.json"),
         serde_json::to_string(&DockerManifest {
-            focused_projects: FxHashSet::from_iter([id.into()]),
+            focused_projects: FxHashSet::from_iter([Id::raw(id)]),
             unfocused_projects: FxHashSet::default(),
         })
         .unwrap(),
@@ -210,7 +211,7 @@ mod scaffold_workspace {
     fn copies_cargo_files() {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
-                "rust".into(),
+                Id::raw("rust"),
                 ".".into(),
             )]))),
             ..PartialWorkspaceConfig::default()

@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{PartialVcsConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use rustc_hash::FxHashMap;
@@ -131,10 +132,10 @@ mod sync_projects {
     fn syncs_all_projects() {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-                ("a".into(), "a".to_owned()),
-                ("b".into(), "b".to_owned()),
-                ("c".into(), "c".to_owned()),
-                ("d".into(), "d".to_owned()),
+                (Id::raw("a"), "a".to_owned()),
+                (Id::raw("b"), "b".to_owned()),
+                (Id::raw("c"), "c".to_owned()),
+                (Id::raw("d"), "d".to_owned()),
             ]))),
             ..PartialWorkspaceConfig::default()
         };
@@ -157,10 +158,10 @@ mod sync_projects {
     fn runs_legacy_sync_command() {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-                ("a".into(), "a".to_owned()),
-                ("b".into(), "b".to_owned()),
-                ("c".into(), "c".to_owned()),
-                ("d".into(), "d".to_owned()),
+                (Id::raw("a"), "a".to_owned()),
+                (Id::raw("b"), "b".to_owned()),
+                (Id::raw("c"), "c".to_owned()),
+                (Id::raw("d"), "d".to_owned()),
             ]))),
             ..PartialWorkspaceConfig::default()
         };

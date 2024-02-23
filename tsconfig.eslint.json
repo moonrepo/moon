@@ -8,14 +8,19 @@
     "extraFileExtensions": [".mjs"]
   },
   "include": [
-    "**/.eslintrc.js",
+    "**/.eslintrc.cjs",
     "packages/*/src/**/*",
     "packages/*/tests/**/*",
     "packages/*/types/**/*",
-    "packages/*/*",
+    "packages/*/*.cjs",
+    "packages/*/*.ts",
     "scripts/**/*",
     "website/src/**/*",
     "website/*.js",
     "website/*.ts",
+  ],
+  "exclude": [
+    "**/*.css",
+    "packages/*/tsconfig.json"
   ]
 }

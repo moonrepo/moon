@@ -1,5 +1,6 @@
 use moon_codegen::{CodeGenerator, Template, TemplateContext, TemplateFile};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_common::Id;
 use moon_config::{GeneratorConfig, TemplateFrontmatterConfig};
 use starbase_sandbox::{create_sandbox, locate_fixture};
 use std::path::PathBuf;
@@ -9,7 +10,7 @@ fn create_template_file() -> TemplateFile {
 }
 
 fn create_template() -> Template {
-    Template::new("standard".into(), locate_fixture("template")).unwrap()
+    Template::new(Id::raw("standard"), locate_fixture("template")).unwrap()
 }
 
 fn create_context() -> TemplateContext {

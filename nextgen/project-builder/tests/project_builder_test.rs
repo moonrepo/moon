@@ -93,12 +93,12 @@ mod project_builder {
             project.dependencies,
             vec![
                 DependencyConfig {
-                    id: "bar".into(),
+                    id: "bar".try_into().unwrap(),
                     source: DependencySource::Explicit,
                     ..Default::default()
                 },
                 DependencyConfig {
-                    id: "foo".into(),
+                    id: "foo".try_into().unwrap(),
                     source: DependencySource::Explicit,
                     scope: DependencyScope::Development,
                     ..Default::default()
@@ -132,7 +132,7 @@ mod project_builder {
                 project.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "sources".into(),
+                        "sources".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "sources",
                             [WorkspaceRelativePathBuf::from("foo/node")]
@@ -140,7 +140,7 @@ mod project_builder {
                         .unwrap()
                     ),
                     (
-                        "tests".into(),
+                        "tests".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "tests",
                             [WorkspaceRelativePathBuf::from("foo/global")]
@@ -148,7 +148,7 @@ mod project_builder {
                         .unwrap()
                     ),
                     (
-                        "other".into(),
+                        "other".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "other",
                             [WorkspaceRelativePathBuf::from("foo/global")]
@@ -168,7 +168,7 @@ mod project_builder {
                 project.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "sources".into(),
+                        "sources".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "sources",
                             // Not node since the language is rust
@@ -177,7 +177,7 @@ mod project_builder {
                         .unwrap()
                     ),
                     (
-                        "tests".into(),
+                        "tests".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "tests",
                             [WorkspaceRelativePathBuf::from("bar/global")]
@@ -185,7 +185,7 @@ mod project_builder {
                         .unwrap()
                     ),
                     (
-                        "other".into(),
+                        "other".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "other",
                             [WorkspaceRelativePathBuf::from("bar/bar")]
@@ -288,7 +288,10 @@ mod project_builder {
         async fn detects_other() {
             let project = build_lang_project("other").await;
 
-            assert_eq!(project.language, LanguageType::Other("kotlin".into()));
+            assert_eq!(
+                project.language,
+                LanguageType::Other("kotlin".try_into().unwrap())
+            );
             assert_eq!(project.platform, PlatformType::System);
         }
 
@@ -418,7 +421,7 @@ mod project_builder {
             builder.load_local_config().await.unwrap();
 
             builder.extend_with_dependency(DependencyConfig {
-                id: "foo".into(),
+                id: "foo".try_into().unwrap(),
                 scope: DependencyScope::Development,
                 ..DependencyConfig::default()
             });
@@ -428,7 +431,7 @@ mod project_builder {
             assert_eq!(
                 project.dependencies,
                 vec![DependencyConfig {
-                    id: "foo".into(),
+                    id: "foo".try_into().unwrap(),
                     scope: DependencyScope::Development,
                     source: DependencySource::Implicit,
                     ..DependencyConfig::default()

@@ -11,7 +11,7 @@
     }
   },
   "include": [
-    ".eslintrc.js",
+    ".eslintrc.cjs",
     "*.config.js",
     "*.config.ts",
     "sidebars.ts",

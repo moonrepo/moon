@@ -261,6 +261,78 @@ deno:
             assert!(config.deno.is_some());
             // assert_eq!(config.deno.unwrap().version.unwrap(), "1.30.0");
         }
+
+        #[test]
+        fn inherits_plugin_locator() {
+            let config = test_load_config(FILENAME, "deno: {}", |path| {
+                let mut tools = ProtoConfig::default();
+                tools.inherit_builtin_plugins();
+
+                ToolchainConfig::load_from(path, &tools)
+            });
+
+            assert_eq!(
+                config.deno.unwrap().plugin.unwrap(),
+                PluginLocator::SourceUrl {
+                    url: "https://github.com/moonrepo/deno-plugin/releases/download/v0.9.1/deno_plugin.wasm".into()
+                }
+            );
+        }
+
+        #[test]
+        fn proto_version_doesnt_override() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+deno:
+  version: 1.30.0
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("deno"),
+                        UnresolvedVersionSpec::parse("1.40.0").unwrap(),
+                    );
+
+                    ToolchainConfig::load_from(path, &proto)
+                },
+            );
+
+            assert!(config.deno.is_some());
+            assert_eq!(
+                config.deno.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.30.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn inherits_version_from_env_var() {
+            env::set_var("MOON_DENO_VERSION", "1.20.0");
+
+            let config = test_load_config(
+                FILENAME,
+                r"
+deno:
+  version: 1.30.0
+",
+                |path| {
+                    let mut proto = ProtoConfig::default();
+                    proto.versions.insert(
+                        Id::raw("deno"),
+                        UnresolvedVersionSpec::parse("1.40.0").unwrap(),
+                    );
+
+                    ToolchainConfig::load_from(path, &proto)
+                },
+            );
+
+            env::remove_var("MOON_DENO_VERSION");
+
+            assert_eq!(
+                config.deno.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.20.0").unwrap()
+            );
+        }
     }
 
     mod node {
@@ -973,7 +1045,7 @@ rust:
             assert_eq!(
                 config.rust.unwrap().plugin.unwrap(),
                 PluginLocator::SourceUrl {
-                    url: "https://github.com/moonrepo/rust-plugin/releases/download/v0.8.0/rust_plugin.wasm".into()
+                    url: "https://github.com/moonrepo/rust-plugin/releases/download/v0.8.1/rust_plugin.wasm".into()
                 }
             );
         }

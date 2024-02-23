@@ -32,9 +32,23 @@
   - This will include all environment variables in the current process that starts with `VITE_`.
 - Updated the `envFile` task option to support a list of file paths.
 
+#### 🐞 Fixes
+
+- Fixed an issue where `bun install` was not running with `--production` in Docker prune.
+
+#### 🧩 Plugins
+
+- Updated `deno_plugin` to v0.9.1.
+  - Added Linux ARM64 support (requires Deno >= v1.41).
+- Updated `rust_plugin` to v0.8.1.
+  - Uses the full triple target when installing and uninstalling toolchains.
+- Updated `schema_plugin` (TOML) to v0.9.1.
+  - Updated our regex to support Perl syntax like `\d`.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.76.
+- Updated proto to v0.30.0 (from v0.29.1).
 
 ## 1.21.4
 

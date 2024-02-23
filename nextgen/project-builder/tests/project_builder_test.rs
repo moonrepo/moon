@@ -470,7 +470,7 @@ mod project_builder {
             builder.extend_with_task(
                 Id::raw("baz"),
                 TaskConfig {
-                    command: TaskArgs::String("new-command-name".try_into().unwrap()),
+                    command: TaskArgs::String("new-command-name".into()),
                     ..TaskConfig::default()
                 },
             );

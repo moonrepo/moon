@@ -89,7 +89,7 @@ pub fn get_cases_fixture_configs() -> (
         tasks: Some(BTreeMap::from_iter([(
             "noop".try_into().unwrap(),
             PartialTaskConfig {
-                command: Some(PartialTaskArgs::String("noop".try_into().unwrap())),
+                command: Some(PartialTaskArgs::String("noop".into())),
                 ..PartialTaskConfig::default()
             },
         )])),
@@ -273,18 +273,18 @@ pub fn get_tasks_fixture_configs() -> (
             (
                 "standard".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("cmd".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "withArgs".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("cmd".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     args: Some(PartialTaskArgs::List(vec![
-                        "--foo".try_into().unwrap(),
-                        "--bar".try_into().unwrap(),
-                        "baz".try_into().unwrap(),
+                        "--foo".into(),
+                        "--bar".into(),
+                        "baz".into(),
                     ])),
                     ..PartialTaskConfig::default()
                 },
@@ -292,7 +292,7 @@ pub fn get_tasks_fixture_configs() -> (
             (
                 "withInputs".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("cmd".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
                         InputPath::from_str("rel/file.*").unwrap(),
                         InputPath::from_str("/root.*").unwrap(),
@@ -303,7 +303,7 @@ pub fn get_tasks_fixture_configs() -> (
             (
                 "withOutputs".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("cmd".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
                         InputPath::from_str("lib").unwrap(),
                         InputPath::from_str("/build").unwrap(),
@@ -354,15 +354,15 @@ pub fn get_bun_fixture_configs() -> (
             (
                 "version".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("bun".try_into().unwrap())),
-                    args: Some(PartialTaskArgs::String("--version".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("bun".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "noop".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("noop".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
@@ -401,15 +401,15 @@ pub fn get_deno_fixture_configs() -> (
             (
                 "version".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("deno".try_into().unwrap())),
-                    args: Some(PartialTaskArgs::String("--version".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("deno".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "noop".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("noop".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
@@ -462,15 +462,15 @@ pub fn get_node_fixture_configs() -> (
             (
                 "version".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("node".try_into().unwrap())),
-                    args: Some(PartialTaskArgs::String("--version".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("node".into())),
+                    args: Some(PartialTaskArgs::String("--version".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
                 "noop".try_into().unwrap(),
                 PartialTaskConfig {
-                    command: Some(PartialTaskArgs::String("noop".try_into().unwrap())),
+                    command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
@@ -526,7 +526,7 @@ pub fn get_node_depman_fixture_configs(
                 node_config.package_manager = Some(NodePackageManager::Yarn);
                 node_config.yarn = Some(PartialYarnConfig {
                     version: Some(UnresolvedVersionSpec::parse("3.3.0").unwrap()),
-                    plugins: Some(vec!["workspace-tools".try_into().unwrap()]),
+                    plugins: Some(vec!["workspace-tools".into()]),
                     ..PartialYarnConfig::default()
                 });
             }
@@ -554,10 +554,10 @@ pub fn get_typescript_fixture_configs() -> (
 
     workspace_config.projects = Some(PartialWorkspaceProjects::Both(
         PartialWorkspaceProjectsConfig {
-            globs: Some(vec!["*".try_into().unwrap()]),
+            globs: Some(vec!["*".into()]),
             sources: Some(FxHashMap::from_iter([(
                 "root".try_into().unwrap(),
-                ".".try_into().unwrap(),
+                ".".into(),
             )])),
         },
     ));

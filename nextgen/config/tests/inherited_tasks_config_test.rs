@@ -606,7 +606,7 @@ mod task_manager {
             assert_eq!(
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
-                    &LanguageType::other("kotlin").unwrap(),
+                    &LanguageType::Other(Id::raw("kotlin")),
                     &ProjectType::Tool,
                     &[]
                 ),
@@ -616,7 +616,7 @@ mod task_manager {
             assert_eq!(
                 manager.get_lookup_order(
                     &PlatformType::System,
-                    &LanguageType::other("dotnet").unwrap(),
+                    &LanguageType::Other(Id::raw("dotnet")),
                     &ProjectType::Application,
                     &[]
                 ),

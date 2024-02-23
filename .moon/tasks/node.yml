@@ -35,13 +35,12 @@ tasks:
       - '--ignore-path'
       - '@in(2)'
       - '--no-error-on-unmatched-pattern'
+      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - '/.prettierignore'
       - '/prettier.config.js'
-    options:
-      affectedFiles: true
 
   lint:
     command: 'eslint'
@@ -57,18 +56,17 @@ tasks:
       - '--exit-on-fatal-error'
       - '--no-error-on-unmatched-pattern'
       - '--report-unused-disable-directives'
+      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - '*.js'
+      - '*.{js,cjs,mjs,ts}'
       - '.eslintrc.*'
       - 'tsconfig.json'
       - '/.eslintignore'
-      - '/.eslintrc.js'
+      - '/.eslintrc.cjs'
       - '/tsconfig.eslint.json'
       - '/tsconfig.options.json'
-    options:
-      affectedFiles: true
 
   lint-fix:
     extends: 'lint'

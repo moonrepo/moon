@@ -1,5 +1,5 @@
 module.exports = {
-	ignorePatterns: ['tailwind.config.js'],
+	ignorePatterns: ['**/*.css', 'tailwind.config.js'],
 	rules: {
 		// This fails on windows for some reason
 		'import/named': 'off',

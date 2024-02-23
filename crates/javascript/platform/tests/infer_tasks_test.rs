@@ -725,13 +725,28 @@ mod infer_tasks_from_scripts {
     fn wraps_scripts() {
         let pkg = PackageJson {
             scripts: Some(BTreeMap::from([
-                ("postinstall".into(), "./setup.sh".into()),
-                ("build:app".into(), "webpack build --output ./dist".into()),
-                ("dev".into(), "webpack dev".into()),
-                ("test".into(), "jest .".into()),
-                ("posttest".into(), "run-coverage".into()),
-                ("lint".into(), "eslint src/**/* .".into()),
-                ("typecheck".into(), "tsc --build".into()),
+                (
+                    "postinstall".try_into().unwrap(),
+                    "./setup.sh".try_into().unwrap(),
+                ),
+                (
+                    "build:app".try_into().unwrap(),
+                    "webpack build --output ./dist".try_into().unwrap(),
+                ),
+                ("dev".try_into().unwrap(), "webpack dev".try_into().unwrap()),
+                ("test".try_into().unwrap(), "jest .".try_into().unwrap()),
+                (
+                    "posttest".try_into().unwrap(),
+                    "run-coverage".try_into().unwrap(),
+                ),
+                (
+                    "lint".try_into().unwrap(),
+                    "eslint src/**/* .".try_into().unwrap(),
+                ),
+                (
+                    "typecheck".try_into().unwrap(),
+                    "tsc --build".try_into().unwrap(),
+                ),
             ])),
             ..PackageJson::default()
         };
@@ -742,20 +757,20 @@ mod infer_tasks_from_scripts {
             tasks,
             BTreeMap::from([
                 (
-                    "build-app".into(),
+                    "build-app".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "yarn",
                             "run",
                             "build:app"
                         ])),
-                        outputs: Some(vec![OutputPath::ProjectFile("dist".into())]),
+                        outputs: Some(vec![OutputPath::ProjectFile("dist".try_into().unwrap())]),
                         platform: Some(PlatformType::Node),
                         ..PartialTaskConfig::default()
                     }
                 ),
                 (
-                    "dev".into(),
+                    "dev".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "dev"])),
                         local: Some(true),
@@ -764,7 +779,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "test".into(),
+                    "test".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "test"])),
                         platform: Some(PlatformType::Node),
@@ -772,7 +787,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "lint".into(),
+                    "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "lint"])),
                         platform: Some(PlatformType::Node),
@@ -780,7 +795,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "typecheck".into(),
+                    "typecheck".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "yarn",
@@ -803,12 +818,24 @@ mod create_tasks_from_scripts {
     fn ignores_unsupported_syntax() {
         let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
-                ("cd".into(), "cd website && yarn build".into()),
-                ("out".into(), "some-bin > output.log".into()),
-                ("in".into(), "output.log < some-bin".into()),
-                ("pipe".into(), "ls | grep foo".into()),
-                ("or".into(), "foo || bar".into()),
-                ("semi".into(), "foo ;; bar".into()),
+                (
+                    "cd".try_into().unwrap(),
+                    "cd website && yarn build".try_into().unwrap(),
+                ),
+                (
+                    "out".try_into().unwrap(),
+                    "some-bin > output.log".try_into().unwrap(),
+                ),
+                (
+                    "in".try_into().unwrap(),
+                    "output.log < some-bin".try_into().unwrap(),
+                ),
+                (
+                    "pipe".try_into().unwrap(),
+                    "ls | grep foo".try_into().unwrap(),
+                ),
+                ("or".try_into().unwrap(), "foo || bar".try_into().unwrap()),
+                ("semi".try_into().unwrap(), "foo ;; bar".try_into().unwrap()),
             ])),
             ..PackageJson::default()
         };
@@ -822,15 +849,27 @@ mod create_tasks_from_scripts {
     fn renames_to_ids() {
         let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
-                ("base".into(), "script".into()),
-                ("foo-bar".into(), "script".into()),
-                ("foo_bar".into(), "script".into()),
-                ("foo:bar".into(), "script".into()),
-                ("foo-bar:baz".into(), "script".into()),
-                ("foo_bar:baz".into(), "script".into()),
-                ("foo:bar:baz".into(), "script".into()),
-                ("foo_bar:baz-qux".into(), "script".into()),
-                ("fooBar".into(), "script".into()),
+                ("base".try_into().unwrap(), "script".try_into().unwrap()),
+                ("foo-bar".try_into().unwrap(), "script".try_into().unwrap()),
+                ("foo_bar".try_into().unwrap(), "script".try_into().unwrap()),
+                ("foo:bar".try_into().unwrap(), "script".try_into().unwrap()),
+                (
+                    "foo-bar:baz".try_into().unwrap(),
+                    "script".try_into().unwrap(),
+                ),
+                (
+                    "foo_bar:baz".try_into().unwrap(),
+                    "script".try_into().unwrap(),
+                ),
+                (
+                    "foo:bar:baz".try_into().unwrap(),
+                    "script".try_into().unwrap(),
+                ),
+                (
+                    "foo_bar:baz-qux".try_into().unwrap(),
+                    "script".try_into().unwrap(),
+                ),
+                ("fooBar".try_into().unwrap(), "script".try_into().unwrap()),
             ])),
             ..PackageJson::default()
         };
@@ -855,9 +894,15 @@ mod create_tasks_from_scripts {
     fn converts_stand_alone() {
         let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
-                ("test".into(), "jest .".into()),
-                ("lint".into(), "eslint src/**/* .".into()),
-                ("typecheck".into(), "tsc --build".into()),
+                ("test".try_into().unwrap(), "jest .".try_into().unwrap()),
+                (
+                    "lint".try_into().unwrap(),
+                    "eslint src/**/* .".try_into().unwrap(),
+                ),
+                (
+                    "typecheck".try_into().unwrap(),
+                    "tsc --build".try_into().unwrap(),
+                ),
             ])),
             ..PackageJson::default()
         };
@@ -870,7 +915,7 @@ mod create_tasks_from_scripts {
             tasks,
             BTreeMap::from([
                 (
-                    "test".into(),
+                    "test".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                         platform: Some(PlatformType::Node),
@@ -878,7 +923,7 @@ mod create_tasks_from_scripts {
                     }
                 ),
                 (
-                    "lint".into(),
+                    "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "eslint", "src/**/*", "."
@@ -888,7 +933,7 @@ mod create_tasks_from_scripts {
                     }
                 ),
                 (
-                    "typecheck".into(),
+                    "typecheck".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["tsc", "--build"])),
                         platform: Some(PlatformType::Node),
@@ -906,9 +951,15 @@ mod create_tasks_from_scripts {
         fn creates_pre_and_post() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("test".into(), "jest .".into()),
-                    ("pretest".into(), "do something".into()),
-                    ("posttest".into(), "do another".into()),
+                    ("test".try_into().unwrap(), "jest .".try_into().unwrap()),
+                    (
+                        "pretest".try_into().unwrap(),
+                        "do something".try_into().unwrap(),
+                    ),
+                    (
+                        "posttest".try_into().unwrap(),
+                        "do another".try_into().unwrap(),
+                    ),
                 ])),
                 ..PackageJson::default()
             };
@@ -921,7 +972,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "pretest".into(),
+                        "pretest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
                             platform: Some(PlatformType::Node),
@@ -929,7 +980,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "posttest".into(),
+                        "posttest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:test"])),
@@ -938,7 +989,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             deps: Some(create_target_deps(["~:pretest"])),
@@ -954,8 +1005,11 @@ mod create_tasks_from_scripts {
         fn supports_multiple_pre_via_andand() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("test".into(), "jest .".into()),
-                    ("pretest".into(), "do something && do another".into()),
+                    ("test".try_into().unwrap(), "jest .".try_into().unwrap()),
+                    (
+                        "pretest".try_into().unwrap(),
+                        "do something && do another".try_into().unwrap(),
+                    ),
                 ])),
                 ..PackageJson::default()
             };
@@ -968,7 +1022,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "pretest-dep1".into(),
+                        "pretest-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
                             platform: Some(PlatformType::Node),
@@ -976,7 +1030,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "pretest".into(),
+                        "pretest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:pretest-dep1"])),
@@ -985,7 +1039,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             deps: Some(create_target_deps(["~:pretest"])),
@@ -1001,8 +1055,11 @@ mod create_tasks_from_scripts {
         fn supports_multiple_post_via_andand() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("test".into(), "jest .".into()),
-                    ("posttest".into(), "do something && do another".into()),
+                    ("test".try_into().unwrap(), "jest .".try_into().unwrap()),
+                    (
+                        "posttest".try_into().unwrap(),
+                        "do something && do another".try_into().unwrap(),
+                    ),
                 ])),
                 ..PackageJson::default()
             };
@@ -1015,7 +1072,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "posttest-dep1".into(),
+                        "posttest-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
                             platform: Some(PlatformType::Node),
@@ -1023,7 +1080,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "posttest".into(),
+                        "posttest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:posttest-dep1", "~:test"])),
@@ -1032,7 +1089,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             platform: Some(PlatformType::Node),
@@ -1047,8 +1104,14 @@ mod create_tasks_from_scripts {
         fn handles_pre_within_script() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("release".into(), "npm run prerelease && npm publish".into()),
-                    ("prerelease".into(), "webpack build".into()),
+                    (
+                        "release".try_into().unwrap(),
+                        "npm run prerelease && npm publish".try_into().unwrap(),
+                    ),
+                    (
+                        "prerelease".try_into().unwrap(),
+                        "webpack build".try_into().unwrap(),
+                    ),
                 ])),
                 ..PackageJson::default()
             };
@@ -1061,7 +1124,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "prerelease".into(),
+                        "prerelease".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["webpack", "build"])),
                             platform: Some(PlatformType::Node),
@@ -1069,7 +1132,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "release".into(),
+                        "release".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["npm", "publish"])),
                             deps: Some(create_target_deps(["~:prerelease"])),
@@ -1089,8 +1152,11 @@ mod create_tasks_from_scripts {
         fn skips_when_pointing_to_an_unknown() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("lint".into(), "eslint .".into()),
-                    ("lint:fix".into(), "npm run invalid -- --fix".into()),
+                    ("lint".try_into().unwrap(), "eslint .".try_into().unwrap()),
+                    (
+                        "lint:fix".try_into().unwrap(),
+                        "npm run invalid -- --fix".try_into().unwrap(),
+                    ),
                 ])),
                 ..PackageJson::default()
             };
@@ -1102,7 +1168,7 @@ mod create_tasks_from_scripts {
             assert_eq!(
                 tasks,
                 BTreeMap::from([(
-                    "lint".into(),
+                    "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                         platform: Some(PlatformType::Node),
@@ -1126,8 +1192,8 @@ mod create_tasks_from_scripts {
             for candidate in candidates {
                 let mut pkg = PackageJson {
                     scripts: Some(BTreeMap::from([
-                        ("lint".into(), "eslint .".into()),
-                        ("lint:fix".into(), candidate.to_owned()),
+                        ("lint".try_into().unwrap(), "eslint .".try_into().unwrap()),
+                        ("lint:fix".try_into().unwrap(), candidate.to_owned()),
                     ])),
                     ..PackageJson::default()
                 };
@@ -1140,7 +1206,7 @@ mod create_tasks_from_scripts {
                     tasks,
                     BTreeMap::from([
                         (
-                            "lint".into(),
+                            "lint".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                                 platform: Some(PlatformType::Node),
@@ -1148,7 +1214,7 @@ mod create_tasks_from_scripts {
                             }
                         ),
                         (
-                            "lint-fix".into(),
+                            "lint-fix".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec![
                                     "moon",
@@ -1177,8 +1243,8 @@ mod create_tasks_from_scripts {
             for candidate in candidates {
                 let mut pkg = PackageJson {
                     scripts: Some(BTreeMap::from([
-                        ("lint:fix".into(), candidate.to_owned()),
-                        ("lint".into(), "eslint .".into()),
+                        ("lint:fix".try_into().unwrap(), candidate.to_owned()),
+                        ("lint".try_into().unwrap(), "eslint .".try_into().unwrap()),
                     ])),
                     ..PackageJson::default()
                 };
@@ -1191,7 +1257,7 @@ mod create_tasks_from_scripts {
                     tasks,
                     BTreeMap::from([
                         (
-                            "lint".into(),
+                            "lint".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                                 platform: Some(PlatformType::Node),
@@ -1199,7 +1265,7 @@ mod create_tasks_from_scripts {
                             }
                         ),
                         (
-                            "lint-fix".into(),
+                            "lint-fix".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec![
                                     "moon",
@@ -1221,18 +1287,25 @@ mod create_tasks_from_scripts {
         fn handles_env_vars() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("build".into(), "webpack build".into()),
                     (
-                        "build:dev".into(),
-                        "NODE_ENV=development npm run build -- --stats".into(),
+                        "build".try_into().unwrap(),
+                        "webpack build".try_into().unwrap(),
                     ),
                     (
-                        "build:prod".into(),
-                        "NODE_ENV=production yarn run build".into(),
+                        "build:dev".try_into().unwrap(),
+                        "NODE_ENV=development npm run build -- --stats"
+                            .try_into()
+                            .unwrap(),
                     ),
                     (
-                        "build:staging".into(),
-                        "NODE_ENV=staging pnpm run build --mode production".into(),
+                        "build:prod".try_into().unwrap(),
+                        "NODE_ENV=production yarn run build".try_into().unwrap(),
+                    ),
+                    (
+                        "build:staging".try_into().unwrap(),
+                        "NODE_ENV=staging pnpm run build --mode production"
+                            .try_into()
+                            .unwrap(),
                     ),
                 ])),
                 ..PackageJson::default()
@@ -1246,7 +1319,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["webpack", "build"])),
                             platform: Some(PlatformType::Node),
@@ -1254,7 +1327,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-dev".into(),
+                        "build-dev".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1272,7 +1345,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-prod".into(),
+                        "build-prod".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1288,7 +1361,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-staging".into(),
+                        "build-staging".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1318,14 +1391,20 @@ mod create_tasks_from_scripts {
         fn rewrites_run_commands() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("build".into(), "babel .".into()),
-                    ("lint".into(), "eslint .".into()),
-                    ("test".into(), "jest .".into()),
-                    ("preversion".into(), "npm run lint && npm run test".into()),
-                    ("version".into(), "npm run build".into()),
+                    ("build".try_into().unwrap(), "babel .".try_into().unwrap()),
+                    ("lint".try_into().unwrap(), "eslint .".try_into().unwrap()),
+                    ("test".try_into().unwrap(), "jest .".try_into().unwrap()),
                     (
-                        "postversion".into(),
-                        "npm ci && git add package-lock.json".into(),
+                        "preversion".try_into().unwrap(),
+                        "npm run lint && npm run test".try_into().unwrap(),
+                    ),
+                    (
+                        "version".try_into().unwrap(),
+                        "npm run build".try_into().unwrap(),
+                    ),
+                    (
+                        "postversion".try_into().unwrap(),
+                        "npm ci && git add package-lock.json".try_into().unwrap(),
                     ),
                 ])),
                 ..PackageJson::default()
@@ -1352,7 +1431,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["babel", "."])),
                             platform: Some(PlatformType::Node),
@@ -1360,7 +1439,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                             platform: Some(PlatformType::Node),
@@ -1368,7 +1447,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             platform: Some(PlatformType::Node),
@@ -1388,29 +1467,50 @@ mod create_tasks_from_scripts {
         fn babel() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    ("postinstall".into(), "husky install".into()),
-                    ("bootstrap".into(), "make bootstrap".into()),
-                    ("codesandbox:build".into(), "make build-no-bundle".into()),
-                    ("build".into(), "make build".into()),
-                    ("fix".into(), "make fix".into()),
-                    ("lint".into(), "make lint".into()),
-                    ("test".into(), "make test".into()),
                     (
-                        "version".into(),
-                        "yarn --immutable-cache && git add yarn.lock".into(),
-                    ),
-                    ("test:esm".into(), "node test/esm/index.js".into()),
-                    (
-                        "test:runtime:generate-absolute-runtime".into(),
-                        "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
+                        "postinstall".try_into().unwrap(),
+                        "husky install".try_into().unwrap(),
                     ),
                     (
-                        "test:runtime:bundlers".into(),
-                        "node test/runtime-integration/bundlers.cjs".into(),
+                        "bootstrap".try_into().unwrap(),
+                        "make bootstrap".try_into().unwrap(),
                     ),
                     (
-                        "test:runtime:node".into(),
-                        "node test/runtime-integration/node.cjs".into(),
+                        "codesandbox:build".try_into().unwrap(),
+                        "make build-no-bundle".try_into().unwrap(),
+                    ),
+                    (
+                        "build".try_into().unwrap(),
+                        "make build".try_into().unwrap(),
+                    ),
+                    ("fix".try_into().unwrap(), "make fix".try_into().unwrap()),
+                    ("lint".try_into().unwrap(), "make lint".try_into().unwrap()),
+                    ("test".try_into().unwrap(), "make test".try_into().unwrap()),
+                    (
+                        "version".try_into().unwrap(),
+                        "yarn --immutable-cache && git add yarn.lock"
+                            .try_into()
+                            .unwrap(),
+                    ),
+                    (
+                        "test:esm".try_into().unwrap(),
+                        "node test/esm/index.js".try_into().unwrap(),
+                    ),
+                    (
+                        "test:runtime:generate-absolute-runtime".try_into().unwrap(),
+                        "node test/runtime-integration/generate-absolute-runtime.cjs"
+                            .try_into()
+                            .unwrap(),
+                    ),
+                    (
+                        "test:runtime:bundlers".try_into().unwrap(),
+                        "node test/runtime-integration/bundlers.cjs"
+                            .try_into()
+                            .unwrap(),
+                    ),
+                    (
+                        "test:runtime:node".try_into().unwrap(),
+                        "node test/runtime-integration/node.cjs".try_into().unwrap(),
                     ),
                 ])),
                 ..PackageJson::default()
@@ -1433,7 +1533,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "bootstrap".into(),
+                        "bootstrap".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "bootstrap"])),
                             platform: Some(PlatformType::System),
@@ -1441,7 +1541,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "build"])),
                             platform: Some(PlatformType::System),
@@ -1449,7 +1549,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "codesandbox-build".into(),
+                        "codesandbox-build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "make",
@@ -1460,7 +1560,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix".into(),
+                        "fix".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "fix"])),
                             platform: Some(PlatformType::System),
@@ -1468,7 +1568,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "lint"])),
                             platform: Some(PlatformType::System),
@@ -1476,7 +1576,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "test"])),
                             platform: Some(PlatformType::System),
@@ -1484,7 +1584,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-esm".into(),
+                        "test-esm".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1495,7 +1595,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-bundlers".into(),
+                        "test-runtime-bundlers".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1506,7 +1606,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-generate-absolute-runtime".into(),
+                        "test-runtime-generate-absolute-runtime".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1517,7 +1617,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-node".into(),
+                        "test-runtime-node".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1536,23 +1636,23 @@ mod create_tasks_from_scripts {
         fn packemon() {
             let mut pkg = PackageJson {
                     scripts: Some(BTreeMap::from([
-                        ("build".into(), "yarn run packemon build".into()),
-                        ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
-                        ("clean".into(), "yarn run packemon clean".into()),
-                        ("commit".into(), "yarn install && git add yarn.lock".into()),
-                        ("coverage".into(), "yarn run test --coverage".into()),
-                        ("create-config".into(), "create-config".into()),
-                        ("docs".into(), "cd website && yarn run start".into()),
-                        ("format".into(), "prettier".into()),
-                        ("lint".into(), "eslint".into()),
-                        ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
-                        ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
-                        ("prerelease".into(), "yarn run clean && yarn run setup && yarn run packup && yarn run check".into()),
-                        ("release".into(), "yarn run prerelease && run-script lerna-release".into()),
-                        ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
-                        ("test".into(), "jest".into()),
-                        ("type".into(), "typescript --build".into()),
-                        ("validate".into(), "yarn run packemon validate".into()),
+                        ("build".try_into().unwrap(), "yarn run packemon build".try_into().unwrap()),
+                        ("check".try_into().unwrap(), "yarn run type && yarn run test && yarn run lint".try_into().unwrap()),
+                        ("clean".try_into().unwrap(), "yarn run packemon clean".try_into().unwrap()),
+                        ("commit".try_into().unwrap(), "yarn install && git add yarn.lock".try_into().unwrap()),
+                        ("coverage".try_into().unwrap(), "yarn run test --coverage".try_into().unwrap()),
+                        ("create-config".try_into().unwrap(), "create-config".try_into().unwrap()),
+                        ("docs".try_into().unwrap(), "cd website && yarn run start".try_into().unwrap()),
+                        ("format".try_into().unwrap(), "prettier".try_into().unwrap()),
+                        ("lint".try_into().unwrap(), "eslint".try_into().unwrap()),
+                        ("packup".try_into().unwrap(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".try_into().unwrap()),
+                        ("packemon".try_into().unwrap(), "node ./packages/packemon/cjs/bin.cjs".try_into().unwrap()),
+                        ("prerelease".try_into().unwrap(), "yarn run clean && yarn run setup && yarn run packup && yarn run check".try_into().unwrap()),
+                        ("release".try_into().unwrap(), "yarn run prerelease && run-script lerna-release".try_into().unwrap()),
+                        ("setup".try_into().unwrap(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".try_into().unwrap()),
+                        ("test".try_into().unwrap(), "jest".try_into().unwrap()),
+                        ("type".try_into().unwrap(), "typescript --build".try_into().unwrap()),
+                        ("validate".try_into().unwrap(), "yarn run packemon validate".try_into().unwrap()),
                     ])),
                     ..PackageJson::default()
                 };
@@ -1565,7 +1665,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1579,7 +1679,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check-dep1".into(),
+                        "check-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1591,7 +1691,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check-dep2".into(),
+                        "check-dep2".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1604,7 +1704,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check".into(),
+                        "check".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1617,7 +1717,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "clean".into(),
+                        "clean".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1631,7 +1731,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "commit-dep1".into(),
+                        "commit-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["yarn", "install"])),
                             platform: Some(PlatformType::Node),
@@ -1639,7 +1739,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "commit".into(),
+                        "commit".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "git",
@@ -1652,7 +1752,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "coverage".into(),
+                        "coverage".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1666,7 +1766,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "create-config".into(),
+                        "create-config".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("create-config".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1674,7 +1774,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "format".into(),
+                        "format".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("prettier".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1682,7 +1782,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("eslint".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1690,7 +1790,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "packup".into(),
+                        "packup".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1711,7 +1811,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "packemon".into(),
+                        "packemon".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1722,7 +1822,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep1".into(),
+                        "prerelease-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1734,7 +1834,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep2".into(),
+                        "prerelease-dep2".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1747,7 +1847,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep3".into(),
+                        "prerelease-dep3".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1760,7 +1860,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease".into(),
+                        "prerelease".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1773,7 +1873,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "release".into(),
+                        "release".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "run-script",
@@ -1785,7 +1885,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "setup".into(),
+                        "setup".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "yarn",
@@ -1803,7 +1903,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("jest".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1811,7 +1911,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "type".into(),
+                        "type".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "typescript",
@@ -1822,7 +1922,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "validate".into(),
+                        "validate".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1844,29 +1944,29 @@ mod create_tasks_from_scripts {
         fn prettier() {
             let mut pkg = PackageJson {
                     scripts: Some(BTreeMap::from([
-                        ("prepublishOnly".into(), "echo \"Error: must publish from dist/\" && exit 1".into()),
-                        ("test".into(), "jest".into()),
-                        ("test:dev-package".into(), "cross-env INSTALL_PACKAGE=1 jest".into()),
-                        ("test:dist".into(), "cross-env NODE_ENV=production jest".into()),
-                        ("test:dist-standalone".into(), "cross-env NODE_ENV=production TEST_STANDALONE=1 jest".into()),
-                        ("test:integration".into(), "jest tests/integration".into()),
-                        ("test:dist-lint".into(), "eslint --no-eslintrc --no-ignore --no-inline-config --config=./scripts/bundle-eslint-config.cjs \"dist/**/*.{js,mjs}\"".into()),
-                        ("perf".into(), "yarn run build && cross-env NODE_ENV=production node ./dist/bin-prettier.js".into()),
-                        ("perf:inspect".into(), "yarn run build && cross-env NODE_ENV=production node --inspect-brk ./dist/bin-prettier.js".into()),
-                        ("perf:benchmark".into(), "yarn run perf --debug-benchmark".into()),
-                        ("lint".into(), "run-p lint:*".into()),
-                        ("lint:typecheck".into(), "tsc".into()),
-                        ("lint:eslint".into(), "cross-env EFF_NO_LINK_RULES=true eslint . --format friendly".into()),
-                        ("lint:changelog".into(), "node ./scripts/lint-changelog.mjs".into()),
-                        ("lint:prettier".into(), "prettier . \"!test*\" --check".into()),
-                        ("lint:spellcheck".into(), "cspell --no-progress --relative --dot --gitignore".into()),
-                        ("lint:deps".into(), "node ./scripts/check-deps.mjs".into()),
-                        ("lint:actionlint".into(), "node-actionlint".into()),
-                        ("fix:eslint".into(), "yarn run lint:eslint --fix".into()),
-                        ("fix:prettier".into(), "yarn run lint:prettier --write".into()),
-                        ("build".into(), "node ./scripts/build/build.mjs".into()),
-                        ("build:website".into(), "node ./scripts/build-website.mjs".into()),
-                        ("vendors:bundle".into(), "node ./scripts/vendors/bundle-vendors.mjs".into()),
+                        ("prepublishOnly".try_into().unwrap(), "echo \"Error: must publish from dist/\" && exit 1".try_into().unwrap()),
+                        ("test".try_into().unwrap(), "jest".try_into().unwrap()),
+                        ("test:dev-package".try_into().unwrap(), "cross-env INSTALL_PACKAGE=1 jest".try_into().unwrap()),
+                        ("test:dist".try_into().unwrap(), "cross-env NODE_ENV=production jest".try_into().unwrap()),
+                        ("test:dist-standalone".try_into().unwrap(), "cross-env NODE_ENV=production TEST_STANDALONE=1 jest".try_into().unwrap()),
+                        ("test:integration".try_into().unwrap(), "jest tests/integration".try_into().unwrap()),
+                        ("test:dist-lint".try_into().unwrap(), "eslint --no-eslintrc --no-ignore --no-inline-config --config=./scripts/bundle-eslint-config.cjs \"dist/**/*.{js,mjs}\"".try_into().unwrap()),
+                        ("perf".try_into().unwrap(), "yarn run build && cross-env NODE_ENV=production node ./dist/bin-prettier.js".try_into().unwrap()),
+                        ("perf:inspect".try_into().unwrap(), "yarn run build && cross-env NODE_ENV=production node --inspect-brk ./dist/bin-prettier.js".try_into().unwrap()),
+                        ("perf:benchmark".try_into().unwrap(), "yarn run perf --debug-benchmark".try_into().unwrap()),
+                        ("lint".try_into().unwrap(), "run-p lint:*".try_into().unwrap()),
+                        ("lint:typecheck".try_into().unwrap(), "tsc".try_into().unwrap()),
+                        ("lint:eslint".try_into().unwrap(), "cross-env EFF_NO_LINK_RULES=true eslint . --format friendly".try_into().unwrap()),
+                        ("lint:changelog".try_into().unwrap(), "node ./scripts/lint-changelog.mjs".try_into().unwrap()),
+                        ("lint:prettier".try_into().unwrap(), "prettier . \"!test*\" --check".try_into().unwrap()),
+                        ("lint:spellcheck".try_into().unwrap(), "cspell --no-progress --relative --dot --gitignore".try_into().unwrap()),
+                        ("lint:deps".try_into().unwrap(), "node ./scripts/check-deps.mjs".try_into().unwrap()),
+                        ("lint:actionlint".try_into().unwrap(), "node-actionlint".try_into().unwrap()),
+                        ("fix:eslint".try_into().unwrap(), "yarn run lint:eslint --fix".try_into().unwrap()),
+                        ("fix:prettier".try_into().unwrap(), "yarn run lint:prettier --write".try_into().unwrap()),
+                        ("build".try_into().unwrap(), "node ./scripts/build/build.mjs".try_into().unwrap()),
+                        ("build:website".try_into().unwrap(), "node ./scripts/build-website.mjs".try_into().unwrap()),
+                        ("vendors:bundle".try_into().unwrap(), "node ./scripts/vendors/bundle-vendors.mjs".try_into().unwrap()),
                     ])),
                     ..PackageJson::default()
                 };
@@ -1885,7 +1985,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["run-p", "lint:*"])),
                             platform: Some(PlatformType::Node),
@@ -1893,7 +1993,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-actionlint".into(),
+                        "lint-actionlint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("node-actionlint".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1901,7 +2001,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-changelog".into(),
+                        "lint-changelog".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1912,7 +2012,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-deps".into(),
+                        "lint-deps".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1923,7 +2023,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-eslint".into(),
+                        "lint-eslint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cross-env",
@@ -1941,7 +2041,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-prettier".into(),
+                        "lint-prettier".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "prettier", ".", "!test*", "--check"
@@ -1951,7 +2051,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-spellcheck".into(),
+                        "lint-spellcheck".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cspell",
@@ -1965,7 +2065,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-typecheck".into(),
+                        "lint-typecheck".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("tsc".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1973,7 +2073,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix-eslint".into(),
+                        "fix-eslint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1987,7 +2087,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix-prettier".into(),
+                        "fix-prettier".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2001,7 +2101,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -2012,7 +2112,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-website".into(),
+                        "build-website".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -2023,7 +2123,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf".into(),
+                        "perf".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cross-env",
@@ -2040,7 +2140,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-benchmark".into(),
+                        "perf-benchmark".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2054,7 +2154,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-inspect".into(),
+                        "perf-inspect".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cross-env",
@@ -2072,7 +2172,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-inspect-dep1".into(),
+                        "perf-inspect-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2084,7 +2184,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-dep1".into(),
+                        "perf-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2096,7 +2196,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("jest".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -2104,7 +2204,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dev-package".into(),
+                        "test-dev-package".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
                             env: Some(FxHashMap::from_iter([(
@@ -2116,7 +2216,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist".into(),
+                        "test-dist".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
                             env: Some(FxHashMap::from_iter([(
@@ -2128,7 +2228,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist-lint".into(),
+                        "test-dist-lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "eslint",
@@ -2143,7 +2243,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist-standalone".into(),
+                        "test-dist-standalone".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
                             env: Some(FxHashMap::from_iter([
@@ -2155,7 +2255,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-integration".into(),
+                        "test-integration".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "jest",
@@ -2166,7 +2266,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "vendors-bundle".into(),
+                        "vendors-bundle".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",

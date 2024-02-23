@@ -279,7 +279,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Language(vec![LanguageType::Other("other".into())]),
+                        field: Field::Language(vec![LanguageType::other("other").unwrap()]),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("language!=other".into())

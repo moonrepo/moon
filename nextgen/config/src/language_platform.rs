@@ -1,4 +1,4 @@
-use moon_common::Id;
+use moon_common::{Id, IdError};
 use schematic::{derive_enum, ConfigEnum};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
@@ -25,6 +25,12 @@ pub enum LanguageType {
     /// An unsupported language.
     #[variant(fallback)]
     Other(Id),
+}
+
+impl LanguageType {
+    pub fn other(id: &str) -> Result<LanguageType, IdError> {
+        Ok(LanguageType::Other(Id::new(id)?))
+    }
 }
 
 // Required to handle the other and unknown variants

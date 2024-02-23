@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{
     PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, PartialWorkspaceProjects,
 };
@@ -9,7 +10,7 @@ use rustc_hash::FxHashMap;
 fn rust_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
-            "rust".into(),
+            Id::raw("rust"),
             ".".into(),
         )]))),
         ..PartialWorkspaceConfig::default()
@@ -157,7 +158,7 @@ mod rustup_toolchain {
     fn rust_toolchain_sandbox() -> Sandbox {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
-                "rust".into(),
+                Id::raw("rust"),
                 ".".into(),
             )]))),
             ..PartialWorkspaceConfig::default()

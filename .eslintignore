@@ -14,5 +14,9 @@ umd/
 *.snap
 *.d.ts
 
+# TS integration
+tsconfig.json
+tsconfig.*.json
+
 # Test fixtures
-/tests
+# /tests

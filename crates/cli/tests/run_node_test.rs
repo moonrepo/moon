@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use moon_common::Id;
 use moon_config::{
     NodePackageManager, NodeVersionFormat, NodeVersionManager, PartialNodeConfig,
     PartialWorkspaceProjects, PartialYarnConfig,
@@ -57,7 +58,7 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
         get_node_depman_fixture_configs(depman);
 
     workspace_config.projects = Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
-        "root".into(),
+        Id::raw("root"),
         ".".into(),
     )])));
 

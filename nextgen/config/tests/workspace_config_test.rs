@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_common::Id;
 use moon_config::{ExtensionConfig, FilePath, VcsProvider, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
@@ -102,12 +103,12 @@ projects:
                     assert_eq!(
                         map,
                         FxHashMap::from_iter([
-                            ("app".into(), "apps/app".into()),
-                            ("foo-kebab".into(), "./packages/foo".into()),
-                            ("barCamel".into(), "packages/bar".into()),
-                            ("baz_snake".into(), "./packages/baz".into()),
-                            ("qux.dot".into(), "packages/qux".into()),
-                            ("wat/slash".into(), "./packages/wat".into())
+                            (Id::raw("app"), "apps/app".into()),
+                            (Id::raw("foo-kebab"), "./packages/foo".into()),
+                            (Id::raw("barCamel"), "packages/bar".into()),
+                            (Id::raw("baz_snake"), "./packages/baz".into()),
+                            (Id::raw("qux.dot"), "packages/qux".into()),
+                            (Id::raw("wat/slash"), "./packages/wat".into())
                         ]),
                     );
                 }
@@ -227,7 +228,7 @@ projects:
                     assert_eq!(cfg.globs, vec!["packages/*".to_owned()]);
                     assert_eq!(
                         cfg.sources,
-                        FxHashMap::from_iter([("app".into(), "app".into())])
+                        FxHashMap::from_iter([(Id::raw("app"), "app".into())])
                     );
                 }
                 _ => panic!(),
@@ -263,7 +264,7 @@ constraints:
             assert!(config.constraints.enforce_project_type_relationships);
             assert_eq!(
                 config.constraints.tag_relationships,
-                FxHashMap::from_iter([("id".into(), vec!["other".into()])])
+                FxHashMap::from_iter([(Id::raw("id"), vec![Id::raw("other")])])
             );
         }
 

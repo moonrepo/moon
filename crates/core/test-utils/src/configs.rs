@@ -37,30 +37,48 @@ pub fn get_cases_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("root".into(), ".".to_owned()),
-            ("affected".into(), "affected".to_owned()),
-            ("noAffected".into(), "no-affected".to_owned()),
-            ("base".into(), "base".to_owned()),
-            ("noop".into(), "noop".to_owned()),
-            ("files".into(), "files".to_owned()),
-            ("states".into(), "states".to_owned()),
+            ("root".try_into().unwrap(), ".".to_owned()),
+            ("affected".try_into().unwrap(), "affected".to_owned()),
+            ("noAffected".try_into().unwrap(), "no-affected".to_owned()),
+            ("base".try_into().unwrap(), "base".to_owned()),
+            ("noop".try_into().unwrap(), "noop".to_owned()),
+            ("files".try_into().unwrap(), "files".to_owned()),
+            ("states".try_into().unwrap(), "states".to_owned()),
             // Runner
-            ("interactive".into(), "interactive".to_owned()),
-            ("passthroughArgs".into(), "passthrough-args".to_owned()),
+            ("interactive".try_into().unwrap(), "interactive".to_owned()),
+            (
+                "passthroughArgs".try_into().unwrap(),
+                "passthrough-args".to_owned(),
+            ),
             // Project/task deps
-            ("depsA".into(), "deps-a".to_owned()),
-            ("depsB".into(), "deps-b".to_owned()),
-            ("depsC".into(), "deps-c".to_owned()),
-            ("dependsOn".into(), "depends-on".to_owned()),
-            ("taskDeps".into(), "task-deps".to_owned()),
+            ("depsA".try_into().unwrap(), "deps-a".to_owned()),
+            ("depsB".try_into().unwrap(), "deps-b".to_owned()),
+            ("depsC".try_into().unwrap(), "deps-c".to_owned()),
+            ("dependsOn".try_into().unwrap(), "depends-on".to_owned()),
+            ("taskDeps".try_into().unwrap(), "task-deps".to_owned()),
             // Target scopes
-            ("targetScopeA".into(), "target-scope-a".to_owned()),
-            ("targetScopeB".into(), "target-scope-b".to_owned()),
-            ("targetScopeC".into(), "target-scope-c".to_owned()),
+            (
+                "targetScopeA".try_into().unwrap(),
+                "target-scope-a".to_owned(),
+            ),
+            (
+                "targetScopeB".try_into().unwrap(),
+                "target-scope-b".to_owned(),
+            ),
+            (
+                "targetScopeC".try_into().unwrap(),
+                "target-scope-c".to_owned(),
+            ),
             // Outputs
-            ("outputs".into(), "outputs".to_owned()),
-            ("outputsFiltering".into(), "outputs-filtering".to_owned()),
-            ("outputStyles".into(), "output-styles".to_owned()),
+            ("outputs".try_into().unwrap(), "outputs".to_owned()),
+            (
+                "outputsFiltering".try_into().unwrap(),
+                "outputs-filtering".to_owned(),
+            ),
+            (
+                "outputStyles".try_into().unwrap(),
+                "output-styles".to_owned(),
+            ),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -69,7 +87,7 @@ pub fn get_cases_fixture_configs() -> (
 
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([(
-            "noop".into(),
+            "noop".try_into().unwrap(),
             PartialTaskConfig {
                 command: Some(PartialTaskArgs::String("noop".into())),
                 ..PartialTaskConfig::default()
@@ -88,17 +106,17 @@ pub fn get_projects_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("advanced".into(), "advanced".to_owned()),
-            ("basic".into(), "basic".to_owned()),
-            ("emptyConfig".into(), "empty-config".to_owned()),
-            ("noConfig".into(), "no-config".to_owned()),
-            ("metadata".into(), "metadata".to_owned()),
-            ("tasks".into(), "tasks".to_owned()),
-            ("platforms".into(), "platforms".to_owned()),
+            ("advanced".try_into().unwrap(), "advanced".to_owned()),
+            ("basic".try_into().unwrap(), "basic".to_owned()),
+            ("emptyConfig".try_into().unwrap(), "empty-config".to_owned()),
+            ("noConfig".try_into().unwrap(), "no-config".to_owned()),
+            ("metadata".try_into().unwrap(), "metadata".to_owned()),
+            ("tasks".try_into().unwrap(), "tasks".to_owned()),
+            ("platforms".try_into().unwrap(), "platforms".to_owned()),
             // Deps
-            ("foo".into(), "deps/foo".to_owned()),
-            ("bar".into(), "deps/bar".to_owned()),
-            ("baz".into(), "deps/baz".to_owned()),
+            ("foo".try_into().unwrap(), "deps/foo".to_owned()),
+            ("bar".try_into().unwrap(), "deps/bar".to_owned()),
+            ("baz".try_into().unwrap(), "deps/baz".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -108,10 +126,13 @@ pub fn get_projects_fixture_configs() -> (
     let tasks_config = PartialInheritedTasksConfig {
         file_groups: Some(FxHashMap::from_iter([
             (
-                "sources".into(),
+                "sources".try_into().unwrap(),
                 create_input_paths(["src/**/*", "types/**/*"]),
             ),
-            ("tests".into(), create_input_paths(["tests/**/*"])),
+            (
+                "tests".try_into().unwrap(),
+                create_input_paths(["tests/**/*"]),
+            ),
         ])),
         ..PartialInheritedTasksConfig::default()
     };
@@ -126,17 +147,23 @@ pub fn get_project_graph_aliases_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("explicit".into(), "explicit".to_owned()),
+            ("explicit".try_into().unwrap(), "explicit".to_owned()),
             (
-                "explicitAndImplicit".into(),
+                "explicitAndImplicit".try_into().unwrap(),
                 "explicit-and-implicit".to_owned(),
             ),
-            ("implicit".into(), "implicit".to_owned()),
-            ("noLang".into(), "no-lang".to_owned()),
+            ("implicit".try_into().unwrap(), "implicit".to_owned()),
+            ("noLang".try_into().unwrap(), "no-lang".to_owned()),
             // Node.js
-            ("node".into(), "node".to_owned()),
-            ("nodeNameOnly".into(), "node-name-only".to_owned()),
-            ("nodeNameScope".into(), "node-name-scope".to_owned()),
+            ("node".try_into().unwrap(), "node".to_owned()),
+            (
+                "nodeNameOnly".try_into().unwrap(),
+                "node-name-only".to_owned(),
+            ),
+            (
+                "nodeNameScope".try_into().unwrap(),
+                "node-name-scope".to_owned(),
+            ),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -167,34 +194,46 @@ pub fn get_tasks_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("basic".into(), "basic".to_owned()),
-            ("buildA".into(), "build-a".to_owned()),
-            ("buildB".into(), "build-b".to_owned()),
-            ("buildC".into(), "build-c".to_owned()),
-            ("chain".into(), "chain".to_owned()),
-            ("cycle".into(), "cycle".to_owned()),
-            ("inheritTags".into(), "inherit-tags".to_owned()),
-            ("inputA".into(), "input-a".to_owned()),
-            ("inputB".into(), "input-b".to_owned()),
-            ("inputC".into(), "input-c".to_owned()),
-            ("inputs".into(), "inputs".to_owned()),
+            ("basic".try_into().unwrap(), "basic".to_owned()),
+            ("buildA".try_into().unwrap(), "build-a".to_owned()),
+            ("buildB".try_into().unwrap(), "build-b".to_owned()),
+            ("buildC".try_into().unwrap(), "build-c".to_owned()),
+            ("chain".try_into().unwrap(), "chain".to_owned()),
+            ("cycle".try_into().unwrap(), "cycle".to_owned()),
+            ("inheritTags".try_into().unwrap(), "inherit-tags".to_owned()),
+            ("inputA".try_into().unwrap(), "input-a".to_owned()),
+            ("inputB".try_into().unwrap(), "input-b".to_owned()),
+            ("inputC".try_into().unwrap(), "input-c".to_owned()),
+            ("inputs".try_into().unwrap(), "inputs".to_owned()),
             (
-                "mergeAllStrategies".into(),
+                "mergeAllStrategies".try_into().unwrap(),
                 "merge-all-strategies".to_owned(),
             ),
-            ("mergeAppend".into(), "merge-append".to_owned()),
-            ("mergePrepend".into(), "merge-prepend".to_owned()),
-            ("mergeReplace".into(), "merge-replace".to_owned()),
-            ("noTasks".into(), "no-tasks".to_owned()),
-            ("persistent".into(), "persistent".to_owned()),
-            ("scopeAll".into(), "scope-all".to_owned()),
-            ("scopeDeps".into(), "scope-deps".to_owned()),
-            ("scopeSelf".into(), "scope-self".to_owned()),
-            ("tokens".into(), "tokens".to_owned()),
-            ("expandEnv".into(), "expand-env".to_owned()),
-            ("expandEnvProject".into(), "expand-env-project".to_owned()),
-            ("expandOutputs".into(), "expand-outputs".to_owned()),
-            ("fileGroups".into(), "file-groups".to_owned()),
+            ("mergeAppend".try_into().unwrap(), "merge-append".to_owned()),
+            (
+                "mergePrepend".try_into().unwrap(),
+                "merge-prepend".to_owned(),
+            ),
+            (
+                "mergeReplace".try_into().unwrap(),
+                "merge-replace".to_owned(),
+            ),
+            ("noTasks".try_into().unwrap(), "no-tasks".to_owned()),
+            ("persistent".try_into().unwrap(), "persistent".to_owned()),
+            ("scopeAll".try_into().unwrap(), "scope-all".to_owned()),
+            ("scopeDeps".try_into().unwrap(), "scope-deps".to_owned()),
+            ("scopeSelf".try_into().unwrap(), "scope-self".to_owned()),
+            ("tokens".try_into().unwrap(), "tokens".to_owned()),
+            ("expandEnv".try_into().unwrap(), "expand-env".to_owned()),
+            (
+                "expandEnvProject".try_into().unwrap(),
+                "expand-env-project".to_owned(),
+            ),
+            (
+                "expandOutputs".try_into().unwrap(),
+                "expand-outputs".to_owned(),
+            ),
+            ("fileGroups".try_into().unwrap(), "file-groups".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -204,7 +243,7 @@ pub fn get_tasks_fixture_configs() -> (
     let tasks_config = PartialInheritedTasksConfig {
         file_groups: Some(FxHashMap::from_iter([
             (
-                "static".into(),
+                "static".try_into().unwrap(),
                 create_input_paths([
                     "file.ts",
                     "dir",
@@ -213,24 +252,33 @@ pub fn get_tasks_fixture_configs() -> (
                     "dir/subdir/another.ts",
                 ]),
             ),
-            ("dirs_glob".into(), create_input_paths(["**/*"])),
-            ("files_glob".into(), create_input_paths(["**/*.{ts,tsx}"])),
             (
-                "globs".into(),
+                "dirs_glob".try_into().unwrap(),
+                create_input_paths(["**/*"]),
+            ),
+            (
+                "files_glob".try_into().unwrap(),
+                create_input_paths(["**/*.{ts,tsx}"]),
+            ),
+            (
+                "globs".try_into().unwrap(),
                 create_input_paths(["**/*.{ts,tsx}", "*.js"]),
             ),
-            ("no_globs".into(), create_input_paths(["config.js"])),
+            (
+                "no_globs".try_into().unwrap(),
+                create_input_paths(["config.js"]),
+            ),
         ])),
         tasks: Some(BTreeMap::from_iter([
             (
-                "standard".into(),
+                "standard".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("cmd".into())),
                     ..PartialTaskConfig::default()
                 },
             ),
             (
-                "withArgs".into(),
+                "withArgs".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("cmd".into())),
                     args: Some(PartialTaskArgs::List(vec![
@@ -242,7 +290,7 @@ pub fn get_tasks_fixture_configs() -> (
                 },
             ),
             (
-                "withInputs".into(),
+                "withInputs".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
@@ -253,7 +301,7 @@ pub fn get_tasks_fixture_configs() -> (
                 },
             ),
             (
-                "withOutputs".into(),
+                "withOutputs".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("cmd".into())),
                     inputs: Some(vec![
@@ -279,10 +327,16 @@ pub fn get_bun_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("bun".into(), "base".to_owned()),
-            ("packageManager".into(), "package-manager".to_owned()),
-            ("scripts".into(), "scripts".to_owned()),
-            ("versionOverride".into(), "version-override".to_owned()),
+            ("bun".try_into().unwrap(), "base".to_owned()),
+            (
+                "packageManager".try_into().unwrap(),
+                "package-manager".to_owned(),
+            ),
+            ("scripts".try_into().unwrap(), "scripts".to_owned()),
+            (
+                "versionOverride".try_into().unwrap(),
+                "version-override".to_owned(),
+            ),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -298,7 +352,7 @@ pub fn get_bun_fixture_configs() -> (
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([
             (
-                "version".into(),
+                "version".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("bun".into())),
                     args: Some(PartialTaskArgs::String("--version".into())),
@@ -306,7 +360,7 @@ pub fn get_bun_fixture_configs() -> (
                 },
             ),
             (
-                "noop".into(),
+                "noop".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
@@ -326,8 +380,11 @@ pub fn get_deno_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("deno".into(), "base".to_owned()),
-            ("versionOverride".into(), "version-override".to_owned()),
+            ("deno".try_into().unwrap(), "base".to_owned()),
+            (
+                "versionOverride".try_into().unwrap(),
+                "version-override".to_owned(),
+            ),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -342,7 +399,7 @@ pub fn get_deno_fixture_configs() -> (
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([
             (
-                "version".into(),
+                "version".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("deno".into())),
                     args: Some(PartialTaskArgs::String("--version".into())),
@@ -350,7 +407,7 @@ pub fn get_deno_fixture_configs() -> (
                 },
             ),
             (
-                "noop".into(),
+                "noop".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
@@ -370,24 +427,30 @@ pub fn get_node_fixture_configs() -> (
 ) {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("node".into(), "base".to_owned()),
-            ("lifecycles".into(), "lifecycles".to_owned()),
-            ("postinstall".into(), "postinstall".to_owned()),
+            ("node".try_into().unwrap(), "base".to_owned()),
+            ("lifecycles".try_into().unwrap(), "lifecycles".to_owned()),
+            ("postinstall".try_into().unwrap(), "postinstall".to_owned()),
             (
-                "postinstallRecursion".into(),
+                "postinstallRecursion".try_into().unwrap(),
                 "postinstall-recursion".to_owned(),
             ),
-            ("versionOverride".into(), "version-override".to_owned()),
+            (
+                "versionOverride".try_into().unwrap(),
+                "version-override".to_owned(),
+            ),
             // Binaries
-            ("esbuild".into(), "esbuild".to_owned()),
-            ("swc".into(), "swc".to_owned()),
+            ("esbuild".try_into().unwrap(), "esbuild".to_owned()),
+            ("swc".try_into().unwrap(), "swc".to_owned()),
             // Project/task deps
-            ("depsA".into(), "deps-a".to_owned()),
-            ("depsB".into(), "deps-b".to_owned()),
-            ("depsC".into(), "deps-c".to_owned()),
-            ("depsD".into(), "deps-d".to_owned()),
-            ("dependsOn".into(), "depends-on".to_owned()),
-            ("dependsOnScopes".into(), "depends-on-scopes".to_owned()),
+            ("depsA".try_into().unwrap(), "deps-a".to_owned()),
+            ("depsB".try_into().unwrap(), "deps-b".to_owned()),
+            ("depsC".try_into().unwrap(), "deps-c".to_owned()),
+            ("depsD".try_into().unwrap(), "deps-d".to_owned()),
+            ("dependsOn".try_into().unwrap(), "depends-on".to_owned()),
+            (
+                "dependsOnScopes".try_into().unwrap(),
+                "depends-on-scopes".to_owned(),
+            ),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -397,7 +460,7 @@ pub fn get_node_fixture_configs() -> (
     let tasks_config = PartialInheritedTasksConfig {
         tasks: Some(BTreeMap::from_iter([
             (
-                "version".into(),
+                "version".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("node".into())),
                     args: Some(PartialTaskArgs::String("--version".into())),
@@ -405,7 +468,7 @@ pub fn get_node_fixture_configs() -> (
                 },
             ),
             (
-                "noop".into(),
+                "noop".try_into().unwrap(),
                 PartialTaskConfig {
                     command: Some(PartialTaskArgs::String("noop".into())),
                     ..PartialTaskConfig::default()
@@ -428,9 +491,12 @@ pub fn get_node_depman_fixture_configs(
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.projects = Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-        (depman.into(), "base".to_owned()),
-        ("other".into(), "other".to_owned()),
-        ("notInWorkspace".into(), "not-in-workspace".to_owned()),
+        (depman.try_into().unwrap(), "base".to_owned()),
+        ("other".try_into().unwrap(), "other".to_owned()),
+        (
+            "notInWorkspace".try_into().unwrap(),
+            "not-in-workspace".to_owned(),
+        ),
     ])));
 
     if let Some(node_config) = &mut toolchain_config.node {
@@ -489,7 +555,10 @@ pub fn get_typescript_fixture_configs() -> (
     workspace_config.projects = Some(PartialWorkspaceProjects::Both(
         PartialWorkspaceProjectsConfig {
             globs: Some(vec!["*".into()]),
-            sources: Some(FxHashMap::from_iter([("root".into(), ".".into())])),
+            sources: Some(FxHashMap::from_iter([(
+                "root".try_into().unwrap(),
+                ".".into(),
+            )])),
         },
     ));
 

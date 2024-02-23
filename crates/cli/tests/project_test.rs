@@ -1,7 +1,30 @@
+use moon_test_utils::predicates::Predicate;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_stderr_output,
-    get_cases_fixture_configs, get_projects_fixture_configs,
+    get_cases_fixture_configs, get_projects_fixture_configs, predicates,
 };
+
+#[test]
+fn invalid_project_id() {
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "projects",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project").arg("=");
+    });
+
+    let output = get_assert_stderr_output(&assert.inner);
+
+    assert.failure().code(2);
+
+    assert!(predicates::str::contains("invalid value '=' for '<ID>'").eval(&output));
+}
 
 #[test]
 fn unknown_project() {

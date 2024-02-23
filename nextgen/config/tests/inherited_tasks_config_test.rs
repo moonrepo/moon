@@ -52,14 +52,14 @@ tasks:
         fn create_merged_tasks() -> BTreeMap<Id, TaskConfig> {
             BTreeMap::from([
                 (
-                    "onlyCommand".into(),
+                    Id::raw("onlyCommand"),
                     TaskConfig {
                         command: TaskArgs::String("a".to_owned()),
                         ..TaskConfig::default()
                     },
                 ),
                 (
-                    "stringArgs".into(),
+                    Id::raw("stringArgs"),
                     TaskConfig {
                         command: TaskArgs::String("b".to_owned()),
                         args: TaskArgs::String("string args".to_owned()),
@@ -67,7 +67,7 @@ tasks:
                     },
                 ),
                 (
-                    "arrayArgs".into(),
+                    Id::raw("arrayArgs"),
                     TaskConfig {
                         command: TaskArgs::String("c".to_owned()),
                         args: TaskArgs::List(vec!["array".into(), "args".into()]),
@@ -75,7 +75,7 @@ tasks:
                     },
                 ),
                 (
-                    "inputs".into(),
+                    Id::raw("inputs"),
                     TaskConfig {
                         command: TaskArgs::String("d".to_owned()),
                         inputs: Some(vec![InputPath::ProjectGlob("src/**/*".into())]),
@@ -83,7 +83,7 @@ tasks:
                     },
                 ),
                 (
-                    "options".into(),
+                    Id::raw("options"),
                     TaskConfig {
                         command: TaskArgs::String("e".to_owned()),
                         options: TaskOptionsConfig {
@@ -107,11 +107,11 @@ tasks:
                 config.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "tests".into(),
+                        Id::raw("tests"),
                         vec![InputPath::ProjectGlob("tests/**/*".into())]
                     ),
                     (
-                        "sources".into(),
+                        Id::raw("sources"),
                         vec![InputPath::ProjectGlob("sources/**/*".into())]
                     ),
                 ])
@@ -170,15 +170,15 @@ fileGroups:
                 config.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "tests".into(),
+                        Id::raw("tests"),
                         vec![InputPath::ProjectGlob("tests/**/*".into())]
                     ),
                     (
-                        "sources".into(),
+                        Id::raw("sources"),
                         vec![InputPath::ProjectGlob("sources/**/*".into())]
                     ),
                     (
-                        "configs".into(),
+                        Id::raw("configs"),
                         vec![InputPath::WorkspaceGlob("*.js".into())]
                     ),
                 ])
@@ -222,15 +222,15 @@ fileGroups:
                 config.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "tests".into(),
+                        Id::raw("tests"),
                         vec![InputPath::ProjectGlob("tests/**/*".into())]
                     ),
                     (
-                        "sources".into(),
+                        Id::raw("sources"),
                         vec![InputPath::ProjectGlob("sources/**/*".into())]
                     ),
                     (
-                        "configs".into(),
+                        Id::raw("configs"),
                         vec![InputPath::WorkspaceGlob("*.js".into())]
                     ),
                 ])
@@ -265,14 +265,14 @@ fileGroups:
                 config.file_groups,
                 FxHashMap::from_iter([
                     (
-                        "files".into(),
+                        Id::raw("files"),
                         vec![
                             InputPath::WorkspaceFile("ws/relative".into()),
                             InputPath::ProjectFile("proj/relative".into())
                         ]
                     ),
                     (
-                        "globs".into(),
+                        Id::raw("globs"),
                         vec![
                             InputPath::WorkspaceGlob("ws/**/*".into()),
                             InputPath::WorkspaceGlob("!ws/**/*".into()),
@@ -606,7 +606,7 @@ mod task_manager {
             assert_eq!(
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
-                    &LanguageType::Other("kotlin".into()),
+                    &LanguageType::Other(Id::raw("kotlin")),
                     &ProjectType::Tool,
                     &[]
                 ),
@@ -616,7 +616,7 @@ mod task_manager {
             assert_eq!(
                 manager.get_lookup_order(
                     &PlatformType::System,
-                    &LanguageType::Other("dotnet".into()),
+                    &LanguageType::Other(Id::raw("dotnet")),
                     &ProjectType::Application,
                     &[]
                 ),
@@ -633,7 +633,7 @@ mod task_manager {
                     &PlatformType::Unknown,
                     &LanguageType::Rust,
                     &ProjectType::Application,
-                    &["cargo".into(), "cli-app".into()]
+                    &[Id::raw("cargo"), Id::raw("cli-app")]
                 ),
                 vec!["*", "rust", "rust-application", "tag-cargo", "tag-cli-app"]
             );
@@ -660,14 +660,17 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    ("global".into(), stub_task("global", PlatformType::Unknown)),
-                    ("node".into(), stub_task("node", PlatformType::Node)),
                     (
-                        "node-application".into(),
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("node"), stub_task("node", PlatformType::Node)),
+                    (
+                        Id::raw("node-application"),
                         stub_task("node-application", PlatformType::Node)
                     ),
                     (
-                        "javascript".into(),
+                        Id::raw("javascript"),
                         stub_task("javascript", PlatformType::Node)
                     ),
                 ]),
@@ -703,10 +706,13 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    ("global".into(), stub_task("global", PlatformType::Unknown)),
-                    ("bun".into(), stub_task("bun", PlatformType::Bun)),
                     (
-                        "javascript".into(),
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("bun"), stub_task("bun", PlatformType::Bun)),
+                    (
+                        Id::raw("javascript"),
                         stub_task("javascript", PlatformType::Bun)
                     ),
                 ]),
@@ -735,10 +741,13 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    ("global".into(), stub_task("global", PlatformType::Unknown)),
-                    ("node".into(), stub_task("node", PlatformType::Node)),
                     (
-                        "typescript".into(),
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("node"), stub_task("node", PlatformType::Node)),
+                    (
+                        Id::raw("typescript"),
                         stub_task("typescript", PlatformType::Node)
                     ),
                 ]),
@@ -767,8 +776,11 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    ("global".into(), stub_task("global", PlatformType::Unknown)),
-                    ("rust".into(), stub_task("rust", PlatformType::System)),
+                    (
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("rust"), stub_task("rust", PlatformType::System)),
                 ]),
             );
 
@@ -788,21 +800,24 @@ mod task_manager {
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
                     &ProjectType::Tool,
-                    &["normal".into(), "kebab-case".into()],
+                    &[Id::raw("normal"), Id::raw("kebab-case")],
                 )
                 .unwrap();
 
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    ("global".into(), stub_task("global", PlatformType::Unknown)),
-                    ("node".into(), stub_task("node", PlatformType::Node)),
                     (
-                        "typescript".into(),
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("node"), stub_task("node", PlatformType::Node)),
+                    (
+                        Id::raw("typescript"),
                         stub_task("typescript", PlatformType::Node)
                     ),
                     (
-                        "tag".into(),
+                        Id::raw("tag"),
                         stub_task("tag-kebab-case", PlatformType::Node)
                     ),
                 ]),
@@ -828,7 +843,7 @@ mod task_manager {
             let config = manager
                 .get_inherited_config(
                     &PlatformType::System,
-                    &LanguageType::Other("kotlin".into()),
+                    &LanguageType::Other(Id::raw("kotlin")),
                     &ProjectType::Library,
                     &[],
                 )
@@ -837,8 +852,11 @@ mod task_manager {
             assert_eq!(
                 config.config.tasks,
                 BTreeMap::from_iter([
-                    ("global".into(), stub_task("global", PlatformType::Unknown)),
-                    ("kotlin".into(), stub_task("kotlin", PlatformType::System)),
+                    (
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("kotlin"), stub_task("kotlin", PlatformType::System)),
                 ]),
             );
 
@@ -871,7 +889,7 @@ mod task_manager {
 
             assert_eq!(
                 config.config.tasks,
-                BTreeMap::from_iter([("command".into(), task)]),
+                BTreeMap::from_iter([(Id::raw("command"), task)]),
             );
         }
 
@@ -886,7 +904,7 @@ mod task_manager {
             let config = manager
                 .get_inherited_config(
                     &PlatformType::System,
-                    &LanguageType::Other("dotnet".into()),
+                    &LanguageType::Other(Id::raw("dotnet")),
                     &ProjectType::Application,
                     &[],
                 )
@@ -894,7 +912,7 @@ mod task_manager {
 
             assert_eq!(
                 config.config.tasks,
-                BTreeMap::from_iter([("command".into(), task)]),
+                BTreeMap::from_iter([(Id::raw("command"), task)]),
             );
         }
     }

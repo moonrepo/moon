@@ -128,6 +128,22 @@ impl FromStr for Id {
     }
 }
 
+impl TryFrom<&str> for Id {
+    type Error = IdError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
+    }
+}
+
+impl TryFrom<String> for Id {
+    type Error = IdError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::from_str(&value)
+    }
+}
+
 impl<'de> Deserialize<'de> for Id {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -141,13 +157,5 @@ impl<'de> Deserialize<'de> for Id {
 impl Schematic for Id {
     fn generate_schema() -> SchemaType {
         SchemaType::string()
-    }
-}
-
-// This is only used by tests!
-
-impl From<&str> for Id {
-    fn from(s: &str) -> Self {
-        Id::new(s).unwrap()
     }
 }

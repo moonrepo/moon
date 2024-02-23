@@ -1,6 +1,7 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::Id;
 use moon_config::{DependencyConfig, InputPath, OutputPath, TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_project_expander::TasksExpander;
@@ -299,7 +300,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .push(DependencyConfig::new("foo".into()));
+                    .push(DependencyConfig::new(Id::raw("foo")));
 
                 let mut task = create_task();
                 task.deps
@@ -331,7 +332,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .push(DependencyConfig::new("foo".into()));
+                    .push(DependencyConfig::new(Id::raw("foo")));
 
                 let mut task = create_task();
                 task.options.persistent = false;
@@ -355,7 +356,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .push(DependencyConfig::new("foo".into()));
+                    .push(DependencyConfig::new(Id::raw("foo")));
 
                 let mut task = create_task();
                 task.deps.push(TaskDependencyConfig::new(
@@ -771,7 +772,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .push(DependencyConfig::new("foo".into()));
+                    .push(DependencyConfig::new(Id::raw("foo")));
 
                 let mut task = create_task();
 
@@ -897,7 +898,7 @@ mod tasks_expander {
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
-                    .push(DependencyConfig::new("foo".into()));
+                    .push(DependencyConfig::new(Id::raw("foo")));
 
                 let mut task = create_task();
                 task.deps.push(TaskDependencyConfig {

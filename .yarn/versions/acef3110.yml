@@ -12,4 +12,5 @@ releases:
 
 declined:
   - '@moonrepo/runtime'
+  - '@moonrepo/visualizer'
   - 'website'

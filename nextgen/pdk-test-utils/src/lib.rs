@@ -4,6 +4,7 @@ mod wrappers;
 
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
+use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -59,18 +60,20 @@ pub fn create_plugin_container_with_config(
     }
 
     // TODO redo
-    let _ = extism::set_log_callback(
-        move |line| {
-            let mut file = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&log_file)
-                .unwrap();
+    if env::var("CI").is_err() {
+        let _ = extism::set_log_callback(
+            move |line| {
+                let mut file = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&log_file)
+                    .unwrap();
 
-            file.write_all(line.as_bytes()).unwrap();
-        },
-        "trace",
-    );
+                file.write_all(line.as_bytes()).unwrap();
+            },
+            "trace",
+        );
+    }
 
     PluginContainer::new(id, manifest, funcs).unwrap()
 }

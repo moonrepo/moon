@@ -725,28 +725,13 @@ mod infer_tasks_from_scripts {
     fn wraps_scripts() {
         let pkg = PackageJson {
             scripts: Some(BTreeMap::from([
-                (
-                    "postinstall".into(),
-                    "./setup.sh".into(),
-                ),
-                (
-                    "build:app".into(),
-                    "webpack build --output ./dist".into(),
-                ),
+                ("postinstall".into(), "./setup.sh".into()),
+                ("build:app".into(), "webpack build --output ./dist".into()),
                 ("dev".into(), "webpack dev".into()),
                 ("test".into(), "jest .".into()),
-                (
-                    "posttest".into(),
-                    "run-coverage".into(),
-                ),
-                (
-                    "lint".into(),
-                    "eslint src/**/* .".into(),
-                ),
-                (
-                    "typecheck".into(),
-                    "tsc --build".into(),
-                ),
+                ("posttest".into(), "run-coverage".into()),
+                ("lint".into(), "eslint src/**/* .".into()),
+                ("typecheck".into(), "tsc --build".into()),
             ])),
             ..PackageJson::default()
         };
@@ -818,22 +803,10 @@ mod create_tasks_from_scripts {
     fn ignores_unsupported_syntax() {
         let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
-                (
-                    "cd".into(),
-                    "cd website && yarn build".into(),
-                ),
-                (
-                    "out".into(),
-                    "some-bin > output.log".into(),
-                ),
-                (
-                    "in".into(),
-                    "output.log < some-bin".into(),
-                ),
-                (
-                    "pipe".into(),
-                    "ls | grep foo".into(),
-                ),
+                ("cd".into(), "cd website && yarn build".into()),
+                ("out".into(), "some-bin > output.log".into()),
+                ("in".into(), "output.log < some-bin".into()),
+                ("pipe".into(), "ls | grep foo".into()),
                 ("or".into(), "foo || bar".into()),
                 ("semi".into(), "foo ;; bar".into()),
             ])),
@@ -853,22 +826,10 @@ mod create_tasks_from_scripts {
                 ("foo-bar".into(), "script".into()),
                 ("foo_bar".into(), "script".into()),
                 ("foo:bar".into(), "script".into()),
-                (
-                    "foo-bar:baz".into(),
-                    "script".into(),
-                ),
-                (
-                    "foo_bar:baz".into(),
-                    "script".into(),
-                ),
-                (
-                    "foo:bar:baz".into(),
-                    "script".into(),
-                ),
-                (
-                    "foo_bar:baz-qux".into(),
-                    "script".into(),
-                ),
+                ("foo-bar:baz".into(), "script".into()),
+                ("foo_bar:baz".into(), "script".into()),
+                ("foo:bar:baz".into(), "script".into()),
+                ("foo_bar:baz-qux".into(), "script".into()),
                 ("fooBar".into(), "script".into()),
             ])),
             ..PackageJson::default()
@@ -895,14 +856,8 @@ mod create_tasks_from_scripts {
         let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("test".into(), "jest .".into()),
-                (
-                    "lint".into(),
-                    "eslint src/**/* .".into(),
-                ),
-                (
-                    "typecheck".into(),
-                    "tsc --build".into(),
-                ),
+                ("lint".into(), "eslint src/**/* .".into()),
+                ("typecheck".into(), "tsc --build".into()),
             ])),
             ..PackageJson::default()
         };
@@ -952,14 +907,8 @@ mod create_tasks_from_scripts {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("test".into(), "jest .".into()),
-                    (
-                        "pretest".into(),
-                        "do something".into(),
-                    ),
-                    (
-                        "posttest".into(),
-                        "do another".into(),
-                    ),
+                    ("pretest".into(), "do something".into()),
+                    ("posttest".into(), "do another".into()),
                 ])),
                 ..PackageJson::default()
             };
@@ -1006,10 +955,7 @@ mod create_tasks_from_scripts {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("test".into(), "jest .".into()),
-                    (
-                        "pretest".into(),
-                        "do something && do another".into(),
-                    ),
+                    ("pretest".into(), "do something && do another".into()),
                 ])),
                 ..PackageJson::default()
             };
@@ -1056,10 +1002,7 @@ mod create_tasks_from_scripts {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("test".into(), "jest .".into()),
-                    (
-                        "posttest".into(),
-                        "do something && do another".into(),
-                    ),
+                    ("posttest".into(), "do something && do another".into()),
                 ])),
                 ..PackageJson::default()
             };
@@ -1104,14 +1047,8 @@ mod create_tasks_from_scripts {
         fn handles_pre_within_script() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    (
-                        "release".into(),
-                        "npm run prerelease && npm publish".into(),
-                    ),
-                    (
-                        "prerelease".into(),
-                        "webpack build".into(),
-                    ),
+                    ("release".into(), "npm run prerelease && npm publish".into()),
+                    ("prerelease".into(), "webpack build".into()),
                 ])),
                 ..PackageJson::default()
             };
@@ -1153,10 +1090,7 @@ mod create_tasks_from_scripts {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("lint".into(), "eslint .".into()),
-                    (
-                        "lint:fix".into(),
-                        "npm run invalid -- --fix".into(),
-                    ),
+                    ("lint:fix".into(), "npm run invalid -- --fix".into()),
                 ])),
                 ..PackageJson::default()
             };
@@ -1287,14 +1221,10 @@ mod create_tasks_from_scripts {
         fn handles_env_vars() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    (
-                        "build".into(),
-                        "webpack build".into(),
-                    ),
+                    ("build".into(), "webpack build".into()),
                     (
                         "build:dev".into(),
-                        "NODE_ENV=development npm run build -- --stats"
-                            .into(),
+                        "NODE_ENV=development npm run build -- --stats".into(),
                     ),
                     (
                         "build:prod".into(),
@@ -1302,8 +1232,7 @@ mod create_tasks_from_scripts {
                     ),
                     (
                         "build:staging".into(),
-                        "NODE_ENV=staging pnpm run build --mode production"
-                            .into(),
+                        "NODE_ENV=staging pnpm run build --mode production".into(),
                     ),
                 ])),
                 ..PackageJson::default()
@@ -1392,14 +1321,8 @@ mod create_tasks_from_scripts {
                     ("build".into(), "babel .".into()),
                     ("lint".into(), "eslint .".into()),
                     ("test".into(), "jest .".into()),
-                    (
-                        "preversion".into(),
-                        "npm run lint && npm run test".into(),
-                    ),
-                    (
-                        "version".into(),
-                        "npm run build".into(),
-                    ),
+                    ("preversion".into(), "npm run lint && npm run test".into()),
+                    ("version".into(), "npm run build".into()),
                     (
                         "postversion".into(),
                         "npm ci && git add package-lock.json".into(),
@@ -1465,43 +1388,25 @@ mod create_tasks_from_scripts {
         fn babel() {
             let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
-                    (
-                        "postinstall".into(),
-                        "husky install".into(),
-                    ),
-                    (
-                        "bootstrap".into(),
-                        "make bootstrap".into(),
-                    ),
-                    (
-                        "codesandbox:build".into(),
-                        "make build-no-bundle".into(),
-                    ),
-                    (
-                        "build".into(),
-                        "make build".into(),
-                    ),
+                    ("postinstall".into(), "husky install".into()),
+                    ("bootstrap".into(), "make bootstrap".into()),
+                    ("codesandbox:build".into(), "make build-no-bundle".into()),
+                    ("build".into(), "make build".into()),
                     ("fix".into(), "make fix".into()),
                     ("lint".into(), "make lint".into()),
                     ("test".into(), "make test".into()),
                     (
                         "version".into(),
-                        "yarn --immutable-cache && git add yarn.lock"
-                            .into(),
+                        "yarn --immutable-cache && git add yarn.lock".into(),
                     ),
-                    (
-                        "test:esm".into(),
-                        "node test/esm/index.js".into(),
-                    ),
+                    ("test:esm".into(), "node test/esm/index.js".into()),
                     (
                         "test:runtime:generate-absolute-runtime".into(),
-                        "node test/runtime-integration/generate-absolute-runtime.cjs"
-                            .into(),
+                        "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
                     ),
                     (
                         "test:runtime:bundlers".into(),
-                        "node test/runtime-integration/bundlers.cjs"
-                            .into(),
+                        "node test/runtime-integration/bundlers.cjs".into(),
                     ),
                     (
                         "test:runtime:node".into(),

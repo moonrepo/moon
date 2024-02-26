@@ -67,6 +67,8 @@ $ moon ext download --\
 
 ### `migrate-nx`<VersionLabel version="1.22.0" />
 
+> This extension is currently _experimental_ and will be improved over time.
+
 The `migrate-nx` extension can be used to migrate an Nx powered repository to moon. This process
 will convert the root `nx.json` and `workspace.json` files, and any `project.json` and
 `package.json` files found within the repository. The following changes are made:
@@ -81,7 +83,7 @@ will convert the root `nx.json` and `workspace.json` files, and any `project.jso
   - The `{projectRoot}` and `{workspaceRoot}` interpolations will be replaced with moon tokens.
 
 ```shell
-$ moon ext migrate-turborepo
+$ moon ext migrate-nx
 ```
 
 :::caution

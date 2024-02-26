@@ -65,11 +65,53 @@ $ moon ext download --\
 - `--dest` - Destination folder to save the file. Defaults to the current working directory.
 - `--name` - Override the file name. Defaults to the file name in the URL.
 
+### `migrate-nx`<VersionLabel version="1.22.0" />
+
+The `migrate-nx` extension can be used to migrate an Nx powered repository to moon. This process
+will convert the root `nx.json` and `workspace.json` files, and any `project.json` and
+`package.json` files found within the repository. The following changes are made:
+
+- Migrates `targetDefaults` as global tasks to [`.moon/tasks/node.yml`](../config/tasks#tasks) (or
+  `bun.yml`), `namedInputs` as file groups, `workspaceLayout` as projects, and more.
+- Migrates all `project.json` settings to [`moon.yml`](../config/project#tasks) equivalent settings.
+  Target to task conversion assumes the following:
+  - Target `executor` will be removed, and we'll attempt to extract the appropriate npm package
+    command. For example, `@nx/webpack:build` -> `webpack build`.
+  - Target `options` will be converted to task `args`.
+  - The `{projectRoot}` and `{workspaceRoot}` interpolations will be replaced with moon tokens.
+
+```shell
+$ moon ext migrate-turborepo
+```
+
+:::caution
+
+Nx and moon are quite different, so many settings are either ignored when converting, or are not a
+1:1 conversion. We do our best to convert as much as possible, but some manual patching will most
+likely be required! We suggest testing each converted task 1-by-1 to ensure it works as expected.
+
+:::
+
+#### Arguments
+
+- `--bun` - Migrate to Bun based commands instead of Node.js.
+
+#### Unsupported
+
+The following features are not supported in moon, and are ignored when converting.
+
+- Most settings in `nx.json`.
+- Named input variants: externel dependencies, dependent task output files, dependent project
+  inputs, or runtime commands.
+- Target `configurations` and `defaultConfiguration`. Another task will be created instead that uses
+  `extends`.
+- Project `root` and `sourceRoot`.
+
 ### `migrate-turborepo`<VersionLabel version="1.21.0" />
 
 The `migrate-turborepo` extension can be used to migrate a Turborepo powered repository to moon.
-This process will convert the root `turbo.json` file, and any `turbo.json` files found within
-packages (must be configured as projects in moon). The following changes are made:
+This process will convert the root `turbo.json` file, and any `turbo.json` files found within the
+repository. The following changes are made:
 
 - Migrates `pipeline` global tasks to [`.moon/tasks/node.yml`](../config/tasks#tasks) (or `bun.yml`)
   and project scoped tasks to [`moon.yml`](../config/project#tasks). Task commands will execute
@@ -80,14 +122,6 @@ packages (must be configured as projects in moon). The following changes are mad
 ```shell
 $ moon ext migrate-turborepo
 ```
-
-:::info
-
-moon must be [initialized](../commands/init) and [`node`](../config/toolchain#node) or
-[`bun`](../config/toolchain#bun) must be configured in the toolchain before this command is ran!
-This is required for extracting `package.json` information.
-
-:::
 
 #### Arguments
 

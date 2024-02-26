@@ -1,0 +1,50 @@
+---
+slug: moon-v1.22
+title: moon v1.22 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.22.png
+---
+
+<!--truncate-->
+
+## New `migrate-nx` extension
+
+In our previous release, we added support for [migrating from Turborepo](./moon-v1.21), but what
+about Nx? Nx is a very popular build system with many users. A lot of our current moon users were
+former Nx users, but unfortunately, they had to go through the tedious process of migrating
+everything manually. We wanted to make this process easier for new users, so we created a new
+experimental extension to help with this process,
+[`migrate-nx`](/docs/guides/extensions#migrate-nx).
+
+```shell
+$ moon ext migrate-nx
+```
+
+This extension was quite complicated to implement, as Nx has a _ton_ of features. However, when the
+extension is executed, we'll convert the root `nx.json` and `workspace.json` files to
+[`.moon/workspace.yml`](/docs/config/workspace) and related top-level config files, and we'll also
+convert every `project.json` and `package.json` (with an `nx` block) into a
+[`moon.yml`](/docs/config/project) file.
+
+Conversion is not a perfect 1:1, as moon and Nx are quite different. Please refer to the
+[official documentation](/docs/guides/extensions#migrate-nx) for a list of unsupported settings and
+features.
+
+:::info
+
+An awesome feature that didn't make it in time for this release, is an npm package for Nx
+compatiblity, that will allow Nx executors/plugins to be executed through moon, without the
+requirement of Nx itself. This will allow for a seamless transition from Nx to moon, without the
+need to change any of your existing Nx executors/plugins till later.
+
+This functionality will be provided by our new
+[`@moonrepo/nx-compat` package](https://github.com/moonrepo/moon/tree/master/packages/nx-compat),
+which we hope to finish in the coming weeks.
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.22.0) for a full list
+of changes.

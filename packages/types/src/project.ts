@@ -1,4 +1,10 @@
-import type { DependencyConfig, LanguageType, ProjectConfig, ProjectType } from './project-config';
+import type {
+	DependencyConfig,
+	DependencyScope,
+	LanguageType,
+	ProjectConfig,
+	ProjectType,
+} from './project-config';
 import type {
 	InheritedTasksConfig,
 	PartialInheritedTasksConfig,
@@ -76,4 +82,24 @@ export interface Project {
 	source: string;
 	tasks: Record<string, Task>;
 	type: ProjectType;
+}
+
+export interface ProjectGraphInner {
+	nodes: Project[];
+	node_holes: string[];
+	edge_property: 'directed';
+	edges: [number, number, DependencyScope][];
+}
+
+export interface PartialProjectGraph {
+	aliases: Record<string, string>;
+	graph: ProjectGraphInner;
+	nodes: Record<string, number>;
+	root_id: string | null;
+	sources: Record<string, string>;
+}
+
+export interface ProjectGraph {
+	graph: ProjectGraphInner;
+	projects: Record<string, Project>;
 }

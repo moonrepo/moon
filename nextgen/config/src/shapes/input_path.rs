@@ -139,7 +139,14 @@ impl Into<String> for InputPath {
             | InputPath::ProjectGlob(value)
             | InputPath::TokenFunc(value)
             | InputPath::TokenVar(value) => value,
-            InputPath::WorkspaceFile(path) | InputPath::WorkspaceGlob(path) => format!("/{path}"),
+            InputPath::WorkspaceFile(path) => format!("/{path}"),
+            InputPath::WorkspaceGlob(path) => {
+                if let Some(suffix) = path.strip_prefix('!') {
+                    format!("!/{suffix}")
+                } else {
+                    format!("/{path}")
+                }
+            }
         }
     }
 }

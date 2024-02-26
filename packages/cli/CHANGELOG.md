@@ -27,10 +27,14 @@
   - Updated the `moon project` and `moon task` commands to include the description in the output.
 - Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
   args used when installing dependencies.
+- Added a new built-in extension, `migrate-nx`, for migrating from Nx to moon.
+  - Will convert all `nx.json`, `workspace.json`, and `project.json` files.
 - Updated task input environment variables to support a wildcard match using `*`, for example
   `$VITE_*`.
   - This will include all environment variables in the current process that starts with `VITE_`.
 - Updated the `envFile` task option to support a list of file paths.
+- Updated the `migrate-turborepo` extension.
+  - Removed the requirement of moon's project graph. Will now scan for turbo.jsons instead.
 
 #### 🐞 Fixes
 

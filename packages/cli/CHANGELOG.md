@@ -31,6 +31,8 @@
   `$VITE_*`.
   - This will include all environment variables in the current process that starts with `VITE_`.
 - Updated the `envFile` task option to support a list of file paths.
+- Updated the `migrate-turborepo` extension.
+  - Removed the requirement of moon's project graph. Will now scan for turbo.jsons instead.
 
 #### 🐞 Fixes
 

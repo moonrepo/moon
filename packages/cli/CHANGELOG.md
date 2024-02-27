@@ -35,6 +35,7 @@
 - Updated the `envFile` task option to support a list of file paths.
 - Updated the `migrate-turborepo` extension.
   - Removed the requirement of moon's project graph. Will now scan for turbo.jsons instead.
+- Updated affected tasks to use `inputs` as the list of files provided, instead of `.`.
 
 #### 🐞 Fixes
 

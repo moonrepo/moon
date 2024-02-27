@@ -354,6 +354,7 @@
         },
         "affectedPassInputs": {
           "title": "affectedPassInputs",
+          "description": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of ..",
           "anyOf": [
             {
               "type": "boolean"
@@ -361,7 +362,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",

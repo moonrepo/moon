@@ -159,8 +159,8 @@ cacheable!(
         /// The pattern in which affected files will be passed to the task.
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
-        // When affected and no files are matching, pass the task inputs
-        // as arguments to the command, instead of `.`.
+        /// When affected and no files are matching, pass the task inputs
+        /// as arguments to the command, instead of `.`.
         pub affected_pass_inputs: Option<bool>,
 
         /// Allows the task to fail without failing the entire pipeline.

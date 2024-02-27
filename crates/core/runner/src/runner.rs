@@ -320,25 +320,24 @@ impl<'a> Runner<'a> {
 
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
-            let mut files = Vec::with_capacity(0);
+            let mut files = if context.affected_only {
+                self.task
+                    .get_affected_files(&context.touched_files, self.project.source.as_str())?
+            } else {
+                Vec::with_capacity(0)
+            };
 
-            if context.affected_only {
+            if files.is_empty() && self.task.options.affected_pass_inputs {
                 files = self
                     .task
-                    .get_affected_files(&context.touched_files, self.project.source.as_str())?;
-
-                if files.is_empty() {
-                    files = self
-                        .task
-                        .get_input_files(&self.workspace.root)?
-                        .into_iter()
-                        .filter_map(|f| {
-                            f.strip_prefix(&self.project.source)
-                                .ok()
-                                .map(ToOwned::to_owned)
-                        })
-                        .collect();
-                }
+                    .get_input_files(&self.workspace.root)?
+                    .into_iter()
+                    .filter_map(|f| {
+                        f.strip_prefix(&self.project.source)
+                            .ok()
+                            .map(ToOwned::to_owned)
+                    })
+                    .collect();
 
                 if files.is_empty() {
                     warn!(
@@ -346,10 +345,10 @@ impl<'a> Runner<'a> {
                         "No input files detected for {}, defaulting to '.'. This will be deprecated in a future version.",
                         color::label(&task.target),
                     );
-                } else {
-                    files.sort();
                 }
             }
+
+            files.sort();
 
             if matches!(
                 check_affected,

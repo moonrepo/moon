@@ -9,6 +9,8 @@ cacheable!(
     pub struct TaskOptions {
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
+        pub affected_pass_inputs: bool,
+
         pub allow_failure: bool,
 
         pub cache: bool,
@@ -52,6 +54,7 @@ impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
             affected_files: None,
+            affected_pass_inputs: false,
             allow_failure: false,
             cache: true,
             env_files: None,

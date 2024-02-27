@@ -464,6 +464,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.affected_files = Some(affected_files.to_owned());
             }
 
+            if let Some(affected_pass_inputs) = &config.affected_pass_inputs {
+                options.affected_pass_inputs = *affected_pass_inputs;
+            }
+
             if let Some(allow_failure) = &config.allow_failure {
                 options.allow_failure = *allow_failure;
             }

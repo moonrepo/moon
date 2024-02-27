@@ -2,11 +2,46 @@
 slug: moon-v1.22
 title: moon v1.22 - ???
 authors: [milesj]
-tags: []
+tags: [project, metadata, nx, migrate]
 # image: ./img/moon/v1.22.png
 ---
 
 <!--truncate-->
+
+## More organizational settings
+
+One aspect of moon that sets us apart from other build systems and tools, is that we have built-in
+support for human-readable project and task metadata. This is extremely useful in organizing and
+managing large repositories, especially when ownership comes into play. This information is also
+used for categorization and filtering for MQL and our editor extensions/plugins.
+
+To expand on this functionality even further, we're adding a few requests from the community, and
+they are:
+
+- New `configuration` and `scaffolding` variants for the project [`type`](/docs/config/project#type)
+  setting in [`moon.yml`](/docs/config/project). Perfect for contracts and templates.
+
+  ```yaml
+  type: 'configuration'
+  ```
+
+- New [`stack`](/docs/config/project#stack) setting in [`moon.yml`](/docs/config/project), for
+  categorizing which tech stack the project belongs to. Supports `frontend`, `backend`,
+  `infrastructure`, and `systems`.
+
+  ```yaml
+  stack: 'frontend'
+  ```
+
+- New [`description`](/docs/config/project#description-1) setting for tasks, that provides
+  human-readable information.
+
+  ```yaml
+  tasks:
+    build:
+      description: 'Builds the project using Vite'
+      command: 'vite build'
+  ```
 
 ## New `migrate-nx` extension
 
@@ -48,3 +83,7 @@ which we hope to finish in the coming weeks.
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.22.0) for a full list
 of changes.
+
+- Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
+  args used when installing dependencies.
+- Updated the `envFile` task option to support a list of file paths.

@@ -281,6 +281,7 @@ impl<'a> Runner<'a> {
 
         command
             .cwd(working_dir)
+            .env("PWD", working_dir)
             // We need to handle non-zero's manually
             .set_error_on_nonzero(false);
 

@@ -151,6 +151,15 @@
           "type": "boolean",
           "markdownDescription": "Automatically infer moon tasks from `package.json` scripts."
         },
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to bun install commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `bun install` commands."
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use for Bun support.",
@@ -196,6 +205,15 @@
       "description": "Options for Bun, when used as a package manager.",
       "type": "object",
       "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to bun install commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `bun install` commands."
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use for Bun support.",
@@ -463,6 +481,15 @@
       "description": "Options for npm, when used as a package manager.",
       "type": "object",
       "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to npm install commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `npm install` commands."
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use for npm support.",
@@ -495,6 +522,15 @@
       "description": "Options for pnpm, when used as a package manager.",
       "type": "object",
       "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to pnpm install commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `pnpm install` commands."
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use for pnpm support.",
@@ -662,6 +698,15 @@
       "description": "Options for Yarn, when used as a package manager.",
       "type": "object",
       "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to yarn install commands.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "List of arguments to append to `yarn install` commands."
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use for Yarn support.",

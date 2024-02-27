@@ -352,6 +352,17 @@
             }
           ]
         },
+        "affectedPassInputs": {
+          "title": "affectedPassInputs",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "allowFailure": {
           "title": "allowFailure",
           "description": "Allows the task to fail without failing the entire pipeline.",

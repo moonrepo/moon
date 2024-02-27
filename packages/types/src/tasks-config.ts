@@ -34,6 +34,7 @@ export type TaskWindowsShell = 'bash' | 'pwsh';
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles: TaskOptionAffectedFiles | null;
+	affectedPassInputs: boolean | null;
 	/** Allows the task to fail without failing the entire pipeline. */
 	allowFailure: boolean | null;
 	/** Caches the `outputs` of the task */
@@ -238,6 +239,7 @@ export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: TaskOptionAffectedFiles | null;
+	affectedPassInputs?: boolean | null;
 	/** Allows the task to fail without failing the entire pipeline. */
 	allowFailure?: boolean | null;
 	/** Caches the `outputs` of the task */

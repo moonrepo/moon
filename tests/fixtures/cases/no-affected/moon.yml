@@ -4,6 +4,7 @@ tasks:
     platform: node
     options:
       affectedFiles: true
+      affectedPassInputs: true
     inputs:
       - file.txt
   misconfigured:

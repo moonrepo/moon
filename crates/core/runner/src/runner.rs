@@ -320,30 +320,35 @@ impl<'a> Runner<'a> {
 
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
-            let mut files = if context.affected_only {
-                self.task
-                    .get_affected_files(&context.touched_files, self.project.source.as_str())?
-            } else {
-                Vec::with_capacity(0)
-            };
+            let mut files = Vec::with_capacity(0);
 
-            if files.is_empty() {
+            if context.affected_only {
                 files = self
                     .task
-                    .get_input_files(&self.workspace.root)?
-                    .into_iter()
-                    .filter_map(|f| {
-                        f.strip_prefix(&self.project.source)
-                            .ok()
-                            .map(ToOwned::to_owned)
-                    })
-                    .collect();
-            }
+                    .get_affected_files(&context.touched_files, self.project.source.as_str())?;
 
-            files.sort();
+                if files.is_empty() {
+                    files = self
+                        .task
+                        .get_input_files(&self.workspace.root)?
+                        .into_iter()
+                        .filter_map(|f| {
+                            f.strip_prefix(&self.project.source)
+                                .ok()
+                                .map(ToOwned::to_owned)
+                        })
+                        .collect();
+                }
 
-            if files.is_empty() {
-                warn!("No input files detected, defaulting to '.'. This will be deprecated in a future version")
+                if files.is_empty() {
+                    warn!(
+                        target: LOG_TARGET,
+                        "No input files detected for {}, defaulting to '.'. This will be deprecated in a future version.",
+                        color::label(&task.target),
+                    );
+                } else {
+                    files.sort();
+                }
             }
 
             if matches!(

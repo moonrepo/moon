@@ -10,6 +10,19 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+In v1.22, we [made a change](https://github.com/moonrepo/moon/issues/1329) to affected tasks that
+pass all `inputs` as arguments, instead of passing `.`. This change was made to not overzealously
+pass files to the task that it doesn't care about, but it ended up causing problems for certain
+commands.
+
+We didn't want to revert the change, but it also wasn't easy to fix without causing other issues, so
+as a compromise, we opted to introduce a new task option, `affectedPassInputs` to handle this
+functionality.
+
 ## 1.22.0
 
 #### 🚀 Updates

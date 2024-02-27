@@ -327,7 +327,7 @@ impl<'a> Runner<'a> {
                 Vec::with_capacity(0)
             };
 
-            if files.is_empty() {
+            if files.is_empty() && self.task.options.affected_pass_inputs {
                 files = self
                     .task
                     .get_input_files(&self.workspace.root)?
@@ -338,13 +338,17 @@ impl<'a> Runner<'a> {
                             .map(ToOwned::to_owned)
                     })
                     .collect();
+
+                if files.is_empty() {
+                    warn!(
+                        target: LOG_TARGET,
+                        "No input files detected for {}, defaulting to '.'. This will be deprecated in a future version.",
+                        color::label(&task.target),
+                    );
+                }
             }
 
             files.sort();
-
-            if files.is_empty() {
-                warn!("No input files detected, defaulting to '.'. This will be deprecated in a future version")
-            }
 
             if matches!(
                 check_affected,

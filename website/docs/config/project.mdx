@@ -759,9 +759,11 @@ tasks:
 
 When enabled and the [`--affected` option](../run-task#running-based-on-affected-files-only) is
 provided, all affected files that match this task's [`inputs`](#inputs) will be passed as relative
-file paths as command line arguments, and as a `MOON_AFFECTED_FILES` environment variable. If there
-are no affected files, `.` (current directory) will be passed instead for arguments, and an empty
-value for the environment variable.
+file paths as command line arguments, and as a `MOON_AFFECTED_FILES` environment variable.
+
+If there are no affected files, `.` (current directory) will be passed instead for arguments, and an
+empty value for the environment variable. This functionality can be changed with the
+[`affectedPassInputs`](#affected-pass-inputs) setting.
 
 ```yaml title="moon.yml" {5,7,9}
 tasks:
@@ -782,6 +784,27 @@ list. Furthermore, this functionality will only work if the task's command suppo
 list of files being passed as arguments.
 
 :::
+
+#### `affectedPassInputs`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#affectedPassInputs" />
+
+When [`affectedFiles`](#affectedfiles) is enabled, and no affected files are found, moon will pass
+`.` as an argument. For the most part, this works, but if you'd like to _not_ pass the entire
+directory (and everything in it), and only pass the configured [`inputs`](#inputs) instead, then you
+can enable this setting.
+
+When enabled, moon will resolve all input globs to literal file paths, and pass them as relative
+arguments.
+
+```yaml title="moon.yml" {5,6}
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      affectedFiles: true
+      affectedPassInputs: true
+```
 
 #### `allowFailure`<VersionLabel version="1.13.0" />
 

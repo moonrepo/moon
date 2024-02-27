@@ -1,10 +1,13 @@
 ---
 slug: moon-v1.22
-title: moon v1.22 - ???
+title: moon v1.22 - Organizational settings, wildcard env var inputs, and Nx migration
 authors: [milesj]
 tags: [project, metadata, nx, migrate]
-# image: ./img/moon/v1.22.png
+image: ./img/moon/v1.22.png
 ---
+
+This release introduces new organizational settings for projects, a migrate from Nx extension, and
+more.
 
 <!--truncate-->
 
@@ -42,6 +45,27 @@ they are:
       description: 'Builds the project using Vite'
       command: 'vite build'
   ```
+
+## New wildcard environment variable inputs
+
+Task inputs have supported environment variables for quite a while now, but they are explicit, which
+can be tedious too manage when you have many environment variables. To make this easier, we've added
+support for wildcard environment variables, denoted by a `*`, which will match any environment
+variable with that pattern.
+
+For example, say we want to track all Node.js and Vite environment variables that start with `NODE_`
+and `VITE_` respectively, we can simply do:
+
+```yaml
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '$NODE_*'
+      - '$VITE_*'
+```
+
+> Do note that this _isn't_ a glob, and the `*` is merely a substitution for any character!
 
 ## New `migrate-nx` extension
 

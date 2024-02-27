@@ -40,6 +40,7 @@
 
 - Fixed an issue where `bun install` was not running with `--production` in Docker prune.
 - Fixed an issue where invalid IDs passed to certain commands would trigger a panic.
+- Fixed an issue where `$PWD` in a task was pointing to the wrong directory.
 
 #### 🧩 Plugins
 
@@ -47,13 +48,11 @@
   - Added Linux ARM64 support (requires Deno >= v1.41).
 - Updated `rust_plugin` to v0.8.1.
   - Uses the full triple target when installing and uninstalling toolchains.
-- Updated `schema_plugin` (TOML) to v0.9.1.
-  - Updated our regex to support Perl syntax like `\d`.
 
 #### ⚙️ Internal
 
 - Updated Rust to v1.76.
-- Updated proto to v0.30.0 (from v0.29.1).
+- Updated proto to v0.30.2 (from v0.29.1).
 
 ## 1.21.4
 

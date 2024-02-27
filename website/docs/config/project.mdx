@@ -421,6 +421,20 @@ tasks:
     local: true
 ```
 
+### `description`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#description" />
+
+A human-readable description of what the task does. This information is displayed within the
+[`moon project`](../commands/project) and [`moon task`](../commands/task) commands.
+
+```yaml title="moon.yml" {3}
+tasks:
+  build:
+    description: 'Builds the project using Vite'
+    command: 'vite build'
+```
+
 ### `command`<RequiredLabel />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#command" />

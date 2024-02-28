@@ -2,6 +2,7 @@ use super::should_skip_action;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
+use moon_common::is_docker_container;
 use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_test_env;
@@ -36,6 +37,11 @@ pub async fn sync_workspace(
         );
 
         return Ok(ActionStatus::Skipped);
+    }
+
+    // Avoid the following features when in Docker
+    if is_docker_container() {
+        return Ok(ActionStatus::Passed);
     }
 
     if workspace.config.codeowners.sync_on_run {

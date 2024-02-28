@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where VCS hooks were being created in Docker, triggering cache issues.
+
 ## 1.22.1
 
 #### 🚀 Updates

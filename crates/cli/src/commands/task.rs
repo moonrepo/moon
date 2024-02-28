@@ -41,6 +41,12 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     let workspace = resources.get::<Workspace>();
 
     console.print_header(&args.target.id)?;
+
+    if let Some(desc) = &task.description {
+        console.write_line(desc)?;
+        console.write_newline()?;
+    }
+
     console.print_entry("Task", color::id(&args.target.task_id))?;
     console.print_entry("Project", color::id(&project.id))?;
     console.print_entry("Platform", format!("{}", &task.platform))?;

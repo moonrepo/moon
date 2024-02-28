@@ -110,6 +110,25 @@ mod ext_download {
     }
 }
 
+mod ext_migrate_nx {
+    use super::*;
+
+    #[test]
+    fn executes_the_plugin() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+        sandbox.create_file("nx.json", "{}");
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("ext").arg("migrate-nx");
+            })
+            .success()
+            .stdout(predicates::str::contains("Successfully migrated from Nx"));
+
+        assert!(!sandbox.path().join("nx.json").exists());
+    }
+}
+
 mod ext_migrate_turborepo {
     use super::*;
 

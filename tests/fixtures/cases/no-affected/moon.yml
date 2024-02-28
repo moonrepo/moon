@@ -1,0 +1,17 @@
+tasks:
+  primary:
+    command: node ./affected.js
+    platform: node
+    options:
+      affectedFiles: true
+      affectedPassInputs: true
+    inputs:
+      - file.txt
+  misconfigured:
+    command: node ./affected.js
+    platform: node
+    options:
+      affectedFiles: true
+    inputs:
+      - non-existent.txt
+      - '**/*.py'

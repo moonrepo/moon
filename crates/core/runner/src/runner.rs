@@ -1,6 +1,5 @@
+use crate::errors::RunnerError;
 use crate::run_state::{load_output_logs, save_output_logs, RunTargetState};
-use crate::target_hash::TargetHasher;
-use crate::{errors::RunnerError, inputs_collector};
 use moon_action::{ActionNode, ActionStatus, Attempt};
 use moon_action_context::{ActionContext, TargetState};
 use moon_cache_item::CacheItem;
@@ -15,12 +14,14 @@ use moon_process::{args, output_to_error, output_to_string, Command, Output, She
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
+use moon_task_hasher::TaskHasher;
 use moon_tool::get_proto_env_vars;
 use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use tokio::{
     task,
@@ -212,31 +213,42 @@ impl<'a> Runner<'a> {
         context: &ActionContext,
         hasher: &mut ContentHasher,
     ) -> miette::Result<()> {
-        let vcs = &self.workspace.vcs;
-        let task = &self.task;
-        let project = &self.project;
-        let workspace = &self.workspace;
-        let mut hash = TargetHasher::new(task);
-
-        hash.hash_project_deps(self.project.get_dependency_ids());
-        hash.hash_task_deps(task, &context.target_states)?;
-
-        if context.should_inherit_args(&task.target) {
-            hash.hash_args(&context.passthrough_args);
-        }
-
-        hash.hash_inputs(
-            inputs_collector::collect_and_hash_inputs(
-                vcs,
-                task,
-                &project.root,
-                &workspace.root,
-                &workspace.config.hasher,
-            )
-            .await?,
+        let mut task_hasher = TaskHasher::new(
+            self.project,
+            self.task,
+            &self.workspace.vcs,
+            &self.workspace.root,
+            &self.workspace.config.hasher,
         );
 
-        hasher.hash_content(hash)?;
+        if context.should_inherit_args(&self.task.target) {
+            task_hasher.hash_args(&context.passthrough_args);
+        }
+
+        let mut deps = BTreeMap::default();
+
+        // todo, move into hasher!
+        for dep in &self.task.deps {
+            deps.insert(
+                &dep.target,
+                match context.target_states.get(&dep.target) {
+                    Some(TargetState::Completed(hash)) => hash,
+                    Some(TargetState::Passthrough) => "passthrough",
+                    _ => {
+                        return Err(RunnerError::MissingDependencyHash(
+                            dep.target.id.to_owned(),
+                            self.task.target.id.to_owned(),
+                        )
+                        .into());
+                    }
+                },
+            );
+        }
+
+        task_hasher.hash_deps(&deps);
+        task_hasher.hash_inputs().await?;
+
+        hasher.hash_content(task_hasher.hash())?;
 
         Ok(())
     }
@@ -269,6 +281,7 @@ impl<'a> Runner<'a> {
 
         command
             .cwd(working_dir)
+            .env("PWD", working_dir)
             // We need to handle non-zero's manually
             .set_error_on_nonzero(false);
 
@@ -307,14 +320,35 @@ impl<'a> Runner<'a> {
 
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
-            let mut affected_files = if context.affected_only {
+            let mut files = if context.affected_only {
                 self.task
                     .get_affected_files(&context.touched_files, self.project.source.as_str())?
             } else {
                 Vec::with_capacity(0)
             };
 
-            affected_files.sort();
+            if files.is_empty() && self.task.options.affected_pass_inputs {
+                files = self
+                    .task
+                    .get_input_files(&self.workspace.root)?
+                    .into_iter()
+                    .filter_map(|f| {
+                        f.strip_prefix(&self.project.source)
+                            .ok()
+                            .map(ToOwned::to_owned)
+                    })
+                    .collect();
+
+                if files.is_empty() {
+                    warn!(
+                        target: LOG_TARGET,
+                        "No input files detected for {}, defaulting to '.'. This will be deprecated in a future version.",
+                        color::label(&task.target),
+                    );
+                }
+            }
+
+            files.sort();
 
             if matches!(
                 check_affected,
@@ -322,10 +356,10 @@ impl<'a> Runner<'a> {
             ) {
                 command.env(
                     "MOON_AFFECTED_FILES",
-                    if affected_files.is_empty() {
+                    if files.is_empty() {
                         ".".into()
                     } else {
-                        affected_files
+                        files
                             .iter()
                             .map(|f| f.as_str().to_string())
                             .collect::<Vec<_>>()
@@ -338,11 +372,11 @@ impl<'a> Runner<'a> {
                 check_affected,
                 TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
             ) {
-                if affected_files.is_empty() {
+                if files.is_empty() {
                     command.arg_if_missing(".");
                 } else {
                     // Mimic relative from ("./")
-                    command.args(affected_files.iter().map(|f| format!("./{f}")));
+                    command.args(files.iter().map(|f| format!("./{f}")));
                 }
             }
         }

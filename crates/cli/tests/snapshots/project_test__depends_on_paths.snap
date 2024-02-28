@@ -8,21 +8,22 @@ expression: assert.output_standardized()
 Project: foo
 Source: deps/foo
 Language: javascript
+Stack: unknown
 Type: application
 Tags: react
 
  DEPENDS ON 
 
- - bar (explicit, production)
- - baz (explicit, production)
+  - bar (explicit, production)
+  - baz (explicit, production)
 
  FILE GROUPS 
 
 sources:
- - deps/foo/src/**/*
- - deps/foo/types/**/*
+  - deps/foo/src/**/*
+  - deps/foo/types/**/*
 tests:
- - deps/foo/tests/**/*
+  - deps/foo/tests/**/*
 
 
 

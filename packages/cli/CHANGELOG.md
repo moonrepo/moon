@@ -10,6 +10,64 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## 1.22.1
+
+#### 🚀 Updates
+
+In v1.22, we [made a change](https://github.com/moonrepo/moon/issues/1329) to affected tasks that
+pass all `inputs` as arguments, instead of passing `.`. This change was made to not overzealously
+pass files to the task that it doesn't care about, but it ended up causing problems for certain
+commands.
+
+We didn't want to revert the change, but it also wasn't easy to fix without causing other issues, so
+as a compromise, we opted to introduce a new task option, `affectedPassInputs` to handle this
+functionality.
+
+## 1.22.0
+
+#### 🚀 Updates
+
+- Added `configuration` and `scaffolding` variants to the project `type` setting in `moon.yml`.
+  - Updated project constraints to support these new variants.
+- Added a `stack` setting to `moon.yml`, for categorizing which tech stack it belongs to.
+  - Supports `frontend`, `backend`, `infrastructure`, and `systems`.
+  - Added a `projectStack` field to the query language (MQL).
+  - Added a `$projectStack` token variable for tasks.
+  - Updated the `moon query projects` command to support a `--stack` option, and include the stack
+    in the output.
+  - Updated the `moon project` command to include the stack in the output.
+- Added a `description` setting for tasks, for providing human-readable information.
+  - Updated the `moon project` and `moon task` commands to include the description in the output.
+- Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
+  args used when installing dependencies.
+- Added a new built-in extension, `migrate-nx`, for migrating from Nx to moon.
+  - Will convert all `nx.json`, `workspace.json`, and `project.json` files.
+- Updated task input environment variables to support a wildcard match using `*`, for example
+  `$VITE_*`.
+  - This will include all environment variables in the current process that starts with `VITE_`.
+- Updated the `envFile` task option to support a list of file paths.
+- Updated the `migrate-turborepo` extension.
+  - Removed the requirement of moon's project graph. Will now scan for turbo.jsons instead.
+- Updated affected tasks to use `inputs` as the list of files provided, instead of `.`.
+
+#### 🐞 Fixes
+
+- Fixed an issue where `bun install` was not running with `--production` in Docker prune.
+- Fixed an issue where invalid IDs passed to certain commands would trigger a panic.
+- Fixed an issue where `$PWD` in a task was pointing to the wrong directory.
+
+#### 🧩 Plugins
+
+- Updated `deno_plugin` to v0.9.1.
+  - Added Linux ARM64 support (requires Deno >= v1.41).
+- Updated `rust_plugin` to v0.8.1.
+  - Uses the full triple target when installing and uninstalling toolchains.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.76.
+- Updated proto to v0.30.2 (from v0.29.1).
+
 ## 1.21.4
 
 #### 🐞 Fixes

@@ -4,8 +4,7 @@ use moon_config::{
     WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
-    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphBuilder,
-    ProjectGraphBuilderContext,
+    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphBuilder, ProjectGraphBuilderContext,
 };
 use moon_vcs::{BoxedVcs, Git};
 use proto_core::ProtoConfig;
@@ -13,6 +12,8 @@ use starbase_events::Emitter;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+
+pub use moon_project_graph::ProjectGraph;
 
 #[derive(Default)]
 pub struct ProjectGraphContainer {
@@ -40,7 +41,7 @@ impl ProjectGraphContainer {
                 input: ".moon/tasks.yml".into(),
                 config: PartialInheritedTasksConfig {
                     tasks: Some(BTreeMap::from_iter([(
-                        "global".into(),
+                        "global".try_into().unwrap(),
                         PartialTaskConfig::default(),
                     )])),
                     ..PartialInheritedTasksConfig::default()
@@ -63,7 +64,9 @@ impl ProjectGraphContainer {
             };
 
             if root.join("moon.yml").exists() {
-                projects.sources.insert("root".into(), ".".into());
+                projects
+                    .sources
+                    .insert("root".try_into().unwrap(), ".".into());
             }
 
             graph.workspace_config.projects = WorkspaceProjects::Both(projects);

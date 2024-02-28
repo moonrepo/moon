@@ -98,6 +98,16 @@
         }
       ]
     },
+    "stack": {
+      "title": "stack",
+      "description": "The technology stack of the project, for categorizing.",
+      "default": "unknown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectStack"
+        }
+      ]
+    },
     "tags": {
       "title": "tags",
       "description": "A list of tags that this project blongs to, for categorizing, boundary enforcement, and task inheritance.",
@@ -386,6 +396,16 @@
       },
       "additionalProperties": false
     },
+    "ProjectStack": {
+      "type": "string",
+      "enum": [
+        "backend",
+        "frontend",
+        "infrastructure",
+        "systems",
+        "unknown"
+      ]
+    },
     "ProjectToolchainCommonToolConfig": {
       "description": "Overrides top-level toolchain settings.",
       "type": "object",
@@ -562,7 +582,9 @@
       "enum": [
         "application",
         "automation",
+        "configuration",
         "library",
+        "scaffolding",
         "tool",
         "unknown"
       ]
@@ -671,6 +693,18 @@
           "items": {
             "$ref": "#/definitions/TaskDependency"
           }
+        },
+        "description": {
+          "title": "description",
+          "description": "A human-readable description about the task.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "env": {
           "title": "env",
@@ -877,6 +911,19 @@
               "type": "null"
             }
           ]
+        },
+        "affectedPassInputs": {
+          "title": "affectedPassInputs",
+          "description": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of ..",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",

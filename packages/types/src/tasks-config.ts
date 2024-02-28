@@ -34,6 +34,11 @@ export type TaskWindowsShell = 'bash' | 'pwsh';
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles: TaskOptionAffectedFiles | null;
+	/**
+	 * When affected and no files are matching, pass the task inputs
+	 * as arguments to the command, instead of `.`.
+	 */
+	affectedPassInputs: boolean | null;
 	/** Allows the task to fail without failing the entire pipeline. */
 	allowFailure: boolean | null;
 	/** Caches the `outputs` of the task */
@@ -139,6 +144,8 @@ export interface TaskConfig {
 	 * other projects, using targets.
 	 */
 	deps: TaskDependency[];
+	/** A human-readable description about the task. */
+	description: string | null;
 	/**
 	 * A mapping of environment variables that will be set when the
 	 * task is ran.
@@ -236,6 +243,11 @@ export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: TaskOptionAffectedFiles | null;
+	/**
+	 * When affected and no files are matching, pass the task inputs
+	 * as arguments to the command, instead of `.`.
+	 */
+	affectedPassInputs?: boolean | null;
 	/** Allows the task to fail without failing the entire pipeline. */
 	allowFailure?: boolean | null;
 	/** Caches the `outputs` of the task */
@@ -337,6 +349,8 @@ export interface PartialTaskConfig {
 	 * other projects, using targets.
 	 */
 	deps?: PartialTaskDependency[] | null;
+	/** A human-readable description about the task. */
+	description?: string | null;
 	/**
 	 * A mapping of environment variables that will be set when the
 	 * task is ran.

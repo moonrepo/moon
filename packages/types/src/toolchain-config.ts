@@ -27,6 +27,8 @@ export interface BunConfig {
 	dependencyVersionFormat: NodeVersionFormat;
 	/** Automatically infer moon tasks from `package.json` scripts. */
 	inferTasksFromScripts: boolean;
+	/** List of arguments to append to `bun install` commands. */
+	installArgs: string[];
 	/** Location of the WASM plugin to use for Bun support. */
 	plugin: string | null;
 	/**
@@ -90,6 +92,8 @@ export interface DenoConfig {
 
 /** Options for Bun, when used as a package manager. */
 export interface BunpmConfig {
+	/** List of arguments to append to `bun install` commands. */
+	installArgs: string[];
 	/** Location of the WASM plugin to use for Bun support. */
 	plugin: string | null;
 	/**
@@ -102,6 +106,8 @@ export interface BunpmConfig {
 
 /** Options for npm, when used as a package manager. */
 export interface NpmConfig {
+	/** List of arguments to append to `npm install` commands. */
+	installArgs: string[];
 	/** Location of the WASM plugin to use for npm support. */
 	plugin: string | null;
 	/**
@@ -116,6 +122,8 @@ export type NodePackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
 
 /** Options for pnpm, when used as a package manager. */
 export interface PnpmConfig {
+	/** List of arguments to append to `pnpm install` commands. */
+	installArgs: string[];
 	/** Location of the WASM plugin to use for pnpm support. */
 	plugin: string | null;
 	/**
@@ -130,6 +138,8 @@ export type NodeVersionManager = 'nodenv' | 'nvm';
 
 /** Options for Yarn, when used as a package manager. */
 export interface YarnConfig {
+	/** List of arguments to append to `yarn install` commands. */
+	installArgs: string[];
 	/** Location of the WASM plugin to use for Yarn support. */
 	plugin: string | null;
 	/** Plugins to automatically install for Yarn v2 and above. */
@@ -341,6 +351,8 @@ export interface PartialBunConfig {
 	dependencyVersionFormat?: NodeVersionFormat | null;
 	/** Automatically infer moon tasks from `package.json` scripts. */
 	inferTasksFromScripts?: boolean | null;
+	/** List of arguments to append to `bun install` commands. */
+	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for Bun support. */
 	plugin?: string | null;
 	/**
@@ -404,6 +416,8 @@ export interface PartialDenoConfig {
 
 /** Options for Bun, when used as a package manager. */
 export interface PartialBunpmConfig {
+	/** List of arguments to append to `bun install` commands. */
+	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for Bun support. */
 	plugin?: string | null;
 	/**
@@ -416,6 +430,8 @@ export interface PartialBunpmConfig {
 
 /** Options for npm, when used as a package manager. */
 export interface PartialNpmConfig {
+	/** List of arguments to append to `npm install` commands. */
+	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for npm support. */
 	plugin?: string | null;
 	/**
@@ -428,6 +444,8 @@ export interface PartialNpmConfig {
 
 /** Options for pnpm, when used as a package manager. */
 export interface PartialPnpmConfig {
+	/** List of arguments to append to `pnpm install` commands. */
+	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for pnpm support. */
 	plugin?: string | null;
 	/**
@@ -440,6 +458,8 @@ export interface PartialPnpmConfig {
 
 /** Options for Yarn, when used as a package manager. */
 export interface PartialYarnConfig {
+	/** List of arguments to append to `yarn install` commands. */
+	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for Yarn support. */
 	plugin?: string | null;
 	/** Plugins to automatically install for Yarn v2 and above. */

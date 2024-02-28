@@ -8,15 +8,16 @@ expression: assert.output()
 Project: emptyConfig
 Source: empty-config
 Language: unknown
+Stack: unknown
 Type: unknown
 
  FILE GROUPS 
 
 sources:
- - empty-config/src/**/*
- - empty-config/types/**/*
+  - empty-config/src/**/*
+  - empty-config/types/**/*
 tests:
- - empty-config/tests/**/*
+  - empty-config/tests/**/*
 
 
 

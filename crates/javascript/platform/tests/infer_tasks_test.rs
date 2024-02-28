@@ -742,7 +742,7 @@ mod infer_tasks_from_scripts {
             tasks,
             BTreeMap::from([
                 (
-                    "build-app".into(),
+                    "build-app".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "yarn",
@@ -755,7 +755,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "dev".into(),
+                    "dev".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "dev"])),
                         local: Some(true),
@@ -764,7 +764,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "test".into(),
+                    "test".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "test"])),
                         platform: Some(PlatformType::Node),
@@ -772,7 +772,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "lint".into(),
+                    "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "run", "lint"])),
                         platform: Some(PlatformType::Node),
@@ -780,7 +780,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "typecheck".into(),
+                    "typecheck".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "yarn",
@@ -870,7 +870,7 @@ mod create_tasks_from_scripts {
             tasks,
             BTreeMap::from([
                 (
-                    "test".into(),
+                    "test".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                         platform: Some(PlatformType::Node),
@@ -878,7 +878,7 @@ mod create_tasks_from_scripts {
                     }
                 ),
                 (
-                    "lint".into(),
+                    "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec![
                             "eslint", "src/**/*", "."
@@ -888,7 +888,7 @@ mod create_tasks_from_scripts {
                     }
                 ),
                 (
-                    "typecheck".into(),
+                    "typecheck".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["tsc", "--build"])),
                         platform: Some(PlatformType::Node),
@@ -921,7 +921,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "pretest".into(),
+                        "pretest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
                             platform: Some(PlatformType::Node),
@@ -929,7 +929,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "posttest".into(),
+                        "posttest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:test"])),
@@ -938,7 +938,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             deps: Some(create_target_deps(["~:pretest"])),
@@ -968,7 +968,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "pretest-dep1".into(),
+                        "pretest-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
                             platform: Some(PlatformType::Node),
@@ -976,7 +976,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "pretest".into(),
+                        "pretest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:pretest-dep1"])),
@@ -985,7 +985,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             deps: Some(create_target_deps(["~:pretest"])),
@@ -1015,7 +1015,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "posttest-dep1".into(),
+                        "posttest-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "something"])),
                             platform: Some(PlatformType::Node),
@@ -1023,7 +1023,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "posttest".into(),
+                        "posttest".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["do", "another"])),
                             deps: Some(create_target_deps(["~:posttest-dep1", "~:test"])),
@@ -1032,7 +1032,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             platform: Some(PlatformType::Node),
@@ -1061,7 +1061,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "prerelease".into(),
+                        "prerelease".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["webpack", "build"])),
                             platform: Some(PlatformType::Node),
@@ -1069,7 +1069,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "release".into(),
+                        "release".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["npm", "publish"])),
                             deps: Some(create_target_deps(["~:prerelease"])),
@@ -1102,7 +1102,7 @@ mod create_tasks_from_scripts {
             assert_eq!(
                 tasks,
                 BTreeMap::from([(
-                    "lint".into(),
+                    "lint".try_into().unwrap(),
                     PartialTaskConfig {
                         command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                         platform: Some(PlatformType::Node),
@@ -1140,7 +1140,7 @@ mod create_tasks_from_scripts {
                     tasks,
                     BTreeMap::from([
                         (
-                            "lint".into(),
+                            "lint".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                                 platform: Some(PlatformType::Node),
@@ -1148,7 +1148,7 @@ mod create_tasks_from_scripts {
                             }
                         ),
                         (
-                            "lint-fix".into(),
+                            "lint-fix".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec![
                                     "moon",
@@ -1191,7 +1191,7 @@ mod create_tasks_from_scripts {
                     tasks,
                     BTreeMap::from([
                         (
-                            "lint".into(),
+                            "lint".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                                 platform: Some(PlatformType::Node),
@@ -1199,7 +1199,7 @@ mod create_tasks_from_scripts {
                             }
                         ),
                         (
-                            "lint-fix".into(),
+                            "lint-fix".try_into().unwrap(),
                             PartialTaskConfig {
                                 command: Some(PartialTaskArgs::List(string_vec![
                                     "moon",
@@ -1246,7 +1246,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["webpack", "build"])),
                             platform: Some(PlatformType::Node),
@@ -1254,7 +1254,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-dev".into(),
+                        "build-dev".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1272,7 +1272,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-prod".into(),
+                        "build-prod".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1288,7 +1288,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-staging".into(),
+                        "build-staging".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1352,7 +1352,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["babel", "."])),
                             platform: Some(PlatformType::Node),
@@ -1360,7 +1360,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["eslint", "."])),
                             platform: Some(PlatformType::Node),
@@ -1368,7 +1368,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["jest", "."])),
                             platform: Some(PlatformType::Node),
@@ -1433,7 +1433,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "bootstrap".into(),
+                        "bootstrap".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "bootstrap"])),
                             platform: Some(PlatformType::System),
@@ -1441,7 +1441,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "build"])),
                             platform: Some(PlatformType::System),
@@ -1449,7 +1449,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "codesandbox-build".into(),
+                        "codesandbox-build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "make",
@@ -1460,7 +1460,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix".into(),
+                        "fix".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "fix"])),
                             platform: Some(PlatformType::System),
@@ -1468,7 +1468,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "lint"])),
                             platform: Some(PlatformType::System),
@@ -1476,7 +1476,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["make", "test"])),
                             platform: Some(PlatformType::System),
@@ -1484,7 +1484,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-esm".into(),
+                        "test-esm".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1495,7 +1495,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-bundlers".into(),
+                        "test-runtime-bundlers".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1506,7 +1506,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-generate-absolute-runtime".into(),
+                        "test-runtime-generate-absolute-runtime".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1517,7 +1517,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-node".into(),
+                        "test-runtime-node".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1565,7 +1565,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1579,7 +1579,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check-dep1".into(),
+                        "check-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1591,7 +1591,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check-dep2".into(),
+                        "check-dep2".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1604,7 +1604,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check".into(),
+                        "check".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1617,7 +1617,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "clean".into(),
+                        "clean".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1631,7 +1631,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "commit-dep1".into(),
+                        "commit-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["yarn", "install"])),
                             platform: Some(PlatformType::Node),
@@ -1639,7 +1639,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "commit".into(),
+                        "commit".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "git",
@@ -1652,7 +1652,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "coverage".into(),
+                        "coverage".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1666,7 +1666,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "create-config".into(),
+                        "create-config".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("create-config".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1674,7 +1674,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "format".into(),
+                        "format".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("prettier".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1682,7 +1682,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("eslint".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1690,7 +1690,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "packup".into(),
+                        "packup".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1711,7 +1711,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "packemon".into(),
+                        "packemon".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1722,7 +1722,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep1".into(),
+                        "prerelease-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1734,7 +1734,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep2".into(),
+                        "prerelease-dep2".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1747,7 +1747,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep3".into(),
+                        "prerelease-dep3".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1760,7 +1760,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease".into(),
+                        "prerelease".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1773,7 +1773,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "release".into(),
+                        "release".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "run-script",
@@ -1785,7 +1785,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "setup".into(),
+                        "setup".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "yarn",
@@ -1803,7 +1803,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("jest".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1811,7 +1811,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "type".into(),
+                        "type".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "typescript",
@@ -1822,7 +1822,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "validate".into(),
+                        "validate".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1885,7 +1885,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "lint".into(),
+                        "lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["run-p", "lint:*"])),
                             platform: Some(PlatformType::Node),
@@ -1893,7 +1893,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-actionlint".into(),
+                        "lint-actionlint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("node-actionlint".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1901,7 +1901,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-changelog".into(),
+                        "lint-changelog".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1912,7 +1912,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-deps".into(),
+                        "lint-deps".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -1923,7 +1923,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-eslint".into(),
+                        "lint-eslint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cross-env",
@@ -1941,7 +1941,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-prettier".into(),
+                        "lint-prettier".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "prettier", ".", "!test*", "--check"
@@ -1951,7 +1951,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-spellcheck".into(),
+                        "lint-spellcheck".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cspell",
@@ -1965,7 +1965,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-typecheck".into(),
+                        "lint-typecheck".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("tsc".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -1973,7 +1973,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix-eslint".into(),
+                        "fix-eslint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -1987,7 +1987,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix-prettier".into(),
+                        "fix-prettier".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2001,7 +2001,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build".into(),
+                        "build".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -2012,7 +2012,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-website".into(),
+                        "build-website".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",
@@ -2023,7 +2023,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf".into(),
+                        "perf".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cross-env",
@@ -2040,7 +2040,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-benchmark".into(),
+                        "perf-benchmark".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2054,7 +2054,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-inspect".into(),
+                        "perf-inspect".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "cross-env",
@@ -2072,7 +2072,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-inspect-dep1".into(),
+                        "perf-inspect-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2084,7 +2084,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-dep1".into(),
+                        "perf-dep1".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "moon",
@@ -2096,7 +2096,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".into(),
+                        "test".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::String("jest".to_owned())),
                             platform: Some(PlatformType::Node),
@@ -2104,7 +2104,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dev-package".into(),
+                        "test-dev-package".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
                             env: Some(FxHashMap::from_iter([(
@@ -2116,7 +2116,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist".into(),
+                        "test-dist".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
                             env: Some(FxHashMap::from_iter([(
@@ -2128,7 +2128,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist-lint".into(),
+                        "test-dist-lint".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "eslint",
@@ -2143,7 +2143,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist-standalone".into(),
+                        "test-dist-standalone".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
                             env: Some(FxHashMap::from_iter([
@@ -2155,7 +2155,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-integration".into(),
+                        "test-integration".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "jest",
@@ -2166,7 +2166,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "vendors-bundle".into(),
+                        "vendors-bundle".try_into().unwrap(),
                         PartialTaskConfig {
                             command: Some(PartialTaskArgs::List(string_vec![
                                 "node",

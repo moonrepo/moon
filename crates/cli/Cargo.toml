@@ -1,6 +1,6 @@
 [package]
 name = "moon_cli"
-version = "1.21.4"
+version = "1.22.1"
 edition = "2021"
 publish = false
 
@@ -64,12 +64,12 @@ clap = { workspace = true, features = [
 	"wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_lex = "0.6.0"
+clap_lex = "0.7.0"
 console = { workspace = true }
 # console-subscriber = "0.1.8"
 dialoguer = { version = "0.11.0", default-features = false }
 diff = "0.1.13"
-indicatif = "0.17.7"
+indicatif = "0.17.8"
 itertools = "0.12.1"
 miette = { workspace = true }
 mimalloc = { version = "0.1.39", default-features = false }

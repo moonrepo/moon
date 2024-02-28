@@ -1,3 +1,5 @@
+use itertools::Itertools;
+use moon_common::Id;
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_runner::RunTargetState;
 use moon_test_utils::{
@@ -5,12 +7,13 @@ use moon_test_utils::{
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
+use std::fs;
 
 fn system_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
         projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("unix".into(), "unix".to_owned()),
-            ("windows".into(), "windows".to_owned()),
+            (Id::raw("unix"), "unix".to_owned()),
+            (Id::raw("windows"), "windows".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -331,16 +334,33 @@ mod unix {
         use super::*;
 
         #[test]
-        fn uses_dot_when_not_affected() {
+        fn all_files_when_not_affected() {
             let sandbox = system_sandbox();
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("unix:affectedFiles");
             });
+
+            let mut files = fs::read_dir(sandbox.path().join("unix"))
+                .unwrap()
+                .map(|f| {
+                    f.unwrap()
+                        .path()
+                        .strip_prefix(sandbox.path().join("unix"))
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_owned()
+                })
+                .sorted();
+
+            let args = files.clone().map(|f| "./".to_owned() + &f).join(" ");
+            let envs = files.join(",");
+
             let output = assert.output();
 
-            assert!(predicate::str::contains("Args: .\n").eval(&output));
-            assert!(predicate::str::contains("Env: .\n").eval(&output));
+            assert!(predicate::str::contains(format!("Args: {}\n", args)).eval(&output));
+            assert!(predicate::str::contains(format!("Env: {}\n", envs)).eval(&output));
         }
 
         #[test]

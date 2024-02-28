@@ -14,6 +14,7 @@ derive_enum!(
     #[serde(untagged, into = "String", try_from = "String")]
     pub enum InputPath {
         EnvVar(String),
+        EnvVarGlob(String),
         ProjectFile(String),
         ProjectGlob(String),
         TokenFunc(String),
@@ -27,6 +28,7 @@ impl InputPath {
     pub fn as_str(&self) -> &str {
         match self {
             InputPath::EnvVar(value)
+            | InputPath::EnvVarGlob(value)
             | InputPath::ProjectFile(value)
             | InputPath::ProjectGlob(value)
             | InputPath::TokenFunc(value)
@@ -39,7 +41,7 @@ impl InputPath {
     pub fn is_glob(&self) -> bool {
         matches!(
             self,
-            InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_)
+            InputPath::EnvVarGlob(_) | InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_)
         )
     }
 
@@ -48,7 +50,10 @@ impl InputPath {
         project_source: impl AsRef<str>,
     ) -> WorkspaceRelativePathBuf {
         match self {
-            InputPath::EnvVar(_) | InputPath::TokenFunc(_) | InputPath::TokenVar(_) => {
+            InputPath::EnvVar(_)
+            | InputPath::EnvVarGlob(_)
+            | InputPath::TokenFunc(_)
+            | InputPath::TokenVar(_) => {
                 unreachable!()
             }
             InputPath::ProjectFile(path) | InputPath::ProjectGlob(path) => {
@@ -80,6 +85,8 @@ impl FromStr for InputPath {
         if let Some(var) = value.strip_prefix('$') {
             if patterns::ENV_VAR_DISTINCT.is_match(value) {
                 return Ok(InputPath::EnvVar(var.to_owned()));
+            } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
+                return Ok(InputPath::EnvVarGlob(var.to_owned()));
             } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
                 return Ok(InputPath::TokenVar(value.to_owned()));
             }
@@ -127,12 +134,19 @@ impl TryFrom<String> for InputPath {
 impl Into<String> for InputPath {
     fn into(self) -> String {
         match self {
-            InputPath::EnvVar(var) => format!("${var}"),
+            InputPath::EnvVar(var) | InputPath::EnvVarGlob(var) => format!("${var}"),
             InputPath::ProjectFile(value)
             | InputPath::ProjectGlob(value)
             | InputPath::TokenFunc(value)
             | InputPath::TokenVar(value) => value,
-            InputPath::WorkspaceFile(path) | InputPath::WorkspaceGlob(path) => format!("/{path}"),
+            InputPath::WorkspaceFile(path) => format!("/{path}"),
+            InputPath::WorkspaceGlob(path) => {
+                if let Some(suffix) = path.strip_prefix('!') {
+                    format!("!/{suffix}")
+                } else {
+                    format!("/{path}")
+                }
+            }
         }
     }
 }
@@ -152,6 +166,18 @@ mod tests {
         assert_eq!(
             InputPath::from_str("$VAR").unwrap(),
             InputPath::EnvVar("VAR".into())
+        );
+        assert_eq!(
+            InputPath::from_str("$VAR_*").unwrap(),
+            InputPath::EnvVarGlob("VAR_*".into())
+        );
+        assert_eq!(
+            InputPath::from_str("$VAR_*_SUFFIX").unwrap(),
+            InputPath::EnvVarGlob("VAR_*_SUFFIX".into())
+        );
+        assert_eq!(
+            InputPath::from_str("$*_SUFFIX").unwrap(),
+            InputPath::EnvVarGlob("*_SUFFIX".into())
         );
 
         // Project relative

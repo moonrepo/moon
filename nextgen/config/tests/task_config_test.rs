@@ -14,7 +14,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `extends`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", |code| TaskConfig::parse(code));
@@ -261,6 +261,7 @@ inputs:
                 r"
 inputs:
   - $FOO_BAR
+  - $FOO_*
   - file/path
 ",
                 |code| TaskConfig::parse(code),
@@ -270,6 +271,7 @@ inputs:
                 config.inputs.unwrap(),
                 vec![
                     InputPath::EnvVar("FOO_BAR".into()),
+                    InputPath::EnvVarGlob("FOO_*".into()),
                     InputPath::ProjectFile("file/path".into()),
                 ]
             );
@@ -541,7 +543,26 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected a boolean or a file system path")]
+            fn can_set_a_list() {
+                let config = test_parse_config(
+                    r"
+options:
+  envFile: [.env.file, /.env.shared]
+",
+                    |code| TaskConfig::parse(code),
+                );
+
+                assert_eq!(
+                    config.options.env_file,
+                    Some(TaskOptionEnvFile::Files(vec![
+                        FilePath(".env.file".to_owned()),
+                        FilePath("/.env.shared".to_owned())
+                    ]))
+                );
+            }
+
+            #[test]
+            #[should_panic(expected = "expected a boolean, a file path, or a list of file paths")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

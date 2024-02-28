@@ -686,11 +686,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "587ae8b5f4a61175158a9af45f5bf70a6c064cf26fad68adb7294c1fd8dcba95"
+            "1d060dc266845020b28cb4215f9c3fe5b9721cbfc9c5e01774291de8f64d1386"
         );
         assert_eq!(
             hash_glob,
-            "b666022c16fda93385fd059841fa06edbf5538ad3aa0c647a8e88e7a726833c8"
+            "42cbfee7dff896dba173784464ea91cbd60bcdbd6202f620322547ebb5a37fb5"
         );
     }
 }

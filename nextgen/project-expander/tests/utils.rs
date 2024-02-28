@@ -42,7 +42,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
         root: workspace_root.join(source.as_str()),
         file_groups: FxHashMap::from_iter([
             (
-                "all".into(),
+                Id::raw("all"),
                 FileGroup::new_with_source(
                     "all",
                     [
@@ -55,7 +55,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
                 .unwrap(),
             ),
             (
-                "dirs".into(),
+                Id::raw("dirs"),
                 FileGroup::new_with_source(
                     "dirs",
                     [
@@ -66,7 +66,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
                 )
                 .unwrap(),
             ),
-            ("envs".into(), {
+            (Id::raw("envs"), {
                 let mut group = FileGroup::new("envs").unwrap();
                 group.add(&InputPath::EnvVar("FOO_BAR".into()), "").unwrap();
                 group
@@ -76,7 +76,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
         ..Project::default()
     };
 
-    project.tasks.insert("task".into(), create_task());
+    project.tasks.insert(Id::raw("task"), create_task());
     project
 }
 
@@ -101,7 +101,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
             task.options.allow_failure = true;
         }
 
-        project.tasks.insert(task_id.into(), task);
+        project.tasks.insert(task.id.clone(), task);
     }
 
     project

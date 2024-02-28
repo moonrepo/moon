@@ -70,7 +70,7 @@ impl ConsoleBuffer {
     }
 
     pub fn format_entry_key<K: AsRef<str>>(&self, key: K) -> String {
-        color::muted_light(format!("{}:", bold(key.as_ref())))
+        color::muted_light(format!("{}:", key.as_ref()))
     }
 
     pub fn print_checkpoint<M: AsRef<str>>(
@@ -155,7 +155,7 @@ impl ConsoleBuffer {
         values.sort();
 
         for value in values {
-            self.write_line(format!(" {} {}", color::muted("-"), value))?;
+            self.write_line(format!("  {} {}", color::muted("-"), value))?;
         }
 
         Ok(())

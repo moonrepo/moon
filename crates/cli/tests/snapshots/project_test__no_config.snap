@@ -8,15 +8,16 @@ expression: assert.output()
 Project: noConfig
 Source: no-config
 Language: unknown
+Stack: unknown
 Type: unknown
 
  FILE GROUPS 
 
 sources:
- - no-config/src/**/*
- - no-config/types/**/*
+  - no-config/src/**/*
+  - no-config/types/**/*
 tests:
- - no-config/tests/**/*
+  - no-config/tests/**/*
 
 
 

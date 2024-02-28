@@ -95,6 +95,7 @@ tasks:
     platform: system
     options:
       affectedFiles: true
+      affectedPassInputs: true
   affectedFilesArgs:
     command: bash ./affectedFiles.sh
     platform: system

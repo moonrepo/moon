@@ -75,6 +75,7 @@ tasks:
     command: node ./affectedFiles.js
     options:
       affectedFiles: true
+      affectedPassInputs: true
   affectedFilesArgs:
     command: node ./affectedFiles.js
     options:

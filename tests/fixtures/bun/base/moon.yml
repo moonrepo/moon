@@ -74,6 +74,7 @@ tasks:
     command: bun ./affectedFiles.js
     options:
       affectedFiles: true
+      affectedPassInputs: true
   affectedFilesArgs:
     command: bun ./affectedFiles.js
     options:

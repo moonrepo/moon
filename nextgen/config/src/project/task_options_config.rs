@@ -67,21 +67,34 @@ impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
 
 derive_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
-    #[serde(untagged, expecting = "expected a boolean or a file system path")]
+    #[serde(
+        untagged,
+        expecting = "expected a boolean, a file path, or a list of file paths"
+    )]
     pub enum TaskOptionEnvFile {
         /// Uses an `.env` file in the project root.
         Enabled(bool),
         /// Explicit path to an `.env` file.
         File(FilePath),
+        /// List of explicit `.env` file paths.
+        Files(Vec<FilePath>),
     }
 );
 
 impl TaskOptionEnvFile {
-    pub fn to_input_path(&self) -> Option<InputPath> {
+    pub fn to_input_paths(&self) -> Option<Vec<InputPath>> {
         match self {
-            TaskOptionEnvFile::Enabled(true) => Some(InputPath::ProjectFile(".env".into())),
+            TaskOptionEnvFile::Enabled(true) => Some(vec![InputPath::ProjectFile(".env".into())]),
             TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => InputPath::from_str(path.as_str()).ok(),
+            TaskOptionEnvFile::File(path) => {
+                InputPath::from_str(path.as_str()).ok().map(|p| vec![p])
+            }
+            TaskOptionEnvFile::Files(paths) => Some(
+                paths
+                    .iter()
+                    .flat_map(|p| InputPath::from_str(p.as_str()).ok())
+                    .collect(),
+            ),
         }
     }
 }
@@ -145,6 +158,10 @@ cacheable!(
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
         pub affected_files: Option<TaskOptionAffectedFiles>,
+
+        /// When affected and no files are matching, pass the task inputs
+        /// as arguments to the command, instead of `.`.
+        pub affected_pass_inputs: Option<bool>,
 
         /// Allows the task to fail without failing the entire pipeline.
         pub allow_failure: Option<bool>,

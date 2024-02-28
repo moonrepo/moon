@@ -9,14 +9,19 @@ Project: scripts
 Alias: test-bun-scripts
 Source: scripts
 Language: javascript
+Stack: unknown
 Type: unknown
 
  TASKS 
 
-build: bun run build
-lint-all: bun run lint:all
-noop: noop 
-version: bun --version
+build: 
+  › bun run build
+lint-all: 
+  › bun run lint:all
+noop: 
+  › noop 
+version: 
+  › bun --version
 
 
 

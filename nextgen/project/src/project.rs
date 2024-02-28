@@ -1,7 +1,8 @@
 use crate::project_error::ProjectError;
 use moon_common::{cacheable, path::WorkspaceRelativePathBuf, Id};
 use moon_config::{
-    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
+    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig,
+    ProjectStack, ProjectType,
 };
 use moon_file_group::FileGroup;
 use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
@@ -37,6 +38,9 @@ cacheable!(
 
         /// Default platform to run tasks against.
         pub platform: PlatformType,
+
+        /// The technology stack of the project.
+        pub stack: ProjectStack,
 
         /// Absolute path to the project's root folder.
         pub root: PathBuf,
@@ -152,6 +156,7 @@ impl Queryable for Project {
                         Field::ProjectSource(sources) => {
                             condition.matches(sources, self.source.as_str())
                         }
+                        Field::ProjectStack(types) => condition.matches_enum(types, &self.stack),
                         Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
                         Field::Tag(tags) => condition.matches_list(
                             tags,
@@ -213,6 +218,7 @@ impl PartialEq for Project {
             && self.language == other.language
             && self.root == other.root
             && self.source == other.source
+            && self.stack == other.stack
             && self.tasks == other.tasks
             && self.type_of == other.type_of
     }

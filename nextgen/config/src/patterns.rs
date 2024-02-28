@@ -11,6 +11,7 @@ macro_rules! pattern {
 
 pattern!(ENV_VAR, "\\$([A-Z0-9_]+)"); // $ENV_VAR
 pattern!(ENV_VAR_DISTINCT, "^\\$([A-Z0-9_]+)$"); // $ENV_VAR
+pattern!(ENV_VAR_GLOB_DISTINCT, "^\\$([A-Z0-9_*]+)$"); // $ENV_*
 pattern!(ENV_VAR_SUBSTITUTE, "\\$(?:\\{([A-Z0-9_]+)\\}|([A-Z0-9_]+))"); // $ENV_VAR, ${ENV_VAR}
 pattern!(ENV_VAR_SUBSTITUTE_STRICT, "\\$\\{([A-Z0-9_]+)\\}"); // ${ENV_VAR}
 

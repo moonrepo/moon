@@ -157,7 +157,7 @@ supports 2 formats, the first being a list of file paths relative from the curre
 format requires [`defaultOwner`](#defaultowner) to be defined, and only supports 1 owner for every
 path (the default owner).
 
-```yaml title="moon.yml" {3-5}
+```yaml title="moon.yml" {3-6}
 owners:
   defaultOwner: '@frontend'
   paths:
@@ -252,9 +252,26 @@ A human readable name of the project. This is _different_ from the unique projec
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
 
+## `stack`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#stack" />
+
+The technology stack this project belongs to, primarily for categorization. Supports the following
+values:
+
+- `frontend` - Client-side user interfaces, etc.
+- `backend` - Server-side APIs, database layers, etc.
+- `infrastructure` - Cloud/server infrastructure, Docker, etc.
+- `systems` - Low-level systems programming.
+- `unknown` (default) - When not configured.
+
+```yaml title="moon.yml"
+stack: 'frontend'
+```
+
 ## `tags`
 
-<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#tags" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#tags" />
 
 Tags are a simple mechanism for categorizing projects. They can be used to group projects together
 for [easier querying](../commands/query/projects), enforcing of
@@ -269,14 +286,18 @@ tags:
 
 ## `type`
 
-<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#type" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#type" />
 
 The type of project. Supports the following values:
 
-- `application` - A backend, frontend, or CLI application.
-- `automation` - Automated testing suite, like E2E, integration, or visual tests.
+- `application` - An application of any kind.
+- `automation` - An automated testing suite, like E2E, integration, or visual tests.
   <VersionLabel version="1.16.0" />
+- `configuration` - Configuration files or infrastructure.
+  <VersionLabel version="1.22.0" />
 - `library` - A self-contained, shareable, and publishable set of code.
+- `scaffolding` - Templates or generators for scaffolding.
+  <VersionLabel version="1.22.0" />
 - `tool` - An internal tool, one-off script, etc.
 - `unknown` (default) - When not configured.
 
@@ -300,7 +321,7 @@ The project type is used in [task inheritance](../concepts/task-inheritance),
 The `env` field is map of strings that are passed as environment variables to _all tasks_ within the
 current project. Project-level variables will not override task-level variables of the same name.
 
-```yaml title="moon.yml" {1,2}
+```yaml title="moon.yml"
 env:
   NODE_ENV: 'production'
 ```
@@ -318,8 +339,8 @@ _is not required_ for the following reasons:
 - File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
-list of [globs or paths](../concepts/file-pattern). Globs and paths are
-[relative to a project](../concepts/file-pattern#project-relative) (even when defined
+list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
+are [relative to a project](../concepts/file-pattern#project-relative) (even when defined
 [globally](./tasks)).
 
 ```yaml title="moon.yml"
@@ -387,7 +408,7 @@ similar tasks with different arguments or options.
 When extending another task, the same
 [merge strategies](../concepts/task-inheritance#merge-strategies) used for inheritance are applied.
 
-```yaml title="moon.yml"
+```yaml title="moon.yml" {8}
 tasks:
   lint:
     command: 'eslint .'
@@ -400,6 +421,20 @@ tasks:
     local: true
 ```
 
+### `description`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#description" />
+
+A human-readable description of what the task does. This information is displayed within the
+[`moon project`](../commands/project) and [`moon task`](../commands/task) commands.
+
+```yaml title="moon.yml" {3}
+tasks:
+  build:
+    description: 'Builds the project using Vite'
+    command: 'vite build'
+```
+
 ### `command`<RequiredLabel />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#command" />
@@ -408,7 +443,7 @@ The `command` field is the command line to run for the task, including the comma
 first) and any optional [arguments](#args). This field is required when _not_ inheriting a global
 task of the same name.
 
-```yaml title="moon.yml" {3}
+```yaml title="moon.yml" {4,6-9}
 tasks:
   format:
     # Using a string
@@ -457,7 +492,7 @@ executing the task. This field exists purely to provide arguments for
 This setting can be defined using a string, or an array of strings. We suggest using arrays when
 dealing with many args, or the args string cannot be parsed easily.
 
-```yaml title="moon.yml" {4,5}
+```yaml title="moon.yml" {5,7-10}
 tasks:
   test:
     command: 'jest'
@@ -580,10 +615,12 @@ defined or inherited, then all files within a project are considered an input (`
 Inputs support the following source types:
 
 - Environment variables (must start with a `$`)
-- Files, folders, globs
+- Environment variable wildcards (must start with a `$` and contain `*`)
+  <VersionLabel version="1.22.0" />
+- Files, folders, and globs
   ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 
-```yaml title="moon.yml" {4-10}
+```yaml title="moon.yml" {4-12}
 tasks:
   lint:
     command: 'eslint'
@@ -596,6 +633,7 @@ tasks:
       - '/.eslintrc.js'
       # Environment variables
       - '$ESLINT_CACHE'
+      - '$ESLINT_*'
 ```
 
 :::caution
@@ -656,7 +694,7 @@ tasks:
 Globs can also be used if you'd like to restrict which files are cached. For example, when building
 a JavaScript project, you may want to include `.js` files, but exclude `.map` and other files.
 
-```yaml title="moon.yml" {4,5}
+```yaml title="moon.yml" {4-6}
 tasks:
   build:
     command: 'webpack'
@@ -706,7 +744,7 @@ The `options` field is an object of configurable options that can be used to mod
 execution. The following fields can be provided, with merge related fields supporting all
 [merge strategies](../concepts/task-inheritance#merge-strategies).
 
-```yaml title="moon.yml" {6-8}
+```yaml title="moon.yml"
 tasks:
   typecheck:
     command: 'tsc --noEmit'
@@ -721,11 +759,13 @@ tasks:
 
 When enabled and the [`--affected` option](../run-task#running-based-on-affected-files-only) is
 provided, all affected files that match this task's [`inputs`](#inputs) will be passed as relative
-file paths as command line arguments, and as a `MOON_AFFECTED_FILES` environment variable. If there
-are no affected files, `.` (current directory) will be passed instead for arguments, and an empty
-value for the environment variable.
+file paths as command line arguments, and as a `MOON_AFFECTED_FILES` environment variable.
 
-```yaml title="moon.yml" {6}
+If there are no affected files, `.` (current directory) will be passed instead for arguments, and an
+empty value for the environment variable. This functionality can be changed with the
+[`affectedPassInputs`](#affected-pass-inputs) setting.
+
+```yaml title="moon.yml" {5,7,9}
 tasks:
   lint:
     command: 'eslint'
@@ -745,6 +785,27 @@ list of files being passed as arguments.
 
 :::
 
+#### `affectedPassInputs`<VersionLabel version="1.22.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#affectedPassInputs" />
+
+When [`affectedFiles`](#affectedfiles) is enabled, and no affected files are found, moon will pass
+`.` as an argument. For the most part, this works, but if you'd like to _not_ pass the entire
+directory (and everything in it), and only pass the configured [`inputs`](#inputs) instead, then you
+can enable this setting.
+
+When enabled, moon will resolve all input globs to literal file paths, and pass them as relative
+arguments.
+
+```yaml title="moon.yml" {5,6}
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      affectedFiles: true
+      affectedPassInputs: true
+```
+
 #### `allowFailure`<VersionLabel version="1.13.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#allowFailure" />
@@ -757,7 +818,7 @@ occur:
 - For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
   failing tasks are allowed to fail.
 
-```yaml title="moon.yml"
+```yaml title="moon.yml" {5}
 tasks:
   lint:
     command: 'eslint'
@@ -776,7 +837,7 @@ system. If disabled, _will not_ create a cache hash, and _will not_ persist a ta
 We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
 operations.
 
-```yaml title="moon.yml" {6}
+```yaml title="moon.yml" {5}
 tasks:
   clean:
     command: 'rm -rf ./temp'
@@ -795,7 +856,7 @@ but will _not_ override those defined in [`env`](#env-1).
 Variables defined in the file support value substitution/expansion by wrapping the variable name in
 curly brackets, such as `${VAR_NAME}`.
 
-```yaml title="moon.yml" {6}
+```yaml title="moon.yml" {6,8,10}
 tasks:
   build:
     command: 'webpack'
@@ -806,6 +867,21 @@ tasks:
       envFile: '.env.production'
       # Or from the workspace root
       envFile: '/.env.shared'
+```
+
+Additionally, a list of file paths can also be provided. When using a list, the order of the files
+is important, as environment variables from all files will be aggregated into a single map, with
+subsequent files taking precedence over previous ones. Once aggregated, the variables will be passed
+to the task, but will _not_ override those defined in [`env`](#env-1).
+
+```yaml title="moon.yml" {5-7}
+tasks:
+  build:
+    command: 'webpack'
+    options:
+      envFile:
+        - '.env'
+        - '.env.production'
 ```
 
 :::caution
@@ -989,7 +1065,7 @@ Whether to run the command within a shell or not. Defaults to `true` for system 
 and `false` otherwise. The shell to run is determined by the [`unixShell`](#unixshell) and
 [`windowsShell`](#windowsshell) options respectively.
 
-```yaml title="moon.yml" {3-5}
+```yaml title="moon.yml" {5}
 tasks:
   native:
     command: 'echo $SHELL'
@@ -1000,7 +1076,7 @@ tasks:
 However, if you'd like to use a different shell, or customize the shell's arguments, or have
 granular control, you can set `shell` to false and configure a fully qualified command.
 
-```yaml title="moon.yml" {3-5}
+```yaml title="moon.yml" {5}
 tasks:
   native:
     command: '/bin/zsh -c "echo $SHELL"'
@@ -1016,7 +1092,7 @@ Customize the shell to run with when on a Unix operating system. Accepts `bash`,
 `sh`, or `zsh`. If not defined, will derive the shell from the `SHELL` environment variable, or
 defaults to `sh`.
 
-```yaml title="moon.yml" {3-5}
+```yaml title="moon.yml" {5}
 tasks:
   native:
     command: 'echo $SHELL'
@@ -1031,7 +1107,7 @@ tasks:
 Customize the shell to run with when on a Windows operating system. Accepts `bash` (typically via
 Git) or `pwsh`. If not defined, defaults to `pwsh`.
 
-```yaml title="moon.yml" {3-5}
+```yaml title="moon.yml" {5}
 tasks:
   native:
     command: 'echo $SHELL'

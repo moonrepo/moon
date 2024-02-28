@@ -345,6 +345,10 @@ impl<'proj> TasksBuilder<'proj> {
             if !config.platform.is_unknown() {
                 task.platform = config.platform;
             }
+
+            if config.description.is_some() {
+                task.description = config.description.clone();
+            }
         }
 
         // Inputs are tricky, as they come from many sources. We need to ensure that user configured
@@ -460,6 +464,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.affected_files = Some(affected_files.to_owned());
             }
 
+            if let Some(affected_pass_inputs) = &config.affected_pass_inputs {
+                options.affected_pass_inputs = *affected_pass_inputs;
+            }
+
             if let Some(allow_failure) = &config.allow_failure {
                 options.allow_failure = *allow_failure;
             }
@@ -469,7 +477,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env_file) = &config.env_file {
-                options.env_file = env_file.to_input_path();
+                options.env_files = env_file.to_input_paths();
             }
 
             if let Some(interactive) = &config.interactive {
@@ -574,8 +582,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
 
-        if let Some(env_file) = &options.env_file {
-            global_inputs.push(env_file.to_owned());
+        if let Some(env_files) = &options.env_files {
+            global_inputs.extend(env_files.to_owned());
         }
 
         if !global_inputs.is_empty() {

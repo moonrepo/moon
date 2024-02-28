@@ -22,11 +22,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(path.as_ref())
-        .unwrap();
+    let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
 
     writeln!(file, "\n\n{data}").unwrap();
 }
@@ -148,8 +144,8 @@ mod project_graph {
 
             container.workspace_config.projects =
                 WorkspaceProjects::Sources(FxHashMap::from_iter([
-                    ("c".into(), "c".into()),
-                    ("b".into(), "b".into()),
+                    (Id::raw("c"), "c".into()),
+                    (Id::raw("b"), "b".into()),
                 ]));
 
             let context = container.create_context();
@@ -167,8 +163,8 @@ mod project_graph {
                 WorkspaceProjects::Both(WorkspaceProjectsConfig {
                     globs: string_vec!["{a,c}"],
                     sources: FxHashMap::from_iter([
-                        ("b".into(), "b".into()),
-                        ("root".into(), ".".into()),
+                        (Id::raw("b"), "b".into()),
+                        (Id::raw("root"), ".".into()),
                     ]),
                 });
 
@@ -322,10 +318,10 @@ mod project_graph {
             assert_eq!(
                 state.projects,
                 FxHashMap::from_iter([
-                    ("a".into(), "a".into()),
-                    ("b".into(), "b".into()),
-                    ("c".into(), "c".into()),
-                    ("d".into(), "d".into()),
+                    (Id::raw("a"), "a".into()),
+                    (Id::raw("b"), "b".into()),
+                    (Id::raw("c"), "c".into()),
+                    (Id::raw("d"), "d".into()),
                 ])
             );
 
@@ -599,7 +595,7 @@ mod project_graph {
             assert_eq!(
                 project.dependencies,
                 vec![DependencyConfig {
-                    id: "base".into(),
+                    id: Id::raw("base"),
                     scope: DependencyScope::Development,
                     source: DependencySource::Explicit,
                     ..Default::default()
@@ -827,7 +823,7 @@ mod project_graph {
 
                         if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
                             data.dependencies.push(DependencyConfig {
-                                id: "@three".into(),
+                                id: Id::raw("@three"),
                                 scope: DependencyScope::Build,
                                 ..Default::default()
                             });
@@ -835,7 +831,7 @@ mod project_graph {
 
                         if event.project_id == "implicit" {
                             data.dependencies.push(DependencyConfig {
-                                id: "@one".into(),
+                                id: Id::raw("@one"),
                                 scope: DependencyScope::Peer,
                                 ..Default::default()
                             });
@@ -935,7 +931,7 @@ mod project_graph {
             assert_eq!(
                 graph.get("dupes-depends-on").unwrap().dependencies,
                 vec![DependencyConfig {
-                    id: "alias-two".into(),
+                    id: Id::raw("alias-two"),
                     scope: DependencyScope::Build,
                     source: DependencySource::Explicit,
                     ..DependencyConfig::default()
@@ -1067,9 +1063,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project app of type application cannot"
-        )]
+        #[should_panic(expected = "Invalid project relationship. Project app of type application")]
         async fn app_cannot_use_app() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1103,9 +1097,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project library of type library cannot"
-        )]
+        #[should_panic(expected = "Invalid project relationship. Project library of type library")]
         async fn library_cannot_use_app() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [app]");
@@ -1114,9 +1106,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Invalid project relationship. Project library of type library cannot"
-        )]
+        #[should_panic(expected = "Invalid project relationship. Project library of type library")]
         async fn library_cannot_use_tool() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
@@ -1141,7 +1131,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
+        #[should_panic(expected = "Invalid project relationship. Project tool of type tool")]
         async fn tool_cannot_use_app() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
@@ -1150,7 +1140,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
+        #[should_panic(expected = "Invalid project relationship. Project tool of type tool")]
         async fn tool_cannot_use_tool() {
             generate_type_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1179,7 +1169,7 @@ mod project_graph {
                 .constraints
                 .tag_relationships
                 .insert(
-                    "warrior".into(),
+                    Id::raw("warrior"),
                     vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
                 );
 
@@ -1188,7 +1178,7 @@ mod project_graph {
                 .constraints
                 .tag_relationships
                 .insert(
-                    "mage".into(),
+                    Id::raw("mage"),
                     vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
                 );
 
@@ -1230,7 +1220,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior")]
         async fn errors_for_no_source_tag_match() {
             generate_tag_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1255,7 +1245,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior")]
         async fn errors_for_no_allowed_tag_match() {
             generate_tag_constraints_project_graph(|sandbox| {
                 append_file(
@@ -1268,7 +1258,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage cannot")]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage")]
         async fn errors_for_depon_empty_tags() {
             generate_tag_constraints_project_graph(|sandbox| {
                 append_file(

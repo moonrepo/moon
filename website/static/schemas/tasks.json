@@ -134,6 +134,18 @@
             "$ref": "#/definitions/TaskDependency"
           }
         },
+        "description": {
+          "title": "description",
+          "description": "A human-readable description about the task.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "env": {
           "title": "env",
           "description": "A mapping of environment variables that will be set when the task is ran.",
@@ -339,6 +351,19 @@
               "type": "null"
             }
           ]
+        },
+        "affectedPassInputs": {
+          "title": "affectedPassInputs",
+          "description": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of ..",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",

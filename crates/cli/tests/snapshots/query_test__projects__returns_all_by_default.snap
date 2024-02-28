@@ -1,15 +1,16 @@
 ---
 source: crates/cli/tests/query_test.rs
-expression: assert.output()
+expression: assert.output_standardized()
 ---
-advanced | advanced | application | typescript
-bar | deps/bar | unknown | unknown
-basic | basic | unknown | javascript
-baz | deps/baz | unknown | unknown
-emptyConfig | empty-config | unknown | unknown
-foo | deps/foo | application | javascript
-noConfig | no-config | unknown | unknown
-platforms | platforms | unknown | unknown
-tasks | tasks | unknown | typescript
+advanced | advanced | frontend | application | typescript
+bar | deps/bar | unknown | unknown | unknown
+basic | basic | unknown | unknown | javascript
+baz | deps/baz | unknown | unknown | unknown
+emptyConfig | empty-config | unknown | unknown | unknown
+foo | deps/foo | unknown | application | javascript
+metadata | metadata | infrastructure | configuration | unknown
+noConfig | no-config | unknown | unknown | unknown
+platforms | platforms | unknown | unknown | unknown
+tasks | tasks | unknown | unknown | typescript
 
 

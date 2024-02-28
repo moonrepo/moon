@@ -1,3 +1,5 @@
+use itertools::Itertools;
+use moon_common::Id;
 use moon_config::{
     NodePackageManager, NodeVersionFormat, NodeVersionManager, PartialNodeConfig,
     PartialWorkspaceProjects, PartialYarnConfig,
@@ -9,7 +11,7 @@ use moon_test_utils::{
 use moon_utils::string_vec;
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
-use std::fs::read_to_string;
+use std::fs::{self, read_to_string};
 
 fn node_sandbox() -> Sandbox {
     node_sandbox_with_config(|_| {})
@@ -56,7 +58,7 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
         get_node_depman_fixture_configs(depman);
 
     workspace_config.projects = Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
-        "root".into(),
+        Id::raw("root"),
         ".".into(),
     )])));
 
@@ -1247,17 +1249,33 @@ mod affected_files {
     use super::*;
 
     #[test]
-    fn uses_dot_when_not_affected() {
+    fn all_files_when_not_affected() {
         let sandbox = node_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("node:affectedFiles");
         });
 
+        let mut files = fs::read_dir(sandbox.path().join("base"))
+            .unwrap()
+            .map(|f| {
+                f.unwrap()
+                    .path()
+                    .strip_prefix(sandbox.path().join("base"))
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_owned()
+            })
+            .sorted();
+
+        let args = files.clone().map(|f| "./".to_owned() + &f).join(" ");
+        let envs = files.join(",");
+
         let output = assert.output();
 
-        assert!(predicate::str::contains("Args: .\n").eval(&output));
-        assert!(predicate::str::contains("Env: .\n").eval(&output));
+        assert!(predicate::str::contains(format!("Args: {}\n", args)).eval(&output));
+        assert!(predicate::str::contains(format!("Env: {}\n", envs)).eval(&output));
     }
 
     #[test]

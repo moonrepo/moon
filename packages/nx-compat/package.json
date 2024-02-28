@@ -1,0 +1,64 @@
+{
+  "name": "@moonrepo/nx-compat",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "description": "Execute Nx targets from the moon.",
+  "keywords": [
+    "moon",
+    "nx",
+    "compat"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "bin": {
+    "moon-nx": "./mjs/bin.mjs"
+  },
+  "main": "./mjs/index.mjs",
+  "types": "./mjs/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/nx-compat"
+  },
+  "files": [
+    "cjs/**/*",
+    "mjs/**/*",
+    "src/**/*"
+  ],
+  "packemon": {
+    "format": "mjs",
+    "platform": "node",
+    "inputs": {
+      "index": "src/index.ts",
+      "bin": "src/bin.ts"
+    }
+  },
+  "dependencies": {
+    "@boost/common": "^5.0.0-alpha.1",
+    "@moonrepo/types": "workspace:^",
+    "enhanced-resolve": "^5.15.0",
+    "execa": "^8.0.1",
+    "yargs-parser": "^21.1.1"
+  },
+  "devDependencies": {
+    "nx": "^18.0.4"
+  },
+  "engines": {
+    "node": ">=16.12.0"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "node": {
+        "types": "./mjs/index.d.ts",
+        "import": "./mjs/index.mjs"
+      }
+    },
+    "./*": {
+      "node": {
+        "types": "./mjs/*.d.ts",
+        "import": "./mjs/*.mjs"
+      }
+    }
+  }
+}

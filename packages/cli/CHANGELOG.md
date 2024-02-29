@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated our project constraint enforcement to take the new `stack` setting into account. For
+  example, frontend applications can now depend on backend applications, where as previously they
+  could not.
+
 ## 1.22.2
 
 #### 🐞 Fixes

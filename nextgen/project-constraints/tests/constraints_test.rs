@@ -1,4 +1,5 @@
 use moon_common::Id;
+use moon_config::{DependencyScope, ProjectStack};
 use moon_project::{Project, ProjectConfig, ProjectType};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 
@@ -24,11 +25,137 @@ fn create_project_with_tags(id: &str, tags: Vec<Id>) -> Project {
 mod by_type {
     use super::*;
 
+    mod scopes {
+        use super::*;
+
+        #[test]
+        fn works_for_prod() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Library),
+                &DependencyScope::Production,
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn works_for_dev() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Library),
+                &DependencyScope::Development,
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn works_for_peer() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Library),
+                &DependencyScope::Peer,
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn works_for_build() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Library),
+                &DependencyScope::Build,
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn works_for_root() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Library),
+                &DependencyScope::Root,
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn doesnt_error_for_invalid_constraint_when_build() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Application),
+                &DependencyScope::Build,
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn doesnt_error_for_invalid_constraint_when_root() {
+            enforce_project_type_relationships(
+                &create_project("foo", ProjectType::Application),
+                &create_project("bar", ProjectType::Application),
+                &DependencyScope::Root,
+            )
+            .unwrap();
+        }
+    }
+
+    mod stacks {
+        use super::*;
+
+        #[test]
+        fn doesnt_error_if_different_stack() {
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Frontend;
+
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Backend;
+
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn errors_if_both_unknown_stack() {
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Unknown;
+
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Unknown;
+
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn errors_if_unknown_and_other_stack() {
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Frontend;
+
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Unknown;
+
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn errors_if_same_stack() {
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Frontend;
+
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Frontend;
+
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
+        }
+    }
+
     #[test]
     fn app_use_lib() {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Library),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -38,6 +165,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Tool),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -47,6 +175,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Configuration),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -56,6 +185,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Scaffolding),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -65,6 +195,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Unknown),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -75,6 +206,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Application),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -85,6 +217,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Application),
             &create_project("bar", ProjectType::Automation),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -94,6 +227,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Library),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -103,6 +237,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Configuration),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -112,6 +247,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Scaffolding),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -121,6 +257,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Unknown),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -131,6 +268,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Tool),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -141,6 +279,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Application),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -151,6 +290,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Library),
             &create_project("bar", ProjectType::Automation),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -160,6 +300,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Library),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -169,6 +310,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Configuration),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -178,6 +320,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Scaffolding),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -187,6 +330,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Unknown),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -197,6 +341,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Tool),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -207,6 +352,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Application),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -217,6 +363,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Tool),
             &create_project("bar", ProjectType::Automation),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -226,6 +373,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Application),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -235,6 +383,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Library),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -244,6 +393,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Tool),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -253,6 +403,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Configuration),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -262,6 +413,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Scaffolding),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -271,6 +423,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Unknown),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -281,6 +434,7 @@ mod by_type {
         enforce_project_type_relationships(
             &create_project("foo", ProjectType::Automation),
             &create_project("bar", ProjectType::Automation),
+            &DependencyScope::Production,
         )
         .unwrap();
     }
@@ -293,6 +447,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Configuration),
                 &create_project("bar", ProjectType::Configuration),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -302,6 +457,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Configuration),
                 &create_project("bar", ProjectType::Scaffolding),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -314,6 +470,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Configuration),
                 &create_project("bar", ProjectType::Application),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -326,6 +483,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Configuration),
                 &create_project("bar", ProjectType::Automation),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -338,6 +496,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Configuration),
                 &create_project("bar", ProjectType::Library),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -350,6 +509,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Configuration),
                 &create_project("bar", ProjectType::Tool),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -363,6 +523,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Scaffolding),
                 &create_project("bar", ProjectType::Configuration),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -372,6 +533,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Scaffolding),
                 &create_project("bar", ProjectType::Scaffolding),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -382,6 +544,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Scaffolding),
                 &create_project("bar", ProjectType::Application),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -392,6 +555,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Scaffolding),
                 &create_project("bar", ProjectType::Automation),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -402,6 +566,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Scaffolding),
                 &create_project("bar", ProjectType::Library),
+                &DependencyScope::Production,
             )
             .unwrap();
         }
@@ -412,6 +577,7 @@ mod by_type {
             enforce_project_type_relationships(
                 &create_project("foo", ProjectType::Scaffolding),
                 &create_project("bar", ProjectType::Tool),
+                &DependencyScope::Production,
             )
             .unwrap();
         }

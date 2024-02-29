@@ -19,6 +19,7 @@ use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_r
 use moon_vcs::BoxedVcs;
 use petgraph::graph::DiGraph;
 use petgraph::prelude::NodeIndex;
+use petgraph::visit::IntoNodeReferences;
 use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
@@ -371,16 +372,29 @@ impl<'app> ProjectGraphBuilder<'app> {
             return Ok(());
         }
 
-        for project in self.graph.node_weights() {
+        let default_scope = DependencyScope::Build;
+
+        for (project_index, project) in self.graph.node_references() {
             let deps: Vec<_> = self
                 .graph
-                .neighbors_directed(*self.nodes.get(&project.id).unwrap(), Direction::Outgoing)
-                .map(|idx| self.graph.node_weight(idx).unwrap())
+                .neighbors_directed(project_index, Direction::Outgoing)
+                .flat_map(|dep_index| {
+                    self.graph.node_weight(dep_index).map(|dep| {
+                        (
+                            dep,
+                            // Is this safe?
+                            self.graph
+                                .find_edge(project_index, dep_index)
+                                .and_then(|ei| self.graph.edge_weight(ei))
+                                .unwrap_or(&default_scope),
+                        )
+                    })
+                })
                 .collect();
 
-            for dep in deps {
+            for (dep, dep_scope) in deps {
                 if type_relationships {
-                    enforce_project_type_relationships(project, dep)?;
+                    enforce_project_type_relationships(project, dep, dep_scope)?;
                 }
 
                 for (source_tag, required_tags) in tag_relationships {

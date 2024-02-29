@@ -1,5 +1,6 @@
 use miette::Diagnostic;
 use moon_common::{Id, Style, Stylize};
+use moon_config::{DependencyScope, ProjectStack};
 use moon_project::{Project, ProjectType};
 use thiserror::Error;
 
@@ -7,9 +8,11 @@ use thiserror::Error;
 pub enum ProjectConstraintsError {
     #[diagnostic(code(project_constraints::invalid_type_relationship))]
     #[error(
-        "Invalid project relationship. Project {} of type {source_type} cannot depend on project {} of type {dep_type}; can only depend on {allowed}.",
+        "Invalid project relationship. Project {} of type {source_type} cannot depend on project {} of type {dep_type}; can only depend on {allowed}.\n\nThis can be customized with the {} and {} settings.",
         .source_id.style(Style::Id),
         .dep_id.style(Style::Id),
+        "stack".style(Style::Property),
+        "type".style(Style::Property),
     )]
     InvalidTypeRelationship {
         source_id: Id,
@@ -36,7 +39,28 @@ pub enum ProjectConstraintsError {
 pub fn enforce_project_type_relationships(
     source: &Project,
     dependency: &Project,
+    dependency_scope: &DependencyScope,
 ) -> miette::Result<()> {
+    // These are special scopes that are implicitly applied by moon,
+    // so don't take them into account when enforcing constraints.
+    // Refer to project_builder for more information.
+    if matches!(
+        dependency_scope,
+        DependencyScope::Build | DependencyScope::Root
+    ) {
+        return Ok(());
+    }
+
+    // We only want to enforce constraints when they are the same stack,
+    // for example, frontend apps should not import from other frontend
+    // apps, but frontend apps should depend on backend apps.
+    if source.config.stack != dependency.config.stack
+        && source.config.stack != ProjectStack::Unknown
+        && dependency.config.stack != ProjectStack::Unknown
+    {
+        return Ok(());
+    }
+
     let mut allowed = vec![
         ProjectType::Configuration.to_string(),
         ProjectType::Scaffolding.to_string(),

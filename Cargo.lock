@@ -3738,6 +3738,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
+ "moon_config",
  "moon_project",
  "thiserror",
 ]

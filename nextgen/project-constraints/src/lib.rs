@@ -1,5 +1,6 @@
 use miette::Diagnostic;
 use moon_common::{Id, Style, Stylize};
+use moon_config::DependencyScope;
 use moon_project::{Project, ProjectType};
 use thiserror::Error;
 
@@ -36,7 +37,18 @@ pub enum ProjectConstraintsError {
 pub fn enforce_project_type_relationships(
     source: &Project,
     dependency: &Project,
+    dependency_scope: &DependencyScope,
 ) -> miette::Result<()> {
+    // These are special scopes that are implicitly applied by moon,
+    // so don't take them into account when enforcing constraints.
+    // Refer to project_builder for more information.
+    if matches!(
+        dependency_scope,
+        DependencyScope::Build | DependencyScope::Root
+    ) {
+        return Ok(());
+    }
+
     let mut allowed = vec![
         ProjectType::Configuration.to_string(),
         ProjectType::Scaffolding.to_string(),

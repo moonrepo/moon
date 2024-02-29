@@ -104,49 +104,49 @@ mod by_type {
 
         #[test]
         fn doesnt_error_if_different_stack() {
-            let mut foo = create_project("foo", ProjectType::Application);
-            foo.config.stack = ProjectStack::Frontend;
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Frontend;
 
-            let mut bar = create_project("bar", ProjectType::Application);
-            bar.config.stack = ProjectStack::Backend;
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Backend;
 
-            enforce_project_type_relationships(&foo, &bar, &DependencyScope::Production).unwrap();
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
 
         #[test]
         #[should_panic]
         fn errors_if_both_unknown_stack() {
-            let mut foo = create_project("foo", ProjectType::Application);
-            foo.config.stack = ProjectStack::Unknown;
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Unknown;
 
-            let mut bar = create_project("bar", ProjectType::Application);
-            bar.config.stack = ProjectStack::Unknown;
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Unknown;
 
-            enforce_project_type_relationships(&foo, &bar, &DependencyScope::Production).unwrap();
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
 
         #[test]
         #[should_panic]
         fn errors_if_unknown_and_other_stack() {
-            let mut foo = create_project("foo", ProjectType::Application);
-            foo.config.stack = ProjectStack::Frontend;
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Frontend;
 
-            let mut bar = create_project("bar", ProjectType::Application);
-            bar.config.stack = ProjectStack::Unknown;
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Unknown;
 
-            enforce_project_type_relationships(&foo, &bar, &DependencyScope::Production).unwrap();
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
 
         #[test]
         #[should_panic]
         fn errors_if_same_stack() {
-            let mut foo = create_project("foo", ProjectType::Application);
-            foo.config.stack = ProjectStack::Frontend;
+            let mut a = create_project("foo", ProjectType::Application);
+            a.config.stack = ProjectStack::Frontend;
 
-            let mut bar = create_project("bar", ProjectType::Application);
-            bar.config.stack = ProjectStack::Frontend;
+            let mut b = create_project("bar", ProjectType::Application);
+            b.config.stack = ProjectStack::Frontend;
 
-            enforce_project_type_relationships(&foo, &bar, &DependencyScope::Production).unwrap();
+            enforce_project_type_relationships(&a, &b, &DependencyScope::Production).unwrap();
         }
     }
 

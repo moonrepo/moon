@@ -385,8 +385,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                             // Is this safe?
                             self.graph
                                 .find_edge(project_index, dep_index)
-                                .map(|ei| self.graph.edge_weight(ei))
-                                .flatten()
+                                .and_then(|ei| self.graph.edge_weight(ei))
                                 .unwrap_or(&default_scope),
                         )
                     })

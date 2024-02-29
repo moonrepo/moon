@@ -8,9 +8,11 @@ use thiserror::Error;
 pub enum ProjectConstraintsError {
     #[diagnostic(code(project_constraints::invalid_type_relationship))]
     #[error(
-        "Invalid project relationship. Project {} of type {source_type} cannot depend on project {} of type {dep_type}; can only depend on {allowed}.",
+        "Invalid project relationship. Project {} of type {source_type} cannot depend on project {} of type {dep_type}; can only depend on {allowed}.\n\nThis can be customized with the {} and {} settings.",
         .source_id.style(Style::Id),
         .dep_id.style(Style::Id),
+        "stack".style(Style::Property),
+        "type".style(Style::Property),
     )]
     InvalidTypeRelationship {
         source_id: Id,

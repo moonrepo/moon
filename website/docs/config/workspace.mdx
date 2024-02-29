@@ -162,15 +162,19 @@ also known as project boundaries.
 <HeadingApiLink to="/api/types/interface/ConstraintsConfig#enforceProjectTypeRelationships" />
 
 Enforces allowed relationships between a project its dependencies based on the project's
-[`type`](./project#type) setting. When a project depends on another project of an invalid type, an
-error will be thrown when attempting to run a task. The following relationships are enforced when
-this setting is enabled, which defaults to `true`.
+[`type`](./project#type) and [`stack`](./project#stack) settings. When a project depends on another
+project of an invalid type, an error will be thrown when attempting to run a task. The following
+relationships are enforced when this setting is enabled, which defaults to `true`.
 
 - Applications can depend on all types _except other_ applications or automation.
 - Automation can depend on all types _except other_ automation.
 - Libraries can _only_ depend on other libraries, configuration, or scaffolding.
 - Tools can _only_ depend on libraries, configuration, or scaffolding.
 - Configuration and scaffolding can _only_ depend on other configuration and scaffolding.
+
+When the project `stack` setting is defined, it alters these rules to allow these kinds of
+relationships. For example, a frontend application can depend on a backend application, but not
+another frontend application.
 
 ```yaml title=".moon/workspace.yml" {2}
 constraints:

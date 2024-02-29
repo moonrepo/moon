@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.529220f1.css">
-<script src="/assets/js/runtime~main.df1ca9bc.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.4151578b.js" defer="defer"></script>
 <script src="/assets/js/main.a469df9d.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -86,9 +86,9 @@ also known as project boundaries.</p>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="enforceprojecttyperelationships"><code>enforceProjectTypeRelationships</code><a href="#enforceprojecttyperelationships" class="hash-link" aria-label="Direct link to enforceprojecttyperelationships" title="Direct link to enforceprojecttyperelationships">​</a></h3>
 <a href="/api/types/interface/ConstraintsConfig#enforceProjectTypeRelationships" target="_blank" class="float-right inline-block" style="margin-top:-3em"><span class="inline-block" aria-hidden="true"><svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="code" class="svg-inline--fa fa-code" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path fill="currentColor" d="M399.1 1.1c-12.7-3.9-26.1 3.1-30 15.8l-144 464c-3.9 12.7 3.1 26.1 15.8 30s26.1-3.1 30-15.8l144-464c3.9-12.7-3.1-26.1-15.8-30zm71.4 118.5c-9.1 9.7-8.6 24.9 1.1 33.9L580.9 256 471.6 358.5c-9.7 9.1-10.2 24.3-1.1 33.9s24.3 10.2 33.9 1.1l128-120c4.8-4.5 7.6-10.9 7.6-17.5s-2.7-13-7.6-17.5l-128-120c-9.7-9.1-24.9-8.6-33.9 1.1zm-301 0c-9.1-9.7-24.3-10.2-33.9-1.1l-128 120C2.7 243 0 249.4 0 256s2.7 13 7.6 17.5l128 120c9.7 9.1 24.9 8.6 33.9-1.1s8.6-24.9-1.1-33.9L59.1 256 168.4 153.5c9.7-9.1 10.2-24.3 1.1-33.9z"></path></svg></span></a>
 <p>Enforces allowed relationships between a project its dependencies based on the project&#x27;s
-<a href="/docs/config/project#type"><code>type</code></a> setting. When a project depends on another project of an invalid type, an
-error will be thrown when attempting to run a task. The following relationships are enforced when
-this setting is enabled, which defaults to <code>true</code>.</p>
+<a href="/docs/config/project#type"><code>type</code></a> and <a href="/docs/config/project#stack"><code>stack</code></a> settings. When a project depends on another
+project of an invalid type, an error will be thrown when attempting to run a task. The following
+relationships are enforced when this setting is enabled, which defaults to <code>true</code>.</p>
 <ul>
 <li>Applications can depend on all types <em>except other</em> applications or automation.</li>
 <li>Automation can depend on all types <em>except other</em> automation.</li>
@@ -96,6 +96,9 @@ this setting is enabled, which defaults to <code>true</code>.</p>
 <li>Tools can <em>only</em> depend on libraries, configuration, or scaffolding.</li>
 <li>Configuration and scaffolding can <em>only</em> depend on other configuration and scaffolding.</li>
 </ul>
+<p>When the project <code>stack</code> setting is defined, it alters these rules to allow these kinds of
+relationships. For example, a frontend application can depend on a backend application, but not
+another frontend application.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">constraints</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">enforceProjectTypeRelationships</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <blockquote>
 <p>Projects with an unconfigured or unknown type are ignored during enforcement.</p>

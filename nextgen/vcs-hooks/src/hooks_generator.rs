@@ -1,4 +1,4 @@
-use moon_common::{color, consts};
+use moon_common::{color, consts, is_docker_container};
 use moon_config::VcsConfig;
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
@@ -68,6 +68,19 @@ impl<'app> HooksGenerator<'app> {
     }
 
     pub async fn generate(&self) -> miette::Result<()> {
+        // When in Docker, we should avoid creating the hooks as they are:
+        // - Not particularly useful in this context.
+        // - It creates a `.git` folder, which in turn enables moon caching,
+        //   which we typically don't want in Docker.
+        if is_docker_container() {
+            debug!(
+                "In a Docker container/image, not generating {} hooks",
+                self.config.manager
+            );
+
+            return Ok(());
+        }
+
         debug!("Generating {} hooks", self.config.manager);
 
         self.sync_to_vcs(self.create_hooks()?).await?;

@@ -138,6 +138,19 @@ mod unix {
     }
 
     #[tokio::test]
+    async fn doesnt_links_git_hooks_if_no_root() {
+        let sandbox = create_empty_sandbox();
+
+        run_generator(sandbox.path()).await;
+
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
+
+        assert!(!pre_commit.exists());
+        assert!(!post_push.exists());
+    }
+
+    #[tokio::test]
     async fn supports_git_worktrees() {
         let sandbox = create_empty_sandbox();
         sandbox.enable_git();

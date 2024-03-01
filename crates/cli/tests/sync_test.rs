@@ -66,6 +66,8 @@ mod sync_hooks {
         });
 
         let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+        sandbox.enable_git();
+
         let hooks_dir = sandbox.path().join(".moon/hooks");
 
         assert!(!hooks_dir.exists());
@@ -103,6 +105,8 @@ mod sync_hooks {
         });
 
         let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+        sandbox.enable_git();
+
         let hooks_dir = sandbox.path().join(".moon/hooks");
 
         assert!(!hooks_dir.exists());

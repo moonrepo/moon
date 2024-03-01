@@ -72,7 +72,7 @@ impl<'app> HooksGenerator<'app> {
         // - Not particularly useful in this context.
         // - It creates a `.git` folder, which in turn enables moon caching,
         //   which we typically don't want in Docker.
-        if is_docker_container() {
+        if is_docker_container() || !self.vcs.is_enabled() {
             debug!(
                 "In a Docker container/image, not generating {} hooks",
                 self.config.manager
@@ -121,10 +121,10 @@ impl<'app> HooksGenerator<'app> {
         for (hook_name, internal_path) in hooks {
             let external_path = hooks_dir.join(hook_name);
 
-            let external_command = PathBuf::from(".")
-                .join(internal_path.strip_prefix(&repo_root).unwrap())
-                .display()
-                .to_string();
+            let external_command = match internal_path.strip_prefix(&repo_root) {
+                Ok(rel) => PathBuf::from(".").join(rel),
+                _ => internal_path.clone(),
+            };
 
             debug!(
                 external_file = ?external_path,
@@ -150,7 +150,7 @@ impl<'app> HooksGenerator<'app> {
                     &external_path,
                     format!(
                         "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{}\" $1 $2 $3",
-                        powershell_exe, external_command
+                        powershell_exe, external_command.display()
                     ),
                 )?;
             }
@@ -161,7 +161,7 @@ impl<'app> HooksGenerator<'app> {
                 // pre-commit
                 self.create_hook_file(
                     &external_path,
-                    &[format!("{} $1 $2 $3", external_command)],
+                    &[format!("{} $1 $2 $3", external_command.display())],
                     false,
                 )?;
             }

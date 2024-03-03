@@ -9,4 +9,4 @@ moon_lang = { path = "../../core/lang" }
 cached = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-yarn-lock-parser = "0.6.0"
+yarn-lock-parser = "0.7.0"

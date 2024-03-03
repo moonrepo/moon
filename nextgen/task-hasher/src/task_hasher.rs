@@ -141,6 +141,8 @@ impl<'task> TaskHasher<'task> {
                 // not valid inputs, so avoid hashing them!
                 if local_file.exists() {
                     files.insert(local_file);
+                } else {
+                    files.remove(&local_file);
                 }
             }
         }

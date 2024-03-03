@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where deleted but uncommitted files would log a hashing warning.
+- Fixed an issue where parsing `bun.lockb` would fail if using `github:` protocols..
 
 ## 1.22.3
 

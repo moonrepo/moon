@@ -134,6 +134,8 @@ impl<'task> TaskHasher<'task> {
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
         if !is_ci() {
+            dbg!(self.vcs.get_touched_files().await?.all());
+
             for local_file in self.vcs.get_touched_files().await?.all() {
                 let local_file = local_file.to_path(self.workspace_root);
 

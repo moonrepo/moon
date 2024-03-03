@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where deleted but uncommitted files would log a hashing warning.
+
 ## 1.22.3
 
 #### 🚀 Updates

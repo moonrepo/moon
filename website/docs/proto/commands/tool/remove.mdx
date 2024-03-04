@@ -7,12 +7,12 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.23.0" header />
 
-The `proto tool remove <tool>` command (formerly `proto remove-plugin`) will remove the provided
+The `proto plugin remove <tool>` command (formerly `proto remove-plugin`) will remove the provided
 tool ID from the `[plugins]` section of the local (`.prototools`) or global (`~/.proto/.prototools`)
 config file.
 
 ```shell
-$ proto tool remove node
+$ proto plugin remove node
 ```
 
 > Built-in plugins _cannot_ be removed!

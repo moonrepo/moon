@@ -7,11 +7,12 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.23.0" header />
 
-The `proto tool list` command (formerly `proto tools`) will list all tools that have been installed,
-along with their installed versions, relevant timestamps, available aliases, and store location.
+The `proto plugin list` command (formerly `proto tools`) will list all tools that have been
+installed, along with their installed versions, relevant timestamps, available aliases, and store
+location.
 
 ```
-$ proto tool list
+$ proto plugin list
 
 go - Go
   Store: ~/.proto/tools/go
@@ -35,7 +36,7 @@ node - Node.js
 A list of tool IDs can be provided to filter the output list.
 
 ```shell
-$ proto tool list node npm
+$ proto plugin list node npm
 ```
 
 ### Arguments

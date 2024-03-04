@@ -292,6 +292,17 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/terragrunt.toml',
 	},
+	timoni: {
+		author: 'b4nst',
+		bins: ['timoni'],
+		description: 'Distribution and lifecycle management for cloud-native applications.',
+		homepageUrl: 'https://timoni.sh/',
+		name: 'timoni',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/stefanprodan/timoni/main/proto-plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/stefanprodan/timoni',
+	},
 	zig: [
 		{
 			author: 'stk0vrfl0w',

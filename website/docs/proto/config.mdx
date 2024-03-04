@@ -228,8 +228,10 @@ identifier).
 
 ```toml title=".prototools"
 [tools.node]
-bundled-npm = false
-intercept-globals = false
+bundled-npm = true
+
+[tools.npm]
+shared-globals-dir = true
 ```
 
 ### `[tools.*.aliases]`

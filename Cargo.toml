@@ -21,7 +21,7 @@ default-members = ["crates/cli"]
 
 [workspace.dependencies]
 async-trait = "0.1.77"
-cached = "0.48.1"
+cached = "0.49.2"
 chrono = { version = "0.4.34", features = ["serde"] }
 cd_env = "0.1.2"
 ci_env = "0.2.1"
@@ -57,15 +57,15 @@ semver = "1.0.22"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 serde_yaml = "0.9.32"
-starbase = "0.5.0"
-starbase_archive = { version = "0.5.0", default-features = false, features = [
+starbase = "0.5.1"
+starbase_archive = { version = "0.5.2", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.5.0"
-starbase_sandbox = "0.4.0"
-starbase_styles = { version = "0.3.0", features = ["relative-path"] }
-starbase_utils = { version = "0.5.0", default-features = false, features = [
+starbase_events = "0.5.1"
+starbase_sandbox = "0.4.1"
+starbase_styles = { version = "0.3.1", features = ["relative-path"] }
+starbase_utils = { version = "0.5.1", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -92,13 +92,13 @@ uuid = { version = "1.7.0", features = ["v4"] }
 # proto/plugin related
 extism = "1.1.0"
 extism-pdk = "1.1.0"
-proto_core = "0.30.4"
-proto_installer = "0.2.2"
-system_env = "0.2.1"
+proto_core = "0.31.5"
+proto_installer = "0.2.4"
+system_env = "0.2.4"
 version_spec = "0.2.1"
-warpgate = "0.11.1"
-warpgate_api = "0.4.1"
-warpgate_pdk = "0.2.1"
+warpgate = "0.11.5"
+warpgate_api = "0.4.5"
+warpgate_pdk = "0.2.4"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

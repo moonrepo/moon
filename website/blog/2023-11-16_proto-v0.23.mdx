@@ -34,10 +34,10 @@ detect-strategy = "prefer-prototools"
 ## New `proto tool` command group (breaking)
 
 Our CLI surface area has been growing and we felt it was time to start grouping commands, starting
-with the new [`proto tool`](/docs/proto/commands/tool) command. This command will contain "not used
-very often" subcommands in relation to tools and their plugins, primarily for managing plugins, and
-viewing tool information and inventory. As such, we've deprecated and moved the following top-level
-commands:
+with the new [`proto tool`](/docs/proto/commands/plugin) command. This command will contain "not
+used very often" subcommands in relation to tools and their plugins, primarily for managing plugins,
+and viewing tool information and inventory. As such, we've deprecated and moved the following
+top-level commands:
 
 - Moved `proto add-plugin` to `proto tool add`.
 - Moved `proto remove-plugin` to `proto tool remove`.
@@ -47,7 +47,7 @@ commands:
 ## New `proto tool info` command
 
 Continuing with the changes above, we're also introducing a new command,
-[`proto tool info`](/docs/proto/commands/tool/info), which displays detailed information about a
+[`proto tool info`](/docs/proto/commands/plugin/info), which displays detailed information about a
 tool and its backing plugin. For example:
 
 ```

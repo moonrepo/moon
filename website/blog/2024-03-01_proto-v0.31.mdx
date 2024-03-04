@@ -1,0 +1,105 @@
+---
+slug: proto-v0.31
+title: proto v0.31 - Improved version pinning, removed global packages management, and more
+authors: [milesj]
+tags: [proto, version, pin, global, packages]
+# image: ./img/proto/v0.26.png
+---
+
+In preparation for an official v1 release, we've improved stability, the overall developer
+experience, we're renaming some commands, and removing the "global packages" functionality.
+
+<!--truncate-->
+
+## Improved version pinning
+
+Based on feedback from the community, we've made some slight changes to pinning to reduce confusion.
+The biggest points of contention were, "Why does `proto install --pin` pin globally?", and "Why
+doesn't `proto pin` resolve the version like `proto install --pin` does?".
+
+To remedy the first issue, we've updated the `--pin` argument to optionally support a string value
+of "local" or "global". When local, will pin to the `.prototools` file in the current directory,
+otherwise it will pin to `~/.proto/.prototools`.
+
+```shell
+$ proto install node --pin # global
+$ proto install node --pin global
+$ proto install node --pin local
+```
+
+As for the second issue, we've introduced a new option called `--resolve`, which will resolve the
+version to a fully qualified semantic version (or fail). This isn't the default functionality, as to
+not break existing workflows, and because you may want to actually pin "1" instead of "1.2.3".
+
+```shell
+$ proto pin node 1 # 1
+$ proto pin node 1 --resolve # 1.2.3
+```
+
+## Removed global package management (breaking)
+
+A while back we introduced the `proto install-global` and `proto uninstall-global` commands as a
+means for managing global packages. This was added to solve issues with the Node.js ecosystem,
+primarily around standardizing where global packages would be installed across all package managers.
+On top of this, we also introduced a "command interception" feature, which would error telling you
+to use proto's command instead of the package manager's.
+
+As a whole, this feature was _very_ disruptive to users, caused a lot of confusion, was simply
+poorly implemented, and honestly wasn't really necessary for tools outside of Node.js. Because of
+all of this, we've decided to entirely remove our global package management functionality, this
+includes:
+
+- `proto install-global` command
+- `proto uninstall-global` command
+- `proto list-global` command
+- `intercept-globals` setting for node/npm/pnpm/yarn
+- `globals` setting for TOML plugins
+
+## New npm/pnpm/yarn `shared-globals-dir` setting
+
+Since we removed our global packages support (above), we had to also remove the `intercept-globals`
+setting from our Node.js related WASM plugins. However, we still believed in the benefit it
+provided, primarily around standardizing where global packages would be installed across all package
+managers.
+
+To still support this in some capacity, we've introduced a new `shared-globals-dir` setting for npm,
+pnpm, and yarn. This setting still standardizes the install path, _but instead_ of intercepting
+commands like it did before, it now appends the global package install commands with additional
+arguments or environment variables. This should be entirely transparent to you!
+
+```toml title=".prototools"
+[tools.npm]
+shared-globals-dir = true
+```
+
+An example of how this now works:
+
+```shell
+# < v0.31
+proto install-global npm typescript
+
+# >= v0.31
+npm install --global typescript
+
+# Under the hood becomes...
+PREFIX=/.proto/tools/node/globals npm install --global typescript
+```
+
+## Renamed commands (breaking)
+
+We're still not happy with some of the current command names, especially around tools and plugins,
+so we've renamed a few of them. They are:
+
+- Renamed the `proto tool` commands to `proto plugin`. An alias still exists for the time being.
+- Removed the `proto tool list-plugins` command, and merged its functionality into
+  `proto plugin list`.
+
+As for the `proto plugin list` command, we've removed the versions and aliases from the output by
+default, and wrapped them in new `--versions` and `--aliases` options.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.31.0) for a full list
+of changes.
+
+- Fixed an issue where empty version strings were being parsed, causing failures.

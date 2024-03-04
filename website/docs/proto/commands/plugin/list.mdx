@@ -1,0 +1,66 @@
+---
+title: plugin list
+sidebar_label: list
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.23.0" header />
+
+The `proto plugin list` command will list all available and configured plugins, for both third-party
+and built-in tools. Will load all `.prototools` traversing upwards, and the `~/.proto/.prototools`
+file.
+
+Furthermore, it can list tool information, along with their installed versions, relevant timestamps,
+available aliases, and store location.
+
+```
+$ proto plugin list --versions
+
+bun - Bun
+  Store: ~/.proto/tools/bun
+  Source: https://github.com/moonrepo/bun-plugin/releases/download/v0.10.0/bun_plugin.wasm
+  Versions:
+    1.0.13 - installed 11/21/23, last used 02/28/24, default version
+    0.8.0 - installed 11/19/23, last used 03/04/24
+    1.0.0 - installed 11/19/23, last used 03/04/24
+    1.0.15 - installed 12/09/23, last used 03/04/24
+
+deno - Deno
+  Store: ~/.proto/tools/deno
+  Source: https://github.com/moonrepo/deno-plugin/releases/download/v0.10.0/deno_plugin.wasm
+  Versions:
+    1.36.1 - installed 08/15/23, default version
+    1.30.0 - installed 02/01/24, last used 03/04/24
+    1.38.0 - installed 11/08/23
+    1.40.0 - installed 02/01/24, last used 03/04/24
+
+go - Go
+  Store: ~/.proto/tools/go
+  Source: https://github.com/moonrepo/go-plugin/releases/download/v0.10.0/go_plugin.wasm
+  Versions:
+    1.21.5 - installed 12/06/23, last used 02/29/24, default version
+    1.20.12 - installed 12/09/23
+
+node - Node.js
+  Store: ~/.proto/tools/node
+  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.10.0/node_plugin.wasm
+  Versions:
+    20.0.0 - installed 09/03/23, last used 03/04/24, default version
+```
+
+A list of tool IDs can be provided to filter the output list.
+
+```shell
+$ proto plugin list node npm
+```
+
+### Arguments
+
+- `[id...]` - IDs of tools.
+
+### Options
+
+- `--aliases` - Print the list with resolved aliases.
+- `--versions` - Print the list with installed versions.
+- `--json` - Print the list in JSON format.

@@ -59,18 +59,16 @@ moving forward from this point.
 
 ## Global binary improvements
 
-In our [previous release](./proto-v0.5), we announced the
-[`proto install-global`](/docs/proto/commands/install-global) command for installing global
-dependencies that are unique per tool. Thanks to the community, this command has been updated to
-support installing multiple globals at once!
+In our [previous release](./proto-v0.5), we announced the `proto install-global` command for
+installing global dependencies that are unique per tool. Thanks to the community, this command has
+been updated to support installing multiple globals at once!
 
 ```shell
 $ proto install-global node typescript webpack-cli
 ```
 
 On top of this, we're also introducing another command that was requested by the community,
-[`proto list-global`](/docs/proto/commands/list-global), that can be used to list all currently
-installed globals.
+`proto list-global`, that can be used to list all currently installed globals.
 
 ```shell
 $ proto list-global node

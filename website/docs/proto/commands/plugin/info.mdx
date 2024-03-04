@@ -1,0 +1,50 @@
+---
+title: plugin info
+sidebar_label: info
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.23.0" header />
+
+The `proto plugin info <id>` command will display information about a tool and its plugin.
+
+```
+$ proto plugin info node
+
+node - Node.js
+
+Plugin
+  Version: 0.10.0
+  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.10.0/node_plugin.wasm
+
+Inventory
+  Store: ~/.proto/tools/node
+  Executable: ~/.proto/tools/node/20.0.0/bin/node
+  Global packages directory: ~/.proto/tools/node/globals/bin
+  Binaries:
+    - ~/.proto/bin/node (primary)
+  Shims:
+    - ~/.proto/shims/node (primary)
+  Installed versions:
+    - 20.0.0
+  Aliases:
+    argon - 4.9.1
+    boron - 6.17.1
+    carbon - 8.17.0
+    dubnium - 10.24.1
+    erbium - 12.22.12
+    fermium - 14.21.3
+    gallium - 16.20.2
+    hydrogen - 18.19.1
+    iron - 20.11.1
+    latest - 21.6.2
+```
+
+### Arguments
+
+- `<id>` - ID of tool.
+
+### Options
+
+- `--json` - Print the info in JSON format.

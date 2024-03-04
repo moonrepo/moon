@@ -22,7 +22,7 @@ export default function ToolCard({ id, tool, showAuthor }: ToolCardProps) {
 	let usage = `proto install ${usageId}`;
 
 	if (tool.pluginLocator) {
-		usage = `proto tool add ${usageId} "${tool.pluginLocator}"\n${usage}`;
+		usage = `proto plugin add ${usageId} "${tool.pluginLocator}"\n${usage}`;
 	}
 
 	return (

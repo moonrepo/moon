@@ -1,5 +1,5 @@
 ---
-title: tool add
+title: plugin add
 sidebar_label: add
 ---
 
@@ -7,9 +7,8 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.23.0" header />
 
-The `proto plugin add <tool> <plugin>` command (formerly `proto add-plugin`) will add the provided
-ID and plugin locator string to the `[plugins]` section of the local (`.prototools`) or global
-(`~/.proto/.prototools`) config file.
+The `proto plugin add <id> <plugin>` command will add the provided ID and plugin locator string to
+the `[plugins]` section of the local (`.prototools`) or global (`~/.proto/.prototools`) config file.
 
 ```shell
 $ proto plugin add node "source:https://github.com/moonrepo/node-plugin/releases/latest/download/node_plugin.wasm"
@@ -19,7 +18,7 @@ $ proto plugin add node "source:https://github.com/moonrepo/node-plugin/releases
 
 ### Arguments
 
-- `<tool>` - ID of the tool.
+- `<id>` - ID of the tool.
 - `<plugin>` - How to locate the plugin.
 
 ### Options

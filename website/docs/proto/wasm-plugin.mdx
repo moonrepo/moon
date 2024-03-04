@@ -140,7 +140,7 @@ The following fields are available:
 ```rust
 #[plugin_fn]
 pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<Json<DownloadPrebuiltOutput>> {
-     let env = get_proto_environment()?;
+     let env = get_host_environment()?;
 
     check_supported_os_and_arch(
         NAME,
@@ -213,7 +213,7 @@ the location of the executable, relative from the installation directory.
 pub fn locate_executables(
     Json(_): Json<LocateExecutablesInput>,
 ) -> FnResult<Json<LocateExecutablesOutput>> {
-    let env = get_proto_environment()?;
+    let env = get_host_environment()?;
 
     Ok(Json(LocateExecutablesOutput {
          primary: Some(ExecutableConfig::new(
@@ -238,7 +238,7 @@ demonstrate this, we'll use [Deno](https://deno.land/manual@v1.35.0/tools/script
 pub fn locate_executables(
     Json(_): Json<LocateExecutablesInput>,
 ) -> FnResult<Json<LocateExecutablesOutput>> {
-    let env = get_proto_environment()?;
+    let env = get_host_environment()?;
 
     Ok(Json(LocateExecutablesOutput {
         globals_lookup_dirs: vec!["$DENO_INSTALL_ROOT/bin".into(), "$HOME/.deno/bin".into()],
@@ -350,38 +350,6 @@ pub fn parse_version_file(Json(input): Json<ParseVersionFileInput>) -> FnResult<
     }
 
     Ok(Json(ParseVersionFileOutput { version }))
-}
-```
-
-### Installing and uninstalling globals
-
-Most languages support the concept of installing packages/dependencies globally, and making them
-available on `PATH`. proto supports this with the
-[`proto install-global`](./commands/install-global) and
-[`proto uninstall-global`](./commands/uninstall-global) commands, which are simple convenience
-wrappers around the native binary.
-
-From the context of the plugin, how globals are installed and uninstalled is implemented with the
-`install_global` and `uninstall_global` functions respectively. Both functions receive the
-`dependency` to install as input.
-
-```rust
-#[plugin_fn]
-pub fn install_global(
-    Json(input): Json<InstallGlobalInput>,
-) -> FnResult<Json<InstallGlobalOutput>> {
-    let result = exec_command!(inherit, "npm", ["install", "--global", &input.dependency]);
-
-    Ok(Json(InstallGlobalOutput::from_exec_command(result)))
-}
-
-#[plugin_fn]
-pub fn uninstall_global(
-    Json(input): Json<UninstallGlobalInput>,
-) -> FnResult<Json<UninstallGlobalOutput>> {
-    let result = exec_command!(inherit, "npm", ["uninstall", "--global", &input.dependency]);
-
-    Ok(Json(UninstallGlobalOutput::from_exec_command(result)))
 }
 ```
 

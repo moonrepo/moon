@@ -30,6 +30,8 @@ This section requires a mapping of Rust
 [`OS` strings](https://doc.rust-lang.org/std/env/consts/constant.OS.html) to platform settings. The
 following settings are available:
 
+- `archs` - A list of architectures supported for this platform. If not provided, supports all
+  archs.
 - `archive-prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
   the direct folder within the archive that contains the tool, and will be removed when unpacking
   the archive. If there is no prefix folder within the archive, this setting can be omitted.
@@ -84,6 +86,7 @@ be downloaded and installed into the toolchain. The following settings are avail
 - `arch` - A mapping of Rust
   [`ARCH` strings](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html) to custom values for
   the `{arch}` token. This is useful if the tool has different terminology.
+- `libc` - A mapping of custom values for the `{libc}` token.
 - `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 - `checksum-url-canary` - A URL for canary releases.
@@ -108,26 +111,19 @@ x86_64 = "x64"
 
 #### Global packages
 
-The `[globals]` sections can be configured that dictates the installation of global binaries for the
-tool. If the tool does not support globals (is not a programming language), these settings can be
-omitted.
+The `[packages]` sections can be configured that provides information about where global packages
+are stored.
 
-- `lookup-dirs` - A list of directories to locate and install the global binaries into. This setting
+- `globals-lookup-dirs` - A list of directories where global binaries are stored. This setting
   supports interpolating environment variables via the syntax `$ENV_VAR`.
-- `install-args` - A list of CLI arguments to pass to the tool to install a global binary. The name
-  of the binary can be inserted using the `{dependency}` token.
-- `uninstall-args` - A list of CLI arguments to pass to the tool to uninstall a global binary. The
-  name of the binary can be inserted using the `{dependency}` token.
-- `package-prefix` - A string that all package names are prefixed with. The prefix will be removed
-  when filtering/listing packages. For example, Cargo/Rust binaries are prefixed wih `cargo-`.
+- `globals-prefix` - A string that all package names are prefixed with. For example, Cargo/Rust
+  binaries are prefixed wih `cargo-`.
 
 ```toml title="protostar.toml"
 # ...
 
-[globals]
-lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
-install-args = ["install", "--force", "{dependency}"]
-uninstall-args = ["uninstall", "{dependency}"]
+[packages]
+globals-lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
 ```
 
 ### Resolving versions

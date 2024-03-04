@@ -17,6 +17,11 @@
 - Fixed an issue where deleted but uncommitted files would log a hashing warning.
 - Fixed an issue where parsing `bun.lockb` would fail if using `github:` protocols..
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.76.
+- Updated proto to v0.31.2 (from v0.30.2).
+
 ## 1.22.3
 
 #### 🚀 Updates

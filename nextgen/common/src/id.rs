@@ -36,7 +36,11 @@ impl Id {
     }
 
     pub fn clean<S: AsRef<str>>(id: S) -> Result<Id, IdError> {
-        Id::new(ID_CLEAN.replace_all(id.as_ref(), "-"))
+        // Remove @ so node based IDs don't become prefixed
+        // with a leading -, causing pattern failures
+        let id = id.as_ref().replace('@', "");
+
+        Id::new(ID_CLEAN.replace_all(&id, "-"))
     }
 
     pub fn raw<S: AsRef<str>>(id: S) -> Id {

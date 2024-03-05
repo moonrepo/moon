@@ -3,7 +3,7 @@
 use cached::proc_macro::cached;
 use moon_lang::config_cache_model;
 use moon_utils::path::to_relative_virtual_string;
-use starbase_utils::json::{self, read_file as read_json, JsonMap, JsonValue};
+use starbase_utils::json::{self, read_file as read_json, JsonValue};
 use std::path::{Path, PathBuf};
 
 pub use typescript_tsconfig_json::*;
@@ -17,16 +17,6 @@ config_cache_model!(
 );
 
 impl TsConfigJsonCache {
-    // pub fn load_with_extends<T: AsRef<Path>>(path: T) -> miette::Result<TsConfigJson> {
-    //     let path = path.as_ref();
-    //     let values = load_to_value(path, true)?;
-
-    //     let mut cfg: TsConfigJson = serde_json::from_value(values).into_diagnostic()?;
-    //     cfg.path = path.to_path_buf();
-
-    //     Ok(cfg)
-    // }
-
     pub fn add_include<T: AsRef<str>>(&mut self, pattern: T) -> bool {
         let pattern = PathOrGlob::from(pattern.as_ref());
         let mut include = match &self.data.include {
@@ -150,40 +140,6 @@ impl TsConfigJsonCache {
             updated
         })
     }
-}
-
-pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> miette::Result<JsonValue> {
-    let path = path.as_ref();
-    let mut merged_file = JsonValue::Object(JsonMap::new());
-    let last_file: JsonValue = json::read_file(path)?;
-
-    if extend {
-        let extends_root = path.parent().unwrap_or_else(|| Path::new(""));
-
-        match &last_file["extends"] {
-            JsonValue::Array(list) => {
-                for item in list {
-                    if let JsonValue::String(value) = item {
-                        merged_file = json::merge(
-                            &merged_file,
-                            &load_to_value(extends_root.join(value), extend)?,
-                        );
-                    }
-                }
-            }
-            JsonValue::String(value) => {
-                merged_file = json::merge(
-                    &merged_file,
-                    &load_to_value(extends_root.join(value), extend)?,
-                );
-            }
-            _ => {}
-        }
-    }
-
-    merged_file = json::merge(&merged_file, &last_file);
-
-    Ok(merged_file)
 }
 
 // https://github.com/serde-rs/json/issues/858

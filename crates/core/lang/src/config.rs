@@ -342,6 +342,7 @@ macro_rules! config_cache_model {
             Ok(()) // Do nothing
         }
 
+        #[derive(Default)]
         pub struct $container {
             pub data: $struct,
             pub dirty: Vec<String>,

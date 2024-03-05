@@ -4087,6 +4087,7 @@ dependencies = [
  "serde_json",
  "starbase_styles",
  "starbase_utils",
+ "typescript_tsconfig_json",
 ]
 
 [[package]]
@@ -6235,6 +6236,19 @@ name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
+
+[[package]]
+name = "typescript_tsconfig_json"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "102a24e13fa23fa7fc6fcfa8749da4ffbd4a3fc346d82baf4fbadda4bf01ae97"
+dependencies = [
+ "clean-path",
+ "indexmap 2.2.5",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "ucd-trie"

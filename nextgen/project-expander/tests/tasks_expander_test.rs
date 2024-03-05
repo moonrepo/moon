@@ -1048,6 +1048,21 @@ mod tasks_expander {
         }
 
         #[test]
+        fn can_substitute_var_from_env_file() {
+            let sandbox = create_sandbox("env-file");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![InputPath::WorkspaceFile(".env-shared".into())]);
+            task.env.insert("TOP_LEVEL".into(), "$BASE".into());
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            assert_eq!(task.env.get("TOP_LEVEL").unwrap(), "value");
+        }
+
+        #[test]
         fn loads_from_multiple_env_file() {
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());

@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 config_cache!(DenoJson, "deno.json", read_json, write_preserved_json);
 
 // This isn't everything, just what we care about
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DenoJson {
     #[serde(skip_serializing_if = "Option::is_none")]

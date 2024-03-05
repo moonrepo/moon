@@ -386,7 +386,7 @@ macro_rules! config_cache_model {
             pub fn sync<P, F>(path: P, func: F) -> miette::Result<bool>
             where
                 P: AsRef<Path>,
-                F: FnOnce(&mut $struct) -> miette::Result<bool>
+                F: FnOnce(&mut $container) -> miette::Result<bool>
             {
                 $container::sync_with_name(path, $file, func)
             }
@@ -395,7 +395,7 @@ macro_rules! config_cache_model {
             where
                 P: AsRef<Path>,
                 N: AsRef<str>,
-                F: FnOnce(&mut $struct) -> miette::Result<bool>
+                F: FnOnce(&mut $container) -> miette::Result<bool>
             {
                 use cached::Cached;
                 use moon_logger::trace;
@@ -422,18 +422,18 @@ macro_rules! config_cache_model {
                     data = $namespace::load_config_internal(&path)?;
                 }
 
-                if func(&mut data)? {
+                let mut model = $container {
+                    data,
+                    dirty: vec![],
+                    path,
+                };
+
+                if func(&mut model)? {
                     trace!(
                         target: "moon:lang:config",
                         "Syncing {} with changes",
-                        color::path(&path),
+                        color::path(&model.path),
                     );
-
-                    let mut model = $container {
-                        data,
-                        dirty: vec![],
-                        path,
-                    };
 
                     model.save()?;
 

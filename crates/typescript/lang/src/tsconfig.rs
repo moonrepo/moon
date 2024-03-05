@@ -5,11 +5,8 @@ use moon_lang::config_cache_model;
 use moon_utils::path::to_relative_virtual_string;
 use starbase_utils::json::{self, read_file as read_json, JsonMap, JsonValue};
 use std::path::{Path, PathBuf};
-use typescript_tsconfig_json::{
-    CompilerOptions, CompilerOptionsPathsMap, PathOrGlob, ProjectReference,
-};
 
-pub use typescript_tsconfig_json::TsConfigJson;
+pub use typescript_tsconfig_json::*;
 
 config_cache_model!(
     TsConfigJsonCache,
@@ -42,7 +39,7 @@ impl TsConfigJsonCache {
         }
 
         include.push(pattern);
-        // include.sort();
+        include.sort();
 
         self.dirty.push("include".into());
         self.data.include = Some(include);
@@ -205,13 +202,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJsonCache) -> miette::Re
             "include" => {
                 if let Some(include) = &tsconfig.data.include {
                     data[field] = JsonValue::from_iter(
-                        include
-                            .iter()
-                            .map(|i| match i {
-                                PathOrGlob::Glob(g) => g.to_owned(),
-                                PathOrGlob::Path(p) => p.to_string_lossy().to_string(),
-                            })
-                            .collect::<Vec<_>>(),
+                        include.iter().map(|i| i.to_string()).collect::<Vec<_>>(),
                     );
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);

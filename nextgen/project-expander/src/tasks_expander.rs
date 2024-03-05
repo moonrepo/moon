@@ -215,14 +215,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             "Expanding environment variables"
         );
 
-        // Expand tokens
         let mut env = self.token.expand_env(task)?;
-        let cloned_env = env.clone();
-
-        // Substitute environment variables
-        for (_, value) in env.iter_mut() {
-            *value = substitute_env_var(value, &cloned_env);
-        }
 
         // Load variables from an .env file
         if let Some(env_files) = &task.options.env_files {
@@ -275,6 +268,13 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     color::property("options.envFile"),
                 );
             }
+        }
+
+        // Substitute environment variables
+        let cloned_env = env.clone();
+
+        for (_, value) in env.iter_mut() {
+            *value = substitute_env_var(value, &cloned_env);
         }
 
         task.env = env;

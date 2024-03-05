@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `env` variable substitution not being able to reference values from an `.env` file.
+
 ## 1.22.4
 
 #### 🐞 Fixes

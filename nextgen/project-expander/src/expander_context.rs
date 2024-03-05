@@ -21,6 +21,10 @@ pub struct ExpanderContext<'graph, 'query> {
 }
 
 pub fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> String {
+    if !value.contains('$') {
+        return value.to_owned();
+    }
+
     patterns::ENV_VAR_SUBSTITUTE.replace_all(
         value,
         |caps: &patterns::Captures| {

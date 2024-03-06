@@ -254,7 +254,7 @@ mod add_project_ref {
         assert_eq!(
             tsc.data.references.unwrap(),
             vec![ProjectReference {
-                path: "../sibling".to_owned(),
+                path: "../sibling".into(),
                 prepend: None,
             }]
         );

@@ -15,8 +15,8 @@ pub async fn post_mutation<O>(
 where
     O: DeserializeOwned,
 {
-    let body =
-        json::to_string(&query).map_err(|e| MoonbaseError::JsonSerializeFailure(e.to_string()))?;
+    let body = json::format(&query, false)
+        .map_err(|e| MoonbaseError::JsonSerializeFailure(e.to_string()))?;
 
     let request = reqwest::Client::new().post(endpoint("graphql")).body(body);
 

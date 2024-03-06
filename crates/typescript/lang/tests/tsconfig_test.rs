@@ -20,7 +20,7 @@ fn preserves_when_saving() {
 
     package.save().unwrap();
 
-    assert_eq!(json::read_to_string(file.path()).unwrap(), json);
+    assert_eq!(std::fs::read_to_string(file.path()).unwrap(), json);
 }
 
 #[test]

@@ -1,4 +1,3 @@
-use miette::IntoDiagnostic;
 use moon_workspace::Workspace;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -23,7 +22,7 @@ pub async fn query_hash(workspace: &Workspace, hash: &str) -> AppResult<(String,
             // so we need to manually convert it here!
             let data: json::JsonValue = json::read_file(path)?;
 
-            return Ok((name, json::to_string_pretty(&data).into_diagnostic()?));
+            return Ok((name, json::format(&data, true)?));
         }
     }
 

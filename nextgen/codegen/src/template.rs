@@ -285,8 +285,7 @@ impl Template {
                 match file.is_mergeable() {
                     Some(MergeType::Json) => {
                         let prev: json::JsonValue = json::read_file(&file.dest_path)?;
-                        let next: json::JsonValue =
-                            json::from_str(&file.content).into_diagnostic()?;
+                        let next: json::JsonValue = json::parse(&file.content)?;
 
                         json::write_file_with_config(
                             &file.dest_path,
@@ -296,8 +295,7 @@ impl Template {
                     }
                     Some(MergeType::Yaml) => {
                         let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
-                        let next: yaml::YamlValue =
-                            yaml::from_str(&file.content).into_diagnostic()?;
+                        let next: yaml::YamlValue = yaml::parse(&file.content)?;
 
                         yaml::write_file_with_config(&file.dest_path, &yaml::merge(&prev, &next))?;
                     }

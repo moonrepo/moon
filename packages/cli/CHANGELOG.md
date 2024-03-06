@@ -15,6 +15,8 @@
 #### 🐞 Fixes
 
 - Fixed `env` variable substitution not being able to reference values from an `.env` file.
+- Fixed an issue where moon would move an existing proto binary when installing proto, triggering
+  permission issues.
 
 ## 1.22.4
 

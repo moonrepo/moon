@@ -109,7 +109,10 @@ rm -rf "$download_file" "$temp_dir"
 
 # Run setup script to update shells
 
-export PROTO_LOG=error
+if [[ -z "$PROTO_LOG" ]]; then
+	export PROTO_LOG=error
+fi
+
 version_pattern="^0\.[0-2]{1}[0-9]{1}\."
 
 # Versions >= 0.30 handle the messaging

@@ -1,6 +1,5 @@
 use moon_node_lang::*;
 use moon_test_utils::{assert_fs::prelude::*, create_temp_dir};
-use starbase_utils::json;
 use std::collections::BTreeMap;
 
 #[test]
@@ -18,7 +17,7 @@ fn preserves_when_saving() {
 
     package.save().unwrap();
 
-    assert_eq!(json::read_to_string(file.path()).unwrap(), json);
+    assert_eq!(std::fs::read_to_string(file.path()).unwrap(), json);
 }
 
 mod add_dependency {

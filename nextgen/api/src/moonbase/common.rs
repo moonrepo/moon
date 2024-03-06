@@ -57,8 +57,8 @@ where
     I: Serialize,
     O: DeserializeOwned,
 {
-    let body =
-        json::to_string(&body).map_err(|e| MoonbaseError::JsonSerializeFailure(e.to_string()))?;
+    let body = json::format(&body, false)
+        .map_err(|e| MoonbaseError::JsonSerializeFailure(e.to_string()))?;
 
     let request = reqwest::Client::new().post(endpoint(path)).body(body);
 

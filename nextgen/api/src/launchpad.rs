@@ -134,7 +134,7 @@ impl Launchpad {
             return Ok(None);
         };
 
-        let data: CurrentVersion = json::from_str(&text).into_diagnostic()?;
+        let data: CurrentVersion = json::parse(&text)?;
         let local_version = Version::parse(&moon_env.version).into_diagnostic()?;
         let remote_version = Version::parse(&data.current_version).into_diagnostic()?;
         let update_available = remote_version > local_version;

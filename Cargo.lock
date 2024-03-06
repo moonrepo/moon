@@ -4765,9 +4765,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.31.5"
+version = "0.31.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a037417b24245074fe491bf69402b847200c6c32882a950ffd0f50943ca12d90"
+checksum = "f3f5934359cb4cceef710e9e1e4b91055e2df25784a4c72755b07abcfc7b9707"
 dependencies = [
  "cached",
  "human-sort",
@@ -4800,9 +4800,9 @@ dependencies = [
 
 [[package]]
 name = "proto_installer"
-version = "0.2.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa156f77df7f1267b6c0f85f38b2613ae6a64eb6014c3686843586e077d82ee6"
+checksum = "cb6eb6f9bfe772d5a1d1fe618509f23414622d1736b213af9f876ccd5da69d41"
 dependencies = [
  "futures",
  "miette",
@@ -5572,9 +5572,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.5.2"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3c925289aee48cbd98f1e49b7857973ffa1a1c7a0c2c129a32a86f97467dd47"
+checksum = "56bf4ff22495fe4c8384f124f4955373ed9d5c50c0e9bca53d202975c820687f"
 dependencies = [
  "binstall-tar",
  "flate2",
@@ -5615,9 +5615,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4e41db850a6d98edb67ba83ea809cdc43d628ed54223c491e0f7fdd69b3194d"
+checksum = "46eb2113d05c21fea19742d5df590641a44373eaa75c9178e6c8888d9ab31286"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -5644,9 +5644,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.5.1"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "263d6acfb4522b7a60d349ca181257135c71377ce852c07e97e9eb5adf928efe"
+checksum = "188611d36a605c62158f3b9a1b36a4b3d328d24e0f478a781f77874a8e407dbb"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",
@@ -6494,9 +6494,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.11.5"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d56fc8b86c5f2189842eccf5c7bc34333b375ca75a48556a8468023c9dac45c9"
+checksum = "c9767947042038e90e1075f0ae267df7c78bb675e431c8460c97ca48526a4b35"
 dependencies = [
  "extism",
  "miette",

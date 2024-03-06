@@ -1,5 +1,4 @@
 use crate::project_graph_error::ProjectGraphError;
-use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
@@ -239,11 +238,13 @@ impl ProjectGraph {
     pub fn to_json(&self) -> miette::Result<String> {
         let projects = self.read_cache();
 
-        json::to_string_pretty(&ProjectGraphCache {
-            graph: &self.graph,
-            projects: &projects,
-        })
-        .into_diagnostic()
+        Ok(json::format(
+            &ProjectGraphCache {
+                graph: &self.graph,
+                projects: &projects,
+            },
+            true,
+        )?)
     }
 
     fn internal_get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {

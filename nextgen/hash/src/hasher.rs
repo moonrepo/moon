@@ -1,6 +1,6 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use starbase_utils::json::JsonError;
+use starbase_utils::json;
 use tracing::{debug, trace};
 
 pub struct ContentHasher {
@@ -53,9 +53,7 @@ impl ContentHasher {
     pub fn hash_content<T: Serialize>(&mut self, content: T) -> miette::Result<()> {
         trace!(label = &self.label, "Adding content to hasher");
 
-        self.contents
-            .push(serde_json::to_string(&content).map_err(|error| JsonError::Stringify { error })?);
-
+        self.contents.push(json::format(&content, false)?);
         self.content_cache = None;
         self.hash_cache = None;
 

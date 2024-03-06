@@ -73,7 +73,9 @@ Remove-Item $DownloadFile -Force
 
 # Run setup script to update shells
 
-$env:PROTO_LOG = "error"
+if (-not $env:PROTO_LOG) {
+  $env:PROTO_LOG = "error"
+}
 
 # Versions >= 0.30 handle the messaging
 if ($Version -eq "latest" -or $Version -notmatch '^0\.[0-2]{1}[0-9]{1}\.') {

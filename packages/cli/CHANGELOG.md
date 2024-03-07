@@ -20,6 +20,10 @@
 
 - Fixed an issue where the wrong path was being displayed for the task message "in ...".
 
+#### ⚙️ Internal
+
+- Updated proto to v0.31.4 (from v0.31.2).
+
 ## 1.22.5
 
 #### 🐞 Fixes

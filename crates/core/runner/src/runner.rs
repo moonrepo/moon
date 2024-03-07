@@ -788,9 +788,10 @@ impl<'a> Runner<'a> {
 
                         warn!(
                             target: LOG_TARGET,
-                            "Target {} failed, running again with attempt {}",
+                            "Target {} failed, running again with attempt {} (exit code {})",
                             color::label(&self.task.target),
-                            attempt_index
+                            attempt_index,
+                            out.status.code().unwrap_or(-1)
                         );
                     }
                 }

@@ -10,6 +10,16 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- We now include the exit code of a failing task in the logs for easier debugging.
+
+#### 🐞 Fixes
+
+- Fixed an issue where the wrong path was being displayed for the task message "in ...".
+
 ## 1.22.5
 
 #### 🐞 Fixes

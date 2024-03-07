@@ -5,7 +5,7 @@ use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::env;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use tracing::{debug, enabled};
@@ -171,15 +171,16 @@ impl<'cmd> CommandInspector<'cmd> {
 
         let target_dir = if working_dir == workspace_root {
             "workspace".into()
+        } else if let Ok(dir) = working_dir.strip_prefix(workspace_root) {
+            format!(".{}{}", MAIN_SEPARATOR, dir.to_string_lossy(),)
         } else {
-            format!(
-                ".{}{}",
-                MAIN_SEPARATOR,
-                working_dir
-                    .strip_prefix(workspace_root)
-                    .unwrap_or(working_dir)
-                    .to_string_lossy(),
-            )
+            debug!(
+                working_dir = ?working_dir,
+                workspace_root = ?workspace_root,
+                "Unable to determine the directory a task is running in...",
+            );
+
+            ".".into()
         };
 
         format!(
@@ -191,9 +192,19 @@ impl<'cmd> CommandInspector<'cmd> {
 
     pub fn log_command(&self) {
         let command_line = self.get_command_line();
-        let workspace_root = env::var("MOON_WORKSPACE_ROOT")
+
+        // We don't have access to the workspace root in this context,
+        // so attempt to retrieve it from the command's env vars. If
+        // not found, retrieve it from the environment. If all else fails,
+        // use the current directory (which may be wrong).
+        let workspace_root_key = OsString::from("MOON_WORKSPACE_ROOT");
+        let workspace_root = self
+            .command
+            .env
+            .get(&workspace_root_key)
             .map(PathBuf::from)
-            .unwrap_or_else(|_| env::current_dir().unwrap_or_default());
+            .or_else(|| env::var(&workspace_root_key).ok().map(PathBuf::from))
+            .map_or_else(|| env::current_dir().unwrap_or_default(), PathBuf::from);
 
         if self.command.print_command {
             if let Some(cmd_line) = command_line.main_command.to_str() {

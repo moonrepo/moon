@@ -172,7 +172,7 @@ impl<'cmd> CommandInspector<'cmd> {
         let target_dir = if working_dir == workspace_root {
             "workspace".into()
         } else if let Ok(dir) = working_dir.strip_prefix(workspace_root) {
-            format!(".{}{}", MAIN_SEPARATOR, dir.to_string_lossy(),)
+            format!(".{}{}", MAIN_SEPARATOR, dir.to_string_lossy())
         } else {
             debug!(
                 working_dir = ?working_dir,
@@ -204,7 +204,7 @@ impl<'cmd> CommandInspector<'cmd> {
             .get(&workspace_root_key)
             .map(PathBuf::from)
             .or_else(|| env::var(&workspace_root_key).ok().map(PathBuf::from))
-            .map_or_else(|| env::current_dir().unwrap_or_default(), PathBuf::from);
+            .unwrap_or_else(|| env::current_dir().unwrap_or(PathBuf::from(".")));
 
         if self.command.print_command {
             if let Some(cmd_line) = command_line.main_command.to_str() {

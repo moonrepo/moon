@@ -2,12 +2,10 @@ use moon_common::Id;
 use moon_config::TypeScriptConfig;
 use moon_project::Project;
 use moon_test_utils::{create_sandbox, create_sandbox_with_config, get_node_fixture_configs};
-use moon_typescript_lang::tsconfig::{Reference, TsConfigExtends};
-use moon_typescript_lang::TsConfigJson;
+use moon_typescript_lang::tsconfig::*;
+use moon_typescript_lang::TsConfigJsonCache;
 use moon_typescript_platform::TypeScriptSyncer;
-use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
-use std::collections::BTreeMap;
 use std::path::Path;
 
 mod missing_tsconfig {
@@ -41,15 +39,16 @@ mod missing_tsconfig {
 
         assert!(tsconfig_path.exists());
 
-        let tsconfig = TsConfigJson::read(tsconfig_path).unwrap().unwrap();
+        let tsconfig = TsConfigJsonCache::read(tsconfig_path).unwrap().unwrap();
 
         assert_eq!(
-            tsconfig.extends,
-            Some(TsConfigExtends::String(
-                "../tsconfig.options.json".to_owned()
-            ))
+            tsconfig.data.extends,
+            Some(ExtendsField::Single("../tsconfig.options.json".to_owned()))
         );
-        assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
+        assert_eq!(
+            tsconfig.data.include,
+            Some(vec![PathOrGlob::Glob("**/*".into())])
+        );
     }
 
     #[test]
@@ -84,15 +83,18 @@ mod missing_tsconfig {
 
         assert!(tsconfig_path.exists());
 
-        let tsconfig = TsConfigJson::read_with_name(&project.root, "tsconfig.ref.json")
+        let tsconfig = TsConfigJsonCache::read_with_name(&project.root, "tsconfig.ref.json")
             .unwrap()
             .unwrap();
 
         assert_eq!(
-            tsconfig.extends,
-            Some(TsConfigExtends::String("../tsconfig.base.json".to_owned()))
+            tsconfig.data.extends,
+            Some(ExtendsField::Single("../tsconfig.base.json".to_owned()))
         );
-        assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
+        assert_eq!(
+            tsconfig.data.include,
+            Some(vec![PathOrGlob::Glob("**/*".into())])
+        );
     }
 
     #[test]
@@ -146,13 +148,13 @@ mod sync_root {
             .sync_as_root_project_reference()
             .unwrap();
 
-        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
+        let tsconfig = TsConfigJsonCache::read_with_name(sandbox.path(), "tsconfig.json")
             .unwrap()
             .unwrap();
 
         assert_eq!(
-            tsconfig.references.unwrap(),
-            vec![Reference {
+            tsconfig.data.references.unwrap(),
+            vec![ProjectReference {
                 path: "project".into(),
                 prepend: None
             }]
@@ -180,13 +182,13 @@ mod sync_root {
             .sync_as_root_project_reference()
             .unwrap();
 
-        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "root/tsconfig.json")
+        let tsconfig = TsConfigJsonCache::read_with_name(sandbox.path(), "root/tsconfig.json")
             .unwrap()
             .unwrap();
 
         assert_eq!(
-            tsconfig.references.unwrap(),
-            vec![Reference {
+            tsconfig.data.references.unwrap(),
+            vec![ProjectReference {
                 path: "../project".into(),
                 prepend: None
             }]
@@ -233,18 +235,19 @@ mod sync_root {
             .sync_as_root_project_reference()
             .unwrap();
 
-        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "root/tsconfig.projects.json")
-            .unwrap()
-            .unwrap();
+        let tsconfig =
+            TsConfigJsonCache::read_with_name(sandbox.path(), "root/tsconfig.projects.json")
+                .unwrap()
+                .unwrap();
 
         assert_eq!(
-            tsconfig.references.unwrap(),
+            tsconfig.data.references.unwrap(),
             vec![
-                Reference {
+                ProjectReference {
                     path: "../a".into(),
                     prepend: None
                 },
-                Reference {
+                ProjectReference {
                     path: "../b/tsconfig.build.json".into(),
                     prepend: None
                 }
@@ -273,13 +276,13 @@ mod sync_root {
             .sync_as_root_project_reference()
             .unwrap();
 
-        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
+        let tsconfig = TsConfigJsonCache::read_with_name(sandbox.path(), "tsconfig.json")
             .unwrap()
             .unwrap();
 
         assert_eq!(
-            tsconfig.references.unwrap(),
-            vec![Reference {
+            tsconfig.data.references.unwrap(),
+            vec![ProjectReference {
                 path: "tsconfig.project.json".into(),
                 prepend: None
             }]
@@ -307,13 +310,13 @@ mod sync_root {
             .sync_as_root_project_reference()
             .unwrap();
 
-        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.root.json")
+        let tsconfig = TsConfigJsonCache::read_with_name(sandbox.path(), "tsconfig.root.json")
             .unwrap()
             .unwrap();
 
         assert_eq!(
-            tsconfig.references.unwrap(),
-            vec![Reference {
+            tsconfig.data.references.unwrap(),
+            vec![ProjectReference {
                 path: ".".into(),
                 prepend: None
             }]
@@ -337,11 +340,11 @@ mod sync_root {
             .sync_as_root_project_reference()
             .unwrap();
 
-        let tsconfig = TsConfigJson::read_with_name(sandbox.path(), "tsconfig.json")
+        let tsconfig = TsConfigJsonCache::read_with_name(sandbox.path(), "tsconfig.json")
             .unwrap()
             .unwrap();
 
-        assert_eq!(tsconfig.references, None);
+        assert_eq!(tsconfig.data.references, None);
     }
 }
 
@@ -373,11 +376,14 @@ mod sync_config {
                 .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include.unwrap(), vec!["../../types/**/*"]);
+            assert_eq!(
+                tsconfig.data.include.unwrap(),
+                vec![PathOrGlob::Glob("../../types/**/*".into())]
+            );
         }
 
         #[test]
@@ -405,11 +411,14 @@ mod sync_config {
                 .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include.unwrap(), vec!["../../types/**/*"]);
+            assert_eq!(
+                tsconfig.data.include.unwrap(),
+                vec![PathOrGlob::Glob("../../types/**/*".into())]
+            );
         }
 
         #[test]
@@ -433,11 +442,11 @@ mod sync_config {
                 .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include, None);
+            assert_eq!(tsconfig.data.include, None);
         }
 
         #[test]
@@ -461,11 +470,11 @@ mod sync_config {
                 .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include, None);
+            assert_eq!(tsconfig.data.include, None);
         }
     }
 
@@ -498,19 +507,19 @@ mod sync_config {
                 ]))
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include, None);
+            assert_eq!(tsconfig.data.include, None);
             assert_eq!(
-                tsconfig.references.unwrap(),
+                tsconfig.data.references.unwrap(),
                 vec![
-                    Reference {
+                    ProjectReference {
                         path: "../../common/c".into(),
                         prepend: None
                     },
-                    Reference {
+                    ProjectReference {
                         path: "../b".into(),
                         prepend: None
                     }
@@ -544,12 +553,12 @@ mod sync_config {
                 ]))
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include, None);
-            assert_eq!(tsconfig.references, None);
+            assert_eq!(tsconfig.data.include, None);
+            assert_eq!(tsconfig.data.references, None);
         }
 
         #[test]
@@ -579,22 +588,25 @@ mod sync_config {
                 ]))
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
             assert_eq!(
-                tsconfig.include.unwrap(),
-                vec!["../../common/c/**/*", "../b/**/*"]
+                tsconfig.data.include.unwrap(),
+                vec![
+                    PathOrGlob::Glob("../../common/c/**/*".into()),
+                    PathOrGlob::Glob("../b/**/*".into())
+                ]
             );
             assert_eq!(
-                tsconfig.references.unwrap(),
+                tsconfig.data.references.unwrap(),
                 vec![
-                    Reference {
+                    ProjectReference {
                         path: "../../common/c".into(),
                         prepend: None
                     },
-                    Reference {
+                    ProjectReference {
                         path: "../b".into(),
                         prepend: None
                     }
@@ -626,22 +638,25 @@ mod sync_config {
                 .sync_project_tsconfig(FxHashSet::default())
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
             assert_eq!(
-                tsconfig.include.unwrap(),
-                vec!["../../common/c/**/*", "../b/**/*"]
+                tsconfig.data.include.unwrap(),
+                vec![
+                    PathOrGlob::Glob("../../common/c/**/*".into()),
+                    PathOrGlob::Glob("../b/**/*".into())
+                ]
             );
             assert_eq!(
-                tsconfig.references.unwrap(),
+                tsconfig.data.references.unwrap(),
                 vec![
-                    Reference {
+                    ProjectReference {
                         path: "../b/tsconfig.json".into(),
                         prepend: None
                     },
-                    Reference {
+                    ProjectReference {
                         path: "../../common/c".into(),
                         prepend: None
                     },
@@ -676,19 +691,19 @@ mod sync_config {
                 ]))
                 .unwrap();
 
-            let tsconfig = TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            let tsconfig = TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap();
 
-            assert_eq!(tsconfig.include, None);
-            assert_eq!(tsconfig.references, None);
+            assert_eq!(tsconfig.data.include, None);
+            assert_eq!(tsconfig.data.references, None);
         }
     }
 
     mod paths {
         use super::*;
 
-        fn run_for_a(root: &Path) -> TsConfigJson {
+        fn run_for_a(root: &Path) -> TsConfigJsonCache {
             let project = Project {
                 id: Id::raw("project"),
                 root: root.join("packages/a"),
@@ -709,7 +724,7 @@ mod sync_config {
                 ]))
                 .unwrap();
 
-            TsConfigJson::read_with_name(project.root, "tsconfig.json")
+            TsConfigJsonCache::read_with_name(project.root, "tsconfig.json")
                 .unwrap()
                 .unwrap()
         }
@@ -727,8 +742,8 @@ mod sync_config {
             let tsconfig = run_for_a(sandbox.path());
 
             assert_eq!(
-                tsconfig.compiler_options.unwrap().paths.unwrap(),
-                BTreeMap::from_iter([
+                tsconfig.data.compiler_options.unwrap().paths.unwrap(),
+                CompilerOptionsPathsMap::from_iter([
                     ("b/*".into(), vec!["../b/src/*".into()]),
                     ("c/*".into(), vec!["../../common/c/*".into()]),
                 ])
@@ -749,8 +764,8 @@ mod sync_config {
             let tsconfig = run_for_a(sandbox.path());
 
             assert_eq!(
-                tsconfig.compiler_options.unwrap().paths.unwrap(),
-                BTreeMap::from_iter([
+                tsconfig.data.compiler_options.unwrap().paths.unwrap(),
+                CompilerOptionsPathsMap::from_iter([
                     ("b".into(), vec!["../b/src/index.ts".into()]),
                     ("b/*".into(), vec!["../b/src/*".into()]),
                     ("c".into(), vec!["../../common/c/index.ts".into()]),
@@ -777,8 +792,8 @@ mod sync_config {
             let tsconfig = run_for_a(sandbox.path());
 
             assert_eq!(
-                tsconfig.compiler_options.unwrap().paths.unwrap(),
-                BTreeMap::from_iter([
+                tsconfig.data.compiler_options.unwrap().paths.unwrap(),
+                CompilerOptionsPathsMap::from_iter([
                     ("b/*".into(), vec!["../b/src/*".into()]),
                     ("c/*".into(), vec!["../../common/c/*".into()]),
                     ("d".into(), vec!["../d/index.ts".into()]),

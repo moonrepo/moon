@@ -14,6 +14,7 @@ serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
+typescript_tsconfig_json = { version = "0.1.4", features = ["serialize"] }
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }

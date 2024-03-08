@@ -2,17 +2,18 @@ use moon_common::Id;
 use moon_config::{DependencyScope, TypeScriptConfig};
 use moon_node_lang::PackageJson;
 use moon_project::Project;
-use moon_typescript_lang::{tsconfig::TsConfigExtends, TsConfigJson};
+use moon_typescript_lang::{
+    tsconfig::{CompilerOptionsPathsMap, ExtendsField, PathOrGlob},
+    TsConfigJson, TsConfigJsonCache,
+};
 use moon_utils::{
     get_cache_dir,
     path::{self, to_relative_virtual_string},
-    string_vec,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
 use starbase_utils::json;
 use std::{
-    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -99,14 +100,13 @@ impl<'app> TypeScriptSyncer<'app> {
         }
 
         let json = TsConfigJson {
-            extends: Some(TsConfigExtends::String(path::to_relative_virtual_string(
+            extends: Some(ExtendsField::Single(path::to_relative_virtual_string(
                 self.types_root
                     .join(&self.typescript_config.root_options_config_file_name),
                 &self.project.root,
             )?)),
-            include: Some(string_vec!["**/*"]),
+            include: Some(vec![PathOrGlob::Glob("**/*".into())]),
             references: Some(vec![]),
-            path: tsconfig_path.clone(),
             ..TsConfigJson::default()
         };
 
@@ -120,7 +120,7 @@ impl<'app> TypeScriptSyncer<'app> {
         let tsconfig_root_name = &self.typescript_config.root_config_file_name;
         let tsconfig_project_name = &self.typescript_config.project_config_file_name;
 
-        TsConfigJson::sync_with_name(&self.types_root, tsconfig_root_name, |tsconfig_json| {
+        TsConfigJsonCache::sync_with_name(&self.types_root, tsconfig_root_name, |tsconfig_json| {
             // Don't sync a root project to itself
             if self.project.root == self.types_root && tsconfig_project_name == tsconfig_root_name {
                 return Ok(false);
@@ -147,7 +147,7 @@ impl<'app> TypeScriptSyncer<'app> {
         &self,
         tsconfig_project_refs: FxHashSet<PathBuf>,
     ) -> miette::Result<bool> {
-        TsConfigJson::sync_with_name(
+        TsConfigJsonCache::sync_with_name(
             &self.project.root,
             &self.typescript_config.project_config_file_name,
             |tsconfig_json| {
@@ -177,15 +177,19 @@ impl<'app> TypeScriptSyncer<'app> {
 
                 // Map all project references (not just synced) to other fields
                 if should_include_sources || should_sync_paths {
-                    if let Some(local_project_refs) = tsconfig_json.references.clone() {
-                        let mut tsconfig_compiler_paths = BTreeMap::default();
+                    if let Some(local_project_refs) = tsconfig_json.data.references.clone() {
+                        let mut tsconfig_compiler_paths = CompilerOptionsPathsMap::default();
 
                         for project_ref in local_project_refs {
                             let mut abs_ref =
                                 path::normalize(self.project.root.join(&project_ref.path));
 
                             // Remove the tsconfig.json file name if it exists
-                            if project_ref.path.ends_with(".json") {
+                            if project_ref
+                                .path
+                                .extension()
+                                .is_some_and(|ext| ext == "json")
+                            {
                                 abs_ref = abs_ref.parent().unwrap().to_path_buf();
                             }
 
@@ -237,9 +241,7 @@ impl<'app> TypeScriptSyncer<'app> {
 
                         // paths
                         if should_sync_paths
-                            && tsconfig_json.update_compiler_options(|options| {
-                                options.update_paths(tsconfig_compiler_paths)
-                            })
+                            && tsconfig_json.update_compiler_option_paths(tsconfig_compiler_paths)
                         {
                             mutated_tsconfig = true;
                         }
@@ -251,8 +253,10 @@ impl<'app> TypeScriptSyncer<'app> {
                     let cache_route = get_cache_dir()
                         .join("types")
                         .join(self.project.source.as_str());
-                    let out_dir =
-                        path::to_relative_virtual_string(cache_route, &self.project.root)?;
+                    let out_dir = PathBuf::from(path::to_relative_virtual_string(
+                        cache_route,
+                        &self.project.root,
+                    )?);
 
                     let updated_options = tsconfig_json.update_compiler_options(|options| {
                         if options.out_dir.is_none() || options.out_dir.as_ref() != Some(&out_dir) {

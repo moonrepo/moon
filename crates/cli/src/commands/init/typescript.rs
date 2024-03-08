@@ -4,7 +4,7 @@ use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_typescript_config_template;
 use moon_console::Console;
-use moon_typescript_lang::TsConfigJson;
+use moon_typescript_lang::TsConfigJsonCache;
 use starbase::AppResult;
 use starbase_styles::color;
 use std::path::Path;
@@ -52,11 +52,12 @@ pub async fn init_typescript(
         console.out.flush()?;
     }
 
-    let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {
+    let project_refs = if let Ok(Some(tsconfig)) = TsConfigJsonCache::read(dest_dir) {
         tsconfig
+            .data
             .compiler_options
             .and_then(|o| o.composite)
-            .unwrap_or(tsconfig.references.is_some())
+            .unwrap_or(tsconfig.data.references.is_some())
     } else {
         options.yes
             || options.minimal

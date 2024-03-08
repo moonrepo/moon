@@ -60,6 +60,7 @@ impl NodeTargetHash {
 mod tests {
     use super::*;
     use moon_hash::ContentHasher;
+    use moon_node_lang::PackageJsonCache;
     use rustc_hash::FxHashMap;
 
     fn to_hash(content: &NodeTargetHash) -> String {
@@ -100,15 +101,15 @@ mod tests {
         fn returns_same_hash_for_same_value_inserted() {
             let resolved_deps = FxHashMap::default();
 
-            let mut package1 = PackageJson::default();
+            let mut package1 = PackageJsonCache::default();
             package1.add_dependency("react", "17.0.0", true);
 
             let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher1.hash_package_json(&package1, &resolved_deps);
+            hasher1.hash_package_json(&package1.data, &resolved_deps);
 
             let mut hasher2 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher2.hash_package_json(&package1, &resolved_deps);
-            hasher2.hash_package_json(&package1, &resolved_deps);
+            hasher2.hash_package_json(&package1.data, &resolved_deps);
+            hasher2.hash_package_json(&package1.data, &resolved_deps);
 
             assert_eq!(to_hash(&hasher1), to_hash(&hasher2));
         }
@@ -117,19 +118,19 @@ mod tests {
         fn returns_same_hash_for_diff_order_insertion() {
             let resolved_deps = FxHashMap::default();
 
-            let mut package1 = PackageJson::default();
+            let mut package1 = PackageJsonCache::default();
             package1.add_dependency("react", "17.0.0", true);
 
-            let mut package2 = PackageJson::default();
+            let mut package2 = PackageJsonCache::default();
             package2.add_dependency("react-dom", "17.0.0", true);
 
             let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher1.hash_package_json(&package2, &resolved_deps);
-            hasher1.hash_package_json(&package1, &resolved_deps);
+            hasher1.hash_package_json(&package2.data, &resolved_deps);
+            hasher1.hash_package_json(&package1.data, &resolved_deps);
 
             let mut hasher2 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher2.hash_package_json(&package1, &resolved_deps);
-            hasher2.hash_package_json(&package2, &resolved_deps);
+            hasher2.hash_package_json(&package1.data, &resolved_deps);
+            hasher2.hash_package_json(&package2.data, &resolved_deps);
 
             assert_eq!(to_hash(&hasher1), to_hash(&hasher2));
         }
@@ -138,18 +139,18 @@ mod tests {
         fn returns_diff_hash_for_overwritten_value() {
             let resolved_deps = FxHashMap::default();
 
-            let mut package1 = PackageJson::default();
+            let mut package1 = PackageJsonCache::default();
             package1.add_dependency("react", "17.0.0", true);
 
-            let mut package2 = PackageJson::default();
+            let mut package2 = PackageJsonCache::default();
             package2.add_dependency("react", "18.0.0", true);
 
             let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher1.hash_package_json(&package1, &resolved_deps);
+            hasher1.hash_package_json(&package1.data, &resolved_deps);
 
             let hash1 = to_hash(&hasher1);
 
-            hasher1.hash_package_json(&package2, &resolved_deps);
+            hasher1.hash_package_json(&package2.data, &resolved_deps);
 
             let hash2 = to_hash(&hasher1);
 
@@ -164,25 +165,25 @@ mod tests {
         fn supports_all_dep_types() {
             let resolved_deps = FxHashMap::default();
 
-            let mut package = PackageJson::default();
+            let mut package = PackageJsonCache::default();
             package.add_dependency("moment", "10.0.0", true);
 
             let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher1.hash_package_json(&package, &resolved_deps);
+            hasher1.hash_package_json(&package.data, &resolved_deps);
             let hash1 = to_hash(&hasher1);
 
-            package.dev_dependencies =
+            package.data.dev_dependencies =
                 Some(BTreeMap::from([("eslint".to_owned(), "8.0.0".to_owned())]));
 
             let mut hasher2 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher2.hash_package_json(&package, &resolved_deps);
+            hasher2.hash_package_json(&package.data, &resolved_deps);
             let hash2 = to_hash(&hasher2);
 
-            package.peer_dependencies =
+            package.data.peer_dependencies =
                 Some(BTreeMap::from([("react".to_owned(), "18.0.0".to_owned())]));
 
             let mut hasher3 = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher3.hash_package_json(&package, &resolved_deps);
+            hasher3.hash_package_json(&package.data, &resolved_deps);
             let hash3 = to_hash(&hasher3);
 
             assert_ne!(hash1, hash2);
@@ -195,12 +196,12 @@ mod tests {
             let resolved_deps =
                 FxHashMap::from_iter([("prettier".to_owned(), vec!["2.1.3".to_owned()])]);
 
-            let mut package = PackageJson::default();
+            let mut package = PackageJsonCache::default();
             package.add_dependency("prettier", "^2.0.0", true);
             package.add_dependency("rollup", "^2.0.0", true);
 
             let mut hasher = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher.hash_package_json(&package, &resolved_deps);
+            hasher.hash_package_json(&package.data, &resolved_deps);
 
             assert_eq!(
                 hasher.dependencies,
@@ -218,11 +219,11 @@ mod tests {
                 vec!["uio".to_owned(), "abc".to_owned(), "123".to_owned()],
             )]);
 
-            let mut package = PackageJson::default();
+            let mut package = PackageJsonCache::default();
             package.add_dependency("prettier", "^2.0.0", true);
 
             let mut hasher = NodeTargetHash::new(Some("0.0.0".into()));
-            hasher.hash_package_json(&package, &resolved_deps);
+            hasher.hash_package_json(&package.data, &resolved_deps);
 
             assert_eq!(
                 hasher.dependencies,

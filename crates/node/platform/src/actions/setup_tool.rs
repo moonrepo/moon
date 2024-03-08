@@ -1,6 +1,6 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_logger::debug;
-use moon_node_lang::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -9,7 +9,7 @@ use std::path::Path;
 const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 
 /// Add `packageManager` to `package.json`.
-fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
+fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJsonCache) -> bool {
     let manager_version = match node_config.package_manager {
         // Not supported by corepack, so remove field
         NodePackageManager::Bun => Some(String::new()),
@@ -44,7 +44,7 @@ fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson)
 }
 
 /// Add `engines` constraint to `package.json`.
-fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
+fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJsonCache) -> bool {
     if let Some(node_version) = &node_config.version {
         if node_config.add_engines_constraint
             && package_json.add_engine("node", node_version.to_string())
@@ -76,7 +76,7 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Resul
         .unwrap_or(packages_root);
 
     // Sync values to root `package.json`
-    PackageJson::sync(&packages_root, |package_json| {
+    PackageJsonCache::sync(&packages_root, |package_json| {
         let added_manager = add_package_manager(&node.config, package_json);
         let added_constraint = add_engines_constraint(&node.config, package_json);
 

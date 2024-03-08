@@ -4,7 +4,7 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
-    ProjectStack, ProjectType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig,
+    ProjectType, StackType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig,
     TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_target::Target;
@@ -540,7 +540,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Application,
                     &[]
                 ),
@@ -568,7 +568,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Library,
                     &[]
                 ),
@@ -596,7 +596,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Ruby,
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Tool,
                     &[]
                 ),
@@ -615,7 +615,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Rust,
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Application,
                     &[]
                 ),
@@ -639,7 +639,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Other(Id::raw("kotlin")),
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Tool,
                     &[]
                 ),
@@ -658,7 +658,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::System,
                     &LanguageType::Other(Id::raw("dotnet")),
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Application,
                     &[]
                 ),
@@ -686,7 +686,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Rust,
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Application,
                     &[Id::raw("cargo"), Id::raw("cli-app")]
                 ),
@@ -717,7 +717,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Application,
                     &[],
                 )
@@ -764,7 +764,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Bun,
                     &LanguageType::JavaScript,
-                    &ProjectStack::Backend,
+                    &StackType::Backend,
                     &ProjectType::Application,
                     &[],
                 )
@@ -800,7 +800,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Tool,
                     &[],
                 )
@@ -836,7 +836,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::System,
                     &LanguageType::Rust,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
                 )
@@ -868,7 +868,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Tool,
                     &[Id::raw("normal"), Id::raw("kebab-case")],
                 )
@@ -914,7 +914,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::System,
                     &LanguageType::Other(Id::raw("kotlin")),
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
                 )
@@ -953,7 +953,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
                 )
@@ -977,7 +977,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::System,
                     &LanguageType::Other(Id::raw("dotnet")),
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Application,
                     &[],
                 )
@@ -1002,7 +1002,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Rust,
                     &LanguageType::Rust,
-                    &ProjectStack::Infrastructure,
+                    &StackType::Infrastructure,
                     &ProjectType::Application,
                     &[],
                 )
@@ -1024,7 +1024,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
-                    &ProjectStack::Frontend,
+                    &StackType::Frontend,
                     &ProjectType::Library,
                     &[],
                 )

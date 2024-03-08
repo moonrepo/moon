@@ -1,6 +1,6 @@
 use miette::Diagnostic;
 use moon_common::{Id, Style, Stylize};
-use moon_config::{DependencyScope, ProjectStack};
+use moon_config::{DependencyScope, StackType};
 use moon_project::{Project, ProjectType};
 use thiserror::Error;
 
@@ -55,8 +55,8 @@ pub fn enforce_project_type_relationships(
     // for example, frontend apps should not import from other frontend
     // apps, but frontend apps should depend on backend apps.
     if source.config.stack != dependency.config.stack
-        && source.config.stack != ProjectStack::Unknown
-        && dependency.config.stack != ProjectStack::Unknown
+        && source.config.stack != StackType::Unknown
+        && dependency.config.stack != StackType::Unknown
     {
         return Ok(());
     }

@@ -1,6 +1,6 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
-use crate::project_config::{ProjectStack, ProjectType};
+use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
@@ -132,7 +132,7 @@ impl InheritedTasksManager {
         &self,
         platform: &PlatformType,
         language: &LanguageType,
-        stack: &ProjectStack,
+        stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> Vec<String> {
@@ -241,7 +241,7 @@ impl InheritedTasksManager {
         &self,
         platform: &PlatformType,
         language: &LanguageType,
-        stack: &ProjectStack,
+        stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {

@@ -27,7 +27,7 @@ fn validate_channel<D, C>(
 derive_enum!(
     /// The technology stack of the project, for categorizing.
     #[derive(ConfigEnum, Copy, Default)]
-    pub enum ProjectStack {
+    pub enum StackType {
         Backend,
         Frontend,
         Infrastructure,
@@ -138,7 +138,7 @@ cacheable!(
         pub project: Option<ProjectMetadataConfig>,
 
         /// The technology stack of the project, for categorizing.
-        pub stack: ProjectStack,
+        pub stack: StackType,
 
         /// A list of tags that this project blongs to, for categorizing,
         /// boundary enforcement, and task inheritance.

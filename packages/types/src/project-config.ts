@@ -94,7 +94,7 @@ export interface ProjectMetadataConfig {
 	owner: string | null;
 }
 
-export type ProjectStack = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
+export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
@@ -210,7 +210,7 @@ export interface ProjectConfig {
 	 *
 	 * @default 'unknown'
 	 */
-	stack: ProjectStack;
+	stack: StackType;
 	/**
 	 * A list of tags that this project blongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
@@ -409,7 +409,7 @@ export interface PartialProjectConfig {
 	 *
 	 * @default 'unknown'
 	 */
-	stack?: ProjectStack | null;
+	stack?: StackType | null;
 	/**
 	 * A list of tags that this project blongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.

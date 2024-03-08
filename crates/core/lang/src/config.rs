@@ -436,7 +436,11 @@ macro_rules! config_cache_model {
                         color::path(&model.path),
                     );
 
-                    model.save()?;
+                    // Write to the file system
+                    $writer(&model.path, &model)?;
+
+                    // And store in the cache
+                    cache.cache_set(model.path, model.data);
 
                     return Ok(true);
                 }

@@ -132,13 +132,14 @@ fn merge_two_configs() {
         config.clone().compiler_options.unwrap().jsx,
         Some(JsxField::Preserve)
     );
+
     assert_eq!(config.clone().compiler_options.unwrap().no_emit, Some(true));
     assert_eq!(
         config
             .compiler_options
             .unwrap()
             .other_fields
-            .get("remove_comments"),
+            .get("removeComments"),
         Some(&JsonValue::Bool(true))
     );
 }
@@ -166,7 +167,10 @@ mod add_project_ref {
 
     #[test]
     fn adds_if_not_set() {
-        let mut tsc = TsConfigJsonCache::default();
+        let mut tsc = TsConfigJsonCache {
+            path: PathBuf::from("/base/tsconfig.json"),
+            ..Default::default()
+        };
 
         assert_eq!(tsc.data.references, None);
 
@@ -193,6 +197,7 @@ mod add_project_ref {
                 }]),
                 ..TsConfigJson::default()
             },
+            path: PathBuf::from("/base/tsconfig.json"),
             ..Default::default()
         };
 

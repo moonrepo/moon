@@ -107,7 +107,6 @@ impl<'app> TypeScriptSyncer<'app> {
             )?)),
             include: Some(vec![PathOrGlob::Glob("**/*".into())]),
             references: Some(vec![]),
-            // path: tsconfig_path.clone(),
             ..TsConfigJson::default()
         };
 
@@ -186,7 +185,11 @@ impl<'app> TypeScriptSyncer<'app> {
                                 path::normalize(self.project.root.join(&project_ref.path));
 
                             // Remove the tsconfig.json file name if it exists
-                            if project_ref.path.ends_with(".json") {
+                            if project_ref
+                                .path
+                                .extension()
+                                .is_some_and(|ext| ext == "json")
+                            {
                                 abs_ref = abs_ref.parent().unwrap().to_path_buf();
                             }
 

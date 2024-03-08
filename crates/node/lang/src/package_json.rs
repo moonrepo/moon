@@ -1,75 +1,32 @@
 // package.json
 
 use cached::proc_macro::cached;
-use moon_lang::config_cache;
-use serde::{Deserialize, Serialize};
+use moon_lang::config_cache_model;
 use starbase_utils::json::{self, read_file as read_json, JsonValue};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageJson, "package.json", read_json, write_preserved_json);
+pub use nodejs_package_json::*;
 
-// Only define fields we interact with and care about!
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PackageJson {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dependencies: Option<DepsSet>,
+config_cache_model!(
+    PackageJsonCache,
+    PackageJson,
+    "package.json",
+    read_json,
+    write_preserved_json
+);
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dev_dependencies: Option<DepsSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub engines: Option<EnginesSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub package_manager: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub peer_dependencies: Option<DepsSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scripts: Option<ScriptsSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub workspaces: Option<PackageWorkspaces>,
-
-    // Non-standard
-    #[serde(skip)]
-    pub dirty: Vec<String>,
-
-    #[serde(skip)]
-    pub path: PathBuf,
-}
-
-impl PackageJson {
-    pub fn save(&mut self) -> miette::Result<()> {
-        if !self.dirty.is_empty() {
-            write_preserved_json(&self.path, self)?;
-            self.dirty.clear();
-
-            PackageJson::write(self.clone())?;
-        }
-
-        Ok(())
-    }
-
+impl PackageJsonCache {
     /// Add a package and version range to the `dependencies` field.
     pub fn add_dependency<T: AsRef<str>>(&mut self, name: T, range: T, if_missing: bool) -> bool {
         if let Some(deps) = self.internal_add_dependency(
             "dependencies",
-            self.dependencies.clone(),
+            self.data.dependencies.clone(),
             name,
             range,
             if_missing,
         ) {
-            self.dependencies = Some(deps);
+            self.data.dependencies = Some(deps);
 
             return true;
         }
@@ -86,12 +43,12 @@ impl PackageJson {
     ) -> bool {
         if let Some(deps) = self.internal_add_dependency(
             "devDependencies",
-            self.dev_dependencies.clone(),
+            self.data.dev_dependencies.clone(),
             name,
             range,
             if_missing,
         ) {
-            self.dev_dependencies = Some(deps);
+            self.data.dev_dependencies = Some(deps);
 
             return true;
         }
@@ -108,12 +65,12 @@ impl PackageJson {
     ) -> bool {
         if let Some(deps) = self.internal_add_dependency(
             "peerDependencies",
-            self.peer_dependencies.clone(),
+            self.data.peer_dependencies.clone(),
             name,
             range,
             if_missing,
         ) {
-            self.peer_dependencies = Some(deps);
+            self.data.peer_dependencies = Some(deps);
 
             return true;
         }
@@ -127,14 +84,17 @@ impl PackageJson {
         let engine = engine.as_ref();
         let range = range.as_ref();
 
-        if let Some(engines) = &mut self.engines {
+        if let Some(engines) = &mut self.data.engines {
             if engines.contains_key(engine) && engines.get(engine).unwrap() == range {
                 return false;
             }
 
             engines.insert(engine.to_owned(), range.to_owned());
         } else {
-            self.engines = Some(BTreeMap::from([(engine.to_owned(), range.to_owned())]));
+            self.data.engines = Some(EnginesMap::from_iter([(
+                engine.to_owned(),
+                range.to_owned(),
+            )]));
         }
 
         self.dirty.push("engines".into());
@@ -147,16 +107,21 @@ impl PackageJson {
     pub fn set_package_manager<T: AsRef<str>>(&mut self, value: T) -> bool {
         let value = value.as_ref();
 
-        if self.package_manager.as_ref().is_some_and(|v| v == value) {
+        if self
+            .data
+            .package_manager
+            .as_ref()
+            .is_some_and(|v| v == value)
+        {
             return false;
         }
 
         self.dirty.push("packageManager".into());
 
         if value.is_empty() {
-            self.package_manager = None;
+            self.data.package_manager = None;
         } else {
-            self.package_manager = Some(value.to_owned());
+            self.data.package_manager = Some(value.to_owned());
         }
 
         true
@@ -164,17 +129,17 @@ impl PackageJson {
 
     /// Set the `scripts` field.
     /// Return true if the new value is different from the old value.
-    pub fn set_scripts(&mut self, scripts: ScriptsSet) -> bool {
-        if self.scripts.is_none() && scripts.is_empty() {
+    pub fn set_scripts(&mut self, scripts: ScriptsMap) -> bool {
+        if self.data.scripts.is_none() && scripts.is_empty() {
             return false;
         }
 
         self.dirty.push("scripts".into());
 
         if scripts.is_empty() {
-            self.scripts = None;
+            self.data.scripts = None;
         } else {
-            self.scripts = Some(scripts);
+            self.data.scripts = Some(scripts);
         }
 
         true
@@ -186,11 +151,11 @@ impl PackageJson {
     fn internal_add_dependency<T: AsRef<str>>(
         &mut self,
         deps_name: &str,
-        deps_map: Option<DepsSet>,
+        deps_map: Option<DependenciesMap<String>>,
         name: T,
         range: T,
         if_missing: bool,
-    ) -> Option<DepsSet> {
+    ) -> Option<DependenciesMap<String>> {
         let name = name.as_ref();
         let range = range.as_ref();
 
@@ -216,33 +181,7 @@ impl PackageJson {
     }
 }
 
-pub type DepsSet = BTreeMap<String, String>;
-pub type EnginesSet = BTreeMap<String, String>;
-pub type ScriptsSet = BTreeMap<String, String>;
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct PackageWorkspacesExpanded {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nohoist: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub packages: Option<Vec<String>>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(untagged)]
-pub enum PackageWorkspaces {
-    Array(Vec<String>),
-    Object(PackageWorkspacesExpanded),
-}
-
-// https://github.com/serde-rs/json/issues/858
-// `serde-json` does NOT preserve original order when serializing the struct,
-// so we need to hack around this by using the `json` crate and manually
-// making the changes. For this to work correctly, we need to read the json
-// file again and parse it with `json`, then stringify it with `json`.
-#[track_caller]
-fn write_preserved_json(path: &Path, package: &PackageJson) -> miette::Result<()> {
+fn write_preserved_json(path: &Path, package: &PackageJsonCache) -> miette::Result<()> {
     let mut data: JsonValue = json::read_file(path)?;
 
     // We only need to set fields that we modify within moon,
@@ -250,42 +189,42 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> miette::Result<()
     for field in &package.dirty {
         match field.as_ref() {
             "dependencies" => {
-                if let Some(dependencies) = &package.dependencies {
+                if let Some(dependencies) = &package.data.dependencies {
                     data[field] = JsonValue::from_iter(dependencies.clone());
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);
                 }
             }
             "devDependencies" => {
-                if let Some(dev_dependencies) = &package.dev_dependencies {
+                if let Some(dev_dependencies) = &package.data.dev_dependencies {
                     data[field] = JsonValue::from_iter(dev_dependencies.clone());
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);
                 }
             }
             "peerDependencies" => {
-                if let Some(peer_dependencies) = &package.peer_dependencies {
+                if let Some(peer_dependencies) = &package.data.peer_dependencies {
                     data[field] = JsonValue::from_iter(peer_dependencies.clone());
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);
                 }
             }
             "engines" => {
-                if let Some(engines) = &package.engines {
+                if let Some(engines) = &package.data.engines {
                     data[field] = JsonValue::from_iter(engines.clone());
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);
                 }
             }
             "packageManager" => {
-                if let Some(package_manager) = &package.package_manager {
+                if let Some(package_manager) = &package.data.package_manager {
                     data[field] = JsonValue::from(package_manager.clone());
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);
                 }
             }
             "scripts" => {
-                if let Some(scripts) = &package.scripts {
+                if let Some(scripts) = &package.data.scripts {
                     data[field] = JsonValue::from_iter(scripts.clone());
                 } else if let Some(root) = data.as_object_mut() {
                     root.remove(field);

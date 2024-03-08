@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::{DependencyScope, TypeScriptConfig};
-use moon_node_lang::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use moon_project::Project;
 use moon_typescript_lang::{
     tsconfig::{CompilerOptionsPathsMap, ExtendsField, PathOrGlob},
@@ -202,8 +202,8 @@ impl<'app> TypeScriptSyncer<'app> {
 
                             // paths
                             if should_sync_paths {
-                                if let Some(dep_package_json) = PackageJson::read(&abs_ref)? {
-                                    if let Some(dep_package_name) = &dep_package_json.name {
+                                if let Some(dep_package_json) = PackageJsonCache::read(&abs_ref)? {
+                                    if let Some(dep_package_name) = &dep_package_json.data.name {
                                         for index in [
                                             "src/index.ts",
                                             "src/index.tsx",

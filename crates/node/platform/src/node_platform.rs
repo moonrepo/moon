@@ -11,7 +11,7 @@ use moon_console::Console;
 use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::debug;
 use moon_node_lang::node::get_package_manager_workspaces;
-use moon_node_lang::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use moon_node_tool::get_node_env_paths;
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, RuntimeReq};
@@ -151,9 +151,9 @@ impl Platform for NodePlatform {
 
         for (project_id, project_source) in projects_list {
             if let Some(package_json) =
-                PackageJson::read(project_source.to_path(&self.workspace_root))?
+                PackageJsonCache::read(project_source.to_path(&self.workspace_root))?
             {
-                if let Some(package_name) = package_json.name {
+                if let Some(package_name) = package_json.data.name {
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
 
@@ -178,7 +178,9 @@ impl Platform for NodePlatform {
             color::id(project_id),
         );
 
-        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
+        if let Some(package_json) =
+            PackageJsonCache::read(self.workspace_root.join(project_source))?
+        {
             let mut find_implicit_relations =
                 |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
                     for dep_name in package_deps.keys() {
@@ -193,15 +195,15 @@ impl Platform for NodePlatform {
                     }
                 };
 
-            if let Some(dependencies) = &package_json.dependencies {
+            if let Some(dependencies) = &package_json.data.dependencies {
                 find_implicit_relations(dependencies, &DependencyScope::Production);
             }
 
-            if let Some(dev_dependencies) = &package_json.dev_dependencies {
+            if let Some(dev_dependencies) = &package_json.data.dev_dependencies {
                 find_implicit_relations(dev_dependencies, &DependencyScope::Development);
             }
 
-            if let Some(peer_dependencies) = &package_json.peer_dependencies {
+            if let Some(peer_dependencies) = &package_json.data.peer_dependencies {
                 find_implicit_relations(peer_dependencies, &DependencyScope::Peer);
             }
         }
@@ -227,7 +229,9 @@ impl Platform for NodePlatform {
             color::file("package.json")
         );
 
-        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
+        if let Some(package_json) =
+            PackageJsonCache::read(self.workspace_root.join(project_source))?
+        {
             for (id, partial_task) in
                 infer_tasks_from_scripts(project_id, &package_json, self.config.package_manager)?
             {
@@ -368,19 +372,19 @@ impl Platform for NodePlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        if let Ok(Some(package)) = PackageJson::read(manifest_path) {
-            let name = package.name.unwrap_or_else(|| "unknown".into());
+        if let Ok(Some(package)) = PackageJsonCache::read(manifest_path) {
+            let name = package.data.name.unwrap_or_else(|| "unknown".into());
             let mut hash = DepsHash::new(name);
 
-            if let Some(peer_deps) = &package.peer_dependencies {
+            if let Some(peer_deps) = &package.data.peer_dependencies {
                 hash.add_deps(peer_deps);
             }
 
-            if let Some(dev_deps) = &package.dev_dependencies {
+            if let Some(dev_deps) = &package.data.dev_dependencies {
                 hash.add_deps(dev_deps);
             }
 
-            if let Some(deps) = &package.dependencies {
+            if let Some(deps) = &package.data.dependencies {
                 hash.add_deps(deps);
             }
 

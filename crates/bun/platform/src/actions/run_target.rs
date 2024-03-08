@@ -1,7 +1,7 @@
 use crate::target_hash::BunTargetHash;
 use moon_bun_tool::BunTool;
 use moon_config::{HasherConfig, HasherOptimization};
-use moon_node_lang::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use moon_project::Project;
 use moon_tool::DependencyManager;
 use rustc_hash::FxHashMap;
@@ -27,14 +27,14 @@ pub async fn create_target_hasher(
             FxHashMap::default()
         };
 
-    if let Some(root_package) = PackageJson::read(
+    if let Some(root_package) = PackageJsonCache::read(
         workspace_root.join(bun.map(|n| n.config.packages_root.as_str()).unwrap_or(".")),
     )? {
-        hasher.hash_package_json(&root_package, &resolved_dependencies);
+        hasher.hash_package_json(&root_package.data, &resolved_dependencies);
     }
 
-    if let Some(package) = PackageJson::read(&project.root)? {
-        hasher.hash_package_json(&package, &resolved_dependencies);
+    if let Some(package) = PackageJsonCache::read(&project.root)? {
+        hasher.hash_package_json(&package.data, &resolved_dependencies);
     }
 
     Ok(hasher)

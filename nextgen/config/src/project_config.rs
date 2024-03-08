@@ -200,6 +200,7 @@ impl ProjectConfig {
     }
 
     pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
+        use crate::validate::check_yml_extension;
         use moon_common::{color, consts};
         use schematic::ConfigLoader;
 
@@ -209,7 +210,7 @@ impl ProjectConfig {
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/project",
             ))
-            .file_optional(path)?
+            .file_optional(check_yml_extension(&path))?
             .load_partial(&())?)
     }
 }

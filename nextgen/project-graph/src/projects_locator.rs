@@ -1,3 +1,4 @@
+use moon_common::consts::with_yaml_ext;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
@@ -66,7 +67,9 @@ where
     for mut project_root in potential_projects {
         // Remove trailing moon.yml
         if project_root.is_file() {
-            if project_root.ends_with(consts::CONFIG_PROJECT_FILENAME) {
+            if project_root.ends_with(consts::CONFIG_PROJECT_FILENAME)
+                || project_root.ends_with(with_yaml_ext(consts::CONFIG_PROJECT_FILENAME))
+            {
                 project_root = project_root.parent().unwrap().to_owned();
 
                 // Avoid overwriting an existing root project

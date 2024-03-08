@@ -1,6 +1,6 @@
 use crate::task_hash::TaskHash;
 use miette::IntoDiagnostic;
-use moon_common::consts::CONFIG_PROJECT_FILENAME;
+use moon_common::consts::{with_yaml_ext, CONFIG_PROJECT_FILENAME};
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, is_ci};
 use moon_config::{HasherConfig, HasherWalkStrategy};
@@ -157,7 +157,9 @@ impl<'task> TaskHasher<'task> {
     ) -> bool {
         // Don't invalidate existing hashes when moon.yml changes
         // as we already hash the contents of each task!
-        if workspace_relative_path.ends_with(CONFIG_PROJECT_FILENAME) {
+        if workspace_relative_path.ends_with(CONFIG_PROJECT_FILENAME)
+            || workspace_relative_path.ends_with(with_yaml_ext(CONFIG_PROJECT_FILENAME))
+        {
             return false;
         }
 

@@ -6,6 +6,7 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
+use moon_common::consts::with_yaml_ext;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{
@@ -419,6 +420,12 @@ impl<'app> ProjectGraphBuilder<'app> {
             configs.push(
                 source
                     .join(consts::CONFIG_PROJECT_FILENAME)
+                    .as_str()
+                    .to_owned(),
+            );
+            configs.push(
+                source
+                    .join(with_yaml_ext(consts::CONFIG_PROJECT_FILENAME))
                     .as_str()
                     .to_owned(),
             );

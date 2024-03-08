@@ -92,18 +92,21 @@ pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         consts::CONFIG_DIRNAME,
         consts::CONFIG_WORKSPACE_FILENAME
     );
-    let config_path = workspace_root.join(&config_name);
+    let config_path = find_config_path(
+        workspace_root.join(consts::CONFIG_DIRNAME),
+        consts::CONFIG_WORKSPACE_FILENAME,
+    );
 
     debug!(
         file = ?config_path,
         "Loading {} (required)", color::file(&config_name),
     );
 
-    if !config_path.exists() {
+    if config_path.is_none() {
         return Err(AppError::MissingConfigFile(config_name).into());
     }
 
-    let config = WorkspaceConfig::load(workspace_root, &config_path)?;
+    let config = WorkspaceConfig::load(workspace_root, config_path.unwrap())?;
 
     resources.set(Workspace {
         telemetry: config.telemetry,

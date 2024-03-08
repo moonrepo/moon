@@ -114,7 +114,10 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
         consts::CONFIG_DIRNAME,
         consts::CONFIG_WORKSPACE_FILENAME,
     );
-    let config_path = root_dir.join(&config_name);
+    let config_path = find_config_path(
+        root_dir.join(consts::CONFIG_DIRNAME),
+        consts::CONFIG_WORKSPACE_FILENAME,
+    );
 
     debug!(
         workspace_root = ?root_dir,
@@ -122,7 +125,7 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
         color::file(config_name),
     );
 
-    if !config_path.exists() {
+    if config_path.is_none() {
         return Err(WorkspaceError::MissingWorkspaceConfigFile.into());
     }
 

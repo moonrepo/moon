@@ -12,7 +12,9 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_app_components::{Console, MoonEnv};
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::consts::{
+    find_config_path, CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME,
+};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_utils::path;
@@ -133,11 +135,10 @@ pub async fn init_tool(
     console: &Console,
 ) -> AppResult {
     if !is_test_env() {
-        let workspace_config_path = dest_dir
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_WORKSPACE_FILENAME);
+        let workspace_config_path =
+            find_config_path(dest_dir.join(CONFIG_DIRNAME), CONFIG_WORKSPACE_FILENAME);
 
-        if !workspace_config_path.exists() {
+        if workspace_config_path.is_none() {
             console.err.write_line(format!(
                 "moon has not been initialized! Try running {} first?",
                 color::shell("moon init")

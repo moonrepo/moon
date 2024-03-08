@@ -7,7 +7,8 @@ use moon_config::{
     DependencyScope, NodePackageManager, PartialDependencyConfig, PartialProjectDependsOn,
     ProjectConfig,
 };
-use moon_node_lang::package_json::{DepsSet, PackageJson};
+use moon_node_lang::package_json::DependenciesMap;
+use moon_node_lang::PackageJsonCache;
 use moon_node_platform::create_tasks_from_scripts;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
@@ -41,8 +42,8 @@ pub async fn from_package_json(
     let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
     for project in project_graph.get_all_unexpanded() {
-        if let Some(package_json) = PackageJson::read(&project.root)? {
-            if let Some(package_name) = package_json.name {
+        if let Some(package_json) = PackageJsonCache::read(&project.root)? {
+            if let Some(package_name) = package_json.data.name {
                 package_map.insert(package_name, project.id.to_owned());
             }
         }
@@ -52,7 +53,7 @@ pub async fn from_package_json(
     let project = project_graph.get(&args.id)?;
     let mut partial_config = ProjectConfig::load_partial(&project.root)?;
 
-    let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {
+    let mut link_deps = |deps: &DependenciesMap<String>, scope: DependencyScope| {
         for package_name in deps.keys() {
             if let Some(dep_id) = package_map.get(package_name) {
                 partial_config.depends_on.get_or_insert(vec![]).push(
@@ -70,7 +71,7 @@ pub async fn from_package_json(
         }
     };
 
-    PackageJson::sync(&project.root, |package_json| {
+    PackageJsonCache::sync(&project.root, |package_json| {
         // Create tasks from `package.json` scripts
         for (task_id, task_config) in create_tasks_from_scripts(
             &project.id,
@@ -89,15 +90,15 @@ pub async fn from_package_json(
         }
 
         // Link deps from `package.json` dependencies
-        if let Some(deps) = &package_json.dependencies {
+        if let Some(deps) = &package_json.data.dependencies {
             link_deps(deps, DependencyScope::Production);
         }
 
-        if let Some(deps) = &package_json.dev_dependencies {
+        if let Some(deps) = &package_json.data.dev_dependencies {
             link_deps(deps, DependencyScope::Development);
         }
 
-        if let Some(deps) = &package_json.peer_dependencies {
+        if let Some(deps) = &package_json.data.peer_dependencies {
             link_deps(deps, DependencyScope::Peer);
         }
 

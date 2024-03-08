@@ -4,7 +4,8 @@ use moon_config::{
     PlatformType,
 };
 use moon_javascript_platform::infer_tasks::*;
-use moon_node_lang::PackageJson;
+use moon_node_lang::package_json::*;
+use moon_node_lang::{PackageJson, PackageJsonCache};
 use moon_target::Target;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
@@ -12,7 +13,7 @@ use std::collections::BTreeMap;
 
 fn create_tasks_from_scripts(
     project_id: &str,
-    package_json: &mut PackageJson,
+    package_json: &mut PackageJsonCache,
 ) -> miette::Result<BTreeMap<Id, PartialTaskConfig>> {
     let mut parser = ScriptParser::new(project_id, PlatformType::Node, NodePackageManager::Npm);
 
@@ -24,7 +25,7 @@ fn create_tasks_from_scripts(
 
 fn infer_tasks_from_scripts(
     project_id: &str,
-    package_json: &PackageJson,
+    package_json: &PackageJsonCache,
 ) -> miette::Result<BTreeMap<Id, PartialTaskConfig>> {
     let mut parser = ScriptParser::new(project_id, PlatformType::Node, NodePackageManager::Yarn);
 
@@ -723,17 +724,20 @@ mod infer_tasks_from_scripts {
 
     #[test]
     fn wraps_scripts() {
-        let pkg = PackageJson {
-            scripts: Some(BTreeMap::from([
-                ("postinstall".into(), "./setup.sh".into()),
-                ("build:app".into(), "webpack build --output ./dist".into()),
-                ("dev".into(), "webpack dev".into()),
-                ("test".into(), "jest .".into()),
-                ("posttest".into(), "run-coverage".into()),
-                ("lint".into(), "eslint src/**/* .".into()),
-                ("typecheck".into(), "tsc --build".into()),
-            ])),
-            ..PackageJson::default()
+        let pkg = PackageJsonCache {
+            data: PackageJson {
+                scripts: Some(ScriptsMap::from_iter([
+                    ("postinstall".into(), "./setup.sh".into()),
+                    ("build:app".into(), "webpack build --output ./dist".into()),
+                    ("dev".into(), "webpack dev".into()),
+                    ("test".into(), "jest .".into()),
+                    ("posttest".into(), "run-coverage".into()),
+                    ("lint".into(), "eslint src/**/* .".into()),
+                    ("typecheck".into(), "tsc --build".into()),
+                ])),
+                ..PackageJson::default()
+            },
+            ..Default::default()
         };
 
         let tasks = infer_tasks_from_scripts("project", &pkg).unwrap();
@@ -801,16 +805,19 @@ mod create_tasks_from_scripts {
 
     #[test]
     fn ignores_unsupported_syntax() {
-        let mut pkg = PackageJson {
-            scripts: Some(BTreeMap::from([
-                ("cd".into(), "cd website && yarn build".into()),
-                ("out".into(), "some-bin > output.log".into()),
-                ("in".into(), "output.log < some-bin".into()),
-                ("pipe".into(), "ls | grep foo".into()),
-                ("or".into(), "foo || bar".into()),
-                ("semi".into(), "foo ;; bar".into()),
-            ])),
-            ..PackageJson::default()
+        let mut pkg = PackageJsonCache {
+            data: PackageJson {
+                scripts: Some(ScriptsMap::from_iter([
+                    ("cd".into(), "cd website && yarn build".into()),
+                    ("out".into(), "some-bin > output.log".into()),
+                    ("in".into(), "output.log < some-bin".into()),
+                    ("pipe".into(), "ls | grep foo".into()),
+                    ("or".into(), "foo || bar".into()),
+                    ("semi".into(), "foo ;; bar".into()),
+                ])),
+                ..PackageJson::default()
+            },
+            ..Default::default()
         };
 
         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
@@ -820,19 +827,22 @@ mod create_tasks_from_scripts {
 
     #[test]
     fn renames_to_ids() {
-        let mut pkg = PackageJson {
-            scripts: Some(BTreeMap::from([
-                ("base".into(), "script".into()),
-                ("foo-bar".into(), "script".into()),
-                ("foo_bar".into(), "script".into()),
-                ("foo:bar".into(), "script".into()),
-                ("foo-bar:baz".into(), "script".into()),
-                ("foo_bar:baz".into(), "script".into()),
-                ("foo:bar:baz".into(), "script".into()),
-                ("foo_bar:baz-qux".into(), "script".into()),
-                ("fooBar".into(), "script".into()),
-            ])),
-            ..PackageJson::default()
+        let mut pkg = PackageJsonCache {
+            data: PackageJson {
+                scripts: Some(ScriptsMap::from_iter([
+                    ("base".into(), "script".into()),
+                    ("foo-bar".into(), "script".into()),
+                    ("foo_bar".into(), "script".into()),
+                    ("foo:bar".into(), "script".into()),
+                    ("foo-bar:baz".into(), "script".into()),
+                    ("foo_bar:baz".into(), "script".into()),
+                    ("foo:bar:baz".into(), "script".into()),
+                    ("foo_bar:baz-qux".into(), "script".into()),
+                    ("fooBar".into(), "script".into()),
+                ])),
+                ..PackageJson::default()
+            },
+            ..Default::default()
         };
 
         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
@@ -853,18 +863,21 @@ mod create_tasks_from_scripts {
 
     #[test]
     fn converts_stand_alone() {
-        let mut pkg = PackageJson {
-            scripts: Some(BTreeMap::from([
-                ("test".into(), "jest .".into()),
-                ("lint".into(), "eslint src/**/* .".into()),
-                ("typecheck".into(), "tsc --build".into()),
-            ])),
-            ..PackageJson::default()
+        let mut pkg = PackageJsonCache {
+            data: PackageJson {
+                scripts: Some(ScriptsMap::from_iter([
+                    ("test".into(), "jest .".into()),
+                    ("lint".into(), "eslint src/**/* .".into()),
+                    ("typecheck".into(), "tsc --build".into()),
+                ])),
+                ..PackageJson::default()
+            },
+            ..Default::default()
         };
 
         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-        assert_eq!(pkg.scripts, None);
+        assert_eq!(pkg.data.scripts, None);
 
         assert_eq!(
             tasks,
@@ -904,18 +917,21 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn creates_pre_and_post() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("test".into(), "jest .".into()),
-                    ("pretest".into(), "do something".into()),
-                    ("posttest".into(), "do another".into()),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("test".into(), "jest .".into()),
+                        ("pretest".into(), "do something".into()),
+                        ("posttest".into(), "do another".into()),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -952,17 +968,20 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn supports_multiple_pre_via_andand() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("test".into(), "jest .".into()),
-                    ("pretest".into(), "do something && do another".into()),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("test".into(), "jest .".into()),
+                        ("pretest".into(), "do something && do another".into()),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -999,17 +1018,20 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn supports_multiple_post_via_andand() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("test".into(), "jest .".into()),
-                    ("posttest".into(), "do something && do another".into()),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("test".into(), "jest .".into()),
+                        ("posttest".into(), "do something && do another".into()),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -1045,17 +1067,20 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn handles_pre_within_script() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("release".into(), "npm run prerelease && npm publish".into()),
-                    ("prerelease".into(), "webpack build".into()),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("release".into(), "npm run prerelease && npm publish".into()),
+                        ("prerelease".into(), "webpack build".into()),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -1087,17 +1112,20 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn skips_when_pointing_to_an_unknown() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("lint".into(), "eslint .".into()),
-                    ("lint:fix".into(), "npm run invalid -- --fix".into()),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("lint".into(), "eslint .".into()),
+                        ("lint:fix".into(), "npm run invalid -- --fix".into()),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -1124,17 +1152,20 @@ mod create_tasks_from_scripts {
             ];
 
             for candidate in candidates {
-                let mut pkg = PackageJson {
-                    scripts: Some(BTreeMap::from([
-                        ("lint".into(), "eslint .".into()),
-                        ("lint:fix".into(), candidate.to_owned()),
-                    ])),
-                    ..PackageJson::default()
+                let mut pkg = PackageJsonCache {
+                    data: PackageJson {
+                        scripts: Some(ScriptsMap::from_iter([
+                            ("lint".into(), "eslint .".into()),
+                            ("lint:fix".into(), candidate.to_owned()),
+                        ])),
+                        ..PackageJson::default()
+                    },
+                    ..Default::default()
                 };
 
                 let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-                assert_eq!(pkg.scripts, None);
+                assert_eq!(pkg.data.scripts, None);
 
                 assert_eq!(
                     tasks,
@@ -1175,17 +1206,20 @@ mod create_tasks_from_scripts {
             ];
 
             for candidate in candidates {
-                let mut pkg = PackageJson {
-                    scripts: Some(BTreeMap::from([
-                        ("lint:fix".into(), candidate.to_owned()),
-                        ("lint".into(), "eslint .".into()),
-                    ])),
-                    ..PackageJson::default()
+                let mut pkg = PackageJsonCache {
+                    data: PackageJson {
+                        scripts: Some(ScriptsMap::from_iter([
+                            ("lint:fix".into(), candidate.to_owned()),
+                            ("lint".into(), "eslint .".into()),
+                        ])),
+                        ..PackageJson::default()
+                    },
+                    ..Default::default()
                 };
 
                 let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-                assert_eq!(pkg.scripts, None);
+                assert_eq!(pkg.data.scripts, None);
 
                 assert_eq!(
                     tasks,
@@ -1219,28 +1253,31 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn handles_env_vars() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("build".into(), "webpack build".into()),
-                    (
-                        "build:dev".into(),
-                        "NODE_ENV=development npm run build -- --stats".into(),
-                    ),
-                    (
-                        "build:prod".into(),
-                        "NODE_ENV=production yarn run build".into(),
-                    ),
-                    (
-                        "build:staging".into(),
-                        "NODE_ENV=staging pnpm run build --mode production".into(),
-                    ),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("build".into(), "webpack build".into()),
+                        (
+                            "build:dev".into(),
+                            "NODE_ENV=development npm run build -- --stats".into(),
+                        ),
+                        (
+                            "build:prod".into(),
+                            "NODE_ENV=production yarn run build".into(),
+                        ),
+                        (
+                            "build:staging".into(),
+                            "NODE_ENV=staging pnpm run build --mode production".into(),
+                        ),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -1316,26 +1353,29 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn rewrites_run_commands() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("build".into(), "babel .".into()),
-                    ("lint".into(), "eslint .".into()),
-                    ("test".into(), "jest .".into()),
-                    ("preversion".into(), "npm run lint && npm run test".into()),
-                    ("version".into(), "npm run build".into()),
-                    (
-                        "postversion".into(),
-                        "npm ci && git add package-lock.json".into(),
-                    ),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("build".into(), "babel .".into()),
+                        ("lint".into(), "eslint .".into()),
+                        ("test".into(), "jest .".into()),
+                        ("preversion".into(), "npm run lint && npm run test".into()),
+                        ("version".into(), "npm run build".into()),
+                        (
+                            "postversion".into(),
+                            "npm ci && git add package-lock.json".into(),
+                        ),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
             assert_eq!(
-                pkg.scripts,
-                Some(BTreeMap::from([
+                pkg.data.scripts,
+                Some(ScriptsMap::from_iter([
                     (
                         "preversion".to_owned(),
                         "moon run project:lint && moon run project:test".to_owned()
@@ -1386,41 +1426,44 @@ mod create_tasks_from_scripts {
         // https://github.com/babel/babel/blob/main/package.json
         #[test]
         fn babel() {
-            let mut pkg = PackageJson {
-                scripts: Some(BTreeMap::from([
-                    ("postinstall".into(), "husky install".into()),
-                    ("bootstrap".into(), "make bootstrap".into()),
-                    ("codesandbox:build".into(), "make build-no-bundle".into()),
-                    ("build".into(), "make build".into()),
-                    ("fix".into(), "make fix".into()),
-                    ("lint".into(), "make lint".into()),
-                    ("test".into(), "make test".into()),
-                    (
-                        "version".into(),
-                        "yarn --immutable-cache && git add yarn.lock".into(),
-                    ),
-                    ("test:esm".into(), "node test/esm/index.js".into()),
-                    (
-                        "test:runtime:generate-absolute-runtime".into(),
-                        "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
-                    ),
-                    (
-                        "test:runtime:bundlers".into(),
-                        "node test/runtime-integration/bundlers.cjs".into(),
-                    ),
-                    (
-                        "test:runtime:node".into(),
-                        "node test/runtime-integration/node.cjs".into(),
-                    ),
-                ])),
-                ..PackageJson::default()
+            let mut pkg = PackageJsonCache {
+                data: PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
+                        ("postinstall".into(), "husky install".into()),
+                        ("bootstrap".into(), "make bootstrap".into()),
+                        ("codesandbox:build".into(), "make build-no-bundle".into()),
+                        ("build".into(), "make build".into()),
+                        ("fix".into(), "make fix".into()),
+                        ("lint".into(), "make lint".into()),
+                        ("test".into(), "make test".into()),
+                        (
+                            "version".into(),
+                            "yarn --immutable-cache && git add yarn.lock".into(),
+                        ),
+                        ("test:esm".into(), "node test/esm/index.js".into()),
+                        (
+                            "test:runtime:generate-absolute-runtime".into(),
+                            "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
+                        ),
+                        (
+                            "test:runtime:bundlers".into(),
+                            "node test/runtime-integration/bundlers.cjs".into(),
+                        ),
+                        (
+                            "test:runtime:node".into(),
+                            "node test/runtime-integration/node.cjs".into(),
+                        ),
+                    ])),
+                    ..PackageJson::default()
+                },
+                ..Default::default()
             };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
             assert_eq!(
-                pkg.scripts,
-                Some(BTreeMap::from([
+                pkg.data.scripts,
+                Some(ScriptsMap::from_iter([
                     ("postinstall".to_owned(), "husky install".to_owned()),
                     (
                         "version".to_owned(),
@@ -1534,8 +1577,9 @@ mod create_tasks_from_scripts {
         // https://github.com/milesj/packemon/blob/master/package.json
         #[test]
         fn packemon() {
-            let mut pkg = PackageJson {
-                    scripts: Some(BTreeMap::from([
+            let mut pkg = PackageJsonCache {
+            data:PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
                         ("build".into(), "yarn run packemon build".into()),
                         ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
                         ("clean".into(), "yarn run packemon clean".into()),
@@ -1555,11 +1599,13 @@ mod create_tasks_from_scripts {
                         ("validate".into(), "yarn run packemon validate".into()),
                     ])),
                     ..PackageJson::default()
-                };
+                },
+                ..Default::default()
+            };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.scripts, None);
+            assert_eq!(pkg.data.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -1842,8 +1888,9 @@ mod create_tasks_from_scripts {
         // https://github.com/prettier/prettier/blob/main/package.json
         #[test]
         fn prettier() {
-            let mut pkg = PackageJson {
-                    scripts: Some(BTreeMap::from([
+            let mut pkg = PackageJsonCache {
+            data:PackageJson {
+                    scripts: Some(ScriptsMap::from_iter([
                         ("prepublishOnly".into(), "echo \"Error: must publish from dist/\" && exit 1".into()),
                         ("test".into(), "jest".into()),
                         ("test:dev-package".into(), "cross-env INSTALL_PACKAGE=1 jest".into()),
@@ -1869,13 +1916,15 @@ mod create_tasks_from_scripts {
                         ("vendors:bundle".into(), "node ./scripts/vendors/bundle-vendors.mjs".into()),
                     ])),
                     ..PackageJson::default()
-                };
+                },
+                ..Default::default()
+            };
 
             let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
             assert_eq!(
-                pkg.scripts,
-                Some(BTreeMap::from([(
+                pkg.data.scripts,
+                Some(ScriptsMap::from_iter([(
                     "prepublishOnly".to_owned(),
                     "echo \"Error: must publish from dist/\" && exit 1".to_owned()
                 )]))

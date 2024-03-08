@@ -1,4 +1,4 @@
-use crate::package_json::{PackageJson, PackageWorkspaces};
+use crate::package_json::{PackageJsonCache, WorkspacesField};
 use crate::pnpm::workspace::PnpmWorkspace;
 use cached::proc_macro::cached;
 use std::env;
@@ -29,19 +29,19 @@ pub fn get_package_manager_workspaces(
         }
     }
 
-    if let Some(package_json) = PackageJson::read(packages_root)? {
-        if let Some(workspaces) = package_json.workspaces {
+    if let Some(package_json) = PackageJsonCache::read(packages_root)? {
+        if let Some(workspaces) = package_json.data.workspaces {
             match workspaces {
-                PackageWorkspaces::Array(globs) => {
+                WorkspacesField::Globs(globs) => {
                     if !globs.is_empty() {
                         return Ok(Some(globs));
                     }
                 }
-                PackageWorkspaces::Object(config) => {
-                    if let Some(globs) = config.packages {
-                        if !globs.is_empty() {
-                            return Ok(Some(globs));
-                        }
+                WorkspacesField::Config {
+                    packages: globs, ..
+                } => {
+                    if !globs.is_empty() {
+                        return Ok(Some(globs));
                     }
                 }
             };

@@ -2,7 +2,7 @@ use crate::target_hash::NodeTargetHash;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 use moon_logger::trace;
-use moon_node_lang::{node, PackageJson};
+use moon_node_lang::{node, PackageJsonCache};
 use moon_node_tool::NodeTool;
 use moon_process::Command;
 use moon_project::Project;
@@ -144,14 +144,14 @@ pub async fn create_target_hasher(
             FxHashMap::default()
         };
 
-    if let Some(root_package) = PackageJson::read(
+    if let Some(root_package) = PackageJsonCache::read(
         workspace_root.join(node.map(|n| n.config.packages_root.as_str()).unwrap_or(".")),
     )? {
-        hasher.hash_package_json(&root_package, &resolved_dependencies);
+        hasher.hash_package_json(&root_package.data, &resolved_dependencies);
     }
 
-    if let Some(package) = PackageJson::read(&project.root)? {
-        hasher.hash_package_json(&package, &resolved_dependencies);
+    if let Some(package) = PackageJsonCache::read(&project.root)? {
+        hasher.hash_package_json(&package.data, &resolved_dependencies);
     }
 
     Ok(hasher)

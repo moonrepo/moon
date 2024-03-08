@@ -1,6 +1,6 @@
 use moon_common::{color, Id};
 use moon_config::{BunConfig, DependencyScope, NodeConfig, NodeVersionFormat};
-use moon_node_lang::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use moon_project::Project;
 use moon_utils::{path, semver};
 use rustc_hash::FxHashMap;
@@ -58,9 +58,9 @@ impl<'app> JavaScriptSyncer<'app> {
             // Update dependencies within this project's `package.json`.
             // Only add if the dependent project has a `package.json`,
             // and this `package.json` has not already declared the dep.
-            if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
-                if let Some(dep_package_name) = &dep_package_json.name {
-                    let dep_package_version = dep_package_json.version.unwrap_or_default();
+            if let Some(dep_package_json) = PackageJsonCache::read(&dep_project.root)? {
+                if let Some(dep_package_name) = &dep_package_json.data.name {
+                    let dep_package_version = dep_package_json.data.version.unwrap_or_default();
                     let dep_version = match &self.dependency_version_format {
                         NodeVersionFormat::File | NodeVersionFormat::Link => {
                             format!(
@@ -118,7 +118,7 @@ impl<'app> JavaScriptSyncer<'app> {
             || !package_dev_deps.is_empty()
             || !package_peer_deps.is_empty()
         {
-            PackageJson::sync(&self.project.root, |package_json| {
+            PackageJsonCache::sync(&self.project.root, |package_json| {
                 let mut mutated_package = false;
 
                 for (name, version) in package_prod_deps {

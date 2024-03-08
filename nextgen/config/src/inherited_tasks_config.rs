@@ -215,6 +215,8 @@ impl InheritedTasksManager {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
             stripped_name
+        } else if let Some(stripped_name) = name.strip_suffix(".yaml") {
+            stripped_name
         } else {
             return;
         };

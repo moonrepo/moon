@@ -8,12 +8,12 @@ pub fn check_yml_extension(path: &Path) -> std::path::PathBuf {
 
     if yaml_path.exists() {
         #[cfg(feature = "tracing")]
-        {
+        if path.exists() {
             use moon_common::color;
 
             tracing::warn!(
                 config = ?yaml_path,
-                "Found a config file with the {} extension, please use {} instead. We'll continue to load the file, but this will cause unintended side-effects!",
+                "Both a {} and {} configuration file exists, please only use one!",
                 color::file(".yaml"),
                 color::file(".yml"),
             );

@@ -580,7 +580,7 @@ impl<'proj> TasksBuilder<'proj> {
             .map(|d| (*d).to_owned())
             .collect::<Vec<_>>();
 
-        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
+        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.{yml,yaml}".into()));
 
         if let Some(env_files) = &options.env_files {
             global_inputs.extend(env_files.to_owned());

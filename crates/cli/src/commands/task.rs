@@ -96,15 +96,20 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         )?;
     }
 
-    if !task.metadata.inherited_configs.is_empty() {
-        console.print_entry_header("Inherits from")?;
-        console.print_list(
-            task.metadata
-                .inherited_configs
-                .iter()
-                .map(|d| color::file(d))
-                .collect::<Vec<_>>(),
-        )?;
+    if let Some(inherited) = &project.inherited {
+        if let Some(task_layers) = inherited.task_layers.get(task.id.as_str()) {
+            if !task_layers.is_empty()
+                && !project
+                    .config
+                    .workspace
+                    .inherited_tasks
+                    .exclude
+                    .contains(&task.id)
+            {
+                console.print_entry_header("Inherits from")?;
+                console.print_list(task_layers.iter().map(color::file).collect::<Vec<_>>())?;
+            }
+        }
     }
 
     if !task.input_files.is_empty() || !task.input_globs.is_empty() {

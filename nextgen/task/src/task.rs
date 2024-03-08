@@ -24,9 +24,6 @@ cacheable!(
         // Has the task (and parent project) been expanded
         pub expanded: bool,
 
-        // List of config paths this task inherited from
-        pub inherited_configs: Vec<String>,
-
         // Was configured as a local running task
         pub local_only: bool,
     }

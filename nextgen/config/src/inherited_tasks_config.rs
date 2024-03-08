@@ -108,8 +108,9 @@ cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
         pub order: Vec<String>,
-        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
         pub config: InheritedTasksConfig,
+        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
+        pub task_layers: FxHashMap<String, Vec<String>>,
     }
 );
 
@@ -263,6 +264,7 @@ impl InheritedTasksManager {
         // and since this clones constantly, we can avoid a lot of allocations and overhead.
         let mut partial_config = PartialInheritedTasksConfig::default();
         let mut layers = IndexMap::default();
+        let mut task_layers = FxHashMap::<String, Vec<String>>::default();
 
         #[allow(clippy::let_unit_value)]
         let context = ();
@@ -276,9 +278,9 @@ impl InheritedTasksManager {
                 // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
                 // We also don't know what platform each of the tasks should be yet.
-                if lookup != "*" {
-                    if let Some(tasks) = &mut managed_config.tasks {
-                        for task in tasks.values_mut() {
+                if let Some(tasks) = &mut managed_config.tasks {
+                    for (task_id, task) in tasks.iter_mut() {
+                        if lookup != "*" {
                             // Automatically set this source as an input
                             task.global_inputs
                                 .get_or_insert(vec![])
@@ -289,6 +291,12 @@ impl InheritedTasksManager {
                                 task.platform = Some(platform.to_owned());
                             }
                         }
+
+                        // Keep track of what layers a task inherited
+                        task_layers
+                            .entry(task_id.to_string())
+                            .or_default()
+                            .push(source_path.clone());
                     }
                 }
 
@@ -318,6 +326,7 @@ impl InheritedTasksManager {
             config: InheritedTasksConfig::from_partial(config),
             layers,
             order: lookup_order,
+            task_layers,
         };
 
         self.cache

@@ -102,7 +102,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
-        assert!(!build.flags.local);
+        assert!(!build.metadata.local_only);
 
         let run = tasks.get("local-run").unwrap();
 
@@ -115,7 +115,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(run.outputs, vec![]);
-        assert!(run.flags.local);
+        assert!(run.metadata.local_only);
 
         let test = tasks.get("local-test").unwrap();
 
@@ -127,7 +127,7 @@ mod tasks_builder {
                 InputPath::WorkspaceGlob(".moon/*.yml".into()),
             ]
         );
-        assert!(!test.flags.local);
+        assert!(!test.metadata.local_only);
     }
 
     #[tokio::test]
@@ -146,7 +146,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
-        assert!(!build.flags.local);
+        assert!(!build.metadata.local_only);
 
         let run = tasks.get("local-run").unwrap();
 
@@ -159,7 +159,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(run.outputs, vec![]);
-        assert!(run.flags.local);
+        assert!(run.metadata.local_only);
     }
 
     #[tokio::test]
@@ -654,7 +654,7 @@ mod tasks_builder {
         use super::*;
 
         fn is_local(task: &Task) {
-            assert!(task.flags.local);
+            assert!(task.metadata.local_only);
             assert!(!task.options.cache);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
             assert!(task.options.persistent);
@@ -678,22 +678,22 @@ mod tasks_builder {
 
             let cache = tasks.get("override-cache").unwrap();
 
-            assert!(cache.flags.local);
+            assert!(cache.metadata.local_only);
             assert!(cache.options.cache);
 
             let style = tasks.get("override-style").unwrap();
 
-            assert!(style.flags.local);
+            assert!(style.metadata.local_only);
             assert_eq!(style.options.output_style, Some(TaskOutputStyle::Hash));
 
             let persistent = tasks.get("override-persistent").unwrap();
 
-            assert!(persistent.flags.local);
+            assert!(persistent.metadata.local_only);
             assert!(!persistent.options.persistent);
 
             let ci = tasks.get("override-ci").unwrap();
 
-            assert!(ci.flags.local);
+            assert!(ci.metadata.local_only);
             assert!(ci.options.run_in_ci);
         }
 
@@ -704,11 +704,11 @@ mod tasks_builder {
 
             let build = tasks.get("global-build").unwrap();
 
-            assert!(build.flags.local);
+            assert!(build.metadata.local_only);
 
             let run = tasks.get("global-run").unwrap();
 
-            assert!(!run.flags.local);
+            assert!(!run.metadata.local_only);
         }
     }
 
@@ -729,7 +729,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(!task.flags.empty_inputs);
+            assert!(!task.metadata.empty_inputs);
 
             let task = tasks.get("empty-inputs").unwrap();
 
@@ -737,7 +737,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
             );
-            assert!(task.flags.empty_inputs);
+            assert!(task.metadata.empty_inputs);
 
             let task = tasks.get("with-inputs").unwrap();
 
@@ -748,7 +748,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(!task.flags.empty_inputs);
+            assert!(!task.metadata.empty_inputs);
         }
 
         #[tokio::test]
@@ -766,7 +766,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(!task.flags.empty_inputs);
+            assert!(!task.metadata.empty_inputs);
 
             let task = tasks.get("global-test").unwrap();
 
@@ -777,7 +777,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(!task.flags.empty_inputs);
+            assert!(!task.metadata.empty_inputs);
 
             let task = tasks.get("global-run").unwrap();
 
@@ -785,7 +785,7 @@ mod tasks_builder {
                 task.inputs,
                 vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
             );
-            assert!(task.flags.empty_inputs);
+            assert!(task.metadata.empty_inputs);
         }
     }
 
@@ -963,7 +963,7 @@ mod tasks_builder {
 
             // inherited
             assert_eq!(task.inputs.len(), 2);
-            assert!(task.flags.empty_inputs);
+            assert!(task.metadata.empty_inputs);
 
             let task = tasks.get("outputs").unwrap();
 
@@ -1220,7 +1220,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(!task.flags.empty_inputs);
+            assert!(!task.metadata.empty_inputs);
         }
 
         #[tokio::test]
@@ -1237,7 +1237,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(task.flags.empty_inputs);
+            assert!(task.metadata.empty_inputs);
         }
 
         #[tokio::test]
@@ -1255,7 +1255,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert!(!task.flags.empty_inputs);
+            assert!(!task.metadata.empty_inputs);
         }
 
         #[tokio::test]

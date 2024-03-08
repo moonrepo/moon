@@ -96,6 +96,17 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         )?;
     }
 
+    if !task.metadata.inherited_configs.is_empty() {
+        console.print_entry_header("Inherits from")?;
+        console.print_list(
+            task.metadata
+                .inherited_configs
+                .iter()
+                .map(|d| color::file(d))
+                .collect::<Vec<_>>(),
+        )?;
+    }
+
     if !task.input_files.is_empty() || !task.input_globs.is_empty() {
         let mut files = vec![];
         files.extend(

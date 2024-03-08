@@ -5,7 +5,7 @@ use moon::generate_project_graph;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
 use moon_deno_tool::DenoTool;
-use moon_node_lang::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
@@ -30,8 +30,8 @@ pub async fn prune_bun(
 
     for project_id in &manifest.focused_projects {
         if let Some(source) = project_graph.sources().get(project_id) {
-            if let Some(package_json) = PackageJson::read(source.to_path(workspace_root))? {
-                if let Some(package_name) = package_json.name {
+            if let Some(package_json) = PackageJsonCache::read(source.to_path(workspace_root))? {
+                if let Some(package_name) = package_json.data.name {
                     package_names.push(package_name);
                 }
             }
@@ -73,8 +73,8 @@ pub async fn prune_node(
 
     for project_id in &manifest.focused_projects {
         if let Some(source) = project_graph.sources().get(project_id) {
-            if let Some(package_json) = PackageJson::read(source.to_path(workspace_root))? {
-                if let Some(package_name) = package_json.name {
+            if let Some(package_json) = PackageJsonCache::read(source.to_path(workspace_root))? {
+                if let Some(package_name) = package_json.data.name {
                     package_names.push(package_name);
                 }
             }

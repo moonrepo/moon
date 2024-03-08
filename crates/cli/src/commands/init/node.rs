@@ -7,7 +7,7 @@ use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_console::Console;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
-use moon_node_lang::package_json::PackageJson;
+use moon_node_lang::PackageJsonCache;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
@@ -51,8 +51,8 @@ fn detect_package_manager(
     let mut pm_version = String::new();
 
     // Extract value from `packageManager` field
-    if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
-        if let Some(pm) = pkg.package_manager {
+    if let Ok(Some(pkg)) = PackageJsonCache::read(dest_dir) {
+        if let Some(pm) = pkg.data.package_manager {
             if pm.contains('@') {
                 let mut parts = pm.split('@');
 

@@ -6,4 +6,4 @@ pub mod pnpm;
 pub mod yarn;
 
 pub use moon_lang::LockfileDependencyVersions;
-pub use package_json::PackageJson;
+pub use package_json::{PackageJson, PackageJsonCache};

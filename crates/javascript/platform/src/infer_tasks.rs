@@ -4,7 +4,7 @@ use moon_config::{
     NodePackageManager, OutputPath, PartialTaskArgs, PartialTaskConfig, PartialTaskDependency,
     PlatformType,
 };
-use moon_node_lang::package_json::{PackageJson, ScriptsSet};
+use moon_node_lang::package_json::{PackageJsonCache, ScriptsMap};
 use moon_platform_detector::{UNIX_SYSTEM_COMMANDS, WINDOWS_SYSTEM_COMMANDS};
 use moon_target::Target;
 use moon_utils::regex::ID_CLEAN;
@@ -14,8 +14,6 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::collections::BTreeMap;
 use tracing::{debug, warn};
-
-pub type ScriptsMap = FxHashMap<String, String>;
 
 static WIN_DRIVE: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r#"^[A-Z]:"#).unwrap());
 
@@ -278,21 +276,21 @@ pub struct ScriptParser<'a> {
 impl<'a> ScriptParser<'a> {
     pub fn new(project_id: &'a str, platform: PlatformType, pm: NodePackageManager) -> Self {
         ScriptParser {
-            life_cycles: FxHashMap::default(),
+            life_cycles: ScriptsMap::default(),
             names_to_ids: FxHashMap::default(),
-            post: FxHashMap::default(),
-            pre: FxHashMap::default(),
+            post: ScriptsMap::default(),
+            pre: ScriptsMap::default(),
             project_id,
-            scripts: FxHashMap::default(),
+            scripts: ScriptsMap::default(),
             tasks: BTreeMap::new(),
-            unresolved_scripts: FxHashMap::default(),
+            unresolved_scripts: ScriptsMap::default(),
             platform,
             pm,
         }
     }
 
-    pub fn infer_scripts(&mut self, package_json: &PackageJson) -> miette::Result<()> {
-        let scripts = match &package_json.scripts {
+    pub fn infer_scripts(&mut self, package_json: &PackageJsonCache) -> miette::Result<()> {
+        let scripts = match &package_json.data.scripts {
             Some(s) => s.clone(),
             None => {
                 return Ok(());
@@ -324,8 +322,8 @@ impl<'a> ScriptParser<'a> {
         Ok(())
     }
 
-    pub fn update_package(&mut self, package_json: &mut PackageJson) -> miette::Result<()> {
-        let mut scripts: ScriptsSet = BTreeMap::new();
+    pub fn update_package(&mut self, package_json: &mut PackageJsonCache) -> miette::Result<()> {
+        let mut scripts = ScriptsMap::default();
 
         for (name, script) in &self.life_cycles {
             scripts.insert(name.to_owned(), self.replace_run_commands(script));
@@ -336,8 +334,8 @@ impl<'a> ScriptParser<'a> {
         Ok(())
     }
 
-    pub fn parse_scripts(&mut self, package_json: &PackageJson) -> miette::Result<()> {
-        let scripts = match &package_json.scripts {
+    pub fn parse_scripts(&mut self, package_json: &PackageJsonCache) -> miette::Result<()> {
+        let scripts = match &package_json.data.scripts {
             Some(s) => s.clone(),
             None => {
                 return Ok(());
@@ -578,7 +576,7 @@ impl<'a> ScriptParser<'a> {
     fn apply_pre_post_hooks(&mut self, script_name: &str, task_id: &Id) -> miette::Result<()> {
         // Convert pre hooks as `deps`
         if self.pre.contains_key(script_name) {
-            let pre = self.pre.remove(script_name).unwrap();
+            let pre = self.pre.swap_remove(script_name).unwrap();
 
             if let Some(pre_task_id) = self.parse_script(format!("pre{script_name}"), pre)? {
                 if let Some(task) = self.tasks.get_mut(task_id) {
@@ -593,7 +591,7 @@ impl<'a> ScriptParser<'a> {
 
         // Use this task as a `deps` for post hooks
         if self.post.contains_key(script_name) {
-            let post = self.post.remove(script_name).unwrap();
+            let post = self.post.swap_remove(script_name).unwrap();
 
             if let Some(post_task_id) = self.parse_script(format!("post{script_name}"), post)? {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {

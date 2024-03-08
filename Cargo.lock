@@ -3483,6 +3483,7 @@ dependencies = [
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
+ "nodejs_package_json",
  "once_cell",
  "package-lock-json-parser",
  "reqwest",
@@ -4231,6 +4232,20 @@ dependencies = [
  "bitflags 2.4.2",
  "cfg-if",
  "libc",
+]
+
+[[package]]
+name = "nodejs_package_json"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee4e9685b1f144814cac096eae8aed97b9278c05053f70dd5b15294c4fed202c"
+dependencies = [
+ "indexmap 2.2.5",
+ "rustc-hash",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

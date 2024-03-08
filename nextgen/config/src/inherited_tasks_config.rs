@@ -4,7 +4,7 @@ use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
-use schematic::schema::IndexSet;
+use schematic::schema::{IndexMap, IndexSet};
 use schematic::{merge, validate, Config, ConfigError};
 use std::collections::BTreeMap;
 use std::hash::{BuildHasherDefault, Hash};
@@ -108,7 +108,7 @@ cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
         pub order: Vec<String>,
-        pub layers: BTreeMap<String, PartialInheritedTasksConfig>,
+        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
         pub config: InheritedTasksConfig,
     }
 );
@@ -262,7 +262,7 @@ impl InheritedTasksManager {
         // Cache the result as this lookup may be the same for a large number of projects,
         // and since this clones constantly, we can avoid a lot of allocations and overhead.
         let mut partial_config = PartialInheritedTasksConfig::default();
-        let mut layers = BTreeMap::default();
+        let mut layers = IndexMap::default();
 
         #[allow(clippy::let_unit_value)]
         let context = ();
@@ -305,9 +305,9 @@ impl InheritedTasksManager {
                 config: format!(
                     "inherited tasks {}",
                     if platform.is_javascript() {
-                        format!("({}, {}, {})", platform, language, project)
+                        format!("({}, {}, {}, {})", platform, language, stack, project)
                     } else {
-                        format!("({}, {})", language, project)
+                        format!("({}, {}, {})", language, stack, project)
                     }
                 ),
                 error,

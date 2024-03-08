@@ -2,7 +2,7 @@ use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, MergeType, TemplateFile};
 use crate::{filters, CodegenError};
 use miette::IntoDiagnostic;
-use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_common::consts::{with_yaml_ext, CONFIG_TEMPLATE_FILENAME};
 use moon_common::path::{to_virtual_string, RelativePathBuf};
 use moon_common::Id;
 use moon_config::TemplateConfig;
@@ -112,7 +112,9 @@ impl Template {
 
         for entry in fs::read_dir_all(&self.root)? {
             // This is our schema, so skip it
-            if entry.file_name() == CONFIG_TEMPLATE_FILENAME {
+            if entry.file_name() == CONFIG_TEMPLATE_FILENAME
+                || entry.file_name() == with_yaml_ext(CONFIG_TEMPLATE_FILENAME).as_str()
+            {
                 continue;
             }
 

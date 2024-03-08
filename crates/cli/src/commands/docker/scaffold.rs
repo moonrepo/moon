@@ -1,7 +1,9 @@
 use super::MANIFEST_NAME;
 use clap::Args;
 use moon::generate_project_graph;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME};
+use moon_common::consts::{
+    with_yaml_ext, CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME,
+};
 use moon_common::Id;
 use moon_config::LanguageType;
 use moon_platform_detector::detect_language_files;
@@ -65,6 +67,8 @@ fn scaffold_workspace(
             ".prototools".to_owned(),
             CONFIG_PROJECT_FILENAME.to_owned(),
             CONFIG_TEMPLATE_FILENAME.to_owned(),
+            with_yaml_ext(CONFIG_PROJECT_FILENAME),
+            with_yaml_ext(CONFIG_TEMPLATE_FILENAME),
         ];
 
         for lang in LanguageType::variants() {

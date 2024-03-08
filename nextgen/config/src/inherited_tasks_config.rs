@@ -2,7 +2,7 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::ProjectType;
 use crate::shapes::InputPath;
-use moon_common::consts::find_config_path;
+use moon_common::consts::{find_config_path, with_yaml_ext};
 use moon_common::{cacheable, Id};
 use rustc_hash::FxHashMap;
 use schematic::{merge, validate, Config, ConfigError};
@@ -211,7 +211,7 @@ impl InheritedTasksManager {
             .unwrap_or_default();
 
         let name = if name == consts::CONFIG_TASKS_FILENAME
-            || name == consts::CONFIG_TASKS_FILENAME.replace(".yml", ".yaml")
+            || name == with_yaml_ext(consts::CONFIG_TASKS_FILENAME)
         {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {

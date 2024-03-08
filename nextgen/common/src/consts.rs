@@ -20,6 +20,10 @@ pub const CONFIG_TEMPLATE_FILENAME: &str = "template.yml";
 
 pub const PROTO_CLI_VERSION: &str = "0.31.4";
 
+pub fn with_yaml_ext(name: &str) -> String {
+    name.replace(".yml", ".yaml")
+}
+
 pub fn find_config_path(path: impl AsRef<Path>, name: &str) -> Option<PathBuf> {
     let path = path.as_ref();
     let yml_file = path.join(name);
@@ -28,7 +32,7 @@ pub fn find_config_path(path: impl AsRef<Path>, name: &str) -> Option<PathBuf> {
         return Some(yml_file);
     }
 
-    let yaml_file = path.join(name.replace(".yml", ".yaml"));
+    let yaml_file = path.join(with_yaml_ext(name));
 
     if yaml_file.exists() {
         return Some(yaml_file);

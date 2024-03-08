@@ -168,7 +168,7 @@ pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: Res
         consts::CONFIG_DIRNAME,
         consts::CONFIG_TASKS_FILENAME
     );
-    let config_path = workspace_root.join(&config_name);
+    let config_path = workspace_root.join(&config_name); // Only logging
 
     debug!(
         file = ?config_path,

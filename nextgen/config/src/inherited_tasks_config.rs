@@ -1,9 +1,9 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
-use crate::project_config::ProjectType;
+use crate::project_config::{ProjectStack, ProjectType};
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use schematic::{merge, validate, Config, ConfigError};
 use std::collections::BTreeMap;
 use std::hash::Hash;
@@ -131,28 +131,36 @@ impl InheritedTasksManager {
         &self,
         platform: &PlatformType,
         language: &LanguageType,
+        stack: &ProjectStack,
         project: &ProjectType,
         tags: &[Id],
     ) -> Vec<String> {
-        let mut lookup = vec!["*".to_string()];
+        let mut lookup = FxHashSet::from_iter([
+            "*".to_string(),
+            format!("{platform}"), // node
+            format!("{language}"), // javascript
+            format!("{stack}"),    // frontend
+            //
+            format!("{platform}-{stack}"), // node-frontend
+            format!("{language}-{stack}"), // javascript-frontend
+            //
+            format!("{platform}-{project}"), // node-library
+            format!("{language}-{project}"), // javascript-library
+            format!("{stack}-{project}"),    // frontend-library
+            //
+            format!("{platform}-{stack}-{project}"), // node-frontend-library
+            format!("{language}-{stack}-{project}"), // javascript-frontend-library
+        ]);
 
-        if platform.is_javascript() {
-            lookup.push(format!("{platform}"));
-        }
-
-        lookup.push(format!("{language}"));
-
-        if platform.is_javascript() {
-            lookup.push(format!("{platform}-{project}"));
-        }
-
-        lookup.push(format!("{language}-{project}"));
-
+        // tag-foo
         for tag in tags {
-            lookup.push(format!("tag-{tag}"));
+            lookup.insert(format!("tag-{tag}"));
         }
 
         lookup
+            .into_iter()
+            .filter(|item| !item.contains("unknown"))
+            .collect()
     }
 }
 
@@ -232,6 +240,7 @@ impl InheritedTasksManager {
         &self,
         platform: &PlatformType,
         language: &LanguageType,
+        stack: &ProjectStack,
         project: &ProjectType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {
@@ -239,7 +248,7 @@ impl InheritedTasksManager {
         use moon_common::path::standardize_separators;
         use schematic::PartialConfig;
 
-        let lookup_order = self.get_lookup_order(platform, language, project, tags);
+        let lookup_order = self.get_lookup_order(platform, language, stack, project, tags);
         let lookup_key = lookup_order.join(":");
 
         // Check the cache first in read only mode!

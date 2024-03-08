@@ -3,10 +3,11 @@ use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfi
 use crate::project_config::{ProjectStack, ProjectType};
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxHashMap, FxHasher};
+use schematic::schema::IndexSet;
 use schematic::{merge, validate, Config, ConfigError};
 use std::collections::BTreeMap;
-use std::hash::Hash;
+use std::hash::{BuildHasherDefault, Hash};
 use std::path::PathBuf;
 
 #[cfg(feature = "loader")]
@@ -135,7 +136,7 @@ impl InheritedTasksManager {
         project: &ProjectType,
         tags: &[Id],
     ) -> Vec<String> {
-        let mut lookup = FxHashSet::from_iter([
+        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> = IndexSet::from_iter([
             "*".to_string(),
             format!("{platform}"), // node
             format!("{language}"), // javascript
@@ -144,9 +145,9 @@ impl InheritedTasksManager {
             format!("{platform}-{stack}"), // node-frontend
             format!("{language}-{stack}"), // javascript-frontend
             //
+            format!("{stack}-{project}"),    // frontend-library
             format!("{platform}-{project}"), // node-library
             format!("{language}-{project}"), // javascript-library
-            format!("{stack}-{project}"),    // frontend-library
             //
             format!("{platform}-{stack}-{project}"), // node-frontend-library
             format!("{language}-{stack}-{project}"), // javascript-frontend-library

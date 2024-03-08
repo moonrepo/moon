@@ -4,8 +4,8 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
-    ProjectType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy,
-    TaskOptionsConfig,
+    ProjectStack, ProjectType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig,
+    TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -540,6 +540,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
+                    &ProjectStack::Frontend,
                     &ProjectType::Application,
                     &[]
                 ),
@@ -547,8 +548,14 @@ mod task_manager {
                     "*",
                     "node",
                     "javascript",
+                    "frontend",
+                    "node-frontend",
+                    "javascript-frontend",
+                    "frontend-application",
                     "node-application",
-                    "javascript-application"
+                    "javascript-application",
+                    "node-frontend-application",
+                    "javascript-frontend-application"
                 ]
             );
         }
@@ -561,6 +568,7 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
+                    &ProjectStack::Frontend,
                     &ProjectType::Library,
                     &[]
                 ),
@@ -568,8 +576,14 @@ mod task_manager {
                     "*",
                     "node",
                     "typescript",
+                    "frontend",
+                    "node-frontend",
+                    "typescript-frontend",
+                    "frontend-library",
                     "node-library",
-                    "typescript-library"
+                    "typescript-library",
+                    "node-frontend-library",
+                    "typescript-frontend-library"
                 ]
             );
         }
@@ -582,20 +596,38 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Ruby,
+                    &ProjectStack::Backend,
                     &ProjectType::Tool,
                     &[]
                 ),
-                vec!["*", "ruby", "ruby-tool"]
+                vec![
+                    "*",
+                    "ruby",
+                    "backend",
+                    "ruby-backend",
+                    "backend-tool",
+                    "ruby-tool",
+                    "ruby-backend-tool"
+                ]
             );
 
             assert_eq!(
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Rust,
+                    &ProjectStack::Backend,
                     &ProjectType::Application,
                     &[]
                 ),
-                vec!["*", "rust", "rust-application"]
+                vec![
+                    "*",
+                    "rust",
+                    "backend",
+                    "rust-backend",
+                    "backend-application",
+                    "rust-application",
+                    "rust-backend-application"
+                ]
             );
         }
 
@@ -607,20 +639,42 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Other(Id::raw("kotlin")),
+                    &ProjectStack::Backend,
                     &ProjectType::Tool,
                     &[]
                 ),
-                vec!["*", "kotlin", "kotlin-tool"]
+                vec![
+                    "*",
+                    "kotlin",
+                    "backend",
+                    "kotlin-backend",
+                    "backend-tool",
+                    "kotlin-tool",
+                    "kotlin-backend-tool"
+                ]
             );
 
             assert_eq!(
                 manager.get_lookup_order(
                     &PlatformType::System,
                     &LanguageType::Other(Id::raw("dotnet")),
+                    &ProjectStack::Backend,
                     &ProjectType::Application,
                     &[]
                 ),
-                vec!["*", "dotnet", "dotnet-application"]
+                vec![
+                    "*",
+                    "system",
+                    "dotnet",
+                    "backend",
+                    "system-backend",
+                    "dotnet-backend",
+                    "backend-application",
+                    "system-application",
+                    "dotnet-application",
+                    "system-backend-application",
+                    "dotnet-backend-application"
+                ]
             );
         }
 
@@ -632,10 +686,21 @@ mod task_manager {
                 manager.get_lookup_order(
                     &PlatformType::Unknown,
                     &LanguageType::Rust,
+                    &ProjectStack::Backend,
                     &ProjectType::Application,
                     &[Id::raw("cargo"), Id::raw("cli-app")]
                 ),
-                vec!["*", "rust", "rust-application", "tag-cargo", "tag-cli-app"]
+                vec![
+                    "*",
+                    "rust",
+                    "backend",
+                    "rust-backend",
+                    "backend-application",
+                    "rust-application",
+                    "rust-backend-application",
+                    "tag-cargo",
+                    "tag-cli-app"
+                ]
             );
         }
     }
@@ -652,6 +717,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
+                    &ProjectStack::Backend,
                     &ProjectType::Application,
                     &[],
                 )
@@ -698,6 +764,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Bun,
                     &LanguageType::JavaScript,
+                    &ProjectStack::Backend,
                     &ProjectType::Application,
                     &[],
                 )
@@ -733,6 +800,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
+                    &ProjectStack::Frontend,
                     &ProjectType::Tool,
                     &[],
                 )
@@ -768,6 +836,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::System,
                     &LanguageType::Rust,
+                    &ProjectStack::Frontend,
                     &ProjectType::Library,
                     &[],
                 )
@@ -799,6 +868,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::TypeScript,
+                    &ProjectStack::Frontend,
                     &ProjectType::Tool,
                     &[Id::raw("normal"), Id::raw("kebab-case")],
                 )
@@ -844,6 +914,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::System,
                     &LanguageType::Other(Id::raw("kotlin")),
+                    &ProjectStack::Frontend,
                     &ProjectType::Library,
                     &[],
                 )
@@ -882,6 +953,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
+                    &ProjectStack::Frontend,
                     &ProjectType::Library,
                     &[],
                 )
@@ -905,6 +977,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::System,
                     &LanguageType::Other(Id::raw("dotnet")),
+                    &ProjectStack::Frontend,
                     &ProjectType::Application,
                     &[],
                 )
@@ -929,6 +1002,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Rust,
                     &LanguageType::Rust,
+                    &ProjectStack::Infrastructure,
                     &ProjectType::Application,
                     &[],
                 )
@@ -950,6 +1024,7 @@ mod task_manager {
                 .get_inherited_config(
                     &PlatformType::Node,
                     &LanguageType::JavaScript,
+                    &ProjectStack::Frontend,
                     &ProjectType::Library,
                     &[],
                 )

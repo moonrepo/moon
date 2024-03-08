@@ -41,6 +41,7 @@ async fn build_tasks_with_config(
         .get_inherited_config(
             &platform,
             &local_config.language,
+            &local_config.stack,
             &local_config.type_of,
             &local_config.tags,
         )

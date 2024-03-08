@@ -1,6 +1,7 @@
 use moon_config::TypeScriptConfig;
 use moon_hash::hash_content;
-use moon_typescript_lang::tsconfig::{CompilerOptions, TsConfigJson};
+use moon_typescript_lang::tsconfig::CompilerOptions;
+use moon_typescript_lang::TsConfigJsonCache;
 use std::{collections::BTreeMap, path::Path};
 
 hash_content!(
@@ -19,19 +20,19 @@ impl TypeScriptTargetHash {
     ) -> miette::Result<TypeScriptTargetHash> {
         let mut hasher = TypeScriptTargetHash::default();
 
-        if let Some(root_tsconfig) = TsConfigJson::read_with_name(
+        if let Some(root_tsconfig) = TsConfigJsonCache::read_with_name(
             workspace_root.join(&config.root),
             &config.root_config_file_name,
         )? {
-            if let Some(compiler_options) = &root_tsconfig.compiler_options {
+            if let Some(compiler_options) = &root_tsconfig.data.compiler_options {
                 hasher.hash_compiler_options(compiler_options);
             }
         }
 
         if let Some(tsconfig) =
-            TsConfigJson::read_with_name(project_root, &config.project_config_file_name)?
+            TsConfigJsonCache::read_with_name(project_root, &config.project_config_file_name)?
         {
-            if let Some(compiler_options) = &tsconfig.compiler_options {
+            if let Some(compiler_options) = &tsconfig.data.compiler_options {
                 hasher.hash_compiler_options(compiler_options);
             }
         }

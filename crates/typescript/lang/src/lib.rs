@@ -1,3 +1,3 @@
 pub mod tsconfig;
 
-pub use tsconfig::TsConfigJson;
+pub use tsconfig::{TsConfigJson, TsConfigJsonCache};

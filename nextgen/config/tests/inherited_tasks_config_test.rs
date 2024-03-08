@@ -746,9 +746,9 @@ mod task_manager {
                 config.layers.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks.yml",
+                    "tasks/node.yml",
                     "tasks/javascript.yml",
                     "tasks/node-application.yml",
-                    "tasks/node.yml",
                 ]
             );
         }
@@ -898,9 +898,9 @@ mod task_manager {
                 vec![
                     "tasks.yml",
                     "tasks/node.yml",
-                    "tasks/tag-kebab-case.yml",
-                    "tasks/tag-normal.yml",
                     "tasks/typescript.yml",
+                    "tasks/tag-normal.yml",
+                    "tasks/tag-kebab-case.yml",
                 ]
             );
         }

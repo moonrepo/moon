@@ -1,7 +1,7 @@
 use crate::workspace_error::WorkspaceError;
 use moon_api::Moonbase;
 use moon_cache::CacheEngine;
-use moon_common::consts;
+use moon_common::consts::{self, find_config_path};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;
 use moon_vcs::{BoxedVcs, Git};
@@ -89,7 +89,10 @@ fn load_toolchain_config(
         consts::CONFIG_DIRNAME,
         consts::CONFIG_TOOLCHAIN_FILENAME,
     );
-    let config_path = root_dir.join(&config_name);
+    let config_path = find_config_path(
+        root_dir.join(consts::CONFIG_DIRNAME),
+        consts::CONFIG_TOOLCHAIN_FILENAME,
+    );
 
     debug!(
         workspace_root = ?root_dir,
@@ -97,7 +100,7 @@ fn load_toolchain_config(
         color::file(config_name),
     );
 
-    if !config_path.exists() {
+    if config_path.is_none() {
         return Ok(ToolchainConfig::default());
     }
 

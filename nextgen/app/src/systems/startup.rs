@@ -2,7 +2,7 @@
 
 use crate::app_error::AppError;
 use moon_app_components::{AppInfo, Tasks, Toolchain, Workspace, WorkspaceRoot};
-use moon_common::consts;
+use moon_common::consts::{self, find_config_path};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use proto_core::{get_proto_home, ProtoConfig, PROTO_CONFIG_NAME};
 use semver::Version;
@@ -119,7 +119,10 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         consts::CONFIG_DIRNAME,
         consts::CONFIG_TOOLCHAIN_FILENAME
     );
-    let config_path = workspace_root.join(&config_name);
+    let config_path = find_config_path(
+        workspace_root.join(consts::CONFIG_DIRNAME),
+        consts::CONFIG_TOOLCHAIN_FILENAME,
+    );
     let proto_path = workspace_root.join(PROTO_CONFIG_NAME);
 
     debug!(
@@ -138,12 +141,12 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
     // TODO
     let proto_config = ProtoConfig::default();
 
-    let config = if config_path.exists() {
+    let config = if let Some(config_path) = config_path {
+        ToolchainConfig::load(workspace_root, config_path, &proto_config)?
+    } else {
         debug!("Config file does not exist, using defaults");
 
         ToolchainConfig::default()
-    } else {
-        ToolchainConfig::load(workspace_root, &config_path, &proto_config)?
     };
 
     resources.set(Toolchain {

@@ -145,6 +145,43 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/act.toml',
 	},
+	actionlint: {
+		author: 'Phault',
+		bins: ['actionlint'],
+		description: 'Static checker for GitHub Actions workflow files',
+		homepageUrl: 'https://github.com/rhysd/actionlint',
+		name: 'actionlint',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/actionlint/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	bazel: {
+		author: 'Phault',
+		bins: ['bazel'],
+		description: 'A fast, scalable, multi-language and extensible build system',
+		homepageUrl: 'https://bazel.build',
+		name: 'Bazel',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/bazel/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	biome: {
+		author: 'Phault',
+		bins: ['biome'],
+		description:
+			'A performant toolchain for web projects, aiming to provide developer tools to maintain the health of said projects',
+		homepageUrl: 'https://biomejs.dev',
+		name: 'Biome',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/biome/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	buf: {
 		author: 'stk0vrfl0w',
 		bins: ['buf'],
@@ -155,6 +192,54 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/buf.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/buf.toml',
+	},
+	caddy: {
+		author: 'Phault',
+		bins: ['caddy'],
+		description: 'Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS',
+		homepageUrl: 'https://caddyserver.com',
+		name: 'Caddy',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/caddy/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	cmake: {
+		author: 'Phault',
+		bins: ['cmake'],
+		description: 'CMake is a cross-platform, open-source build system generator',
+		homepageUrl: 'https://cmake.org',
+		name: 'CMake',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/cmake/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	cosign: {
+		author: 'Phault',
+		bins: ['cosign'],
+		description: 'Code signing and transparency for containers and binaries',
+		homepageUrl: 'https://github.com/sigstore/cosign',
+		name: 'Cosign',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/cosign/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	dagger: {
+		author: 'Phault',
+		bins: ['dagger'],
+		description:
+			'Powerful, programmable open source CI/CD engine that runs your pipelines in containers',
+		homepageUrl: 'https://dagger.io',
+		name: 'Dagger',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/dagger/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
 	dotnet: {
 		author: 'Phault',
@@ -190,6 +275,31 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/theomessin/proto-toml-plugins/blob/master/earthly.toml',
 	},
+	flyctl: {
+		author: 'Phault',
+		bins: ['fly'],
+		description: 'A command-line interface for fly.io',
+		homepageUrl: 'https://github.com/superfly/flyctl',
+		name: 'flyctl',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/flyctl/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	gitleaks: {
+		author: 'Phault',
+		bins: ['gitleaks'],
+		description:
+			'A fast, light-weight, portable, and open-source secret scanner for git repositories, files, and directories',
+		homepageUrl: 'https://gitleaks.io',
+		name: 'Gitleaks',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/gitleaks/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	gojq: {
 		author: 'stk0vrfl0w',
 		bins: ['gojq'],
@@ -200,6 +310,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/gojq.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/gojq.toml',
+	},
+	gum: {
+		author: 'Phault',
+		bins: ['gum'],
+		description: 'A tool for glamorous shell scripts',
+		homepageUrl: 'https://github.com/charmbracelet/gum',
+		name: 'Gum',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/gum/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
 	helm: {
 		author: 'stk0vrfl0w',
@@ -223,6 +345,67 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/helmfile.toml',
 	},
+	hurl: {
+		author: 'Phault',
+		bins: ['hurl'],
+		description:
+			'A command line tool that runs HTTP requests defined in a simple plain text format',
+		homepageUrl: 'https://hurl.dev/',
+		name: 'Hurl',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/hurl/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	hyperfine: {
+		author: 'Phault',
+		bins: ['hyperfine'],
+		description: 'A command-line benchmarking tool',
+		homepageUrl: 'https://github.com/sharkdp/hyperfine',
+		name: 'hyperfine',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/hyperfine/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	infisical: {
+		author: 'Phault',
+		bins: ['infisical'],
+		description:
+			'The command-line interface for the open source secret management platform Infisical"',
+		homepageUrl: 'https://infisical.com',
+		name: 'Infisical',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/infisical/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	jira: {
+		author: 'Phault',
+		bins: ['jira'],
+		description: 'An interactive command line tool for Atlassian Jira',
+		homepageUrl: 'https://github.com/ankitpokhrel/jira-cli',
+		name: 'JiraCLI',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/jira/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	just: {
+		author: 'Phault',
+		bins: ['just'],
+		description: 'A handy way to save and run project-specific commands',
+		homepageUrl: 'https://github.com/casey/just',
+		name: 'just',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/just/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	kubectl: {
 		author: 'stk0vrfl0w',
 		bins: ['kubectl'],
@@ -234,6 +417,31 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/kubectl.toml',
 	},
+	mage: {
+		author: 'Phault',
+		bins: ['mage'],
+		description: 'A make/rake-like build tool using Go',
+		homepageUrl: 'https://magefile.org',
+		name: 'Mage',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/mage/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	mkcert: {
+		author: 'Phault',
+		bins: ['mkcert'],
+		description:
+			"A simple zero-config tool to make locally trusted development certificates with any names you'd like",
+		homepageUrl: 'https://github.com/FiloSottile/mkcert',
+		name: 'mkcert',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/mkcert/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	moon: {
 		author: 'moonrepo',
 		bins: ['moon'],
@@ -244,6 +452,30 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/moonrepo/moon/blob/master/proto-plugin.toml',
+	},
+	ninja: {
+		author: 'Phault',
+		bins: ['ninja'],
+		description: 'A small build system with a focus on speed',
+		homepageUrl: 'https://ninja-build.org',
+		name: 'Ninja',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/ninja/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	octopus: {
+		author: 'Phault',
+		bins: ['octopus'],
+		description: 'Command Line Interface for Octopus Deploy',
+		homepageUrl: 'https://octopus.com/',
+		name: 'Octopus CLI',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/octopus/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
 	oxlint: {
 		author: 'Phault',
@@ -258,6 +490,54 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
+	'rattler-build': {
+		author: 'Phault',
+		bins: ['rattler-build'],
+		description: 'A fast Conda package builder',
+		homepageUrl: 'https://prefix-dev.github.io/rattler-build/',
+		name: 'rattler-build',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/rattler-build/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	ruff: {
+		author: 'Phault',
+		bins: ['ruff'],
+		description: 'An extremely fast Python linter and code formatter',
+		homepageUrl: 'https://docs.astral.sh/ruff/',
+		name: 'Ruff',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/ruff/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	shellcheck: {
+		author: 'Phault',
+		bins: ['shellcheck'],
+		description: 'A static analysis tool for shell scripts',
+		homepageUrl: 'https://github.com/koalaman/shellcheck',
+		name: 'ShellCheck',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/shellcheck/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	shfmt: {
+		author: 'Phault',
+		bins: ['shfmt'],
+		description: 'A shell formatter for POSIX Shell, Bash and mksh',
+		homepageUrl: 'https://github.com/mvdan/sh',
+		name: 'shfmt',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/shfmt/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
 	sops: {
 		author: 'stk0vrfl0w',
 		bins: ['sops'],
@@ -268,6 +548,19 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/sops.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/sops.toml',
+	},
+	task: {
+		author: 'Phault',
+		bins: ['task'],
+		description:
+			'Task is a task runner / build tool that aims to be simpler and easier to use than, for example, GNU Make',
+		homepageUrl: 'https://taskfile.dev',
+		name: 'Task',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/task/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
 	terraform: {
 		author: 'stk0vrfl0w',
@@ -302,6 +595,54 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/stefanprodan/timoni/main/proto-plugin.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stefanprodan/timoni',
+	},
+	traefik: {
+		author: 'Phault',
+		bins: ['traefik'],
+		description:
+			'A modern HTTP reverse proxy and load balancer that makes deploying microservices easy',
+		homepageUrl: 'https://traefik.io/',
+		name: 'Traefik',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/traefik/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	trufflehog: {
+		author: 'Phault',
+		bins: ['trufflehog'],
+		description: 'Find and verify credentials',
+		homepageUrl: 'https://github.com/trufflesecurity/trufflehog',
+		name: 'TruffleHog',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/trufflehog/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	uv: {
+		author: 'Phault',
+		bins: ['uv'],
+		description: 'An extremely fast Python package installer and resolver',
+		homepageUrl: 'https://github.com/astral-sh/uv',
+		name: 'uv',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/uv/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	wizer: {
+		author: 'Phault',
+		bins: ['wizer'],
+		description: 'The WebAssembly Pre-Initializer',
+		homepageUrl: 'https://github.com/bytecodealliance/wizer',
+		name: 'Wizer',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/wizer/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
 	zig: [
 		{

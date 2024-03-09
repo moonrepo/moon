@@ -2,7 +2,6 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
-
  TASKS 
 
 Project: tasks
@@ -10,6 +9,10 @@ Source: tasks
 Language: typescript
 Stack: unknown
 Type: unknown
+
+ INHERITS FROM 
+
+  - .moon/tasks.yml
 
  TASKS 
 
@@ -25,6 +28,3 @@ sources:
   - tasks/types/**/*
 tests:
   - tasks/tests/**/*
-
-
-

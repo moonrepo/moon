@@ -1,12 +1,13 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
-use crate::project_config::ProjectType;
+use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHasher};
+use schematic::schema::{IndexMap, IndexSet};
 use schematic::{merge, validate, Config, ConfigError};
 use std::collections::BTreeMap;
-use std::hash::Hash;
+use std::hash::{BuildHasherDefault, Hash};
 use std::path::PathBuf;
 
 #[cfg(feature = "loader")]
@@ -107,8 +108,9 @@ cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
         pub order: Vec<String>,
-        pub layers: BTreeMap<String, PartialInheritedTasksConfig>,
         pub config: InheritedTasksConfig,
+        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
+        pub task_layers: FxHashMap<String, Vec<String>>,
     }
 );
 
@@ -131,28 +133,36 @@ impl InheritedTasksManager {
         &self,
         platform: &PlatformType,
         language: &LanguageType,
+        stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> Vec<String> {
-        let mut lookup = vec!["*".to_string()];
+        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> = IndexSet::from_iter([
+            "*".to_string(),
+            format!("{platform}"), // node
+            format!("{language}"), // javascript
+            format!("{stack}"),    // frontend
+            //
+            format!("{platform}-{stack}"), // node-frontend
+            format!("{language}-{stack}"), // javascript-frontend
+            //
+            format!("{stack}-{project}"),    // frontend-library
+            format!("{platform}-{project}"), // node-library
+            format!("{language}-{project}"), // javascript-library
+            //
+            format!("{platform}-{stack}-{project}"), // node-frontend-library
+            format!("{language}-{stack}-{project}"), // javascript-frontend-library
+        ]);
 
-        if platform.is_javascript() {
-            lookup.push(format!("{platform}"));
-        }
-
-        lookup.push(format!("{language}"));
-
-        if platform.is_javascript() {
-            lookup.push(format!("{platform}-{project}"));
-        }
-
-        lookup.push(format!("{language}-{project}"));
-
+        // tag-foo
         for tag in tags {
-            lookup.push(format!("tag-{tag}"));
+            lookup.insert(format!("tag-{tag}"));
         }
 
         lookup
+            .into_iter()
+            .filter(|item| !item.contains("unknown"))
+            .collect()
     }
 }
 
@@ -232,6 +242,7 @@ impl InheritedTasksManager {
         &self,
         platform: &PlatformType,
         language: &LanguageType,
+        stack: &StackType,
         project: &ProjectType,
         tags: &[Id],
     ) -> miette::Result<InheritedTasksResult> {
@@ -239,7 +250,7 @@ impl InheritedTasksManager {
         use moon_common::path::standardize_separators;
         use schematic::PartialConfig;
 
-        let lookup_order = self.get_lookup_order(platform, language, project, tags);
+        let lookup_order = self.get_lookup_order(platform, language, stack, project, tags);
         let lookup_key = lookup_order.join(":");
 
         // Check the cache first in read only mode!
@@ -252,7 +263,8 @@ impl InheritedTasksManager {
         // Cache the result as this lookup may be the same for a large number of projects,
         // and since this clones constantly, we can avoid a lot of allocations and overhead.
         let mut partial_config = PartialInheritedTasksConfig::default();
-        let mut layers = BTreeMap::default();
+        let mut layers = IndexMap::default();
+        let mut task_layers = FxHashMap::<String, Vec<String>>::default();
 
         #[allow(clippy::let_unit_value)]
         let context = ();
@@ -266,9 +278,9 @@ impl InheritedTasksManager {
                 // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
                 // We also don't know what platform each of the tasks should be yet.
-                if lookup != "*" {
-                    if let Some(tasks) = &mut managed_config.tasks {
-                        for task in tasks.values_mut() {
+                if let Some(tasks) = &mut managed_config.tasks {
+                    for (task_id, task) in tasks.iter_mut() {
+                        if lookup != "*" {
                             // Automatically set this source as an input
                             task.global_inputs
                                 .get_or_insert(vec![])
@@ -279,6 +291,12 @@ impl InheritedTasksManager {
                                 task.platform = Some(platform.to_owned());
                             }
                         }
+
+                        // Keep track of what layers a task inherited
+                        task_layers
+                            .entry(task_id.to_string())
+                            .or_default()
+                            .push(source_path.clone());
                     }
                 }
 
@@ -295,9 +313,9 @@ impl InheritedTasksManager {
                 config: format!(
                     "inherited tasks {}",
                     if platform.is_javascript() {
-                        format!("({}, {}, {})", platform, language, project)
+                        format!("({}, {}, {}, {})", platform, language, stack, project)
                     } else {
-                        format!("({}, {})", language, project)
+                        format!("({}, {}, {})", language, stack, project)
                     }
                 ),
                 error,
@@ -308,6 +326,7 @@ impl InheritedTasksManager {
             config: InheritedTasksConfig::from_partial(config),
             layers,
             order: lookup_order,
+            task_layers,
         };
 
         self.cache

@@ -267,7 +267,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         task.options = self.build_task_options(id, is_local)?;
-        task.flags.local = is_local;
+        task.metadata.local_only = is_local;
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -360,7 +360,7 @@ impl<'proj> TasksBuilder<'proj> {
                     "Task has explicitly disabled inputs",
                 );
 
-                task.flags.empty_inputs = true;
+                task.metadata.empty_inputs = true;
             } else {
                 trace!(
                     target = target.as_str(),

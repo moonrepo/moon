@@ -2,7 +2,6 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
-
  METADATA 
 
 Advanced example.
@@ -20,6 +19,10 @@ Language: unknown
 Stack: infrastructure
 Type: configuration
 
+ INHERITS FROM 
+
+  - .moon/tasks.yml
+
  TASKS 
 
 build: 
@@ -36,6 +39,3 @@ sources:
   - metadata/types/**/*
 tests:
   - metadata/tests/**/*
-
-
-

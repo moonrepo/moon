@@ -56,6 +56,7 @@ export interface Task {
 	inputFiles: string[];
 	inputGlobs: string[];
 	inputVars: string[];
+	metadata: Record<string, unknown>;
 	options: TaskOptions;
 	outputs: string[];
 	outputFiles: string[];
@@ -73,8 +74,9 @@ export interface Project {
 	id: string;
 	inherited: {
 		order: string[];
-		layers: Record<string, PartialInheritedTasksConfig>;
 		config: InheritedTasksConfig;
+		layers: Record<string, PartialInheritedTasksConfig>;
+		taskLayers: Record<string, string[]>;
 	};
 	language: LanguageType;
 	platform: PlatformType;

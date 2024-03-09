@@ -2,7 +2,6 @@
 source: crates/cli/tests/run_bun_test.rs
 expression: assert.output()
 ---
-
  SCRIPTS 
 
 Project: scripts
@@ -11,6 +10,10 @@ Source: scripts
 Language: javascript
 Stack: unknown
 Type: unknown
+
+ INHERITS FROM 
+
+  - .moon/tasks.yml
 
  TASKS 
 
@@ -22,6 +25,3 @@ noop:
   › noop 
 version: 
   › bun --version
-
-
-

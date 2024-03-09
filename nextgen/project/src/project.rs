@@ -1,8 +1,8 @@
 use crate::project_error::ProjectError;
 use moon_common::{cacheable, path::WorkspaceRelativePathBuf, Id};
 use moon_config::{
-    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig,
-    ProjectStack, ProjectType,
+    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
+    StackType,
 };
 use moon_file_group::FileGroup;
 use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
@@ -40,7 +40,7 @@ cacheable!(
         pub platform: PlatformType,
 
         /// The technology stack of the project.
-        pub stack: ProjectStack,
+        pub stack: StackType,
 
         /// Absolute path to the project's root folder.
         pub root: PathBuf,

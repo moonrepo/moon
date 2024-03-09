@@ -78,6 +78,7 @@ impl<'app> ProjectBuilder<'app> {
         let global_config = tasks_manager.get_inherited_config(
             &self.platform,
             &self.language,
+            &local_config.stack,
             &local_config.type_of,
             &local_config.tags,
         )?;

@@ -92,7 +92,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
         };
 
         if task_id == "dev" {
-            task.flags.local = true;
+            task.metadata.local_only = true;
             task.options.cache = false;
             task.options.persistent = true;
         }

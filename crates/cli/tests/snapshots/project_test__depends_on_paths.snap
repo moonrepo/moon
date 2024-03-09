@@ -2,7 +2,6 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output_standardized()
 ---
-
  FOO 
 
 Project: foo
@@ -17,6 +16,10 @@ Tags: react
   - bar (explicit, production)
   - baz (explicit, production)
 
+ INHERITS FROM 
+
+  - .moon/tasks.yml
+
  FILE GROUPS 
 
 sources:
@@ -24,6 +27,3 @@ sources:
   - deps/foo/types/**/*
 tests:
   - deps/foo/tests/**/*
-
-
-

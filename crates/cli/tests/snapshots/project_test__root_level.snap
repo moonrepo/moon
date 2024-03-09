@@ -2,7 +2,6 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
-
  ROOT 
 
 Project: root
@@ -12,12 +11,13 @@ Language: typescript
 Stack: unknown
 Type: unknown
 
+ INHERITS FROM 
+
+  - .moon/tasks.yml
+
  TASKS 
 
 noop: 
   › noop 
 oneOff: 
   › echo root-one-off
-
-
-

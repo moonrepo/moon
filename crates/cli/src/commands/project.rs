@@ -108,6 +108,19 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         console.print_list(deps)?;
     }
 
+    if let Some(inherited) = &project.inherited {
+        if !inherited.layers.is_empty() {
+            let mut configs = vec![];
+
+            for layer in inherited.layers.keys() {
+                configs.push(color::file(layer));
+            }
+
+            console.print_entry_header("Inherits from")?;
+            console.print_list(configs)?;
+        }
+    }
+
     if !project.tasks.is_empty() {
         console.print_entry_header("Tasks")?;
 

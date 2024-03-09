@@ -1,4 +1,4 @@
-use moon_config::{LanguageType, PlatformType, ProjectStack, ProjectType, TaskType};
+use moon_config::{LanguageType, PlatformType, ProjectType, StackType, TaskType};
 use moon_query::{
     build_query, ComparisonOperator, Condition, Criteria, Field, FieldValues, LogicalOperator,
 };
@@ -487,7 +487,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectStack(vec![ProjectStack::Frontend]),
+                        field: Field::ProjectStack(vec![StackType::Frontend]),
                         op: ComparisonOperator::Equal,
                     }],
                     input: Some("projectStack=frontend".into())
@@ -502,10 +502,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::ProjectStack(vec![
-                            ProjectStack::Frontend,
-                            ProjectStack::Backend
-                        ]),
+                        field: Field::ProjectStack(vec![StackType::Frontend, StackType::Backend]),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("projectStack!=[frontend, backend]".into())

@@ -2,7 +2,6 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
-
  BASIC 
 
 Project: basic
@@ -16,6 +15,10 @@ Tags: vue
 
   - noConfig (explicit, production)
 
+ INHERITS FROM 
+
+  - .moon/tasks.yml
+
  FILE GROUPS 
 
 sources:
@@ -23,6 +26,3 @@ sources:
   - basic/types/**/*
 tests:
   - basic/**/*_test.rs
-
-
-

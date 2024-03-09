@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated task inheritance to support stack-based configuration, such as
+  `.moon/tasks/node-frontend.yml` or `.moon/tasks/bun-backend-application.yml`.
+- Updated `moon project` and `moon task` to include the configuration files that tasks inherit from.
+
 ## 1.22.6
 
 #### 🚀 Updates

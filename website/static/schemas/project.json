@@ -104,7 +104,7 @@
       "default": "unknown",
       "allOf": [
         {
-          "$ref": "#/definitions/ProjectStack"
+          "$ref": "#/definitions/StackType"
         }
       ]
     },
@@ -396,16 +396,6 @@
       },
       "additionalProperties": false
     },
-    "ProjectStack": {
-      "type": "string",
-      "enum": [
-        "backend",
-        "frontend",
-        "infrastructure",
-        "systems",
-        "unknown"
-      ]
-    },
     "ProjectToolchainCommonToolConfig": {
       "description": "Overrides top-level toolchain settings.",
       "type": "object",
@@ -646,6 +636,16 @@
         }
       },
       "additionalProperties": false
+    },
+    "StackType": {
+      "type": "string",
+      "enum": [
+        "backend",
+        "frontend",
+        "infrastructure",
+        "systems",
+        "unknown"
+      ]
     },
     "TaskArgs": {
       "description": "Configures a command to execute, and its arguments.",

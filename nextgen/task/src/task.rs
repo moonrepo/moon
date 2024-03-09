@@ -17,7 +17,7 @@ use tracing::debug;
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct TaskFlags {
+    pub struct TaskMetadata {
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
@@ -25,7 +25,7 @@ cacheable!(
         pub expanded: bool,
 
         // Was configured as a local running task
-        pub local: bool,
+        pub local_only: bool,
     }
 );
 
@@ -42,8 +42,6 @@ cacheable!(
 
         pub env: FxHashMap<String, String>,
 
-        pub flags: TaskFlags,
-
         pub id: Id,
 
         pub inputs: Vec<InputPath>,
@@ -53,6 +51,8 @@ cacheable!(
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub input_vars: FxHashSet<String>,
+
+        pub metadata: TaskMetadata,
 
         pub options: TaskOptions,
 
@@ -117,7 +117,7 @@ impl Task {
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<bool> {
-        if self.flags.empty_inputs {
+        if self.metadata.empty_inputs {
             return Ok(true);
         }
 
@@ -213,7 +213,7 @@ impl Task {
 
     /// Return true if the task has been expanded.
     pub fn is_expanded(&self) -> bool {
-        self.flags.expanded
+        self.metadata.expanded
     }
 
     /// Return true if an interactive task.
@@ -228,7 +228,7 @@ impl Task {
 
     /// Return true if the task is a "run" type.
     pub fn is_run_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Run) || self.flags.local
+        matches!(self.type_of, TaskType::Run) || self.metadata.local_only
     }
 
     /// Return true if the task is a "test" type.

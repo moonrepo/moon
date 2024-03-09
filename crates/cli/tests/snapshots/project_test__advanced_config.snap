@@ -2,7 +2,6 @@
 source: crates/cli/tests/project_test.rs
 expression: assert.output()
 ---
-
  ADVANCED 
 
 Project: advanced
@@ -12,6 +11,10 @@ Stack: frontend
 Type: application
 Tags: react
 
+ INHERITS FROM 
+
+  - .moon/tasks.yml
+
  FILE GROUPS 
 
 sources:
@@ -19,6 +22,3 @@ sources:
   - advanced/types/**/*
 tests:
   - advanced/tests/**/*
-
-
-

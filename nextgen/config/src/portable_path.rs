@@ -3,6 +3,7 @@
 use crate::validate::validate_child_relative_path;
 use schematic::{SchemaType, Schematic, ValidateError};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::path::Path;
 
 /// Return true of the provided file looks like a glob pattern.
@@ -93,6 +94,12 @@ macro_rules! path_type {
         impl Schematic for $name {
             fn generate_schema() -> SchemaType {
                 SchemaType::string()
+            }
+        }
+
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.0)
             }
         }
     };

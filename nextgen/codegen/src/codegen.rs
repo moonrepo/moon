@@ -3,22 +3,30 @@ use crate::template::Template;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
 use moon_common::path::RelativePathBuf;
 use moon_common::Id;
-use moon_config::{load_template_config_template, GeneratorConfig};
+use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocator};
+use moon_env::MoonEnvironment;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::debug;
 
 pub struct CodeGenerator<'app> {
     config: &'app GeneratorConfig,
+    moon_env: Arc<MoonEnvironment>,
     workspace_root: &'app Path,
 }
 
 impl<'app> CodeGenerator<'app> {
-    pub fn new(workspace_root: &'app Path, config: &'app GeneratorConfig) -> CodeGenerator<'app> {
+    pub fn new(
+        workspace_root: &'app Path,
+        config: &'app GeneratorConfig,
+        moon_env: Arc<MoonEnvironment>,
+    ) -> CodeGenerator<'app> {
         debug!("Creating code generator");
 
         CodeGenerator {
             config,
+            moon_env,
             workspace_root,
         }
     }
@@ -27,7 +35,9 @@ impl<'app> CodeGenerator<'app> {
     /// Will error if a template of the same name already exists.
     pub fn create_template(&self, id: &str) -> miette::Result<Template> {
         let id = Id::clean(id)?;
-        let root = self.create_absolute_path(self.config.templates[0].as_str(), id.as_str());
+        let root = self
+            .resolve_template_locator(&self.config.templates[0])
+            .join(id.as_str());
 
         if root.exists() {
             return Err(CodegenError::ExistingTemplate(id, root).into());
@@ -54,12 +64,14 @@ impl<'app> CodeGenerator<'app> {
 
         debug!(
             template = id.as_str(),
-            locations = ?self.config.templates.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
+            locations = ?self.config.templates.iter().map(|t| t.to_string()).collect::<Vec<_>>(),
             "Attempting to find template from configured locations",
         );
 
         for template_path in &self.config.templates {
-            let root = self.create_absolute_path(template_path.as_str(), id.as_str());
+            let root = self
+                .resolve_template_locator(template_path)
+                .join(id.as_str());
 
             if root.exists() {
                 debug!(
@@ -119,10 +131,16 @@ impl<'app> CodeGenerator<'app> {
         Ok(())
     }
 
-    fn create_absolute_path(&self, template_path: &str, template_name: &str) -> PathBuf {
-        RelativePathBuf::from(template_path)
-            .join(template_name)
-            .normalize()
-            .to_logical_path(self.workspace_root)
+    fn resolve_template_locator(&self, locator: &TemplateLocator) -> PathBuf {
+        match locator {
+            TemplateLocator::File { path } => RelativePathBuf::from(path)
+                .normalize()
+                .to_logical_path(self.workspace_root),
+            TemplateLocator::Git {
+                remote_url,
+                revision,
+            } => todo!(),
+            TemplateLocator::Npm { package } => todo!(),
+        }
     }
 }

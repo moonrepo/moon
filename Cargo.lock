@@ -3230,6 +3230,7 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
+ "moon_env",
  "once_cell",
  "regex",
  "starbase_sandbox",

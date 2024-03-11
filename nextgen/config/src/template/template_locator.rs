@@ -1,5 +1,6 @@
 use crate::portable_path::{FilePath, PortablePath};
 use schematic::ValidateError;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -12,10 +13,11 @@ pub enum TemplateLocator {
     },
     Git {
         remote_url: String,
-        revision: Option<String>,
+        revision: String,
     },
     Npm {
         package: String,
+        version: Version,
     },
 }
 
@@ -26,15 +28,8 @@ impl fmt::Display for TemplateLocator {
             TemplateLocator::Git {
                 remote_url,
                 revision,
-            } => write!(
-                f,
-                "git:{remote_url}{}",
-                match revision {
-                    Some(rev) => format!("#{rev}"),
-                    None => "".into(),
-                }
-            ),
-            TemplateLocator::Npm { package } => write!(f, "npm:{package}"),
+            } => write!(f, "git:{remote_url}#{revision}"),
+            TemplateLocator::Npm { package, version } => write!(f, "npm:{package}@{version}"),
         }
     }
 }
@@ -53,14 +48,16 @@ impl FromStr for TemplateLocator {
             let inner_value = value[index + 1..].to_owned();
 
             match &value[0..index] {
-                "git" => {
-                    let (remote_url, revision) = if let Some(rev_index) = inner_value.find('#') {
+                "git" | "git+http" | "git+https" => {
+                    let (remote_url, revision) = if let Some(inner_index) = inner_value.find('#') {
                         (
-                            inner_value[0..rev_index].to_owned(),
-                            Some(inner_value[rev_index + 1..].to_owned()),
+                            inner_value[0..inner_index].to_owned(),
+                            inner_value[inner_index + 1..].to_owned(),
                         )
                     } else {
-                        (inner_value, None)
+                        return Err(ValidateError::new(format!(
+                            "Git template locator is missing a revision (commit, branch, etc)"
+                        )));
                     };
 
                     return Ok(TemplateLocator::Git {
@@ -68,14 +65,25 @@ impl FromStr for TemplateLocator {
                         revision,
                     });
                 }
-                "npm" => {
-                    return Ok(TemplateLocator::Npm {
-                        package: inner_value,
-                    })
+                "npm" | "pnpm" | "yarn" => {
+                    // Don't find leading @ when a scope is being used!
+                    let (package, version) = if let Some(inner_index) = inner_value[1..].find('@') {
+                        (
+                            inner_value[0..inner_index].to_owned(),
+                            Version::parse(&inner_value[inner_index + 1..])
+                                .map_err(|error| ValidateError::new(error.to_string()))?,
+                        )
+                    } else {
+                        return Err(ValidateError::new(format!(
+                            "npm template locator is missing a semantic version"
+                        )));
+                    };
+
+                    return Ok(TemplateLocator::Npm { package, version });
                 }
                 other => {
                     return Err(ValidateError::new(format!(
-                        "Unknown template locator prefix {other}:."
+                        "Unknown template locator prefix `{other}:`"
                     )));
                 }
             };

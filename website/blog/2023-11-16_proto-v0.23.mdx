@@ -17,10 +17,9 @@ Up until now, when proto would attempt to detect a version, it would use a versi
 For the most part, this works great, but what if you wanted `.prototools` to take precedence over
 other files, even if found in a higher parent directory? You unfortunately couldn't.
 
-To support this new flow, we're introducing a new
-[`~/.proto/config.toml`](/docs/proto/config#user-configuration) setting called
-[`detect-strategy`](/docs/proto/config#detect-strategy). This setting supports the following values,
-with more possibly in the future!
+To support this new flow, we're introducing a new [`~/.proto/config.toml`](/docs/proto/config)
+setting called [`detect-strategy`](/docs/proto/config#detect-strategy). This setting supports the
+following values, with more possibly in the future!
 
 - `first-available` (default) - Will use the first available version that is found. Either from
   `.prototools` or a tool specific file.

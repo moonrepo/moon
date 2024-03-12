@@ -7812,9 +7812,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"docusaurus-plugin-typedoc-api@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "docusaurus-plugin-typedoc-api@npm:4.1.0"
+"docusaurus-plugin-typedoc-api@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "docusaurus-plugin-typedoc-api@npm:4.2.0"
   dependencies:
     "@docusaurus/plugin-content-docs": "npm:^3.1.0"
     "@docusaurus/types": "npm:^3.1.0"
@@ -7825,9 +7825,10 @@ __metadata:
     typedoc: "npm:^0.25.7"
   peerDependencies:
     "@docusaurus/core": ^3.0.0
+    "@docusaurus/mdx-loader": ^3.0.0
     react: ">=18.0.0"
     typescript: ^5.0.0
-  checksum: cfcfc472606f883dc2a7a288607988a86e554e0c508bb72f0626012170c8e784d84009a743404ca4e23df7a209f6e16dcb748cc5de7df60f41367a7958c1d5fb
+  checksum: e17f38a9a9fbd80f7ef39884c70592a02756f0176f8c1040b89283dc43d83f709d487e1cca9b728e60897a093e048b797f63575bf3f0f2c7d0f90e1edeea4470
   languageName: node
   linkType: hard
 
@@ -18339,7 +18340,7 @@ __metadata:
     clsx: "npm:^2.1.0"
     cytoscape: "npm:^3.28.1"
     cytoscape-dagre: "npm:^2.5.0"
-    docusaurus-plugin-typedoc-api: "npm:^4.1.0"
+    docusaurus-plugin-typedoc-api: "npm:^4.2.0"
     prism-react-renderer: "npm:^2.3.1"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"

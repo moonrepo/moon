@@ -26,9 +26,9 @@ proto uninstall-global node prettier
 ### WASM functions
 
 Implementing this command was rather straight forward, but most of the work went into supporting
-[`install_global` and `uninstall_global`](/docs/proto/wasm-plugin#installing-and-uninstalling-globals)
-functions for WASM plugins, and then updating all existing plugins! For those of you writing your
-own plugins, here's an example of what the Rust code looks like:
+[`install_global` and `uninstall_global`](/docs/proto/wasm-plugin) functions for WASM plugins, and
+then updating all existing plugins! For those of you writing your own plugins, here's an example of
+what the Rust code looks like:
 
 ```rust
 #[plugin_fn]
@@ -44,9 +44,8 @@ pub fn install_global(
 ### TOML setting
 
 We've also updated our TOML plugins to support uninstalling globals through the new
-[`globals.uninstall-args`](/docs/proto/toml-plugin#global-packages) setting. Hopefully the name is
-self explanatory, but it's a list of arguments passed to the tool's binary, that'll uninstall the
-global.
+[`globals.uninstall-args`](/docs/proto/toml-plugin) setting. Hopefully the name is self explanatory,
+but it's a list of arguments passed to the tool's binary, that'll uninstall the global.
 
 ```toml
 # ...
@@ -62,11 +61,10 @@ With each release we're slowly stabilizing the WASM and TOML APIs for an officia
 is soon), and with this, it requires more documentation. As part of this release, we've done a giant
 polish pass on our WASM documentation, and have included the following sections:
 
-- [Virtual paths](/docs/proto/wasm-plugin#virtual-paths)
-- [Host environment](/docs/proto/wasm-plugin#host-environment)
-- [Host functions](/docs/proto/wasm-plugin#host-functions)
-- [Tool ID and context](/docs/proto/wasm-plugin#tool-id-and-context)
-- [Installing and uninstalling globals](/docs/proto/wasm-plugin#installing-and-uninstalling-globals)
+- [Virtual paths](/docs/guides/wasm-plugins#virtual-paths)
+- [Host environment](/docs/guides/wasm-plugins#host-environment)
+- [Host functions](/docs/guides/wasm-plugins#host-functions--macros)
+- [Tool ID and context](/docs/guides/wasm-plugins#plugin-identifier)
 
 ## Other changes
 

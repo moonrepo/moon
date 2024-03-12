@@ -350,6 +350,7 @@ are [relative to a project](../concepts/file-pattern#project-relative) (even whe
 [globally](./tasks)).
 
 ```yaml title="moon.yml"
+# Example groups
 fileGroups:
   configs:
     - '*.config.{js,cjs,mjs}'
@@ -367,9 +368,18 @@ fileGroups:
     - '**/*.{scss,css}'
 ```
 
-> The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
-> modify the glob lists, add and remove groups, or implement completely new groups. The choice is
-> yours!
+Once your groups have been defined, you can reference them within [`args`](#args),
+[`inputs`](#inputs), [`outputs`](#outputs), and more, using
+[token functions and variables](../concepts/token).
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '@group(configs)'
+      - '@group(sources)'
+```
 
 ## `platform`
 
@@ -625,6 +635,7 @@ Inputs support the following source types:
   <VersionLabel version="1.22.0" />
 - Files, folders, and globs
   ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
+- [Token functions and variables](../concepts/token)
 
 ```yaml title="moon.yml" {4-12}
 tasks:
@@ -640,6 +651,9 @@ tasks:
       # Environment variables
       - '$ESLINT_CACHE'
       - '$ESLINT_*'
+      # Tokens
+      - '$projectRoot'
+      - '@group(sources)'
 ```
 
 :::caution

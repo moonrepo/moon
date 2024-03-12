@@ -12,6 +12,19 @@ change, deterministic builds, and more.
 File groups can be configured per project through [`moon.yml`](../config/project), or for many
 projects through [`.moon/tasks.yml`](../config/tasks).
 
+### Token functions
+
+File groups can be referenced in [tasks](./task) using [token functions](./token). For example, the
+`@group(name)` token will expand to all paths configured in the `sources` file group.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'vite build'
+    inputs:
+      - '@group(sources)'
+```
+
 ## Inheritance and merging
 
 When a file group of the same name exists in both [configuration files](#configuration), the

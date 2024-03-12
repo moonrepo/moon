@@ -71,9 +71,9 @@ $ moon query projects --tags 'vue|trpc'
 ### Enforce relationships with tags
 
 Another feature of tags is enforcing relationships between projects using our new
-[`constraints`](#project-constraints) setting. When a tagged constraint is defined, it requires all
-[dependencies](/docs/concepts/project#dependencies) of a tagged project to require 1 of the
-configured tags, otherwise an error is thrown during project graph creation.
+[`constraints`](#project-boundaries-with-constraints) setting. When a tagged constraint is defined,
+it requires all [dependencies](/docs/concepts/project#dependencies) of a tagged project to require 1
+of the configured tags, otherwise an error is thrown during project graph creation.
 
 To demonstrate this, take the following configuration:
 

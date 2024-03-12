@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where environment variable substitution would trigger recursively when referencing
+  itself.
+
 ## 1.22.6
 
 #### 🚀 Updates

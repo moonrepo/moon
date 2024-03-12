@@ -132,7 +132,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
             // Environment variables
             } else if patterns::ENV_VAR_SUBSTITUTE.is_match(arg) {
-                args.push(substitute_env_var(arg, &task.env));
+                args.push(substitute_env_var("", arg, &task.env));
 
             // Normal arg
             } else {

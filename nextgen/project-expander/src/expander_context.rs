@@ -20,7 +20,11 @@ pub struct ExpanderContext<'graph, 'query> {
     pub workspace_root: &'graph Path,
 }
 
-pub fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> String {
+pub fn substitute_env_var(
+    base_name: &str,
+    value: &str,
+    env_map: &FxHashMap<String, String>,
+) -> String {
     if !value.contains('$') {
         return value.to_owned();
     }
@@ -28,10 +32,19 @@ pub fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> S
     patterns::ENV_VAR_SUBSTITUTE.replace_all(
         value,
         |caps: &patterns::Captures| {
-            // First with wrapping {}, then without
+            // First with wrapping {} then without: ${FOO} -> $FOO
             let name = caps.get(1).or_else(|| caps.get(2)).unwrap().as_str();
 
-            match env_map.get(name).map(|v| v.to_owned()).or_else(|| env::var(name).ok()) {
+            // If the variable is referencing itself, don't pull
+            // from the local map, and instead only pull from the
+            // system environment. Otherwise we hit recursion!
+            let maybe_var = if !base_name.is_empty() && base_name == name {
+                env::var(name).ok()
+            } else {
+                env_map.get(name).cloned().or_else(|| env::var(name).ok())
+            };
+
+            match maybe_var {
                 Some(var) => var,
                 None => {
                     debug!(

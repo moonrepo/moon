@@ -32,7 +32,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         let command = self.token.expand_command(task)?;
 
         // Environment variables
-        let command = substitute_env_var(&command, &task.env);
+        let command = substitute_env_var("", &command, &task.env);
 
         task.command = command;
 
@@ -273,8 +273,8 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         // Substitute environment variables
         let cloned_env = env.clone();
 
-        for (_, value) in env.iter_mut() {
-            *value = substitute_env_var(value, &cloned_env);
+        for (key, value) in env.iter_mut() {
+            *value = substitute_env_var(key, value, &cloned_env);
         }
 
         task.env = env;

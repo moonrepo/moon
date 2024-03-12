@@ -1063,6 +1063,38 @@ mod tasks_expander {
         }
 
         #[test]
+        fn can_substitute_self_from_system() {
+            let sandbox = create_sandbox("env-file");
+            let project = create_project(sandbox.path());
+
+            env::set_var("MYPATH", "/another/path");
+
+            let mut task = create_task();
+            task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            assert_eq!(task.env.get("MYPATH").unwrap(), "/path:/another/path");
+
+            env::remove_var("MYPATH");
+        }
+
+        #[test]
+        fn doesnt_substitute_self_from_local() {
+            let sandbox = create_sandbox("env-file");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            assert_eq!(task.env.get("MYPATH").unwrap(), "/path:$MYPATH");
+        }
+
+        #[test]
         fn loads_from_multiple_env_file() {
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());

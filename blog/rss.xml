@@ -1115,10 +1115,9 @@ alleviate some of the pain points with <code>package.json</code> syncing.</li>
 <code>.prototools</code> file, or tool specific file (<code>package.json</code>, <code>.nvmrc</code>, etc), which ever matched first.
 For the most part, this works great, but what if you wanted <code>.prototools</code> to take precedence over
 other files, even if found in a higher parent directory? You unfortunately couldn't.</p>
-<p>To support this new flow, we're introducing a new
-<a href="https://moonrepo.dev/docs/proto/config#user-configuration"><code>~/.proto/config.toml</code></a> setting called
-<a href="https://moonrepo.dev/docs/proto/config#detect-strategy"><code>detect-strategy</code></a>. This setting supports the following values,
-with more possibly in the future!</p>
+<p>To support this new flow, we're introducing a new <a href="https://moonrepo.dev/docs/proto/config"><code>~/.proto/config.toml</code></a>
+setting called <a href="https://moonrepo.dev/docs/proto/config#detect-strategy"><code>detect-strategy</code></a>. This setting supports the
+following values, with more possibly in the future!</p>
 <ul>
 <li><code>first-available</code> (default) - Will use the first available version that is found. Either from
 <code>.prototools</code> or a tool specific file.</li>
@@ -1173,7 +1172,7 @@ of users are interested in using Bun purely as a package manager, as it can inst
 incredibly fast. So why not support it?</p>
 <p>In this release, you can now install dependencies with Bun by configuring
 <a href="https://moonrepo.dev/docs/config/toolchain#packagemanager"><code>node.packageManager</code></a> and
-<a href="https://moonrepo.dev/docs/config/toolchain#npm-pnpm-yarn"><code>node.bun</code></a> in your toolchain.</p>
+<a href="https://moonrepo.dev/docs/config/toolchain#npm-pnpm-yarn-bun"><code>node.bun</code></a> in your toolchain.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/toolchain.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">node</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'bun'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">bun</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'1.0.0'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>Additionally, you can now execute Bun commands within tasks! However, ensure the task's platform is
 still set to <code>node</code> though, as this is using Bun as a package manager within Node.js, not as a

@@ -7,13 +7,10 @@ import Image from '@site/src/components/Image';
 Although moon was designed for large monorepos, it can also be used for open source projects,
 especially when coupled with our [built-in continuous integration support](./ci).
 
-However, a pain point with moon is that it only supports a single Node.js version within its
+However, a pain point with moon is that it has an explicitly configured version for each tool in the
 [toolchain](../concepts/toolchain), but open source projects typically need to run checks against
-multiple Node.js versions! To mitigate this problem, we built the
-[`moonrepo/tool-version-action`](https://github.com/moonrepo/tool-version-action) GitHub Action,
-which will override the Node.js version configured in the workspace.
-
-This action works best when paired with a matrix, as demonstrated below!
+multiple versions! To mitigate this problem, you can set the matrix value as an environment
+variable, in the format of `MOON_<TOOL>_VERSION`.
 
 ```yaml title=".github/workflows/ci.yml"
 name: 'Pipeline'
@@ -29,30 +26,26 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
-        node-version: [14, 16, 18]
+        node-version: [16, 18, 20]
     steps:
       # Checkout repository
       - uses: 'actions/checkout@v4'
         with:
           fetch-depth: 0
-      # Install Node.js so we can install dependencies
-      - uses: 'actions/setup-node@v3'
-        with:
-          cache: 'yarn'
-      # Set Node.js version to use in moon
-      - uses: 'moonrepo/tool-version-action@v1'
-        with:
-          node: ${{ matrix.node-version }}
+      # Install Node.js
+      - uses: 'actions/setup-node@v4'
       # Install dependencies
       - run: 'yarn install --immutable'
       # Run moon and affected tasks
       - run: 'yarn moon ci'
+        env:
+          MOON_NODE_VERSION: ${{ matrix.node-version }}
 ```
 
 :::info
 
-Currently, we only have a solution for GitHub actions, but the same mechanism can be applied to
-other CI environments by setting the `MOON_NODE_VERSION` environment variable.
+This example is only for GitHub actions, but the same mechanism can be applied to other CI
+environments.
 
 :::
 

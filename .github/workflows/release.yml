@@ -128,7 +128,7 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         name: Upload artifact
         with:
           name: binary-${{ matrix.target }}
@@ -162,11 +162,11 @@ jobs:
     runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         name: Download artifacts
         with:
           path: artifacts
@@ -197,13 +197,13 @@ jobs:
       - test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           cache: yarn
           check-latest: true
       - name: Install dependencies
         run: yarn install --immutable
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         name: Download artifacts
         with:
           path: artifacts
@@ -268,7 +268,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           cache: yarn
           check-latest: true

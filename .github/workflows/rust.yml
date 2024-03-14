@@ -91,7 +91,7 @@ jobs:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
           proto-version: '0.31.4' # Keep in sync
-      - uses: mozilla-actions/sccache-action@v0.0.3
+      - uses: mozilla-actions/sccache-action@v0.0.4
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Checking coverage status
         id: coverage
@@ -111,7 +111,7 @@ jobs:
         if: ${{ steps.coverage.outputs.coverage == 'true' }}
         run: just gen-report
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ steps.coverage.outputs.coverage == 'true' }}
         with:
           name: coverage-${{ runner.os }}
@@ -127,14 +127,15 @@ jobs:
       - test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         name: Download coverage reports
         with:
           path: coverage
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         name: Upload to Codecov
         with:
           # files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           files: ./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           flags: rust
+          token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true

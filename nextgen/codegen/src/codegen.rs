@@ -140,7 +140,7 @@ impl<'app> CodeGenerator<'app> {
                 remote_url,
                 revision,
             } => todo!(),
-            TemplateLocator::Npm { package } => todo!(),
+            TemplateLocator::Npm { package, version } => todo!(),
         }
     }
 }

@@ -1,9 +1,19 @@
 use crate::portable_path::{FilePath, PortablePath};
+use once_cell::sync::Lazy;
+use regex::Regex;
 use schematic::ValidateError;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+
+static GIT: Lazy<Regex> =
+    Lazy::new(|| Regex::new("^(?<url>[^#]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap());
+
+static NPM: Lazy<Regex> = Lazy::new(|| {
+    Regex::new("^(?<package>(@[a-z][a-z0-9-_.]*/)?[a-z][a-z0-9-_.]*)@(?<version>[a-z0-9-.+]+)$")
+        .unwrap()
+});
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged, try_from = "String", into = "String")]
@@ -45,41 +55,39 @@ impl FromStr for TemplateLocator {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if let Some(index) = value.find(':') {
-            let inner_value = value[index + 1..].to_owned();
+            let protocol = &value[0..index];
+            let inner_value = &value[index + 1..];
 
-            match &value[0..index] {
+            match protocol {
                 "git" | "git+http" | "git+https" => {
-                    let (remote_url, revision) = if let Some(inner_index) = inner_value.find('#') {
-                        (
-                            inner_value[0..inner_index].to_owned(),
-                            inner_value[inner_index + 1..].to_owned(),
-                        )
-                    } else {
-                        return Err(ValidateError::new(format!(
-                            "Git template locator is missing a revision (commit, branch, etc)"
-                        )));
-                    };
+                    if let Some(result) = GIT.captures(inner_value) {
+                        return Ok(TemplateLocator::Git {
+                            remote_url: result.name("url").unwrap().as_str().to_owned(),
+                            revision: result.name("revision").unwrap().as_str().to_owned(),
+                        });
+                    }
 
-                    return Ok(TemplateLocator::Git {
-                        remote_url,
-                        revision,
-                    });
+                    return Err(ValidateError::new(format!(
+                        "Invalid Git template locator, must be in the format of `{protocol}:url#revision`"
+                    )));
                 }
                 "npm" | "pnpm" | "yarn" => {
-                    // Don't find leading @ when a scope is being used!
-                    let (package, version) = if let Some(inner_index) = inner_value[1..].find('@') {
-                        (
-                            inner_value[0..inner_index].to_owned(),
-                            Version::parse(&inner_value[inner_index + 1..])
+                    if let Some(result) = NPM.captures(inner_value) {
+                        return Ok(TemplateLocator::Npm {
+                            package: result.name("package").unwrap().as_str().to_owned(),
+                            version: Version::parse(result.name("version").unwrap().as_str())
                                 .map_err(|error| ValidateError::new(error.to_string()))?,
-                        )
-                    } else {
-                        return Err(ValidateError::new(format!(
-                            "npm template locator is missing a semantic version"
-                        )));
-                    };
+                        });
+                    }
 
-                    return Ok(TemplateLocator::Npm { package, version });
+                    return Err(ValidateError::new(format!(
+                        "Invalid npm template locator, must be in the format of `{protocol}:package@version`"
+                    )));
+                }
+                "file" => {
+                    return Ok(TemplateLocator::File {
+                        path: FilePath::from_str(inner_value)?,
+                    })
                 }
                 other => {
                     return Err(ValidateError::new(format!(
@@ -89,9 +97,10 @@ impl FromStr for TemplateLocator {
             };
         }
 
-        let path = FilePath::from_str(value)?;
-
-        Ok(TemplateLocator::File { path })
+        // Backwards compatibility
+        Ok(TemplateLocator::File {
+            path: FilePath::from_str(value)?,
+        })
     }
 }
 

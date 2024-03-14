@@ -118,9 +118,9 @@ jobs:
           path: ./report.txt
           if-no-files-found: error
   coverage:
-    # if:
-    #  ${{ github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
-    #  github.event_name == 'push' && github.ref_name == 'master' }}
+    if:
+      ${{ github.event_name == 'pull_request' && contains(github.head_ref, 'develop-') ||
+      github.event_name == 'push' && github.ref_name == 'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:
@@ -137,4 +137,5 @@ jobs:
           # files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           files: ./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           flags: rust
+          token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true

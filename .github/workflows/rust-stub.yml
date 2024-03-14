@@ -13,6 +13,11 @@ on:
       - Makefile.toml
       - rust-toolchain.toml
 jobs:
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "Not affected, skipping"'
   format:
     name: Format
     runs-on: ubuntu-latest

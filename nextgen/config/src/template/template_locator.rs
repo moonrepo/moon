@@ -7,8 +7,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
-static GIT: Lazy<Regex> =
-    Lazy::new(|| Regex::new("^(?<url>[^#]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap());
+static GIT: Lazy<Regex> = Lazy::new(|| {
+    Regex::new("^(?<url>[a-z0-9.]+/[a-zA-Z0-9-_./]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap()
+});
 
 static NPM: Lazy<Regex> = Lazy::new(|| {
     Regex::new("^(?<package>(@[a-z][a-z0-9-_.]*/)?[a-z][a-z0-9-_.]*)@(?<version>[a-z0-9-.+]+)$")

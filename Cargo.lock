@@ -3232,6 +3232,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_env",
+ "moon_process",
  "moon_time",
  "once_cell",
  "regex",

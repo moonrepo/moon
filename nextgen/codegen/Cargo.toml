@@ -12,6 +12,7 @@ publish = false
 moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "template"] }
 moon_env = { path = "../env" }
+moon_process = { path = "../process" }
 moon_time = { path = "../time" }
 async-recursion = { workspace = true }
 content_inspector = "0.2.4"

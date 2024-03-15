@@ -6,6 +6,7 @@ use moon_common::path::RelativePathBuf;
 use moon_common::Id;
 use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocator, Version};
 use moon_env::MoonEnvironment;
+use moon_process::Command;
 use moon_time::now_millis;
 use starbase_archive::Archiver;
 use starbase_utils::{fs, net};
@@ -152,11 +153,87 @@ impl<'app> CodeGenerator<'app> {
             TemplateLocator::File { path } => Ok(RelativePathBuf::from(path)
                 .normalize()
                 .to_logical_path(self.workspace_root)),
-            TemplateLocator::Git { .. } => todo!(),
+            TemplateLocator::Git {
+                remote_url,
+                revision,
+            } => {
+                self.clone_and_checkout_git_repository(remote_url, revision)
+                    .await
+            }
             TemplateLocator::Npm { package, version } => {
                 self.download_and_unpack_npm_archive(package, version).await
             }
         }
+    }
+
+    async fn clone_and_checkout_git_repository(
+        &self,
+        remote_url: &str,
+        revision: &str,
+    ) -> miette::Result<PathBuf> {
+        let base_url = remote_url.trim_start_matches("/").trim_end_matches(".git");
+        let url = format!("https://{base_url}.git");
+        let template_location = self.moon_env.templates_dir.join(&base_url);
+
+        debug!(
+            url = &url,
+            revision, "Resolving template location for Git repository",
+        );
+
+        async fn run_git(args: &[&str], cwd: &Path) -> miette::Result<()> {
+            Command::new("git")
+                .args(args)
+                .cwd(cwd)
+                .without_shell()
+                .create_async()
+                .exec_capture_output()
+                .await?;
+
+            Ok(())
+        }
+
+        // Clone or fetch the repository
+        if template_location.exists() {
+            debug!(
+                location = ?template_location,
+                "Repository already exists, fetching latest",
+            );
+
+            run_git(
+                &["fetch", "--prune", "--no-recurse-submodules"],
+                &template_location,
+            )
+            .await?;
+        } else {
+            debug!(
+                location = ?template_location,
+                "Cloning repository into template location",
+            );
+
+            fs::create_dir_all(&template_location)?;
+            run_git(&["clone", &url, "."], &template_location).await?;
+        }
+
+        // Checkout the revision
+        debug!(revision, "Checking out the configured revision");
+
+        run_git(
+            &["checkout", "-B", &revision, "--track"],
+            &template_location,
+        )
+        .await?;
+
+        // Checkout the revision
+        debug!("Pulling latest changes");
+
+        run_git(&["pull", "--rebase", "--prune"], &template_location).await?;
+
+        fs::write_file(
+            template_location.parent().unwrap().join(".installed-at"),
+            now_millis().to_string(),
+        )?;
+
+        Ok(template_location)
     }
 
     async fn download_and_unpack_npm_archive(

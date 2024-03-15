@@ -20,6 +20,7 @@ exclude = ["tests/fixtures", "wasm/test-plugin"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
+async-recursion = "1.0.5"
 async-trait = "0.1.77"
 cached = "0.49.2"
 chrono = { version = "0.4.34", features = ["serde"] }
@@ -50,7 +51,7 @@ reqwest = { version = "0.11.24", default-features = false, features = [
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.14.3", default-features = false, features = [
+schematic = { version = "0.14.5", default-features = false, features = [
 	"schema",
 ] }
 semver = "1.0.22"
@@ -65,11 +66,12 @@ starbase_archive = { version = "0.6.0", default-features = false, features = [
 starbase_events = "0.5.1"
 starbase_sandbox = "0.5.0"
 starbase_styles = { version = "0.3.1", features = ["relative-path"] }
-starbase_utils = { version = "0.6.0", default-features = false, features = [
+starbase_utils = { version = "0.6.1", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
 	"miette",
+	"net",
 	"toml",
 	"yaml",
 ] }

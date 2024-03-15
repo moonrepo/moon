@@ -1,7 +1,7 @@
 use crate::portable_path::{FilePath, PortablePath};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schematic::ValidateError;
+use schematic::ParseError;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -51,7 +51,7 @@ impl schematic::Schematic for TemplateLocator {
 }
 
 impl FromStr for TemplateLocator {
-    type Err = ValidateError;
+    type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if let Some(index) = value.find(':') {
@@ -67,7 +67,7 @@ impl FromStr for TemplateLocator {
                         });
                     }
 
-                    return Err(ValidateError::new(format!(
+                    return Err(ParseError::new(format!(
                         "Invalid Git template locator, must be in the format of `{protocol}:url#revision`"
                     )));
                 }
@@ -76,11 +76,11 @@ impl FromStr for TemplateLocator {
                         return Ok(TemplateLocator::Npm {
                             package: result.name("package").unwrap().as_str().to_owned(),
                             version: Version::parse(result.name("version").unwrap().as_str())
-                                .map_err(|error| ValidateError::new(error.to_string()))?,
+                                .map_err(|error| ParseError::new(error.to_string()))?,
                         });
                     }
 
-                    return Err(ValidateError::new(format!(
+                    return Err(ParseError::new(format!(
                         "Invalid npm template locator, must be in the format of `{protocol}:package@version`"
                     )));
                 }
@@ -90,7 +90,7 @@ impl FromStr for TemplateLocator {
                     })
                 }
                 other => {
-                    return Err(ValidateError::new(format!(
+                    return Err(ParseError::new(format!(
                         "Unknown template locator prefix `{other}:`"
                     )));
                 }
@@ -105,7 +105,7 @@ impl FromStr for TemplateLocator {
 }
 
 impl TryFrom<String> for TemplateLocator {
-    type Error = ValidateError;
+    type Error = ParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::from_str(&value)

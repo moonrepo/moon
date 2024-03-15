@@ -2,7 +2,7 @@ use crate::helpers::{create_theme, map_list};
 use clap::Args;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
-use moon_app_components::Console;
+use moon_app_components::{Console, MoonEnv};
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_workspace::Workspace;
@@ -11,6 +11,7 @@ use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::fmt::Debug;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tracing::{debug, warn};
 
 #[derive(Args, Clone, Debug)]
@@ -313,14 +314,19 @@ pub async fn generate(
     args: ArgsRef<GenerateArgs>,
     workspace: ResourceRef<Workspace>,
     console: ResourceRef<Console>,
+    moon_env: StateRef<MoonEnv>,
 ) {
-    let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
+    let generator = CodeGenerator::new(
+        &workspace.root,
+        &workspace.config.generator,
+        Arc::clone(moon_env),
+    );
     let console = console.stdout();
     let theme = create_theme();
 
     // This is a special case for creating a new template with the generator itself!
     if args.template {
-        let template = generator.create_template(&args.name)?;
+        let template = generator.create_template(&args.name).await?;
 
         console.write_line(format!(
             "Created a new template {} at {}",
@@ -336,7 +342,7 @@ pub async fn generate(
     }
 
     // Create the template instance
-    let mut template = generator.load_template(&args.name)?;
+    let mut template = generator.load_template(&args.name).await?;
 
     console.write_newline()?;
     console.write_line(format!(

@@ -1,11 +1,14 @@
 use crate::codegen_error::CodegenError;
 use crate::template::Template;
+use async_recursion::async_recursion;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
 use moon_common::path::RelativePathBuf;
 use moon_common::Id;
-use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocator};
+use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocator, Version};
 use moon_env::MoonEnvironment;
-use starbase_utils::fs;
+use moon_time::now_millis;
+use starbase_archive::Archiver;
+use starbase_utils::{fs, net};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::debug;
@@ -22,7 +25,10 @@ impl<'app> CodeGenerator<'app> {
         config: &'app GeneratorConfig,
         moon_env: Arc<MoonEnvironment>,
     ) -> CodeGenerator<'app> {
-        debug!("Creating code generator");
+        debug!(
+            locations = ?config.templates.iter().map(|t| t.to_string()).collect::<Vec<_>>(),
+            "Creating code generator with template locations",
+        );
 
         CodeGenerator {
             config,
@@ -33,44 +39,56 @@ impl<'app> CodeGenerator<'app> {
 
     /// Create a new template with a schema, using the first configured template path.
     /// Will error if a template of the same name already exists.
-    pub fn create_template(&self, id: &str) -> miette::Result<Template> {
+    pub async fn create_template(&self, id: &str) -> miette::Result<Template> {
         let id = Id::clean(id)?;
-        let root = self
-            .resolve_template_locator(&self.config.templates[0])
+
+        let Some(file_locator) = self
+            .config
+            .templates
+            .iter()
+            .find(|locator| matches!(locator, TemplateLocator::File { .. }))
+        else {
+            return Err(CodegenError::CreateFileSystemOnly.into());
+        };
+
+        let template_root = self
+            .resolve_templates_location(&file_locator)
+            .await?
             .join(id.as_str());
 
-        if root.exists() {
-            return Err(CodegenError::ExistingTemplate(id, root).into());
+        if template_root.exists() {
+            return Err(CodegenError::ExistingTemplate(id, template_root).into());
         }
 
         debug!(
             template = id.as_str(),
-            to = ?root,
+            to = ?template_root,
             "Creating new template",
         );
 
         fs::write_file(
-            root.join(CONFIG_TEMPLATE_FILENAME),
+            template_root.join(CONFIG_TEMPLATE_FILENAME),
             load_template_config_template(),
         )?;
 
-        Template::new(id, root)
+        Template::new(id, template_root)
     }
 
     /// Load the template with the provided name, using the first match amongst
     /// the list of template paths. Will error if no match is found.
-    pub fn load_template(&self, id: &str) -> miette::Result<Template> {
+    #[async_recursion]
+    pub async fn load_template(&self, id: &str) -> miette::Result<Template> {
         let id = Id::clean(id)?;
 
         debug!(
             template = id.as_str(),
-            locations = ?self.config.templates.iter().map(|t| t.to_string()).collect::<Vec<_>>(),
             "Attempting to find template from configured locations",
         );
 
         for template_path in &self.config.templates {
             let root = self
-                .resolve_template_locator(template_path)
+                .resolve_templates_location(template_path)
+                .await?
                 .join(id.as_str());
 
             if root.exists() {
@@ -86,19 +104,14 @@ impl<'app> CodeGenerator<'app> {
                 if !template.config.extends.is_empty() {
                     debug!(
                         template = template.id.as_str(),
-                        extends = ?template
-                            .config
-                            .extends
-                            .iter()
-                            .map(|ex| ex.as_str())
-                            .collect::<Vec<_>>(),
+                        extends = ?template.config.extends,
                         "Extending from other templates",
                     );
 
                     let mut extends = vec![];
 
                     for extend_id in &template.config.extends {
-                        extends.push(self.load_template(extend_id)?);
+                        extends.push(self.load_template(extend_id).await?);
                     }
 
                     for extend in extends {
@@ -131,16 +144,86 @@ impl<'app> CodeGenerator<'app> {
         Ok(())
     }
 
-    fn resolve_template_locator(&self, locator: &TemplateLocator) -> PathBuf {
+    async fn resolve_templates_location(
+        &self,
+        locator: &TemplateLocator,
+    ) -> miette::Result<PathBuf> {
         match locator {
-            TemplateLocator::File { path } => RelativePathBuf::from(path)
+            TemplateLocator::File { path } => Ok(RelativePathBuf::from(path)
                 .normalize()
-                .to_logical_path(self.workspace_root),
-            TemplateLocator::Git {
-                remote_url,
-                revision,
-            } => todo!(),
-            TemplateLocator::Npm { package, version } => todo!(),
+                .to_logical_path(self.workspace_root)),
+            TemplateLocator::Git { .. } => todo!(),
+            TemplateLocator::Npm { package, version } => {
+                self.download_and_unpack_npm_archive(package, version).await
+            }
         }
+    }
+
+    async fn download_and_unpack_npm_archive(
+        &self,
+        package: &str,
+        version: &Version,
+    ) -> miette::Result<PathBuf> {
+        let version_string = version.to_string();
+        let package_slug = package.replace('@', "").replace('/', "_");
+        let template_location = self
+            .moon_env
+            .templates_dir
+            .join("npm")
+            .join(&package_slug)
+            .join(&version_string);
+
+        debug!(
+            package,
+            version = &version_string,
+            "Resolving template location for npm package"
+        );
+
+        if template_location.exists() {
+            debug!(location = ?template_location, "Template location already exists locally");
+
+            return Ok(template_location);
+        }
+
+        let tarball_url = if let Some(index) = package.find('/') {
+            // With scope: https://registry.npmjs.org/@moonrepo/cli/-/cli-1.22.7.tgz
+            format!(
+                "https://registry.npmjs.org/{package}/-/{}-{version_string}.tgz",
+                &package[index + 1..]
+            )
+        } else {
+            // Without scope: https://registry.npmjs.org/npm/-/npm-10.5.0.tgz
+            format!("https://registry.npmjs.org/{package}/-/{package}-{version_string}.tgz")
+        };
+
+        // Download tarball
+        let temp_file = self
+            .moon_env
+            .temp_dir
+            .join(format!("{package_slug}_{version_string}.tgz",));
+
+        debug!(tarball_url = &tarball_url, temp_file = ?temp_file, "Downloading npm tarball");
+
+        net::download_from_url(&tarball_url, &temp_file).await?;
+
+        // Unpack tarball
+        debug!(
+            temp_file = ?temp_file,
+            location = ?template_location,
+            "Unpacking npm tarball into template location",
+        );
+
+        Archiver::new(&template_location, &temp_file)
+            .set_prefix("package")
+            .unpack_from_ext()?;
+
+        fs::remove_file(temp_file)?;
+
+        fs::write_file(
+            template_location.join(".installed-at"),
+            now_millis().to_string(),
+        )?;
+
+        Ok(template_location)
     }
 }

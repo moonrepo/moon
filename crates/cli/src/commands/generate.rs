@@ -316,7 +316,7 @@ pub async fn generate(
     console: ResourceRef<Console>,
     moon_env: StateRef<MoonEnv>,
 ) {
-    let generator = CodeGenerator::new(
+    let mut generator = CodeGenerator::new(
         &workspace.root,
         &workspace.config.generator,
         Arc::clone(moon_env),
@@ -326,7 +326,7 @@ pub async fn generate(
 
     // This is a special case for creating a new template with the generator itself!
     if args.template {
-        let template = generator.create_template(&args.name).await?;
+        let template = generator.create_template(&args.name)?;
 
         console.write_line(format!(
             "Created a new template {} at {}",
@@ -341,8 +341,10 @@ pub async fn generate(
         debug!("Running in DRY MODE");
     }
 
+    generator.resolve_template_locations().await?;
+
     // Create the template instance
-    let mut template = generator.load_template(&args.name).await?;
+    let mut template = generator.load_template(&args.name)?;
 
     console.write_newline()?;
     console.write_line(format!(

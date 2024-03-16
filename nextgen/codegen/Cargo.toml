@@ -14,7 +14,6 @@ moon_config = { path = "../config", features = ["loader", "template"] }
 moon_env = { path = "../env" }
 moon_process = { path = "../process" }
 moon_time = { path = "../time" }
-async-recursion = { workspace = true }
 content_inspector = "0.2.4"
 convert_case = "0.6.0"
 miette = { workspace = true }
@@ -24,6 +23,7 @@ starbase_archive = { workspace = true }
 starbase_utils = { workspace = true }
 tera = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

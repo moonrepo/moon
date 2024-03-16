@@ -45,12 +45,14 @@ impl Template {
         engine.register_filter("path_join", filters::path_join);
         engine.register_filter("path_relative", filters::path_relative);
 
+        let config = TemplateConfig::load_from(&root)?;
+
         Ok(Template {
+            id: config.id.clone().unwrap_or(id),
             assets: BTreeMap::new(),
-            config: TemplateConfig::load_from(&root)?,
+            config,
             engine,
             files: BTreeMap::new(),
-            id,
             root,
             templates: vec![],
         })

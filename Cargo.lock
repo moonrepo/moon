@@ -3225,7 +3225,6 @@ dependencies = [
 name = "moon_codegen"
 version = "0.0.1"
 dependencies = [
- "async-recursion",
  "content_inspector",
  "convert_case",
  "miette",
@@ -3241,6 +3240,7 @@ dependencies = [
  "starbase_utils",
  "tera",
  "thiserror",
+ "tokio",
  "tracing",
 ]
 

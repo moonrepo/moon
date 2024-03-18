@@ -16,9 +16,10 @@ use tokio::task::spawn;
 use tracing::debug;
 
 pub struct CodeGenerator<'app> {
+    pub template_locations: Vec<PathBuf>,
+
     config: &'app GeneratorConfig,
     moon_env: Arc<MoonEnvironment>,
-    template_locations: Vec<PathBuf>,
     workspace_root: &'app Path,
 }
 
@@ -45,7 +46,7 @@ impl<'app> CodeGenerator<'app> {
         let mut locations = vec![];
         let mut futures = vec![];
 
-        debug!("Resolve template locations to absolute file paths");
+        debug!("Resolving template locations to absolute file paths");
 
         for locator in &self.config.templates {
             match locator {
@@ -60,9 +61,9 @@ impl<'app> CodeGenerator<'app> {
                     remote_url,
                     revision,
                 } => {
-                    let base_url = remote_url.trim_start_matches("/").trim_end_matches(".git");
+                    let base_url = remote_url.trim_start_matches('/').trim_end_matches(".git");
                     let url = format!("https://{base_url}.git");
-                    let template_location = self.moon_env.templates_dir.join(&base_url);
+                    let template_location = self.moon_env.templates_dir.join(base_url);
 
                     futures.push(spawn(clone_and_checkout_git_repository(
                         url,
@@ -73,7 +74,7 @@ impl<'app> CodeGenerator<'app> {
                     locations.push(template_location);
                 }
                 TemplateLocator::Npm { package, version } => {
-                    let package_slug = package.replace('@', "").replace('/', "_");
+                    let package_slug = package.replace('@', "").replace('/', "_").to_lowercase();
                     let version_string = version.to_string();
                     let template_location = self
                         .moon_env
@@ -84,7 +85,7 @@ impl<'app> CodeGenerator<'app> {
                     let temp_file = self
                         .moon_env
                         .temp_dir
-                        .join(format!("{package_slug}_{version_string}.tgz",));
+                        .join(format!("{package_slug}_{version_string}.tgz"));
 
                     futures.push(spawn(download_and_unpack_npm_archive(
                         package.to_owned(),

@@ -25,6 +25,8 @@ mod template {
     use super::*;
 
     mod load_files {
+        use moon_env::MoonEnvironment;
+
         use super::*;
 
         #[test]
@@ -149,9 +151,13 @@ mod template {
             let sandbox = create_sandbox("generator");
             let out = sandbox.path().join("out");
 
-            let mut template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                .load_template("extends")
-                .unwrap();
+            let mut template = CodeGenerator::new(
+                sandbox.path(),
+                &GeneratorConfig::default(),
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            )
+            .load_template("extends")
+            .unwrap();
 
             template.load_files(&out, &create_context()).unwrap();
 

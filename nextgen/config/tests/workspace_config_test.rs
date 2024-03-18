@@ -307,6 +307,9 @@ constraints:
     }
 
     mod generator {
+        use moon_config::TemplateLocator;
+        use semver::Version;
+
         use super::*;
 
         #[test]
@@ -317,7 +320,9 @@ constraints:
 
             assert_eq!(
                 config.generator.templates,
-                vec![FilePath("./templates".into())]
+                vec![TemplateLocator::File {
+                    path: FilePath("./templates".into())
+                }]
             );
         }
 
@@ -339,11 +344,106 @@ generator:
             assert_eq!(
                 config.generator.templates,
                 vec![
-                    FilePath("custom/path".into()),
-                    FilePath("./rel/path".into()),
-                    FilePath("../parent/path".into()),
-                    FilePath("/abs/path".into())
+                    TemplateLocator::File {
+                        path: FilePath("custom/path".into())
+                    },
+                    TemplateLocator::File {
+                        path: FilePath("./rel/path".into())
+                    },
+                    TemplateLocator::File {
+                        path: FilePath("../parent/path".into())
+                    },
+                    TemplateLocator::File {
+                        path: FilePath("/abs/path".into())
+                    }
                 ]
+            );
+        }
+
+        #[test]
+        fn can_set_git_locations() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates:
+    - git:github.com/org/repo#master
+    - git:gitlab.com/org/repo#main
+    - git:ghe.self.hosted.com/some/org/repo#v1.2.3
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.generator.templates,
+                vec![
+                    TemplateLocator::Git {
+                        remote_url: "github.com/org/repo".into(),
+                        revision: "master".into()
+                    },
+                    TemplateLocator::Git {
+                        remote_url: "gitlab.com/org/repo".into(),
+                        revision: "main".into()
+                    },
+                    TemplateLocator::Git {
+                        remote_url: "ghe.self.hosted.com/some/org/repo".into(),
+                        revision: "v1.2.3".into()
+                    },
+                ]
+            );
+        }
+
+        #[test]
+        fn can_set_npm_locations() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates:
+    - npm:package-name@1.2.3
+    - npm:@scope/package@4.5.6
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.generator.templates,
+                vec![
+                    TemplateLocator::Npm {
+                        package: "package-name".into(),
+                        version: Version::new(1, 2, 3)
+                    },
+                    TemplateLocator::Npm {
+                        package: "@scope/package".into(),
+                        version: Version::new(4, 5, 6)
+                    }
+                ]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "globs are not supported, expected a literal file path")]
+        fn errors_for_no_git_revision() {
+            test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates: ['git:github.com/org/repo']
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "globs are not supported, expected a literal file path")]
+        fn errors_for_no_npm_version() {
+            test_load_config(
+                FILENAME,
+                r"
+generator:
+  templates: ['npm:@scope/package']
+",
+                |path| WorkspaceConfig::load_from(path),
             );
         }
 

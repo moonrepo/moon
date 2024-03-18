@@ -1,8 +1,11 @@
 use crate::portable_path::FilePath;
+use crate::template::TemplateLocator;
 use schematic::{validate, Config};
 
-fn default_templates<C>(_ctx: &C) -> Option<Vec<FilePath>> {
-    Some(vec![FilePath("./templates".into())])
+fn default_templates<C>(_ctx: &C) -> Option<Vec<TemplateLocator>> {
+    Some(vec![TemplateLocator::File {
+        path: FilePath("./templates".into()),
+    }])
 }
 
 /// Configures the generator for scaffolding from templates.
@@ -14,5 +17,5 @@ pub struct GeneratorConfig {
         validate = validate::not_empty,
         default = default_templates
     )]
-    pub templates: Vec<FilePath>,
+    pub templates: Vec<TemplateLocator>,
 }

@@ -4,7 +4,7 @@ use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{validate, Config, Path as SettingPath, PathSegment, ValidateError};
+use schematic::{validate, Config, PathSegment, ValidateError};
 use semver::VersionReq;
 
 #[cfg(feature = "loader")]
@@ -22,41 +22,43 @@ fn validate_projects<D, C>(
         PartialWorkspaceProjects::Both(cfg) => {
             if let Some(globs) = &cfg.globs {
                 for (i, g) in globs.iter().enumerate() {
-                    ProjectGlobPath::from_str(g).map_err(|mut error| {
-                        error.path = SettingPath::new(vec![
-                            PathSegment::Key("globs".to_owned()),
-                            PathSegment::Index(i),
-                        ]);
-                        error
+                    ProjectGlobPath::from_str(g).map_err(|error| {
+                        ValidateError::with_segments(
+                            error.to_string(),
+                            [PathSegment::Key("globs".to_owned()), PathSegment::Index(i)],
+                        )
                     })?;
                 }
             }
 
             if let Some(sources) = &cfg.sources {
                 for (k, v) in sources {
-                    ProjectFilePath::from_str(v).map_err(|mut error| {
-                        error.path = SettingPath::new(vec![
-                            PathSegment::Key("sources".to_owned()),
-                            PathSegment::Key(k.to_string()),
-                        ]);
-                        error
+                    ProjectFilePath::from_str(v).map_err(|error| {
+                        ValidateError::with_segments(
+                            error.to_string(),
+                            [
+                                PathSegment::Key("sources".to_owned()),
+                                PathSegment::Key(k.to_string()),
+                            ],
+                        )
                     })?;
                 }
             }
         }
         PartialWorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
-                ProjectGlobPath::from_str(g).map_err(|mut error| {
-                    error.path = SettingPath::new(vec![PathSegment::Index(i)]);
-                    error
+                ProjectGlobPath::from_str(g).map_err(|error| {
+                    ValidateError::with_segments(error.to_string(), [PathSegment::Index(i)])
                 })?;
             }
         }
         PartialWorkspaceProjects::Sources(sources) => {
             for (k, v) in sources {
-                ProjectFilePath::from_str(v).map_err(|mut error| {
-                    error.path = SettingPath::new(vec![PathSegment::Key(k.to_string())]);
-                    error
+                ProjectFilePath::from_str(v).map_err(|error| {
+                    ValidateError::with_segments(
+                        error.to_string(),
+                        [PathSegment::Key(k.to_string())],
+                    )
                 })?;
             }
         }

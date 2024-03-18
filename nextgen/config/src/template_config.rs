@@ -97,6 +97,9 @@ pub struct TemplateConfig {
     /// Extends one or many other templates.
     pub extends: Vec<Id>,
 
+    /// Overrides the ID of the template, instead of using the folder name.
+    pub id: Option<Id>,
+
     /// A human-readable title for the template.
     #[setting(validate = validate::not_empty)]
     pub title: String,

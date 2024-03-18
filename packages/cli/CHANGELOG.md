@@ -14,6 +14,9 @@
 
 #### 🚀 Updates
 
+- Added `git:` and `npm:` locators to the `generator.templates` setting in `.moon/workspace.yml`.
+  - This allows templates to be packaged and managed outside of the workspace.
+  - Locations will be cloned/downloaded on-demand.
 - Updated task inheritance to support stack-based configuration, such as
   `.moon/tasks/node-frontend.yml` or `.moon/tasks/bun-backend-application.yml`.
 - Updated `moon project` and `moon task` to include the configuration files that tasks inherit from.

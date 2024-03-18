@@ -11,6 +11,7 @@ pub struct MoonEnvironment {
     pub id_file: PathBuf,
     pub plugins_dir: PathBuf,
     pub temp_dir: PathBuf,
+    pub templates_dir: PathBuf,
     pub home: PathBuf,       // ~
     pub store_root: PathBuf, // ~/.moon
     pub test_mode: bool,
@@ -52,6 +53,7 @@ impl MoonEnvironment {
             id_file: store_root.join("id"),
             plugins_dir: store_root.join("plugins"),
             temp_dir: store_root.join("temp"),
+            templates_dir: store_root.join("templates"),
             home: dirs::home_dir().unwrap(),
             store_root: store_root.to_owned(),
             test_mode: false,

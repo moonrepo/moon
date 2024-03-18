@@ -34,6 +34,18 @@
         "type": "string"
       }
     },
+    "id": {
+      "title": "id",
+      "description": "Overrides the ID of the template, instead of using the folder name.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "title": {
       "title": "title",
       "description": "A human-readable title for the template.",

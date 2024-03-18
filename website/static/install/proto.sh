@@ -116,7 +116,7 @@ if [[ "$ext" == ".zip" ]]; then
 	# Unzip doesnt remove components folder
 	temp_dir="$temp_dir/$target"
 else
-	req_archive "gz" "gzip" "gzip"
+	req_archive "gzip"
 	req_archive "xz" "xz" "xz-utils"
 
 	tar xf "$download_file" --strip-components 1 -C "$temp_dir"

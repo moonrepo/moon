@@ -91,10 +91,10 @@ fi
 temp_dir="$HOME/.proto/temp/proto/$target"
 download_file="$temp_dir$ext"
 
-if [[ -z "$PROTO_INSTALL_DIR" ]]; then
+if [[ -z "$PROTO_HOME" ]]; then
 	install_dir="$HOME/.proto/bin"
 else
-	install_dir="$PROTO_INSTALL_DIR"
+	install_dir="$PROTO_HOME/bin"
 fi
 
 bin_path="$install_dir/$bin"

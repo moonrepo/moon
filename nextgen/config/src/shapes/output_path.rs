@@ -6,7 +6,7 @@ use crate::validate::validate_child_relative_path;
 use moon_common::path::{
     expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
 };
-use schematic::{derive_enum, SchemaType, Schematic, ValidateError};
+use schematic::{derive_enum, ParseError, SchemaType, Schematic};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
@@ -81,7 +81,7 @@ impl Ord for OutputPath {
 }
 
 impl FromStr for OutputPath {
-    type Err = ValidateError;
+    type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
@@ -91,7 +91,7 @@ impl FromStr for OutputPath {
 
         // Token/env var
         if value.starts_with('$') {
-            return Err(ValidateError::new(
+            return Err(ParseError::new(
                 "token and environment variables are not supported",
             ));
         }
@@ -105,7 +105,8 @@ impl FromStr for OutputPath {
 
         // Workspace-relative
         if let Some(workspace_path) = value.strip_prefix('/') {
-            validate_child_relative_path(workspace_path)?;
+            validate_child_relative_path(workspace_path)
+                .map_err(|error| ParseError::new(error.to_string()))?;
 
             return Ok(if is_glob_like(workspace_path) {
                 OutputPath::WorkspaceGlob(workspace_path.to_owned())
@@ -117,7 +118,8 @@ impl FromStr for OutputPath {
         // Project-relative
         let project_path = &value;
 
-        validate_child_relative_path(project_path)?;
+        validate_child_relative_path(project_path)
+            .map_err(|error| ParseError::new(error.to_string()))?;
 
         Ok(if is_glob_like(project_path) {
             OutputPath::ProjectGlob(project_path.to_owned())
@@ -128,7 +130,7 @@ impl FromStr for OutputPath {
 }
 
 impl TryFrom<String> for OutputPath {
-    type Error = ValidateError;
+    type Error = ParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         OutputPath::from_str(&value)

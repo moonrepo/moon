@@ -1,8 +1,9 @@
 #![allow(clippy::from_over_into)]
 
 use crate::validate::validate_child_relative_path;
-use schematic::{SchemaType, Schematic, ValidateError};
+use schematic::{ParseError, SchemaType, Schematic};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::path::Path;
 
 /// Return true of the provided file looks like a glob pattern.
@@ -27,7 +28,7 @@ pub fn is_glob_like(value: &str) -> bool {
 }
 
 pub trait PortablePath: Sized {
-    fn from_str(path: &str) -> Result<Self, ValidateError>;
+    fn from_str(path: &str) -> Result<Self, ParseError>;
 }
 
 macro_rules! path_type {
@@ -61,7 +62,7 @@ macro_rules! path_type {
         }
 
         impl TryFrom<String> for $name {
-            type Error = ValidateError;
+            type Error = ParseError;
 
             fn try_from(value: String) -> Result<Self, Self::Error> {
                 $name::from_str(&value)
@@ -69,7 +70,7 @@ macro_rules! path_type {
         }
 
         impl TryFrom<&String> for $name {
-            type Error = ValidateError;
+            type Error = ParseError;
 
             fn try_from(value: &String) -> Result<Self, Self::Error> {
                 $name::from_str(value)
@@ -77,7 +78,7 @@ macro_rules! path_type {
         }
 
         impl TryFrom<&str> for $name {
-            type Error = ValidateError;
+            type Error = ParseError;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
                 $name::from_str(value)
@@ -95,6 +96,12 @@ macro_rules! path_type {
                 SchemaType::string()
             }
         }
+
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
     };
 }
 
@@ -102,7 +109,7 @@ macro_rules! path_type {
 path_type!(GlobPath);
 
 impl PortablePath for GlobPath {
-    fn from_str(value: &str) -> Result<Self, ValidateError> {
+    fn from_str(value: &str) -> Result<Self, ParseError> {
         Ok(GlobPath(value.into()))
     }
 }
@@ -111,9 +118,9 @@ impl PortablePath for GlobPath {
 path_type!(FilePath);
 
 impl PortablePath for FilePath {
-    fn from_str(value: &str) -> Result<Self, ValidateError> {
+    fn from_str(value: &str) -> Result<Self, ParseError> {
         if is_glob_like(value) {
-            return Err(ValidateError::new(
+            return Err(ParseError::new(
                 "globs are not supported, expected a literal file path",
             ));
         }
@@ -126,8 +133,8 @@ impl PortablePath for FilePath {
 path_type!(ProjectGlobPath);
 
 impl PortablePath for ProjectGlobPath {
-    fn from_str(value: &str) -> Result<Self, ValidateError> {
-        validate_child_relative_path(value)?;
+    fn from_str(value: &str) -> Result<Self, ParseError> {
+        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
         Ok(ProjectGlobPath(value.into()))
     }
@@ -137,14 +144,14 @@ impl PortablePath for ProjectGlobPath {
 path_type!(ProjectFilePath);
 
 impl PortablePath for ProjectFilePath {
-    fn from_str(value: &str) -> Result<Self, ValidateError> {
+    fn from_str(value: &str) -> Result<Self, ParseError> {
         if is_glob_like(value) {
-            return Err(ValidateError::new(
+            return Err(ParseError::new(
                 "globs are not supported, expected a literal file path",
             ));
         }
 
-        validate_child_relative_path(value)?;
+        validate_child_relative_path(value).map_err(|error| ParseError::new(error.to_string()))?;
 
         Ok(ProjectFilePath(value.into()))
     }

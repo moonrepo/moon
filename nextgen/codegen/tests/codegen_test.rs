@@ -1,7 +1,9 @@
 use moon_codegen::CodeGenerator;
 use moon_common::Id;
-use moon_config::{FilePath, GeneratorConfig, TemplateVariable};
+use moon_config::{FilePath, GeneratorConfig, TemplateLocator, TemplateVariable, Version};
+use moon_env::MoonEnvironment;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
+use std::sync::Arc;
 
 mod codegen {
     use super::*;
@@ -15,18 +17,26 @@ mod codegen {
             let sandbox = create_empty_sandbox();
             sandbox.create_file("templates/standard/file", "");
 
-            CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                .create_template("standard")
-                .unwrap();
+            CodeGenerator::new(
+                sandbox.path(),
+                &GeneratorConfig::default(),
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            )
+            .create_template("standard")
+            .unwrap();
         }
 
         #[test]
         fn creates_the_template() {
             let sandbox = create_empty_sandbox();
 
-            let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                .create_template("new-template")
-                .unwrap();
+            let template = CodeGenerator::new(
+                sandbox.path(),
+                &GeneratorConfig::default(),
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            )
+            .create_template("new-template")
+            .unwrap();
 
             assert!(sandbox.path().join("templates/new-template").exists());
             assert!(sandbox
@@ -45,8 +55,11 @@ mod codegen {
             let template = CodeGenerator::new(
                 sandbox.path(),
                 &GeneratorConfig {
-                    templates: vec![FilePath("./scaffolding".to_owned())],
+                    templates: vec![TemplateLocator::File {
+                        path: FilePath("./scaffolding".to_owned()),
+                    }],
                 },
+                MoonEnvironment::new_testing(sandbox.path()).into(),
             )
             .create_template("new-template")
             .unwrap();
@@ -68,9 +81,13 @@ mod codegen {
         fn cleans_and_formats_the_name() {
             let sandbox = create_empty_sandbox();
 
-            let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
-                .unwrap();
+            let template = CodeGenerator::new(
+                sandbox.path(),
+                &GeneratorConfig::default(),
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            )
+            .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
+            .unwrap();
 
             assert!(sandbox
                 .path()
@@ -91,41 +108,107 @@ mod codegen {
         }
     }
 
+    mod resolve_template_locations {
+        use super::*;
+
+        #[tokio::test]
+        async fn clones_a_git_repo() {
+            let sandbox = create_empty_sandbox();
+            let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
+            let config = GeneratorConfig {
+                templates: vec![TemplateLocator::Git {
+                    remote_url: "github.com/moonrepo/moon-configs".into(),
+                    revision: "master".into(),
+                }],
+            };
+
+            let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
+            codegen.resolve_template_locations().await.unwrap();
+
+            assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
+            assert!(env
+                .templates_dir
+                .join("github.com")
+                .join("moonrepo")
+                .join("moon-configs")
+                .join(".git")
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn downloads_an_npm_package() {
+            let sandbox = create_empty_sandbox();
+            let env = Arc::new(MoonEnvironment::new_testing(sandbox.path()));
+            let config = GeneratorConfig {
+                templates: vec![TemplateLocator::Npm {
+                    package: "@moonrepo/cli".into(),
+                    version: Version::new(1, 0, 0),
+                }],
+            };
+
+            let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
+            codegen.resolve_template_locations().await.unwrap();
+
+            assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
+            assert!(env
+                .templates_dir
+                .join("npm")
+                .join("moonrepo_cli")
+                .join("1.0.0")
+                .exists());
+        }
+    }
+
     mod load_template {
         use super::*;
 
-        #[test]
-        fn loads_by_name() {
+        #[tokio::test]
+        async fn loads_by_name() {
             let sandbox = create_sandbox("generator");
+            let config = GeneratorConfig::default();
 
-            let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                .load_template("one")
-                .unwrap();
+            let mut codegen = CodeGenerator::new(
+                sandbox.path(),
+                &config,
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            );
+            codegen.resolve_template_locations().await.unwrap();
+            let template = codegen.load_template("one").unwrap();
 
             assert_eq!(template.id, Id::raw("one"));
             assert_eq!(template.root, sandbox.path().join("templates/one"));
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic(expected = "No template with the name three could not be found")]
-        fn errors_for_missing() {
+        async fn errors_for_missing() {
             let sandbox = create_sandbox("generator");
+            let config = GeneratorConfig::default();
 
-            CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                .load_template("three")
-                .unwrap();
+            let mut codegen = CodeGenerator::new(
+                sandbox.path(),
+                &config,
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            );
+            codegen.resolve_template_locations().await.unwrap();
+            codegen.load_template("three").unwrap();
         }
 
         mod extends {
             use super::*;
 
-            #[test]
-            fn loads_extended() {
+            #[tokio::test]
+            async fn loads_extended() {
                 let sandbox = create_sandbox("generator");
+                let config = GeneratorConfig::default();
 
-                let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                    .load_template("extends")
-                    .unwrap();
+                let mut codegen = CodeGenerator::new(
+                    sandbox.path(),
+                    &config,
+                    MoonEnvironment::new_testing(sandbox.path()).into(),
+                );
+                codegen.resolve_template_locations().await.unwrap();
+                let template = codegen.load_template("extends").unwrap();
 
                 assert_eq!(template.id, Id::raw("extends"));
                 assert_eq!(template.root, sandbox.path().join("templates/extends"));
@@ -152,13 +235,18 @@ mod codegen {
                 );
             }
 
-            #[test]
-            fn inherits_extended_variables() {
+            #[tokio::test]
+            async fn inherits_extended_variables() {
                 let sandbox = create_sandbox("generator");
+                let config = GeneratorConfig::default();
 
-                let template = CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                    .load_template("extends")
-                    .unwrap();
+                let mut codegen = CodeGenerator::new(
+                    sandbox.path(),
+                    &config,
+                    MoonEnvironment::new_testing(sandbox.path()).into(),
+                );
+                codegen.resolve_template_locations().await.unwrap();
+                let template = codegen.load_template("extends").unwrap();
 
                 assert_eq!(
                     template.config.variables.keys().collect::<Vec<_>>(),
@@ -175,14 +263,19 @@ mod codegen {
                 assert!(result);
             }
 
-            #[test]
+            #[tokio::test]
             #[should_panic(expected = "No template with the name missing could not be found")]
-            fn errors_for_missing_extends() {
+            async fn errors_for_missing_extends() {
                 let sandbox = create_sandbox("generator");
+                let config = GeneratorConfig::default();
 
-                CodeGenerator::new(sandbox.path(), &GeneratorConfig::default())
-                    .load_template("extends-unknown")
-                    .unwrap();
+                let mut codegen = CodeGenerator::new(
+                    sandbox.path(),
+                    &config,
+                    MoonEnvironment::new_testing(sandbox.path()).into(),
+                );
+                codegen.resolve_template_locations().await.unwrap();
+                codegen.load_template("extends-unknown").unwrap();
             }
         }
     }

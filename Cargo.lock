@@ -3230,12 +3230,17 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
+ "moon_env",
+ "moon_process",
+ "moon_time",
  "once_cell",
  "regex",
+ "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",
  "tera",
  "thiserror",
+ "tokio",
  "tracing",
 ]
 
@@ -5018,9 +5023,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.11.24"
+version = "0.11.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6920094eb85afde5e4a138be3f2de8bbdf28000f0029e72c45025a56b042251"
+checksum = "78bf93c4af7a8bb7d879d51cebe797356ff10ae8516ace542b5182d9dcac10b2"
 dependencies = [
  "base64",
  "bytes",
@@ -5227,9 +5232,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.14.3"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "709e1f0b0a3db267a98da09c89a7818e307cc8daea841e1079eb5f5a02591d54"
+checksum = "ac09b4b9c9fe5068fb44ac5cdc6b282acb175ab39e8b0d1eef737df2aeec3a91"
 dependencies = [
  "garde",
  "indexmap 2.2.5",
@@ -5251,9 +5256,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31af7347544d97d00870a5865d2077dac07c069a5290c26215ddd1138b302590"
+checksum = "910c561ff783c09af4e4a7a4f7d6d733aed0a0374333de7f0b39f474568ba937"
 dependencies = [
  "convert_case",
  "darling 0.20.8",
@@ -5660,9 +5665,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "188611d36a605c62158f3b9a1b36a4b3d328d24e0f478a781f77874a8e407dbb"
+checksum = "602b821bd1b020210432bdc5152056defca02dab1f601e86093cb12e842d0fa5"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",
@@ -5672,6 +5677,7 @@ dependencies = [
  "once_cell",
  "regex",
  "relative-path",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -5680,6 +5686,7 @@ dependencies = [
  "tokio",
  "toml 0.8.10",
  "tracing",
+ "url",
  "wax",
 ]
 

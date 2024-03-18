@@ -1,8 +1,11 @@
 mod utils;
 
 use moon_common::Id;
-use moon_config::{ExtensionConfig, FilePath, VcsProvider, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{
+    ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig, WorkspaceProjects,
+};
 use rustc_hash::FxHashMap;
+use semver::Version;
 use starbase_sandbox::create_sandbox;
 use utils::*;
 
@@ -307,9 +310,6 @@ constraints:
     }
 
     mod generator {
-        use moon_config::TemplateLocator;
-        use semver::Version;
-
         use super::*;
 
         #[test]
@@ -422,7 +422,9 @@ generator:
         }
 
         #[test]
-        #[should_panic(expected = "globs are not supported, expected a literal file path")]
+        #[should_panic(
+            expected = "Invalid Git template locator, must be in the format of `git:url#revision`"
+        )]
         fn errors_for_no_git_revision() {
             test_load_config(
                 FILENAME,
@@ -435,7 +437,9 @@ generator:
         }
 
         #[test]
-        #[should_panic(expected = "globs are not supported, expected a literal file path")]
+        #[should_panic(
+            expected = "Invalid npm template locator, must be in the format of `npm:package@version`"
+        )]
         fn errors_for_no_npm_version() {
             test_load_config(
                 FILENAME,

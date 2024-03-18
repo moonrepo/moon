@@ -2,6 +2,7 @@ use moon_codegen::{CodeGenerator, Template, TemplateContext, TemplateFile};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
 use moon_common::Id;
 use moon_config::{GeneratorConfig, TemplateFrontmatterConfig};
+use moon_env::MoonEnvironment;
 use starbase_sandbox::{create_sandbox, locate_fixture};
 use std::path::PathBuf;
 
@@ -25,8 +26,6 @@ mod template {
     use super::*;
 
     mod load_files {
-        use moon_env::MoonEnvironment;
-
         use super::*;
 
         #[test]
@@ -146,18 +145,19 @@ mod template {
             assert!(!has_schema);
         }
 
-        #[test]
-        fn inherits_extended_files() {
+        #[tokio::test]
+        async fn inherits_extended_files() {
             let sandbox = create_sandbox("generator");
             let out = sandbox.path().join("out");
+            let config = GeneratorConfig::default();
 
-            let mut template = CodeGenerator::new(
+            let mut codegen = CodeGenerator::new(
                 sandbox.path(),
-                &GeneratorConfig::default(),
+                &config,
                 MoonEnvironment::new_testing(sandbox.path()).into(),
-            )
-            .load_template("extends")
-            .unwrap();
+            );
+            codegen.resolve_template_locations().await.unwrap();
+            let mut template = codegen.load_template("extends").unwrap();
 
             template.load_files(&out, &create_context()).unwrap();
 

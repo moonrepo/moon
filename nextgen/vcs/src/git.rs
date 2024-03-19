@@ -253,6 +253,19 @@ impl Git {
 
         Ok(&self.default_branch)
     }
+
+    fn to_workspace_relative_path(&self, value: &str) -> WorkspaceRelativePathBuf {
+        let file = WorkspaceRelativePathBuf::from(value);
+
+        // Convert the prefixed path back to a workspace relative one...
+        if let Some(prefix) = &self.root_prefix {
+            if let Ok(rel_file) = file.strip_prefix(prefix) {
+                return rel_file.to_owned();
+            }
+        }
+
+        return file;
+    }
 }
 
 #[async_trait]
@@ -333,16 +346,7 @@ impl Vcs for Git {
 
             for (i, hash) in output.split('\n').enumerate() {
                 if !hash.is_empty() {
-                    let mut file = WorkspaceRelativePathBuf::from(&slice[i]);
-
-                    // Convert the prefixed path back to a workspace relative one...
-                    if let Some(prefix) = &self.root_prefix {
-                        if file.starts_with(prefix) {
-                            file = file.strip_prefix(prefix).unwrap().to_owned();
-                        }
-                    }
-
-                    map.insert(file, hash.to_owned());
+                    map.insert(self.to_workspace_relative_path(&slice[i]), hash.to_owned());
                 }
             }
 
@@ -371,7 +375,7 @@ impl Vcs for Git {
 
         Ok(output
             .split('\n')
-            .map(WorkspaceRelativePathBuf::from)
+            .map(|file| self.to_workspace_relative_path(file))
             .collect::<Vec<_>>())
     }
 
@@ -466,7 +470,7 @@ impl Vcs for Git {
             let mut chars = line.chars();
             let x = chars.next().unwrap_or_default();
             let y = chars.next().unwrap_or_default();
-            let file = WorkspaceRelativePathBuf::from(&line[3..]);
+            let file = self.to_workspace_relative_path(&line[3..]);
 
             match x {
                 'A' | 'C' => {
@@ -598,7 +602,7 @@ impl Vcs for Git {
             }
 
             let x = last_status.chars().next().unwrap_or_default();
-            let file = WorkspaceRelativePathBuf::from(line);
+            let file = self.to_workspace_relative_path(line);
 
             match x {
                 'A' | 'C' => {
@@ -636,7 +640,7 @@ impl Vcs for Git {
             .run_with_formatter(["--version"], true, clean_git_version)
             .await?;
 
-        Ok(Version::parse(version).unwrap())
+        Ok(Version::parse(version).into_diagnostic()?)
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {

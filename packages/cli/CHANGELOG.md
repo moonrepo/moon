@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where task hashing would attempt to hash invalid file paths, when moon is located
+  within a nested git repository.
+
 ## 1.22.7
 
 #### 🐞 Fixes

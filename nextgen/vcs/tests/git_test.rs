@@ -24,6 +24,20 @@ fn create_git_sandbox_with_ignored(fixture: &str) -> (Sandbox, Git) {
     (sandbox, git)
 }
 
+fn create_nested_git_sandbox() -> (Sandbox, Git) {
+    let sandbox = create_sandbox("nested");
+    sandbox.enable_git();
+
+    let git = Git::load(
+        sandbox.path().join("frontend"),
+        "master",
+        &["origin".into()],
+    )
+    .unwrap();
+
+    (sandbox, git)
+}
+
 fn create_touched_set<I: IntoIterator<Item = V>, V: AsRef<str>>(
     files: I,
 ) -> FxHashSet<WorkspaceRelativePathBuf> {
@@ -374,6 +388,30 @@ mod file_hashing {
             BTreeMap::new()
         );
     }
+
+    #[tokio::test]
+    async fn removes_nested_workspace_prefix() {
+        let (_sandbox, git) = create_nested_git_sandbox();
+
+        assert_eq!(
+            git.get_file_hashes(
+                &[
+                    // valid
+                    "file.js".into(),
+                    // invalid
+                    "frontend/file.js".into()
+                ],
+                false,
+                100
+            )
+            .await
+            .unwrap(),
+            BTreeMap::from([(
+                WorkspaceRelativePathBuf::from("file.js"),
+                "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".into()
+            )])
+        );
+    }
 }
 
 mod file_tree {
@@ -422,6 +460,16 @@ mod file_tree {
                 WorkspaceRelativePathBuf::from("baz/dir/file6.txt"),
                 WorkspaceRelativePathBuf::from("baz/file5.txt"),
             ]
+        );
+    }
+
+    #[tokio::test]
+    async fn removes_nested_workspace_prefix() {
+        let (_sandbox, git) = create_nested_git_sandbox();
+
+        assert_eq!(
+            git.get_file_tree(".").await.unwrap(),
+            vec![WorkspaceRelativePathBuf::from("file.js")]
         );
     }
 }
@@ -522,6 +570,22 @@ mod touched_files {
                 deleted: create_touched_set(["rename-me.txt"]),
                 unstaged: create_touched_set(["rename-me.txt"]),
                 untracked: create_touched_set(["renamed.txt"]),
+                ..TouchedFiles::default()
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn removes_nested_workspace_prefix() {
+        let (sandbox, git) = create_nested_git_sandbox();
+
+        sandbox.create_file("frontend/file.js", "modified");
+
+        assert_eq!(
+            git.get_touched_files().await.unwrap(),
+            TouchedFiles {
+                modified: create_touched_set(["file.js"]),
+                unstaged: create_touched_set(["file.js"]),
                 ..TouchedFiles::default()
             }
         );

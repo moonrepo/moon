@@ -6,6 +6,32 @@
 
 set -eo pipefail
 
+is_macos() {
+	[[ "$OSTYPE" == "darwin"* ]]
+}
+
+check_cmd() {
+	command -v "$1" > /dev/null 2>&1
+	return $?
+}
+
+req_archive() {
+	macos_pkg="${2:-$1}"
+	linux_pkg="${3:-$1}"
+
+	if ! check_cmd "$1"; then
+		echo "$1 is required for unpacking archives and using proto!"
+
+		if is_macos; then
+			echo "Install with \`brew install $macos_pkg\`"
+		else
+			echo "Install with your package manager, such as \`apt install $linux_pkg\`"
+		fi
+
+		exit 1
+	fi
+}
+
 bin="proto"
 shim_bin="proto-shim"
 arch=$(uname -sm)
@@ -65,10 +91,10 @@ fi
 temp_dir="$HOME/.proto/temp/proto/$target"
 download_file="$temp_dir$ext"
 
-if [[ -z "$PROTO_INSTALL_DIR" ]]; then
+if [[ -z "$PROTO_HOME" ]]; then
 	install_dir="$HOME/.proto/bin"
 else
-	install_dir="$PROTO_INSTALL_DIR"
+	install_dir="$PROTO_HOME/bin"
 fi
 
 bin_path="$install_dir/$bin"
@@ -83,11 +109,16 @@ fi
 curl --fail --location --progress-bar --output "$download_file" "$download_url"
 
 if [[ "$ext" == ".zip" ]]; then
+	req_archive "unzip"
+
 	unzip -d "$temp_dir" "$download_file"
 
 	# Unzip doesnt remove components folder
 	temp_dir="$temp_dir/$target"
 else
+	req_archive "gzip"
+	req_archive "xz" "xz" "xz-utils"
+
 	tar xf "$download_file" --strip-components 1 -C "$temp_dir"
 fi
 

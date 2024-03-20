@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.529220f1.css">
-<script src="/assets/js/runtime~main.252af7f4.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.f373f011.js" defer="defer"></script>
 <script src="/assets/js/main.9576bd11.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -21,14 +21,16 @@
 <p>The following guide can be used to install proto into your environment.</p>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="requirements">Requirements<a href="#requirements" class="hash-link" aria-label="Direct link to Requirements" title="Direct link to Requirements">​</a></h2>
 <ul>
-<li>Git &gt;= 2.22</li>
+<li>Git - for fetching available versions/tags</li>
+<li>tar, unzip, gz, xz - for unpacking archives</li>
 </ul>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># macOS</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">brew </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">git</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">unzip</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">gzip</span><span class="token plain"> xz</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Linux</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">apt-get</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">git</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">unzip</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">gzip</span><span class="token plain"> xz-utils</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="installing">Installing<a href="#installing" class="hash-link" aria-label="Direct link to Installing" title="Direct link to Installing">​</a></h2>
 <p>The entirety of proto is packaged and shipped as a single binary. It works on <em>most</em> operating
 systems, and does not require any external dependencies. For convenience, we provide the following
 scripts to download and install proto.</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>The install location can be customized with the <code>PROTO_INSTALL_DIR</code> environment variable. If not
-provided, the default location is <code>~/.proto</code>.</p></div></div>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>The install location can be customized with the <code>PROTO_HOME</code> environment variable. If not provided,
+the default location is <code>~/.proto</code>.</p></div></div>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="linux-macos-wsl">Linux, macOS, WSL<a href="#linux-macos-wsl" class="hash-link" aria-label="Direct link to Linux, macOS, WSL" title="Direct link to Linux, macOS, WSL">​</a></h3>
 <p>In a terminal that supports Bash, run the following command. This will download and install proto,
 then open an interactive prompt to complete the installation.</p>

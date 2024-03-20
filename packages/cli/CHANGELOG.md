@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue with `moon docker scaffold` where an unknown project type would trigger toolchain
+  errors.
+
 ## 1.22.8
 
 #### 🐞 Fixes

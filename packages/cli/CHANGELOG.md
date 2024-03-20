@@ -14,7 +14,9 @@
 
 #### 🐞 Fixes
 
-- Fixed an issue with `moon docker scaffold` where an unknown project type would trigger toolchain
+- Fixed an issue with `moon docker scaffold` where Rust projects in the workspace skeleton would
+  fail to compile as they were missing a lib/main entry point.
+- Fixed an issue with `moon docker prune` where an unknown project type would trigger toolchain
   errors.
 
 ## 1.22.8

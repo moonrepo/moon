@@ -49,6 +49,27 @@ fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResul
     Ok(())
 }
 
+fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
+    for file in list {
+        let file = file.as_ref();
+        let dest_file = dest.join(file);
+
+        if dest_file.exists() {
+            continue;
+        }
+
+        let mut data = "";
+
+        if file.ends_with(".json") {
+            data = "{}";
+        }
+
+        fs::write_file(dest.join(file), data.as_bytes())?;
+    }
+
+    Ok(())
+}
+
 fn scaffold_workspace(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
@@ -61,45 +82,64 @@ fn scaffold_workspace(
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
     let copy_from_dir = |source: &Path, dest: &Path| -> AppResult {
-        let mut files: Vec<String> = vec![
-            ".prototools".to_owned(),
-            CONFIG_PROJECT_FILENAME.to_owned(),
-            CONFIG_TEMPLATE_FILENAME.to_owned(),
+        let mut files_to_copy: Vec<String> = vec![
+            ".prototools".into(),
+            CONFIG_PROJECT_FILENAME.into(),
+            CONFIG_TEMPLATE_FILENAME.into(),
         ];
+        let mut files_to_create: Vec<String> = vec![];
 
         for lang in LanguageType::variants() {
-            files.extend(detect_language_files(&lang));
+            files_to_copy.extend(detect_language_files(&lang));
 
             // These are special cases
             match lang {
                 LanguageType::JavaScript => {
-                    files.extend([
-                        "postinstall.js".to_owned(),
-                        "postinstall.cjs".to_owned(),
-                        "postinstall.mjs".to_owned(),
+                    files_to_copy.extend([
+                        "postinstall.js".into(),
+                        "postinstall.cjs".into(),
+                        "postinstall.mjs".into(),
                     ]);
+                    files_to_create.push("package.json".into());
                 }
                 LanguageType::Rust => {
                     if let Some(cargo_toml) = CargoTomlCache::read(source)? {
                         let manifests = cargo_toml.get_member_manifest_paths(source)?;
 
                         for manifest in manifests {
-                            files.push(path::to_string(manifest.strip_prefix(source).unwrap())?);
+                            if let Ok(rel_manifest) = manifest.strip_prefix(source) {
+                                files_to_copy.push(path::to_string(rel_manifest)?);
+
+                                let rel_manifest_dir = rel_manifest.parent().unwrap();
+
+                                files_to_create.extend([
+                                    path::to_string(rel_manifest_dir.join("src/lib.rs"))?,
+                                    path::to_string(rel_manifest_dir.join("src/main.rs"))?,
+                                ]);
+                            }
                         }
+                    } else {
+                        files_to_create.extend(["src/lib.rs".into(), "src/main.rs".into()]);
                     }
                 }
                 LanguageType::TypeScript => {
+                    files_to_create.push("tsconfig.json".into());
+
                     if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                        files.push(typescript_config.project_config_file_name.to_owned());
-                        files.push(typescript_config.root_config_file_name.to_owned());
-                        files.push(typescript_config.root_options_config_file_name.to_owned());
+                        files_to_copy.push(typescript_config.project_config_file_name.to_owned());
+                        files_to_copy.push(typescript_config.root_config_file_name.to_owned());
+                        files_to_copy
+                            .push(typescript_config.root_options_config_file_name.to_owned());
                     }
                 }
                 _ => {}
             }
         }
 
-        copy_files(&files, source, dest)
+        copy_files(&files_to_copy, source, dest)?;
+        create_files(&files_to_create, dest)?;
+
+        Ok(())
     };
 
     // Copy each project and mimic the folder structure

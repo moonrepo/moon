@@ -230,7 +230,11 @@ mod scaffold_workspace {
         assert!(docker.join("Cargo.toml").exists());
         assert!(docker.join("Cargo.lock").exists());
         assert!(docker.join("crates/bin-crate/Cargo.toml").exists());
+        assert!(docker.join("crates/bin-crate/src/lib.rs").exists());
+        assert!(docker.join("crates/bin-crate/src/main.rs").exists());
         assert!(docker.join("crates/path-deps/Cargo.toml").exists());
+        assert!(docker.join("crates/path-deps/src/lib.rs").exists());
+        assert!(docker.join("crates/path-deps/src/main.rs").exists());
     }
 }
 

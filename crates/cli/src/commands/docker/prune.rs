@@ -132,7 +132,7 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
     // Do this later so we only run once for each platform instead of per project
     for platform_type in platforms {
         if platform_type.is_unknown() {
-            // Unknown will crash with "Platform unknown has not been enabled"
+            // Will crash with "Platform unknown has not been enabled"
             continue;
         }
 

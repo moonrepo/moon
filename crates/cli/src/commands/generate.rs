@@ -341,10 +341,10 @@ pub async fn generate(
         debug!("Running in DRY MODE");
     }
 
-    generator.resolve_template_locations().await?;
+    generator.load_templates().await?;
 
     // Create the template instance
-    let mut template = generator.load_template(&args.name)?;
+    let mut template = generator.get_template(&args.name)?;
 
     console.write_newline()?;
     console.write_line(format!(

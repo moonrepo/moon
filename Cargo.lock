@@ -3242,6 +3242,7 @@ dependencies = [
  "moon_time",
  "once_cell",
  "regex",
+ "rustc-hash",
  "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",

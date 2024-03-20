@@ -26,10 +26,23 @@ pub enum CodegenError {
 
     #[diagnostic(code(codegen::template::missing))]
     #[error(
-        "No template with the name {} could not be found at any of the configured template paths.",
+        "No template with the name {} could not be found at any of the configured template locations.",
         .0.style(Style::Id),
     )]
     MissingTemplate(Id),
+
+    #[diagnostic(code(codegen::template::duplicate))]
+    #[error(
+        "Found multiple templates with the same name {}.\nOriginal template at {}.\nCurrent template at {}.",
+        .id.style(Style::Id),
+        .original.style(Style::Path),
+        .current.style(Style::Path),
+    )]
+    DulicateTemplate {
+        id: Id,
+        original: PathBuf,
+        current: PathBuf,
+    },
 
     #[diagnostic(code(codegen::template_file::load_failed))]
     #[error(

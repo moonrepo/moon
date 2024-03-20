@@ -8,6 +8,7 @@ use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocato
 use moon_env::MoonEnvironment;
 use moon_process::Command;
 use moon_time::now_millis;
+use rustc_hash::FxHashMap;
 use starbase_archive::Archiver;
 use starbase_utils::{fs, net};
 use std::path::{Path, PathBuf};
@@ -15,10 +16,12 @@ use std::sync::Arc;
 use tokio::task::spawn;
 use tracing::debug;
 
+#[derive(Debug)]
 pub struct CodeGenerator<'app> {
+    pub config: &'app GeneratorConfig,
+    pub templates: FxHashMap<Id, Template>,
     pub template_locations: Vec<PathBuf>,
 
-    config: &'app GeneratorConfig,
     moon_env: Arc<MoonEnvironment>,
     workspace_root: &'app Path,
 }
@@ -37,12 +40,136 @@ impl<'app> CodeGenerator<'app> {
         CodeGenerator {
             config,
             moon_env,
+            templates: FxHashMap::default(),
             template_locations: vec![],
             workspace_root,
         }
     }
 
-    pub async fn resolve_template_locations(&mut self) -> miette::Result<()> {
+    pub async fn load_templates(&mut self) -> miette::Result<()> {
+        self.resolve_template_locations().await?;
+
+        debug!("Loading all available templates from locations");
+
+        for location in &self.template_locations {
+            debug!(location = ?location, "Scanning location");
+
+            for template_root in fs::read_dir(location)? {
+                let template_root = template_root.path();
+
+                if !template_root.is_dir() || !template_root.join(CONFIG_TEMPLATE_FILENAME).exists()
+                {
+                    continue;
+                }
+
+                debug!(root = ?template_root, "Found a template, attempting to load");
+
+                let template =
+                    Template::new(Id::clean(fs::file_name(&template_root))?, template_root)?;
+
+                if let Some(existing_template) = self.templates.get(&template.id) {
+                    return Err(CodegenError::DulicateTemplate {
+                        id: template.id,
+                        original: existing_template.root.clone(),
+                        current: template.root,
+                    }
+                    .into());
+                } else {
+                    self.templates.insert(template.id.clone(), template);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn create_template(&self, id: &str) -> miette::Result<Template> {
+        let id = Id::clean(id)?;
+
+        let Some(TemplateLocator::File { path }) = self
+            .config
+            .templates
+            .iter()
+            .find(|locator| matches!(locator, TemplateLocator::File { .. }))
+        else {
+            return Err(CodegenError::CreateFileSystemOnly.into());
+        };
+
+        let template_root = RelativePathBuf::from(path)
+            .to_logical_path(self.workspace_root)
+            .join(id.as_str());
+
+        if template_root.exists() {
+            return Err(CodegenError::ExistingTemplate(id, template_root).into());
+        }
+
+        debug!(
+            template = id.as_str(),
+            to = ?template_root,
+            "Creating new template",
+        );
+
+        fs::write_file(
+            template_root.join(CONFIG_TEMPLATE_FILENAME),
+            load_template_config_template(),
+        )?;
+
+        Template::new(id, template_root)
+    }
+
+    pub fn get_template(&self, id: &str) -> miette::Result<Template> {
+        let id = Id::clean(id)?;
+
+        debug!(template = id.as_str(), "Retrieving a template");
+
+        let Some(template) = self.templates.get(&id) else {
+            return Err(CodegenError::MissingTemplate(id).into());
+        };
+
+        // Clone base template
+        let mut template = template.clone();
+
+        // Inherit other templates
+        if !template.config.extends.is_empty() {
+            debug!(
+                template = template.id.as_str(),
+                extends = ?template.config.extends,
+                "Extending from other templates",
+            );
+
+            let mut extends = vec![];
+
+            for extend_id in &template.config.extends {
+                extends.push(self.get_template(extend_id)?);
+            }
+
+            for extend in extends {
+                template.extend_template(extend);
+            }
+        }
+
+        Ok(template)
+    }
+
+    pub fn generate(&self, template: &Template) -> miette::Result<()> {
+        debug!(template = template.id.as_str(), "Generating template files");
+
+        for file in template.files.values() {
+            if file.should_write() {
+                template.write_file(file)?;
+            }
+        }
+
+        for asset in template.assets.values() {
+            template.copy_asset(asset)?;
+        }
+
+        debug!(template = template.id.as_str(), "Code generation complete!");
+
+        Ok(())
+    }
+
+    async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
         let mut futures = vec![];
 
@@ -104,111 +231,6 @@ impl<'app> CodeGenerator<'app> {
         }
 
         self.template_locations = locations;
-
-        Ok(())
-    }
-
-    /// Create a new template with a schema, using the first configured template path.
-    /// Will error if a template of the same name already exists.
-    pub fn create_template(&self, id: &str) -> miette::Result<Template> {
-        let id = Id::clean(id)?;
-
-        let Some(TemplateLocator::File { path }) = self
-            .config
-            .templates
-            .iter()
-            .find(|locator| matches!(locator, TemplateLocator::File { .. }))
-        else {
-            return Err(CodegenError::CreateFileSystemOnly.into());
-        };
-
-        let template_root = RelativePathBuf::from(path)
-            .to_logical_path(self.workspace_root)
-            .join(id.as_str());
-
-        if template_root.exists() {
-            return Err(CodegenError::ExistingTemplate(id, template_root).into());
-        }
-
-        debug!(
-            template = id.as_str(),
-            to = ?template_root,
-            "Creating new template",
-        );
-
-        fs::write_file(
-            template_root.join(CONFIG_TEMPLATE_FILENAME),
-            load_template_config_template(),
-        )?;
-
-        Template::new(id, template_root)
-    }
-
-    /// Load the template with the provided name, using the first match amongst
-    /// the list of template locations. Will error if no match is found.
-    pub fn load_template(&self, id: &str) -> miette::Result<Template> {
-        let id = Id::clean(id)?;
-
-        debug!(
-            template = id.as_str(),
-            locations = ?self.template_locations,
-            "Attempting to find template from resolved locations",
-        );
-
-        for template_location in &self.template_locations {
-            let root = template_location.join(id.as_str());
-
-            if !root.exists() {
-                continue;
-            }
-
-            debug!(
-                template = id.as_str(),
-                root = ?root,
-                "Found template"
-            );
-
-            let mut template = Template::new(id, root)?;
-
-            // Inherit other templates
-            if !template.config.extends.is_empty() {
-                debug!(
-                    template = template.id.as_str(),
-                    extends = ?template.config.extends,
-                    "Extending from other templates",
-                );
-
-                let mut extends = vec![];
-
-                for extend_id in &template.config.extends {
-                    extends.push(self.load_template(extend_id)?);
-                }
-
-                for extend in extends {
-                    template.extend_template(extend);
-                }
-            }
-
-            return Ok(template);
-        }
-
-        Err(CodegenError::MissingTemplate(id).into())
-    }
-
-    pub fn generate(&self, template: &Template) -> miette::Result<()> {
-        debug!(template = template.id.as_str(), "Generating template files");
-
-        for file in template.files.values() {
-            if file.should_write() {
-                template.write_file(file)?;
-            }
-        }
-
-        for asset in template.assets.values() {
-            template.copy_asset(asset)?;
-        }
-
-        debug!(template = template.id.as_str(), "Code generation complete!");
 
         Ok(())
     }

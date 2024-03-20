@@ -78,7 +78,7 @@ pub enum TemplateVariable {
 
 /// Configures a template and its files to be scaffolded.
 /// Docs: https://moonrepo.dev/docs/config/template
-#[derive(Config, Debug)]
+#[derive(Clone, Config, Debug)]
 pub struct TemplateConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/template.json",

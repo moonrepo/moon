@@ -108,7 +108,7 @@ mod codegen {
         }
     }
 
-    mod resolve_template_locations {
+    mod load_templates {
         use super::*;
 
         #[tokio::test]
@@ -123,7 +123,7 @@ mod codegen {
             };
 
             let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
-            codegen.resolve_template_locations().await.unwrap();
+            codegen.load_templates().await.unwrap();
 
             assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
             assert!(env
@@ -147,7 +147,7 @@ mod codegen {
             };
 
             let mut codegen = CodeGenerator::new(sandbox.path(), &config, Arc::clone(&env));
-            codegen.resolve_template_locations().await.unwrap();
+            codegen.load_templates().await.unwrap();
 
             assert!(codegen.template_locations[0].starts_with(&env.templates_dir));
             assert!(env
@@ -157,9 +157,24 @@ mod codegen {
                 .join("1.0.0")
                 .exists());
         }
+
+        #[tokio::test]
+        #[should_panic(expected = "Found multiple templates with the same name folder-name")]
+        async fn errors_for_dupe_ids() {
+            let sandbox = create_sandbox("dupes");
+            let config = GeneratorConfig::default();
+
+            let mut codegen = CodeGenerator::new(
+                sandbox.path(),
+                &config,
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            );
+            codegen.load_templates().await.unwrap();
+            codegen.get_template("three").unwrap();
+        }
     }
 
-    mod load_template {
+    mod get_template {
         use super::*;
 
         #[tokio::test]
@@ -172,8 +187,9 @@ mod codegen {
                 &config,
                 MoonEnvironment::new_testing(sandbox.path()).into(),
             );
-            codegen.resolve_template_locations().await.unwrap();
-            let template = codegen.load_template("one").unwrap();
+            codegen.load_templates().await.unwrap();
+
+            let template = codegen.get_template("one").unwrap();
 
             assert_eq!(template.id, Id::raw("one"));
             assert_eq!(template.root, sandbox.path().join("templates/one"));
@@ -190,8 +206,8 @@ mod codegen {
                 &config,
                 MoonEnvironment::new_testing(sandbox.path()).into(),
             );
-            codegen.resolve_template_locations().await.unwrap();
-            codegen.load_template("three").unwrap();
+            codegen.load_templates().await.unwrap();
+            codegen.get_template("three").unwrap();
         }
 
         mod extends {
@@ -207,8 +223,8 @@ mod codegen {
                     &config,
                     MoonEnvironment::new_testing(sandbox.path()).into(),
                 );
-                codegen.resolve_template_locations().await.unwrap();
-                let template = codegen.load_template("extends").unwrap();
+                codegen.load_templates().await.unwrap();
+                let template = codegen.get_template("extends").unwrap();
 
                 assert_eq!(template.id, Id::raw("extends"));
                 assert_eq!(template.root, sandbox.path().join("templates/extends"));
@@ -245,8 +261,8 @@ mod codegen {
                     &config,
                     MoonEnvironment::new_testing(sandbox.path()).into(),
                 );
-                codegen.resolve_template_locations().await.unwrap();
-                let template = codegen.load_template("extends").unwrap();
+                codegen.load_templates().await.unwrap();
+                let template = codegen.get_template("extends").unwrap();
 
                 assert_eq!(
                     template.config.variables.keys().collect::<Vec<_>>(),
@@ -274,8 +290,8 @@ mod codegen {
                     &config,
                     MoonEnvironment::new_testing(sandbox.path()).into(),
                 );
-                codegen.resolve_template_locations().await.unwrap();
-                codegen.load_template("extends-unknown").unwrap();
+                codegen.load_templates().await.unwrap();
+                codegen.get_template("extends-unknown").unwrap();
             }
         }
     }

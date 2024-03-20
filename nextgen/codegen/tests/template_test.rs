@@ -156,8 +156,8 @@ mod template {
                 &config,
                 MoonEnvironment::new_testing(sandbox.path()).into(),
             );
-            codegen.resolve_template_locations().await.unwrap();
-            let mut template = codegen.load_template("extends").unwrap();
+            codegen.load_templates().await.unwrap();
+            let mut template = codegen.get_template("extends").unwrap();
 
             template.load_files(&out, &create_context()).unwrap();
 

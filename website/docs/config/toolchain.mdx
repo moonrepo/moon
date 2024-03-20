@@ -80,7 +80,7 @@ can also be configured within `bun`:
 
 - [`dependencyVersionFormat`](#dependencyversionformat)
 - [`inferTasksFromScripts`](#infertasksfromscripts)
-- [`rootPackageOnly`](#rootPackageOnly)
+- [`rootPackageOnly`](#rootpackageonly)
 - [`syncProjectWorkspaceDependencies`](#syncprojectworkspacedependencies)
 
 ```yaml title=".moon/toolchain.yml" {2-4}
@@ -562,7 +562,7 @@ typescript:
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#routeOutDirToCache" />
 
-Updates the `outDir` compiler option in each project's [`tsconfig.json`](#projectConfigFileName) to
+Updates the `outDir` compiler option in each project's [`tsconfig.json`](#projectconfigfilename) to
 route to moon's cache folder. This is useful when using project references and wanting to keep all
 the compiled `.d.ts` files _out_ of the project folder. Defaults to `false`.
 
@@ -629,7 +629,7 @@ This setting assumes you're using the file organization as defined in our offici
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#syncProjectReferencesToPaths" />
 
-Will sync a project's [`tsconfig.json`](#projectConfigFileName) project references to the `paths`
+Will sync a project's [`tsconfig.json`](#projectconfigfilename) project references to the `paths`
 compiler option, using the referenced project's `package.json` name. This is useful for mapping
 aliases to their source code. Defaults to `false`.
 

@@ -93,6 +93,8 @@ be downloaded and installed into the toolchain. The following settings are avail
 - `checksum-public-key` - Public key used for verifying checksums. Only used for `.minisig` files.
 - `download-url` (required) - A secure URL to download the tool/archive.
 - `download-url-canary` - A URL for canary releases.
+- `primary` - Configures the primary executable.
+- `secondary` - Configures secondary executables.
 
 The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
 the values from the `[platform]` section.
@@ -107,6 +109,46 @@ download-url = "https://github.com/moonrepo/protostar/releases/download/v{versio
 [install.arch]
 aarch64 = "arm64"
 x86_64 = "x64"
+```
+
+#### Primary executable
+
+The primary executable can be customized with the `[install.primary]` section, which is optional. If
+this section is omitted, the primary executable will be named after the tool itself.
+
+This setting supports the following options:
+
+- `exe-path` - The file to execute, relative from the tool directory. On Windows, the `.exe`
+  extension will automatically be appended. If you need more control over platform variance, use
+  `[platform.*.bin-path]` instead.
+- `no-bin` - Do not symlink a binary in `~/.proto/bin`.
+- `no-shim`- Do not generate a shim in `~/.proto/shims`.
+- `parent-exe-name` - Name of a parent executable required to execute the executable path. For
+  example, `node` is required for `.js` files.
+- `shim-before-args` - Custom args to prepend to user-provided args within the generated shim.
+- `shim-after-args` - Custom args to append to user-provided args within the generated shim.
+- `shim-env-vars` - Custom environment variables to set when executing the shim.
+
+```toml title="protostar.toml"
+# ...
+
+[install.primary]
+exe-path = "bins/protostar"
+shim-before-args = ["--verbose"]
+```
+
+#### Secondary executables
+
+The `[install.secondary]` section can be used to configure additional executables (bins or shims)
+alongside the primary executable. This setting requires a map, where the key is the executable file
+name, and the value is an object of options (the same as above).
+
+```toml title="protostar.toml"
+# ...
+
+[install.secondary.protostar-debug]
+exe-path = "bins/protostar-debug"
+no-shim = true
 ```
 
 #### Global packages

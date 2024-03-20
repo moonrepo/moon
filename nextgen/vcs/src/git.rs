@@ -264,7 +264,7 @@ impl Git {
             }
         }
 
-        return file;
+        file
     }
 }
 

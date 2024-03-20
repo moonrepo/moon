@@ -49,6 +49,27 @@ fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResul
     Ok(())
 }
 
+fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
+    for file in list {
+        let file = file.as_ref();
+        let dest_file = dest.join(file);
+
+        if dest_file.exists() {
+            continue;
+        }
+
+        let mut data = "";
+
+        if file.ends_with(".json") {
+            data = "{}";
+        }
+
+        fs::write_file(dest.join(file), data.as_bytes())?;
+    }
+
+    Ok(())
+}
+
 fn scaffold_workspace(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
@@ -60,69 +81,107 @@ fn scaffold_workspace(
 
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
-    let copy_from_dir = |source: &Path, dest: &Path| -> AppResult {
-        let mut files: Vec<String> = vec![
-            ".prototools".to_owned(),
-            CONFIG_PROJECT_FILENAME.to_owned(),
-            CONFIG_TEMPLATE_FILENAME.to_owned(),
+    let copy_from_dir = |source: &Path, dest: &Path, project_lang: LanguageType| -> AppResult {
+        let mut files_to_copy: Vec<String> = vec![
+            ".prototools".into(),
+            CONFIG_PROJECT_FILENAME.into(),
+            CONFIG_TEMPLATE_FILENAME.into(),
         ];
+        let mut files_to_create: Vec<String> = vec![];
 
         for lang in LanguageType::variants() {
-            files.extend(detect_language_files(&lang));
+            files_to_copy.extend(detect_language_files(&lang));
 
             // These are special cases
             match lang {
                 LanguageType::JavaScript => {
-                    files.extend([
-                        "postinstall.js".to_owned(),
-                        "postinstall.cjs".to_owned(),
-                        "postinstall.mjs".to_owned(),
+                    files_to_copy.extend([
+                        "postinstall.js".into(),
+                        "postinstall.cjs".into(),
+                        "postinstall.mjs".into(),
                     ]);
                 }
                 LanguageType::Rust => {
                     if let Some(cargo_toml) = CargoTomlCache::read(source)? {
                         let manifests = cargo_toml.get_member_manifest_paths(source)?;
 
-                        for manifest in manifests {
-                            files.push(path::to_string(manifest.strip_prefix(source).unwrap())?);
+                        // Non-workspace
+                        if manifests.is_empty() {
+                            if lang == project_lang {
+                                files_to_create.extend(["src/lib.rs".into(), "src/main.rs".into()]);
+                            }
+                        }
+                        // Workspace
+                        else {
+                            for manifest in manifests {
+                                if let Ok(rel_manifest) = manifest.strip_prefix(source) {
+                                    files_to_copy.push(path::to_string(rel_manifest)?);
+
+                                    let rel_manifest_dir = rel_manifest.parent().unwrap();
+
+                                    if lang == project_lang {
+                                        files_to_create.extend([
+                                            path::to_string(rel_manifest_dir.join("src/lib.rs"))?,
+                                            path::to_string(rel_manifest_dir.join("src/main.rs"))?,
+                                        ]);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
                 LanguageType::TypeScript => {
                     if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                        files.push(typescript_config.project_config_file_name.to_owned());
-                        files.push(typescript_config.root_config_file_name.to_owned());
-                        files.push(typescript_config.root_options_config_file_name.to_owned());
+                        files_to_copy.push(typescript_config.project_config_file_name.to_owned());
+                        files_to_copy.push(typescript_config.root_config_file_name.to_owned());
+                        files_to_copy
+                            .push(typescript_config.root_options_config_file_name.to_owned());
                     }
                 }
                 _ => {}
             }
         }
 
-        copy_files(&files, source, dest)
+        copy_files(&files_to_copy, source, dest)?;
+        create_files(&files_to_create, dest)?;
+
+        Ok(())
     };
 
     // Copy each project and mimic the folder structure
-    for source in project_graph.sources().values() {
-        if source.as_str() == "." {
-            continue;
+    let mut has_root_project = false;
+
+    for project in project_graph.get_all()? {
+        if project.source.as_str() == "." {
+            has_root_project = true;
         }
 
-        let docker_project_root = docker_workspace_root.join(source.as_str());
+        let docker_project_root = docker_workspace_root.join(project.source.as_str());
 
         fs::create_dir_all(&docker_project_root)?;
 
-        copy_from_dir(&source.to_path(&workspace.root), &docker_project_root)?;
+        copy_from_dir(
+            &project.root,
+            &docker_project_root,
+            project.language.clone(),
+        )?;
     }
 
     // Copy root lockfiles and configurations
-    copy_from_dir(&workspace.root, &docker_workspace_root)?;
+    if !has_root_project {
+        copy_from_dir(
+            &workspace.root,
+            &docker_workspace_root,
+            LanguageType::Unknown,
+        )?;
+    }
 
     if let Some(js_config) = &workspace.toolchain_config.bun {
         if js_config.packages_root != "." {
             copy_from_dir(
                 &workspace.root.join(&js_config.packages_root),
                 &docker_workspace_root.join(&js_config.packages_root),
+                LanguageType::Unknown,
             )?;
         }
     }
@@ -132,6 +191,7 @@ fn scaffold_workspace(
             copy_from_dir(
                 &workspace.root.join(&js_config.packages_root),
                 &docker_workspace_root.join(&js_config.packages_root),
+                LanguageType::Unknown,
             )?;
         }
     }
@@ -141,6 +201,7 @@ fn scaffold_workspace(
             copy_from_dir(
                 &workspace.root.join(&typescript_config.root),
                 &docker_workspace_root.join(&typescript_config.root),
+                LanguageType::Unknown,
             )?;
         }
     }

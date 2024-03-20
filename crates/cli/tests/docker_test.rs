@@ -208,7 +208,7 @@ mod scaffold_workspace {
     }
 
     #[test]
-    fn copies_cargo_files() {
+    fn copies_cargo_workspace_files() {
         let workspace_config = PartialWorkspaceConfig {
             projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
                 Id::raw("rust"),
@@ -230,7 +230,37 @@ mod scaffold_workspace {
         assert!(docker.join("Cargo.toml").exists());
         assert!(docker.join("Cargo.lock").exists());
         assert!(docker.join("crates/bin-crate/Cargo.toml").exists());
+        assert!(docker.join("crates/bin-crate/src/lib.rs").exists());
+        assert!(docker.join("crates/bin-crate/src/main.rs").exists());
         assert!(docker.join("crates/path-deps/Cargo.toml").exists());
+        assert!(docker.join("crates/path-deps/src/lib.rs").exists());
+        assert!(docker.join("crates/path-deps/src/main.rs").exists());
+    }
+
+    #[test]
+    fn copies_cargo_non_workspace_files() {
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
+                Id::raw("rust"),
+                ".".into(),
+            )]))),
+            ..PartialWorkspaceConfig::default()
+        };
+
+        let sandbox =
+            create_sandbox_with_config("rust/project", Some(workspace_config), None, None);
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("rust");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
+
+        assert!(docker.join("dockerManifest.json").exists());
+        assert!(docker.join("Cargo.toml").exists());
+        assert!(docker.join("Cargo.lock").exists());
+        assert!(docker.join("src/lib.rs").exists());
+        assert!(docker.join("src/main.rs").exists());
     }
 }
 

@@ -32,8 +32,8 @@ $DownloadUrl = if ($Version -eq "latest") {
 $TempDir = "${HOME}\.proto\temp\proto\${Target}"
 $DownloadFile = "${TempDir}.zip"
 
-$InstallDir = if ($env:PROTO_INSTALL_DIR) {
-  $env:PROTO_INSTALL_DIR
+$InstallDir = if ($env:PROTO_HOME) {
+  "$($env:PROTO_HOME)\bin"
 } else {
   "${Home}\.proto\bin"
 }

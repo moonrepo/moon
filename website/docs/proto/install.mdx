@@ -10,7 +10,16 @@ The following guide can be used to install proto into your environment.
 
 ## Requirements
 
-- Git >= 2.22
+- Git - for fetching available versions/tags
+- tar, unzip, gz, xz - for unpacking archives
+
+```shell
+# macOS
+brew install git unzip gzip xz
+
+# Linux
+apt-get install git unzip gzip xz-utils
+```
 
 ## Installing
 
@@ -20,8 +29,8 @@ scripts to download and install proto.
 
 :::info
 
-The install location can be customized with the `PROTO_INSTALL_DIR` environment variable. If not
-provided, the default location is `~/.proto`.
+The install location can be customized with the `PROTO_HOME` environment variable. If not provided,
+the default location is `~/.proto`.
 
 :::
 

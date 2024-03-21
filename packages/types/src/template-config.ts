@@ -6,12 +6,14 @@
 export interface PartialTemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default?: boolean | null;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
 	type?: 'boolean' | null;
 }
+
+export type PartialTemplateVariableEnumDefault = string | string[];
 
 export interface PartialTemplateVariableEnumValueConfig {
 	/** A human-readable label for the value. */
@@ -24,10 +26,10 @@ export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableE
 
 export interface PartialTemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
-	default?: string | null;
+	default?: PartialTemplateVariableEnumDefault | null;
 	/** Allows multiple values to be selected. */
 	multiple?: boolean | null;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	type?: 'enum' | null;
 	/** List of acceptable values for this variable. */
@@ -38,7 +40,7 @@ export interface PartialTemplateVariableEnumSetting {
 export interface PartialTemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default?: number | null;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
@@ -49,7 +51,7 @@ export interface PartialTemplateVariableNumberSetting {
 export interface PartialTemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default?: string | null;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required?: boolean | null;
@@ -102,12 +104,14 @@ export interface PartialTemplateFrontmatterConfig {
 export interface TemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default: boolean;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required: boolean | null;
 	type: 'boolean';
 }
+
+export type TemplateVariableEnumDefault = string | string[];
 
 export interface TemplateVariableEnumValueConfig {
 	/** A human-readable label for the value. */
@@ -120,11 +124,11 @@ export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig
 
 export interface TemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
-	default: string;
+	default: TemplateVariableEnumDefault;
 	/** Allows multiple values to be selected. */
 	multiple: boolean | null;
-	/** Prompt the user for a value when the generate is running. */
-	prompt: string;
+	/** Prompt the user for a value when the generator is running. */
+	prompt: string | null;
 	type: 'enum';
 	/** List of acceptable values for this variable. */
 	values: TemplateVariableEnumValue[];
@@ -134,7 +138,7 @@ export interface TemplateVariableEnumSetting {
 export interface TemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default: number;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required: boolean | null;
@@ -145,7 +149,7 @@ export interface TemplateVariableNumberSetting {
 export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default: string;
-	/** Prompt the user for a value when the generate is running. */
+	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
 	required: boolean | null;

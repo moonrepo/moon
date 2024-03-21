@@ -184,7 +184,10 @@ fn gather_variables(
                     log_var(name, &defaults, Some(default_comment));
                 }
 
-                match (args.defaults, var.multiple.unwrap_or_default()) {
+                match (
+                    args.defaults || var.prompt.is_none(),
+                    var.multiple.unwrap_or_default(),
+                ) {
                     (true, true) => {
                         context.insert(name, &defaults);
                     }
@@ -195,7 +198,7 @@ fn gather_variables(
                     }
                     (false, true) => {
                         let indexes = MultiSelect::with_theme(theme)
-                            .with_prompt(&var.prompt)
+                            .with_prompt(var.prompt.as_ref().unwrap())
                             .items(&labels)
                             .defaults(
                                 &values
@@ -216,7 +219,7 @@ fn gather_variables(
                     }
                     (false, false) => {
                         let index = Select::with_theme(theme)
-                            .with_prompt(&var.prompt)
+                            .with_prompt(var.prompt.as_ref().unwrap())
                             .default(default_index)
                             .items(&labels)
                             .interact()

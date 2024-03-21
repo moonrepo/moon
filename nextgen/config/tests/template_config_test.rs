@@ -257,7 +257,7 @@ variables:
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
                     default: TemplateVariableEnumDefault::String("a".into()),
                     multiple: None,
-                    prompt: "prompt".into(),
+                    prompt: Some("prompt".into()),
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),
                         TemplateVariableEnumValue::String("b".into()),
@@ -298,7 +298,7 @@ variables:
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
                     default: TemplateVariableEnumDefault::Vec(vec!["a".into(), "c".into()]),
                     multiple: None,
-                    prompt: "prompt".into(),
+                    prompt: Some("prompt".into()),
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),
                         TemplateVariableEnumValue::String("b".into()),
@@ -342,6 +342,27 @@ variables:
    strum:
     type: enum
     default: z
+    values: [a, b, c]
+    prompt: prompt
+",
+                |path| TemplateConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "multiple default values is not allowed unless `multiple` is enabled"
+        )]
+        fn errors_multi_default_when_not_multiple() {
+            test_load_config(
+                CONFIG_TEMPLATE_FILENAME,
+                r"
+title: title
+description: description
+variables:
+   strum:
+    type: enum
+    default: [a, b]
     values: [a, b, c]
     prompt: prompt
 ",

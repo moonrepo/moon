@@ -81,33 +81,33 @@ variables:
     prompt: 'Package name?'
 ```
 
-### `default`<RequiredLabel />
-
-<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#default" />
-
-The default value of the variable. When `--defaults` is passed to
-[`moon generate`](../commands/generate) or [`prompt`](#prompt) is not defined, the default value
-will be used, otherwise the user will be prompted to enter a custom value.
-
-### `prompt`<RequiredLabel text="Required for enums" />
-
-<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#prompt" />
-
-When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
-[`default`](#default) will be used.
-
 ### `type`<RequiredLabel />
 
 The type of value for the variable. Accepts `boolean`, `string`, `number`, or `enum`. Floats _are
 not supported_, use strings instead.
 
-### Numbers & strings
+### Primitives
 
-Your basic primitives.
+Your basic primitives: boolean, numbers, strings.
+
+### `default`<RequiredLabel />
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#default" />
+
+The default value of the variable. When `--defaults` is passed to
+[`moon generate`](../commands/generate) or [`prompt`](#prompt) is not defined, the default value
+will be used, otherwise the user will be prompted to enter a custom value.
+
+### `prompt`
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#prompt" />
+
+When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
+[`default`](#default) will be used.
 
 ### `required`
 
-<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#required" />
+<HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#required" />
 
 Marks the variable as required during _prompting only_. For strings, will error for empty values
 (`''`). For numbers, will error for zero's (`0`).
@@ -133,6 +133,44 @@ variables:
     default: 'purple'
     prompt: 'Favorite color?'
 ```
+
+### `default`
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#default" />
+
+The default value of the variable. When `--defaults` is passed to
+[`moon generate`](../commands/generate) or [`prompt`](#prompt) is not defined, the default value
+will be used, otherwise the user will be prompted to enter a custom value.
+
+For enums, the default value can be a string when [`multiple`](#multiple) is false, or a string or
+an array of strings when `multiple` is true. Furthermore, each default value must exist in the
+[`values`](#values) list.
+
+```yaml title="template.yml"
+# Single
+variables:
+  color:
+    type: 'enum'
+    values: ['red', 'green', 'blue', 'purple']
+    default: 'purple'
+    prompt: 'Favorite color?'
+
+# Multiple
+variables:
+  color:
+    type: 'enum'
+    values: ['red', 'green', 'blue', 'purple']
+    default: ['red', 'purple']
+    multiple: true
+    prompt: 'Favorite color?'
+```
+
+### `prompt`
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#prompt" />
+
+When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
+[`default`](#default) will be used.
 
 ### `multiple`
 

@@ -14,7 +14,7 @@ macro_rules! var_setting {
         pub struct $name {
             /// The default value of the variable if none was provided.
             pub default: $ty,
-            /// Prompt the user for a value when the generate is running.
+            /// Prompt the user for a value when the generator is running.
             pub prompt: Option<String>,
             /// Marks the variable as required, and will not accept an empty value.
             pub required: Option<bool>,
@@ -69,6 +69,15 @@ fn validate_enum_default<C>(
     _finalize: bool,
 ) -> Result<(), ValidateError> {
     if let Some(values) = &partial.values {
+        if let PartialTemplateVariableEnumDefault::Vec(list) = default_value {
+            // Vector is the default value, so check if not-empty
+            if !partial.multiple.is_some_and(|m| m) && !list.is_empty() {
+                return Err(ValidateError::new(
+                    "multiple default values is not allowed unless `multiple` is enabled",
+                ));
+            }
+        }
+
         let values = values
             .iter()
             .flat_map(|v| match v {
@@ -103,8 +112,8 @@ pub struct TemplateVariableEnumSetting {
     /// Allows multiple values to be selected.
     pub multiple: Option<bool>,
 
-    /// Prompt the user for a value when the generate is running.
-    pub prompt: String,
+    /// Prompt the user for a value when the generator is running.
+    pub prompt: Option<String>,
 
     /// List of acceptable values for this variable.
     #[setting(nested)]

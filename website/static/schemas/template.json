@@ -94,7 +94,7 @@
         },
         "prompt": {
           "title": "prompt",
-          "description": "Prompt the user for a value when the generate is running.",
+          "description": "Prompt the user for a value when the generator is running.",
           "anyOf": [
             {
               "type": "string"
@@ -123,13 +123,30 @@
       },
       "additionalProperties": false
     },
+    "TemplateVariableEnumDefault": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "TemplateVariableEnumSetting": {
       "type": "object",
       "properties": {
         "default": {
           "title": "default",
           "description": "The default value of the variable if none was provided.",
-          "type": "string"
+          "allOf": [
+            {
+              "$ref": "#/definitions/TemplateVariableEnumDefault"
+            }
+          ]
         },
         "multiple": {
           "title": "multiple",
@@ -145,8 +162,15 @@
         },
         "prompt": {
           "title": "prompt",
-          "description": "Prompt the user for a value when the generate is running.",
-          "type": "string"
+          "description": "Prompt the user for a value when the generator is running.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "type": {
           "title": "type",
@@ -201,7 +225,7 @@
         },
         "prompt": {
           "title": "prompt",
-          "description": "Prompt the user for a value when the generate is running.",
+          "description": "Prompt the user for a value when the generator is running.",
           "anyOf": [
             {
               "type": "string"
@@ -241,7 +265,7 @@
         },
         "prompt": {
           "title": "prompt",
-          "description": "Prompt the user for a value when the generate is running.",
+          "description": "Prompt the user for a value when the generator is running.",
           "anyOf": [
             {
               "type": "string"

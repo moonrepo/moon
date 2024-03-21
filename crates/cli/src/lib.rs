@@ -125,15 +125,17 @@ pub async fn run_cli() -> AppResult {
     setup_logging(&cli.log);
     setup_caching(&cli.cache);
 
+    let mut modules = string_vec!["moon", "proto", "schematic", "starbase", "warpgate"];
+
+    if let Ok(level) = env::var("MOON_WASM_LOG") {
+        env::set_var("PROTO_WASM_LOG", level);
+        modules.push("extism".into());
+    } else {
+        modules.push("extism::pdk".into());
+    }
+
     App::setup_tracing_with_options(TracingOptions {
-        filter_modules: string_vec![
-            "moon",
-            "proto",
-            "schematic",
-            "starbase",
-            "warpgate",
-            "extism::pdk"
-        ],
+        filter_modules: modules,
         log_env: "MOON_APP_LOG".into(),
         log_file: cli.log_file.clone(),
         // test_env: "MOON_TEST".into(),

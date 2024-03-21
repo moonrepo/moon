@@ -19,6 +19,7 @@ pub trait CargoTomlExt {
 }
 
 impl CargoTomlExt for CargoToml {
+    #[allow(clippy::question_mark)]
     fn get_detailed_workspace_dependency(&self, name: &str) -> Option<DependencyDetail> {
         let Some(workspace) = &self.workspace else {
             return None;

@@ -127,8 +127,14 @@ pub async fn run_cli() -> AppResult {
 
     let mut modules = string_vec!["moon", "proto", "schematic", "starbase", "warpgate"];
 
-    if let Ok(level) = env::var("MOON_WASM_LOG") {
-        env::set_var("PROTO_WASM_LOG", level);
+    if env::var("MOON_DEBUG_WASM").is_ok() {
+        env::set_var("PROTO_WASM_LOG", "trace");
+        env::set_var("PROTO_DEBUG_WASM", "true");
+        env::set_var("EXTISM_DEBUG", "1");
+        env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
+        env::set_var("EXTISM_MEMDUMP", "moon-wasm-plugin.mem");
+        env::set_var("EXTISM_COREDUMP", "moon-wasm-plugin.core");
+
         modules.push("extism".into());
     } else {
         modules.push("extism::pdk".into());

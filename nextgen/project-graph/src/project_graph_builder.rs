@@ -4,7 +4,6 @@ use crate::project_graph_cache::ProjectsState;
 use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
-use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
@@ -218,7 +217,6 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(())
     }
 
-    #[async_recursion]
     async fn internal_load(
         &mut self,
         project_locator: &str,
@@ -267,11 +265,11 @@ impl<'app> ProjectGraphBuilder<'app> {
 
                 // Don't link the root project to any project, but still load it
             } else if matches!(dep_config.scope, DependencyScope::Root) {
-                self.internal_load(&dep_config.id, cycle).await?.0
+                Box::pin(self.internal_load(&dep_config.id, cycle)).await?.0
 
                 // Otherwise link projects
             } else {
-                let dep = self.internal_load(&dep_config.id, cycle).await?;
+                let dep = Box::pin(self.internal_load(&dep_config.id, cycle)).await?;
                 edges.push((dep.1, dep_config.scope));
                 dep.0
             };

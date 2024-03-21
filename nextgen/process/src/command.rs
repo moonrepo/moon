@@ -100,7 +100,7 @@ impl Command {
         }
 
         AsyncCommand {
-            console: self.console.as_ref().map(Arc::clone),
+            console: self.console.clone(),
             inner: command,
             inspector,
         }

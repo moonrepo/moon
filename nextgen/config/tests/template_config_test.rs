@@ -288,6 +288,7 @@ variables:
       - b
       - label: C
         value: c
+    multiple: true
     prompt: prompt
 ",
                 |path| TemplateConfig::load_from(path),
@@ -297,7 +298,7 @@ variables:
                 *config.variables.get("strum").unwrap(),
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
                     default: TemplateVariableEnumDefault::Vec(vec!["a".into(), "c".into()]),
-                    multiple: None,
+                    multiple: Some(true),
                     prompt: Some("prompt".into()),
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),

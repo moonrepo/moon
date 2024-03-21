@@ -14,6 +14,18 @@ The `template.yml` file configures metadata and variables for a template,
 $schema: 'https://moonrepo.dev/schemas/template.json'
 ```
 
+## `id`<VersionLabel version="1.23.0" />
+
+<HeadingApiLink to="/api/types/interface/TemplateConfig#id" />
+
+Overrides the name (identifier) of the template, instead of inferring the name from the template
+folder. Be aware that template names must be unique across the workspace, and across all template
+locations that have been configured in [`generator.templates`](./workspace#templates).
+
+```yaml title="template.yml"
+id: 'npm-package'
+```
+
 ## `title`<RequiredLabel />
 
 <HeadingApiLink to="/api/types/interface/TemplateConfig#title" />

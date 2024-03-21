@@ -1,6 +1,7 @@
 use crate::helpers::create_theme;
 use clap::Args;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon_app_components::{Console, MoonEnv};
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
@@ -141,7 +142,12 @@ fn gather_variables(
 
     debug!("Declaring variable values from defaults and user prompts");
 
-    for (name, config) in &template.config.variables {
+    let mut variables = template.config.variables.iter().collect_vec();
+
+    // Sort variables so prompting happens in the correct order
+    variables.sort_by(|a, d| a.1.get_order().cmp(&d.1.get_order()));
+
+    for (name, config) in variables {
         match config {
             TemplateVariable::Boolean(var) => {
                 let default: bool = match custom_vars.get(name) {

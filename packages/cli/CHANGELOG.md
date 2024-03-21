@@ -19,6 +19,8 @@
   - Locations will be cloned/downloaded on-demand.
 - Added an `id` setting to `template.yml`, so that templates can customize their name (instead of
   using the folder name).
+- Added an `order` setting for variables in `template.yml`, to control the order in which they are
+  prompted for.
 - Updated template enum variable `default` fields to support an array of values.
 - Updated task inheritance to support stack-based configuration, such as
   `.moon/tasks/node-frontend.yml` or `.moon/tasks/bun-backend-application.yml`.

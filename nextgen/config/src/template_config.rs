@@ -14,8 +14,13 @@ macro_rules! var_setting {
         pub struct $name {
             /// The default value of the variable if none was provided.
             pub default: $ty,
+
+            /// The order in which variables should be prompted for.
+            pub order: Option<usize>,
+
             /// Prompt the user for a value when the generator is running.
             pub prompt: Option<String>,
+
             /// Marks the variable as required, and will not accept an empty value.
             pub required: Option<bool>,
         }
@@ -112,6 +117,9 @@ pub struct TemplateVariableEnumSetting {
     /// Allows multiple values to be selected.
     pub multiple: Option<bool>,
 
+    /// The order in which variables should be prompted for.
+    pub order: Option<usize>,
+
     /// Prompt the user for a value when the generator is running.
     pub prompt: Option<String>,
 
@@ -149,15 +157,31 @@ pub enum TemplateVariable {
     /// A boolean variable.
     #[setting(nested)]
     Boolean(TemplateVariableBoolSetting),
+
     /// A string enumerable variable.
     #[setting(nested)]
     Enum(TemplateVariableEnumSetting),
+
     /// A number variable.
     #[setting(nested)]
     Number(TemplateVariableNumberSetting),
+
     /// A string variable.
     #[setting(nested)]
     String(TemplateVariableStringSetting),
+}
+
+impl TemplateVariable {
+    pub fn get_order(&self) -> usize {
+        let order = match self {
+            Self::Boolean(cfg) => cfg.order.as_ref(),
+            Self::Enum(cfg) => cfg.order.as_ref(),
+            Self::Number(cfg) => cfg.order.as_ref(),
+            Self::String(cfg) => cfg.order.as_ref(),
+        };
+
+        order.copied().unwrap_or(100)
+    }
 }
 
 /// Configures a template and its files to be scaffolded.

@@ -125,15 +125,23 @@ pub async fn run_cli() -> AppResult {
     setup_logging(&cli.log);
     setup_caching(&cli.cache);
 
+    let mut modules = string_vec!["moon", "proto", "schematic", "starbase", "warpgate"];
+
+    if env::var("MOON_DEBUG_WASM").is_ok() {
+        env::set_var("PROTO_WASM_LOG", "trace");
+        env::set_var("PROTO_DEBUG_WASM", "true");
+        env::set_var("EXTISM_DEBUG", "1");
+        env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
+        env::set_var("EXTISM_MEMDUMP", "moon-wasm-plugin.mem");
+        env::set_var("EXTISM_COREDUMP", "moon-wasm-plugin.core");
+
+        modules.push("extism".into());
+    } else {
+        modules.push("extism::pdk".into());
+    }
+
     App::setup_tracing_with_options(TracingOptions {
-        filter_modules: string_vec![
-            "moon",
-            "proto",
-            "schematic",
-            "starbase",
-            "warpgate",
-            "extism::pdk"
-        ],
+        filter_modules: modules,
         log_env: "MOON_APP_LOG".into(),
         log_file: cli.log_file.clone(),
         // test_env: "MOON_TEST".into(),

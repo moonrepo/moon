@@ -3690,6 +3690,7 @@ dependencies = [
  "starbase_styles",
  "thiserror",
  "tokio",
+ "tracing",
  "warpgate",
 ]
 

@@ -13,6 +13,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tracing::debug;
 use warpgate::{
     host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
     PluginLoader, PluginLocator, PluginManifest, Wasm,
@@ -35,10 +36,13 @@ impl<T: Plugin> PluginRegistry<T> {
         moon_env: Arc<MoonEnvironment>,
         proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
+        debug!(kind = type_of.get_label(), "Creating plugin registry");
+
         let mut loader = PluginLoader::new(
             moon_env.plugins_dir.join(type_of.get_dir_name()),
             &moon_env.temp_dir,
         );
+
         loader.set_offline_checker(is_offline);
 
         let mut paths = proto_env
@@ -71,6 +75,13 @@ impl<T: Plugin> PluginRegistry<T> {
     }
 
     pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            path = ?wasm_file,
+            "Creating plugin manifest from WASM file",
+        );
+
         let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
 
         // Allow all hosts because we don't know what endpoints plugins
@@ -113,6 +124,12 @@ impl<T: Plugin> PluginRegistry<T> {
             id: id.to_owned(),
         })?;
 
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Accessing information from the plugin (async)",
+        );
+
         op(plugin.value()).await
     }
 
@@ -124,6 +141,12 @@ impl<T: Plugin> PluginRegistry<T> {
             name: self.type_of.get_label().to_owned(),
             id: id.to_owned(),
         })?;
+
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Accessing information from the plugin (sync)",
+        );
 
         op(plugin.value())
     }
@@ -141,6 +164,12 @@ impl<T: Plugin> PluginRegistry<T> {
                 id: id.to_owned(),
             })?;
 
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Performing an action on the plugin (async)",
+        );
+
         op(plugin.value_mut(), self.create_context()).await
     }
 
@@ -155,6 +184,12 @@ impl<T: Plugin> PluginRegistry<T> {
                 name: self.type_of.get_label().to_owned(),
                 id: id.to_owned(),
             })?;
+
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Performing an action on the plugin (sync)",
+        );
 
         op(plugin.value_mut(), self.create_context())
     }
@@ -196,6 +231,12 @@ impl<T: Plugin> PluginRegistry<T> {
             .into());
         }
 
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Attempting to load and register plugin",
+        );
+
         // Load the WASM file (this must happen first because of async)
         let plugin_file = self.loader.load_plugin(id, locator).await?;
 
@@ -209,6 +250,12 @@ impl<T: Plugin> PluginRegistry<T> {
         let mut manifest = self.create_manifest(id, plugin_file)?;
 
         op(&mut manifest)?;
+
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Updated plugin manifest, attempting to register plugin",
+        );
 
         // Combine everything into the container and register
         self.register(
@@ -225,6 +272,12 @@ impl<T: Plugin> PluginRegistry<T> {
     }
 
     pub fn register(&self, id: Id, plugin: T) {
+        debug!(
+            kind = self.type_of.get_label(),
+            id = id.as_str(),
+            "Registered plugin",
+        );
+
         self.plugins.insert(id, plugin);
     }
 }

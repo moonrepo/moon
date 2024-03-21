@@ -101,7 +101,11 @@ impl TaskOptionEnvFile {
 
 impl Schematic for TaskOptionEnvFile {
     fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![SchemaType::boolean(), SchemaType::string()]);
+        let mut schema = SchemaType::union(vec![
+            SchemaType::boolean(),
+            SchemaType::string(),
+            SchemaType::array(SchemaType::string()),
+        ]);
         schema.set_name("TaskOptionEnvFile");
         schema
     }

@@ -50,18 +50,13 @@ variables:
   enum:
     type: 'enum'
     values: ['a', 'b', 'c']
-    default: ''
+    # default: ''
     prompt: 'Enum, empty default'
   enumNotEmpty:
     type: 'enum'
     values: ['a', 'b', 'c']
     default: 'b'
     prompt: 'Enum, with default'
-  enumInvalidDefault:
-    type: 'enum'
-    values: ['a', 'b', 'c']
-    default: 'z'
-    prompt: 'Enum, invalid default'
   multenum:
     type: 'enum'
     values:
@@ -71,7 +66,7 @@ variables:
         value: b
       - label: C
         value: c
-    default: ''
+    # default: ''
     prompt: 'Multi-enum, empty default'
     multiple: true
   multenumNotEmpty:
@@ -85,18 +80,6 @@ variables:
         value: c
     default: 'b'
     prompt: 'Multi-enum, with default'
-    multiple: true
-  multenumInvalidDefault:
-    type: 'enum'
-    values:
-      - label: A
-        value: a
-      - label: B
-        value: b
-      - label: C
-        value: c
-    default: 'z'
-    prompt: 'Multi-enum, invalid default'
     multiple: true
   noPrompt:
     type: 'number'

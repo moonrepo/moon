@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config::TemplateConfig;
+use moon_config::{TemplateConfig, TemplateVariableEnumDefault};
 use rustc_hash::FxHashMap;
 use utils::*;
 
@@ -255,9 +255,51 @@ variables:
             assert_eq!(
                 *config.variables.get("strum").unwrap(),
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
-                    default: "a".into(),
+                    default: TemplateVariableEnumDefault::String("a".into()),
                     multiple: None,
-                    prompt: "prompt".into(),
+                    prompt: Some("prompt".into()),
+                    values: vec![
+                        TemplateVariableEnumValue::String("a".into()),
+                        TemplateVariableEnumValue::String("b".into()),
+                        TemplateVariableEnumValue::Object(TemplateVariableEnumValueConfig {
+                            label: "C".into(),
+                            value: "c".into()
+                        })
+                    ],
+                })
+            );
+        }
+
+        #[test]
+        fn loads_string_enum_default_list() {
+            let config = test_load_config(
+                CONFIG_TEMPLATE_FILENAME,
+                r"
+title: title
+description: description
+variables:
+  strum:
+    type: enum
+    default:
+      - a
+      - c
+    values:
+      - a
+      - b
+      - label: C
+        value: c
+    multiple: true
+    prompt: prompt
+",
+                |path| TemplateConfig::load_from(path),
+            );
+
+            assert_eq!(
+                *config.variables.get("strum").unwrap(),
+                TemplateVariable::Enum(TemplateVariableEnumSetting {
+                    default: TemplateVariableEnumDefault::Vec(vec!["a".into(), "c".into()]),
+                    multiple: Some(true),
+                    prompt: Some("prompt".into()),
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),
                         TemplateVariableEnumValue::String("b".into()),
@@ -283,6 +325,46 @@ variables:
     type: enum
     default: c
     values: [1, 2, 3]
+    prompt: prompt
+",
+                |path| TemplateConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "invalid default value, must be a value configured in `values`")]
+        fn invalid_enum_default_value() {
+            test_load_config(
+                CONFIG_TEMPLATE_FILENAME,
+                r"
+title: title
+description: description
+variables:
+   strum:
+    type: enum
+    default: z
+    values: [a, b, c]
+    prompt: prompt
+",
+                |path| TemplateConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "multiple default values is not allowed unless `multiple` is enabled"
+        )]
+        fn errors_multi_default_when_not_multiple() {
+            test_load_config(
+                CONFIG_TEMPLATE_FILENAME,
+                r"
+title: title
+description: description
+variables:
+   strum:
+    type: enum
+    default: [a, b]
+    values: [a, b, c]
     prompt: prompt
 ",
                 |path| TemplateConfig::load_from(path),

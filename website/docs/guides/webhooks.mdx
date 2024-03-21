@@ -524,7 +524,7 @@ Triggered when the [outputs](../config/project#outputs) of a task have been arch
 the `.moon/cache/outputs` directory. The `archivePath` field is an absolute path to this archive,
 _but_ is unique to the host machine that the target ran on.
 
-This event _does not_ trigger if [`target-output.archiving`](#targetoutputarchiving) did not run or
+This event _does not_ trigger if [`target-output.archiving`](#target-outputarchiving) did not run or
 failed to run.
 
 ```json
@@ -589,7 +589,7 @@ Triggered when a target has hydrated a project with the contents of a cached arc
 `archivePath` field is an absolute path to this archive, _but_ is unique to the host machine that
 the target ran on.
 
-This event _does not_ trigger if [`target-output.hydrating`](#targetoutputhydrating) did not run or
+This event _does not_ trigger if [`target-output.hydrating`](#target-outputhydrating) did not run or
 failed to run.
 
 ```json

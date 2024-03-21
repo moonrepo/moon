@@ -18,7 +18,14 @@ use std::sync::Arc;
 
 pub fn get_node_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
-    paths.push(proto_env.tools_dir.join("node").join("globals").join("bin"));
+    paths.push(
+        proto_env
+            .store
+            .inventory_dir
+            .join("node")
+            .join("globals")
+            .join("bin"),
+    );
     paths
 }
 
@@ -247,7 +254,7 @@ impl Tool for NodeTool {
                     None => true,
                 };
 
-                if setup || !self.tool.get_tool_dir().exists() {
+                if setup || !self.tool.get_product_dir().exists() {
                     self.console.out.print_checkpoint(
                         Checkpoint::Setup,
                         format!("installing node {version}"),

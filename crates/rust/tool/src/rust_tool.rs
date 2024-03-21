@@ -149,7 +149,7 @@ impl Tool for RustTool {
                 None => true,
             };
 
-            if setup || !self.tool.get_tool_dir().exists() {
+            if setup || !self.tool.get_product_dir().exists() {
                 self.console
                     .out
                     .print_checkpoint(Checkpoint::Setup, format!("installing rust {version}"))?;

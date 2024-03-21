@@ -43,13 +43,15 @@ where
 
 pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
     vec![
-        // For debugging
-        // proto.home.join("Projects").join("proto").join("target").join("debug"),
         // Always use a versioned proto first
-        proto.tools_dir.join("proto").join(PROTO_CLI_VERSION),
+        proto
+            .store
+            .inventory_dir
+            .join("proto")
+            .join(PROTO_CLI_VERSION),
         // Then fallback to shims/bins
-        proto.shims_dir.clone(),
-        proto.bin_dir.clone(),
+        proto.store.shims_dir.clone(),
+        proto.store.bin_dir.clone(),
         // And ensure non-proto managed moon comes last
         proto.home.join(".moon").join("bin"),
     ]

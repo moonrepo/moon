@@ -84,7 +84,11 @@ pub async fn install_proto(
     console: ResourceRef<Console>,
 ) {
     let bin_name = exe_name("proto");
-    let install_dir = proto_env.tools_dir.join("proto").join(PROTO_CLI_VERSION);
+    let install_dir = proto_env
+        .store
+        .inventory_dir
+        .join("proto")
+        .join(PROTO_CLI_VERSION);
 
     debug!(proto = ?install_dir.join(&bin_name), "Checking if proto is installed");
 
@@ -109,7 +113,7 @@ pub async fn install_proto(
     // If offline but a primary proto binary exists,
     // use that instead of failing, even if a different version!
     if is_offline() {
-        let existing_bin = proto_env.bin_dir.join(&bin_name);
+        let existing_bin = proto_env.store.bin_dir.join(&bin_name);
 
         if existing_bin.exists() {
             debug!(
@@ -131,14 +135,14 @@ pub async fn install_proto(
     let result = download_release(
         &target_triple,
         PROTO_CLI_VERSION,
-        &proto_env.temp_dir,
+        &proto_env.store.temp_dir,
         |_, _| {},
     )
     .await?;
 
     debug!("Unpacking archive and installing proto");
 
-    unpack_release(result, &install_dir, &proto_env.temp_dir, false)?;
+    unpack_release(result, &install_dir, &proto_env.store.temp_dir, false)?;
 
     debug!("Successfully installed proto!");
 }

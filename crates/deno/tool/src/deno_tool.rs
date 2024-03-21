@@ -115,7 +115,7 @@ impl Tool for DenoTool {
         }
 
         if let Some(last) = last_versions.get("deno") {
-            if last == version && self.tool.get_tool_dir().exists() {
+            if last == version && self.tool.get_product_dir().exists() {
                 return Ok(count);
             }
         }

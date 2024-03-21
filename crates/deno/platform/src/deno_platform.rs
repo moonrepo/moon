@@ -1,6 +1,7 @@
 use crate::bins_hash::DenoBinsHash;
 use crate::deps_hash::DenoDepsHash;
 use crate::target_hash::DenoTargetHash;
+use miette::IntoDiagnostic;
 use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, is_test_env, Id};
 use moon_config::{
@@ -21,7 +22,7 @@ use moon_tool::{
 };
 use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
-use proto_core::{hash_file_contents, ProtoEnvironment, UnresolvedVersionSpec};
+use proto_core::{ProtoEnvironment, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::{
@@ -317,7 +318,7 @@ impl Platform for DenoPlatform {
         if deps_path.exists() {
             deps_hash.dependencies.insert(
                 self.config.deps_file.to_owned(),
-                hash_file_contents(deps_path)?,
+                deps_path.metadata().into_diagnostic()?.len().to_string(),
             );
         }
 

@@ -1,7 +1,7 @@
 use moon_common::path::RelativePathBuf;
 use std::path::PathBuf;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AssetFile {
     /// Binary content.
     pub content: Vec<u8>,

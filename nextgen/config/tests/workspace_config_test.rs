@@ -400,8 +400,8 @@ generator:
                 r"
 generator:
   templates:
-    - npm:package-name@1.2.3
-    - npm:@scope/package@4.5.6
+    - npm:package-name#1.2.3
+    - npm:@scope/package#4.5.6
 ",
                 |path| WorkspaceConfig::load_from(path),
             );
@@ -438,7 +438,7 @@ generator:
 
         #[test]
         #[should_panic(
-            expected = "Invalid npm template locator, must be in the format of `npm:package@version`"
+            expected = "Invalid npm template locator, must be in the format of `npm:package#version`"
         )]
         fn errors_for_no_npm_version() {
             test_load_config(

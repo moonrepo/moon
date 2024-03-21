@@ -12,7 +12,7 @@ static GIT: Lazy<Regex> = Lazy::new(|| {
 });
 
 static NPM: Lazy<Regex> = Lazy::new(|| {
-    Regex::new("^(?<package>(@[a-z][a-z0-9-_.]*/)?[a-z][a-z0-9-_.]*)@(?<version>[a-z0-9-.+]+)$")
+    Regex::new("^(?<package>(@[a-z][a-z0-9-_.]*/)?[a-z][a-z0-9-_.]*)#(?<version>[a-z0-9-.+]+)$")
         .unwrap()
 });
 
@@ -40,7 +40,7 @@ impl fmt::Display for TemplateLocator {
                 remote_url,
                 revision,
             } => write!(f, "git:{remote_url}#{revision}"),
-            TemplateLocator::Npm { package, version } => write!(f, "npm:{package}@{version}"),
+            TemplateLocator::Npm { package, version } => write!(f, "npm:{package}#{version}"),
         }
     }
 }
@@ -82,7 +82,7 @@ impl FromStr for TemplateLocator {
                     }
 
                     return Err(ParseError::new(format!(
-                        "Invalid npm template locator, must be in the format of `{protocol}:package@version`"
+                        "Invalid npm template locator, must be in the format of `{protocol}:package#version`"
                     )));
                 }
                 "file" => {

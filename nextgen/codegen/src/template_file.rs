@@ -3,13 +3,13 @@ use moon_config::TemplateFrontmatterConfig;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MergeType {
     Json,
     Yaml,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FileState {
     Create,
     Merge,
@@ -17,7 +17,7 @@ pub enum FileState {
     Skip,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TemplateFile {
     /// Frontmatter extracted into a config.
     pub config: Option<TemplateFrontmatterConfig>,

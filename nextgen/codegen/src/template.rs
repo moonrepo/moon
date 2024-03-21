@@ -18,7 +18,7 @@ use tracing::debug;
 static PATH_VAR: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)(?:\s*\|\s*([^\]]+))?\]").unwrap());
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Template {
     pub assets: BTreeMap<RelativePathBuf, AssetFile>,
     pub config: TemplateConfig,
@@ -31,7 +31,7 @@ pub struct Template {
 
 impl Template {
     pub fn new(id: Id, root: PathBuf) -> miette::Result<Template> {
-        debug!(template = id.as_str(), root = ?root, "Loading template");
+        debug!(root = ?root, "Loading template");
 
         let mut engine = Tera::default();
         engine.register_filter("camel_case", filters::camel_case);

@@ -20,7 +20,7 @@ export type TaskDependency = string | TaskDependencyConfig;
 
 export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 
-export type TaskOptionEnvFile = boolean | string;
+export type TaskOptionEnvFile = boolean | string | string[];
 
 export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 

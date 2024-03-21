@@ -21,6 +21,10 @@
   `.moon/tasks/node-frontend.yml` or `.moon/tasks/bun-backend-application.yml`.
 - Updated `moon project` and `moon task` to include the configuration files that tasks inherit from.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.32 (from v0.31.4).
+
 ## 1.22.9
 
 #### 🐞 Fixes

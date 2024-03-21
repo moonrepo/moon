@@ -89,7 +89,7 @@ impl Tool for NpmTool {
         }
 
         if let Some(last) = last_versions.get("npm") {
-            if last == version && self.tool.get_tool_dir().exists() {
+            if last == version && self.tool.get_product_dir().exists() {
                 return Ok(count);
             }
         }

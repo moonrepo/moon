@@ -108,8 +108,8 @@ pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
 ```
 
 This function also receives the plugin ID as input, allowing for conditional logic based on the ID.
-The ID is the [key the plugin was configured with](#enabling-plugins), and what is passed to `proto`
-commands (e.g. `proto install <id>`).
+The ID is the [key the plugin was configured with](./plugins#enabling-plugins), and what is passed
+to `proto` commands (e.g. `proto install <id>`).
 
 ```rust
 #[plugin_fn]

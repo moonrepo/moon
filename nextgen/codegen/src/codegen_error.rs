@@ -26,7 +26,7 @@ pub enum CodegenError {
 
     #[diagnostic(code(codegen::template::missing))]
     #[error(
-        "No template with the name {} could not be found at any of the configured template locations.",
+        "No template with the name {} could be found at any of the configured template locations.",
         .0.style(Style::Id),
     )]
     MissingTemplate(Id),

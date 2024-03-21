@@ -196,7 +196,7 @@ mod codegen {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "No template with the name three could not be found")]
+        #[should_panic(expected = "No template with the name three could be found")]
         async fn errors_for_missing() {
             let sandbox = create_sandbox("generator");
             let config = GeneratorConfig::default();
@@ -280,7 +280,7 @@ mod codegen {
             }
 
             #[tokio::test]
-            #[should_panic(expected = "No template with the name missing could not be found")]
+            #[should_panic(expected = "No template with the name missing could be found")]
             async fn errors_for_missing_extends() {
                 let sandbox = create_sandbox("generator");
                 let config = GeneratorConfig::default();

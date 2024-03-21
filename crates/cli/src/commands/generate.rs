@@ -1,10 +1,10 @@
-use crate::helpers::{create_theme, map_list};
+use crate::helpers::create_theme;
 use clap::Args;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
 use moon_app_components::{Console, MoonEnv};
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
-use moon_config::{TemplateVariable, TemplateVariableEnumValue};
+use moon_config::TemplateVariable;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::{system, AppResult};
@@ -145,7 +145,7 @@ fn gather_variables(
         match config {
             TemplateVariable::Boolean(var) => {
                 let default: bool = match custom_vars.get(name) {
-                    Some(val) => val == "true",
+                    Some(val) => val == "true" || val == "1" || val == "on",
                     None => var.default,
                 };
 
@@ -167,38 +167,30 @@ fn gather_variables(
                 }
             }
             TemplateVariable::Enum(var) => {
-                let values = var
-                    .values
-                    .iter()
-                    .map(|e| match e {
-                        TemplateVariableEnumValue::String(value) => value,
-                        TemplateVariableEnumValue::Object(cfg) => &cfg.value,
-                    })
-                    .collect::<Vec<_>>();
-                let labels = var
-                    .values
-                    .iter()
-                    .map(|e| match e {
-                        TemplateVariableEnumValue::String(value) => value,
-                        TemplateVariableEnumValue::Object(cfg) => &cfg.label,
-                    })
-                    .collect::<Vec<_>>();
+                let values = var.get_values();
+                let labels = var.get_labels();
 
-                let default = custom_vars.get(name).unwrap_or(&var.default);
+                let defaults = custom_vars
+                    .get(name)
+                    .map(|v| vec![v])
+                    .unwrap_or(var.default.to_vec());
+
                 let default_index = values
                     .iter()
-                    .position(|i| *i == default)
+                    .position(|v| defaults.contains(v))
                     .unwrap_or_default();
 
                 if args.defaults {
-                    log_var(name, &values[default_index], Some(default_comment));
+                    log_var(name, &defaults, Some(default_comment));
                 }
 
                 match (args.defaults, var.multiple.unwrap_or_default()) {
                     (true, true) => {
-                        context.insert(name, &[&values[default_index]]);
+                        context.insert(name, &defaults);
                     }
                     (true, false) => {
+                        // Default value may not be defined, but for enums,
+                        // we should always have a value when not multiple
                         context.insert(name, &values[default_index]);
                     }
                     (false, true) => {
@@ -208,8 +200,7 @@ fn gather_variables(
                             .defaults(
                                 &values
                                     .iter()
-                                    .enumerate()
-                                    .map(|(i, _)| i == default_index)
+                                    .map(|v| defaults.contains(v))
                                     .collect::<Vec<bool>>(),
                             )
                             .interact()
@@ -219,7 +210,7 @@ fn gather_variables(
                             .map(|i| values[*i].clone())
                             .collect::<Vec<String>>();
 
-                        log_var(name, &map_list(&value, |f| f.to_string()), None);
+                        log_var(name, &value, None);
 
                         context.insert(name, &value);
                     }

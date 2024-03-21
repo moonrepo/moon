@@ -2,7 +2,7 @@
 
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{validate, Config};
+use schematic::{validate, Config, ValidateError};
 
 #[cfg(feature = "loader")]
 use std::path::Path;
@@ -46,16 +46,91 @@ pub enum TemplateVariableEnumValue {
 }
 
 #[derive(Clone, Config, Debug, Eq, PartialEq)]
+#[config(serde(untagged))]
+pub enum TemplateVariableEnumDefault {
+    String(String),
+    #[setting(default)]
+    Vec(Vec<String>),
+}
+
+impl TemplateVariableEnumDefault {
+    pub fn to_vec(&self) -> Vec<&String> {
+        match self {
+            Self::String(value) => vec![value],
+            Self::Vec(list) => list.iter().collect(),
+        }
+    }
+}
+
+fn validate_enum_default<C>(
+    default_value: &PartialTemplateVariableEnumDefault,
+    partial: &PartialTemplateVariableEnumSetting,
+    _context: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
+    if let Some(values) = &partial.values {
+        let values = values
+            .iter()
+            .flat_map(|v| match v {
+                PartialTemplateVariableEnumValue::String(value) => Some(value),
+                PartialTemplateVariableEnumValue::Object(cfg) => cfg.value.as_ref(),
+            })
+            .collect::<Vec<_>>();
+
+        let matches = match default_value {
+            PartialTemplateVariableEnumDefault::String(inner) => values.contains(&inner),
+            PartialTemplateVariableEnumDefault::Vec(list) => {
+                list.iter().all(|v| values.contains(&v))
+            }
+        };
+
+        if !matches {
+            return Err(ValidateError::new(
+                "invalid default value, must be a value configured in `values`",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+#[derive(Clone, Config, Debug, Eq, PartialEq)]
 pub struct TemplateVariableEnumSetting {
     /// The default value of the variable if none was provided.
-    pub default: String,
+    #[setting(nested, validate = validate_enum_default)]
+    pub default: TemplateVariableEnumDefault,
+
     /// Allows multiple values to be selected.
     pub multiple: Option<bool>,
+
     /// Prompt the user for a value when the generate is running.
     pub prompt: String,
+
     /// List of acceptable values for this variable.
     #[setting(nested)]
     pub values: Vec<TemplateVariableEnumValue>,
+}
+
+impl TemplateVariableEnumSetting {
+    pub fn get_labels(&self) -> Vec<&String> {
+        self.values
+            .iter()
+            .map(|v| match v {
+                TemplateVariableEnumValue::String(value) => value,
+                TemplateVariableEnumValue::Object(cfg) => &cfg.label,
+            })
+            .collect()
+    }
+
+    pub fn get_values(&self) -> Vec<&String> {
+        self.values
+            .iter()
+            .map(|v| match v {
+                TemplateVariableEnumValue::String(value) => value,
+                TemplateVariableEnumValue::Object(cfg) => &cfg.value,
+            })
+            .collect()
+    }
 }
 
 /// Each type of template variable.

@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Added more logging around our WASM plugins.
+- Added a `MOON_DEBUG_WASM` environment variable, for including additional logging output, and
+  optionally dumping memory/core profiles.
+
 ## 1.22.9
 
 #### 🐞 Fixes

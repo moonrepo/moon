@@ -2,7 +2,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, LanguageType,
-    PlatformType, TaskArgs, TaskConfig, ToolchainConfig,
+    NodeConfig, PlatformType, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -21,8 +21,15 @@ struct Stub {
 
 impl Stub {
     pub fn new(id: &str, root: &Path) -> Self {
+        // Enable platforms so that detection works
+        let toolchain_config = ToolchainConfig {
+            node: Some(NodeConfig::default()),
+            rust: Some(RustConfig::default()),
+            ..ToolchainConfig::default()
+        };
+
         Self {
-            toolchain_config: ToolchainConfig::default(),
+            toolchain_config,
             workspace_root: root.to_path_buf(),
             id: Id::raw(id),
             source: WorkspaceRelativePathBuf::from(id),

@@ -7,6 +7,7 @@ expression: assert.output()
 Project: root
 Alias: test-cases
 Source: .
+Platform: node
 Language: typescript
 Stack: unknown
 Type: unknown

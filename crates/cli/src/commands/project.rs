@@ -83,6 +83,10 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         console.print_entry("Root", color::path(&project.root))?;
     }
 
+    if project.platform.is_javascript() {
+        console.print_entry("Platform", format!("{}", &project.platform))?;
+    }
+
     console.print_entry("Language", format!("{}", &project.language))?;
     console.print_entry("Stack", format!("{}", &project.stack))?;
     console.print_entry("Type", format!("{}", &project.type_of))?;

@@ -6,7 +6,7 @@ use moon_config::{
     ToolchainConfig,
 };
 use moon_file_group::FileGroup;
-use moon_platform_detector::detect_project_language;
+use moon_platform_detector::{detect_project_language, detect_project_platform};
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
@@ -117,13 +117,17 @@ impl<'app> ProjectBuilder<'app> {
 
         // Use configured platform or infer from language
         self.platform = config.platform.unwrap_or_else(|| {
-            let platform: PlatformType = self.language.clone().into();
+            let platform = detect_project_platform(
+                &self.project_root,
+                &self.language,
+                &self.context.toolchain_config.get_enabled_platforms(),
+            );
 
             trace!(
                 id = self.id.as_str(),
                 language = ?self.language,
                 platform = ?self.platform,
-                "Unknown tasks platform, inferring from language",
+                "Unknown tasks platform, inferring from language and toolchain",
             );
 
             platform

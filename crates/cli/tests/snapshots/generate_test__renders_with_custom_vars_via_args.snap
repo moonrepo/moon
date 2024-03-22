@@ -17,3 +17,4 @@ enumNotEmpty = b
 multenum = []
 multenumNotEmpty = [a]
 noPrompt = 456
+internal = original

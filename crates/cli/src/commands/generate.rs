@@ -1,6 +1,7 @@
 use crate::helpers::create_theme;
 use clap::Args;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon_app_components::{Console, MoonEnv};
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
@@ -49,7 +50,10 @@ fn log_var<T: Debug>(name: &str, value: &T, comment: Option<&str>) {
     debug!(name, value = ?value, comment, "Setting variable");
 }
 
-fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
+fn parse_var_args(
+    vars: &[String],
+    config: &FxHashMap<String, TemplateVariable>,
+) -> FxHashMap<String, String> {
     let mut custom_vars = FxHashMap::default();
 
     if vars.is_empty() {
@@ -69,6 +73,13 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
             name
         };
         let comment = format!("(from --{name})");
+
+        // Skip if an internal variable
+        if let Some(var_config) = config.get(name) {
+            if var_config.is_internal() {
+                return;
+            }
+        }
 
         log_var(name, &value, Some(&comment));
 
@@ -136,12 +147,17 @@ fn gather_variables(
     args: &GenerateArgs,
 ) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
-    let custom_vars = parse_var_args(&args.vars);
+    let custom_vars = parse_var_args(&args.vars, &template.config.variables);
     let default_comment = "(defaults)";
 
     debug!("Declaring variable values from defaults and user prompts");
 
-    for (name, config) in &template.config.variables {
+    let mut variables = template.config.variables.iter().collect_vec();
+
+    // Sort variables so prompting happens in the correct order
+    variables.sort_by(|a, d| a.1.get_order().cmp(&d.1.get_order()));
+
+    for (name, config) in variables {
         match config {
             TemplateVariable::Boolean(var) => {
                 let default: bool = match custom_vars.get(name) {
@@ -389,7 +405,6 @@ pub async fn generate(
 
     // Load template files and determine when to overwrite
     template.load_files(&dest, &context)?;
-    template.flatten_files()?;
 
     for file in template.files.values_mut() {
         if file.is_skipped() {

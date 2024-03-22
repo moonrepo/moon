@@ -16,6 +16,8 @@ targetBin="$PWD/target/$target/release/$binary"
 packageBin="$PWD/packages/$package/$binary"
 artifactBin="$PWD/artifacts/$binary"
 
+mkdir -p "$PWD/artifacts"
+
 # Copy the binary to the package
 cp "$targetBin" "$packageBin"
 chmod +x "$packageBin"

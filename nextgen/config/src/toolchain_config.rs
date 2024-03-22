@@ -1,6 +1,6 @@
 // .moon/toolchain.yml
 
-use crate::language_platform::PlatformType;
+use crate::language_platform::*;
 use crate::toolchain::*;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config};

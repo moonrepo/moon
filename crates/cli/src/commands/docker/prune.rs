@@ -126,7 +126,7 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
     let mut platforms = FxHashSet::<PlatformType>::default();
 
     for project_id in &manifest.focused_projects {
-        platforms.insert(project_graph.get(project_id)?.language.clone().into());
+        platforms.insert(project_graph.get(project_id)?.platform);
     }
 
     // Do this later so we only run once for each platform instead of per project

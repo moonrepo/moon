@@ -94,24 +94,6 @@ impl PlatformType {
     }
 }
 
-impl From<LanguageType> for PlatformType {
-    fn from(language: LanguageType) -> Self {
-        match language {
-            LanguageType::Unknown => PlatformType::Unknown,
-            LanguageType::Bash | LanguageType::Batch => PlatformType::System,
-            // Deno and Bun are not covered here!
-            LanguageType::JavaScript | LanguageType::TypeScript => PlatformType::Node,
-            LanguageType::Rust => PlatformType::Rust,
-            // TODO: Move these to their own platform once it's been implemented!
-            LanguageType::Go
-            | LanguageType::Php
-            | LanguageType::Python
-            | LanguageType::Ruby
-            | LanguageType::Other(_) => PlatformType::System,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -2,7 +2,7 @@ use crate::languages::*;
 use moon_config::LanguageType;
 use std::path::Path;
 
-fn has_language_files(root: &Path, files: StaticStringList) -> bool {
+pub fn has_language_files(root: &Path, files: StaticStringList) -> bool {
     files.iter().any(|file| root.join(file).exists())
 }
 

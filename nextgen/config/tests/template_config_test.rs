@@ -122,6 +122,8 @@ variables:
                 *config.variables.get("bool").unwrap(),
                 TemplateVariable::Boolean(TemplateVariableBoolSetting {
                     default: false,
+                    internal: false,
+                    order: None,
                     prompt: Some("prompt".into()),
                     required: Some(true)
                 })
@@ -166,6 +168,8 @@ variables:
                 *config.variables.get("num").unwrap(),
                 TemplateVariable::Number(TemplateVariableNumberSetting {
                     default: 123,
+                    internal: false,
+                    order: None,
                     prompt: Some("prompt".into()),
                     required: Some(false)
                 })
@@ -208,6 +212,8 @@ variables:
                 *config.variables.get("str").unwrap(),
                 TemplateVariable::String(TemplateVariableStringSetting {
                     default: "abc".into(),
+                    internal: false,
+                    order: None,
                     prompt: None,
                     required: None
                 })
@@ -256,7 +262,9 @@ variables:
                 *config.variables.get("strum").unwrap(),
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
                     default: TemplateVariableEnumDefault::String("a".into()),
+                    internal: false,
                     multiple: None,
+                    order: None,
                     prompt: Some("prompt".into()),
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),
@@ -298,7 +306,9 @@ variables:
                 *config.variables.get("strum").unwrap(),
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
                     default: TemplateVariableEnumDefault::Vec(vec!["a".into(), "c".into()]),
+                    internal: false,
                     multiple: Some(true),
+                    order: None,
                     prompt: Some("prompt".into()),
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),

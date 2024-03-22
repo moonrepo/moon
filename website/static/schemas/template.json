@@ -92,6 +92,23 @@
           "description": "The default value of the variable if none was provided.",
           "type": "boolean"
         },
+        "internal": {
+          "title": "internal",
+          "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
+          "type": "boolean"
+        },
+        "order": {
+          "title": "order",
+          "description": "The order in which variables should be prompted for.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "prompt": {
           "title": "prompt",
           "description": "Prompt the user for a value when the generator is running.",
@@ -148,12 +165,29 @@
             }
           ]
         },
+        "internal": {
+          "title": "internal",
+          "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
+          "type": "boolean"
+        },
         "multiple": {
           "title": "multiple",
           "description": "Allows multiple values to be selected.",
           "anyOf": [
             {
               "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "order": {
+          "title": "order",
+          "description": "The order in which variables should be prompted for.",
+          "anyOf": [
+            {
+              "type": "number"
             },
             {
               "type": "null"
@@ -223,6 +257,23 @@
           "description": "The default value of the variable if none was provided.",
           "type": "number"
         },
+        "internal": {
+          "title": "internal",
+          "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
+          "type": "boolean"
+        },
+        "order": {
+          "title": "order",
+          "description": "The order in which variables should be prompted for.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "prompt": {
           "title": "prompt",
           "description": "Prompt the user for a value when the generator is running.",
@@ -262,6 +313,23 @@
           "title": "default",
           "description": "The default value of the variable if none was provided.",
           "type": "string"
+        },
+        "internal": {
+          "title": "internal",
+          "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",
+          "type": "boolean"
+        },
+        "order": {
+          "title": "order",
+          "description": "The order in which variables should be prompted for.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "prompt": {
           "title": "prompt",

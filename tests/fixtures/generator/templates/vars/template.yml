@@ -84,3 +84,7 @@ variables:
   noPrompt:
     type: 'number'
     default: 456
+  internal:
+    type: 'string'
+    default: 'original'
+    internal: true

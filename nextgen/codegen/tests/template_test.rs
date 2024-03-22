@@ -161,8 +161,6 @@ mod template {
 
             template.load_files(&out, &create_context()).unwrap();
 
-            template.flatten_files().unwrap();
-
             // Verify sources
             assert_eq!(
                 template
@@ -387,6 +385,45 @@ mod template {
             assert!(file.is_skipped());
             assert!(file.config.unwrap().skip);
             assert_eq!(file.content, "Content".to_owned());
+        }
+    }
+
+    mod extending {
+        use super::*;
+        use starbase_sandbox::assert_snapshot;
+
+        #[tokio::test]
+        async fn can_include_extended_files() {
+            let sandbox = create_sandbox("include");
+            let out = sandbox.path().join("out");
+            let config = GeneratorConfig::default();
+
+            let mut codegen = CodeGenerator::new(
+                sandbox.path(),
+                &config,
+                MoonEnvironment::new_testing(sandbox.path()).into(),
+            );
+            codegen.load_templates().await.unwrap();
+
+            let mut template = codegen.get_template("base").unwrap();
+
+            template.load_files(&out, &create_context()).unwrap();
+
+            let file = template
+                .files
+                .values()
+                .find(|f| f.name == "include.txt")
+                .unwrap();
+
+            assert_snapshot!(file.content);
+
+            let file = template
+                .files
+                .values()
+                .find(|f| f.name == "inheritance.txt")
+                .unwrap();
+
+            assert_snapshot!(file.content);
         }
     }
 }

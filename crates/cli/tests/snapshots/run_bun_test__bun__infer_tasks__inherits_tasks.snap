@@ -7,6 +7,7 @@ expression: assert.output()
 Project: scripts
 Alias: test-bun-scripts
 Source: scripts
+Platform: bun
 Language: javascript
 Stack: unknown
 Type: unknown

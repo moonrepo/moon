@@ -92,16 +92,29 @@ impl PlatformType {
     pub fn is_unknown(&self) -> bool {
         matches!(self, PlatformType::Unknown)
     }
-}
 
-impl From<LanguageType> for PlatformType {
-    fn from(language: LanguageType) -> Self {
+    pub fn from_language(language: &LanguageType, enabled: &[PlatformType]) -> Self {
         match language {
             LanguageType::Unknown => PlatformType::Unknown,
             LanguageType::Bash | LanguageType::Batch => PlatformType::System,
-            // Deno and Bun are not covered here!
-            LanguageType::JavaScript | LanguageType::TypeScript => PlatformType::Node,
-            LanguageType::Rust => PlatformType::Rust,
+            LanguageType::JavaScript | LanguageType::TypeScript => {
+                if enabled.contains(&PlatformType::Deno) {
+                    PlatformType::Deno
+                } else if enabled.contains(&PlatformType::Bun) {
+                    PlatformType::Bun
+                } else if enabled.contains(&PlatformType::Node) {
+                    PlatformType::Node
+                } else {
+                    PlatformType::System
+                }
+            }
+            LanguageType::Rust => {
+                if enabled.contains(&PlatformType::Rust) {
+                    PlatformType::Rust
+                } else {
+                    PlatformType::System
+                }
+            }
             // TODO: Move these to their own platform once it's been implemented!
             LanguageType::Go
             | LanguageType::Php

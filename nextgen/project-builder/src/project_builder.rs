@@ -117,13 +117,16 @@ impl<'app> ProjectBuilder<'app> {
 
         // Use configured platform or infer from language
         self.platform = config.platform.unwrap_or_else(|| {
-            let platform: PlatformType = self.language.clone().into();
+            let platform = PlatformType::from_language(
+                &self.language,
+                &self.context.toolchain_config.get_enabled_platforms(),
+            );
 
             trace!(
                 id = self.id.as_str(),
                 language = ?self.language,
                 platform = ?self.platform,
-                "Unknown tasks platform, inferring from language",
+                "Unknown tasks platform, inferring from language and toolchain",
             );
 
             platform

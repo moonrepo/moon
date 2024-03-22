@@ -176,7 +176,11 @@ fn main() {
     generate_workspace();
 
     // Run prettier
-    let mut cmd = Command::new("node_modules/.bin/prettier");
-    cmd.args(["--write", "packages/types"]);
-    cmd.output().unwrap();
+    let prettier = PathBuf::from("node_modules/.bin/prettier");
+
+    if prettier.exists() {
+        let mut cmd = Command::new(prettier);
+        cmd.args(["--write", "packages/types"]);
+        cmd.output().unwrap();
+    }
 }

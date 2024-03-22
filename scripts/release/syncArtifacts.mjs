@@ -1,28 +1,30 @@
 import fs from 'fs/promises';
-import path from 'path';
 import { getPackageFromTarget, getPath } from '../helpers.mjs';
 
 async function syncArtifacts() {
-	const targetDirs = await fs.readdir(getPath('artifacts'));
+	const dirs = await fs.readdir(getPath('artifacts'));
 
-	console.log(targetDirs);
+	await fs.mkdir(getPath('artifacts/release'), { recursive: true });
 
 	await Promise.all(
-		targetDirs.map(async (targetDir) => {
-			const artifacts = await fs.readdir(getPath('artifacts', targetDir));
+		dirs.map(async (dir) => {
+			const artifacts = await fs.readdir(getPath('artifacts', dir));
 
 			console.log(artifacts);
 
 			await Promise.all(
 				artifacts.map(async (artifact) => {
+					const artifactPath = getPath('artifacts', dir, artifact);
+
+					// JSON schemas
 					if (artifact.startsWith('schema-')) {
+						await fs.copyFile(artifactPath, getPath('artifacts/release', artifact));
+
 						return;
 					}
 
-					const artifactPath = getPath('artifacts', targetDir, artifact);
-					const target = targetDir.replace('binary-', '');
-
 					// Copy the artifact binary into the target core package
+					const target = dir.replace('binary-', '');
 					const binaryPath = getPath('packages', getPackageFromTarget(target), artifact);
 
 					await fs.copyFile(artifactPath, binaryPath);
@@ -34,7 +36,6 @@ async function syncArtifacts() {
 						artifact.replace('moon', `moon-${target}`),
 					);
 
-					await fs.mkdir(path.dirname(releasePath), { recursive: true });
 					await fs.copyFile(artifactPath, releasePath);
 					await fs.chmod(releasePath, 0o755);
 				}),

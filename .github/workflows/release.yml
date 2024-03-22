@@ -16,7 +16,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
-  pull_request:
+  # pull_request:
 
 permissions:
   contents: write
@@ -235,51 +235,51 @@ jobs:
       - name: List binaries
         run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
-      # - id: publish-step
-      #   name: Publish npm packages
-      #   run: bash ./scripts/release/publishBinaryPackages.sh
-      #   shell: bash
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # - if:
-      #     ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next'
-      #     }}
-      #   uses: ncipollo/release-action@v1
-      #   name: Create GitHub release
-      #   with:
-      #     artifactErrorsFailBuild: true
-      #     artifacts: artifacts/release/*
-      #     tag: ${{ steps.publish-step.outputs.npm-tag-name }}
-      #     prerelease: ${{ needs.plan.outputs.npm-channel == 'next' }}
-      #     skipIfReleaseExists: true
-      # - if: ${{ needs.plan.outputs.npm-channel == 'canary' }}
-      #   uses: ncipollo/release-action@v1
-      #   name: Create GitHub release
-      #   with:
-      #     allowUpdates: true
-      #     artifactErrorsFailBuild: true
-      #     artifacts: artifacts/release/*
-      #     body: 'This canary release corresponds to the commit [${{ github.sha }}].'
-      #     name: 'Canary'
-      #     tag: 'canary'
-      #     prerelease: true
-      #     replacesArtifacts: true
-      #     skipIfReleaseExists: false
-      # - if: ${{ needs.plan.outputs.npm-channel == 'nightly' }}
-      #   uses: ncipollo/release-action@v1
-      #   name: Create GitHub release
-      #   with:
-      #     allowUpdates: true
-      #     artifactErrorsFailBuild: true
-      #     artifacts: artifacts/release/*
-      #     body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
-      #     name: 'Nightly'
-      #     tag: 'nightly'
-      #     prerelease: true
-      #     replacesArtifacts: true
-      #     skipIfReleaseExists: false
+      - id: publish-step
+        name: Publish npm packages
+        run: bash ./scripts/release/publishBinaryPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - if:
+          ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next'
+          }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          tag: ${{ steps.publish-step.outputs.npm-tag-name }}
+          prerelease: ${{ needs.plan.outputs.npm-channel == 'next' }}
+          skipIfReleaseExists: true
+      - if: ${{ needs.plan.outputs.npm-channel == 'canary' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This canary release corresponds to the commit [${{ github.sha }}].'
+          name: 'Canary'
+          tag: 'canary'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
+      - if: ${{ needs.plan.outputs.npm-channel == 'nightly' }}
+        uses: ncipollo/release-action@v1
+        name: Create GitHub release
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: artifacts/release/*
+          body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
+          name: 'Nightly'
+          tag: 'nightly'
+          prerelease: true
+          replacesArtifacts: true
+          skipIfReleaseExists: false
 
   publish-npm:
     if:

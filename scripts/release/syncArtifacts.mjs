@@ -10,8 +10,6 @@ async function syncArtifacts() {
 		dirs.map(async (dir) => {
 			const artifacts = await fs.readdir(getPath('artifacts', dir));
 
-			console.log(artifacts);
-
 			await Promise.all(
 				artifacts.map(async (artifact) => {
 					const artifactPath = getPath('artifacts', dir, artifact);

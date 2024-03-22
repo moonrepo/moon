@@ -123,16 +123,10 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
 
     let project_graph = generate_project_graph(workspace).await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;
-    let enabled_platforms = workspace.toolchain_config.get_enabled_platforms();
     let mut platforms = FxHashSet::<PlatformType>::default();
 
     for project_id in &manifest.focused_projects {
-        let project = project_graph.get(project_id)?;
-
-        platforms.insert(PlatformType::from_language(
-            &project.language,
-            &enabled_platforms,
-        ));
+        platforms.insert(project_graph.get(project_id)?.platform);
     }
 
     // Do this later so we only run once for each platform instead of per project

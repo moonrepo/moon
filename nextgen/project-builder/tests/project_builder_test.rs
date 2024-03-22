@@ -21,11 +21,12 @@ struct Stub {
 
 impl Stub {
     pub fn new(id: &str, root: &Path) -> Self {
-        let mut toolchain_config = ToolchainConfig::default();
-
         // Enable platforms so that detection works
-        toolchain_config.node = Some(NodeConfig::default());
-        toolchain_config.rust = Some(RustConfig::default());
+        let toolchain_config = ToolchainConfig {
+            node: Some(NodeConfig::default()),
+            rust: Some(RustConfig::default()),
+            ..ToolchainConfig::default()
+        };
 
         Self {
             toolchain_config,

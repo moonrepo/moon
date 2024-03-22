@@ -31,7 +31,9 @@
 #### 🐞 Fixes
 
 - Fixed an issue where a project's `platform` was being detected as `node` (when not enabled), and
-  should have been `bun`.
+  should have been `bun`. If you're using both `bun` and `node` in the same workspace, moon has a
+  hard time detecting which should be used for what project. If you run into issues, explicitly set
+  the `platform` in the project's `moon.yml`.
 - Fixed an issue where template files couldn't import/include/extends files from extended templates.
 - Fixed template enum variable default values being able to use a non-supported value.
 

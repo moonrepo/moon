@@ -170,6 +170,24 @@ fn renders_with_custom_vars_via_args() {
 }
 
 #[test]
+fn cant_overwrite_internal_variables_with_args() {
+    let sandbox = generate_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("generate")
+            .arg("vars")
+            .arg("./test")
+            .arg("--defaults")
+            .arg("--")
+            .args(["--internal", "overwritten"]);
+    });
+
+    assert.success();
+
+    assert_snapshot!(fs::read_to_string(sandbox.path().join("./test/expressions.txt")).unwrap());
+}
+
+#[test]
 fn handles_raw_files() {
     let sandbox = generate_sandbox();
 

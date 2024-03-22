@@ -50,7 +50,10 @@ fn log_var<T: Debug>(name: &str, value: &T, comment: Option<&str>) {
     debug!(name, value = ?value, comment, "Setting variable");
 }
 
-fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
+fn parse_var_args(
+    vars: &[String],
+    config: &FxHashMap<String, TemplateVariable>,
+) -> FxHashMap<String, String> {
     let mut custom_vars = FxHashMap::default();
 
     if vars.is_empty() {
@@ -70,6 +73,13 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
             name
         };
         let comment = format!("(from --{name})");
+
+        // Skip if an internal variable
+        if let Some(var_config) = config.get(name) {
+            if var_config.is_internal() {
+                return;
+            }
+        }
 
         log_var(name, &value, Some(&comment));
 
@@ -137,7 +147,7 @@ fn gather_variables(
     args: &GenerateArgs,
 ) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
-    let custom_vars = parse_var_args(&args.vars);
+    let custom_vars = parse_var_args(&args.vars, &template.config.variables);
     let default_comment = "(defaults)";
 
     debug!("Declaring variable values from defaults and user prompts");

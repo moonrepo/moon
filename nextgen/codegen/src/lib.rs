@@ -2,6 +2,7 @@ mod asset_file;
 mod codegen;
 mod codegen_error;
 mod filters;
+mod funcs;
 mod template;
 mod template_file;
 

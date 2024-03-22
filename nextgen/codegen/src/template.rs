@@ -1,6 +1,6 @@
 use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, MergeType, TemplateFile};
-use crate::{filters, CodegenError};
+use crate::{filters, funcs, CodegenError};
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
 use moon_common::path::{to_virtual_string, RelativePathBuf};
@@ -44,6 +44,7 @@ impl Template {
         engine.register_filter("upper_snake_case", filters::upper_snake_case);
         engine.register_filter("path_join", filters::path_join);
         engine.register_filter("path_relative", filters::path_relative);
+        engine.register_function("variables", funcs::variables);
 
         let config = TemplateConfig::load_from(&root)?;
 

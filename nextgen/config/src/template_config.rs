@@ -15,6 +15,9 @@ macro_rules! var_setting {
             /// The default value of the variable if none was provided.
             pub default: $ty,
 
+            /// Marks the variable as internal, and won't be overwritten via CLI arguments.
+            pub internal: bool,
+
             /// The order in which variables should be prompted for.
             pub order: Option<usize>,
 
@@ -114,6 +117,9 @@ pub struct TemplateVariableEnumSetting {
     #[setting(nested, validate = validate_enum_default)]
     pub default: TemplateVariableEnumDefault,
 
+    /// Marks the variable as internal, and won't be overwritten via CLI arguments.
+    pub internal: bool,
+
     /// Allows multiple values to be selected.
     pub multiple: Option<bool>,
 
@@ -181,6 +187,15 @@ impl TemplateVariable {
         };
 
         order.copied().unwrap_or(100)
+    }
+
+    pub fn is_internal(&self) -> bool {
+        match self {
+            Self::Boolean(cfg) => cfg.internal,
+            Self::Enum(cfg) => cfg.internal,
+            Self::Number(cfg) => cfg.internal,
+            Self::String(cfg) => cfg.internal,
+        }
     }
 }
 

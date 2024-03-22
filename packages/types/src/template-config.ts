@@ -6,6 +6,10 @@
 export interface PartialTemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default?: boolean | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
@@ -27,8 +31,12 @@ export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableE
 export interface PartialTemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
 	default?: PartialTemplateVariableEnumDefault | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
 	/** Allows multiple values to be selected. */
 	multiple?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	type?: 'enum' | null;
@@ -40,6 +48,10 @@ export interface PartialTemplateVariableEnumSetting {
 export interface PartialTemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default?: number | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
@@ -51,6 +63,10 @@ export interface PartialTemplateVariableNumberSetting {
 export interface PartialTemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default?: string | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt?: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
@@ -104,6 +120,10 @@ export interface PartialTemplateFrontmatterConfig {
 export interface TemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	default: boolean;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
@@ -125,8 +145,12 @@ export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig
 export interface TemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
 	default: TemplateVariableEnumDefault;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
 	/** Allows multiple values to be selected. */
 	multiple: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	type: 'enum';
@@ -138,6 +162,10 @@ export interface TemplateVariableEnumSetting {
 export interface TemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	default: number;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */
@@ -149,6 +177,10 @@ export interface TemplateVariableNumberSetting {
 export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	default: string;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal: boolean;
+	/** The order in which variables should be prompted for. */
+	order: number | null;
 	/** Prompt the user for a value when the generator is running. */
 	prompt: string | null;
 	/** Marks the variable as required, and will not accept an empty value. */

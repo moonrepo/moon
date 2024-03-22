@@ -13,3 +13,4 @@ enumNotEmpty = {{ enumNotEmpty }}
 multenum = {{ multenum }}
 multenumNotEmpty = {{ multenumNotEmpty }}
 noPrompt = {{ noPrompt }}
+internal = {{ internal }}

@@ -211,7 +211,7 @@ jobs:
           command: bash ./scripts/release/testBinary.sh
 
   publish:
-    # if: ${{ needs.plan.outputs.publish == 'true' }}
+    if: ${{ needs.plan.outputs.publish == 'true' }}
     name: Publish cli/core packages
     runs-on: ubuntu-20.04
     needs:

@@ -72,7 +72,7 @@ impl Template {
 
     /// Once files have been loaded by all templates in the extends chain,
     /// we must flatten all nested files map into a single top-level map.
-    pub fn flatten_files(&mut self) -> miette::Result<()> {
+    pub fn load_extended_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
         if self.templates.is_empty() {
             return Ok(());
         }
@@ -81,7 +81,7 @@ impl Template {
         let mut files = BTreeMap::new();
 
         for template in &mut self.templates {
-            template.flatten_files()?;
+            template.load_files(dest, context)?;
 
             self.engine.extend(&template.engine).into_diagnostic()?;
 
@@ -101,9 +101,7 @@ impl Template {
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
     pub fn load_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
-        for template in &mut self.templates {
-            template.load_files(dest, context)?;
-        }
+        self.load_extended_files(dest, context)?;
 
         let mut files = vec![];
 
@@ -191,7 +189,7 @@ impl Template {
         }
 
         // Do a second pass and render the content
-        for file in &mut files {
+        for mut file in files {
             if file.raw {
                 file.set_raw_content(dest)?;
             } else {
@@ -205,9 +203,9 @@ impl Template {
                     dest,
                 )?;
             }
-        }
 
-        self.files = BTreeMap::from_iter(files.into_iter().map(|file| (file.name.clone(), file)));
+            self.files.insert(file.name.clone(), file);
+        }
 
         Ok(())
     }

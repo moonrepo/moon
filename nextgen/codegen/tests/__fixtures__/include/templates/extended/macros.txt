@@ -1,0 +1,6 @@
+{% macro input(label, type="text") %}
+	<label>
+		{{ label }}
+		<input type="{{type}}" />
+	</label>
+{% endmacro input %}

@@ -405,7 +405,6 @@ pub async fn generate(
 
     // Load template files and determine when to overwrite
     template.load_files(&dest, &context)?;
-    template.flatten_files()?;
 
     for file in template.files.values_mut() {
         if file.is_skipped() {

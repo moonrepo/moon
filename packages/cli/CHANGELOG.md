@@ -30,6 +30,7 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where template files couldn't import/include/extends files from extended templates.
 - Fixed template enum variable default values being able to use a non-supported value.
 
 #### ⚙️ Internal

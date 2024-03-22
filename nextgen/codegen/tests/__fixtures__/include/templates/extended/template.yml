@@ -1,0 +1,3 @@
+title: 'Template title'
+description: 'Template description'
+extends: [partials]

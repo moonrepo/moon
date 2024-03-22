@@ -14,7 +14,7 @@ echo "Binary: $binary"
 
 targetBin="$PWD/target/$target/release/$binary"
 packageBin="$PWD/packages/$package/$binary"
-artifactBin="$PWD/$binary"
+artifactBin="$PWD/artifacts/$binary"
 
 # Copy the binary to the package
 cp "$targetBin" "$packageBin"

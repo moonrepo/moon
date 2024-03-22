@@ -5,12 +5,20 @@ import { getPackageFromTarget, getPath } from '../helpers.mjs';
 async function syncArtifacts() {
 	const targetDirs = await fs.readdir(getPath('artifacts'));
 
+	console.log(targetDirs);
+
 	await Promise.all(
 		targetDirs.map(async (targetDir) => {
 			const artifacts = await fs.readdir(getPath('artifacts', targetDir));
 
+			console.log(artifacts);
+
 			await Promise.all(
 				artifacts.map(async (artifact) => {
+					if (artifact.startsWith('schema-')) {
+						return;
+					}
+
 					const artifactPath = getPath('artifacts', targetDir, artifact);
 					const target = targetDir.replace('binary-', '');
 

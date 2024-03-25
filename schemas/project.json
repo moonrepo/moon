@@ -104,7 +104,7 @@
       "default": "unknown",
       "allOf": [
         {
-          "$ref": "#/definitions/ProjectStack"
+          "$ref": "#/definitions/StackType"
         }
       ]
     },
@@ -396,16 +396,6 @@
       },
       "additionalProperties": false
     },
-    "ProjectStack": {
-      "type": "string",
-      "enum": [
-        "backend",
-        "frontend",
-        "infrastructure",
-        "systems",
-        "unknown"
-      ]
-    },
     "ProjectToolchainCommonToolConfig": {
       "description": "Overrides top-level toolchain settings.",
       "type": "object",
@@ -646,6 +636,16 @@
         }
       },
       "additionalProperties": false
+    },
+    "StackType": {
+      "type": "string",
+      "enum": [
+        "backend",
+        "frontend",
+        "infrastructure",
+        "systems",
+        "unknown"
+      ]
     },
     "TaskArgs": {
       "description": "Configures a command to execute, and its arguments.",
@@ -893,6 +893,12 @@
         },
         {
           "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       ]
     },
@@ -966,6 +972,18 @@
         "interactive": {
           "title": "interactive",
           "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "internal": {
+          "title": "internal",
+          "description": "Marks the task as internal, which disables it from begin ran from the command line, but can be depended on.",
           "anyOf": [
             {
               "type": "boolean"

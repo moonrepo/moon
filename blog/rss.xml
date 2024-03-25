@@ -4,10 +4,87 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Fri, 01 Mar 2024 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 25 Mar 2024 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more]]></title>
+            <link>https://moonrepo.dev/blog/moon-v1.23</link>
+            <guid>https://moonrepo.dev/blog/moon-v1.23</guid>
+            <pubDate>Mon, 25 Mar 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[It's been a month since our last release, and we're excited to land major codegen and task]]></description>
+            <content:encoded><![CDATA[<p>It's been a month since our last release, and we're excited to land major codegen and task
+improvements.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="template--generator-improvements">Template &amp; generator improvements<a href="https://moonrepo.dev/blog/moon-v1.23#template--generator-improvements" class="hash-link" aria-label="Direct link to Template &amp; generator improvements" title="Direct link to Template &amp; generator improvements">​</a></h2>
+<p>Based on feedback and requests from community, we've made quite a few improvements to our code
+generation workflow!</p>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="git-and-npm-template-locators">Git and npm template locators<a href="https://moonrepo.dev/blog/moon-v1.23#git-and-npm-template-locators" class="hash-link" aria-label="Direct link to Git and npm template locators" title="Direct link to Git and npm template locators">​</a></h3>
+<p>Our <a href="https://moonrepo.dev/docs/config/workspace#templates"><code>generator.templates</code></a> setting has only supported file system
+paths, relative from the workspace root. This has made it quite difficult to share templates across
+repositories, but no longer!</p>
+<p>Template locations now support Git repositories and npm packages, through the <code>git:</code> and <code>npm:</code>
+prefixes respectively. The <code>git:</code> locator requires a Git repository URL and explicit revision
+(branch, commit, etc), while the <code>npm:</code> locator requires a package name and explicit version. For
+example:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">generator</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">templates</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'git:github.com/moonrepo/templates#master'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'npm:@moonrepo/templates#1.2.3'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<blockquote>
+<p>Learn more about this in the official
+<a href="https://moonrepo.dev/docs/guides/codegen#configuring-template-locations">code generation guide</a>!</p>
+</blockquote>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="custom-template-names">Custom template names<a href="https://moonrepo.dev/blog/moon-v1.23#custom-template-names" class="hash-link" aria-label="Direct link to Custom template names" title="Direct link to Custom template names">​</a></h3>
+<p>Historically, a template's name was derived from the directory the
+<a href="https://moonrepo.dev/docs/config/template"><code>template.yml</code></a> file was located in. While this works great for small repos,
+it falls apart for large monorepos when there's multiple teams defining templates, as the chance of
+name collisions arise.</p>
+<p>To combat this problem, we're introducing a new <a href="https://moonrepo.dev/docs/config/template#id"><code>id</code> setting</a> for
+templates, which allows you to customize the exact name of the template. This setting is optional,
+and if not provided, the name will be derived from the directory as before.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'my-template'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-variable-settings">New variable settings<a href="https://moonrepo.dev/blog/moon-v1.23#new-variable-settings" class="hash-link" aria-label="Direct link to New variable settings" title="Direct link to New variable settings">​</a></h3>
+<p>And lastly, we're introducing some additions and improvements to template
+<a href="https://moonrepo.dev/docs/config/template#variables"><code>variables</code></a>.</p>
+<ul>
+<li>A new <code>order</code> setting, which defines the order in which variables are prompted to the user.</li>
+<li>A new <code>internal</code> setting, which avoids the value being set from the CLI.</li>
+<li>Enum <code>default</code> values now support a list of values (cannot be provided by the CLI yet).</li>
+<li>Enum <code>prompt</code>s are now optional, and will fallback to the default value if not provided.</li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="stack-based-task-inheritance">Stack-based task inheritance<a href="https://moonrepo.dev/blog/moon-v1.23#stack-based-task-inheritance" class="hash-link" aria-label="Direct link to Stack-based task inheritance" title="Direct link to Stack-based task inheritance">​</a></h2>
+<p>Last month in <a href="https://moonrepo.dev/blog/moon-v1.22">moon v1.22</a>, we introduced the <a href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a>
+setting for organizing projects into what tech stack they belong to. This is primarily for
+organizational purposes, and improving our project constaints implementation.</p>
+<p>Based on community feeedback, we've expanded the <code>stack</code> setting to also apply for
+<a href="http://localhost:3000/docs/concepts/task-inheritance#scope-by-project-metadata" target="_blank" rel="noopener noreferrer">task inheritance</a>.
+You can now inherit tasks for the stack itself, or through a combination of the project language,
+platform, and type. For example:</p>
+<ul>
+<li><code>.moon/tasks/backend.yml</code></li>
+<li><code>.moon/tasks/javascript-backend.yml</code></li>
+<li><code>.moon/tasks/frontend-library.yml</code></li>
+<li><code>.moon/tasks/bun-frontend-application.yml</code></li>
+</ul>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="internal-tasks">Internal tasks<a href="https://moonrepo.dev/blog/moon-v1.23#internal-tasks" class="hash-link" aria-label="Direct link to Internal tasks" title="Direct link to Internal tasks">​</a></h2>
+<p>We're introducing a new <a href="https://moonrepo.dev/docs/concepts/task#modes">task mode</a> called internal, which can be enabled
+with the <a href="https://moonrepo.dev/docs/config/project#internal"><code>internal</code></a> task option. Internal tasks are tasks that are
+not meant to be ran explicitly by the user (via <a href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a> or
+<a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>), but are used internally as dependencies of other tasks.</p>
+<p>This functionality provides another way to organize your tasks.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">prepare</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'intermediate-step'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">internal</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.23#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.23.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added a <code>variables()</code> function for templates that returns an object of all variables available.</li>
+<li>Updated <code>moon project</code> and <code>moon task</code> to include the configuration files that tasks inherit from.</li>
+<li>Updated <code>moon task</code> to include the modes it belongs to.</li>
+</ul>]]></content:encoded>
+            <category>tasks</category>
+            <category>codegen</category>
+            <category>template</category>
+            <category>tack</category>
+            <category>inheritance</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.31 - Improved version pinning, removed global packages management, and more]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.31</link>
@@ -1336,109 +1413,6 @@ self-upgrades.</li>
             <category>bin</category>
             <category>shim</category>
             <category>checksum</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.15 - Next-generation action graph]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.15</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.15</guid>
-            <pubDate>Mon, 09 Oct 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[In this release, we've taken the next step in modernizing our action pipeline, by rewriting the]]></description>
-            <content:encoded><![CDATA[<p>In this release, we've taken the next step in modernizing our action pipeline, by rewriting the
-dependency graph.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="hello-action-graph-goodbye-dependency-graph">Hello action graph, goodbye dependency graph<a href="https://moonrepo.dev/blog/moon-v1.15#hello-action-graph-goodbye-dependency-graph" class="hash-link" aria-label="Direct link to Hello action graph, goodbye dependency graph" title="Direct link to Hello action graph, goodbye dependency graph">​</a></h2>
-<p>For the past few months, we've been working on a rewrite of our action pipeline, which consists of
-the project graph, dependency graph, task executor, process pipeline, and more. It's a slow process,
-with many different pieces that must land in sequence, but we're almost done. The next step in this
-process is the <a href="https://moonrepo.dev/docs/how-it-works/action-graph">introduction of the new action graph</a>, which
-replaces the previous dependency graph.</p>
-<p>For the most part, the graphs work in a similar fashion, but since we rewrote it from the ground up,
-we were able to resolve any discrepancies and performance issues. The biggest changes between the
-new and old graphs are:</p>
-<ul>
-<li>All actions now depend on the <code>SyncWorkspace</code> action, instead of this action running arbitrarily.</li>
-<li>Cleaned up dependency chains between actions, greatly reducing the number of nodes in the graph.</li>
-<li>Renamed <code>RunTarget</code> to <code>RunTask</code>, including interactive and persistent variants.</li>
-<li>And lastly, we ditched our batched task approach for a ready queue. Continue reading for more
-information!</li>
-</ul>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="a-new-performant-thread-pool">A new performant thread pool<a href="https://moonrepo.dev/blog/moon-v1.15#a-new-performant-thread-pool" class="hash-link" aria-label="Direct link to A new performant thread pool" title="Direct link to A new performant thread pool">​</a></h3>
-<p>In the old dependency graph, when we'd execute a task, we'd order the graph topologically and then
-group actions into batches (or buckets) based on their dependency chains. Batches would then be
-executed in order within the thread pool. This approach worked well, but had one major flaw: it
-wasn't as performant as could be. For example, if our thread pool size was 12, and a batch only had
-2 tasks in it, what were the other 10 threads doing? Absolutely nothing. They were sitting idly,
-waiting for a task.</p>
-<p>And now with the new action graph, we take full advantage of all threads in the pool. Instead of the
-batched approach above, we now use a topological task-ready queue, where a thread without work (or
-is waiting for work) can poll the graph for a new task to run. A task is considered ready to run if
-it either has no dependencies, or all of its dependencies (in the chain) have been ran.</p>
-<p>For large graphs, this should result in a significant performance improvement!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="automatic-dependency-linking-breaking">Automatic dependency linking (breaking)<a href="https://moonrepo.dev/blog/moon-v1.15#automatic-dependency-linking-breaking" class="hash-link" aria-label="Direct link to Automatic dependency linking (breaking)" title="Direct link to Automatic dependency linking (breaking)">​</a></h3>
-<blockquote>
-<p>In v1.17, we changed the scope from "peer" to "build" to reduce friction.</p>
-</blockquote>
-<p>Because of these graph changes, we do have a minor "breaking change". Tasks that depend (via <code>deps</code>)
-on other tasks from arbitrary projects (the parent project doesn't implicitly or explicitly depend
-on the other project), not including the root-level project, will now automatically mark that other
-project as a "peer" dependency (if not already configured with <code>dependsOn</code>). For example, "b"
-becomes a peer dependency for "a".</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">a/moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'b:build'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Now internally becomes:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">a/moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">dependsOn</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'b'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">scope</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'peer'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'b:build'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>If you'd prefer this dependency to <em>not be</em> a peer, you can explicitly configure it with a different
-scope. For Node.js projects, the "build" scope can be used as a no-op replacement.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">a/moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">dependsOn</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'b'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">scope</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'build'</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># production, development</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'b:build'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>We're marking this as a breaking change as this could subtly introduce cycles in the project graph
-that weren't present before, and for Node.js projects, this may inject <code>peerDependencies</code>. However,
-this change was necessary to ensure accurate dependency chains in the graph.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-moonreposetup-toolchain-github-action">New <code>moonrepo/setup-toolchain</code> GitHub action<a href="https://moonrepo.dev/blog/moon-v1.15#new-moonreposetup-toolchain-github-action" class="hash-link" aria-label="Direct link to new-moonreposetup-toolchain-github-action" title="Direct link to new-moonreposetup-toolchain-github-action">​</a></h2>
-<p>We've begun a process to deprecate the
-<a href="https://github.com/moonrepo/setup-moon-action" target="_blank" rel="noopener noreferrer">moonrepo/setup-moon-action</a> and
-<a href="https://github.com/moonrepo/setup-proto" target="_blank" rel="noopener noreferrer">moonrepo/setup-proto</a> GitHub actions, and instead, combine
-and replace them with a new <a href="https://github.com/moonrepo/setup-toolchain" target="_blank" rel="noopener noreferrer">moonrepo/setup-toolchain</a>
-action. Why a new action instead of fixing the others?</p>
-<p>The biggest problem was that both previous actions shared about 90% of the same code, but were
-slightly different in how they installed the binaries and cached the toolchain. It was was also
-confusing for consumers to understand and know which action to use (because they shouldn't be used
-together).</p>
-<p>To remedy this, we're prototyping the new
-<a href="https://github.com/moonrepo/setup-toolchain" target="_blank" rel="noopener noreferrer">moonrepo/setup-toolchain</a> action, which has been
-working quite well. It aims to solve the following:</p>
-<ul>
-<li>Installs <code>proto</code> globally so that installed tools can also be executed globally.</li>
-<li>Conditionally installs <code>moon</code> globally if the repository is using moon (attempts to detect a
-<code>.moon</code> directory).</li>
-<li>Caches the toolchain (<code>~/.proto</code>) so subsequent runs are faster.</li>
-<li>Hashes <code>.prototools</code> and <code>.moon/toolchain.yml</code> files to generate a unique cache key.</li>
-<li>Cleans the toolchain before caching to remove unused or stale tools.</li>
-<li>Can auto-install tools when used.</li>
-</ul>
-<div class="language-diff codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-diff codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain"># ...</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">jobs:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line"> ci:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line">   name: CI</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line">   runs-on: ubuntu-latest</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line">   steps:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line">     - uses: actions/checkout@v4</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line">       with:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token unchanged prefix unchanged"> </span><span class="token unchanged line">         fetch-depth: 0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token unchanged line"></span><span class="token deleted-sign deleted prefix deleted" style="color:#ff7c89">-</span><span class="token deleted-sign deleted line" style="color:#ff7c89">      - uses: moonrepo/setup-moon-action@v1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token deleted-sign deleted line" style="color:#ff7c89"></span><span class="token inserted-sign inserted prefix inserted" style="color:#b7d733">+</span><span class="token inserted-sign inserted line" style="color:#b7d733">      - uses: moonrepo/setup-toolchain@v0</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="now-supported-in-railway">Now supported in Railway<a href="https://moonrepo.dev/blog/moon-v1.15#now-supported-in-railway" class="hash-link" aria-label="Direct link to Now supported in Railway" title="Direct link to Now supported in Railway">​</a></h2>
-<p>If you're a big fan of <a href="https://railway.app/" target="_blank" rel="noopener noreferrer">Railway</a> (like we are), and you're deploying a Node.js
-backed application, then you'll be happy to hear that Railway now officially and natively supports
-moon! We spent some time over the past month
-<a href="https://nixpacks.com/docs/providers/node" target="_blank" rel="noopener noreferrer">integrating moon support into their Nixpacks architecture</a>.</p>
-<p>To make use of this, set the <code>NIXPACKS_MOON_APP_NAME</code> environment variable to the name of your moon
-project that you want to be deployed. This will then automatically run <code>moon run &lt;app&gt;:build</code> and
-<code>moon run &lt;app&gt;:start</code> respectively. To customize the task names, you can set the
-<code>NIXPACKS_MOON_BUILD_TASK</code> and <code>NIXPACKS_MOON_START_TASK</code> environment variables.</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>This is currently only supported for Node.js projects, but will be expanded to other languages in
-the future!</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.15#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.15.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added a <code>moon action-graph</code> command.</li>
-<li>Added a <code>--dependents</code> argument to <code>moon action-graph</code>.</li>
-<li>Added the ability to skip non-<code>RunTask</code> actions using environment variables.</li>
-<li>Deprecated the <code>moon dep-graph</code> command.</li>
-</ul>]]></content:encoded>
-            <category>action</category>
-            <category>dependency</category>
-            <category>graph</category>
-            <category>pipeline</category>
-            <category>railway</category>
         </item>
     </channel>
 </rss>

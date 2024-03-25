@@ -10,7 +10,7 @@ publish = false
 
 [dependencies]
 moon_env = { path = "../env" }
-moon_pdk_api = { version = "0.0.4", path = "../pdk-api" }
+moon_pdk_api = { version = "0.0.5", path = "../pdk-api" }
 convert_case = "0.6.0"
 dashmap = "5.5.3"
 miette = { workspace = true }

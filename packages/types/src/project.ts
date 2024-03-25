@@ -4,6 +4,7 @@ import type {
 	LanguageType,
 	ProjectConfig,
 	ProjectType,
+	StackType,
 } from './project-config';
 import type {
 	InheritedTasksConfig,
@@ -26,9 +27,11 @@ export interface FileGroup {
 
 export interface TaskOptions {
 	affectedFiles: boolean | 'args' | 'env' | null;
+	affectedPassInputs: boolean;
 	allowFailure: boolean;
 	cache: boolean;
 	envFiles: string[] | null;
+	internal: boolean;
 	interactive: boolean;
 	mergeArgs: TaskMergeStrategy;
 	mergeDeps: TaskMergeStrategy;
@@ -46,6 +49,12 @@ export interface TaskOptions {
 	windowsShell: TaskWindowsShell | null;
 }
 
+export interface TaskMetadata {
+	emptyInputs: boolean;
+	expanded: boolean;
+	localOnly: boolean;
+}
+
 export interface Task {
 	args: string[];
 	command: string;
@@ -56,7 +65,7 @@ export interface Task {
 	inputFiles: string[];
 	inputGlobs: string[];
 	inputVars: string[];
-	metadata: Record<string, unknown>;
+	metadata: TaskMetadata;
 	options: TaskOptions;
 	outputs: string[];
 	outputFiles: string[];
@@ -82,6 +91,7 @@ export interface Project {
 	platform: PlatformType;
 	root: string;
 	source: string;
+	stack: StackType;
 	tasks: Record<string, Task>;
 	type: ProjectType;
 }

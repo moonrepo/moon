@@ -15,7 +15,6 @@ Command: jest --cache --color
 Working directory: <WORKSPACE>/tasks
 Runs dependencies: Concurrently
 Runs in CI: Yes
-Internal only: No
 
  INPUTS 
 

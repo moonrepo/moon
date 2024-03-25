@@ -226,6 +226,11 @@ impl Task {
         self.options.interactive
     }
 
+    /// Return true if a local only task.
+    pub fn is_local(&self) -> bool {
+        self.metadata.local_only
+    }
+
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
         self.command == "nop" || self.command == "noop" || self.command == "no-op"
@@ -233,7 +238,7 @@ impl Task {
 
     /// Return true if the task is a "run" type.
     pub fn is_run_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Run) || self.metadata.local_only
+        matches!(self.type_of, TaskType::Run) || self.is_local()
     }
 
     /// Return true if the task is a "test" type.

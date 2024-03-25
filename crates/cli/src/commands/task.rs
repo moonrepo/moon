@@ -52,6 +52,25 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     console.print_entry("Platform", format!("{}", &task.platform))?;
     console.print_entry("Type", format!("{}", &task.type_of))?;
 
+    let mut modes = vec![];
+
+    if task.is_local() {
+        modes.push("local");
+    }
+    if task.is_internal() {
+        modes.push("internal");
+    }
+    if task.is_interactive() {
+        modes.push("interactive");
+    }
+    if task.is_persistent() {
+        modes.push("persistent");
+    }
+
+    if !modes.is_empty() {
+        console.print_entry("Modes", modes.join(", "))?;
+    }
+
     console.print_entry_header("Process")?;
     console.print_entry(
         "Command",
@@ -85,7 +104,6 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         },
     )?;
     console.print_entry_bool("Runs in CI", task.should_run_in_ci())?;
-    console.print_entry_bool("Internal only", task.is_internal())?;
 
     if !task.deps.is_empty() {
         console.print_entry_header("Depends on")?;

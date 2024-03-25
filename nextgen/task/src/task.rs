@@ -216,6 +216,11 @@ impl Task {
         self.metadata.expanded
     }
 
+    /// Return true if an internal task.
+    pub fn is_internal(&self) -> bool {
+        self.options.internal
+    }
+
     /// Return true if an interactive task.
     pub fn is_interactive(&self) -> bool {
         self.options.interactive

@@ -10,7 +10,7 @@ moon_config = { path = "../../../nextgen/config" }
 assert_cmd = "2.0.14"
 assert_fs = "1.1.1"
 clean-path = "0.2.1"
-insta = "1.35.1"
+insta = "1.36.1"
 predicates = "3.1.0"
 pretty_assertions = "1.4.0"
 rustc-hash = { workspace = true }

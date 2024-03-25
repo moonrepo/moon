@@ -1,8 +1,8 @@
 ---
 slug: moon-v1.23
-title: moon v1.23 - ???
+title: moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more
 authors: [milesj]
-tags: [tasks]
+tags: [tasks, codegen, template, tack, inheritance]
 # image: ./img/moon/v1.23.png
 ---
 
@@ -10,12 +10,30 @@ tags: [tasks]
 
 <!--truncate-->
 
+## Template & generator improvements
+
+## Stack-based task inheritance
+
+Last month in [moon v1.22](./moon-v1.22), we introduced the [`stack`](/docs/config/project#stack)
+setting for organizing projects into what tech stack they belong to. This is primarily for
+organizational purposes, and improving our project constaints implementation.
+
+Based on community feeedback, we've expanded the `stack` setting to also apply for
+[task inheritance](http://localhost:3000/docs/concepts/task-inheritance#scope-by-project-metadata).
+You can now inherit tasks for the stack itself, or through a combination of the project language,
+platform, and type. For example:
+
+- `.moon/tasks/backend.yml`
+- `.moon/tasks/javascript-backend.yml`
+- `.moon/tasks/frontend-library.yml`
+- `.moon/tasks/bun-frontend-application.yml`
+
 ## Internal tasks
 
 We're introducing a new [task mode](/docs/concepts/task#modes) called internal, which can be enabled
-with the `internal` task option. Internal tasks are tasks that are not meant to be ran explicitly by
-the user (via [`moon check`](/docs/commands/check) or [`moon run`](/docs/commands/run)), but are
-used internally as dependencies of other tasks.
+with the [`internal`](/docs/config/project#internal) task option. Internal tasks are tasks that are
+not meant to be ran explicitly by the user (via [`moon check`](/docs/commands/check) or
+[`moon run`](/docs/commands/run)), but are used internally as dependencies of other tasks.
 
 This functionality provides another way to organize your tasks.
 
@@ -32,6 +50,5 @@ tasks:
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.23.0) for a full list
 of changes.
 
-- Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
-  args used when installing dependencies.
-- Updated the `envFile` task option to support a list of file paths.
+- Updated `moon project` and `moon task` to include the configuration files that tasks inherit from.
+- Updated `moon task` to include the modes it belongs to.

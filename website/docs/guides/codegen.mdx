@@ -204,6 +204,13 @@ but we also provide the following custom filters:
 {{ some_path | path_relative(to = other_path) }}
 ```
 
+#### Functions
+
+The following functions are available within a template:
+
+- `variables()` - Returns an object containing all variables within the current template.
+  <VersionLabel inline version="1.23.0" />
+
 #### Variables
 
 The following variables are always available within a template:
@@ -265,7 +272,8 @@ generator:
     - 'git:gitlab.com/org/repo#v1.2.3'
 ```
 
-> Git repositories will be cloned to `~/.moon/templates` and cached for future use.
+> Git repositories will be cloned to `~/.moon/templates` using an HTTPS URL (not a Git URL), and
+> will be cached for future use.
 
 #### npm packages<VersionLabel version="1.23.0" />
 

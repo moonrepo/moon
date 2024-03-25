@@ -280,15 +280,24 @@ Configures aspects of the template generator.
 
 <HeadingApiLink to="/api/types/interface/GeneratorConfig#templates" />
 
-A list of file system paths where templates can be located, relative from the workspace root.
-Defaults to `./templates`.
+A list of paths in which templates can be located. Supports the following types of paths, and
+defaults to `./templates`.
+
+- File system paths, relative from the workspace root.
+- Git repositories and a revision, prefixed with `git:`. <VersionLabel inline version="1.23.0" />
+- npm packages and a version, prefixed with `npm:`. <VersionLabel inline version="1.23.0" />
 
 ```yaml title=".moon/workspace.yml" {2-4}
 generator:
   templates:
     - './templates'
     - './other/templates'
+    - 'git:github.com/moonrepo/templates#master'
+    - 'npm:@moonrepo/templates#1.2.3'
 ```
+
+> Learn more about this in the official
+> [code generation guide](../guides/codegen#configuring-template-locations)!
 
 ## `hasher`
 

@@ -26,29 +26,45 @@ The following output is an example of what this command prints, using our very o
 ```
 RUNTIME
 
-ID: runtime
+Project: runtime
 Alias: @moonrepo/runtime
 Source: packages/runtime
-Root: /Projects/moon/packages/runtime
+Root: ~/Projects/moon/packages/runtime
+Platform: node
 Language: typescript
 Stack: unknown
 Type: library
 
+DEPENDS ON
+
+  - types (implicit, production)
+
+INHERITS FROM
+
+  - .moon/tasks/node.yml
+
 TASKS
 
-build: packemon build --addEngines --addExports
-format: prettier --check .
-lint: eslint --no-error-on-unmatched-pattern .
-test: jest --passWithNoTests .
-typecheck: tsc --build
+build:
+  › packemon build --addFiles --addExports --declaration
+format:
+  › prettier --check --config ../../prettier.config.js --ignore-path ../../.prettierignore --no-error-on-unmatched-pattern .
+lint:
+  › eslint --cache --cache-location ./.eslintcache --color --ext .js,.ts,.tsx --ignore-path ../../.eslintignore --exit-on-fatal-error --no-error-on-unmatched-pattern --report-unused-disable-directives .
+lint-fix:
+  › eslint --cache --cache-location ./.eslintcache --color --ext .js,.ts,.tsx --ignore-path ../../.eslintignore --exit-on-fatal-error --no-error-on-unmatched-pattern --report-unused-disable-directives . --fix
+test:
+  › jest --cache --color --preset jest-preset-moon --passWithNoTests
+typecheck:
+  › tsc --build
 
 FILE GROUPS
 
 configs:
- - *.{js,json}
+  - packages/runtime/*.{js,json}
 sources:
- - src/**/*
- - types/**/*
+  - packages/runtime/src/**/*
+  - packages/runtime/types/**/*
 tests:
- - tests/**/*.test.*
+  - packages/runtime/tests/**/*
 ```

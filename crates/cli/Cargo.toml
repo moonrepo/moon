@@ -52,7 +52,7 @@ moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../../nextgen/vcs" }
 moon_workspace = { path = "../../nextgen/workspace" }
-bytes = "1.5.0"
+bytes = "1.6.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
 	"color",
@@ -73,7 +73,7 @@ indicatif = "0.17.8"
 itertools = "0.12.1"
 miette = { workspace = true }
 mimalloc = { version = "0.1.39", default-features = false }
-open = "5.0.1"
+open = "5.1.2"
 petgraph = { workspace = true }
 proto_core = { workspace = true }
 proto_installer = { workspace = true }

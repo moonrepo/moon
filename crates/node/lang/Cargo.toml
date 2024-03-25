@@ -11,7 +11,7 @@ moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
 miette = { workspace = true }
-nodejs_package_json = "0.1.3"
+nodejs_package_json = "0.2.0"
 once_cell = { workspace = true }
 package-lock-json-parser = "0.4.0"
 rustc-hash = { workspace = true }

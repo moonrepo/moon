@@ -1,21 +1,89 @@
 ---
 slug: moon-v1.23
-title: moon v1.23 - ???
+title: moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more
 authors: [milesj]
-tags: [tasks]
-# image: ./img/moon/v1.23.png
+tags: [tasks, codegen, template, tack, inheritance]
+image: ./img/moon/v1.23.png
 ---
 
-???
+It's been a month since our last release, and we're excited to land major codegen and task
+improvements.
 
 <!--truncate-->
+
+## Template & generator improvements
+
+Based on feedback and requests from community, we've made quite a few improvements to our code
+generation workflow!
+
+### Git and npm template locators
+
+Our [`generator.templates`](/docs/config/workspace#templates) setting has only supported file system
+paths, relative from the workspace root. This has made it quite difficult to share templates across
+repositories, but no longer!
+
+Template locations now support Git repositories and npm packages, through the `git:` and `npm:`
+prefixes respectively. The `git:` locator requires a Git repository URL and explicit revision
+(branch, commit, etc), while the `npm:` locator requires a package name and explicit version. For
+example:
+
+```yaml title="moon.yml"
+generator:
+  templates:
+    - 'git:github.com/moonrepo/templates#master'
+    - 'npm:@moonrepo/templates#1.2.3'
+```
+
+> Learn more about this in the official
+> [code generation guide](/docs/guides/codegen#configuring-template-locations)!
+
+### Custom template names
+
+Historically, a template's name was derived from the directory the
+[`template.yml`](/docs/config/template) file was located in. While this works great for small repos,
+it falls apart for large monorepos when there's multiple teams defining templates, as the chance of
+name collisions arise.
+
+To combat this problem, we're introducing a new [`id` setting](/docs/config/template#id) for
+templates, which allows you to customize the exact name of the template. This setting is optional,
+and if not provided, the name will be derived from the directory as before.
+
+```yaml title="template.yml"
+id: 'my-template'
+```
+
+### New variable settings
+
+And lastly, we're introducing some additions and improvements to template
+[`variables`](/docs/config/template#variables).
+
+- A new `order` setting, which defines the order in which variables are prompted to the user.
+- A new `internal` setting, which avoids the value being set from the CLI.
+- Enum `default` values now support a list of values (cannot be provided by the CLI yet).
+- Enum `prompt`s are now optional, and will fallback to the default value if not provided.
+
+## Stack-based task inheritance
+
+Last month in [moon v1.22](./moon-v1.22), we introduced the [`stack`](/docs/config/project#stack)
+setting for organizing projects into what tech stack they belong to. This is primarily for
+organizational purposes, and improving our project constaints implementation.
+
+Based on community feeedback, we've expanded the `stack` setting to also apply for
+[task inheritance](http://localhost:3000/docs/concepts/task-inheritance#scope-by-project-metadata).
+You can now inherit tasks for the stack itself, or through a combination of the project language,
+platform, and type. For example:
+
+- `.moon/tasks/backend.yml`
+- `.moon/tasks/javascript-backend.yml`
+- `.moon/tasks/frontend-library.yml`
+- `.moon/tasks/bun-frontend-application.yml`
 
 ## Internal tasks
 
 We're introducing a new [task mode](/docs/concepts/task#modes) called internal, which can be enabled
-with the `internal` task option. Internal tasks are tasks that are not meant to be ran explicitly by
-the user (via [`moon check`](/docs/commands/check) or [`moon run`](/docs/commands/run)), but are
-used internally as dependencies of other tasks.
+with the [`internal`](/docs/config/project#internal) task option. Internal tasks are tasks that are
+not meant to be ran explicitly by the user (via [`moon check`](/docs/commands/check) or
+[`moon run`](/docs/commands/run)), but are used internally as dependencies of other tasks.
 
 This functionality provides another way to organize your tasks.
 
@@ -32,6 +100,6 @@ tasks:
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.23.0) for a full list
 of changes.
 
-- Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
-  args used when installing dependencies.
-- Updated the `envFile` task option to support a list of file paths.
+- Added a `variables()` function for templates that returns an object of all variables available.
+- Updated `moon project` and `moon task` to include the configuration files that tasks inherit from.
+- Updated `moon task` to include the modes it belongs to.

@@ -98,6 +98,20 @@ variables:
 The type of value for the variable. Accepts `boolean`, `string`, `number`, or `enum`. Floats _are
 not supported_, use strings instead.
 
+### `internal`<VersionLabel version="1.23.0" />
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#internal" />
+
+Marks a variable as internal only, which avoids the variable value being overwritten by command line
+arguments.
+
+### `order`<VersionLabel version="1.23.0" />
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#order" />
+
+The order in which the variable will be prompted to the user. By default, variables are prompted in
+the order they are defined in the `template.yml` file.
+
 ### Primitives
 
 Your basic primitives: boolean, numbers, strings.

@@ -54,6 +54,11 @@ export interface TaskOptionsConfig {
 	 */
 	interactive: boolean | null;
 	/**
+	 * Marks the task as internal, which disables it from begin ran
+	 * from the command line, but can be depended on.
+	 */
+	internal: boolean | null;
+	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *
 	 * @default 'append'
@@ -262,6 +267,11 @@ export interface PartialTaskOptionsConfig {
 	 * and have direct access to stdin.
 	 */
 	interactive?: boolean | null;
+	/**
+	 * Marks the task as internal, which disables it from begin ran
+	 * from the command line, but can be depended on.
+	 */
+	internal?: boolean | null;
 	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *

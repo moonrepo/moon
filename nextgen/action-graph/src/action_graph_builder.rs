@@ -4,7 +4,7 @@ use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
 use moon_config::TaskDependencyConfig;
 use moon_platform::{PlatformManager, Runtime};
-use moon_project::Project;
+use moon_project::{Project, ProjectError};
 use moon_project_graph::ProjectGraph;
 use moon_query::{build_query, Criteria};
 use moon_task::{parse_task_args, Target, TargetError, TargetLocator, TargetScope, Task};
@@ -18,6 +18,7 @@ type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 pub struct RunRequirements<'app> {
     pub ci: bool,
     pub dependents: bool,
+    pub initial_locators: Vec<&'app TargetLocator>,
     pub interactive: bool,
     pub touched_files: Option<&'app TouchedFilePaths>,
 }
@@ -339,6 +340,10 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
+                        if task.is_internal() {
+                            continue;
+                        }
+
                         if let Some(index) =
                             self.run_task_with_config(&project, task, reqs, config)?
                         {
@@ -357,6 +362,17 @@ impl<'app> ActionGraphBuilder<'app> {
                 let project = self.project_graph.get(project_locator.as_str())?;
                 let task = project.get_task(&target.task_id)?;
 
+                // Don't allow internal tasks to be ran
+                if task.is_internal()
+                    && reqs.initial_locators.iter().any(|loc| *loc == &task.target)
+                {
+                    return Err(ProjectError::UnknownTask {
+                        task_id: task.target.task_id.clone(),
+                        project_id: project.id.clone(),
+                    }
+                    .into());
+                }
+
                 if let Some(index) = self.run_task_with_config(&project, task, reqs, config)? {
                     inserted_targets.insert(task.target.to_owned());
                     inserted_indices.insert(index);
@@ -371,6 +387,10 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
+                        if task.is_internal() {
+                            continue;
+                        }
+
                         if let Some(index) =
                             self.run_task_with_config(&project, task, reqs, config)?
                         {

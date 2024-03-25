@@ -2,7 +2,6 @@
 source: crates/cli/tests/task_test.rs
 expression: assert.output_standardized()
 ---
-
  TASKS:TEST 
 
 Task: test
@@ -16,11 +15,9 @@ Command: jest --cache --color
 Working directory: <WORKSPACE>/tasks
 Runs dependencies: Concurrently
 Runs in CI: Yes
+Internal only: No
 
  INPUTS 
 
   - .moon/*.yml
   - tasks/tests/**/*
-
-
-

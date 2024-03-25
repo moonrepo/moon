@@ -2,7 +2,6 @@
 source: crates/cli/tests/task_test.rs
 expression: assert.output_standardized()
 ---
-
  TASKS:LINT 
 
 Task: lint
@@ -16,6 +15,7 @@ Command: eslint --cache --report-unused-disable-directives
 Working directory: <WORKSPACE>/tasks
 Runs dependencies: Concurrently
 Runs in CI: Yes
+Internal only: No
 
  INPUTS 
 
@@ -25,6 +25,3 @@ Runs in CI: Yes
  OUTPUTS 
 
   - tasks/cache
-
-
-

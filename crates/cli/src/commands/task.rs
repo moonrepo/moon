@@ -85,6 +85,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         },
     )?;
     console.print_entry_bool("Runs in CI", task.should_run_in_ci())?;
+    console.print_entry_bool("Internal only", task.is_internal())?;
 
     if !task.deps.is_empty() {
         console.print_entry_header("Depends on")?;

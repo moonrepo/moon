@@ -981,6 +981,18 @@
             }
           ]
         },
+        "internal": {
+          "title": "internal",
+          "description": "Marks the task as internal, which disables it from begin ran from the command line, but can be depended on.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "mergeArgs": {
           "title": "mergeArgs",
           "description": "The strategy to use when merging args with an inherited task.",

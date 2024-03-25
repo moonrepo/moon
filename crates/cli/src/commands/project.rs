@@ -131,6 +131,10 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
         for name in project.tasks.keys().sorted() {
             let task = project.tasks.get(name).unwrap();
 
+            if task.is_internal() {
+                continue;
+            }
+
             console.print_entry(name, "")?;
 
             console.write_line(format!(

@@ -177,7 +177,7 @@ cacheable!(
         /// running the task.
         pub env_file: Option<TaskOptionEnvFile>,
 
-        /// Marks the task as internal, which disables it from begin run
+        /// Marks the task as internal, which disables it from begin ran
         /// from the command line, but can be depended on.
         pub internal: Option<bool>,
 

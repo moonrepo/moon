@@ -152,6 +152,7 @@ pub async fn run_target(
     let requirements = RunRequirements {
         ci: is_ci(),
         dependents: args.dependents,
+        initial_locators: target_locators.iter().collect(),
         interactive: args.interactive,
         touched_files: if should_run_affected {
             Some(&touched_files)

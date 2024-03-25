@@ -58,3 +58,21 @@ fn shows_outputs() {
 
     assert_snapshot!(assert.output_standardized());
 }
+
+#[test]
+fn can_show_internal() {
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "projects",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("task").arg("tasks:internal");
+    });
+
+    assert_snapshot!(assert.output_standardized());
+}

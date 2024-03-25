@@ -52,6 +52,25 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     console.print_entry("Platform", format!("{}", &task.platform))?;
     console.print_entry("Type", format!("{}", &task.type_of))?;
 
+    let mut modes = vec![];
+
+    if task.is_local() {
+        modes.push("local");
+    }
+    if task.is_internal() {
+        modes.push("internal");
+    }
+    if task.is_interactive() {
+        modes.push("interactive");
+    }
+    if task.is_persistent() {
+        modes.push("persistent");
+    }
+
+    if !modes.is_empty() {
+        console.print_entry("Modes", modes.join(", "))?;
+    }
+
     console.print_entry_header("Process")?;
     console.print_entry(
         "Command",

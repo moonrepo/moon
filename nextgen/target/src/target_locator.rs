@@ -30,6 +30,15 @@ impl AsRef<str> for TargetLocator {
     }
 }
 
+impl PartialEq<Target> for TargetLocator {
+    fn eq(&self, other: &Target) -> bool {
+        match self {
+            Self::Qualified(target) => target == other,
+            _ => false,
+        }
+    }
+}
+
 impl FromStr for TargetLocator {
     type Err = miette::Report;
 

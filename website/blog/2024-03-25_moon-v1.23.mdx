@@ -1,0 +1,37 @@
+---
+slug: moon-v1.23
+title: moon v1.23 - ???
+authors: [milesj]
+tags: [tasks]
+# image: ./img/moon/v1.23.png
+---
+
+???
+
+<!--truncate-->
+
+## Internal tasks
+
+We're introducing a new [task mode](/docs/concepts/task#modes) called internal, which can be enabled
+with the `internal` task option. Internal tasks are tasks that are not meant to be ran explicitly by
+the user (via [`moon check`](/docs/commands/check) or [`moon run`](/docs/commands/run)), but are
+used internally as dependencies of other tasks.
+
+This functionality provides another way to organize your tasks.
+
+```yaml title="moon.yml"
+tasks:
+  prepare:
+    command: 'intermediate-step'
+    options:
+      internal: true
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.23.0) for a full list
+of changes.
+
+- Added an `installArgs` setting for bun/npm/pnpm/yarn in `.moon/toolchain.yml`, to customize the
+  args used when installing dependencies.
+- Updated the `envFile` task option to support a list of file paths.

@@ -1,0 +1,22 @@
+---
+source: nextgen/action-graph/tests/action_graph_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SetupSystemTool" ]
+    2 [ label="SyncSystemProject(misc)" ]
+    3 [ label="SyncSystemProject(common)" ]
+    4 [ label="SyncSystemProject(base)" ]
+    5 [ label="RunTask(misc:requiresInternal)" ]
+    6 [ label="RunTask(common:internal)" ]
+    1 -> 0 [ ]
+    4 -> 1 [ ]
+    3 -> 1 [ ]
+    3 -> 4 [ ]
+    2 -> 1 [ ]
+    2 -> 3 [ ]
+    6 -> 3 [ ]
+    5 -> 2 [ ]
+    5 -> 6 [ ]
+}

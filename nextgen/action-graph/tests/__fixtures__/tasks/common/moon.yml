@@ -7,3 +7,7 @@ tasks:
     command: 'build'
   lint:
     command: 'lint'
+  internal:
+    command: 'unknown'
+    options:
+      internal: true

@@ -15,3 +15,7 @@ tasks:
       - --report-unused-disable-directives
     outputs:
       - 'cache'
+  internal:
+    command: build
+    options:
+      internal: true

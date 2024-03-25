@@ -480,6 +480,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.env_files = env_file.to_input_paths();
             }
 
+            if let Some(internal) = &config.internal {
+                options.internal = *internal;
+            }
+
             if let Some(interactive) = &config.interactive {
                 options.interactive = *interactive;
             }

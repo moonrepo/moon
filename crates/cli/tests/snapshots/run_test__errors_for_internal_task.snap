@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: assert.output()
+---
+Error: project::task::unknown
+
+  × Unknown task internalOnly for project base.
+  help: Has this task been configured?

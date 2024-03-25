@@ -119,3 +119,16 @@ fn creates_run_report() {
 
     assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
 }
+
+#[test]
+fn doesnt_run_internal_tasks() {
+    let sandbox = cases_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("check").arg("base");
+    });
+
+    let output = assert.output();
+
+    assert!(!predicate::str::contains("base:internalOnly").eval(&output));
+}

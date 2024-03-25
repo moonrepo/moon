@@ -78,6 +78,17 @@ fn errors_for_unknown_task_in_project() {
 }
 
 #[test]
+fn errors_for_internal_task() {
+    let sandbox = cases_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("base:internalOnly");
+    });
+
+    assert_snapshot!(assert.output());
+}
+
+#[test]
 fn errors_for_unknown_all_target() {
     let sandbox = cases_sandbox();
 

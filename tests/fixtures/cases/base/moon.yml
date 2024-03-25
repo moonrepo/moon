@@ -15,3 +15,8 @@ tasks:
     command: node --version
     platform: node
     local: true
+  internalOnly:
+    command: node --version
+    platform: node
+    options:
+      internal: true

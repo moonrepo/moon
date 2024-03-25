@@ -24,9 +24,11 @@
   - New `order` setting to control the order in which they are prompted for.
   - New `internal` setting that ignores values passed on the command line.
   - Updated enum `default` settings to support an array of values.
+- Added an `internal` task option, which marks tasks as internal only.
 - Updated task inheritance to support stack-based configuration, such as
   `.moon/tasks/node-frontend.yml` or `.moon/tasks/bun-backend-application.yml`.
 - Updated `moon project` and `moon task` to include the configuration files that tasks inherit from.
+- Updated `moon task` to include the modes it belongs to.
 
 #### 🐞 Fixes
 

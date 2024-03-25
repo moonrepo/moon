@@ -2,7 +2,6 @@
 source: crates/cli/tests/task_test.rs
 expression: assert.output_standardized()
 ---
-
  TASKS:TEST 
 
 Task: test
@@ -21,6 +20,3 @@ Runs in CI: Yes
 
   - .moon/*.yml
   - tasks/tests/**/*
-
-
-

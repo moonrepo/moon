@@ -48,6 +48,23 @@ tasks:
     local: true
 ```
 
+### Internal only<VersionLabel version="1.23.0" />
+
+Internal tasks are tasks that are not meant to be ran explicitly by the user (via
+[`moon check`](../commands/check) or [`moon run`](../commands/run)), but are used internally as
+dependencies of other tasks. Additionally, internal tasks are not displayed in a project's tasks
+list, but can be inspected with [`moon task`](../commands/task).
+
+To mark a task as internal, enable the [`options.internal`](../config/project#internal) setting.
+
+```yaml title="moon.yml"
+tasks:
+  prepare:
+    command: 'intermediate-step'
+    options:
+      internal: true
+```
+
 ### Interactive<VersionLabel version="1.12.0" />
 
 Tasks that need to interact with the user via terminal prompts are known as interactive tasks.

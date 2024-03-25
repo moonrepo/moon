@@ -1157,6 +1157,24 @@ mod action_graph {
         }
 
         #[tokio::test]
+        async fn doesnt_run_all_internal() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(
+                    Target::parse(":internal").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert!(graph.is_empty());
+        }
+
+        #[tokio::test]
         async fn runs_by_project() {
             let sandbox = create_sandbox("tasks");
             let container = ActionGraphContainer::new(sandbox.path()).await;
@@ -1205,6 +1223,67 @@ mod action_graph {
         }
 
         #[tokio::test]
+        #[should_panic(expected = "Unknown task internal for project common.")]
+        async fn errors_for_internal_task_when_explicit() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let locator = TargetLocator::Qualified(Target::parse("common:internal").unwrap());
+
+            builder
+                .run_task_by_target(
+                    Target::parse("common:internal").unwrap(),
+                    &RunRequirements {
+                        initial_locators: vec![&locator],
+                        ..RunRequirements::default()
+                    },
+                )
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_error_for_internal_task_when_implicit() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(
+                    Target::parse("common:internal").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn doesnt_error_for_internal_task_when_depended_on() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let locator = TargetLocator::Qualified(Target::parse("common:internal").unwrap());
+
+            builder
+                .run_task_by_target(
+                    Target::parse("misc:requiresInternal").unwrap(),
+                    &RunRequirements {
+                        initial_locators: vec![&locator],
+                        ..RunRequirements::default()
+                    },
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
         async fn runs_tag() {
             let sandbox = create_sandbox("tasks");
             let container = ActionGraphContainer::new(sandbox.path()).await;
@@ -1231,6 +1310,24 @@ mod action_graph {
             builder
                 .run_task_by_target(
                     Target::parse("#unknown:lint").unwrap(),
+                    &RunRequirements::default(),
+                )
+                .unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert!(graph.is_empty());
+        }
+
+        #[tokio::test]
+        async fn doesnt_run_tags_internal() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            builder
+                .run_task_by_target(
+                    Target::parse("#frontend:internal").unwrap(),
                     &RunRequirements::default(),
                 )
                 .unwrap();

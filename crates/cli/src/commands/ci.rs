@@ -44,6 +44,7 @@ pub struct CiArgs {
 struct CiConsole<'ci> {
     inner: &'ci Console,
     output: CiOutput,
+    last_title: String,
 }
 
 impl<'ci> CiConsole<'ci> {
@@ -51,14 +52,21 @@ impl<'ci> CiConsole<'ci> {
         self.inner.out.write_line(data)
     }
 
-    pub fn print_header(&self, title: &str) -> miette::Result<()> {
-        self.write_line(format!("{}{}", self.output.open_log_group, title))
+    pub fn print_header(&mut self, title: &str) -> miette::Result<()> {
+        self.last_title = title.to_owned();
+        self.write_line(self.output.open_log_group.replace("{name}", title))
     }
 
-    pub fn print_footer(&self) -> miette::Result<()> {
+    pub fn print_footer(&mut self) -> miette::Result<()> {
         if !self.output.close_log_group.is_empty() {
-            self.write_line(self.output.close_log_group)?;
+            self.write_line(
+                self.output
+                    .close_log_group
+                    .replace("{name}", &self.last_title),
+            )?;
         }
+
+        self.last_title = String::new();
 
         Ok(())
     }
@@ -78,7 +86,7 @@ impl<'ci> CiConsole<'ci> {
 
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
-    console: &CiConsole<'_>,
+    console: &mut CiConsole<'_>,
     workspace: &Workspace,
     args: &CiArgs,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
@@ -115,7 +123,7 @@ async fn gather_touched_files(
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 fn gather_runnable_targets(
-    console: &CiConsole<'_>,
+    console: &mut CiConsole<'_>,
     project_graph: &ProjectGraph,
     args: &CiArgs,
 ) -> AppResult<TargetList> {
@@ -153,7 +161,7 @@ fn gather_runnable_targets(
 
 /// Distribute targets across jobs if parallelism is enabled.
 fn distribute_targets_across_jobs(
-    console: &CiConsole<'_>,
+    console: &mut CiConsole<'_>,
     args: &CiArgs,
     targets: TargetList,
 ) -> AppResult<TargetList> {
@@ -189,7 +197,7 @@ fn distribute_targets_across_jobs(
 
 /// Generate a dependency graph with the runnable targets.
 fn generate_action_graph(
-    console: &CiConsole<'_>,
+    console: &mut CiConsole<'_>,
     project_graph: &ProjectGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
@@ -224,16 +232,17 @@ fn generate_action_graph(
 pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resources: ResourcesMut) {
     let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
     let workspace = resources.get::<Workspace>();
-    let console = CiConsole {
+    let mut console = CiConsole {
         inner: resources.get::<Console>(),
         output: ci_env::get_output().unwrap_or(CiOutput {
             close_log_group: "",
-            open_log_group: "▪▪▪▪ ",
+            open_log_group: "▪▪▪▪ {name}",
         }),
+        last_title: String::new(),
     };
 
-    let touched_files = gather_touched_files(&console, workspace, args).await?;
-    let targets = gather_runnable_targets(&console, &project_graph, args)?;
+    let touched_files = gather_touched_files(&mut console, workspace, args).await?;
+    let targets = gather_runnable_targets(&mut console, &project_graph, args)?;
 
     if targets.is_empty() {
         console.write_line(color::invalid("No targets to run"))?;
@@ -241,8 +250,9 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&console, args, targets)?;
-    let action_graph = generate_action_graph(&console, &project_graph, &targets, &touched_files)?;
+    let targets = distribute_targets_across_jobs(&mut console, args, targets)?;
+    let action_graph =
+        generate_action_graph(&mut console, &project_graph, &targets, &touched_files)?;
 
     if action_graph.is_empty() {
         console.write_line(color::invalid("No targets to run based on touched files"))?;

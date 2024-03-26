@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added more CI/CD platforms to check for.
+
 ## 1.23.0
 
 #### 🚀 Updates

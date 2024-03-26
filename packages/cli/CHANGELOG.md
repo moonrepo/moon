@@ -10,6 +10,17 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added more CI/CD platforms to check for.
+
+#### 🔋 Extensions
+
+- Updated `migrate-nx` to v0.0.3.
+  - Fixed invalid IDs when converting `package.json` names.
+
 ## 1.23.0
 
 #### 🚀 Updates

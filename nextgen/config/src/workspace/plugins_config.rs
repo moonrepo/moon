@@ -34,7 +34,7 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
          (
             Id::raw("migrate-nx"),
             ExtensionConfig {
-                plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_nx_extension-v0.0.2/moon_migrate_nx_extension.wasm".into() }),
+                plugin: Some(PluginLocator::SourceUrl { url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_nx_extension-v0.0.3/moon_migrate_nx_extension.wasm".into() }),
                 config: FxHashMap::default(),
             },
         ),

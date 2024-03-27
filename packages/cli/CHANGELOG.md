@@ -16,6 +16,10 @@
 
 - Added more CI/CD platforms to check for.
 
+#### 🐞 Fixes
+
+- Fixed an issue where `moon clean` wasn't removing nested files.
+
 #### 🔋 Extensions
 
 - Updated `migrate-nx` to v0.0.3.

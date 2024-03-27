@@ -7,12 +7,7 @@ use dashmap::{
 use moon_env::MoonEnvironment;
 use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
-use std::{
-    collections::BTreeMap,
-    future::Future,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use tracing::debug;
 use warpgate::{
     host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
@@ -48,8 +43,6 @@ impl<T: Plugin> PluginRegistry<T> {
         let mut paths = proto_env
             .get_virtual_paths()
             .into_iter()
-            // Remove proto workspace, as it collides with moon's
-            .filter(|(_, g)| g != Path::new("/workspace"))
             .collect::<BTreeMap<_, _>>();
 
         paths.extend(moon_env.get_virtual_paths());

@@ -96,6 +96,7 @@ pub async fn install_proto(
     env::set_var("PROTO_VERSION", PROTO_CLI_VERSION);
     env::set_var("PROTO_IGNORE_MIGRATE_WARNING", "true");
     env::set_var("PROTO_VERSION_CHECK", "false");
+    env::set_var("PROTO_LOOKUP_DIR", &install_dir);
 
     // This causes a ton of issues when running the test suite,
     // so just avoid it and assume proto exists!

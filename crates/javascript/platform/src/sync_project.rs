@@ -9,6 +9,7 @@ use std::sync::Arc;
 use tracing::debug;
 
 pub struct JavaScriptSyncer<'app> {
+    bun: bool,
     project: &'app Project,
 
     // Settings
@@ -19,6 +20,7 @@ pub struct JavaScriptSyncer<'app> {
 impl<'app> JavaScriptSyncer<'app> {
     pub fn for_bun(project: &'app Project, bun_config: &'app BunConfig) -> Self {
         Self {
+            bun: true,
             dependency_version_format: bun_config.dependency_version_format,
             sync_project_workspace_dependencies: bun_config.sync_project_workspace_dependencies,
             project,
@@ -27,6 +29,7 @@ impl<'app> JavaScriptSyncer<'app> {
 
     pub fn for_node(project: &'app Project, node_config: &'app NodeConfig) -> Self {
         Self {
+            bun: false,
             dependency_version_format: node_config.dependency_version_format,
             sync_project_workspace_dependencies: node_config.sync_project_workspace_dependencies,
             project,
@@ -66,10 +69,17 @@ impl<'app> JavaScriptSyncer<'app> {
                             format!(
                                 "{}{}",
                                 version_prefix,
-                                path::to_relative_virtual_string(
-                                    &dep_project.root,
-                                    &self.project.root
-                                )?
+                                // https://bun.sh/docs/cli/link
+                                if self.bun
+                                    && self.dependency_version_format == NodeVersionFormat::Link
+                                {
+                                    dep_package_name.to_owned()
+                                } else {
+                                    path::to_relative_virtual_string(
+                                        &dep_project.root,
+                                        &self.project.root,
+                                    )?
+                                }
                             )
                         }
                         NodeVersionFormat::Version

@@ -7,6 +7,7 @@ use dashmap::{
 use moon_env::MoonEnvironment;
 use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
+use starbase_utils::fs;
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use tracing::debug;
 use warpgate::{
@@ -33,6 +34,7 @@ impl<T: Plugin> PluginRegistry<T> {
     ) -> Self {
         debug!(kind = type_of.get_label(), "Creating plugin registry");
 
+        // Create the loader
         let mut loader = PluginLoader::new(
             moon_env.plugins_dir.join(type_of.get_dir_name()),
             &moon_env.temp_dir,
@@ -40,6 +42,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
         loader.set_offline_checker(is_offline);
 
+        // Merge proto and moon virtual paths
         let mut paths = proto_env
             .get_virtual_paths()
             .into_iter()
@@ -91,6 +94,12 @@ impl<T: Plugin> PluginRegistry<T> {
 
         // Inherit default configs, like host environment and ID.
         inject_default_manifest_config(id, &self.moon_env.home, &mut manifest)?;
+
+        // Ensure virtual host paths exist, otherwise WASI (via extism)
+        // will throw a cryptic file/directory not found error.
+        for host_path in self.virtual_paths.keys() {
+            fs::create_dir_all(host_path)?;
+        }
 
         Ok(manifest)
     }

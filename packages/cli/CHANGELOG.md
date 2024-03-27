@@ -20,6 +20,7 @@
 
 - Fixed an issue where `moon clean` wasn't removing nested files.
 - Fixed an issue where `package.json` syncing would create incorrect `link:`s for Bun.
+- Fixed an issue where `moon ext` would trigger a "No such file or directory" error.
 
 #### 🔋 Extensions
 

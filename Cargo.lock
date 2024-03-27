@@ -3697,6 +3697,7 @@ dependencies = [
  "serde_json",
  "starbase_sandbox",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "tokio",
  "tracing",

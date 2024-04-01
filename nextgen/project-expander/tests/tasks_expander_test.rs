@@ -1178,7 +1178,7 @@ mod tasks_expander {
                 .expand_inputs(&mut task)
                 .unwrap();
 
-            assert_eq!(task.input_vars, FxHashSet::from_iter(["FOO_BAR".into()]));
+            assert_eq!(task.input_env, FxHashSet::from_iter(["FOO_BAR".into()]));
             assert_eq!(task.input_globs, FxHashSet::default());
             assert_eq!(task.input_files, FxHashSet::default());
         }

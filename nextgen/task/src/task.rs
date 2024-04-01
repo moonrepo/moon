@@ -46,11 +46,11 @@ cacheable!(
 
         pub inputs: Vec<InputPath>,
 
+        pub input_env: FxHashSet<String>,
+
         pub input_files: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
-
-        pub input_vars: FxHashSet<String>,
 
         pub metadata: TaskMetadata,
 
@@ -121,7 +121,7 @@ impl Task {
             return Ok(true);
         }
 
-        for var_name in &self.input_vars {
+        for var_name in &self.input_env {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
                     debug!(

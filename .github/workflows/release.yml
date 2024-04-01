@@ -98,9 +98,6 @@ jobs:
         with:
           cache: false
           targets: ${{ matrix.target }}
-      - name: Generate lockfile
-        if: ${{ !matrix.docker-target }}
-        run: cargo generate-lockfile
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}

@@ -296,7 +296,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         // Expand inputs to file system paths and environment variables
         let result = self.token.expand_inputs(task)?;
 
-        task.input_vars.extend(result.env);
+        task.input_env.extend(result.env);
         task.input_files.extend(result.files);
         task.input_globs.extend(result.globs);
 

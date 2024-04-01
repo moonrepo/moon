@@ -23,6 +23,9 @@ hash_content!(
         // Input files and globs mapped to a unique hash
         pub inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
+        // Input environment variables
+        pub input_env: BTreeMap<&'task str, String>,
+
         // Relative output paths
         pub outputs: Vec<&'task OutputPath>,
 
@@ -52,6 +55,7 @@ impl<'task> TaskHash<'task> {
                 .map(|(k, v)| (k.as_str(), v.as_str()))
                 .collect(),
             inputs: BTreeMap::new(),
+            input_env: BTreeMap::new(),
             outputs: task.outputs.iter().collect(),
             platform: &task.platform,
             project_deps: project.get_dependency_ids(),

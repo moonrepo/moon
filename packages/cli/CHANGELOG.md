@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where input environment variables weren't always being taken into account for task
+  hashes.
+
 ## 1.23.1
 
 #### 🚀 Updates

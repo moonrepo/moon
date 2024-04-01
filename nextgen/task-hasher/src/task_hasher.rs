@@ -10,6 +10,7 @@ use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_utils::glob::{self, GlobSet};
 use std::collections::BTreeMap;
+use std::env;
 use std::path::{Path, PathBuf};
 use tracing::{debug, warn};
 
@@ -84,6 +85,14 @@ impl<'task> TaskHasher<'task> {
             );
 
             self.content.inputs = hashed_inputs;
+        }
+
+        if !self.task.input_env.is_empty() {
+            for input in &self.task.input_env {
+                self.content
+                    .input_env
+                    .insert(input, env::var(input).unwrap_or_default());
+            }
         }
 
         Ok(())

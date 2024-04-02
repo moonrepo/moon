@@ -4,11 +4,8 @@ expression: assert.output()
 ---
 ▪▪▪▪ bun install
 ▪▪▪▪ bun:version
-1.0.0
+1.1.0
 ▪▪▪▪ bun:version (100ms)
 
 Tasks: 1 completed
  Time: 100ms
-
-
-

@@ -345,7 +345,7 @@ mod bun {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("1.0.0").eval(&output));
+            assert!(predicate::str::contains("1.1.0").eval(&output));
             assert!(predicate::str::contains("0.8.0").eval(&output));
 
             assert.success();

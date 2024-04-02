@@ -348,6 +348,8 @@ mod bun {
                     .arg("versionOverride:version");
             });
 
+            assert.debug();
+
             let output = assert.output();
 
             assert!(predicate::str::contains("1.1.0").eval(&output));

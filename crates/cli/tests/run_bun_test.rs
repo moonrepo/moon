@@ -31,8 +31,6 @@ where
     sandbox
 }
 
-// TODO: Bun doesn't support Windows yet!
-#[cfg(not(windows))]
 mod bun {
     use super::*;
 

@@ -31,8 +31,6 @@ where
     sandbox
 }
 
-// TODO: Bun doesn't support Windows yet!
-#[cfg(not(windows))]
 mod bun {
     use super::*;
 
@@ -190,7 +188,12 @@ mod bun {
                 .arg("123");
         });
 
-        assert_snapshot!(assert.output());
+        // Quoting is handled differently between unix and windows,
+        // so only check part of the arg string
+        assert!(
+            predicate::str::contains("Args: -aBc --opt value --optCamel=value foo")
+                .eval(&assert.output())
+        );
     }
 
     #[test]
@@ -335,6 +338,8 @@ mod bun {
     mod workspace_overrides {
         use super::*;
 
+        // Need multiple windows versions for this to work, right now we only have 1.1.0
+        #[cfg(not(windows))]
         #[test]
         fn can_override_version() {
             let sandbox = bun_sandbox();
@@ -347,7 +352,7 @@ mod bun {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("1.0.0").eval(&output));
+            assert!(predicate::str::contains("1.1.0").eval(&output));
             assert!(predicate::str::contains("0.8.0").eval(&output));
 
             assert.success();

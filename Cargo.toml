@@ -57,15 +57,15 @@ semver = "1.0.22"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 serde_yaml = "0.9.33"
-starbase = "0.5.1"
-starbase_archive = { version = "0.6.0", default-features = false, features = [
+starbase = "=0.5.1"
+starbase_archive = { version = "=0.6.0", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.5.1"
-starbase_sandbox = "0.5.0"
-starbase_styles = { version = "0.3.1", features = ["relative-path"] }
-starbase_utils = { version = "0.6.2", default-features = false, features = [
+starbase_events = "=0.5.1"
+starbase_sandbox = "=0.5.0"
+starbase_styles = { version = "=0.3.1", features = ["relative-path"] }
+starbase_utils = { version = "=0.6.2", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -93,7 +93,7 @@ uuid = { version = "1.8.0", features = ["v4"] }
 # proto/plugin related
 extism = "1.2.0"
 extism-pdk = "1.1.0"
-proto_core = "0.32.3"
+proto_core = "0.32.5"
 proto_installer = "0.3.1"
 system_env = "0.2.4"
 version_spec = "0.2.1"

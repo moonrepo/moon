@@ -338,6 +338,8 @@ mod bun {
     mod workspace_overrides {
         use super::*;
 
+        // Need multiple windows versions for this to work, right now we only have 1.1.0
+        #[cfg(not(windows))]
         #[test]
         fn can_override_version() {
             let sandbox = bun_sandbox();
@@ -347,8 +349,6 @@ mod bun {
                     .arg("bun:version")
                     .arg("versionOverride:version");
             });
-
-            assert.debug();
 
             let output = assert.output();
 

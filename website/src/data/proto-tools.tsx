@@ -345,6 +345,30 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/helmfile.toml',
 	},
+	hugo: [
+		{
+			author: 'z0rrn',
+			bins: ['hugo'],
+			description: 'The world’s fastest framework for building websites - standard version.',
+			homepageUrl: 'https://gohugo.io',
+			name: 'Hugo Standard',
+			pluginLocator:
+				'source:https://raw.githubusercontent.com/z0rrn/proto-plugins/main/hugo/plugin-standard.toml',
+			pluginType: 'toml',
+			repoUrl: 'https://github.com/z0rrn/proto-plugins',
+		},
+		{
+			author: 'z0rrn',
+			bins: ['hugo'],
+			description: 'The world’s fastest framework for building websites - extended version.',
+			homepageUrl: 'https://gohugo.io',
+			name: 'Hugo Extended',
+			pluginLocator:
+				'source:https://raw.githubusercontent.com/z0rrn/proto-plugins/main/hugo/plugin-extended.toml',
+			pluginType: 'toml',
+			repoUrl: 'https://github.com/z0rrn/proto-plugins',
+		},
+	],
 	hurl: {
 		author: 'Phault',
 		bins: ['hurl'],
@@ -677,28 +701,4 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'wasm',
 		repoUrl: 'https://github.com/konomae/zls-plugin',
 	},
-	hugo: [
-		{
-			author: 'z0rrn',
-			bins: ['hugo'],
-			description: 'The world’s fastest framework for building websites - standard version.',
-			homepageUrl: 'https://gohugo.io',
-			name: 'Hugo Standard',
-			pluginLocator:
-				'source:https://raw.githubusercontent.com/z0rrn/proto-plugins/main/hugo/plugin-standard.toml',
-			pluginType: 'toml',
-			repoUrl: 'https://github.com/z0rrn/proto-plugins',
-		},
-		{
-			author: 'z0rrn',
-			bins: ['hugo'],
-			description: 'The world’s fastest framework for building websites - extended version.',
-			homepageUrl: 'https://gohugo.io',
-			name: 'Hugo Extended',
-			pluginLocator:
-				'source:https://raw.githubusercontent.com/z0rrn/proto-plugins/main/hugo/plugin-extended.toml',
-			pluginType: 'toml',
-			repoUrl: 'https://github.com/z0rrn/proto-plugins',
-		},
-	],
 };

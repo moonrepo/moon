@@ -111,9 +111,9 @@ impl FromStr for InputPath {
         }
 
         // Project-relative
-        let project_path = &value;
+        validate_child_relative_path(&value)?;
 
-        validate_child_relative_path(project_path)?;
+        let project_path = value.trim_start_matches("./");
 
         Ok(if is_glob_like(project_path) {
             InputPath::ProjectGlob(project_path.to_owned())
@@ -195,6 +195,18 @@ mod tests {
         );
         assert_eq!(
             InputPath::from_str("dir/**/*").unwrap(),
+            InputPath::ProjectGlob("dir/**/*".into())
+        );
+        assert_eq!(
+            InputPath::from_str("./file.rs").unwrap(),
+            InputPath::ProjectFile("file.rs".into())
+        );
+        assert_eq!(
+            InputPath::from_str("././dir/file.rs").unwrap(),
+            InputPath::ProjectFile("dir/file.rs".into())
+        );
+        assert_eq!(
+            InputPath::from_str("./dir/**/*").unwrap(),
             InputPath::ProjectGlob("dir/**/*".into())
         );
 

@@ -116,10 +116,9 @@ impl FromStr for OutputPath {
         }
 
         // Project-relative
-        let project_path = &value;
+        validate_child_relative_path(&value).map_err(|error| ParseError::new(error.to_string()))?;
 
-        validate_child_relative_path(project_path)
-            .map_err(|error| ParseError::new(error.to_string()))?;
+        let project_path = value.trim_start_matches("./");
 
         Ok(if is_glob_like(project_path) {
             OutputPath::ProjectGlob(project_path.to_owned())
@@ -176,6 +175,18 @@ mod tests {
         assert_eq!(
             OutputPath::from_str("!dir/**/*").unwrap(),
             OutputPath::ProjectGlob("!dir/**/*".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("./file.rs").unwrap(),
+            OutputPath::ProjectFile("file.rs".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("./dir/file.rs").unwrap(),
+            OutputPath::ProjectFile("dir/file.rs".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("././dir/**/*").unwrap(),
+            OutputPath::ProjectGlob("dir/**/*".into())
         );
 
         // Workspace relative

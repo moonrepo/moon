@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where leading `./` in input/output globs would cause matching failures.
+
 ## 1.23.3
 
 #### 🧩 Plugins

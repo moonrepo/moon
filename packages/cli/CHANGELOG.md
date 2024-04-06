@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where leading `./` in input/output globs would cause matching failures.
+- Fixed an issue where root-level projects were not being marked as affected in `moon query`.
 
 ## 1.23.3
 

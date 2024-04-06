@@ -108,6 +108,10 @@ impl Project {
     /// Return true if this project is affected based on touched files.
     /// Since the project is a folder, we check if a file starts with the root.
     pub fn is_affected(&self, touched_files: &FxHashSet<WorkspaceRelativePathBuf>) -> bool {
+        if self.is_root_level() {
+            return !touched_files.is_empty();
+        }
+
         touched_files
             .iter()
             .any(|file| file.starts_with(&self.source))

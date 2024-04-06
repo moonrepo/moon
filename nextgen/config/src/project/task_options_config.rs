@@ -201,6 +201,10 @@ cacheable!(
         /// The strategy to use when merging `outputs` with an inherited task.
         pub merge_outputs: Option<TaskMergeStrategy>,
 
+        /// Creates an exclusive lock on a virtual resource, preventing other
+        /// tasks using the same resource from running concurrently.
+        pub mutex: Option<String>,
+
         /// The style in which task output will be printed to the console.
         #[setting(env = "MOON_OUTPUT_STYLE")]
         pub output_style: Option<TaskOutputStyle>,

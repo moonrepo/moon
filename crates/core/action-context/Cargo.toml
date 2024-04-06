@@ -11,3 +11,4 @@ clap = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+tokio = { workspace = true }

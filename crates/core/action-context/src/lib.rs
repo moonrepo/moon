@@ -3,7 +3,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 #[derive(ValueEnum, Clone, Debug, Deserialize, Serialize)]
 pub enum ProfileType {
@@ -26,12 +26,58 @@ impl TargetState {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct TaskNamedMutexes {
+    mutexes: Arc<std::sync::Mutex<FxHashMap<String, Arc<tokio::sync::Mutex<()>>>>>,
+}
+
+impl<'de> Deserialize<'de> for TaskNamedMutexes {
+    fn deserialize<D>(_: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        // We don't care about unserializing this, but we need to satisfy the
+        // trait requirements.
+        Ok(TaskNamedMutexes::new())
+    }
+}
+
+impl Serialize for TaskNamedMutexes {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // We don't care about serializing this, but we need to satisfy the
+        // trait requirements.
+        FxHashMap::<String, ()>::default().serialize(_serializer)
+    }
+}
+
+impl TaskNamedMutexes {
+    fn new() -> Self {
+        TaskNamedMutexes {
+            mutexes: Arc::new(std::sync::Mutex::new(FxHashMap::default())),
+        }
+    }
+
+    pub fn get(&self, name: &str) -> Arc<tokio::sync::Mutex<()>> {
+        // TODO: Check how to remove that `unwrap`
+        let mut mutexes = self.mutexes.lock().unwrap();
+        if !mutexes.contains_key(name) {
+            mutexes.insert(name.to_string(), Arc::new(tokio::sync::Mutex::new(())));
+        }
+        mutexes.get(name).unwrap().clone()
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
     pub affected_only: bool,
 
     pub initial_targets: FxHashSet<TargetLocator>,
+
+    pub named_mutexes: TaskNamedMutexes,
 
     pub passthrough_args: Vec<String>,
 

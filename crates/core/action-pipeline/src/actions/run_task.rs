@@ -95,7 +95,23 @@ pub async fn run_task(
     }
 
     let attempts_result = if is_cache_enabled {
-        let context = context.read().await;
+        if let Some(mutex_name) = &task.options.mutex {
+            let context = context.read().await;
+
+            let named_mutex = context.named_mutexes.get(mutex_name);
+            let _guard = named_mutex.lock().await;
+
+            runner.create_and_run_command(&context, runtime).await
+        } else {
+            let context = context.read().await;
+
+            runner.create_and_run_command(&context, runtime).await
+        }
+    } else if let Some(mutex_name) = &task.options.mutex {
+        let context = (context.read().await).clone();
+
+        let named_mutex = context.named_mutexes.get(mutex_name);
+        let _guard = named_mutex.lock().await;
 
         runner.create_and_run_command(&context, runtime).await
     } else {

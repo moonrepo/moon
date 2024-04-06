@@ -264,7 +264,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 continue;
 
                 // Don't link the root project to any project, but still load it
-            } else if matches!(dep_config.scope, DependencyScope::Root) {
+            } else if dep_config.is_root_scope() {
                 Box::pin(self.internal_load(&dep_config.id, cycle)).await?.0
 
                 // Otherwise link projects

@@ -242,14 +242,19 @@ fn scaffold_sources_project(
         )?;
     }
 
-    for dep_id in project.get_dependency_ids() {
-        scaffold_sources_project(
-            workspace,
-            project_graph,
-            docker_sources_root,
-            dep_id,
-            manifest,
-        )?;
+    for dep_cfg in &project.dependencies {
+        // Avoid root-level projects as it will pull in all sources,
+        // which is usually not what users want. If they do want it,
+        // they can be explicitly on the command line!
+        if !dep_cfg.is_root_scope() {
+            scaffold_sources_project(
+                workspace,
+                project_graph,
+                docker_sources_root,
+                &dep_cfg.id,
+                manifest,
+            )?;
+        }
     }
 
     Ok(())

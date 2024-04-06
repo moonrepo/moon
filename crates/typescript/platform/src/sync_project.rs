@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::{DependencyScope, TypeScriptConfig};
+use moon_config::TypeScriptConfig;
 use moon_node_lang::PackageJsonCache;
 use moon_project::Project;
 use moon_typescript_lang::{
@@ -293,7 +293,7 @@ impl<'app> TypeScriptSyncer<'app> {
                 continue;
             };
 
-            if dep_project.is_root_level() || matches!(dep_config.scope, DependencyScope::Root) {
+            if dep_project.is_root_level() || dep_config.is_root_scope() {
                 continue;
             }
 

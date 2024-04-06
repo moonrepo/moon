@@ -16,6 +16,8 @@
 
 - Fixed an issue where leading `./` in input/output globs would cause matching failures.
 - Fixed an issue where root-level projects were not being marked as affected in `moon query`.
+- Fixed an issue where `moon docker scaffold` would copy all sources when a project depends on a
+  root-level project.
 
 ## 1.23.3
 

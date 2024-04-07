@@ -980,6 +980,32 @@ The [strategy](../concepts/task-inheritance#merge-strategies) to use when mergin
 The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
 [`outputs`](#outputs) list with an inherited task. Defaults to "append".
 
+#### `mutex`
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mutex" />
+
+Creates an exclusive lock on a "virtual resource", preventing other tasks using
+the same "virtual resource" from running concurrently.
+
+If you have many tasks that require exclusive access to a resource that can't be
+tracked by Moon (like a database, an ignored file, a file that's not part of
+the project, or a remote resource) you can use the `mutex` option to prevent them
+from running at the same time.
+
+```yaml title="moon.yml" {5}
+tasks:
+  task_a:
+    # ...
+    options:
+      mutex: 'virtual_resource_name'
+
+  # task_b doesn't necessarily have to be in the same project
+  task_b:
+    # ...
+    options:
+      mutex: 'virtual_resource_name'
+```
+
 #### `outputStyle`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#outputStyle" />

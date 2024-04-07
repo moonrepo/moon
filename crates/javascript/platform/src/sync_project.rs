@@ -54,7 +54,7 @@ impl<'app> JavaScriptSyncer<'app> {
                 continue;
             };
 
-            if dep_project.is_root_level() || matches!(dep_config.scope, DependencyScope::Root) {
+            if dep_project.is_root_level() || dep_config.is_root_scope() {
                 continue;
             }
 

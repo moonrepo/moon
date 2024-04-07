@@ -49,4 +49,8 @@ impl DependencyConfig {
             ..Default::default()
         }
     }
+
+    pub fn is_root_scope(&self) -> bool {
+        matches!(self.scope, DependencyScope::Root)
+    }
 }

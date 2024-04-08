@@ -440,7 +440,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginLocator:
 			'source:https://raw.githubusercontent.com/appthrust/proto-toml-plugins/main/k3d/plugin.toml',
 		pluginType: 'toml',
-		repoUrl: 'https://github.com/appthrust/proto-toml-plugins/blob/main/k3d/plugin.toml',
+		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
 	},
 	kubectl: {
 		author: 'stk0vrfl0w',

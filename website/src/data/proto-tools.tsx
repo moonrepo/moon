@@ -418,6 +418,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
+	jq: {
+		author: 'A-D-E-A',
+		bins: ['jq'],
+		description: 'Command-line JSON processor',
+		homepageUrl: 'https://jqlang.github.io/jq/',
+		name: 'jq',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/A-D-E-A/proto-toml-plugins/main/plugins/jq.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/A-D-E-A/proto-toml-plugins'
+	},
 	just: {
 		author: 'Phault',
 		bins: ['just'],

@@ -3227,7 +3227,6 @@ dependencies = [
 name = "moon_codegen"
 version = "0.0.1"
 dependencies = [
- "clap",
  "content_inspector",
  "convert_case",
  "miette",

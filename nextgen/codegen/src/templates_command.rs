@@ -33,7 +33,7 @@ pub async fn templates_command(
                     .config
                     .extends
                     .iter()
-                    .map(|ext| color::id(ext))
+                    .map(color::id)
                     .collect::<Vec<_>>()
                     .join(&color::muted(", ")),
             )?;
@@ -46,7 +46,7 @@ pub async fn templates_command(
                     .config
                     .variables
                     .keys()
-                    .map(|ext| color::property(ext))
+                    .map(color::property)
                     .collect::<Vec<_>>()
                     .join(&color::muted(", ")),
             )?;

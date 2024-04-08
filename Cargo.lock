@@ -3232,6 +3232,7 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_env",
  "moon_process",
  "moon_time",

@@ -3227,11 +3227,13 @@ dependencies = [
 name = "moon_codegen"
 version = "0.0.1"
 dependencies = [
+ "clap",
  "content_inspector",
  "convert_case",
  "miette",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_env",
  "moon_process",
  "moon_time",

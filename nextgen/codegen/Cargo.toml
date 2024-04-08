@@ -27,5 +27,9 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
+# Commands
+moon_console = { path = "../console" }
+clap = { workspace = true }
+
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

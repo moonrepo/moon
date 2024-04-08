@@ -235,6 +235,13 @@ pub enum Commands {
     )]
     Generate(GenerateArgs),
 
+    // moon templates
+    #[command(
+        name = "templates",
+        about = "List all templates that are available for code generation."
+    )]
+    Templates,
+
     // RUNNER
 
     // moon check

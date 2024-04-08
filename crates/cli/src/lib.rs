@@ -34,6 +34,7 @@ use crate::helpers::setup_colors;
 use app::App as CLI;
 use app_error::ExitCode;
 use clap::Parser;
+use commands::templates::templates;
 use enums::{CacheMode, LogLevel};
 use moon_common::consts::BIN_NAME;
 use starbase::{tracing::TracingOptions, App, AppResult};
@@ -231,6 +232,7 @@ pub async fn run_cli() -> AppResult {
         }
         Commands::Task(args) => app.execute_with_args(task, args),
         Commands::Teardown => app.execute(teardown),
+        Commands::Templates => app.execute(templates),
         Commands::Upgrade => app.execute(upgrade),
     };
 

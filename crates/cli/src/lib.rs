@@ -29,6 +29,7 @@ use crate::commands::sync::sync;
 use crate::commands::syncs;
 use crate::commands::task::task;
 use crate::commands::teardown::teardown;
+use crate::commands::templates::templates;
 use crate::commands::upgrade::upgrade;
 use crate::helpers::setup_colors;
 use app::App as CLI;
@@ -231,6 +232,7 @@ pub async fn run_cli() -> AppResult {
         }
         Commands::Task(args) => app.execute_with_args(task, args),
         Commands::Teardown => app.execute(teardown),
+        Commands::Templates => app.execute(templates),
         Commands::Upgrade => app.execute(upgrade),
     };
 

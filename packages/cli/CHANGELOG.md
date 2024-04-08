@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `moon templates` command, that lists all available codegen templates.
+
 ## 1.23.4
 
 #### 🐞 Fixes

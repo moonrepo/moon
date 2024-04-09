@@ -95,18 +95,17 @@ pub async fn run_task(
     }
 
     let attempts_result = {
-        let _ctx: Arc<RwLock<ActionContext>>;
+        let _ctx: RwLock<ActionContext>;
         let ctx = if is_cache_enabled {
-            &context
+            context.read().await
         } else {
             // Concurrent long-running tasks will cause a deadlock, as some threads will
             // attempt to write to context while others are reading from it, and long-running
             // tasks may never release the lock. Unfortuantely we have to clone here to work
             // around it, so revisit in the future.
-            _ctx = Arc::new(RwLock::new(context.read().await.clone()));
-            &_ctx
+            _ctx = RwLock::new(context.read().await.clone());
+            _ctx.read().await
         };
-        let ctx = ctx.read().await;
 
         if let Some(mutex_name) = &task.options.mutex {
             if let Some(named_mutex) = ctx.named_mutexes.get(mutex_name) {

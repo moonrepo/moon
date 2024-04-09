@@ -1,4 +1,5 @@
 use clap::ValueEnum;
+use dashmap::DashMap;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -26,22 +27,6 @@ impl TargetState {
     }
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct TaskNamedMutexes {
-    mutexes: Arc<std::sync::Mutex<FxHashMap<String, Arc<tokio::sync::Mutex<()>>>>>,
-}
-
-impl TaskNamedMutexes {
-    pub fn get(&self, name: &str) -> Arc<tokio::sync::Mutex<()>> {
-        // TODO: Check how to remove that `unwrap`
-        let mut mutexes = self.mutexes.lock().unwrap();
-        if !mutexes.contains_key(name) {
-            mutexes.insert(name.to_string(), Arc::new(tokio::sync::Mutex::new(())));
-        }
-        mutexes.get(name).unwrap().clone()
-    }
-}
-
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
@@ -50,7 +35,7 @@ pub struct ActionContext {
     pub initial_targets: FxHashSet<TargetLocator>,
 
     #[serde(skip)]
-    pub named_mutexes: TaskNamedMutexes,
+    pub named_mutexes: DashMap<String, Arc<tokio::sync::Mutex<()>>>,
 
     pub passthrough_args: Vec<String>,
 

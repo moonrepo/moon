@@ -94,34 +94,34 @@ pub async fn run_task(
             .insert(target.clone(), TargetState::Passthrough);
     }
 
-    let attempts_result = if is_cache_enabled {
-        if let Some(mutex_name) = &task.options.mutex {
-            let context = context.read().await;
-
-            let named_mutex = context.named_mutexes.get(mutex_name);
-            let _guard = named_mutex.lock().await;
-
-            runner.create_and_run_command(&context, runtime).await
+    let attempts_result = {
+        let _ctx: Arc<RwLock<ActionContext>>;
+        let ctx = if is_cache_enabled {
+            &context
         } else {
-            let context = context.read().await;
+            // Concurrent long-running tasks will cause a deadlock, as some threads will
+            // attempt to write to context while others are reading from it, and long-running
+            // tasks may never release the lock. Unfortuantely we have to clone here to work
+            // around it, so revisit in the future.
+            _ctx = Arc::new(RwLock::new(context.read().await.clone()));
+            &_ctx
+        };
+        let ctx = ctx.read().await;
 
-            runner.create_and_run_command(&context, runtime).await
+        if let Some(mutex_name) = &task.options.mutex {
+            if let Some(named_mutex) = ctx.named_mutexes.get(mutex_name) {
+                let _guard = named_mutex.lock().await;
+
+                runner.create_and_run_command(&ctx, runtime).await
+            } else {
+                Result::Err(miette::Report::msg(format!(
+                    "Unable to acquire named mutex \"{}\"",
+                    mutex_name
+                )))
+            }
+        } else {
+            runner.create_and_run_command(&ctx, runtime).await
         }
-    } else if let Some(mutex_name) = &task.options.mutex {
-        let context = (context.read().await).clone();
-
-        let named_mutex = context.named_mutexes.get(mutex_name);
-        let _guard = named_mutex.lock().await;
-
-        runner.create_and_run_command(&context, runtime).await
-    } else {
-        // Concurrent long-running tasks will cause a deadlock, as some threads will
-        // attempt to write to context while others are reading from it, and long-running
-        // tasks may never release the lock. Unfortuantely we have to clone here to work
-        // around it, so revisit in the future.
-        let context = (context.read().await).clone();
-
-        runner.create_and_run_command(&context, runtime).await
     };
 
     match attempts_result {

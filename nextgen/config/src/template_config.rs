@@ -154,6 +154,10 @@ impl TemplateVariableEnumSetting {
             })
             .collect()
     }
+
+    pub fn is_multiple(&self) -> bool {
+        self.multiple.is_some_and(|v| v)
+    }
 }
 
 /// Each type of template variable.
@@ -195,6 +199,13 @@ impl TemplateVariable {
             Self::Enum(cfg) => cfg.internal,
             Self::Number(cfg) => cfg.internal,
             Self::String(cfg) => cfg.internal,
+        }
+    }
+
+    pub fn is_multiple(&self) -> bool {
+        match self {
+            Self::Enum(cfg) => cfg.is_multiple(),
+            _ => false,
         }
     }
 }

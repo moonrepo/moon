@@ -1,12 +1,45 @@
+use std::io::{stdout, IsTerminal};
+
+use crate::codegen_error::CodegenError;
+use crate::template::Template;
 use clap::builder::{
     BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser,
 };
 use clap::parser::ValueSource;
-use clap::{Arg, ArgAction, Command};
+use clap::{Arg, ArgAction, Args, Command};
 use moon_config::TemplateVariable;
+use moon_console::prompts::Confirm;
 use rustc_hash::FxHashMap;
 use tera::Context as TemplateContext;
 use tracing::debug;
+
+#[derive(Args, Clone, Debug)]
+pub struct GenerateArgs {
+    #[arg(help = "Name of template to generate")]
+    name: String,
+
+    #[arg(help = "Destination path, relative from the current working directory")]
+    dest: Option<String>,
+
+    #[arg(
+        long,
+        help = "Use the default value of all variables instead of prompting"
+    )]
+    defaults: bool,
+
+    #[arg(help = "Run entire generator process without writing files")]
+    dry_run: bool,
+
+    #[arg(long, help = "Force overwrite any existing files at the destination")]
+    force: bool,
+
+    #[arg(long, help = "Create a new template")]
+    template: bool,
+
+    // Variable args (after --)
+    #[arg(last = true, help = "Arguments to define as variable values")]
+    vars: Vec<String>,
+}
 
 pub fn parse_args_into_variables(
     args: &[String],
@@ -148,12 +181,61 @@ pub fn parse_args_into_variables(
             }
         }
         Err(error) => {
-            return Err(miette::miette!(
-                "Failed to parse arguments into variables: {}",
-                error
-            ));
+            let mut message = String::new();
+
+            // clap includes some information we don't want,
+            // so let's try and strip it before adding to the error
+            for line in error.to_string().lines() {
+                let line = line.strip_prefix("error:").unwrap_or(line);
+
+                if line.is_empty()
+                    || line.starts_with("Usage:")
+                    || line.contains("For more information")
+                {
+                    continue;
+                }
+
+                message.push_str(line);
+                message.push('\n');
+            }
+
+            return Err(CodegenError::FailedToParseArgs {
+                error: miette::miette!("{}", message.trim()).into(),
+            }
+            .into());
         }
     };
 
     Ok(vars)
+}
+
+pub fn gather_variables(
+    args: &GenerateArgs,
+    template: &Template,
+) -> miette::Result<TemplateContext> {
+    let mut context = parse_args_into_variables(&args.vars, &template.config.variables)?;
+
+    debug!("Gathering variable values from defaults and user prompts");
+
+    let mut variables = template.config.variables.iter().collect::<Vec<_>>();
+    let skip_prompts = args.defaults || !stdout().is_terminal();
+
+    // Sort variables so prompting happens in the correct order
+    variables.sort_by(|a, d| a.1.get_order().cmp(&d.1.get_order()));
+
+    for (name, config) in variables {
+        match config {
+            TemplateVariable::Boolean(cfg) => {
+                if skip_prompts || cfg.prompt.is_none() {
+                    if !context.contains_key(name) {
+                        context.insert(name, &cfg.default);
+                    }
+                } else {
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok(context)
 }

@@ -20,6 +20,13 @@ pub enum CodegenError {
     )]
     ExistingTemplate(Id, PathBuf),
 
+    #[diagnostic(code(codegen::args::parse_failed))]
+    #[error("Failed to parse variables from arguments.")]
+    FailedToParseArgs {
+        #[diagnostic_source]
+        error: miette::Report,
+    },
+
     #[diagnostic(code(codegen::var::parse_failed))]
     #[error("Failed to parse variable argument --{0}: {1}")]
     FailedToParseArgVar(String, String),

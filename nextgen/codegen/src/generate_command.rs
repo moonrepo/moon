@@ -1,6 +1,7 @@
 use clap::builder::{
     BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser,
 };
+use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Command};
 use moon_config::TemplateVariable;
 use rustc_hash::FxHashMap;
@@ -10,11 +11,11 @@ use tracing::debug;
 pub fn parse_args_into_variables(
     args: &[String],
     config: &FxHashMap<String, TemplateVariable>,
-) -> TemplateContext {
+) -> miette::Result<TemplateContext> {
     let mut vars = TemplateContext::default();
 
     if args.is_empty() {
-        return vars;
+        return Ok(vars);
     }
 
     debug!(args = ?args, "Inheriting variable values from command line arguments");
@@ -82,81 +83,77 @@ pub fn parse_args_into_variables(
     let mut temp_args = vec![&command_name];
     temp_args.extend(args);
 
-    if let Ok(matches) = command.try_get_matches_from(temp_args) {
-        for (name, cfg) in config {
-            if cfg.is_internal() {
-                continue;
-            }
+    match command.try_get_matches_from(temp_args) {
+        Ok(matches) => {
+            // Loop in order of arguments passed, instead of looping
+            // the variable configs, so that subsequent values can overwrite
+            for arg_id in matches.ids() {
+                let arg_name = arg_id.as_str();
+                let name = arg_name.strip_prefix("no-").unwrap_or(arg_name);
 
-            let arg_name = format!("--{name}");
+                let Some(cfg) = config.get(name) else {
+                    continue;
+                };
 
-            match cfg {
-                TemplateVariable::Boolean(_) => {
-                    let negated_name = format!("no-{name}");
-                    let negated_arg_name = format!("--{negated_name}");
-
-                    if let Some(value) = matches.get_one::<bool>(&negated_name) {
-                        debug!(
-                            arg = negated_arg_name,
-                            var = name,
-                            value,
-                            "Setting boolean variable"
-                        );
-
-                        vars.insert(name, value);
-                    } else if let Some(value) = matches.get_one::<bool>(name) {
-                        debug!(
-                            arg = arg_name,
-                            var = name,
-                            value,
-                            "Setting boolean variable"
-                        );
-
-                        vars.insert(name, value);
-                    }
+                if cfg.is_internal() {
+                    continue;
                 }
-                TemplateVariable::Enum(inner) => {
-                    if inner.is_multiple() {
-                        if let Some(value) = matches.get_many::<String>(name) {
-                            let value = value.collect::<Vec<_>>();
 
-                            debug!(
-                                arg = arg_name,
-                                var = name,
-                                value = ?value,
-                                "Setting multiple enum variable"
-                            );
+                match cfg {
+                    TemplateVariable::Boolean(_) => {
+                        // Booleans always have a value when matched, so only extract
+                        // the value when it was actually passed on the command line
+                        if let Some(ValueSource::CommandLine) = matches.value_source(arg_name) {
+                            if let Some(value) = matches.get_one::<bool>(arg_name) {
+                                debug!(var = name, value, "Setting boolean variable");
 
-                            vars.insert(name, &value);
+                                vars.insert(name, value);
+                            }
                         }
-                    } else if let Some(value) = matches.get_one::<String>(name) {
-                        debug!(
-                            arg = arg_name,
-                            var = name,
-                            value,
-                            "Setting single enum variable"
-                        );
-
-                        vars.insert(name, value);
                     }
-                }
-                TemplateVariable::Number(_) => {
-                    if let Some(value) = matches.get_one::<isize>(name) {
-                        debug!(arg = arg_name, var = name, value, "Setting number variable");
+                    TemplateVariable::Enum(inner) => {
+                        if inner.is_multiple() {
+                            if let Some(value) = matches.get_many::<String>(arg_name) {
+                                let value = value.collect::<Vec<_>>();
 
-                        vars.insert(name, value);
-                    }
-                }
-                TemplateVariable::String(_) => {
-                    if let Some(value) = matches.get_one::<String>(name) {
-                        debug!(arg = arg_name, var = name, value, "Setting string variable");
+                                debug!(
+                                    var = name,
+                                    value = ?value,
+                                    "Setting multiple enum variable"
+                                );
 
-                        vars.insert(name, value);
+                                vars.insert(name, &value);
+                            }
+                        } else if let Some(value) = matches.get_one::<String>(arg_name) {
+                            debug!(var = name, value, "Setting single enum variable");
+
+                            vars.insert(name, value);
+                        }
                     }
-                }
-            };
+                    TemplateVariable::Number(_) => {
+                        if let Some(value) = matches.get_one::<isize>(arg_name) {
+                            debug!(var = name, value, "Setting number variable");
+
+                            vars.insert(name, value);
+                        }
+                    }
+                    TemplateVariable::String(_) => {
+                        if let Some(value) = matches.get_one::<String>(arg_name) {
+                            debug!(var = name, value, "Setting string variable");
+
+                            vars.insert(name, value);
+                        }
+                    }
+                };
+            }
         }
-    }
+        Err(error) => {
+            return Err(miette::miette!(
+                "Failed to parse arguments into variables: {}",
+                error
+            ));
+        }
+    };
 
-    vars
+    Ok(vars)
 }

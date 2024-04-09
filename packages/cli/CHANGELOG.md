@@ -15,6 +15,12 @@
 #### 🚀 Updates
 
 - Added a `moon templates` command, that lists all available codegen templates.
+- Updated `moon generate` with:
+  - When passing variables as command line arguments, they are now entirely modeled after the
+    template configuration.
+    - Booleans and negated booleans now work better.
+    - Numbers now support negative values.
+    - Multiple values can now be passed for enums when `multiple` is enabled.
 
 ## 1.23.4
 

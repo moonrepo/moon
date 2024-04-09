@@ -4,7 +4,9 @@ use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon_app_components::{Console, MoonEnv};
-use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
+use moon_codegen::{
+    parse_args_into_variables, CodeGenerator, CodegenError, FileState, Template, TemplateContext,
+};
 use moon_config::TemplateVariable;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
@@ -147,6 +149,12 @@ fn gather_variables(
     args: &GenerateArgs,
 ) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
+
+    dbg!(parse_args_into_variables(
+        &args.vars,
+        &template.config.variables
+    )?);
+
     let custom_vars = parse_var_args(&args.vars, &template.config.variables);
     let default_comment = "(defaults)";
 

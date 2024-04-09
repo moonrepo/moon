@@ -430,6 +430,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
+	k3d: {
+		author: 'appthrust',
+		bins: ['k3d'],
+		description:
+			'k3d is a lightweight wrapper to run k3s (Rancher Lab’s minimal Kubernetes distribution) in docker.',
+		homepageUrl: 'https://k3d.io',
+		name: 'k3d',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/appthrust/proto-toml-plugins/main/k3d/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
+	},
 	kubectl: {
 		author: 'stk0vrfl0w',
 		bins: ['kubectl'],

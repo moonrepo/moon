@@ -28,6 +28,11 @@ impl Console {
         self.handle_prompt(prompt.prompt())
     }
 
+    pub fn prompt_multiselect<T: Display>(&self, prompt: MultiSelect<T>) -> miette::Result<Vec<T>> {
+        self.err.flush()?;
+        self.handle_prompt(prompt.prompt())
+    }
+
     pub fn prompt_select<T: Display>(&self, prompt: Select<T>) -> miette::Result<T> {
         self.err.flush()?;
         self.handle_prompt(prompt.prompt())

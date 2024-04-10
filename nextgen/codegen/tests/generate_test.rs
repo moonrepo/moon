@@ -14,10 +14,9 @@ mod cli_args {
         let mut vars = FxHashMap::default();
         vars.insert(
             "internal".into(),
-            TemplateVariable::Boolean({
-                let mut val = TemplateVariableBoolSetting::default();
-                val.internal = true;
-                val
+            TemplateVariable::Boolean(TemplateVariableBoolSetting {
+                internal: true,
+                ..Default::default()
             }),
         );
         vars.insert(
@@ -34,27 +33,25 @@ mod cli_args {
         );
         vars.insert(
             "enum".into(),
-            TemplateVariable::Enum({
-                let mut val = TemplateVariableEnumSetting::default();
-                val.values = vec![
+            TemplateVariable::Enum(TemplateVariableEnumSetting {
+                values: vec![
                     TemplateVariableEnumValue::String("a".into()),
                     TemplateVariableEnumValue::String("b".into()),
                     TemplateVariableEnumValue::String("c".into()),
-                ];
-                val
+                ],
+                ..Default::default()
             }),
         );
         vars.insert(
             "multienum".into(),
-            TemplateVariable::Enum({
-                let mut val = TemplateVariableEnumSetting::default();
-                val.multiple = Some(true);
-                val.values = vec![
+            TemplateVariable::Enum(TemplateVariableEnumSetting {
+                multiple: Some(true),
+                values: vec![
                     TemplateVariableEnumValue::String("a".into()),
                     TemplateVariableEnumValue::String("b".into()),
                     TemplateVariableEnumValue::String("c".into()),
-                ];
-                val
+                ],
+                ..Default::default()
             }),
         );
         vars

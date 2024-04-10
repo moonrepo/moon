@@ -1,209 +1,16 @@
 use crate::helpers::create_theme;
-use clap::Args;
-use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
-use itertools::Itertools;
+use dialoguer::{Confirm, Input, Select};
 use miette::IntoDiagnostic;
 use moon_app_components::{Console, MoonEnv};
-use moon_codegen::{
-    parse_args_into_variables, CodeGenerator, CodegenError, FileState, Template, TemplateContext,
-};
-use moon_config::TemplateVariable;
+use moon_codegen::{gather_variables, CodeGenerator, FileState};
 use moon_workspace::Workspace;
-use rustc_hash::FxHashMap;
-use starbase::{system, AppResult};
+use starbase::system;
 use starbase_styles::color;
-use std::fmt::Debug;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tracing::{debug, warn};
+use tracing::debug;
 
 pub use moon_codegen::GenerateArgs;
-
-fn log_var<T: Debug>(name: &str, value: &T, comment: Option<&str>) {
-    debug!(name, value = ?value, comment, "Setting variable");
-}
-
-fn parse_var_args(
-    vars: &[String],
-    config: &FxHashMap<String, TemplateVariable>,
-) -> FxHashMap<String, String> {
-    let mut custom_vars = FxHashMap::default();
-
-    if vars.is_empty() {
-        return custom_vars;
-    }
-
-    debug!("Inheriting variable values from command line arguments");
-
-    let lexer = clap_lex::RawArgs::new(vars);
-    let mut cursor = lexer.cursor();
-    let mut previous_name: Option<String> = None;
-
-    let mut set_var = |name: &str, value: String| {
-        let name = if let Some(stripped_name) = name.strip_prefix("no-") {
-            stripped_name
-        } else {
-            name
-        };
-        let comment = format!("(from --{name})");
-
-        // Skip if an internal variable
-        if let Some(var_config) = config.get(name) {
-            if var_config.is_internal() {
-                return;
-            }
-        }
-
-        log_var(name, &value, Some(&comment));
-
-        custom_vars.insert(name.to_owned(), value);
-    };
-
-    while let Some(arg) = lexer.next(&mut cursor) {
-        // --name, --name=value
-        if let Some((long, maybe_value)) = arg.to_long() {
-            match long {
-                Ok(name) => {
-                    // If we found another long arg, but one previously exists,
-                    // this must be a boolean value!
-                    if let Some(name) = &previous_name {
-                        set_var(
-                            name,
-                            if name.starts_with("no-") {
-                                "false".to_owned()
-                            } else {
-                                "true".to_owned()
-                            },
-                        );
-                    }
-
-                    // Value was explicitly defined with =
-                    if let Some(value) = maybe_value {
-                        previous_name = None;
-
-                        set_var(name, value.to_str().unwrap_or_default().to_owned());
-
-                        // No value defined, so persist the name till the next iteration
-                    } else {
-                        previous_name = Some(name.to_owned());
-                    }
-                }
-                _ => {
-                    warn!("Failed to parse argument --{}", arg.display());
-                }
-            }
-
-            // -n
-        } else if arg.to_short().is_some() {
-            warn!(
-                "Short arguments are not supported, found -{}",
-                arg.display()
-            );
-
-            // value
-        } else if let Some(name) = previous_name {
-            previous_name = None;
-
-            set_var(
-                &name,
-                arg.to_value_os().to_str().unwrap_or_default().to_owned(),
-            );
-        }
-    }
-
-    custom_vars
-}
-
-fn gather_variables(
-    template: &Template,
-    theme: &dyn Theme,
-    args: &GenerateArgs,
-) -> AppResult<TemplateContext> {
-    let mut context = TemplateContext::new();
-
-    let custom_vars = parse_var_args(&args.vars, &template.config.variables);
-    let default_comment = "(defaults)";
-
-    debug!("Declaring variable values from defaults and user prompts");
-
-    let mut variables = template.config.variables.iter().collect_vec();
-
-    // Sort variables so prompting happens in the correct order
-    variables.sort_by(|a, d| a.1.get_order().cmp(&d.1.get_order()));
-
-    for (name, config) in variables {
-        match config {
-            _ => {}
-            TemplateVariable::Enum(var) => {
-                let values = var.get_values();
-                let labels = var.get_labels();
-
-                let defaults = custom_vars
-                    .get(name)
-                    .map(|v| vec![v])
-                    .unwrap_or(var.default.to_vec());
-
-                let default_index = values
-                    .iter()
-                    .position(|v| defaults.contains(v))
-                    .unwrap_or_default();
-
-                if args.defaults {
-                    log_var(name, &defaults, Some(default_comment));
-                }
-
-                match (
-                    args.defaults || var.prompt.is_none(),
-                    var.multiple.unwrap_or_default(),
-                ) {
-                    (true, true) => {
-                        context.insert(name, &defaults);
-                    }
-                    (true, false) => {
-                        // Default value may not be defined, but for enums,
-                        // we should always have a value when not multiple
-                        context.insert(name, &values[default_index]);
-                    }
-                    (false, true) => {
-                        let indexes = MultiSelect::with_theme(theme)
-                            .with_prompt(var.prompt.as_ref().unwrap())
-                            .items(&labels)
-                            .defaults(
-                                &values
-                                    .iter()
-                                    .map(|v| defaults.contains(v))
-                                    .collect::<Vec<bool>>(),
-                            )
-                            .interact()
-                            .into_diagnostic()?;
-                        let value = indexes
-                            .iter()
-                            .map(|i| values[*i].clone())
-                            .collect::<Vec<String>>();
-
-                        log_var(name, &value, None);
-
-                        context.insert(name, &value);
-                    }
-                    (false, false) => {
-                        let index = Select::with_theme(theme)
-                            .with_prompt(var.prompt.as_ref().unwrap())
-                            .default(default_index)
-                            .items(&labels)
-                            .interact()
-                            .into_diagnostic()?;
-
-                        log_var(name, &values[index], None);
-
-                        context.insert(name, &values[index]);
-                    }
-                };
-            }
-        }
-    }
-
-    Ok(context)
-}
 
 #[system]
 pub async fn generate(
@@ -243,8 +50,6 @@ pub async fn generate(
     // Create the template instance
     let mut template = generator.get_template(&args.name)?;
 
-    moon_codegen::gather_variables(args, &template, base_console);
-
     console.write_newline()?;
     console.write_line(format!(
         "{} {}",
@@ -260,7 +65,7 @@ pub async fn generate(
     console.flush()?;
 
     // Gather variables
-    let mut context = gather_variables(&template, &theme, args)?;
+    let mut context = gather_variables(args, &template, base_console)?;
 
     // Determine the destination path
     let relative_dest = PathBuf::from(match &args.dest {

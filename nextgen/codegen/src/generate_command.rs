@@ -8,7 +8,7 @@ use clap::{Arg, ArgAction, Args, Command};
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
 use moon_console::prompts::list_option::ListOption;
 use moon_console::prompts::validator::Validation;
-use moon_console::prompts::{Confirm, CustomType, Select, Text};
+use moon_console::prompts::{Confirm, CustomType, MultiSelect, Select, Text};
 use moon_console::Console;
 use rustc_hash::FxHashMap;
 use std::io::{stdout, IsTerminal};
@@ -140,7 +140,7 @@ pub fn parse_args_into_variables(
                         // the value when it was actually passed on the command line
                         if let Some(ValueSource::CommandLine) = matches.value_source(arg_name) {
                             if let Some(value) = matches.get_one::<bool>(arg_name) {
-                                debug!(var = name, value, "Setting boolean variable");
+                                debug!(name, value, "Setting boolean variable");
 
                                 vars.insert(name, value);
                             }
@@ -152,29 +152,29 @@ pub fn parse_args_into_variables(
                                 let value = value.collect::<Vec<_>>();
 
                                 debug!(
-                                    var = name,
+                                    name,
                                     value = ?value,
-                                    "Setting multiple enum variable"
+                                    "Setting multiple-value enum variable"
                                 );
 
                                 vars.insert(name, &value);
                             }
                         } else if let Some(value) = matches.get_one::<String>(arg_name) {
-                            debug!(var = name, value, "Setting single enum variable");
+                            debug!(name, value, "Setting single-value enum variable");
 
                             vars.insert(name, value);
                         }
                     }
                     TemplateVariable::Number(_) => {
                         if let Some(value) = matches.get_one::<isize>(arg_name) {
-                            debug!(var = name, value, "Setting number variable");
+                            debug!(name, value, "Setting number variable");
 
                             vars.insert(name, value);
                         }
                     }
                     TemplateVariable::String(_) => {
                         if let Some(value) = matches.get_one::<String>(arg_name) {
-                            debug!(var = name, value, "Setting string variable");
+                            debug!(name, value, "Setting string variable");
 
                             vars.insert(name, value);
                         }
@@ -202,7 +202,7 @@ pub fn parse_args_into_variables(
             }
 
             return Err(CodegenError::FailedToParseArgs {
-                error: miette::miette!("{}", message.trim()).into(),
+                error: miette::miette!("{}", message.trim()),
             }
             .into());
         }
@@ -243,6 +243,8 @@ pub fn gather_variables(
                     )?
                 };
 
+                debug!(name, value, "Setting boolean variable");
+
                 context.insert(name, &value);
             }
             TemplateVariable::Number(cfg) => {
@@ -261,6 +263,8 @@ pub fn gather_variables(
                             }),
                     )?
                 };
+
+                debug!(name, value, "Setting number variable");
 
                 context.insert(name, &value);
             }
@@ -281,9 +285,59 @@ pub fn gather_variables(
                     )?
                 };
 
+                debug!(name, value, "Setting string variable");
+
                 context.insert(name, &value);
             }
-            TemplateVariable::Enum(cfg) if cfg.is_multiple() => {}
+            TemplateVariable::Enum(cfg) if cfg.is_multiple() => {
+                let default_value = match &cfg.default {
+                    TemplateVariableEnumDefault::Vec(def) => def.to_owned(),
+                    _ => vec![],
+                };
+
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    default_value
+                } else {
+                    let values = cfg.get_values();
+                    let labels = cfg.get_labels();
+                    let default_indexes = values
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(index, value)| {
+                            if default_value.contains(value) {
+                                Some(index)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>();
+
+                    let selected = console.prompt_multiselect(
+                        MultiSelect::new(
+                            cfg.prompt.as_ref().unwrap(),
+                            labels
+                                .iter()
+                                .enumerate()
+                                .map(|(index, label)| ListOption::new(index, label))
+                                .collect::<Vec<_>>(),
+                        )
+                        .with_default(&default_indexes),
+                    )?;
+
+                    selected
+                        .into_iter()
+                        .map(|option| values[option.index].clone())
+                        .collect()
+                };
+
+                debug!(
+                    name,
+                    value = ?value,
+                    "Setting multiple-value enum variable"
+                );
+
+                context.insert(name, &value);
+            }
             TemplateVariable::Enum(cfg) if !cfg.is_multiple() => {
                 let default_value = match &cfg.default {
                     TemplateVariableEnumDefault::String(def) => def.to_owned(),
@@ -304,6 +358,8 @@ pub fn gather_variables(
 
                     cfg.get_values()[selected.index].to_owned()
                 };
+
+                debug!(name, value, "Setting single-value enum variable");
 
                 context.insert(name, &value);
             }

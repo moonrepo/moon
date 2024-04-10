@@ -4986,9 +4986,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.34.2"
+version = "0.34.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "465e57ecb992e45c3fafbbbe39035f4d520147ebe30a47764bf2cbbe7be99fab"
+checksum = "ba4d8190bf1f3eecb24d772417e684903654be30659a38d72ae3370c20a60bd2"
 dependencies = [
  "cached",
  "human-sort",
@@ -5022,9 +5022,9 @@ dependencies = [
 
 [[package]]
 name = "proto_installer"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f1888974b866c151ef6b00dc335e4823db945ec056d3a6acf16cff079edb839"
+checksum = "ab16f373969bfb9228ab6afb7bbce7226d6b82bf5154cbd1e9b08754744be23e"
 dependencies = [
  "futures",
  "miette",
@@ -5038,9 +5038,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.17.4"
+version = "0.17.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30e9e205d21933bd10d2dbb59252cb0f5df3dfa46729653e2c9be1f605567282"
+checksum = "0b82e604159d03411da6c9b52ab513304955c6ac137718ca364beb83005e13d4"
 dependencies = [
  "rustc-hash",
  "semver",
@@ -5073,9 +5073,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.35"
+version = "1.0.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "291ec9ab5efd934aaf503a6466c5d5251535d108ee747472c3977cc5acc868ef"
+checksum = "0fa76aaf39101c457836aec0ce2316dbdc3ab723cdda1c6bd4e6ad4208acaca7"
 dependencies = [
  "proc-macro2",
 ]
@@ -5519,15 +5519,15 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.14.5"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac09b4b9c9fe5068fb44ac5cdc6b282acb175ab39e8b0d1eef737df2aeec3a91"
+checksum = "8573d84f787ddead7cec2813ee28aca631e1ca4b6e470d8ce76299c26f46847d"
 dependencies = [
  "garde",
  "indexmap 2.2.6",
  "markdown",
  "miette",
- "reqwest 0.11.26",
+ "reqwest 0.12.3",
  "schemars",
  "schematic_macros",
  "schematic_types",
@@ -5543,9 +5543,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.14.2"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "910c561ff783c09af4e4a7a4f7d6d733aed0a0374333de7f0b39f474568ba937"
+checksum = "220fe894642e59af0239378fb9d6d045db36933958449d66f05f6e7ddaf05086"
 dependencies = [
  "convert_case",
  "darling 0.20.8",
@@ -5556,9 +5556,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f3adfbe1c90a6a9643433e490ef1605c6a99f93be37e4c83fe5149fca9698c6"
+checksum = "8c881455700a86164b6c578b4cbbef17eac2fbcc0cb51c4473edda11161f8efd"
 dependencies = [
  "indexmap 2.2.6",
  "semver",
@@ -5648,9 +5648,9 @@ dependencies = [
 
 [[package]]
 name = "serde_path_to_error"
-version = "0.1.15"
+version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebd154a240de39fdebcf5775d2675c204d7c13cf39a4c697be6493c8e734337c"
+checksum = "af99884400da37c88f5e9146b7f1fd0fbcae8f6eec4e9da38b67d05486f814a6"
 dependencies = [
  "itoa",
  "serde",
@@ -6142,9 +6142,9 @@ dependencies = [
 
 [[package]]
 name = "system_env"
-version = "0.2.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "967511d0f22b9de600ec03e25d9dacc5627f36d69e780d5d0b306903de88b714"
+checksum = "02a74c9c10cef6a449785d4eb88bad6c36d5e18fe9610f3ff0da15c595ebe466"
 dependencies = [
  "schematic",
  "serde",
@@ -6824,9 +6824,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "version_spec"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a81a98a1dd2c4d6f994f4e217029fcc64f3811769ed8e8b9edaabb0cd0c31f3d"
+checksum = "3d031b5a9abceaa2b708d67426e9cd3c8309555586c54505dc35585c3f83f1e6"
 dependencies = [
  "human-sort",
  "regex",
@@ -6877,9 +6877,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.11.8"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d311e4047472e693971e68b5bab7c52a475847186d4ebe638fa6dcac5d82a45"
+checksum = "9a041ca658d56da1209152937ba8eabbb70659470d0de050c5a6f8beeac207be"
 dependencies = [
  "extism",
  "miette",
@@ -6903,9 +6903,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.4.6"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09c0f44297aa4623f1107e7fa645702aebf98ad7ec7e3a5ccc226e7b74cb958c"
+checksum = "dfd13143fc98cd72390385fa9f0903242596793062537c9e0831d94170077c8e"
 dependencies = [
  "anyhow",
  "rustc-hash",
@@ -6918,9 +6918,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.2.4"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1286c9c43a051463251deb81404b639a5bae5b6918fde781d75609d65a67520b"
+checksum = "238410cb31a36b2561e8aca6e97026144005709fb5a351afe7e17d6aa2954013"
 dependencies = [
  "extism-pdk",
  "serde",

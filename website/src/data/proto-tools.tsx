@@ -182,6 +182,19 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
+	black: {
+		author: 'appthrust',
+		bins: ['black'],
+		description:
+			'The uncompromising Python code formatter',
+		homepageUrl: 'https://black.readthedocs.io/en/stable/',
+		name: 'Black',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/appthrust/proto-toml-plugins/main/black/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
+	},
 	buf: {
 		author: 'stk0vrfl0w',
 		bins: ['buf'],

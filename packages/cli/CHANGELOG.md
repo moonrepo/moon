@@ -24,6 +24,10 @@
   - If a variable value is passed as an argument, we no longer prompt for it.
   - Internal variables will now error when passed as an argument.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.34.2 (from v0.32.2).
+
 ## 1.23.4
 
 #### 🐞 Fixes

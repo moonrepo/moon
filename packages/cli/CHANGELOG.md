@@ -22,6 +22,7 @@
     - Numbers now support negative values.
     - Multiple values can now be passed for enums when `multiple` is enabled.
   - If a variable value is passed as an argument, we no longer prompt for it.
+  - Internal variables will now error when passed as an argument.
 
 ## 1.23.4
 

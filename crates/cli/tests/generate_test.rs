@@ -182,9 +182,8 @@ fn cant_overwrite_internal_variables_with_args() {
             .args(["--internal", "overwritten"]);
     });
 
-    assert.success();
-
-    assert_snapshot!(fs::read_to_string(sandbox.path().join("./test/expressions.txt")).unwrap());
+    // It errors!
+    assert.failure();
 }
 
 #[test]

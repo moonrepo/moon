@@ -2,11 +2,11 @@
 source: crates/cli/tests/generate_test.rs
 expression: assert.output_standardized()
 ---
-
 Variable testing 
 A template for testing all variable config combinations.
 
-Error:   × Failed to parse variable argument --number: invalid digit found in string
+Error: codegen::args::parse_failed
 
-
-
+  × Failed to parse variables from arguments.
+  ╰─▶   × invalid value 'abc' for '--number <number>': invalid digit found
+      in string

@@ -29,7 +29,10 @@ pub struct GenerateArgs {
     )]
     pub defaults: bool,
 
-    #[arg(long, help = "Run entire generator process without writing files")]
+    #[arg(
+        long = "dryRun",
+        help = "Run entire generator process without writing files"
+    )]
     pub dry_run: bool,
 
     #[arg(long, help = "Force overwrite any existing files at the destination")]
@@ -290,16 +293,16 @@ pub fn gather_variables(
                 context.insert(name, &value);
             }
             TemplateVariable::Enum(cfg) if cfg.is_multiple() => {
+                let values = cfg.get_values();
+                let labels = cfg.get_labels();
                 let default_value = match &cfg.default {
                     TemplateVariableEnumDefault::Vec(def) => def.to_owned(),
-                    _ => vec![],
+                    TemplateVariableEnumDefault::String(def) => vec![def.to_owned()],
                 };
 
                 let value = if skip_prompts || cfg.prompt.is_none() {
                     default_value
                 } else {
-                    let values = cfg.get_values();
-                    let labels = cfg.get_labels();
                     let default_indexes = values
                         .iter()
                         .enumerate()
@@ -339,9 +342,17 @@ pub fn gather_variables(
                 context.insert(name, &value);
             }
             TemplateVariable::Enum(cfg) if !cfg.is_multiple() => {
+                let values = cfg.get_values();
+                let labels = cfg.get_labels();
                 let default_value = match &cfg.default {
                     TemplateVariableEnumDefault::String(def) => def.to_owned(),
-                    _ => String::new(),
+                    TemplateVariableEnumDefault::Vec(def) => {
+                        if def.is_empty() {
+                            values[0].to_owned()
+                        } else {
+                            def[0].to_owned()
+                        }
+                    }
                 };
 
                 let value = if skip_prompts || cfg.prompt.is_none() {
@@ -349,14 +360,14 @@ pub fn gather_variables(
                 } else {
                     let selected = console.prompt_select(Select::new(
                         cfg.prompt.as_ref().unwrap(),
-                        cfg.get_labels()
-                            .into_iter()
+                        labels
+                            .iter()
                             .enumerate()
                             .map(|(index, label)| ListOption::new(index, label))
                             .collect::<Vec<_>>(),
                     ))?;
 
-                    cfg.get_values()[selected.index].to_owned()
+                    values[selected.index].to_owned()
                 };
 
                 debug!(name, value, "Setting single-value enum variable");

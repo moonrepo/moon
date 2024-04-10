@@ -89,58 +89,57 @@ mod bun {
         assert_snapshot!(assert.output());
     }
 
-    // TODO These are very flaky!
-    // #[test]
-    // fn handles_process_exit_zero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_zero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:processExitZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:processExitZero");
+        });
 
-    //     assert_snapshot!(assert.output());
-    // }
+        assert_snapshot!(assert.output());
+    }
 
-    // #[test]
-    // fn handles_process_exit_nonzero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_nonzero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:processExitNonZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:processExitNonZero");
+        });
 
-    //     if cfg!(windows) {
-    //         assert.code(1);
-    //     } else {
-    //         assert_snapshot!(assert.output());
-    //     }
-    // }
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
 
-    // #[test]
-    // fn handles_process_exit_code_zero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_code_zero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:exitCodeZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:exitCodeZero");
+        });
 
-    //     assert_snapshot!(assert.output());
-    // }
+        assert_snapshot!(assert.output());
+    }
 
-    // #[test]
-    // fn handles_process_exit_code_nonzero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_code_nonzero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:exitCodeNonZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:exitCodeNonZero");
+        });
 
-    //     if cfg!(windows) {
-    //         assert.code(1);
-    //     } else {
-    //         assert_snapshot!(assert.output());
-    //     }
-    // }
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
 
     #[test]
     fn handles_throw_error() {

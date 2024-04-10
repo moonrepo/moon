@@ -40,7 +40,8 @@ export type LanguageType =
 	| 'ruby'
 	| 'rust'
 	| 'typescript'
-	| 'unknown';
+	| 'unknown'
+	| string;
 
 export type OwnersPaths = string[] | Record<string, string[]>;
 

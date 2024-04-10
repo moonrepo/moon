@@ -177,7 +177,7 @@ variables:
         }
 
         #[test]
-        #[should_panic(expected = "invalid type: boolean `true`, expected usize")]
+        #[should_panic(expected = "invalid type: boolean `true`, expected isize")]
         fn invalid_number() {
             test_load_config(
                 CONFIG_TEMPLATE_FILENAME,

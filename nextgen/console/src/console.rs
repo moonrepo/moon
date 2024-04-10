@@ -1,3 +1,5 @@
+use crate::prompts::create_theme;
+use inquire::ui::RenderConfig;
 use miette::IntoDiagnostic;
 use moon_common::is_formatted_output;
 use parking_lot::Mutex;
@@ -185,6 +187,7 @@ pub struct Console {
     pub out: ConsoleBuffer,
 
     quiet: Arc<AtomicBool>,
+    theme: Arc<RenderConfig<'static>>,
 }
 
 impl Console {
@@ -197,7 +200,12 @@ impl Console {
         let mut out = ConsoleBuffer::new(ConsoleStream::Stdout);
         out.quiet = Some(Arc::clone(&quiet));
 
-        Self { err, out, quiet }
+        Self {
+            err,
+            out,
+            quiet,
+            theme: Arc::new(create_theme()),
+        }
     }
 
     pub fn new_testing() -> Self {
@@ -205,6 +213,7 @@ impl Console {
             err: ConsoleBuffer::new_testing(ConsoleStream::Stderr),
             out: ConsoleBuffer::new_testing(ConsoleStream::Stdout),
             quiet: Arc::new(AtomicBool::new(false)),
+            theme: Arc::new(RenderConfig::empty()),
         }
     }
 
@@ -225,6 +234,10 @@ impl Console {
 
     pub fn stdout(&self) -> &ConsoleBuffer {
         &self.out
+    }
+
+    pub fn theme(&self) -> Arc<RenderConfig<'static>> {
+        Arc::clone(&self.theme)
     }
 }
 

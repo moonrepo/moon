@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+inquire = "0.7.4"
 miette = { workspace = true }
 parking_lot = "0.12.1"
 starbase = { workspace = true }

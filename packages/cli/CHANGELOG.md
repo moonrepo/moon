@@ -24,6 +24,10 @@
   - If a variable value is passed as an argument, we no longer prompt for it.
   - Internal variables will now error when passed as an argument.
 
+#### 🐞 Fixes
+
+- Fixed YAML schema validation not allowing custom languages for the project `language` field.
+
 #### ⚙️ Internal
 
 - Updated proto to v0.34.3 (from v0.32.2).

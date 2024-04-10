@@ -17,36 +17,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
-#[derive(Args, Clone, Debug)]
-pub struct GenerateArgs {
-    #[arg(help = "Name of template to generate")]
-    name: String,
-
-    #[arg(help = "Destination path, relative from the current working directory")]
-    dest: Option<String>,
-
-    #[arg(
-        long,
-        help = "Use the default value of all variables instead of prompting"
-    )]
-    defaults: bool,
-
-    #[arg(
-        long = "dryRun",
-        help = "Run entire generator process without writing files"
-    )]
-    dry_run: bool,
-
-    #[arg(long, help = "Force overwrite any existing files at the destination")]
-    force: bool,
-
-    #[arg(long, help = "Create a new template")]
-    template: bool,
-
-    // Variable args (after --)
-    #[arg(last = true, help = "Arguments to define as variable values")]
-    vars: Vec<String>,
-}
+pub use moon_codegen::GenerateArgs;
 
 fn log_var<T: Debug>(name: &str, value: &T, comment: Option<&str>) {
     debug!(name, value = ?value, comment, "Setting variable");
@@ -150,11 +121,6 @@ fn gather_variables(
 ) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
 
-    dbg!(parse_args_into_variables(
-        &args.vars,
-        &template.config.variables
-    )?);
-
     let custom_vars = parse_var_args(&args.vars, &template.config.variables);
     let default_comment = "(defaults)";
 
@@ -167,29 +133,7 @@ fn gather_variables(
 
     for (name, config) in variables {
         match config {
-            TemplateVariable::Boolean(var) => {
-                let default: bool = match custom_vars.get(name) {
-                    Some(val) => val == "true" || val == "1" || val == "on",
-                    None => var.default,
-                };
-
-                if args.defaults || var.prompt.is_none() {
-                    log_var(name, &default, Some(default_comment));
-
-                    context.insert(name, &default);
-                } else {
-                    let value = Confirm::with_theme(theme)
-                        .default(default)
-                        .with_prompt(var.prompt.as_ref().unwrap())
-                        .show_default(true)
-                        .interact()
-                        .into_diagnostic()?;
-
-                    log_var(name, &value, None);
-
-                    context.insert(name, &value);
-                }
-            }
+            _ => {}
             TemplateVariable::Enum(var) => {
                 let values = var.get_values();
                 let labels = var.get_labels();
@@ -255,72 +199,6 @@ fn gather_variables(
                     }
                 };
             }
-            TemplateVariable::Number(var) => {
-                let required = var.required.unwrap_or_default();
-                let default: i32 = match custom_vars.get(name) {
-                    Some(val) => val
-                        .parse::<i32>()
-                        .map_err(|e| {
-                            CodegenError::FailedToParseArgVar(name.to_owned(), e.to_string())
-                        })
-                        .into_diagnostic()?,
-                    None => var.default as i32,
-                };
-
-                if args.defaults || var.prompt.is_none() {
-                    log_var(name, &default, Some(default_comment));
-
-                    context.insert(name, &default);
-                } else {
-                    let value: i32 = Input::with_theme(theme)
-                        .default(default)
-                        .with_prompt(var.prompt.as_ref().unwrap())
-                        .allow_empty(false)
-                        .show_default(true)
-                        .validate_with(|input: &i32| -> Result<(), &str> {
-                            if required && *input == 0 {
-                                Err("a non-zero value is required")
-                            } else {
-                                Ok(())
-                            }
-                        })
-                        .interact_text()
-                        .into_diagnostic()?;
-
-                    log_var(name, &value, None);
-
-                    context.insert(name, &value);
-                }
-            }
-            TemplateVariable::String(var) => {
-                let required = var.required.unwrap_or_default();
-                let default = custom_vars.get(name).unwrap_or(&var.default);
-
-                if args.defaults || var.prompt.is_none() {
-                    log_var(name, &default, Some(default_comment));
-
-                    context.insert(name, &default);
-                } else {
-                    let value: String = Input::with_theme(theme)
-                        .default(default.clone())
-                        .with_prompt(var.prompt.as_ref().unwrap())
-                        .allow_empty(false)
-                        .show_default(!default.is_empty())
-                        .validate_with(|input: &String| -> Result<(), &str> {
-                            if required && input.is_empty() {
-                                Err("a value is required")
-                            } else {
-                                Ok(())
-                            }
-                        })
-                        .interact_text()
-                        .into_diagnostic()?;
-
-                    log_var(name, &value, None);
-
-                    context.insert(name, &value);
-                }
-            }
         }
     }
 
@@ -339,6 +217,7 @@ pub async fn generate(
         &workspace.config.generator,
         Arc::clone(moon_env),
     );
+    let base_console = console;
     let console = console.stdout();
     let theme = create_theme();
 
@@ -363,6 +242,8 @@ pub async fn generate(
 
     // Create the template instance
     let mut template = generator.get_template(&args.name)?;
+
+    moon_codegen::gather_variables(args, &template, base_console);
 
     console.write_newline()?;
     console.write_line(format!(

@@ -31,7 +31,7 @@ macro_rules! var_setting {
 }
 
 var_setting!(TemplateVariableBoolSetting, bool);
-var_setting!(TemplateVariableNumberSetting, usize);
+var_setting!(TemplateVariableNumberSetting, isize);
 var_setting!(TemplateVariableStringSetting, String);
 
 #[derive(Clone, Config, Debug, Eq, PartialEq)]
@@ -207,6 +207,16 @@ impl TemplateVariable {
             Self::Enum(cfg) => cfg.is_multiple(),
             _ => false,
         }
+    }
+
+    pub fn is_required(&self) -> bool {
+        match self {
+            Self::Boolean(cfg) => cfg.required,
+            Self::Number(cfg) => cfg.required,
+            Self::String(cfg) => cfg.required,
+            _ => None,
+        }
+        .is_some_and(|v| v)
     }
 }
 

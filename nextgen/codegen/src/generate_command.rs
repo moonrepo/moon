@@ -1,5 +1,3 @@
-use std::io::{stdout, IsTerminal};
-
 use crate::codegen_error::CodegenError;
 use crate::template::Template;
 use clap::builder::{
@@ -7,38 +5,42 @@ use clap::builder::{
 };
 use clap::parser::ValueSource;
 use clap::{Arg, ArgAction, Args, Command};
-use moon_config::TemplateVariable;
-use moon_console::prompts::Confirm;
+use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
+use moon_console::prompts::list_option::ListOption;
+use moon_console::prompts::validator::Validation;
+use moon_console::prompts::{Confirm, CustomType, Select, Text};
+use moon_console::Console;
 use rustc_hash::FxHashMap;
+use std::io::{stdout, IsTerminal};
 use tera::Context as TemplateContext;
 use tracing::debug;
 
 #[derive(Args, Clone, Debug)]
 pub struct GenerateArgs {
     #[arg(help = "Name of template to generate")]
-    name: String,
+    pub name: String,
 
     #[arg(help = "Destination path, relative from the current working directory")]
-    dest: Option<String>,
+    pub dest: Option<String>,
 
     #[arg(
         long,
         help = "Use the default value of all variables instead of prompting"
     )]
-    defaults: bool,
+    pub defaults: bool,
 
-    #[arg(help = "Run entire generator process without writing files")]
-    dry_run: bool,
+    #[arg(long, help = "Run entire generator process without writing files")]
+    pub dry_run: bool,
 
     #[arg(long, help = "Force overwrite any existing files at the destination")]
-    force: bool,
+    pub force: bool,
 
     #[arg(long, help = "Create a new template")]
-    template: bool,
+    pub template: bool,
 
     // Variable args (after --)
     #[arg(last = true, help = "Arguments to define as variable values")]
-    vars: Vec<String>,
+    pub vars: Vec<String>,
 }
 
 pub fn parse_args_into_variables(
@@ -212,6 +214,7 @@ pub fn parse_args_into_variables(
 pub fn gather_variables(
     args: &GenerateArgs,
     template: &Template,
+    console: &Console,
 ) -> miette::Result<TemplateContext> {
     let mut context = parse_args_into_variables(&args.vars, &template.config.variables)?;
 
@@ -224,16 +227,89 @@ pub fn gather_variables(
     variables.sort_by(|a, d| a.1.get_order().cmp(&d.1.get_order()));
 
     for (name, config) in variables {
+        if context.contains_key(name) {
+            continue;
+        }
+
+        let required = config.is_required();
+
         match config {
             TemplateVariable::Boolean(cfg) => {
-                if skip_prompts || cfg.prompt.is_none() {
-                    if !context.contains_key(name) {
-                        context.insert(name, &cfg.default);
-                    }
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default
                 } else {
-                }
+                    console.confirm(
+                        Confirm::new(cfg.prompt.as_ref().unwrap()).with_default(cfg.default),
+                    )?
+                };
+
+                context.insert(name, &value);
             }
-            _ => {}
+            TemplateVariable::Number(cfg) => {
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default
+                } else {
+                    console.prompt_custom(
+                        CustomType::<isize>::new(cfg.prompt.as_ref().unwrap())
+                            .with_default(cfg.default)
+                            .with_validator(move |input: &isize| {
+                                if required && *input == 0 {
+                                    Ok(Validation::Invalid("A non-zero value is required".into()))
+                                } else {
+                                    Ok(Validation::Valid)
+                                }
+                            }),
+                    )?
+                };
+
+                context.insert(name, &value);
+            }
+            TemplateVariable::String(cfg) => {
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    cfg.default.clone()
+                } else {
+                    console.prompt_text(
+                        Text::new(cfg.prompt.as_ref().unwrap())
+                            .with_default(&cfg.default)
+                            .with_validator(move |input: &str| {
+                                if required && input.is_empty() {
+                                    Ok(Validation::Invalid("A value is required".into()))
+                                } else {
+                                    Ok(Validation::Valid)
+                                }
+                            }),
+                    )?
+                };
+
+                context.insert(name, &value);
+            }
+            TemplateVariable::Enum(cfg) if cfg.is_multiple() => {}
+            TemplateVariable::Enum(cfg) if !cfg.is_multiple() => {
+                let default_value = match &cfg.default {
+                    TemplateVariableEnumDefault::String(def) => def.to_owned(),
+                    _ => String::new(),
+                };
+
+                let value = if skip_prompts || cfg.prompt.is_none() {
+                    default_value
+                } else {
+                    let selected = console.prompt_select(Select::new(
+                        cfg.prompt.as_ref().unwrap(),
+                        cfg.get_labels()
+                            .into_iter()
+                            .enumerate()
+                            .map(|(index, label)| ListOption::new(index, label))
+                            .collect::<Vec<_>>(),
+                    ))?;
+
+                    cfg.get_values()[selected.index].to_owned()
+                };
+
+                context.insert(name, &value);
+            }
+            _ => {
+                // Rust can't infer enum variants above correctly!
+            }
         }
     }
 

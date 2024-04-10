@@ -27,10 +27,6 @@ pub enum CodegenError {
         error: miette::Report,
     },
 
-    #[diagnostic(code(codegen::var::parse_failed))]
-    #[error("Failed to parse variable argument --{0}: {1}")]
-    FailedToParseArgVar(String, String),
-
     #[diagnostic(code(codegen::template::missing))]
     #[error(
         "No template with the name {} could be found at any of the configured template locations.",

@@ -339,7 +339,7 @@ mod bun {
     mod workspace_overrides {
         use super::*;
 
-        // Need multiple windows versions for this to work, right now we only have 1.1.0
+        // Need multiple windows versions for this to work
         #[cfg(not(windows))]
         #[test]
         fn can_override_version() {
@@ -353,7 +353,7 @@ mod bun {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("1.1.0").eval(&output));
+            assert!(predicate::str::contains("1.1.3").eval(&output));
             assert!(predicate::str::contains("0.8.0").eval(&output));
 
             assert.success();

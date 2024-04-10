@@ -6877,9 +6877,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a041ca658d56da1209152937ba8eabbb70659470d0de050c5a6f8beeac207be"
+checksum = "f8e51931bd2ef0d0b14dc0a1e111fa4a9ecf83292da48c7147358833776795d5"
 dependencies = [
  "extism",
  "miette",
@@ -6903,9 +6903,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfd13143fc98cd72390385fa9f0903242596793062537c9e0831d94170077c8e"
+checksum = "99bfd47d0349f8dbc0aecc8b9732ffbc792000accc219cff016dc780715692dd"
 dependencies = [
  "anyhow",
  "rustc-hash",
@@ -6918,9 +6918,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "238410cb31a36b2561e8aca6e97026144005709fb5a351afe7e17d6aa2954013"
+checksum = "d9a2a91dce5392d3fe7658c46a87b50c3448fb6746b143b83980fdae9c82ef21"
 dependencies = [
  "extism-pdk",
  "serde",

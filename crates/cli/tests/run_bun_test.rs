@@ -31,6 +31,8 @@ where
     sandbox
 }
 
+// These are very flaky in CI, as they error with "Text file busy" nonstop
+#[cfg(not(target_os = "linux"))]
 mod bun {
     use super::*;
 
@@ -89,58 +91,57 @@ mod bun {
         assert_snapshot!(assert.output());
     }
 
-    // TODO These are very flaky!
-    // #[test]
-    // fn handles_process_exit_zero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_zero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:processExitZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:processExitZero");
+        });
 
-    //     assert_snapshot!(assert.output());
-    // }
+        assert_snapshot!(assert.output());
+    }
 
-    // #[test]
-    // fn handles_process_exit_nonzero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_nonzero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:processExitNonZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:processExitNonZero");
+        });
 
-    //     if cfg!(windows) {
-    //         assert.code(1);
-    //     } else {
-    //         assert_snapshot!(assert.output());
-    //     }
-    // }
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
 
-    // #[test]
-    // fn handles_process_exit_code_zero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_code_zero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:exitCodeZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:exitCodeZero");
+        });
 
-    //     assert_snapshot!(assert.output());
-    // }
+        assert_snapshot!(assert.output());
+    }
 
-    // #[test]
-    // fn handles_process_exit_code_nonzero() {
-    //     let sandbox = bun_sandbox();
+    #[test]
+    fn handles_process_exit_code_nonzero() {
+        let sandbox = bun_sandbox();
 
-    //     let assert = sandbox.run_moon(|cmd| {
-    //         cmd.arg("run").arg("bun:exitCodeNonZero");
-    //     });
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:exitCodeNonZero");
+        });
 
-    //     if cfg!(windows) {
-    //         assert.code(1);
-    //     } else {
-    //         assert_snapshot!(assert.output());
-    //     }
-    // }
+        if cfg!(windows) {
+            assert.code(1);
+        } else {
+            assert_snapshot!(assert.output());
+        }
+    }
 
     #[test]
     fn handles_throw_error() {
@@ -339,7 +340,7 @@ mod bun {
     mod workspace_overrides {
         use super::*;
 
-        // Need multiple windows versions for this to work, right now we only have 1.1.0
+        // Need multiple windows versions for this to work
         #[cfg(not(windows))]
         #[test]
         fn can_override_version() {
@@ -353,7 +354,7 @@ mod bun {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("1.1.0").eval(&output));
+            assert!(predicate::str::contains("1.1.3").eval(&output));
             assert!(predicate::str::contains("0.8.0").eval(&output));
 
             assert.success();

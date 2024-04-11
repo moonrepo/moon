@@ -96,8 +96,14 @@ async fn gather_touched_files(
     let mut head = args.head.clone();
 
     if let Some(env) = ci_env::get_environment() {
-        if base.is_none() && env.base_revision.is_some() {
-            base = env.base_revision;
+        let is_pr = env.request_id.is_some_and(|id| !id.is_empty());
+
+        if base.is_none() {
+            if env.base_revision.is_some() {
+                base = env.base_revision;
+            } else if is_pr && env.base_branch.is_some() {
+                base = env.base_branch;
+            }
         }
 
         if head.is_none() && env.head_revision.is_some() {

@@ -92,12 +92,25 @@ async fn gather_touched_files(
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     console.print_header("Gathering touched files")?;
 
+    let mut base = args.base.clone();
+    let mut head = args.head.clone();
+
+    if let Some(env) = ci_env::get_environment() {
+        if base.is_none() && env.base_revision.is_some() {
+            base = env.base_revision;
+        }
+
+        if head.is_none() && env.head_revision.is_some() {
+            head = env.head_revision;
+        }
+    }
+
     let result = query_touched_files(
         workspace,
         &QueryTouchedFilesOptions {
             default_branch: true,
-            base: args.base.clone(),
-            head: args.head.clone(),
+            base,
+            head,
             ..QueryTouchedFilesOptions::default()
         },
     )

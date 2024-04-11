@@ -20,18 +20,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # build-wasm:
-  #   name: Build WASM
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: moonrepo/setup-rust@v1
-  #       with:
-  #         bins: just,cargo-wasi
-  #         cache: false
-  #     - run: rustup target add wasm32-wasi
-  #     - name: Building crates
-  #       run: just build-wasm
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          bins: just,cargo-wasi
+          cache: false
+      - run: rustup target add wasm32-wasi
+      - name: Building crates
+        run: just build-wasm
   format:
     name: Format
     runs-on: ubuntu-latest
@@ -90,7 +90,7 @@ jobs:
         with:
           auto-install: true
           cache: ${{ runner.os == 'Linux' }}
-          proto-version: '0.32.2' # Keep in sync
+          proto-version: '0.34.3' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.4
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Checking coverage status

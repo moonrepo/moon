@@ -32,7 +32,7 @@ where
 }
 
 // These are very flaky in CI, as they error with "Text file busy" nonstop
-#[cfg(not(target_family = "linux"))]
+#[cfg(not(target_os = "linux"))]
 mod bun {
     use super::*;
 

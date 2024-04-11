@@ -185,8 +185,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	black: {
 		author: 'appthrust',
 		bins: ['black'],
-		description:
-			'The uncompromising Python code formatter',
+		description: 'The uncompromising Python code formatter',
 		homepageUrl: 'https://black.readthedocs.io/en/stable/',
 		name: 'Black',
 		noIcon: true,

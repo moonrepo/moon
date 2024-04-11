@@ -1,0 +1,35 @@
+---
+slug: moon-v1.24
+title: moon v1.24 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.23.png
+---
+
+???
+
+<!--truncate-->
+
+## Auto-detect base/head for `moon ci`
+
+We've updated [`moon ci`](/docs/commands/ci) to try and detect the base and head revisions
+automatically when running in a popular CI provider, like GitLab, Jenkins. For the base revision,
+we'll use the base/target commit SHA or target branch, while the head revision with use the source
+commit SHA or `HEAD`. This is great for pull requests and forks!
+
+With that said, these values can be overwritten with environment variables, or command line
+arguments. Below is the order of precedence:
+
+- `MOON_BASE` / `MOON_HEAD` environment variables
+- `--base` / `--head` command line arguments
+- `base_revision` / `head_revision` via CI provider
+- `vcs.defaultBranch` setting / `HEAD` literal value
+
+> This functionality is provided by the [`ci_env`](https://github.com/milesj/rust-cicd-env) Rust
+> crate. Please refer to that crate for supported providers, and which of them support revision
+> detection (primarily the `base_revision` and `head_revision` fields).
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.24.0) for a full list
+of changes.

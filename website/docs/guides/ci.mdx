@@ -86,7 +86,7 @@ steps:
   - label: 'CI'
     commands:
       - 'yarn install --immutable'
-      - 'yarn moon ci'
+      - 'moon ci'
 ```
 
 </TabItem>
@@ -108,7 +108,7 @@ jobs:
       - node/install-packages:
           check-cache: 'always'
           pkg-manager: 'yarn-berry'
-      - run: 'yarn moon ci'
+      - run: 'moon ci'
 workflows:
   pipeline:
     jobs:
@@ -149,16 +149,20 @@ $ moon ci :test :lint
 
 ## Comparing revisions
 
-By default the command will compare the current HEAD against a base revision, which is typically the
-configured [`vcs.defaultBranch`](../config/workspace#defaultbranch) (master, main, trunk, etc). Both
-of these can be customized with the `--base` and `--head` options respectively.
+By default the command will attempt to detect the base and head revisions automatically based on the
+current CI provider (powered by the [`ci_env`](https://github.com/milesj/rust-cicd-env) Rust crate).
+If nothing was detected, this will fallback to the configured
+[`vcs.defaultBranch`](../config/workspace#defaultbranch) for the base revision, and `HEAD` for the
+head revision.
+
+These values can be customized with the `--base` and `--head` command line options, or the
+`MOON_BASE` and `MOON_HEAD` environment variables, which takes highest precedence.
 
 ```shell
 $ moon ci --base <BRANCH> --head <SHA>
+# Or
+$ MOON_BASE=<BRANCH> MOON_HEAD=<SHA> moon ci
 ```
-
-The `MOON_BASE` and `MOON_HEAD` environment variables can also be used, which takes highest
-precedence.
 
 ## Parallelizing tasks
 
@@ -184,7 +188,7 @@ jobs:
         index: [0, 1]
     steps:
       # ...
-      - run: 'yarn moon ci --job ${{ matrix.index }} --jobTotal 2'
+      - run: 'moon ci --job ${{ matrix.index }} --jobTotal 2'
 ```
 
 - [Documentation](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
@@ -199,7 +203,7 @@ steps:
     parallelism: 10
     commands:
       # ...
-      - 'yarn moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT'
+      - 'moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT'
 ```
 
 - [Documentation](https://buildkite.com/docs/tutorials/parallel-builds#parallel-jobs)
@@ -215,7 +219,7 @@ jobs:
     parallelism: 10
     steps:
       # ...
-      - run: 'yarn moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL'
+      - run: 'moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL'
 ```
 
 - [Documentation](https://circleci.com/docs/2.0/parallelism-faster-jobs/)
@@ -282,7 +286,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       # ...
-      - run: 'yarn moon ci'
+      - run: 'moon ci'
       - uses: 'moonrepo/run-report-action@v1'
         if: success() || failure()
         with:

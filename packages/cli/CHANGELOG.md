@@ -15,6 +15,8 @@
 #### 🚀 Updates
 
 - Added a `moon templates` command, that lists all available codegen templates.
+- Updated `moon ci` to automatically determine base/head revisions based on your current CI provider
+  (when applicable).
 - Updated `moon generate` with:
   - When passing variables as command line arguments, they are now entirely modeled after the
     template configuration.

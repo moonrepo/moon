@@ -454,6 +454,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
 	},
+	tilt: {
+		author: 'appthrust',
+		bins: ['tilt'],
+		description:
+			'A toolkit for fixing the pains of microservice development.',
+		homepageUrl: 'https://tilt.dev',
+		name: 'tilt',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/appthrust/proto-toml-plugins/main/tilt/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
+	},
 	kubectl: {
 		author: 'stk0vrfl0w',
 		bins: ['kubectl'],

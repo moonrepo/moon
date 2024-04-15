@@ -26,6 +26,13 @@ async fn create_project_graph() -> ProjectGraph {
     generate_project_graph("projects").await
 }
 
+// fn create_bun_runtime() -> Runtime {
+//     Runtime::new(
+//         PlatformType::Bun,
+//         RuntimeReq::with_version(Version::new(1, 0, 0)),
+//     )
+// }
+
 fn create_node_runtime() -> Runtime {
     Runtime::new(
         PlatformType::Node,
@@ -169,6 +176,63 @@ mod action_graph {
                         project: Id::raw("out"),
                         runtime: create_node_runtime()
                     },
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn doesnt_install_bun_and_node() {
+            let sandbox = create_sandbox("projects");
+            sandbox.append_file(".moon/toolchain.yml", "bun:\n  version: '1.0.0'");
+
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+
+            let mut bun = create_task("bun", "bar");
+            bun.platform = PlatformType::Bun;
+
+            let mut node = create_task("node", "bar");
+            node.platform = PlatformType::Node;
+
+            let mut builder = container.create_builder();
+            let project = container.project_graph.get("bar").unwrap();
+
+            builder.install_deps(&project, Some(&bun)).unwrap();
+            builder.install_deps(&project, Some(&node)).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    }
+                ]
+            );
+
+            // Reverse order
+            let mut builder = container.create_builder();
+            let project = container.project_graph.get("bar").unwrap();
+
+            builder.install_deps(&project, Some(&node)).unwrap();
+            builder.install_deps(&project, Some(&bun)).unwrap();
+
+            let graph = builder.build().unwrap();
+
+            assert_eq!(
+                topo(graph),
+                vec![
+                    ActionNode::SyncWorkspace,
+                    ActionNode::SetupTool {
+                        runtime: create_node_runtime()
+                    },
+                    ActionNode::InstallDeps {
+                        runtime: create_node_runtime()
+                    }
                 ]
             );
         }

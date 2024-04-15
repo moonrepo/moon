@@ -2,7 +2,7 @@ use crate::action_graph::ActionGraph;
 use crate::action_node::ActionNode;
 use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
-use moon_config::TaskDependencyConfig;
+use moon_config::{PlatformType, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::{Project, ProjectError};
 use moon_project_graph::ProjectGraph;
@@ -62,13 +62,13 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn get_runtime(
         &self,
         project: &Project,
-        task: Option<&Task>,
+        platform_type: PlatformType,
         allow_override: bool,
     ) -> Runtime {
-        if let Some(platform) = self.platform_manager.find(|p| match task {
-            Some(task) => p.matches(&task.platform, None),
-            None => p.matches(&project.platform, None),
-        }) {
+        if let Some(platform) = self
+            .platform_manager
+            .find(|p| p.get_type() == platform_type)
+        {
             return platform.get_runtime_from_config(if allow_override {
                 Some(&project.config)
             } else {
@@ -93,7 +93,7 @@ impl<'app> ActionGraphBuilder<'app> {
         task: Option<&Task>,
     ) -> miette::Result<Option<NodeIndex>> {
         let mut in_project = false;
-        let platform_type = task.map(|t| t.platform).unwrap_or_else(|| project.platform);
+        let mut platform_type = task.map(|t| t.platform).unwrap_or_else(|| project.platform);
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
@@ -108,14 +108,32 @@ impl<'app> ActionGraphBuilder<'app> {
             }
         }
 
+        // If Bun and Node.js are enabled, they will both attempt to install
+        // dependencies in the target root. We need to avoid this problem,
+        // so always prefer Node.js instead. Revisit in the future.
+        if matches!(platform_type, PlatformType::Bun)
+            && self
+                .platform_manager
+                .enabled()
+                .any(|enabled_platform| matches!(enabled_platform, PlatformType::Node))
+        {
+            debug!(
+                "Already installing dependencies with {}, skipping a conflicting install from {}",
+                PlatformType::Node,
+                platform_type,
+            );
+
+            platform_type = PlatformType::Node;
+        }
+
         let node = if in_project {
             ActionNode::InstallProjectDeps {
                 project: project.id.to_owned(),
-                runtime: self.get_runtime(project, task, true),
+                runtime: self.get_runtime(project, platform_type, true),
             }
         } else {
             ActionNode::InstallDeps {
-                runtime: self.get_runtime(project, task, false),
+                runtime: self.get_runtime(project, platform_type, false),
             }
         };
 
@@ -165,7 +183,7 @@ impl<'app> ActionGraphBuilder<'app> {
             env,
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
-            runtime: self.get_runtime(project, Some(task), true),
+            runtime: self.get_runtime(project, task.platform, true),
             target: task.target.to_owned(),
         };
 
@@ -437,7 +455,7 @@ impl<'app> ActionGraphBuilder<'app> {
     ) -> miette::Result<NodeIndex> {
         let node = ActionNode::SyncProject {
             project: project.id.clone(),
-            runtime: self.get_runtime(project, None, true),
+            runtime: self.get_runtime(project, project.platform, true),
         };
 
         if let Some(index) = self.get_index_from_node(&node) {

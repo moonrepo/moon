@@ -29,6 +29,11 @@
 #### 🐞 Fixes
 
 - Fixed YAML schema validation not allowing custom languages for the project `language` field.
+- Fixed an issue where Bun and Node would both attempt to install dependencies, resulting in
+  collisions.
+  - To resolve this issue, we currently prioritize Node over Bun if both tools are enabled.
+  - If you have both and want to use Bun, set Node's package manager to bun
+    `node.packageManager: 'bun'`.
 - Attempted fix for "too many open files" when moon is cleaning cached artifacts.
 
 #### ⚙️ Internal

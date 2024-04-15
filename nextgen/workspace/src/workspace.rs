@@ -47,6 +47,8 @@ fn find_workspace_root<P: AsRef<Path>>(working_dir: P) -> miette::Result<PathBuf
         "Found a potential workspace root",
     );
 
+    env::set_var("MOON_WORKSPACE_ROOT", &possible_root);
+
     Ok(possible_root)
 }
 

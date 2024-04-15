@@ -41,6 +41,13 @@ And that's it, but there are a few caveats to be aware of...
 
 ### Greedy inputs
 
+:::warning
+
+In moon v1.24, root-level tasks default to no inputs. In previous versions, inputs default to
+`**/*`. This section is only applicable for older moon versions!
+
+:::
+
 Task [`inputs`](../config/project#inputs) default to `**/*`, which would result in root-level tasks
 scanning _all_ files in the repository. This will be a very expensive operation! We suggest
 restricting inputs to a very succinct whitelist, or disabling inputs entirely.

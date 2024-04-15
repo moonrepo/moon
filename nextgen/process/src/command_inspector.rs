@@ -145,6 +145,15 @@ impl<'cmd> CommandInspector<'cmd> {
         self.command.prefix.clone().unwrap_or_default()
     }
 
+    pub fn get_workspace_root(&self) -> PathBuf {
+        let env_key = OsString::from("MOON_WORKSPACE_ROOT");
+
+        env::var_os(&env_key)
+            .or_else(|| self.command.env.get(&env_key).cloned())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| env::current_dir().unwrap_or(PathBuf::from(".")))
+    }
+
     pub fn should_error_nonzero(&self) -> bool {
         self.command.error_on_nonzero
     }
@@ -191,32 +200,22 @@ impl<'cmd> CommandInspector<'cmd> {
     }
 
     pub fn log_command(&self) {
-        let command_line = self.get_command_line();
-
-        // We don't have access to the workspace root in this context,
-        // so attempt to retrieve it from the command's env vars. If
-        // not found, retrieve it from the environment. If all else fails,
-        // use the current directory (which may be wrong).
-        let workspace_root_key = OsString::from("MOON_WORKSPACE_ROOT");
-        let workspace_root = self
-            .command
-            .env
-            .get(&workspace_root_key)
-            .map(PathBuf::from)
-            .or_else(|| env::var(&workspace_root_key).ok().map(PathBuf::from))
-            .unwrap_or_else(|| env::current_dir().unwrap_or(PathBuf::from(".")));
+        let mut workspace_root = None;
 
         if self.command.print_command {
-            if let Some(cmd_line) = command_line.main_command.to_str() {
-                let cmd_line =
-                    self.format_command(cmd_line, &workspace_root, self.command.cwd.as_deref());
-
+            if let Some(cmd_line) = self.get_command_line().main_command.to_str() {
                 if let Some(console) = self.command.console.as_ref() {
                     if !console.out.is_quiet() {
+                        workspace_root = Some(self.get_workspace_root());
+
+                        let cmd_line = self.format_command(
+                            cmd_line,
+                            workspace_root.as_deref().unwrap(),
+                            self.command.cwd.as_deref(),
+                        );
+
                         let _ = console.out.write_line(cmd_line);
                     }
-                } else {
-                    println!("{cmd_line}"); // Hrmm?
                 }
             }
         }
@@ -243,13 +242,21 @@ impl<'cmd> CommandInspector<'cmd> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let working_dir_field = self.command.cwd.as_ref().unwrap_or(&workspace_root);
+        if workspace_root.is_none() {
+            workspace_root = Some(self.get_workspace_root());
+        }
+
+        let working_dir_field = self
+            .command
+            .cwd
+            .as_deref()
+            .or_else(|| workspace_root.as_deref());
 
         debug!(
             env_vars = ?env_vars_field,
             working_dir = ?working_dir_field,
             "Running command {}",
-            color::shell(command_line.to_string())
+            color::shell(self.get_command_line().to_string())
         );
     }
 }

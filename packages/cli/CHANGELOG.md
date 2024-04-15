@@ -25,14 +25,22 @@
     - Multiple values can now be passed for enums when `multiple` is enabled.
   - If a variable value is passed as an argument, we no longer prompt for it.
   - Internal variables will now error when passed as an argument.
+- Updated root-level tasks to have no inputs by default, instead of `**/*`. This is typically what
+  users want, to avoid greedy tasks.
 
 #### 🐞 Fixes
 
 - Fixed YAML schema validation not allowing custom languages for the project `language` field.
+- Fixed an issue where Bun and Node would both attempt to install dependencies, resulting in
+  collisions.
+  - To resolve this issue, we currently prioritize Node over Bun if both tools are enabled.
+  - If you have both and want to use Bun, set Node's package manager to bun
+    `node.packageManager: 'bun'`.
+- Attempted fix for "too many open files" when moon is cleaning cached artifacts.
 
 #### ⚙️ Internal
 
-- Updated proto to v0.34.3 (from v0.32.2).
+- Updated proto to v0.34.4 (from v0.32.2).
 
 ## 1.23.4
 

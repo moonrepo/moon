@@ -53,6 +53,10 @@ impl PlatformManager {
             .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
     }
 
+    pub fn enabled(&self) -> std::collections::hash_map::Keys<PlatformType, BoxedPlatform> {
+        self.cache.keys()
+    }
+
     pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
         self.cache.values()
     }

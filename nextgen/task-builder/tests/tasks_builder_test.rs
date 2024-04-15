@@ -56,9 +56,15 @@ async fn build_tasks_with_config(
 }
 
 async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+    let source = if config_path == "moon.yml" {
+        ".".into()
+    } else {
+        config_path.replace("/moon.yml", "")
+    };
+
     build_tasks_with_config(
         root,
-        &config_path.replace("/moon.yml", ""),
+        &source,
         ProjectConfig::load(root, root.join(config_path)).unwrap(),
         ToolchainConfig::default(),
         None,
@@ -749,6 +755,42 @@ mod tasks_builder {
                 ]
             );
             assert!(!task.metadata.empty_inputs);
+        }
+
+        #[tokio::test]
+        async fn handles_different_inputs_for_root_tasks() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "moon.yml").await;
+
+            let task = tasks.get("no-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert!(task.metadata.empty_inputs);
+            assert!(task.metadata.root_level);
+
+            let task = tasks.get("empty-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert!(task.metadata.empty_inputs);
+            assert!(task.metadata.root_level);
+
+            let task = tasks.get("with-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("local/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                ]
+            );
+            assert!(!task.metadata.empty_inputs);
+            assert!(task.metadata.root_level);
         }
 
         #[tokio::test]

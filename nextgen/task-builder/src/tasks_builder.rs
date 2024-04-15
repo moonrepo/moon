@@ -268,6 +268,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         task.options = self.build_task_options(id, is_local)?;
         task.metadata.local_only = is_local;
+        task.metadata.root_level = self.project_source == ".";
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -358,6 +359,13 @@ impl<'proj> TasksBuilder<'proj> {
                 trace!(
                     target = target.as_str(),
                     "Task has explicitly disabled inputs",
+                );
+
+                task.metadata.empty_inputs = true;
+            } else if task.metadata.root_level {
+                trace!(
+                    target = target.as_str(),
+                    "Task is in a root-level project, defaulting to no inputs",
                 );
 
                 task.metadata.empty_inputs = true;

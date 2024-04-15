@@ -93,7 +93,7 @@ uuid = { version = "1.8.0", features = ["v4"] }
 # proto/plugin related
 extism = "1.2.0"
 extism-pdk = "1.1.0"
-proto_core = "0.34.3"
+proto_core = "0.34.4"
 proto_installer = "0.3.3"
 system_env = "0.3.0"
 version_spec = "0.3.0"

@@ -4986,9 +4986,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.34.3"
+version = "0.34.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba4d8190bf1f3eecb24d772417e684903654be30659a38d72ae3370c20a60bd2"
+checksum = "af1589b4641b5cd4ebbdf9fcfd2a3038a3bde549a7db3c8299b190b875af6a9d"
 dependencies = [
  "cached",
  "human-sort",

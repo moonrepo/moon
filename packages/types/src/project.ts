@@ -53,6 +53,7 @@ export interface TaskMetadata {
 	emptyInputs: boolean;
 	expanded: boolean;
 	localOnly: boolean;
+	rootLevel: boolean;
 }
 
 export interface Task {

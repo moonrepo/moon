@@ -25,6 +25,8 @@
     - Multiple values can now be passed for enums when `multiple` is enabled.
   - If a variable value is passed as an argument, we no longer prompt for it.
   - Internal variables will now error when passed as an argument.
+- Updated root-level tasks to have no inputs by default, instead of `**/*`. This is typically what
+  users want, to avoid greedy tasks.
 
 #### 🐞 Fixes
 

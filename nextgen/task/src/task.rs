@@ -26,6 +26,9 @@ cacheable!(
 
         // Was configured as a local running task
         pub local_only: bool,
+
+        // Is task defined in a root-level project
+        pub root_level: bool,
     }
 );
 

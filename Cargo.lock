@@ -5901,9 +5901,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b10b79ab852ba2c554c545e102d19bb835f25b6f0837733b9648e08751494da0"
+checksum = "13521e04ff47f9181dce2b0e39863a8886290ab96f5e95a0f4c9117d129dbacd"
 dependencies = [
  "binstall-tar",
  "flate2",
@@ -5973,9 +5973,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.6.3"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daed858df74e14a14fe9ca1db9da8d5f43b39013e2e47201d597ac991b64e8de"
+checksum = "3af1b6c0965b40c9bc2898fe02cafe4cd592abde3c96d62b91cca4e632c0c3b8"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",

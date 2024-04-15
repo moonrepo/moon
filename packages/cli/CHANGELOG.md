@@ -29,6 +29,7 @@
 #### 🐞 Fixes
 
 - Fixed YAML schema validation not allowing custom languages for the project `language` field.
+- Attempted fix for "too many open files" when moon is cleaning cached artifacts.
 
 #### ⚙️ Internal
 

@@ -61,6 +61,7 @@ $ moon query touched-files | moon query projects --affected
 
 - `--affected` - Filter projects that have been affected by touched files. This will only filter
   based on files, and _does not_ include upstream or downstream dependencies.
+- `--dependents` - Include direct dependents of affected projects (requires `--affected`).
 - `--json` - Display the projects in JSON format.
 
 #### Filters

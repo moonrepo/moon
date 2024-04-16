@@ -5,6 +5,7 @@ use miette::IntoDiagnostic;
 use moon::generate_project_graph;
 use moon_common::{path::WorkspaceRelativePathBuf, Id};
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_task::Task;
 use moon_utils::{is_ci, regex};
 use moon_workspace::Workspace;
@@ -22,6 +23,7 @@ use tracing::{debug, trace};
 pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub affected: bool,
+    pub dependents: bool,
     pub id: Option<String>,
     pub json: bool,
     pub language: Option<String>,
@@ -103,31 +105,28 @@ pub async fn load_touched_files(
     Ok(result.files)
 }
 
-pub async fn query_projects(
-    workspace: &mut Workspace,
+fn load_from_query(
+    project_graph: &ProjectGraph,
+    query: &str,
     options: &QueryProjectsOptions,
-) -> AppResult<Vec<Arc<Project>>> {
-    debug!("Querying for projects");
+) -> miette::Result<FxHashMap<Id, Arc<Project>>> {
+    Ok(project_graph
+        .query(moon_query::build_query(query)?)?
+        .into_iter()
+        .filter_map(|project| {
+            if options.affected && !project.is_affected(&options.touched_files) {
+                return None;
+            }
 
-    let project_graph = generate_project_graph(workspace).await?;
+            Some((project.id.clone(), project.to_owned()))
+        })
+        .collect::<FxHashMap<_, _>>())
+}
 
-    // When a MQL input is provided, it takes full precedence over option args
-    if let Some(query) = &options.query {
-        let projects = project_graph
-            .query(moon_query::build_query(query)?)?
-            .into_iter()
-            .filter_map(|project| {
-                if options.affected && !project.is_affected(&options.touched_files) {
-                    return None;
-                }
-
-                Some(project.to_owned())
-            })
-            .collect::<Vec<_>>();
-
-        return Ok(projects);
-    }
-
+fn load_with_regex(
+    project_graph: &ProjectGraph,
+    options: &QueryProjectsOptions,
+) -> miette::Result<FxHashMap<Id, Arc<Project>>> {
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
@@ -136,7 +135,7 @@ pub async fn query_projects(
     let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
-    let mut projects = vec![];
+    let mut projects = FxHashMap::default();
 
     for project in project_graph.get_all()? {
         if options.affected && !project.is_affected(&options.touched_files) {
@@ -197,8 +196,44 @@ pub async fn query_projects(
             }
         }
 
-        projects.push(project.to_owned());
+        projects.insert(project.id.clone(), project.to_owned());
     }
 
     Ok(projects)
+}
+
+pub async fn query_projects(
+    workspace: &mut Workspace,
+    options: &QueryProjectsOptions,
+) -> AppResult<Vec<Arc<Project>>> {
+    debug!("Querying for projects");
+
+    let project_graph = generate_project_graph(workspace).await?;
+
+    let mut projects = if let Some(query) = &options.query {
+        load_from_query(&project_graph, query, options)?
+    } else {
+        load_with_regex(&project_graph, options)?
+    };
+
+    // Is there a better way to do this?
+    if options.dependents {
+        debug!("Including dependent projects");
+
+        let mut dependent_projects = FxHashMap::default();
+
+        for project in projects.values() {
+            for dep_id in project_graph.dependents_of(project)? {
+                if projects.contains_key(dep_id) {
+                    continue;
+                }
+
+                dependent_projects.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
+            }
+        }
+
+        projects.extend(dependent_projects);
+    }
+
+    Ok(projects.into_values().collect::<Vec<_>>())
 }

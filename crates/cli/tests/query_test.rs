@@ -351,6 +351,36 @@ mod projects {
     }
 
     #[test]
+    fn can_include_dependents_for_affected() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
+        );
+        sandbox.enable_git();
+
+        touch_file(&sandbox);
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query")
+                .arg("projects")
+                .arg("--json")
+                .arg("--affected")
+                .arg("--dependents");
+        });
+
+        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
+
+        assert_eq!(ids, string_vec!["advanced", "basic", "noConfig"]);
+        assert!(json.options.affected);
+        assert!(json.options.dependents);
+    }
+
+    #[test]
     fn can_filter_by_affected_via_stdin_json() {
         let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 

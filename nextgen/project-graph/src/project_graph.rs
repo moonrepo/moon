@@ -208,8 +208,12 @@ impl ProjectGraph {
             .collect()
     }
 
-    pub fn into_focused(&self, id: &Id, with_dependents: bool) -> miette::Result<Self> {
-        let project = self.get(id)?;
+    pub fn into_focused(
+        &self,
+        project_locator: &Id,
+        with_dependents: bool,
+    ) -> miette::Result<Self> {
+        let project = self.get(project_locator)?;
         let upstream = self.dependencies_of(&project)?;
         let downstream = self.dependents_of(&project)?;
         let mut nodes = FxHashMap::default();
@@ -221,7 +225,7 @@ impl ProjectGraph {
 
                 if
                 // Self
-                node_id == id ||
+                node_id == &project.id ||
                     // Dependencies
                     upstream.contains(&node_id) ||
                     // Dependents

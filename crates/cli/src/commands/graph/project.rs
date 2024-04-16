@@ -11,7 +11,7 @@ pub struct ProjectGraphArgs {
     #[arg(help = "ID of project to *only* graph")]
     id: Option<Id>,
 
-    #[arg(long, help = "Include dependents of the focused project")]
+    #[arg(long, help = "Include direct dependents of the focused project")]
     dependents: bool,
 
     #[arg(long, help = "Print the graph in DOT format")]

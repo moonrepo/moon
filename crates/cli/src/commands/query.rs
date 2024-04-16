@@ -127,7 +127,7 @@ pub struct QueryProjectsArgs {
     )]
     affected: bool,
 
-    #[arg(long, help = "Include direct dependents of affected projects")]
+    #[arg(long, help = "Include direct dependents of queried projects")]
     dependents: bool,
 
     #[arg(long, help = "Filter projects that match this ID")]

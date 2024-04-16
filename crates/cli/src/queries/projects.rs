@@ -217,8 +217,8 @@ pub async fn query_projects(
     };
 
     // Is there a better way to do this?
-    if options.affected && options.dependents {
-        debug!("Including dependent projects based on affected");
+    if options.dependents {
+        debug!("Including dependent projects");
 
         let mut dependent_projects = FxHashMap::default();
 

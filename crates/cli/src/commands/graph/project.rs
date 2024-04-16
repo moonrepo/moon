@@ -1,6 +1,6 @@
 use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
 use clap::Args;
-use moon::build_project_graph;
+use moon::generate_project_graph;
 use moon_common::Id;
 use moon_workspace::Workspace;
 use starbase::system;
@@ -23,19 +23,11 @@ pub struct ProjectGraphArgs {
 
 #[system]
 pub async fn project_graph(args: ArgsRef<ProjectGraphArgs>, workspace: ResourceMut<Workspace>) {
-    let mut project_graph_builder = build_project_graph(workspace).await?;
+    let mut project_graph = generate_project_graph(workspace).await?;
 
     if let Some(id) = &args.id {
-        project_graph_builder.load(id).await?;
-
-        if args.dependents {
-            project_graph_builder.load_dependents(id).await?;
-        }
-    } else {
-        project_graph_builder.load_all().await?;
+        project_graph = project_graph.into_focused(id, args.dependents)?;
     }
-
-    let project_graph = project_graph_builder.build().await?;
 
     // Force expand all projects
     project_graph.get_all()?;

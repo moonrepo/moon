@@ -1,8 +1,12 @@
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
+import klay from 'cytoscape-klay';
 import type { GraphInfo } from './types';
 
 cytoscape.use(dagre);
+cytoscape.use(klay);
+
+const SUPPORTED_LAYOUTS = ['grid', 'dagre', 'klay', 'breadthfirst'];
 
 function getActionType(label: string) {
 	if (label === 'SyncWorkspace') {
@@ -54,15 +58,22 @@ export function render(element: HTMLElement, data: GraphInfo) {
 		},
 	}));
 
+	// eslint-disable-next-line node/no-unsupported-features/node-builtins
+	let layout = new URLSearchParams(window.location.search).get('layout') ?? 'dagre';
+
+	if (layout && !SUPPORTED_LAYOUTS.includes(layout)) {
+		layout = 'dagre';
+	}
+
 	// https://js.cytoscape.org/
 	return cytoscape({
 		container: element,
 		elements: { edges, nodes },
 		layout: {
 			fit: true,
-			name: 'dagre' as 'cose',
+			name: layout as 'cose',
 			nodeDimensionsIncludeLabels: true,
-			spacingFactor: 1.5,
+			spacingFactor: 1,
 		},
 		style: [
 			{
@@ -75,11 +86,11 @@ export function render(element: HTMLElement, data: GraphInfo) {
 					label: 'data(label)',
 					'line-cap': 'round',
 					'line-color': '#c9eef6', // '#012a4a',
-					'line-opacity': 0.15,
+					'line-opacity': 0.2,
 					'overlay-color': '#c9eef6',
 					'target-arrow-color': '#c9eef6', // '#1a3f5c',
-					'target-arrow-shape': 'tee',
-					'text-opacity': 0.5,
+					'target-arrow-shape': 'chevron',
+					'text-opacity': 0.6,
 					width: 3,
 				},
 			},

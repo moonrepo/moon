@@ -26,12 +26,14 @@
   "dependencies": {
     "cytoscape": "^3.28.1",
     "cytoscape-dagre": "^2.5.0",
+    "cytoscape-klay": "^3.1.4",
     "preact": "^10.19.3"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.7.0",
     "@types/cytoscape": "^3.19.16",
     "@types/cytoscape-dagre": "^2.3.3",
+    "@types/cytoscape-klay": "^3.1.4",
     "autoprefixer": "^10.4.16",
     "eslint-config-preact": "^1.3.0",
     "postcss": "^8.4.32",

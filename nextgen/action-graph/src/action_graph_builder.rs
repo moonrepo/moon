@@ -276,32 +276,26 @@ impl<'app> ActionGraphBuilder<'app> {
         let reqs = RunRequirements::default();
 
         if let TargetScope::Project(project_locator) = &task.target.scope {
-            let project = self.project_graph.get(project_locator)?;
+            let mut projects_to_build = vec![];
 
             // From self project
-            for dep_task in project.tasks.values() {
-                if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
-                    continue;
-                }
+            let self_project = self.project_graph.get(project_locator)?;
 
-                if dep_task.deps.iter().any(|dep| dep.target == task.target) {
-                    if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
-                        indices.push(index);
-                    }
-                }
-            }
+            projects_to_build.push(self_project.clone());
 
             // From other projects
-            for dependent_id in self.project_graph.dependents_of(&project)? {
-                let dep_project = self.project_graph.get(dependent_id)?;
+            for dependent_id in self.project_graph.dependents_of(&self_project)? {
+                projects_to_build.push(self.project_graph.get(dependent_id)?);
+            }
 
-                for dep_task in dep_project.tasks.values() {
+            for project in projects_to_build {
+                for dep_task in project.tasks.values() {
                     if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
                         continue;
                     }
 
                     if dep_task.deps.iter().any(|dep| dep.target == task.target) {
-                        if let Some(index) = self.run_task(&dep_project, dep_task, &reqs)? {
+                        if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
                             indices.push(index);
                         }
                     }

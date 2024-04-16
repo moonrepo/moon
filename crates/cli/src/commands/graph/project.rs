@@ -11,6 +11,9 @@ pub struct ProjectGraphArgs {
     #[arg(help = "ID of project to *only* graph")]
     id: Option<Id>,
 
+    #[arg(long, help = "Include dependents of the focused project")]
+    dependents: bool,
+
     #[arg(long, help = "Print the graph in DOT format")]
     dot: bool,
 
@@ -24,6 +27,10 @@ pub async fn project_graph(args: ArgsRef<ProjectGraphArgs>, workspace: ResourceM
 
     if let Some(id) = &args.id {
         project_graph_builder.load(id).await?;
+
+        if args.dependents {
+            project_graph_builder.load_dependents(id).await?;
+        }
     } else {
         project_graph_builder.load_all().await?;
     }

@@ -206,6 +206,21 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(())
     }
 
+    /// Load dependents of the provided project.
+    pub async fn load_dependents(&mut self, project_locator: &str) -> miette::Result<()> {
+        let (id, index) = self
+            .internal_load(project_locator, &mut FxHashSet::default())
+            .await?;
+
+        // let deps = self
+        //     .graph
+        //     .neighbors_directed(index, Direction::Incoming)
+        //     .map(|idx| &self.graph.node_weight(idx).unwrap().id)
+        //     .collect();
+
+        Ok(())
+    }
+
     /// Load all projects into the graph, as configured in the workspace.
     pub async fn load_all(&mut self) -> miette::Result<()> {
         let ids = self.sources.keys().cloned().collect::<Vec<_>>();

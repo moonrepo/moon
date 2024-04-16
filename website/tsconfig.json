@@ -1,5 +1,8 @@
 {
-  "extends": ["../tsconfig.options.json", "@docusaurus/tsconfig"],
+  "extends": [
+    "../tsconfig.options.json",
+    "@docusaurus/tsconfig"
+  ],
   "compilerOptions": {
     "emitDeclarationOnly": true,
     "noEmit": false,
@@ -7,7 +10,9 @@
     "verbatimModuleSyntax": false,
     "baseUrl": ".",
     "paths": {
-      "@site/*": ["./*"]
+      "@site/*": [
+        "./*"
+      ]
     }
   },
   "include": [

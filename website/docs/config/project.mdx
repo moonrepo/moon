@@ -984,13 +984,12 @@ The [strategy](../concepts/task-inheritance#merge-strategies) to use when mergin
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mutex" />
 
-Creates an exclusive lock on a "virtual resource", preventing other tasks using
-the same "virtual resource" from running concurrently.
+Creates an exclusive lock on a "virtual resource", preventing other tasks using the same "virtual
+resource" from running concurrently.
 
-If you have many tasks that require exclusive access to a resource that can't be
-tracked by Moon (like a database, an ignored file, a file that's not part of
-the project, or a remote resource) you can use the `mutex` option to prevent them
-from running at the same time.
+If you have many tasks that require exclusive access to a resource that can't be tracked by Moon
+(like a database, an ignored file, a file that's not part of the project, or a remote resource) you
+can use the `mutex` option to prevent them from running at the same time.
 
 ```yaml title="moon.yml" {5}
 tasks:

@@ -15,6 +15,8 @@
 #### 🚀 Updates
 
 - Added a `moon templates` command, that lists all available codegen templates.
+- Added a `--dependents` flag to `moon project-graph <id>`, to include downstream dependents of a
+  focused project.
 - Updated `moon ci` to automatically determine base/head revisions based on your current CI provider
   (when applicable).
 - Updated `moon generate` with:
@@ -25,6 +27,11 @@
     - Multiple values can now be passed for enums when `multiple` is enabled.
   - If a variable value is passed as an argument, we no longer prompt for it.
   - Internal variables will now error when passed as an argument.
+- Updated action graph and project graph visualization:
+  - Slightly tweaked the colors to be easier to read.
+  - Updated edges to use chevron arrows.
+  - Added a new layout system to organize node/edges, controlled by the `?layout=` query parameter.
+  - Supported layout options: `dagre` (default), `klay`, `grid`, `breadthfirst`
 - Updated root-level tasks to have no inputs by default, instead of `**/*`. This is typically what
   users want, to avoid greedy tasks.
 
@@ -34,7 +41,7 @@
 - Fixed an issue where Bun and Node would both attempt to install dependencies, resulting in
   collisions.
   - To resolve this issue, we currently prioritize Node over Bun if both tools are enabled.
-  - If you have both and want to use Bun, set Node's package manager to bun
+  - If you have both and want to use Bun, set Node's package manager to
     `node.packageManager: 'bun'`.
 - Attempted fix for "too many open files" when moon is cleaning cached artifacts.
 

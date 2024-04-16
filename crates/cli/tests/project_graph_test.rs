@@ -51,6 +51,27 @@ fn single_project_with_dependencies() {
 }
 
 #[test]
+fn single_project_with_dependents() {
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "projects",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project-graph")
+            .arg("bar")
+            .arg("--dot")
+            .arg("--dependents");
+    });
+
+    assert_snapshot!(assert.output());
+}
+
+#[test]
 fn single_project_no_dependencies() {
     let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 

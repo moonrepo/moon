@@ -127,6 +127,9 @@ pub struct QueryProjectsArgs {
     )]
     affected: bool,
 
+    #[arg(long, help = "Include direct dependents of queried projects")]
+    dependents: bool,
+
     #[arg(long, help = "Filter projects that match this ID")]
     id: Option<String>,
 
@@ -158,6 +161,7 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
     let options = QueryProjectsOptions {
         alias: args.alias,
         affected: args.affected,
+        dependents: args.dependents,
         id: args.id,
         json: args.json,
         language: args.language,

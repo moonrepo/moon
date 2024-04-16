@@ -26,7 +26,7 @@ pub struct ProjectGraphCache<'graph> {
     projects: &'graph ProjectsCache,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ProjectNode {
     pub alias: Option<String>,
     pub index: NodeIndex,
@@ -206,6 +206,60 @@ impl ProjectGraph {
             .iter()
             .map(|(id, node)| (id, &node.source))
             .collect()
+    }
+
+    pub fn into_focused(
+        &self,
+        project_locator: &Id,
+        with_dependents: bool,
+    ) -> miette::Result<Self> {
+        let project = self.get(project_locator)?;
+        let upstream = self.dependencies_of(&project)?;
+        let downstream = self.dependents_of(&project)?;
+        let mut nodes = FxHashMap::default();
+
+        // Create a new graph
+        let graph = self.graph.filter_map(
+            |_, node| {
+                let node_id = &node.id;
+
+                if
+                // Self
+                node_id == &project.id ||
+                    // Dependencies
+                    upstream.contains(&node_id) ||
+                    // Dependents
+                    with_dependents && downstream.contains(&node_id)
+                {
+                    Some(node.clone())
+                } else {
+                    None
+                }
+            },
+            |_, edge| Some(*edge),
+        );
+
+        // Copy over nodes
+        for new_index in graph.node_indices() {
+            let project_id = &graph[new_index].id;
+
+            if let Some(old_node) = self.nodes.get(project_id) {
+                let mut new_node = old_node.to_owned();
+                new_node.index = new_index;
+
+                nodes.insert(project_id.to_owned(), new_node);
+            }
+        }
+
+        Ok(Self {
+            fs_cache: OnceMap::new(),
+            graph,
+            nodes,
+            projects: self.projects.clone(),
+            query_cache: OnceMap::new(),
+            working_dir: self.working_dir.clone(),
+            workspace_root: self.workspace_root.clone(),
+        })
     }
 
     /// Format graph as a DOT string.

@@ -1,0 +1,9 @@
+---
+source: crates/cli/tests/project_graph_test.rs
+expression: assert.output()
+---
+digraph {
+    0 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ label="production" arrowhead=box, arrowtail=box]
+}

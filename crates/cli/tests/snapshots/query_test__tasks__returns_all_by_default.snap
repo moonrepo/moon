@@ -5,10 +5,10 @@ expression: assert.output_standardized()
 platforms
 	:node | node
 	:system | noop
+metadata
+	:build | noop
+	:test | noop
 tasks
 	:internal | build
 	:lint | eslint
 	:test | jest
-metadata
-	:build | noop
-	:test | noop

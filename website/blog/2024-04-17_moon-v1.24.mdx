@@ -13,8 +13,8 @@ tags: []
 ## Auto-detect base/head for `moon ci`
 
 We've updated [`moon ci`](/docs/commands/ci) to try and detect the base and head revisions
-automatically when running in a popular CI provider, like GitLab, Jenkins. For the base revision,
-we'll use the base/target commit SHA or target branch, while the head revision with use the source
+automatically when running in a popular CI provider, like GitLab and Jenkins. For the base revision,
+we'll use the base/target commit SHA or target branch, while the head revision will use the source
 commit SHA or `HEAD`. This is great for pull requests and forks!
 
 With that said, these values can be overwritten with environment variables, or command line
@@ -29,7 +29,32 @@ arguments. Below is the order of precedence:
 > crate. Please refer to that crate for supported providers, and which of them support revision
 > detection (primarily the `base_revision` and `head_revision` fields).
 
+## Include dependents for focused project graph
+
+When running [`moon project-graph <id>`](/docs/commands/project-graph), we visualize a graph of the
+focused project and all of its dependencies (other projects it depends on). However, if you wanted
+to also visualize dependents (other projects that depend on the focused project), this was currently
+not possible.
+
+We felt this information could be useful, so we've added a `--dependents`
+flattenDiagnosticMessageText, which will include direct dependents in the graph.
+
+```shell
+$ moon project-graph server --dependents
+```
+
+We also felt dependent information can be useful when querying projects, so have also added support
+for the `--dependents` flag to the [`moon query projects`](/docs/commands/query/projects) command.
+
+```shell
+$ moon query projects --affected --dependents
+```
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.24.0) for a full list
 of changes.
+
+- Updated `moon generate` with better argument to variable handling.
+- Updated action graph and project graph visualization to be more readable.
+- Updated root-level tasks to have no inputs by default, instead of `**/*`.

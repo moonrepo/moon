@@ -168,6 +168,7 @@ const sidebars: SidebarsConfig = {
 				},
 				'commands/task',
 				'commands/teardown',
+				'commands/templates',
 				'commands/upgrade',
 			],
 			link: {

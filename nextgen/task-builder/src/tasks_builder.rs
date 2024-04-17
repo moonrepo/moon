@@ -516,6 +516,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.merge_outputs = *merge_outputs;
             }
 
+            if let Some(mutex) = &config.mutex {
+                options.mutex = Some(mutex.clone());
+            }
+
             if let Some(output_style) = &config.output_style {
                 options.output_style = Some(*output_style);
             }

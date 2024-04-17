@@ -1098,6 +1098,19 @@
           ],
           "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
         },
+        "mutex": {
+          "title": "mutex",
+          "description": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently."
+        },
         "outputStyle": {
           "title": "outputStyle",
           "description": "The style in which task output will be printed to the console.",

@@ -389,6 +389,12 @@
             "type": "string"
           }
         },
+        "autoCleanCache": {
+          "title": "autoCleanCache",
+          "description": "Automatically clean the cache after every task run.",
+          "default": true,
+          "type": "boolean"
+        },
         "cacheLifetime": {
           "title": "cacheLifetime",
           "description": "The lifetime in which task outputs will be cached.",

@@ -149,6 +149,12 @@ export interface RunnerConfig {
 	 */
 	archivableTargets: string[];
 	/**
+	 * Automatically clean the cache after every task run.
+	 *
+	 * @default true
+	 */
+	autoCleanCache: boolean;
+	/**
 	 * The lifetime in which task outputs will be cached.
 	 *
 	 * @default '7 days'
@@ -386,6 +392,12 @@ export interface PartialRunnerConfig {
 	 * cached and persisted.
 	 */
 	archivableTargets?: string[] | null;
+	/**
+	 * Automatically clean the cache after every task run.
+	 *
+	 * @default true
+	 */
+	autoCleanCache?: boolean | null;
 	/**
 	 * The lifetime in which task outputs will be cached.
 	 *

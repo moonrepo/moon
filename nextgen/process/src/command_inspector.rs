@@ -246,11 +246,7 @@ impl<'cmd> CommandInspector<'cmd> {
             workspace_root = Some(self.get_workspace_root());
         }
 
-        let working_dir_field = self
-            .command
-            .cwd
-            .as_deref()
-            .or_else(|| workspace_root.as_deref());
+        let working_dir_field = self.command.cwd.as_deref().or(workspace_root.as_deref());
 
         debug!(
             env_vars = ?env_vars_field,

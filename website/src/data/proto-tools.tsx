@@ -454,17 +454,6 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
 	},
-	tilt: {
-		author: 'appthrust',
-		bins: ['tilt'],
-		description: 'A toolkit for fixing the pains of microservice development.',
-		homepageUrl: 'https://tilt.dev',
-		name: 'tilt',
-		pluginLocator:
-			'source:https://raw.githubusercontent.com/appthrust/proto-toml-plugins/main/tilt/plugin.toml',
-		pluginType: 'toml',
-		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
-	},
 	kubectl: {
 		author: 'stk0vrfl0w',
 		bins: ['kubectl'],
@@ -643,6 +632,17 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/stk0vrfl0w/proto-toml-plugins/main/plugins/terragrunt.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/stk0vrfl0w/proto-toml-plugins/blob/main/plugins/terragrunt.toml',
+	},
+	tilt: {
+		author: 'appthrust',
+		bins: ['tilt'],
+		description: 'A toolkit for fixing the pains of microservice development.',
+		homepageUrl: 'https://tilt.dev',
+		name: 'tilt',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/appthrust/proto-toml-plugins/main/tilt/plugin.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/appthrust/proto-toml-plugins',
 	},
 	timoni: {
 		author: 'b4nst',

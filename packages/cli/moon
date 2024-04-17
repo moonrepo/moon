@@ -1,1 +1,3 @@
-This file is necessary for package managers to link the core binary!
+#!/bin/sh
+
+echo "This file is necessary for package managers to link the core binary!"

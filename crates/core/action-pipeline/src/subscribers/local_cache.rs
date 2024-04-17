@@ -82,7 +82,7 @@ impl Subscriber for LocalCacheSubscriber {
                 if workspace.config.runner.auto_clean_cache {
                     workspace
                         .cache_engine
-                        .clean_stale_cache(&workspace.config.runner.cache_lifetime)?;
+                        .clean_stale_cache(&workspace.config.runner.cache_lifetime, false)?;
                 }
             }
             _ => {}

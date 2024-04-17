@@ -457,8 +457,7 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	tilt: {
 		author: 'appthrust',
 		bins: ['tilt'],
-		description:
-			'A toolkit for fixing the pains of microservice development.',
+		description: 'A toolkit for fixing the pains of microservice development.',
 		homepageUrl: 'https://tilt.dev',
 		name: 'tilt',
 		pluginLocator:

@@ -1,3 +1,8 @@
 #!/bin/sh
 
+# This script is a placeholder used by package managers for linking the core binary.
+# To run the moon tool directly from the repository, use the following command:
+# cargo run
+
 echo "This file is necessary for package managers to link the core binary!"
+echo "If you want to run moon from the repo, please use: cargo run"

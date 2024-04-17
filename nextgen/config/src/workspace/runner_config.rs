@@ -8,6 +8,10 @@ pub struct RunnerConfig {
     /// cached and persisted.
     pub archivable_targets: Vec<Target>,
 
+    /// Automatically clean the cache after every task run.
+    #[setting(default = true)]
+    pub auto_clean_cache: bool,
+
     /// The lifetime in which task outputs will be cached.
     #[setting(default = "7 days")]
     pub cache_lifetime: String,

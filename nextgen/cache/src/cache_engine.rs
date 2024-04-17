@@ -62,20 +62,33 @@ impl CacheEngine {
         self.cache(self.states_dir.join(path.as_ref()))
     }
 
-    pub fn clean_stale_cache(&self, lifetime: &str) -> miette::Result<(usize, u64)> {
+    pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
         let duration =
             parse_duration(lifetime).map_err(|e| miette::miette!("Invalid lifetime: {e}"))?;
 
         debug!(
-            "Cleaning up and deleting stale cache older than \"{}\"",
+            "Cleaning up and deleting stale cached artifacts older than \"{}\"",
             lifetime
         );
 
-        let stats = fs::remove_dir_stale_contents(&self.cache_dir, duration)?;
-        let deleted = stats.files_deleted;
-        let bytes = stats.bytes_saved;
+        let mut deleted = 0;
+        let mut bytes = 0;
 
-        debug!("Deleted {} files and saved {} bytes", deleted, bytes);
+        if all {
+            let stats = fs::remove_dir_stale_contents(&self.cache_dir, duration)?;
+            deleted += stats.files_deleted;
+            bytes += stats.bytes_saved;
+        } else {
+            let stats = fs::remove_dir_stale_contents(self.cache_dir.join("hashes"), duration)?;
+            deleted += stats.files_deleted;
+            bytes += stats.bytes_saved;
+
+            let stats = fs::remove_dir_stale_contents(self.cache_dir.join("outputs"), duration)?;
+            deleted += stats.files_deleted;
+            bytes += stats.bytes_saved;
+        }
+
+        debug!("Deleted {} artifacts and saved {} bytes", deleted, bytes);
 
         Ok((deleted, bytes))
     }

@@ -1108,8 +1108,7 @@
             {
               "type": "null"
             }
-          ],
-          "markdownDescription": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently."
+          ]
         },
         "outputStyle": {
           "title": "outputStyle",

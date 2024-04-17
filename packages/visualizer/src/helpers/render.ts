@@ -6,8 +6,6 @@ import type { GraphInfo } from './types';
 cytoscape.use(dagre);
 cytoscape.use(klay);
 
-const SUPPORTED_LAYOUTS = ['grid', 'dagre', 'klay', 'breadthfirst'];
-
 function getActionType(label: string) {
 	if (label === 'SyncWorkspace') {
 		return 'sync-workspace';
@@ -44,7 +42,7 @@ function getShortDepLabel(label: string) {
 	return label;
 }
 
-export function render(element: HTMLElement, data: GraphInfo) {
+export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 	const nodes = data.nodes.map((n) => ({
 		data: { id: n.id.toString(), label: n.label, type: getActionType(n.label) },
 	}));
@@ -57,13 +55,6 @@ export function render(element: HTMLElement, data: GraphInfo) {
 			target: e.target.toString(),
 		},
 	}));
-
-	// eslint-disable-next-line node/no-unsupported-features/node-builtins
-	let layout = new URLSearchParams(window.location.search).get('layout') ?? 'dagre';
-
-	if (layout && !SUPPORTED_LAYOUTS.includes(layout)) {
-		layout = 'dagre';
-	}
 
 	// https://js.cytoscape.org/
 	return cytoscape({
@@ -86,7 +77,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 					label: 'data(label)',
 					'line-cap': 'round',
 					'line-color': '#c9eef6', // '#012a4a',
-					'line-opacity': 0.2,
+					'line-opacity': 0.18,
 					'overlay-color': '#c9eef6',
 					'target-arrow-color': '#c9eef6', // '#1a3f5c',
 					'target-arrow-shape': 'chevron',

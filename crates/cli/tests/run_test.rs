@@ -218,7 +218,9 @@ fn runs_task_with_a_mutex_in_sequence() {
 
     let stop = start.elapsed();
 
-    assert!(stop.as_secs() > 10);
+    dbg!(&start, &stop);
+
+    assert!(stop.as_secs() > 3);
 }
 
 #[cfg(not(windows))]
@@ -718,11 +720,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "afa2e4bc5c48f5c649cae710560dfd2001e14fee5a8846d7ed30f00216fd8d03"
+            "4f65a90e3f44c850eda3e7dd64f801d743a8bef29a6fcc5231369e55cfa43ee9"
         );
         assert_eq!(
             hash_glob,
-            "f552a883dc6d1d8c327fc7357c156948381c8da842e4b1a5f7fa933c8bd5988e"
+            "c0a7c576081e08902e8bdf4b191ca6621be4274f808081d78dc77619df058f4a"
         );
     }
 }

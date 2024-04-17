@@ -418,20 +418,7 @@ notifier:
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#runner" />
 
-Configures aspects of the action pipeline.
-
-### `cacheLifetime`
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#cacheLifetime" />
-
-The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
-the action pipeline. Defaults to "7 days". This field requires an integer and a timeframe unit that
-can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
-
-```yaml title=".moon/workspace.yml" {2}
-runner:
-  cacheLifetime: '24 hours'
-```
+Configures aspects of task running and the action pipeline.
 
 ### `archivableTargets`
 
@@ -450,6 +437,32 @@ runner:
 
 > This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
 > persist tar archives located in `.moon/cache/outputs`.
+
+### `autoCleanCache`<VersionLabel version="1.24.0" />
+
+<HeadingApiLink to="/api/types/interface/RunnerConfig#autoCleanCache" />
+
+Automatically cleans cached artifacts older than [`cacheLifetime`](#cachelifetime) from the cache
+directory (`.moon/cache`) after every run. This is useful for keeping the cache directory lean.
+Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+runner:
+  autoCleanCache: false
+```
+
+### `cacheLifetime`
+
+<HeadingApiLink to="/api/types/interface/RunnerConfig#cacheLifetime" />
+
+The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
+the action pipeline. Defaults to "7 days". This field requires an integer and a timeframe unit that
+can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
+
+```yaml title=".moon/workspace.yml" {2}
+runner:
+  cacheLifetime: '24 hours'
+```
 
 ### `inheritColorsForPipedTasks`
 

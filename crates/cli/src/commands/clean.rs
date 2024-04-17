@@ -13,7 +13,9 @@ pub struct CleanArgs {
 pub async fn clean(args: ArgsRef<CleanArgs>, workspace: ResourceRef<Workspace>) {
     let done = create_progress_bar(format!("Cleaning stale cache older than {}", args.lifetime));
 
-    let (files_deleted, bytes_saved) = workspace.cache_engine.clean_stale_cache(&args.lifetime)?;
+    let (files_deleted, bytes_saved) = workspace
+        .cache_engine
+        .clean_stale_cache(&args.lifetime, true)?;
 
     done(
         format!("Deleted {files_deleted} files and saved {bytes_saved} bytes"),

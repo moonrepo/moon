@@ -89,6 +89,11 @@ export interface TaskOptionsConfig {
 	 */
 	mergeOutputs: TaskMergeStrategy | null;
 	/**
+	 * Creates an exclusive lock on a virtual resource, preventing other tasks
+	 * using the same resource from running concurrently.
+	 */
+	mutex: string | null;
+	/**
 	 * The style in which task output will be printed to the console.
 	 *
 	 * @default 'buffer'
@@ -302,6 +307,11 @@ export interface PartialTaskOptionsConfig {
 	 * @default 'append'
 	 */
 	mergeOutputs?: TaskMergeStrategy | null;
+	/**
+	 * Creates an exclusive lock on a virtual resource, preventing other tasks
+	 * using the same resource from running concurrently.
+	 */
+	mutex?: string | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *

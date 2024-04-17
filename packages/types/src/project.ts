@@ -39,6 +39,7 @@ export interface TaskOptions {
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
 	outputStyle: TaskOutputStyle | null;
+	mutex: string | null;
 	persistent: boolean;
 	retryCount: number;
 	runDepsInParallel: boolean;

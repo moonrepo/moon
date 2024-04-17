@@ -31,6 +31,8 @@ cacheable!(
 
         pub merge_outputs: TaskMergeStrategy,
 
+        pub mutex: Option<String>,
+
         pub output_style: Option<TaskOutputStyle>,
 
         pub persistent: bool,
@@ -67,6 +69,7 @@ impl Default for TaskOptions {
             merge_env: TaskMergeStrategy::Append,
             merge_inputs: TaskMergeStrategy::Append,
             merge_outputs: TaskMergeStrategy::Append,
+            mutex: None,
             output_style: None,
             persistent: false,
             retry_count: 0,

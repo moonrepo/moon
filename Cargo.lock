@@ -3059,11 +3059,13 @@ name = "moon_action_context"
 version = "0.0.1"
 dependencies = [
  "clap",
+ "dashmap",
  "moon_common",
  "moon_target",
  "relative-path",
  "rustc-hash",
  "serde",
+ "tokio",
 ]
 
 [[package]]

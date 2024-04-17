@@ -1,9 +1,10 @@
 use clap::ValueEnum;
+use dashmap::DashMap;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 #[derive(ValueEnum, Clone, Debug, Deserialize, Serialize)]
 pub enum ProfileType {
@@ -32,6 +33,9 @@ pub struct ActionContext {
     pub affected_only: bool,
 
     pub initial_targets: FxHashSet<TargetLocator>,
+
+    #[serde(skip)]
+    pub named_mutexes: DashMap<String, Arc<tokio::sync::Mutex<()>>>,
 
     pub passthrough_args: Vec<String>,
 

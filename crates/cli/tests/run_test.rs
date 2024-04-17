@@ -200,6 +200,27 @@ fn disambiguates_same_tasks_with_diff_args_envs() {
     assert.success();
 }
 
+#[test]
+fn runs_task_with_a_mutex_in_sequence() {
+    let sandbox = cases_sandbox();
+    let start = std::time::Instant::now();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run")
+            .arg("mutex:run1")
+            .arg("mutex:run2")
+            .arg("mutex:run3")
+            .arg("--log")
+            .arg("debug");
+    });
+
+    assert.success();
+
+    let stop = start.elapsed();
+
+    assert!(stop.as_secs() > 10);
+}
+
 #[cfg(not(windows))]
 mod general {
     use super::*;

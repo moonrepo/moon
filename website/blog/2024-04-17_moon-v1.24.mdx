@@ -1,14 +1,52 @@
 ---
 slug: moon-v1.24
-title: moon v1.24 - ???
+title: moon v1.24 - Task mutexes, auto-detect revisions, project dependents, and more!
 authors: [milesj]
-tags: []
-# image: ./img/moon/v1.23.png
+tags: [task, mutex, ci, base, head, project-graph, dependents]
+image: ./img/moon/v1.24.png
 ---
 
-???
+This is a light release that focused solely in requests and improvements from the community.
 
 <!--truncate-->
+
+## Exclusive resources with task mutexes
+
+Some tasks may require exclusive access to a resource, like a database, file, or network connection,
+but other parallel running tasks may also require access to the same resource. When both of these
+tasks run, they may conflict with each other, causing one or both to fail. This wasn't an easy
+problem to solve in moon, until now!
+
+Thanks to [Andrés Correa Casablanca](https://github.com/castarco) for the idea and implementation,
+tasks now support a new option called [`mutex`](/docs/config/project#mutex). This option allows you
+to specify a unique name (across the entire workspace) for the mutex, which will be used to lock the
+task from running if another task with the same mutex name is already running.
+
+Take the following for example:
+
+```yaml
+# server/moon.yml
+tasks:
+  build:
+    command: 'build-server'
+    options:
+      mutex: 'app'
+
+# client/moon.yml
+tasks:
+  build:
+    command: 'build-client'
+    options:
+      mutex: 'app'
+```
+
+When [`moon run :build`](/docs/commands/run) or [`moon ci`](/docs/commands/ci) is ran, both tasks
+will be parallelized within our pipeline, _but_ only one of them will run at a time. If the `server`
+task is running, the `client` task will wait until the `server` task is complete. This ensures that
+both tasks don't conflict with each other.
+
+This could technically be solved through task `deps`, but with a mutex, it allows you to decouple
+project and task dependencies, and instead focus on a virtual resource that is being locked.
 
 ## Auto-detect base/head for `moon ci`
 
@@ -55,6 +93,7 @@ $ moon query projects --affected --dependents
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.24.0) for a full list
 of changes.
 
+- Added an experimental `moon templates` command, that lists all available codegen templates.
 - Added a `runner.autoCleanCache` setting to `.moon/workspace.yml`, allowing the post-run clean
   mechanism to be controlled.
 - Updated `moon generate` with better argument to variable handling.

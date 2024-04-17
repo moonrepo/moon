@@ -11,7 +11,8 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::time::SystemTime;
+use tokio::sync::{Mutex, RwLock};
 
 const LOG_TARGET: &str = "moon:action:run-task";
 
@@ -108,8 +109,29 @@ pub async fn run_task(
         };
 
         if let Some(mutex_name) = &task.options.mutex {
+            if !ctx.named_mutexes.contains_key(mutex_name) {
+                ctx.named_mutexes
+                    .insert(mutex_name.to_owned(), Arc::new(Mutex::new(())));
+            }
+
+            debug!(
+                target: LOG_TARGET,
+                "Waiting to acquire {} mutex lock for {} before running ({:?})",
+                color::id(mutex_name),
+                color::label(&task.target),
+                SystemTime::now()
+            );
+
             if let Some(named_mutex) = ctx.named_mutexes.get(mutex_name) {
                 let _guard = named_mutex.lock().await;
+
+                debug!(
+                    target: LOG_TARGET,
+                    "Acquired {} mutex lock for {} ({:?})",
+                    color::id(mutex_name),
+                    color::label(&task.target),
+                    SystemTime::now()
+                );
 
                 runner.create_and_run_command(&ctx, runtime).await
             } else {

@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where versions in `.prototools` weren't being respected.
+- Fixed task `deps.args` and `deps.env` not expanding tokens correctly.
 
 ## 1.24.0
 

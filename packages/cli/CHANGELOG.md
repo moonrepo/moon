@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where versions in `.prototools` weren't being respected.
+
 ## 1.24.0
 
 #### 🚀 Updates

@@ -696,7 +696,35 @@ mod tasks_expander {
                 assert_eq!(
                     task.deps,
                     vec![TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        target: Target::parse("project:test").unwrap(),
+                        ..TaskDependencyConfig::default()
+                    }]
+                );
+            }
+
+            #[test]
+            fn supports_tokens_in_args() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    args: TaskArgs::String("$project $language".into()),
+                    target: Target::parse("test").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::List(vec!["project".into(), "unknown".into()]),
                         target: Target::parse("project:test").unwrap(),
                         ..TaskDependencyConfig::default()
                     }]
@@ -733,6 +761,35 @@ mod tasks_expander {
             }
 
             #[test]
+            fn supports_token_in_env() {
+                let sandbox = create_empty_sandbox();
+                let project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                let mut task = create_task();
+
+                task.deps.push(TaskDependencyConfig {
+                    env: FxHashMap::from_iter([("FOO".into(), "$project-$language".into())]),
+                    target: Target::parse("test").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let context =
+                    create_context_with_query(&project, sandbox.path(), |i| query.none(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![TaskDependencyConfig {
+                        args: TaskArgs::None,
+                        env: FxHashMap::from_iter([("FOO".into(), "project-unknown".into())]),
+                        target: Target::parse("project:test").unwrap(),
+                        optional: None,
+                    }]
+                );
+            }
+
+            #[test]
             fn passes_args_and_env_through() {
                 let sandbox = create_empty_sandbox();
                 let project = create_project_with_tasks(sandbox.path(), "project");
@@ -754,7 +811,7 @@ mod tasks_expander {
                 assert_eq!(
                     task.deps,
                     vec![TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
                         env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                         target: Target::parse("project:test").unwrap(),
                         optional: None,
@@ -790,19 +847,19 @@ mod tasks_expander {
                     task.deps,
                     vec![
                         TaskDependencyConfig {
-                            args: TaskArgs::String("a b c".into()),
+                            args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
                             env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                             target: Target::parse("foo:build").unwrap(),
                             optional: None,
                         },
                         TaskDependencyConfig {
-                            args: TaskArgs::String("a b c".into()),
+                            args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
                             env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                             target: Target::parse("bar:build").unwrap(),
                             optional: None,
                         },
                         TaskDependencyConfig {
-                            args: TaskArgs::String("a b c".into()),
+                            args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
                             env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
                             target: Target::parse("baz:build").unwrap(),
                             optional: None,

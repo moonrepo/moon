@@ -2,9 +2,9 @@ use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::TaskDependencyConfig;
+use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
-use moon_task::{Target, TargetScope, Task};
+use moon_task::{parse_task_args, Target, TargetScope, Task};
 use rustc_hash::FxHashMap;
 use tracing::{trace, warn};
 
@@ -106,9 +106,19 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             }
 
             // Add the dep if it has not already been
+            let mut dep_args = parse_task_args(&dep.args)?;
+
+            if !dep_args.is_empty() {
+                dep_args = self.token.expand_args_with_task(task, &dep_args)?;
+            }
+
             let dep = TaskDependencyConfig {
-                args: dep.args.clone(),
-                env: dep.env.clone(),
+                args: if dep_args.is_empty() {
+                    TaskArgs::None
+                } else {
+                    TaskArgs::List(dep_args)
+                },
+                env: self.token.expand_env_with_task(task, &dep.env)?,
                 optional: dep.optional,
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,
             };
@@ -165,9 +175,6 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 }
                 // id:task
                 TargetScope::Project(project_locator) => {
-                    if dep.optional.is_some() {
-                        // log a message to the user to let them know that this is effectless
-                    }
                     if project.matches_locator(project_locator) {
                         if dep_target.task_id == task.id {
                             // Avoid circular references

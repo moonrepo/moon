@@ -222,18 +222,53 @@
       ]
     },
     "LanguageType": {
-      "type": "string",
-      "enum": [
-        "bash",
-        "batch",
-        "go",
-        "javascript",
-        "php",
-        "python",
-        "ruby",
-        "rust",
-        "typescript",
-        "unknown"
+      "oneOf": [
+        {
+          "title": "Bash",
+          "const": "bash"
+        },
+        {
+          "title": "Batch",
+          "const": "batch"
+        },
+        {
+          "title": "Go",
+          "const": "go"
+        },
+        {
+          "title": "JavaScript",
+          "const": "javascript"
+        },
+        {
+          "title": "Php",
+          "const": "php"
+        },
+        {
+          "title": "Python",
+          "const": "python"
+        },
+        {
+          "title": "Ruby",
+          "const": "ruby"
+        },
+        {
+          "title": "Rust",
+          "const": "rust"
+        },
+        {
+          "title": "TypeScript",
+          "const": "typescript"
+        },
+        {
+          "title": "Unknown",
+          "description": "Not explicitly set or detected.",
+          "const": "unknown"
+        },
+        {
+          "title": "Other",
+          "description": "An unsupported language.",
+          "type": "string"
+        }
       ]
     },
     "OwnersConfig": {
@@ -1062,6 +1097,18 @@
             }
           ],
           "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
+        },
+        "mutex": {
+          "title": "mutex",
+          "description": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "outputStyle": {
           "title": "outputStyle",

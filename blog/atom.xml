@@ -2,11 +2,87 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-03-25T00:00:00.000Z</updated>
+    <updated>2024-04-17T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.24 - Task mutexes, auto-detect revisions, project dependents, and more!]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.24</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.24"/>
+        <updated>2024-04-17T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This is a light release that focused solely in requests and improvements from the community.]]></summary>
+        <content type="html"><![CDATA[<p>This is a light release that focused solely in requests and improvements from the community.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="exclusive-resources-with-task-mutexes">Exclusive resources with task mutexes<a href="https://moonrepo.dev/blog/moon-v1.24#exclusive-resources-with-task-mutexes" class="hash-link" aria-label="Direct link to Exclusive resources with task mutexes" title="Direct link to Exclusive resources with task mutexes">​</a></h2>
+<p>Some tasks may require exclusive access to a resource, like a database, file, or network connection,
+but other parallel running tasks may also require access to the same resource. When both of these
+tasks run, they may conflict with each other, causing one or both to fail. This wasn't an easy
+problem to solve in moon, until now!</p>
+<p>Thanks to <a href="https://github.com/castarco" target="_blank" rel="noopener noreferrer">Andrés Correa Casablanca</a> for the idea and implementation,
+tasks now support a new option called <a href="https://moonrepo.dev/docs/config/project#mutex"><code>mutex</code></a>. This option allows you
+to specify a unique name (across the entire workspace) for the mutex, which will be used to lock the
+task from running if another task with the same mutex name is already running.</p>
+<p>Take the following for example:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># server/moon.yml</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'build-server'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">mutex</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'app'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># client/moon.yml</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'build-client'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">mutex</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'app'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>When <a href="https://moonrepo.dev/docs/commands/run"><code>moon run :build</code></a> or <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> is ran, both tasks
+will be parallelized within our pipeline, <em>but</em> only one of them will run at a time. If the <code>server</code>
+task is running, the <code>client</code> task will wait until the <code>server</code> task is complete. This ensures that
+both tasks don't conflict with each other.</p>
+<p>This could technically be solved through task <code>deps</code>, but with a mutex, it allows you to decouple
+project and task dependencies, and instead focus on a virtual resource that is being locked.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="auto-detect-basehead-for-moon-ci">Auto-detect base/head for <code>moon ci</code><a href="https://moonrepo.dev/blog/moon-v1.24#auto-detect-basehead-for-moon-ci" class="hash-link" aria-label="Direct link to auto-detect-basehead-for-moon-ci" title="Direct link to auto-detect-basehead-for-moon-ci">​</a></h2>
+<p>We've updated <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> to try and detect the base and head revisions
+automatically when running in a popular CI provider, like GitLab and Jenkins. For the base revision,
+we'll use the base/target commit SHA or target branch, while the head revision will use the source
+commit SHA or <code>HEAD</code>. This is great for pull requests and forks!</p>
+<p>With that said, these values can be overwritten with environment variables, or command line
+arguments. Below is the order of precedence:</p>
+<ul>
+<li><code>MOON_BASE</code> / <code>MOON_HEAD</code> environment variables</li>
+<li><code>--base</code> / <code>--head</code> command line arguments</li>
+<li><code>base_revision</code> / <code>head_revision</code> via CI provider</li>
+<li><code>vcs.defaultBranch</code> setting / <code>HEAD</code> literal value</li>
+</ul>
+<blockquote>
+<p>This functionality is provided by the <a href="https://github.com/milesj/rust-cicd-env" target="_blank" rel="noopener noreferrer"><code>ci_env</code></a> Rust
+crate. Please refer to that crate for supported providers, and which of them support revision
+detection (primarily the <code>base_revision</code> and <code>head_revision</code> fields).</p>
+</blockquote>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="include-dependents-for-focused-project-graph">Include dependents for focused project graph<a href="https://moonrepo.dev/blog/moon-v1.24#include-dependents-for-focused-project-graph" class="hash-link" aria-label="Direct link to Include dependents for focused project graph" title="Direct link to Include dependents for focused project graph">​</a></h2>
+<p>When running <a href="https://moonrepo.dev/docs/commands/project-graph"><code>moon project-graph &lt;id&gt;</code></a>, we visualize a graph of the
+focused project and all of its dependencies (other projects it depends on). However, if you wanted
+to also visualize dependents (other projects that depend on the focused project), this was currently
+not possible.</p>
+<p>We felt this information could be useful, so we've added a <code>--dependents</code>
+flattenDiagnosticMessageText, which will include direct dependents in the graph.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon project-graph server </span><span class="token parameter variable" style="color:#fef9c3">--dependents</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>We also felt dependent information can be useful when querying projects, so have also added support
+for the <code>--dependents</code> flag to the <a href="https://moonrepo.dev/docs/commands/query/projects"><code>moon query projects</code></a> command.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon query projects </span><span class="token parameter variable" style="color:#fef9c3">--affected</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--dependents</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.24#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.24.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added an experimental <code>moon templates</code> command, that lists all available codegen templates.</li>
+<li>Added a <code>runner.autoCleanCache</code> setting to <code>.moon/workspace.yml</code>, allowing the post-run clean
+mechanism to be controlled.</li>
+<li>Updated <code>moon generate</code> with better argument to variable handling.</li>
+<li>Updated action graph and project graph visualization to be more readable.</li>
+<li>Updated root-level tasks to have no inputs by default, instead of <code>**/*</code>.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="task" term="task"/>
+        <category label="mutex" term="mutex"/>
+        <category label="ci" term="ci"/>
+        <category label="base" term="base"/>
+        <category label="head" term="head"/>
+        <category label="project-graph" term="project-graph"/>
+        <category label="dependents" term="dependents"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.23</id>
@@ -1417,80 +1493,5 @@ variations (version, alias, requirement, range).</li>
         <category label="proto" term="proto"/>
         <category label="linux" term="linux"/>
         <category label="musl" term="musl"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.20 - New shims and binaries management]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.20</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.20"/>
-        <updated>2023-10-20T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're reworking how shims and binaries work.]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're reworking how shims and binaries work.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="shims-and-binaries-breaking">Shims <em>and</em> Binaries (breaking)<a href="https://moonrepo.dev/blog/proto-v0.20#shims-and-binaries-breaking" class="hash-link" aria-label="Direct link to shims-and-binaries-breaking" title="Direct link to shims-and-binaries-breaking">​</a></h2>
-<p>Since proto's inception, we've used shims as a way to execute installed tools. This allowed us to
-wrap the underlying tool binary to provide additional functionality, such as automatic version
-detection, runtime hooks, and more. However, this approach has some limitations, such as:</p>
-<ul>
-<li>Shims are forced onto you and there's no way to use proto without shims.</li>
-<li>Shims are slower than executing the native binary, upwards of 10x slower. While this equates in
-milliseconds, it can be noticeable dependending on the tool.</li>
-<li>For Windows, our shim files are <code>.cmd</code> <em>and not</em> <code>.exe</code>. This causes a lot of weird and unexpected
-problems when an environment expects a real executable, or uses a hard-coded <code>.exe</code> extension.</li>
-</ul>
-<p>To remedy this, we're introducing both a shim and non-shim approach, which has resulted in a pretty
-big breaking change. Shims are now generated in <code>~/.proto/shims</code> (instead of <code>~/.proto/bin</code>), while
-<code>~/.proto/bin</code> will now store symlinks to native binaries. To migrate to this new pattern, we're
-introducing a new <code>proto migrate</code> command (this only needs to be ran once).</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto upgrade</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto migrate v0.20 </span><span class="token parameter variable" style="color:#fef9c3">--log</span><span class="token plain"> debug</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="how-it-works">How it works<a href="https://moonrepo.dev/blog/proto-v0.20#how-it-works" class="hash-link" aria-label="Direct link to How it works" title="Direct link to How it works">​</a></h3>
-<p>When installing proto for the first time, or running the <code>proto migrate</code> command, we prepend <code>PATH</code>
-with <code>$PROTO_HOME/shims:$PROTO_HOME/bin</code>. This allows shims to be executed <em>first</em> and fallthrough
-to native binaries if a shim does not exist (for example, <code>.exe</code> on Windows).</p>
-<p>Furthermore, if you'd prefer to <em>only use</em> shims, or <em>only use</em> binaries, you can update <code>PATH</code> and
-remove the unwanted directory path.</p>
-<p>And lastly, if shims are causing problems, you can now easily reference the native binaries
-directly. This was rather complicated before.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="comparison">Comparison<a href="https://moonrepo.dev/blog/proto-v0.20#comparison" class="hash-link" aria-label="Direct link to Comparison" title="Direct link to Comparison">​</a></h3>
-<table><thead><tr><th></th><th>Shims</th><th>Binaries</th></tr></thead><tbody><tr><td><strong>Location</strong></td><td><code>~/.proto/shims</code></td><td><code>~/.proto/bin</code></td></tr><tr><td><strong>Created as</strong></td><td>Scripts that run <code>proto run</code></td><td>Symlinks to the native binary</td></tr><tr><td><strong>Version executed</strong></td><td>Detects version at runtime</td><td>Last version that was installed + pinned</td></tr><tr><td><strong>Supported for</strong></td><td>All tools</td><td>Only tools that support native execution (may not work for <code>.js</code> files)</td></tr><tr><td><strong>Additional files</strong></td><td>Creates extra files (like <code>bunx</code>, <code>node-gyp</code>, etc)</td><td>Only links the primary binary</td></tr></tbody></table>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="support-for-minisign-checksums">Support for minisign checksums<a href="https://moonrepo.dev/blog/proto-v0.20#support-for-minisign-checksums" class="hash-link" aria-label="Direct link to Support for minisign checksums" title="Direct link to Support for minisign checksums">​</a></h2>
-<p>When proto installs a tool, it runs a process known as checksum verification, where we ensure the
-download hasn't been modified maliciously in anyway. Historically we only supported SHA256
-checksums, but now, we also support the new <a href="https://jedisct1.github.io/minisign/" target="_blank" rel="noopener noreferrer">minisign</a> tool,
-used by popular tools like <a href="https://ziglang.org/" target="_blank" rel="noopener noreferrer">Zig</a>.</p>
-<p>If you're building a plugin for a tool that uses minisign, you can use the new
-<a href="https://moonrepo.dev/docs/proto/wasm-plugin#downloading-pre-builts"><code>checksum_public_key</code></a> (WASM) or
-<a href="https://moonrepo.dev/docs/proto/toml-plugin#downloading-and-installing"><code>install.checksum-public-key</code></a> (TOML) field to
-provide the public key for use in verification.</p>
-<p>When the checksum URL ends in a <code>.minisig</code> extension, proto will automatically use minisign for
-checksum verification!</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">install</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">checksum-url</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://domain.com/some/path/to/checksum.minisig"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">checksum-public-key</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"untrusted comment: ..."</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.20#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.20.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Updated <code>proto use</code> to install tools in parallel.</li>
-<li>Updated <code>proto plugins</code> and <code>proto tools</code> to load plugins in parallel.</li>
-<li>Updated <code>proto run</code> to error when the tool attempts to self-upgrade outside of proto.</li>
-<li>Rust plugin<!-- -->
-<ul>
-<li>Will now attempt to install <code>rustup</code> if it does not exist on the current machine.</li>
-<li>Will now respect the <code>RUSTUP_HOME</code> environment variable when locating the <code>.rustup</code> store.</li>
-</ul>
-</li>
-<li>Schema plugin<!-- -->
-<ul>
-<li>Added <code>install.checksum_public_key</code> for defining the public key used to verify checksums.</li>
-<li>Added <code>metadata.self_upgrade_commands</code> for defining which sub-commands should be blocked for
-self-upgrades.</li>
-</ul>
-</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="bin" term="bin"/>
-        <category label="shim" term="shim"/>
-        <category label="checksum" term="checksum"/>
     </entry>
 </feed>

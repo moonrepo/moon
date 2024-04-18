@@ -13,8 +13,8 @@
             <link>https://moonrepo.dev/blog/moon-v1.24</link>
             <guid>https://moonrepo.dev/blog/moon-v1.24</guid>
             <pubDate>Wed, 17 Apr 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is a light release that focused solely in requests and improvements from the community.]]></description>
-            <content:encoded><![CDATA[<p>This is a light release that focused solely in requests and improvements from the community.</p>
+            <description><![CDATA[This is a light release that focused solely on requests and improvements from the community.]]></description>
+            <content:encoded><![CDATA[<p>This is a light release that focused solely on requests and improvements from the community.</p>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="exclusive-resources-with-task-mutexes">Exclusive resources with task mutexes<a href="https://moonrepo.dev/blog/moon-v1.24#exclusive-resources-with-task-mutexes" class="hash-link" aria-label="Direct link to Exclusive resources with task mutexes" title="Direct link to Exclusive resources with task mutexes">​</a></h2>
 <p>Some tasks may require exclusive access to a resource, like a database, file, or network connection,
 but other parallel running tasks may also require access to the same resource. When both of these
@@ -79,6 +79,8 @@ mechanism to be controlled.</li>
             <category>head</category>
             <category>project-graph</category>
             <category>dependents</category>
+            <category>cache</category>
+            <category>clean</category>
         </item>
         <item>
             <title><![CDATA[moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more]]></title>

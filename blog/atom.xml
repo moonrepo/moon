@@ -12,8 +12,8 @@
         <id>https://moonrepo.dev/blog/moon-v1.24</id>
         <link href="https://moonrepo.dev/blog/moon-v1.24"/>
         <updated>2024-04-17T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This is a light release that focused solely in requests and improvements from the community.]]></summary>
-        <content type="html"><![CDATA[<p>This is a light release that focused solely in requests and improvements from the community.</p>
+        <summary type="html"><![CDATA[This is a light release that focused solely on requests and improvements from the community.]]></summary>
+        <content type="html"><![CDATA[<p>This is a light release that focused solely on requests and improvements from the community.</p>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="exclusive-resources-with-task-mutexes">Exclusive resources with task mutexes<a href="https://moonrepo.dev/blog/moon-v1.24#exclusive-resources-with-task-mutexes" class="hash-link" aria-label="Direct link to Exclusive resources with task mutexes" title="Direct link to Exclusive resources with task mutexes">​</a></h2>
 <p>Some tasks may require exclusive access to a resource, like a database, file, or network connection,
 but other parallel running tasks may also require access to the same resource. When both of these
@@ -82,6 +82,8 @@ mechanism to be controlled.</li>
         <category label="head" term="head"/>
         <category label="project-graph" term="project-graph"/>
         <category label="dependents" term="dependents"/>
+        <category label="cache" term="cache"/>
+        <category label="clean" term="clean"/>
     </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more]]></title>

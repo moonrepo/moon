@@ -159,9 +159,6 @@ impl DependencyManager<()> for DenoTool {
             cmd.env("PROTO_DENO_VERSION", version);
         }
 
-        // Tell proto to resolve instead of failing
-        cmd.env_if_missing("PROTO_DENO_VERSION", "*");
-
         Ok(cmd)
     }
 

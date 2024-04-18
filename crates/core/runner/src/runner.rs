@@ -424,68 +424,43 @@ impl<'a> Runner<'a> {
 
         // Pin versions for each tool in the toolchain
         if let Some(bun_config) = &self.workspace.toolchain_config.bun {
-            command.env_if_missing(
-                "PROTO_BUN_VERSION",
-                bun_config
-                    .version
-                    .as_ref()
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(|| "*".into()),
-            );
+            if let Some(version) = &bun_config.version {
+                command.env_if_missing("PROTO_BUN_VERSION", version.to_string());
+            }
+        }
+
+        if let Some(deno_config) = &self.workspace.toolchain_config.deno {
+            if let Some(version) = &deno_config.version {
+                command.env_if_missing("PROTO_DENO_VERSION", version.to_string());
+            }
         }
 
         if let Some(node_config) = &self.workspace.toolchain_config.node {
-            command.env_if_missing(
-                "PROTO_NODE_VERSION",
-                node_config
-                    .version
-                    .as_ref()
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(|| "*".into()),
-            );
+            if let Some(version) = &node_config.version {
+                command.env_if_missing("PROTO_NODE_VERSION", version.to_string());
+            }
 
-            command.env_if_missing(
-                "PROTO_NPM_VERSION",
-                node_config
-                    .npm
-                    .version
-                    .as_ref()
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(|| "*".into()),
-            );
+            if let Some(version) = &node_config.npm.version {
+                command.env_if_missing("PROTO_NPM_VERSION", version.to_string());
+            }
 
             if let Some(pnpm_config) = &node_config.pnpm {
-                command.env_if_missing(
-                    "PROTO_PNPM_VERSION",
-                    pnpm_config
-                        .version
-                        .as_ref()
-                        .map(|v| v.to_string())
-                        .unwrap_or_else(|| "*".into()),
-                );
+                if let Some(version) = &pnpm_config.version {
+                    command.env_if_missing("PROTO_PNPM_VERSION", version.to_string());
+                }
             }
 
             if let Some(yarn_config) = &node_config.yarn {
-                command.env_if_missing(
-                    "PROTO_YARN_VERSION",
-                    yarn_config
-                        .version
-                        .as_ref()
-                        .map(|v| v.to_string())
-                        .unwrap_or_else(|| "*".into()),
-                );
+                if let Some(version) = &yarn_config.version {
+                    command.env_if_missing("PROTO_YARN_VERSION", version.to_string());
+                }
             }
-        }
 
-        // Pin a version for all plugins so that global/system tasks work well
-        for plugin in self.workspace.proto_config.plugins.keys() {
-            command.env_if_missing(
-                format!(
-                    "PROTO_{}_VERSION",
-                    plugin.as_str().to_uppercase().replace('-', "_")
-                ),
-                "*",
-            );
+            if let Some(bunpm_config) = &node_config.bun {
+                if let Some(version) = &bunpm_config.version {
+                    command.env_if_missing("PROTO_BUN_VERSION", version.to_string());
+                }
+            }
         }
 
         Ok(())

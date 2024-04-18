@@ -141,9 +141,6 @@ impl NodeTool {
                     cmd.env("PROTO_NODE_VERSION", version);
                 }
 
-                // Tell proto to resolve instead of failing
-                cmd.env_if_missing("PROTO_NODE_VERSION", "*");
-
                 if !self.global {
                     cmd.env(
                         "PATH",

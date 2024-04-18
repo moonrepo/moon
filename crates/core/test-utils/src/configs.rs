@@ -46,6 +46,7 @@ pub fn get_cases_fixture_configs() -> (
             ("states".try_into().unwrap(), "states".to_owned()),
             // Runner
             ("interactive".try_into().unwrap(), "interactive".to_owned()),
+            ("mutex".try_into().unwrap(), "mutex".to_owned()),
             (
                 "passthroughArgs".try_into().unwrap(),
                 "passthrough-args".to_owned(),

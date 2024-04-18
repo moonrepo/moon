@@ -220,7 +220,7 @@ fn runs_task_with_a_mutex_in_sequence() {
 
     dbg!(&start, &stop);
 
-    assert!(stop.as_secs() > 3);
+    assert!(stop.as_millis() > 3000);
 }
 
 #[cfg(not(windows))]

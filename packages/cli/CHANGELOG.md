@@ -24,6 +24,8 @@
 - Added an experimental `moon templates` command, that lists all available codegen templates.
 - Added a `--dependents` flag to `moon project-graph <id>` and `moon query projects`, to include
   downstream dependents of a focused/affected project.
+- Added a `mutex` task option, allowing for exclusivity and to ensure only 1 task is running at a
+  time for the same mutex.
 - Added a `runner.autoCleanCache` setting to `.moon/workspace.yml`, allowing the post-run clean
   mechanism to be controlled.
 - Updated `moon ci` to automatically determine base/head revisions based on your current CI provider

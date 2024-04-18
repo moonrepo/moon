@@ -106,10 +106,18 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             }
 
             // Add the dep if it has not already been
-            let dep_args = parse_task_args(&dep.args)?;
+            let mut dep_args = parse_task_args(&dep.args)?;
+
+            if !dep_args.is_empty() {
+                dep_args = self.token.expand_args_with_task(task, &dep_args)?;
+            }
 
             let dep = TaskDependencyConfig {
-                args: TaskArgs::List(self.token.expand_args_with_task(task, &dep_args)?),
+                args: if dep_args.is_empty() {
+                    TaskArgs::None
+                } else {
+                    TaskArgs::List(dep_args)
+                },
                 env: self.token.expand_env_with_task(task, &dep.env)?,
                 optional: dep.optional,
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,

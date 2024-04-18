@@ -3444,7 +3444,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.0.5"
+version = "0.0.6"
 dependencies = [
  "httpmock",
  "miette",

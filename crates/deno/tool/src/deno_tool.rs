@@ -159,7 +159,6 @@ impl DependencyManager<()> for DenoTool {
             cmd.env("PROTO_DENO_VERSION", version);
         }
 
-
         Ok(cmd)
     }
 

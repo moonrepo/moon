@@ -90,6 +90,14 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
     }
 
     pub fn expand_args(&mut self, task: &Task) -> miette::Result<Vec<String>> {
+        self.expand_args_with_task(task, &task.args)
+    }
+
+    pub fn expand_args_with_task(
+        &mut self,
+        task: &Task,
+        base_args: &[String],
+    ) -> miette::Result<Vec<String>> {
         self.scope = TokenScope::Args;
 
         let mut args = vec![];
@@ -113,7 +121,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         };
 
-        for arg in &task.args {
+        for arg in base_args {
             // Token functions
             if self.has_token_function(arg) {
                 let result = self.replace_function(task, arg)?;
@@ -144,11 +152,19 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
     }
 
     pub fn expand_env(&mut self, task: &Task) -> miette::Result<FxHashMap<String, String>> {
+        self.expand_env_with_task(task, &task.env)
+    }
+
+    pub fn expand_env_with_task(
+        &mut self,
+        task: &Task,
+        base_env: &FxHashMap<String, String>,
+    ) -> miette::Result<FxHashMap<String, String>> {
         self.scope = TokenScope::Env;
 
         let mut env = FxHashMap::default();
 
-        for (key, value) in &task.env {
+        for (key, value) in base_env {
             if self.has_token_function(value) {
                 let result = self.replace_function(task, value)?;
 

@@ -10,10 +10,10 @@ use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]
 pub struct ActionGraphArgs {
-    #[arg(help = "Target to *only* graph")]
-    target: Option<TargetLocator>,
+    #[arg(help = "Targets to *only* graph")]
+    targets: Option<Vec<TargetLocator>>,
 
-    #[arg(long, help = "Include dependents of the focused target")]
+    #[arg(long, help = "Include dependents of the focused target(s)")]
     dependents: bool,
 
     #[arg(long, help = "Print the graph in DOT format")]
@@ -36,8 +36,10 @@ pub async fn internal_action_graph(
     };
 
     // Focus a target and its dependencies/dependents
-    if let Some(locator) = args.target.clone() {
-        action_graph_builder.run_task_by_target_locator(locator, &requirements)?;
+    if let Some(locators) = &args.targets {
+        for locator in locators {
+            action_graph_builder.run_task_by_target_locator(locator, &requirements)?;
+        }
 
         // Show all targets and actions
     } else {

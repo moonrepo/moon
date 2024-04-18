@@ -1,0 +1,15 @@
+platform: 'node'
+
+tasks:
+  run1:
+    command: 'node ./sleep.mjs'
+    options:
+      mutex: 'test-lock'
+  run2:
+    command: 'node ./sleep.mjs'
+    options:
+      mutex: 'test-lock'
+  run3:
+    command: 'node ./sleep.mjs'
+    options:
+      mutex: 'test-lock'

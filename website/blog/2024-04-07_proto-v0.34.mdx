@@ -1,0 +1,90 @@
+---
+slug: proto-v0.34
+title: proto v0.34 - New detection strategy, status command, and outdated improvements
+authors: [milesj]
+tags: [detection, status, outdated]
+# image: ./img/proto/v0.26.png
+---
+
+In this release, we've focused on the developer experience for common workflows.
+
+<!--truncate-->
+
+## New `only-prototools` detection strategy
+
+proto currently detects versions at runtime using
+[1 of 2 strategies](/docs/proto/config#detect-strategy), `first-available` which checks
+`.prototools` files and tool-specific files (like `package.json` engines), whichever is first, or
+`prefer-prototools` which works like the previous strategy, but prefers `.prototools` (even in a
+parent directory).
+
+In this release, we're adding a 3rd strategy called `only-prototools`. This strategy will only check
+`.prototools` files and will not check tool-specific files. This is useful if you want explicit
+versions, and to avoid unexpected versions from random configs/directories.
+
+```toml title=".prototools"
+[settings]
+detect-strategy = "only-prototools"
+```
+
+> For the v1 release, we plan to make this strategy the new default.
+
+## New `proto status` command
+
+Sometimes you simply want to know what tools are currently active for a target directory, what
+versions those tools are resolved to, and the configuration file in which they are defined. To
+satisfy this requirement, we've added a new [`proto status`](/docs/proto/commands/status) command,
+which outputs something like the following:
+
+```
+$ proto status
+
+Tool  Configured  Resolved  Installed                   Config
+deno  1.40.0      1.40.0    ~/.proto/tools/deno/1.40.0  ~/.prototools
+node  20.8.0      20.8.0    ~/.proto/tools/node/20.8.0  ~/.prototools
+npm   10.1.0      10.1.0    ~/.proto/tools/npm/10.1.0   ~/.prototools
+```
+
+By default this includes tools from all `.prototools` files up the hierarchy, excluding
+`~/.proto/.prototools`. To include global tools as well, pass `--include-global`.
+
+## Improved `proto outdated` experience
+
+The [`proto outdated`](/docs/proto/commands/outdated) command has worked "alright" but its developer
+experience wasn't the best. The terminal output was rudimentary, and writing updated versions to
+`.prototools` would save to the current directory, instead of the directory they are configured in.
+
+To improve the overall developer experience, we've made the following changes to this command:
+
+- Displays all tools and available updates as a table of data.
+- Includes both newest (matching range) and latest versions available.
+- Includes the config file that the tool + version was loaded from.
+- When `--update` is passed, will now prompt to confirm the update.
+- When updating versions, versions are now written to their original config file, instead of local.
+- Updated the `--latest` flag to use the latest version when updating, instead of newest.
+
+```
+$ proto outdated
+
+Tool  Current  Newest   Latest  Config
+deno  1.40.0   1.42.4   1.42.4  ~/.prototools
+node  20.8.0   20.12.2  21.7.3  ~/.prototools
+npm   10.1.0   10.5.2   10.5.2  ~/.prototools
+```
+
+## What about v0.32 and v0.33?
+
+You may have noticed that we don't have blog posts for either of these versions. The v0.32 release
+was a relatively light release with no meaningful changes, so we opted to not write a blog post for
+it. As for v0.33, we ran into build issues while releasing it, so we decided to skip it and move on
+to v0.34.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.34.0) for a full list
+of changes.
+
+- Added a `dist-url` setting to some plugins, allowing the distribution download URL to be
+  customized.
+- Updated `proto setup` (which is ran during proto installation) to modify the `PATH` system
+  environment variable on Windows. To disable this functionality, pass `--no-modify-path`.

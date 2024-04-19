@@ -2,9 +2,9 @@
 title: install
 ---
 
-The `proto install <tool>` (or `proto i`) command will download and install a tool by unpacking
-their archive to `~/.proto/tools/<tool>`. If the tool has already been installed, the command will
-exit early.
+The `proto install <tool> [version]` (or `proto i`) command will download and install a tool by
+unpacking their archive to `~/.proto/tools/<tool>`. If the tool has already been installed, the
+command will exit early.
 
 The command is also smart enough to resolve partial versions, so 1, 1.2, and 1.2.3 are all
 acceptable. It even supports aliases when applicable, like `latest`, `next`, `beta`, etc. To install
@@ -14,6 +14,22 @@ a canary release, use `--canary`.
 $ proto install deno 1.31
 $ proto install deno --canary
 ```
+
+### Pinning the version
+
+By default this command will only install the tool into `~/.proto/tools`. If you would like to also
+pin the resolved version to a `.prototools` file, use the `--pin` option.
+
+```shell
+# ~/.prototools
+$ proto install bun --pin
+$ proto install bun --pin local
+
+# ~/.proto/.prototools
+$ proto install bun --pin global
+```
+
+### Handling plugin hooks
 
 Some tools run [post-install hooks](../tools) that support arbitrary arguments that can be passed
 after `--`.
@@ -32,4 +48,4 @@ $ proto install go -- --no-gobin
 
 - `--canary` - Install a canary (next, nightly, etc) version.
 - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean (pins
-  globally), or the string "global", or the string "local".
+  locally by default), or the string "global", or the string "local".

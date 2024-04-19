@@ -7,7 +7,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="0.19.0" header />
 
 The `proto pin <tool> <version>` command will pin a version (or alias) of a tool. By default it will
-pin to a `.prototools` file in the current directory. This version will be used when attempting to
+pin to a `./.prototools` file in the current directory. This version will be used when attempting to
 [detect a version](../detection).
 
 ```shell
@@ -30,5 +30,5 @@ $ proto pin go 1.20 --global
 
 ### Options
 
-- `--global` - Pin the version globally, rather than in the current directory.
+- `--global` - Pin to the global `~/.proto/.prototools` instead of the local `./.prototools`.
 - `--resolve` - Resolve the version to a fully-qualified semantic version before pinning.

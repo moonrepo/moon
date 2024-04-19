@@ -1,3 +1,4 @@
+// @ts-expect-error Ignore
 const workspacePreset = require('../tailwind.config');
 
 /** @type {import('tailwindcss').Config} */

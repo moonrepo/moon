@@ -36,11 +36,9 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "node": {
-        "types": "./cjs/index.d.ts",
-        "import": "./cjs/index-wrapper.mjs",
-        "require": "./cjs/index.cjs"
-      }
+      "types": "./cjs/index.d.ts",
+      "import": "./cjs/index-wrapper.mjs",
+      "default": "./cjs/index.cjs"
     }
   }
 }

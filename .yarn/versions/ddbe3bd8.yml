@@ -1,0 +1,10 @@
+releases:
+  "@moonrepo/nx-compat": patch
+  "@moonrepo/report": patch
+  "@moonrepo/runtime": patch
+  "@moonrepo/types": patch
+  "@moonrepo/visualizer": patch
+
+declined:
+  - "@moonrepo/cli"
+  - website

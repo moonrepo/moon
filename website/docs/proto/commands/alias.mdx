@@ -2,7 +2,7 @@
 title: alias
 ---
 
-The `proto alias <tool> <label> <version>` (or `proto a`) command will define a custom alias that
+The `proto alias <tool> <alias> <version>` (or `proto a`) command will define a custom alias that
 maps to a specific version for the provided tool. Aliases can be used anywhere a version is
 accepted.
 
@@ -10,8 +10,8 @@ accepted.
 $ proto alias node work 16.16
 ```
 
-By default this will update the local [`.prototools`](../config) file. Pass `--global` to update the
-global [`~/.proto/.prototools`](../config) file instead.
+By default this will update the local [`./.prototools`](../config) file. Pass `--global` to update
+the global [`~/.proto/.prototools`](../config) file instead.
 
 ```shell
 $ proto alias yarn berry 4 --global
@@ -20,9 +20,9 @@ $ proto alias yarn berry 4 --global
 ### Arguments
 
 - `<tool>` - Type of tool.
-- `<label>` - Name of the alias. Supports alphanumeric chars.
+- `<alias>` - Name of the alias. Supports alphanumeric chars.
 - `<version>` - Version to map to the alias.
 
 ## Options
 
-- `--global` - Pin the version globally, rather than in the current directory.
+- `--global` - Pin to the global `~/.proto/.prototools` instead of the local `./.prototools`.

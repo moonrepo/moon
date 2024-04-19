@@ -6,15 +6,17 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.19.0" header />
 
-The `proto outdated` command will load all `.prototools` files and check for newer versions of each
-configured tool. By default, only newer versions that match the configured version requirements or
-ranges will be used. To ignore this and use the latest version, pass `--latest`.
+The `proto outdated` command will load all `.prototools` files and check for newer (matching
+configured range) and latest versions of each configured tool. Will also include the configuration
+file in which the version has been configured.
 
 ```
 $ proto outdated
 
-go - current version 1.20.2 (via ~1.20), newer version 1.20.8, update available!
-node - current version 20.7.0 (via 20.7.0), latest version 20.8.0, update available!
+Tool  Current  Newest   Latest  Config
+deno  1.40.0   1.42.4   1.42.4  ~/.prototools
+node  20.8.0   20.12.2  21.7.3  ~/.prototools
+npm   10.1.0   10.5.2   10.5.2  ~/.prototools
 ```
 
 > [Learn more about the `.prototools` configuration file!](../config)
@@ -23,8 +25,7 @@ node - current version 20.7.0 (via 20.7.0), latest version 20.8.0, update availa
 
 - `--json` - Print the list in JSON format.
 - `--include-global` - Include versions from the global `~/.proto/.prototools` file.
-- `--latest` - Check for the latest available version, ignoring any version requirements, ranges, or
-  constraints.
-- `--only-local` - Only check versions from the local `.prototools` file, instead of aggregating
+- `--latest` - When updating versions with `--update`, use the latest version instead of newest.
+- `--only-local` - Only check versions from the local `./.prototools` file, instead of aggregating
   parents.
-- `--update` - Update the local `.prototools` file with newer versions if available.
+- `--update` - Update and write newest/latest versions to their respective configuration.

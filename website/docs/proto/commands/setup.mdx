@@ -9,7 +9,7 @@ file and appending proto's bin directory to `PATH`.
 $ proto setup
 ```
 
-During setup, the following profiles will be searched. To override these, pass the
+During setup, the following profiles will be searched or prompted for. To override these, pass the
 `PROTO_SHELL_PROFILE` environment variable.
 
 - All shells
@@ -32,9 +32,20 @@ During setup, the following profiles will be searched. To override these, pass t
     - `~/.config/powershell/profile.ps1`
 - Zsh
   - `~/.zprofile`
+  - `~/.zshenv`
   - `~/.zshrc`
+
+### Windows support
+
+In addition to updating a shell profile file (most likely PowerShell), we'll also modify the `PATH`
+(or `Path`) system environment variable, by prepending the `~/.proto/shims` and `~/.proto/bin`
+paths.
+
+If you would like to opt-out of this behavior, pass the `--no-modify-path` flag.
 
 ### Options
 
-- `--shell` - Shell to explicitly generate for. Accepts "bash", "elvish", "fish", "powershell", or
-  "zsh".
+- `--shell` - Shell to explicitly setup for.
+- `--no-modify-profile` - Don't update a shell profile file.
+- `--no-modify-path` - Don't update the system `PATH` environment variable (Windows only).
+- `--yes` - Avoid interactive prompts and use defaults.

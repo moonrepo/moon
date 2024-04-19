@@ -15,6 +15,22 @@ $ proto install deno 1.31
 $ proto install deno --canary
 ```
 
+### Pinning the version
+
+By default this command will only install the tool into `~/.proto/tools`. If you would like to also
+pin the resolved version to a `.prototools` file, use the `--pin` option.
+
+```shell
+# ~/.prototools
+$ proto install bun --pin
+$ proto install bun --pin local
+
+# ~/.proto/.prototools
+$ proto install bun --pin global
+```
+
+### Handling plugin hooks
+
 Some tools run [post-install hooks](../tools) that support arbitrary arguments that can be passed
 after `--`.
 
@@ -32,4 +48,4 @@ $ proto install go -- --no-gobin
 
 - `--canary` - Install a canary (next, nightly, etc) version.
 - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean (pins
-  globally), or the string "global", or the string "local".
+  locally by default), or the string "global", or the string "local".

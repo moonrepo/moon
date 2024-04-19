@@ -5521,9 +5521,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.15.0"
+version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8573d84f787ddead7cec2813ee28aca631e1ca4b6e470d8ce76299c26f46847d"
+checksum = "eb3a2aff29732f5b59dc043c4ff436913a59e5bb8715c449e758c22a8b7563e1"
 dependencies = [
  "garde",
  "indexmap 2.2.6",

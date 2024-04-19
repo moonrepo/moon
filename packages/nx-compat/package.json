@@ -49,16 +49,12 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "node": {
-        "types": "./mjs/index.d.ts",
-        "import": "./mjs/index.mjs"
-      }
+      "types": "./mjs/index.d.ts",
+      "import": "./mjs/index.mjs"
     },
     "./*": {
-      "node": {
-        "types": "./mjs/*.d.ts",
-        "import": "./mjs/*.mjs"
-      }
+      "types": "./mjs/*.d.ts",
+      "import": "./mjs/*.mjs"
     }
   }
 }

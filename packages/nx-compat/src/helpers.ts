@@ -24,7 +24,6 @@ export function env(name: string): string {
 const packageResolver = ResolverFactory.createResolver({
 	enforceExtension: true,
 	extensions: ['.json'],
-	// @ts-expect-error Incorrect types
 	fileSystem: new CachedInputFileSystem(fs, 4000),
 });
 

@@ -25,7 +25,7 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.0",
-    "cytoscape": "^3.28.1",
+    "cytoscape": "^3.29.0",
     "cytoscape-dagre": "^2.5.0",
     "docusaurus-plugin-typedoc-api": "^4.2.0",
     "prism-react-renderer": "^2.3.1",
@@ -37,7 +37,7 @@
     "@docusaurus/tsconfig": "^3.2.1",
     "@moonrepo/runtime": "workspace:^",
     "@moonrepo/types": "workspace:^",
-    "@types/cytoscape": "^3.19.16",
+    "@types/cytoscape": "^3.21.0",
     "@types/cytoscape-dagre": "^2.3.3",
     "tailwindcss": "^3.4.3"
   },

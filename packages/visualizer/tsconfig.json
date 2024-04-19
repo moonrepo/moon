@@ -14,7 +14,7 @@
   },
   "include": [
     "src/**/*",
-    "vite.config.mts",
+    "vite.config.mjs",
     "*.cjs"
   ]
 }

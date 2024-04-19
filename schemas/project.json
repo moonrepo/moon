@@ -222,7 +222,7 @@
       ]
     },
     "LanguageType": {
-      "oneOf": [
+      "anyOf": [
         {
           "title": "Bash",
           "const": "bash"

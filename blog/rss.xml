@@ -83,6 +83,66 @@ mechanism to be controlled.</li>
             <category>clean</category>
         </item>
         <item>
+            <title><![CDATA[proto v0.34 - New detection strategy, status command, and outdated improvements]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.34</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.34</guid>
+            <pubDate>Sun, 07 Apr 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[In this release, we've focused on the developer experience for common workflows.]]></description>
+            <content:encoded><![CDATA[<p>In this release, we've focused on the developer experience for common workflows.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-only-prototools-detection-strategy">New <code>only-prototools</code> detection strategy<a href="https://moonrepo.dev/blog/proto-v0.34#new-only-prototools-detection-strategy" class="hash-link" aria-label="Direct link to new-only-prototools-detection-strategy" title="Direct link to new-only-prototools-detection-strategy">​</a></h2>
+<p>proto currently detects versions at runtime using
+<a href="https://moonrepo.dev/docs/proto/config#detect-strategy">1 of 2 strategies</a>, <code>first-available</code> which checks
+<code>.prototools</code> files and tool-specific files (like <code>package.json</code> engines), whichever is first, or
+<code>prefer-prototools</code> which works like the previous strategy, but prefers <code>.prototools</code> (even in a
+parent directory).</p>
+<p>In this release, we're adding a 3rd strategy called <code>only-prototools</code>. This strategy will only check
+<code>.prototools</code> files and will not check tool-specific files. This is useful if you want explicit
+versions, and to avoid unexpected versions from random configs/directories.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">detect-strategy</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"only-prototools"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<blockquote>
+<p>For the v1 release, we plan to make this strategy the new default.</p>
+</blockquote>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-status-command">New <code>proto status</code> command<a href="https://moonrepo.dev/blog/proto-v0.34#new-proto-status-command" class="hash-link" aria-label="Direct link to new-proto-status-command" title="Direct link to new-proto-status-command">​</a></h2>
+<p>Sometimes you simply want to know what tools are currently active for a target directory, what
+versions those tools are resolved to, and the configuration file in which they are defined. To
+satisfy this requirement, we've added a new <a href="https://moonrepo.dev/docs/proto/commands/status"><code>proto status</code></a> command,
+which outputs something like the following:</p>
+<div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto status</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Tool  Configured  Resolved  Installed                   Config</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">deno  1.40.0      1.40.0    ~/.proto/tools/deno/1.40.0  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">node  20.8.0      20.8.0    ~/.proto/tools/node/20.8.0  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">npm   10.1.0      10.1.0    ~/.proto/tools/npm/10.1.0   ~/.prototools</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>By default this includes tools from all <code>.prototools</code> files up the hierarchy, excluding
+<code>~/.proto/.prototools</code>. To include global tools as well, pass <code>--include-global</code>.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-proto-outdated-experience">Improved <code>proto outdated</code> experience<a href="https://moonrepo.dev/blog/proto-v0.34#improved-proto-outdated-experience" class="hash-link" aria-label="Direct link to improved-proto-outdated-experience" title="Direct link to improved-proto-outdated-experience">​</a></h2>
+<p>The <a href="https://moonrepo.dev/docs/proto/commands/outdated"><code>proto outdated</code></a> command has worked "alright" but its developer
+experience wasn't the best. The terminal output was rudimentary, and writing updated versions to
+<code>.prototools</code> would save to the current directory, instead of the directory they are configured in.</p>
+<p>To improve the overall developer experience, we've made the following changes to this command:</p>
+<ul>
+<li>Displays all tools and available updates as a table of data.</li>
+<li>Includes both newest (matching range) and latest versions available.</li>
+<li>Includes the config file that the tool + version was loaded from.</li>
+<li>When <code>--update</code> is passed, will now prompt to confirm the update.</li>
+<li>When updating versions, versions are now written to their original config file, instead of local.</li>
+<li>Updated the <code>--latest</code> flag to use the latest version when updating, instead of newest.</li>
+</ul>
+<div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto outdated</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Tool  Current  Newest   Latest  Config</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">deno  1.40.0   1.42.4   1.42.4  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">node  20.8.0   20.12.2  21.7.3  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">npm   10.1.0   10.5.2   10.5.2  ~/.prototools</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-about-v032-and-v033">What about v0.32 and v0.33?<a href="https://moonrepo.dev/blog/proto-v0.34#what-about-v032-and-v033" class="hash-link" aria-label="Direct link to What about v0.32 and v0.33?" title="Direct link to What about v0.32 and v0.33?">​</a></h2>
+<p>You may have noticed that we don't have blog posts for either of these versions. The v0.32 release
+was a relatively light release with no meaningful changes, so we opted to not write a blog post for
+it. As for v0.33, we ran into build issues while releasing it, so we decided to skip it and move on
+to v0.34.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.34#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.34.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added a <code>dist-url</code> setting to some plugins, allowing the distribution download URL to be
+customized.</li>
+<li>Updated <code>proto setup</code> (which is ran during proto installation) to modify the <code>PATH</code> system
+environment variable on Windows. To disable this functionality, pass <code>--no-modify-path</code>.</li>
+</ul>]]></content:encoded>
+            <category>detection</category>
+            <category>status</category>
+            <category>outdated</category>
+        </item>
+        <item>
             <title><![CDATA[moon v1.23 - Codegen improvements, stack inheritance, internal tasks, and more]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.23</link>
             <guid>https://moonrepo.dev/blog/moon-v1.23</guid>
@@ -1389,33 +1449,6 @@ integration testing.</li>
             <category>automation</category>
             <category>package</category>
             <category>manager</category>
-        </item>
-        <item>
-            <title><![CDATA[proto v0.21 - Linux x64 musl support]]></title>
-            <link>https://moonrepo.dev/blog/proto-v0.21</link>
-            <guid>https://moonrepo.dev/blog/proto-v0.21</guid>
-            <pubDate>Fri, 27 Oct 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is a very small release that primarily adds support for the Linux x64 musl target.]]></description>
-            <content:encoded><![CDATA[<p>This is a very small release that primarily adds support for the Linux x64 musl target.</p>
-<p>Thanks to <a href="https://github.com/axodotdev/cargo-dist" target="_blank" rel="noopener noreferrer">cargo-dist</a>, we can now build and distribute
-musl binaries with relative ease. When building the binary, libraries are statically linked to
-ensure that the binary can run on any Linux distribution.</p>
-<p>You can download the binary from the official
-<a href="https://github.com/moonrepo/proto/releases/tag/v0.21.0" target="_blank" rel="noopener noreferrer">GitHub release</a> or by running the
-<a href="https://moonrepo.dev/docs/proto/install#linux-macos-wsl">Bash installation script</a>. In the future, we plan to support
-arm64 builds for both Linux gnu and musl.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.21#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.21.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Improved file and directory locking. Will now work correctly across processes and signals,
-especially for those killed/dropped.</li>
-<li>Updated WASM functions to use explicit Rust enum types for versions to properly handle all
-variations (version, alias, requirement, range).</li>
-</ul>]]></content:encoded>
-            <category>proto</category>
-            <category>linux</category>
-            <category>musl</category>
         </item>
     </channel>
 </rss>

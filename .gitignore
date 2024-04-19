@@ -27,6 +27,7 @@ dist/
 *.map
 *.min.js
 *.tsbuildinfo
+tailwind.config.d.ts
 
 # moon
 .moon/cache

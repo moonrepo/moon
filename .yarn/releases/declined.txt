@@ -1,5 +1,0 @@
-declined:
-  - '@moonrepo/report'
-  - '@moonrepo/runtime'
-  - '@moonrepo/nx-compat'
-  - 'website'

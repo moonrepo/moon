@@ -322,6 +322,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/regen',
 				'proto/commands/run',
 				'proto/commands/setup',
+				'proto/commands/status',
 				'proto/commands/unalias',
 				'proto/commands/uninstall',
 				'proto/commands/upgrade',

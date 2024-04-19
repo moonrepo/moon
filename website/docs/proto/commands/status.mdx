@@ -1,0 +1,29 @@
+---
+title: status
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.34.0" header />
+
+The `proto status` command will list all tools that are currently active for a target directory,
+what versions of those tools are resolved to, and the configuration file in which they are defined.
+
+```
+$ proto status
+
+Tool  Configured  Resolved  Installed                   Config
+deno  1.40.0      1.40.0    ~/.proto/tools/deno/1.40.0  ~/.prototools
+node  20.8.0      20.8.0    ~/.proto/tools/node/20.8.0  ~/.prototools
+npm   10.1.0      10.1.0    ~/.proto/tools/npm/10.1.0   ~/.prototools
+```
+
+By default this includes tools from all `.prototools` files up the hierarchy, excluding
+`~/.proto/.prototools`. To include global tools as well, pass `--include-global`.
+
+### Options
+
+- `--json` - Print the list in JSON format.
+- `--include-global` - Include tools from the global `~/.proto/.prototools` file.
+- `--only-local` - Only check tools from the local `./.prototools` file, instead of aggregating
+  parents.

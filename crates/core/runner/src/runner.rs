@@ -231,10 +231,11 @@ impl<'a> Runner<'a> {
         for dep in &self.task.deps {
             let mut state = None;
 
+            // TODO avoid cloning if possible
             if let Some(entry) = context.target_states.get(&dep.target) {
                 state = match entry.value() {
-                    TargetState::Completed(hash) => Some(unsafe { std::mem::transmute_copy(hash) }),
-                    TargetState::Passthrough => Some("passthrough"),
+                    TargetState::Completed(hash) => Some(hash.to_owned()),
+                    TargetState::Passthrough => Some("passthrough".into()),
                     _ => None,
                 };
             }

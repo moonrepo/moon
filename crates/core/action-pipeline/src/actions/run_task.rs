@@ -104,9 +104,13 @@ pub async fn run_task(
                 color::id(mutex_name),
                 color::label(&task.target),
             );
-        }
 
-        runner.create_and_run_command(&context, runtime).await
+            // This is required within this block so that the guard
+            // above isn't immediately dropped!
+            runner.create_and_run_command(&context, runtime).await
+        } else {
+            runner.create_and_run_command(&context, runtime).await
+        }
     };
 
     match attempts_result {

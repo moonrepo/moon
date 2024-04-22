@@ -18,7 +18,7 @@ use starbase_styles::color;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{RwLock, RwLockReadGuard, Semaphore};
+use tokio::sync::Semaphore;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
@@ -75,22 +75,19 @@ impl Pipeline {
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
         let context = Arc::new(context.unwrap_or_default());
-        let emitter = Arc::new(RwLock::new(
-            create_emitter(Arc::clone(&self.workspace)).await,
-        ));
+        let emitter = Arc::new(create_emitter(Arc::clone(&self.workspace)).await);
         let workspace = Arc::clone(&self.workspace);
         let project_graph = Arc::clone(&self.project_graph);
 
         // Queue actions in topological order that need to be processed
         let total_actions_count = action_graph.get_node_count();
-        let local_emitter = emitter.read().await;
 
         debug!(
             target: LOG_TARGET,
             "Running {} actions", total_actions_count
         );
 
-        local_emitter
+        emitter
             .emit(Event::PipelineStarted {
                 actions_count: total_actions_count,
                 context: &context,
@@ -123,7 +120,7 @@ impl Pipeline {
             let Some(node_index) = action_graph_iter.next() else {
                 // Nothing new to run since they're waiting on currently
                 // running actions, so exhaust the current list
-                self.run_handles(mem::take(&mut action_handles), &mut results, &local_emitter)
+                self.run_handles(mem::take(&mut action_handles), &mut results, &emitter)
                     .await?;
 
                 continue;
@@ -199,7 +196,7 @@ impl Pipeline {
 
             // Run this in isolation by exhausting the current list of handles
             if node.is_interactive() || semaphore.available_permits() == 0 {
-                self.run_handles(mem::take(&mut action_handles), &mut results, &local_emitter)
+                self.run_handles(mem::take(&mut action_handles), &mut results, &emitter)
                     .await?;
             }
         }
@@ -260,7 +257,7 @@ impl Pipeline {
         }
 
         // Run any remaining actions
-        self.run_handles(action_handles, &mut results, &local_emitter)
+        self.run_handles(action_handles, &mut results, &emitter)
             .await?;
 
         let duration = start.elapsed();
@@ -285,7 +282,7 @@ impl Pipeline {
             "Finished running {} actions in {:?}", total_actions_count, &duration
         );
 
-        local_emitter
+        emitter
             .emit(Event::PipelineFinished {
                 baseline_duration: &estimate.duration,
                 cached_count,
@@ -307,7 +304,7 @@ impl Pipeline {
         &self,
         handles: Vec<JoinHandle<miette::Result<Action>>>,
         results: &mut ActionResults,
-        emitter: &RwLockReadGuard<'_, Emitter>,
+        emitter: &Emitter,
     ) -> miette::Result<()> {
         let mut abort_error: Option<miette::Report> = None;
         let mut show_abort_log = false;
@@ -568,29 +565,23 @@ impl Pipeline {
 }
 
 async fn create_emitter(workspace: Arc<Workspace>) -> Emitter {
-    let mut emitter = Emitter::new(Arc::clone(&workspace));
+    let emitter = Emitter::new(Arc::clone(&workspace));
 
     // For security and privacy purposes, only send webhooks from a CI environment
     if is_ci() || is_test_env() {
         if let Some(webhook_url) = &workspace.config.notifier.webhook_url {
             emitter
-                .subscribers
-                .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                    webhook_url.to_owned(),
-                ))));
+                .subscribe(WebhooksSubscriber::new(webhook_url.to_owned()))
+                .await;
         }
     }
 
     if workspace.session.is_some() {
-        emitter
-            .subscribers
-            .push(Arc::new(RwLock::new(MoonbaseSubscriber::new())));
+        emitter.subscribe(MoonbaseSubscriber::new()).await;
     }
 
     // Must be last as its the final line of defense
-    emitter
-        .subscribers
-        .push(Arc::new(RwLock::new(LocalCacheSubscriber::new())));
+    emitter.subscribe(LocalCacheSubscriber::new()).await;
 
     emitter
 }

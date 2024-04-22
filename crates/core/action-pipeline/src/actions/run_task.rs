@@ -11,7 +11,6 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:run-task";
 
@@ -19,7 +18,7 @@ const LOG_TARGET: &str = "moon:action:run-task";
 pub async fn run_task(
     action: &mut Action,
     context: Arc<ActionContext>,
-    emitter: Arc<RwLock<Emitter>>,
+    emitter: Arc<Emitter>,
     workspace: Arc<Workspace>,
     console: Arc<Console>,
     project: &Project,
@@ -28,7 +27,6 @@ pub async fn run_task(
 ) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "run-task");
 
-    let emitter = emitter.read().await;
     let task = project.get_task(&target.task_id)?;
     let mut runner = Runner::new(&emitter, &workspace, project, task, console)?;
 

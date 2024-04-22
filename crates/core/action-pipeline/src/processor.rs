@@ -12,7 +12,6 @@ use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
     match result {
@@ -24,7 +23,7 @@ fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
 pub async fn process_action(
     mut action: Action,
     context: Arc<ActionContext>,
-    emitter: Arc<RwLock<Emitter>>,
+    emitter: Arc<Emitter>,
     workspace: Arc<Workspace>,
     project_graph: Arc<ProjectGraph>,
     console: Arc<Console>,
@@ -40,10 +39,7 @@ pub async fn process_action(
         log_action_label
     );
 
-    let local_emitter = Arc::clone(&emitter);
-    let local_emitter = local_emitter.read().await;
-
-    local_emitter
+    emitter
         .emit(Event::ActionStarted {
             action: &action,
             node: &node,
@@ -55,13 +51,11 @@ pub async fn process_action(
 
         // Setup and install the specific tool
         ActionNode::SetupTool { runtime } => {
-            local_emitter
-                .emit(Event::ToolInstalling { runtime })
-                .await?;
+            emitter.emit(Event::ToolInstalling { runtime }).await?;
 
             let setup_result = setup_tool(&mut action, context, workspace, runtime).await;
 
-            local_emitter
+            emitter
                 .emit(Event::ToolInstalled {
                     error: extract_error(&setup_result),
                     runtime,
@@ -73,7 +67,7 @@ pub async fn process_action(
 
         // Install dependencies in the workspace root
         ActionNode::InstallDeps { runtime } => {
-            local_emitter
+            emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
                     runtime,
@@ -82,7 +76,7 @@ pub async fn process_action(
 
             let install_result = install_deps(&mut action, context, workspace, runtime, None).await;
 
-            local_emitter
+            emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&install_result),
                     project: None,
@@ -100,7 +94,7 @@ pub async fn process_action(
         } => {
             let project = project_graph.get(project_id)?;
 
-            local_emitter
+            emitter
                 .emit(Event::DependenciesInstalling {
                     project: Some(&project),
                     runtime,
@@ -110,7 +104,7 @@ pub async fn process_action(
             let install_result =
                 install_deps(&mut action, context, workspace, runtime, Some(&project)).await;
 
-            local_emitter
+            emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&install_result),
                     project: Some(&project),
@@ -128,7 +122,7 @@ pub async fn process_action(
         } => {
             let project = project_graph.get(project_id)?;
 
-            local_emitter
+            emitter
                 .emit(Event::ProjectSyncing {
                     project: &project,
                     runtime,
@@ -145,7 +139,7 @@ pub async fn process_action(
             )
             .await;
 
-            local_emitter
+            emitter
                 .emit(Event::ProjectSynced {
                     error: extract_error(&sync_result),
                     project: &project,
@@ -158,11 +152,11 @@ pub async fn process_action(
 
         // Sync the workspace
         ActionNode::SyncWorkspace => {
-            local_emitter.emit(Event::WorkspaceSyncing).await?;
+            emitter.emit(Event::WorkspaceSyncing).await?;
 
             let sync_result = sync_workspace(&mut action, context, workspace, project_graph).await;
 
-            local_emitter
+            emitter
                 .emit(Event::WorkspaceSynced {
                     error: extract_error(&sync_result),
                 })
@@ -177,12 +171,12 @@ pub async fn process_action(
         } => {
             let project = project_graph.get(target.get_project_id().unwrap())?;
 
-            local_emitter.emit(Event::TargetRunning { target }).await?;
+            emitter.emit(Event::TargetRunning { target }).await?;
 
             let run_result = run_task(
                 &mut action,
                 context,
-                emitter,
+                Arc::clone(&emitter),
                 workspace,
                 console,
                 &project,
@@ -191,7 +185,7 @@ pub async fn process_action(
             )
             .await;
 
-            local_emitter
+            emitter
                 .emit(Event::TargetRan {
                     error: extract_error(&run_result),
                     target,
@@ -223,7 +217,7 @@ pub async fn process_action(
         }
     }
 
-    local_emitter
+    emitter
         .emit(Event::ActionFinished {
             action: &action,
             error: error_message,

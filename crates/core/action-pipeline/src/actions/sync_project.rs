@@ -11,23 +11,18 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:sync-project";
 
 pub async fn sync_project(
     _action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
-    workspace: Arc<RwLock<Workspace>>,
-    project_graph: Arc<RwLock<ProjectGraph>>,
+    context: Arc<ActionContext>,
+    workspace: Arc<Workspace>,
+    project_graph: Arc<ProjectGraph>,
     project: &Project,
     runtime: &Runtime,
 ) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "sync-project");
-
-    let workspace = workspace.read().await;
-    let context = context.read().await;
-    let project_graph = project_graph.read().await;
 
     debug!(
         target: LOG_TARGET,

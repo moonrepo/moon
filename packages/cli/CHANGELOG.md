@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Greatly reduced the amount of concurrent locks being held during task execution. May see slight
+  performance improvements.
+
 ## 1.24.6
 
 #### 🐞 Fixes

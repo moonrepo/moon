@@ -10,7 +10,6 @@ use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 cache_item!(
     pub struct ToolState {
@@ -23,8 +22,8 @@ const LOG_TARGET: &str = "moon:action:setup-tool";
 
 pub async fn setup_tool(
     _action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
-    workspace: Arc<RwLock<Workspace>>,
+    context: Arc<ActionContext>,
+    workspace: Arc<Workspace>,
     runtime: &Runtime,
 ) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "setup-tool");
@@ -50,9 +49,6 @@ pub async fn setup_tool(
 
         return Ok(ActionStatus::Skipped);
     }
-
-    let workspace = workspace.write().await;
-    let context = context.read().await;
 
     let mut state = workspace
         .cache_engine

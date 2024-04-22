@@ -2,11 +2,13 @@ use clap::ValueEnum;
 use dashmap::DashMap;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Arc};
+use tokio::sync::Mutex;
 
-#[derive(ValueEnum, Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
+#[serde(rename_all = "lowercase")]
 pub enum ProfileType {
     Cpu,
     Heap,
@@ -30,27 +32,51 @@ impl TargetState {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
+    /// Should only run affected targets (via `--affected`).
     pub affected_only: bool,
 
+    /// Initial target locators passed to `moon run`, `moon ci`, etc.
     pub initial_targets: FxHashSet<TargetLocator>,
 
+    /// Active mutexes for tasks to acquire locks against.
+    /// @mutable
     #[serde(skip)]
-    pub named_mutexes: DashMap<String, Arc<tokio::sync::Mutex<()>>>,
+    pub named_mutexes: DashMap<String, Arc<Mutex<()>>>,
 
+    /// Additional arguments passed after `--` to passthrough.
     pub passthrough_args: Vec<String>,
 
+    /// Targets to run after the initial locators have been resolved.
     pub primary_targets: FxHashSet<Target>,
 
+    /// The type of profiler to run tasks with.
     pub profile: Option<ProfileType>,
 
-    pub target_states: FxHashMap<Target, TargetState>,
+    /// The current state of running tasks (via their target).
+    /// @mutable
+    pub target_states: DashMap<Target, TargetState>,
 
+    /// Files that have currently been touched.
     pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 
+    /// The workspace root.
     pub workspace_root: PathBuf,
 }
 
 impl ActionContext {
+    pub fn get_or_create_mutex(&self, name: &str) -> Arc<Mutex<()>> {
+        if let Some(value) = self.named_mutexes.get(name) {
+            return Arc::clone(&value);
+        }
+
+        let mutex = Arc::new(Mutex::new(()));
+
+        self.named_mutexes
+            .insert(name.to_owned(), Arc::clone(&mutex));
+
+        mutex
+    }
+
     pub fn should_inherit_args<T: AsRef<Target>>(&self, target: T) -> bool {
         if self.passthrough_args.is_empty() {
             return false;

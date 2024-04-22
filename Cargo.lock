@@ -4323,13 +4323,13 @@ name = "moon_vcs"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "dashmap",
  "git-url-parse",
  "ignore",
  "miette",
  "moon_common",
  "moon_process",
  "once_cell",
- "once_map",
  "regex",
  "rustc-hash",
  "semver",

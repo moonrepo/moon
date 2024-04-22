@@ -1,5 +1,5 @@
+use dashmap::DashMap;
 use moon_process::{output_to_string, Command};
-use once_map::OnceMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -7,7 +7,7 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct ProcessCache {
     /// Output cache of all executed commands.
-    cache: OnceMap<String, Arc<String>>,
+    cache: DashMap<String, Arc<String>>,
 
     /// Binary/command to run.
     pub bin: String,
@@ -19,7 +19,7 @@ pub struct ProcessCache {
 impl ProcessCache {
     pub fn new(bin: &str, root: &Path) -> Self {
         Self {
-            cache: OnceMap::new(),
+            cache: DashMap::new(),
             bin: bin.to_string(),
             root: root.to_path_buf(),
         }
@@ -76,17 +76,16 @@ impl ProcessCache {
         let mut executor = command.create_async();
         let cache_key = executor.inspector.get_cache_key();
 
-        // Execute and insert output into the cache if not already present
-        if !self.cache.contains_key(&cache_key) {
-            let output = executor.exec_capture_output().await?;
-
-            self.cache.insert(cache_key.clone(), |_| {
-                let value = output_to_string(&output.stdout);
-
-                Arc::new(format(if trim { value.trim().to_owned() } else { value }))
-            });
+        if let Some(cache) = self.cache.get(&cache_key) {
+            return Ok(cache.clone());
         }
 
-        Ok(self.cache.get_cloned(&cache_key).unwrap())
+        let output = executor.exec_capture_output().await?;
+        let value = output_to_string(&output.stdout);
+        let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
+
+        self.cache.insert(cache_key, Arc::clone(&cache));
+
+        Ok(cache)
     }
 }

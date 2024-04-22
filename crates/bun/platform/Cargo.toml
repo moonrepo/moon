@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-moon_action_context = { path = "../../core/action-context" }
+moon_action_context = { path = "../../../nextgen/action-context" }
 moon_bun_lang = { path = "../lang" }
 moon_bun_tool = { path = "../tool" }
 moon_common = { path = "../../../nextgen/common" }

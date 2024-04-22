@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 moon_action = { path = "../action" }
-moon_action_context = { path = "../action-context" }
+moon_action_context = { path = "../../../nextgen/action-context" }
 moon_cache_item = { path = "../../../nextgen/cache-item" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }

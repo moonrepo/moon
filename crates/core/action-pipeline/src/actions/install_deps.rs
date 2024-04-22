@@ -13,7 +13,6 @@ use starbase_utils::fs;
 use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 cache_item!(
     pub struct DependenciesState {
@@ -40,8 +39,8 @@ fn get_installation_key(runtime: &Runtime, project: Option<&Project>) -> String 
 
 pub async fn install_deps(
     _action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
-    workspace: Arc<RwLock<Workspace>>,
+    context: Arc<ActionContext>,
+    workspace: Arc<Workspace>,
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> miette::Result<ActionStatus> {
@@ -51,8 +50,6 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    let workspace = workspace.read().await;
-    let context = context.read().await;
     let install_key = get_installation_key(runtime, project);
 
     if proto_core::is_offline() {

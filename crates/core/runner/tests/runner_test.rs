@@ -9,7 +9,6 @@ use moon_platform_runtime::{Runtime, RuntimeReq};
 use moon_runner::Runner;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
 use rustc_hash::FxHashSet;
-use tokio::sync::RwLock;
 
 fn cases_sandbox() -> Sandbox {
     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
@@ -33,7 +32,7 @@ async fn all_inputs_when_no_files_affected() {
 
     let project = project_graph.get("noAffected").unwrap();
     let task = project.get_task("primary").unwrap();
-    let emitter = Emitter::new(Arc::new(RwLock::new(workspace.clone())));
+    let emitter = Emitter::new(Arc::new(workspace.clone()));
 
     let runner = Runner::new(
         &emitter,
@@ -70,7 +69,7 @@ async fn dot_if_no_input_files() {
 
     let project = project_graph.get("noAffected").unwrap();
     let task = project.get_task("misconfigured").unwrap();
-    let emitter = Emitter::new(Arc::new(RwLock::new(workspace.clone())));
+    let emitter = Emitter::new(Arc::new(workspace.clone()));
 
     let runner = Runner::new(
         &emitter,

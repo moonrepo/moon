@@ -10,7 +10,6 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:sync-workspace";
 
@@ -18,14 +17,12 @@ pub async fn sync_workspace(
     _action: &mut Action,
     _context: Arc<ActionContext>,
     workspace: Arc<Workspace>,
-    project_graph: Arc<RwLock<ProjectGraph>>,
+    project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<ActionStatus> {
     // This causes a lot of churn in tests, revisit
     if !is_test_env() {
         env::set_var("MOON_RUNNING_ACTION", "sync-workspace");
     }
-
-    let project_graph = project_graph.read().await;
 
     debug!(target: LOG_TARGET, "Syncing workspace");
 

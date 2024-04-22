@@ -26,7 +26,7 @@ pub async fn process_action(
     context: Arc<ActionContext>,
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<Workspace>,
-    project_graph: Arc<RwLock<ProjectGraph>>,
+    project_graph: Arc<ProjectGraph>,
     console: Arc<Console>,
 ) -> miette::Result<Action> {
     action.start();
@@ -42,9 +42,6 @@ pub async fn process_action(
 
     let local_emitter = Arc::clone(&emitter);
     let local_emitter = local_emitter.read().await;
-
-    let local_project_graph = Arc::clone(&project_graph);
-    let local_project_graph = local_project_graph.read().await;
 
     local_emitter
         .emit(Event::ActionStarted {
@@ -101,7 +98,7 @@ pub async fn process_action(
             runtime,
             project: project_id,
         } => {
-            let project = local_project_graph.get(project_id)?;
+            let project = project_graph.get(project_id)?;
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
@@ -129,7 +126,7 @@ pub async fn process_action(
             runtime,
             project: project_id,
         } => {
-            let project = local_project_graph.get(project_id)?;
+            let project = project_graph.get(project_id)?;
 
             local_emitter
                 .emit(Event::ProjectSyncing {
@@ -178,7 +175,7 @@ pub async fn process_action(
         ActionNode::RunTask {
             runtime, target, ..
         } => {
-            let project = local_project_graph.get(target.get_project_id().unwrap())?;
+            let project = project_graph.get(target.get_project_id().unwrap())?;
 
             local_emitter.emit(Event::TargetRunning { target }).await?;
 

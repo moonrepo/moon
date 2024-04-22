@@ -33,7 +33,7 @@ pub struct Pipeline {
 
     duration: Option<Duration>,
 
-    project_graph: Arc<RwLock<ProjectGraph>>,
+    project_graph: Arc<ProjectGraph>,
 
     report_name: Option<String>,
 
@@ -46,7 +46,7 @@ impl Pipeline {
             bail: false,
             concurrency: None,
             duration: None,
-            project_graph: Arc::new(RwLock::new(project_graph)),
+            project_graph: Arc::new(project_graph),
             report_name: None,
             workspace: Arc::new(workspace),
         }

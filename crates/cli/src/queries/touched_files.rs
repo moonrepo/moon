@@ -60,7 +60,7 @@ pub async fn query_touched_files(
     let current_branch = vcs.get_local_branch().await?;
 
     // On default branch, so compare against self -1 revision
-    let touched_files_map = if options.default_branch && vcs.is_default_branch(current_branch) {
+    let touched_files_map = if options.default_branch && vcs.is_default_branch(&current_branch) {
         check_shallow!(vcs);
 
         trace!(
@@ -68,15 +68,20 @@ pub async fn query_touched_files(
             current_branch
         );
 
-        vcs.get_touched_files_against_previous_revision(default_branch)
+        vcs.get_touched_files_against_previous_revision(&default_branch)
             .await?
 
         // On a branch, so compare branch against remote base/default branch
     } else if !options.local {
         check_shallow!(vcs);
 
-        let base = env::var("MOON_BASE")
-            .unwrap_or_else(|_| options.base.as_deref().unwrap_or(default_branch).to_owned());
+        let base = env::var("MOON_BASE").unwrap_or_else(|_| {
+            options
+                .base
+                .as_deref()
+                .unwrap_or(&default_branch)
+                .to_owned()
+        });
 
         let head = env::var("MOON_HEAD")
             .unwrap_or_else(|_| options.head.as_deref().unwrap_or("HEAD").to_owned());

@@ -2,11 +2,12 @@ use moon_process::{output_to_string, Command};
 use once_map::OnceMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ProcessCache {
     /// Output cache of all executed commands.
-    cache: OnceMap<String, String>,
+    cache: OnceMap<String, Arc<String>>,
 
     /// Binary/command to run.
     pub bin: String,
@@ -40,7 +41,7 @@ impl ProcessCache {
         command
     }
 
-    pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<&str>
+    pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -53,7 +54,7 @@ impl ProcessCache {
         args: I,
         trim: bool,
         format: impl FnOnce(String) -> String,
-    ) -> miette::Result<&str>
+    ) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -62,7 +63,7 @@ impl ProcessCache {
             .await
     }
 
-    pub async fn run_command(&self, command: Command, trim: bool) -> miette::Result<&str> {
+    pub async fn run_command(&self, command: Command, trim: bool) -> miette::Result<Arc<String>> {
         self.run_command_with_formatter(command, trim, |s| s).await
     }
 
@@ -71,7 +72,7 @@ impl ProcessCache {
         command: Command,
         trim: bool,
         format: impl FnOnce(String) -> String,
-    ) -> miette::Result<&str> {
+    ) -> miette::Result<Arc<String>> {
         let mut executor = command.create_async();
         let cache_key = executor.inspector.get_cache_key();
 
@@ -82,10 +83,10 @@ impl ProcessCache {
             self.cache.insert(cache_key.clone(), |_| {
                 let value = output_to_string(&output.stdout);
 
-                format(if trim { value.trim().to_owned() } else { value })
+                Arc::new(format(if trim { value.trim().to_owned() } else { value }))
             });
         }
 
-        Ok(self.cache.get(&cache_key).unwrap())
+        Ok(self.cache.get_cloned(&cache_key).unwrap())
     }
 }

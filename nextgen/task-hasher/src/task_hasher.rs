@@ -61,7 +61,7 @@ impl<'task> TaskHasher<'task> {
         }
     }
 
-    pub fn hash_deps(&mut self, deps: &BTreeMap<&'task Target, String>) {
+    pub fn hash_deps(&mut self, deps: BTreeMap<&'task Target, String>) {
         if !deps.is_empty() {
             self.content.deps.extend(deps);
         }

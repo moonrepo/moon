@@ -251,7 +251,7 @@ impl<'a> Runner<'a> {
             deps.insert(&dep.target, state.unwrap());
         }
 
-        task_hasher.hash_deps(&deps);
+        task_hasher.hash_deps(deps);
         task_hasher.hash_inputs().await?;
 
         hasher.hash_content(task_hasher.hash())?;

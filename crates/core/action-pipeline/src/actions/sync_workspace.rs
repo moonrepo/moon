@@ -16,8 +16,8 @@ const LOG_TARGET: &str = "moon:action:sync-workspace";
 
 pub async fn sync_workspace(
     _action: &mut Action,
-    _context: Arc<RwLock<ActionContext>>,
-    workspace: Arc<RwLock<Workspace>>,
+    _context: Arc<ActionContext>,
+    workspace: Arc<Workspace>,
     project_graph: Arc<RwLock<ProjectGraph>>,
 ) -> miette::Result<ActionStatus> {
     // This causes a lot of churn in tests, revisit
@@ -25,7 +25,6 @@ pub async fn sync_workspace(
         env::set_var("MOON_RUNNING_ACTION", "sync-workspace");
     }
 
-    let workspace = workspace.read().await;
     let project_graph = project_graph.read().await;
 
     debug!(target: LOG_TARGET, "Syncing workspace");

@@ -229,20 +229,25 @@ impl<'a> Runner<'a> {
 
         // todo, move into hasher!
         for dep in &self.task.deps {
-            deps.insert(
-                &dep.target,
-                match context.target_states.get(&dep.target) {
-                    Some(TargetState::Completed(hash)) => hash,
-                    Some(TargetState::Passthrough) => "passthrough",
-                    _ => {
-                        return Err(RunnerError::MissingDependencyHash(
-                            dep.target.id.to_owned(),
-                            self.task.target.id.to_owned(),
-                        )
-                        .into());
-                    }
-                },
-            );
+            let mut state = None;
+
+            if let Some(entry) = context.target_states.get(&dep.target) {
+                state = match entry.value() {
+                    TargetState::Completed(hash) => Some(unsafe { std::mem::transmute_copy(hash) }),
+                    TargetState::Passthrough => Some("passthrough"),
+                    _ => None,
+                };
+            }
+
+            if state.is_none() {
+                return Err(RunnerError::MissingDependencyHash(
+                    dep.target.id.to_owned(),
+                    self.task.target.id.to_owned(),
+                )
+                .into());
+            }
+
+            deps.insert(&dep.target, state.unwrap());
         }
 
         task_hasher.hash_deps(&deps);
@@ -540,7 +545,7 @@ impl<'a> Runner<'a> {
     /// of the target and project, determine the hydration strategy as well.
     pub async fn is_cached(
         &mut self,
-        context: &mut ActionContext,
+        context: &ActionContext,
         runtime: &Runtime,
     ) -> miette::Result<Option<HydrateFrom>> {
         let mut hasher = self

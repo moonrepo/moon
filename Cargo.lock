@@ -3070,19 +3070,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_action_context2"
-version = "0.0.1"
-dependencies = [
- "dashmap",
- "moon_common",
- "moon_target",
- "relative-path",
- "rustc-hash",
- "serde",
- "tokio",
-]
-
-[[package]]
 name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [

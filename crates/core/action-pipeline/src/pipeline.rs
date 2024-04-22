@@ -37,7 +37,7 @@ pub struct Pipeline {
 
     report_name: Option<String>,
 
-    workspace: Arc<RwLock<Workspace>>,
+    workspace: Arc<Workspace>,
 }
 
 impl Pipeline {
@@ -48,7 +48,7 @@ impl Pipeline {
             duration: None,
             project_graph: Arc::new(RwLock::new(project_graph)),
             report_name: None,
-            workspace: Arc::new(RwLock::new(workspace)),
+            workspace: Arc::new(workspace),
         }
     }
 
@@ -74,7 +74,7 @@ impl Pipeline {
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let start = Instant::now();
-        let context = Arc::new(RwLock::new(context.unwrap_or_default()));
+        let context = Arc::new(context.unwrap_or_default());
         let emitter = Arc::new(RwLock::new(
             create_emitter(Arc::clone(&self.workspace)).await,
         ));
@@ -93,7 +93,7 @@ impl Pipeline {
         local_emitter
             .emit(Event::PipelineStarted {
                 actions_count: total_actions_count,
-                context: &*context.read().await,
+                context: &context,
             })
             .await?;
 
@@ -265,7 +265,7 @@ impl Pipeline {
 
         let duration = start.elapsed();
         let estimate = Estimator::calculate(&results, duration);
-        let context = Arc::into_inner(context).unwrap().into_inner();
+        let context = Arc::into_inner(context).unwrap();
         let mut passed_count = 0;
         let mut cached_count = 0;
         let mut failed_count = 0;
@@ -556,10 +556,9 @@ impl Pipeline {
         estimate: Estimator,
     ) -> miette::Result<()> {
         if let Some(name) = &self.report_name {
-            let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();
 
-            workspace
+            self.workspace
                 .cache_engine
                 .write(name, &RunReport::new(actions, context, duration, estimate))?;
         }
@@ -568,28 +567,24 @@ impl Pipeline {
     }
 }
 
-async fn create_emitter(workspace: Arc<RwLock<Workspace>>) -> Emitter {
+async fn create_emitter(workspace: Arc<Workspace>) -> Emitter {
     let mut emitter = Emitter::new(Arc::clone(&workspace));
 
-    {
-        let local_workspace = workspace.read().await;
-
-        // For security and privacy purposes, only send webhooks from a CI environment
-        if is_ci() || is_test_env() {
-            if let Some(webhook_url) = &local_workspace.config.notifier.webhook_url {
-                emitter
-                    .subscribers
-                    .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                        webhook_url.to_owned(),
-                    ))));
-            }
-        }
-
-        if local_workspace.session.is_some() {
+    // For security and privacy purposes, only send webhooks from a CI environment
+    if is_ci() || is_test_env() {
+        if let Some(webhook_url) = &workspace.config.notifier.webhook_url {
             emitter
                 .subscribers
-                .push(Arc::new(RwLock::new(MoonbaseSubscriber::new())));
+                .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                    webhook_url.to_owned(),
+                ))));
         }
+    }
+
+    if workspace.session.is_some() {
+        emitter
+            .subscribers
+            .push(Arc::new(RwLock::new(MoonbaseSubscriber::new())));
     }
 
     // Must be last as its the final line of defense

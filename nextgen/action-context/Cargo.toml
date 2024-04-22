@@ -1,5 +1,5 @@
 [package]
-name = "moon_action_context2"
+name = "moon_action_context"
 version = "0.0.1"
 edition = "2021"
 publish = false
@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
+clap = { workspace = true }
 dashmap = { workspace = true, features = ["serde"] }
 relative-path = { workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }

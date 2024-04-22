@@ -23,9 +23,9 @@ fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
 
 pub async fn process_action(
     mut action: Action,
-    context: Arc<RwLock<ActionContext>>,
+    context: Arc<ActionContext>,
     emitter: Arc<RwLock<Emitter>>,
-    workspace: Arc<RwLock<Workspace>>,
+    workspace: Arc<Workspace>,
     project_graph: Arc<RwLock<ProjectGraph>>,
     console: Arc<Console>,
 ) -> miette::Result<Action> {

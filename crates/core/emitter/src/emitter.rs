@@ -7,11 +7,11 @@ use tokio::sync::RwLock;
 pub struct Emitter {
     pub subscribers: Vec<Arc<RwLock<dyn Subscriber>>>,
 
-    workspace: Arc<RwLock<Workspace>>,
+    workspace: Arc<Workspace>,
 }
 
 impl Emitter {
-    pub fn new(workspace: Arc<RwLock<Workspace>>) -> Self {
+    pub fn new(workspace: Arc<Workspace>) -> Self {
         Emitter {
             subscribers: vec![],
             workspace,
@@ -19,12 +19,15 @@ impl Emitter {
     }
 
     pub async fn emit<'e>(&self, event: Event<'e>) -> miette::Result<EventFlow> {
-        let workspace = self.workspace.read().await;
-
         // dbg!(&event);
 
         for subscriber in &self.subscribers {
-            match subscriber.write().await.on_emit(&event, &workspace).await? {
+            match subscriber
+                .write()
+                .await
+                .on_emit(&event, &self.workspace)
+                .await?
+            {
                 EventFlow::Break => return Ok(EventFlow::Break),
                 EventFlow::Return(value) => return Ok(EventFlow::Return(value)),
                 EventFlow::Continue => {}

@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use dashmap::DashMap;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
@@ -6,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum ProfileType {
     Cpu,
@@ -73,7 +74,7 @@ impl ActionContext {
         self.named_mutexes
             .insert(name.to_owned(), Arc::clone(&mutex));
 
-        return mutex;
+        mutex
     }
 
     pub fn should_inherit_args<T: AsRef<Target>>(&self, target: T) -> bool {

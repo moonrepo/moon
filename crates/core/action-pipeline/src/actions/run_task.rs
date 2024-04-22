@@ -11,16 +11,16 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:run-task";
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run_task(
     action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
+    context: Arc<ActionContext>,
     emitter: Arc<RwLock<Emitter>>,
-    workspace: Arc<RwLock<Workspace>>,
+    workspace: Arc<Workspace>,
     console: Arc<Console>,
     project: &Project,
     target: &Target,
@@ -29,7 +29,6 @@ pub async fn run_task(
     env::set_var("MOON_RUNNING_ACTION", "run-task");
 
     let emitter = emitter.read().await;
-    let workspace = workspace.read().await;
     let task = project.get_task(&target.task_id)?;
     let mut runner = Runner::new(&emitter, &workspace, project, task, console)?;
 
@@ -44,12 +43,11 @@ pub async fn run_task(
 
     // If a dependency failed, we should skip this target
     if !task.deps.is_empty() {
-        let mut ctx = context.write().await;
-
         for dep in &task.deps {
-            if let Some(dep_state) = ctx.target_states.get(&dep.target) {
+            if let Some(dep_state) = context.target_states.get(&dep.target) {
                 if !dep_state.is_complete() {
-                    ctx.target_states
+                    context
+                        .target_states
                         .insert(target.clone(), TargetState::Skipped);
 
                     debug!(
@@ -73,9 +71,7 @@ pub async fn run_task(
 
     // Abort early if this build has already been cached/hashed
     if is_cache_enabled {
-        let mut ctx = context.write().await;
-
-        if let Some(cache_location) = runner.is_cached(&mut ctx, runtime).await? {
+        if let Some(cache_location) = runner.is_cached(&context, runtime).await? {
             return runner.hydrate(cache_location).await;
         }
     } else {
@@ -88,31 +84,12 @@ pub async fn run_task(
         // We must give this task a fake hash for it to be considered complete
         // for other tasks! This case triggers for noop or cache disabled tasks.
         context
-            .write()
-            .await
             .target_states
             .insert(target.clone(), TargetState::Passthrough);
     }
 
     let attempts_result = {
-        let _ctx: RwLock<ActionContext>;
-        let ctx = if is_cache_enabled {
-            context.read().await
-        } else {
-            // Concurrent long-running tasks will cause a deadlock, as some threads will
-            // attempt to write to context while others are reading from it, and long-running
-            // tasks may never release the lock. Unfortuantely we have to clone here to work
-            // around it, so revisit in the future.
-            _ctx = RwLock::new(context.read().await.clone());
-            _ctx.read().await
-        };
-
         if let Some(mutex_name) = &task.options.mutex {
-            if !ctx.named_mutexes.contains_key(mutex_name) {
-                ctx.named_mutexes
-                    .insert(mutex_name.to_owned(), Arc::new(Mutex::new(())));
-            }
-
             debug!(
                 target: LOG_TARGET,
                 "Waiting to acquire {} mutex lock for {} before running",
@@ -120,26 +97,18 @@ pub async fn run_task(
                 color::label(&task.target),
             );
 
-            if let Some(named_mutex) = ctx.named_mutexes.get(mutex_name) {
-                let _guard = named_mutex.lock().await;
+            let mutex = context.get_or_create_mutex(mutex_name);
+            let _guard = mutex.lock().await;
 
-                debug!(
-                    target: LOG_TARGET,
-                    "Acquired {} mutex lock for {}",
-                    color::id(mutex_name),
-                    color::label(&task.target),
-                );
-
-                runner.create_and_run_command(&ctx, runtime).await
-            } else {
-                Result::Err(miette::Report::msg(format!(
-                    "Unable to acquire named mutex \"{}\"",
-                    mutex_name
-                )))
-            }
-        } else {
-            runner.create_and_run_command(&ctx, runtime).await
+            debug!(
+                target: LOG_TARGET,
+                "Acquired {} mutex lock for {}",
+                color::id(mutex_name),
+                color::label(&task.target),
+            );
         }
+
+        runner.create_and_run_command(&context, runtime).await
     };
 
     match attempts_result {
@@ -148,8 +117,6 @@ pub async fn run_task(
                 ActionStatus::Passed
             } else {
                 context
-                    .write()
-                    .await
                     .target_states
                     .insert(target.clone(), TargetState::Failed);
 
@@ -173,8 +140,6 @@ pub async fn run_task(
         }
         Err(err) => {
             context
-                .write()
-                .await
                 .target_states
                 .insert(target.clone(), TargetState::Failed);
 

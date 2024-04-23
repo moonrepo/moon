@@ -3960,6 +3960,7 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
+ "dashmap",
  "miette",
  "moon_cache",
  "moon_common",
@@ -3974,7 +3975,6 @@ dependencies = [
  "moon_task_builder",
  "moon_test_utils2",
  "moon_vcs",
- "once_map",
  "petgraph",
  "rustc-hash",
  "serde",

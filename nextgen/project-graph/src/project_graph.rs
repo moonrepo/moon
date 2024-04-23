@@ -1,11 +1,11 @@
 use crate::project_graph_error::ProjectGraphError;
+use dashmap::DashMap;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
 use moon_project_expander::{ExpanderContext, ProjectExpander};
 use moon_query::{build_query, Criteria, Queryable};
-use once_map::OnceMap;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -46,7 +46,7 @@ impl ProjectNode {
 #[derive(Default)]
 pub struct ProjectGraph {
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
-    fs_cache: OnceMap<PathBuf, String>,
+    fs_cache: DashMap<PathBuf, Arc<String>>,
 
     /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
     graph: GraphType,
@@ -58,7 +58,7 @@ pub struct ProjectGraph {
     projects: Arc<RwLock<ProjectsCache>>,
 
     /// Cache of query results, mapped by query input to project IDs.
-    query_cache: OnceMap<String, Vec<Id>>,
+    query_cache: DashMap<String, Arc<Vec<Id>>>,
 
     /// The current working directory.
     pub working_dir: PathBuf,
@@ -77,8 +77,8 @@ impl ProjectGraph {
             projects: Arc::new(RwLock::new(FxHashMap::default())),
             working_dir: workspace_root.to_owned(),
             workspace_root: workspace_root.to_owned(),
-            fs_cache: OnceMap::new(),
-            query_cache: OnceMap::new(),
+            fs_cache: DashMap::new(),
+            query_cache: DashMap::new(),
         }
     }
 
@@ -169,7 +169,9 @@ impl ProjectGraph {
             current_file
         };
 
-        self.get(self.internal_search(file)?)
+        let id = self.internal_search(file)?;
+
+        self.get(&id)
     }
 
     /// Return a list of IDs for all projects currently within the graph.
@@ -193,7 +195,7 @@ impl ProjectGraph {
     ) -> miette::Result<Vec<Arc<Project>>> {
         let mut projects = vec![];
 
-        for id in self.internal_query(query)? {
+        for id in self.internal_query(query)?.iter() {
             projects.push(self.get(id)?);
         }
 
@@ -252,11 +254,11 @@ impl ProjectGraph {
         }
 
         Ok(Self {
-            fs_cache: OnceMap::new(),
+            fs_cache: DashMap::new(),
             graph,
             nodes,
             projects: self.projects.clone(),
-            query_cache: OnceMap::new(),
+            query_cache: DashMap::new(),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
         })
@@ -319,7 +321,7 @@ impl ProjectGraph {
                 // Don't use get() for expanded projects, since it'll overflow the
                 // stack trying to recursively expand projects! Using unexpanded
                 // dependent projects works just fine for the this entire process.
-                for result_id in self.internal_query(build_query(&input)?)? {
+                for result_id in self.internal_query(build_query(&input)?)?.iter() {
                     results.push(self.get_unexpanded(result_id)?);
                 }
 
@@ -343,77 +345,92 @@ impl ProjectGraph {
     fn internal_query<'input, Q: AsRef<Criteria<'input>>>(
         &self,
         query: Q,
-    ) -> miette::Result<&[Id]> {
+    ) -> miette::Result<Arc<Vec<Id>>> {
         let query = query.as_ref();
         let query_input = query
             .input
             .as_ref()
             .expect("Querying the project graph requires a query input string.");
+        let cache_key = query_input.to_string();
 
-        self.query_cache.try_insert(query_input.to_string(), |_| {
-            debug!("Querying projects with {}", color::shell(query_input));
+        if let Some(cache) = self.query_cache.get(&cache_key) {
+            return Ok(Arc::clone(cache.value()));
+        }
 
-            let mut project_ids = vec![];
+        debug!("Querying projects with {}", color::shell(query_input));
 
-            // Don't use `get_all` as it recursively calls `query`,
-            // which runs into a deadlock! This should be faster also...
-            for node in self.graph.raw_nodes() {
-                let project = &node.weight;
+        let mut project_ids = vec![];
 
-                if project.matches_criteria(query)? {
-                    project_ids.push(project.id.clone());
-                }
+        // Don't use `get_all` as it recursively calls `query`,
+        // which runs into a deadlock! This should be faster also...
+        for node in self.graph.raw_nodes() {
+            let project = &node.weight;
+
+            if project.matches_criteria(query)? {
+                project_ids.push(project.id.clone());
             }
+        }
 
-            // Sort so that the order is deterministic
-            project_ids.sort();
+        // Sort so that the order is deterministic
+        project_ids.sort();
 
-            debug!(
-                projects = ?project_ids
-                    .iter()
-                    .map(|id| id.as_str())
-                    .collect::<Vec<_>>(),
-                "Found {} matches",
-                project_ids.len(),
-            );
+        debug!(
+            projects = ?project_ids
+                .iter()
+                .map(|id| id.as_str())
+                .collect::<Vec<_>>(),
+            "Found {} matches",
+            project_ids.len(),
+        );
 
-            Ok(project_ids)
-        })
+        let ids = Arc::new(project_ids);
+
+        self.query_cache.insert(cache_key, Arc::clone(&ids));
+
+        Ok(ids)
     }
 
-    fn internal_search(&self, search: &Path) -> miette::Result<&str> {
-        self.fs_cache.try_insert(search.to_path_buf(), |_| {
-            // Find the deepest matching path in case sub-projects are being used
-            let mut remaining_length = 1000; // Start with a really fake number
-            let mut possible_id = String::new();
+    fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {
+        let cache_key = search.to_path_buf();
 
-            for (id, node) in &self.nodes {
-                if !search.starts_with(node.source.as_str()) {
-                    continue;
-                }
+        if let Some(cache) = self.fs_cache.get(&cache_key) {
+            return Ok(Arc::clone(cache.value()));
+        }
 
-                if let Ok(diff) = search.relative_to(node.source.as_str()) {
-                    let diff_comps = diff.components().count();
+        // Find the deepest matching path in case sub-projects are being used
+        let mut remaining_length = 1000; // Start with a really fake number
+        let mut possible_id = String::new();
 
-                    // Exact match, abort
-                    if diff_comps == 0 {
-                        possible_id = id.as_str().to_owned();
-                        break;
-                    }
-
-                    if diff_comps < remaining_length {
-                        remaining_length = diff_comps;
-                        possible_id = id.as_str().to_owned();
-                    }
-                }
+        for (id, node) in &self.nodes {
+            if !search.starts_with(node.source.as_str()) {
+                continue;
             }
 
-            if possible_id.is_empty() {
-                return Err(ProjectGraphError::MissingFromPath(search.to_path_buf()).into());
-            }
+            if let Ok(diff) = search.relative_to(node.source.as_str()) {
+                let diff_comps = diff.components().count();
 
-            Ok(possible_id)
-        })
+                // Exact match, abort
+                if diff_comps == 0 {
+                    possible_id = id.as_str().to_owned();
+                    break;
+                }
+
+                if diff_comps < remaining_length {
+                    remaining_length = diff_comps;
+                    possible_id = id.as_str().to_owned();
+                }
+            }
+        }
+
+        if possible_id.is_empty() {
+            return Err(ProjectGraphError::MissingFromPath(search.to_path_buf()).into());
+        }
+
+        let id = Arc::new(possible_id);
+
+        self.fs_cache.insert(cache_key, Arc::clone(&id));
+
+        Ok(id)
     }
 
     fn resolve_id(&self, alias_or_id: &str) -> Id {

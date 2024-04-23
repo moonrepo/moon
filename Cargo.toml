@@ -35,7 +35,6 @@ dashmap = "5.5.3"
 dirs = "5.0.1"
 miette = "7.2.0"
 once_cell = "1.19.0"
-once_map = "0.4.17"
 pathdiff = "0.2.1"
 petgraph = { version = "0.6.4", default-features = false, features = [
 	"serde-1",

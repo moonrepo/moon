@@ -41,6 +41,8 @@ pub struct Action {
 
     pub flaky: bool,
 
+    pub label: String,
+
     pub node: Arc<ActionNode>,
 
     pub node_index: usize,
@@ -64,6 +66,7 @@ impl Action {
             error_report: None,
             finished_at: None,
             flaky: false,
+            label: node.label(),
             node: Arc::new(node),
             node_index: 0,
             started_at: None,

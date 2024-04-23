@@ -726,7 +726,7 @@ impl<'a> Runner<'a> {
             match possible_output {
                 // zero and non-zero exit codes
                 Ok(out) => {
-                    attempt.done(if out.status.success() {
+                    attempt.finish(if out.status.success() {
                         ActionStatus::Passed
                     } else {
                         ActionStatus::Failed
@@ -775,7 +775,7 @@ impl<'a> Runner<'a> {
                 }
                 // process itself failed
                 Err(error) => {
-                    attempt.done(ActionStatus::Failed);
+                    attempt.finish(ActionStatus::Failed);
                     attempts.push(attempt);
 
                     interval_handle.abort();

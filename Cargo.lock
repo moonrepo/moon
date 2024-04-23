@@ -3048,20 +3048,6 @@ dependencies = [
  "miette",
  "moon_action_graph",
  "moon_common",
- "moon_platform_runtime",
- "moon_target",
- "moon_utils",
- "serde",
-]
-
-[[package]]
-name = "moon_action2"
-version = "0.0.1"
-dependencies = [
- "miette",
- "moon_action_graph",
- "moon_common",
- "moon_platform_runtime",
  "moon_target",
  "moon_time",
  "serde",

@@ -33,11 +33,7 @@ pub async fn process_action(
     let node = Arc::clone(&action.node);
     let log_action_label = color::muted_light(&action.label);
 
-    trace!(
-        target: &action.log_target,
-        "Processing action {}",
-        log_action_label
-    );
+    trace!("Processing action {}", log_action_label);
 
     emitter
         .emit(Event::ActionStarted {
@@ -227,14 +223,12 @@ pub async fn process_action(
 
     if action.has_failed() {
         trace!(
-            target: &action.log_target,
             "Failed to process action {} in {:?}",
             log_action_label,
             action.duration.unwrap()
         );
     } else {
         trace!(
-            target: &action.log_target,
             "Processed action {} in {:?}",
             log_action_label,
             action.duration.unwrap()

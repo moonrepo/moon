@@ -145,7 +145,7 @@ mod local {
     async fn local_branch() {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
-        assert_eq!(git.get_local_branch().await.unwrap(), "master");
+        assert_eq!(git.get_local_branch().await.unwrap().as_str(), "master");
     }
 
     #[tokio::test]
@@ -156,7 +156,7 @@ mod local {
             cmd.args(["checkout", "-b", "feature"]);
         });
 
-        assert_eq!(git.get_local_branch().await.unwrap(), "feature");
+        assert_eq!(git.get_local_branch().await.unwrap().as_str(), "feature");
     }
 
     #[tokio::test]
@@ -164,7 +164,7 @@ mod local {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         // Hash changes every time, so check that it's not empty
-        assert_ne!(git.get_local_branch_revision().await.unwrap(), "");
+        assert_ne!(git.get_local_branch_revision().await.unwrap().as_str(), "");
     }
 
     #[tokio::test]
@@ -174,7 +174,7 @@ mod local {
 
         let git = Git::load(sandbox.path(), "main", &[]).unwrap();
 
-        assert_eq!(git.get_default_branch().await.unwrap(), "main");
+        assert_eq!(git.get_default_branch().await.unwrap().as_str(), "main");
     }
 
     #[tokio::test]
@@ -182,7 +182,10 @@ mod local {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         // Hash changes every time, so check that it's not empty
-        assert_ne!(git.get_default_branch_revision().await.unwrap(), "");
+        assert_ne!(
+            git.get_default_branch_revision().await.unwrap().as_str(),
+            ""
+        );
     }
 }
 

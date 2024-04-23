@@ -12,6 +12,7 @@ use rustc_hash::FxHashSet;
 use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::{cmp, env};
 use thiserror::Error;
 use tracing::debug;
@@ -68,7 +69,7 @@ pub enum GitError {
 #[derive(Debug)]
 pub struct Git {
     /// Default git branch name.
-    pub default_branch: String,
+    pub default_branch: Arc<String>,
 
     /// Root of the `.git` directory.
     pub git_root: PathBuf,
@@ -172,7 +173,7 @@ impl Git {
         }
 
         Ok(Git {
-            default_branch: default_branch.as_ref().to_owned(),
+            default_branch: Arc::new(default_branch.as_ref().to_owned()),
             ignore,
             remote_candidates: remote_candidates.to_owned(),
             root_prefix: if repository_root == workspace_root {
@@ -187,7 +188,7 @@ impl Git {
         })
     }
 
-    async fn get_merge_base(&self, base: &str, head: &str) -> miette::Result<Option<&str>> {
+    async fn get_merge_base(&self, base: &str, head: &str) -> miette::Result<Option<Arc<String>>> {
         let mut args = vec!["merge-base", head];
         let mut candidates = vec![base.to_owned()];
 
@@ -216,13 +217,12 @@ impl Git {
         Ok(None)
     }
 
-    #[allow(clippy::needless_lifetimes)]
-    pub async fn get_remote_default_branch<'l>(&'l self) -> miette::Result<&'l str> {
-        let extract_branch = |result: &'l str| -> Option<&'l str> {
+    pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
+        let extract_branch = |result: Arc<String>| -> Option<Arc<String>> {
             if let Some(branch) = result.strip_prefix("origin/") {
-                return Some(branch);
+                return Some(Arc::new(branch.to_owned()));
             } else if let Some(branch) = result.strip_prefix("upstream/") {
-                return Some(branch);
+                return Some(Arc::new(branch.to_owned()));
             }
 
             None
@@ -251,7 +251,7 @@ impl Git {
             }
         };
 
-        Ok(&self.default_branch)
+        Ok(self.default_branch.clone())
     }
 
     fn to_workspace_relative_path(&self, value: &str) -> WorkspaceRelativePathBuf {
@@ -270,7 +270,7 @@ impl Git {
 
 #[async_trait]
 impl Vcs for Git {
-    async fn get_local_branch(&self) -> miette::Result<&str> {
+    async fn get_local_branch(&self) -> miette::Result<Arc<String>> {
         if self.is_version_supported(">=2.22.0").await? {
             return self.process.run(["branch", "--show-current"], true).await;
         }
@@ -280,15 +280,15 @@ impl Vcs for Git {
             .await
     }
 
-    async fn get_local_branch_revision(&self) -> miette::Result<&str> {
+    async fn get_local_branch_revision(&self) -> miette::Result<Arc<String>> {
         self.process.run(["rev-parse", "HEAD"], true).await
     }
 
-    async fn get_default_branch(&self) -> miette::Result<&str> {
-        Ok(&self.default_branch)
+    async fn get_default_branch(&self) -> miette::Result<Arc<String>> {
+        Ok(self.default_branch.clone())
     }
 
-    async fn get_default_branch_revision(&self) -> miette::Result<&str> {
+    async fn get_default_branch_revision(&self) -> miette::Result<Arc<String>> {
         self.process
             .run(["rev-parse", &self.default_branch], true)
             .await
@@ -389,7 +389,7 @@ impl Vcs for Git {
             .run(["config", "--get", "core.hooksPath"], true)
             .await
         {
-            let dir = PathBuf::from(output);
+            let dir = PathBuf::from(output.as_str());
 
             if is_in_repo(&dir) {
                 return Ok(dir);
@@ -415,7 +415,7 @@ impl Vcs for Git {
             .to_path_buf())
     }
 
-    async fn get_repository_slug(&self) -> miette::Result<&str> {
+    async fn get_repository_slug(&self) -> miette::Result<Arc<String>> {
         use git_url_parse::GitUrl;
 
         for candidate in &self.remote_candidates {
@@ -548,7 +548,7 @@ impl Vcs for Git {
             .run(["rev-list", "--count", revision], true)
             .await?;
 
-        let prev_revision = if output == "0" || output.is_empty() {
+        let prev_revision = if output.as_str() == "0" || output.is_empty() {
             revision.to_owned()
         } else {
             format!("{revision}~1")
@@ -563,10 +563,7 @@ impl Vcs for Git {
         base_revision: &str,
         revision: &str,
     ) -> miette::Result<TouchedFiles> {
-        let base = self
-            .get_merge_base(base_revision, revision)
-            .await?
-            .unwrap_or(base_revision);
+        let base = self.get_merge_base(base_revision, revision).await?;
 
         let output = self
             .process
@@ -580,7 +577,7 @@ impl Vcs for Git {
                     // We use this option so that file names with special characters
                     // are displayed as-is and are not quoted/escaped
                     "-z",
-                    base,
+                    base.as_ref().map(|b| b.as_str()).unwrap_or(base_revision),
                 ],
                 false,
             )
@@ -652,13 +649,13 @@ impl Vcs for Git {
             .run_with_formatter(["--version"], true, clean_git_version)
             .await?;
 
-        Ok(Version::parse(version).into_diagnostic()?)
+        Ok(Version::parse(&version).into_diagnostic()?)
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {
         let default_branch = &self.default_branch;
 
-        if default_branch == branch {
+        if default_branch.as_str() == branch {
             return true;
         }
 
@@ -688,7 +685,7 @@ impl Vcs for Git {
                 .run(["rev-parse", "--is-shallow-repository"], true)
                 .await?;
 
-            result == "true"
+            result.as_str() == "true"
         } else {
             let result = self.process.run(["rev-parse", "--git-dir"], true).await?;
 

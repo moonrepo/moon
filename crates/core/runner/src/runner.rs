@@ -233,7 +233,7 @@ impl<'a> Runner<'a> {
 
             // TODO avoid cloning if possible
             if let Some(entry) = context.target_states.get(&dep.target) {
-                state = match entry.value() {
+                state = match entry.get() {
                     TargetState::Completed(hash) => Some(hash.to_owned()),
                     TargetState::Passthrough => Some("passthrough".into()),
                     _ => None,
@@ -575,10 +575,7 @@ impl<'a> Runner<'a> {
             color::id(&self.task.target)
         );
 
-        context.target_states.insert(
-            self.task.target.clone(),
-            TargetState::Completed(hash.clone()),
-        );
+        context.set_target_state(&self.task.target, TargetState::Completed(hash.clone()));
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate

@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode, ActionStatus};
+use moon_action::*;
 use moon_action_pipeline::estimator::{Estimator, TaskEstimate};
 use moon_platform::Runtime;
 use rustc_hash::FxHashMap;
@@ -9,14 +9,10 @@ const NANOS_PER_MILLI: u32 = 1_000_000;
 const HALF_SECOND: u32 = NANOS_PER_MILLI * 500;
 
 fn create_run_task_action(runtime: Runtime, target: &str) -> Arc<ActionNode> {
-    Arc::new(ActionNode::RunTask {
-        args: vec![],
-        env: vec![],
-        interactive: false,
-        persistent: false,
+    Arc::new(ActionNode::run_task(RunTaskNode::new(
+        target.into(),
         runtime,
-        target: target.into(),
-    })
+    )))
 }
 
 mod estimator {
@@ -125,16 +121,16 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::SetupTool {
+                    node: Arc::new(ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system(),
-                    }),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::InstallDeps {
+                    node: Arc::new(ActionNode::install_deps(InstallDepsNode {
                         runtime: Runtime::system(),
-                    }),
+                    })),
                     ..Action::default()
                 },
                 Action {
@@ -197,16 +193,16 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::SetupTool {
+                    node: Arc::new(ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system(),
-                    }),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::InstallDeps {
+                    node: Arc::new(ActionNode::install_deps(InstallDepsNode {
                         runtime: Runtime::system(),
-                    }),
+                    })),
                     ..Action::default()
                 },
                 Action {
@@ -270,16 +266,16 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::SetupTool {
+                    node: Arc::new(ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system(),
-                    }),
+                    })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::InstallDeps {
+                    node: Arc::new(ActionNode::install_deps(InstallDepsNode {
                         runtime: Runtime::system(),
-                    }),
+                    })),
                     ..Action::default()
                 },
                 Action {

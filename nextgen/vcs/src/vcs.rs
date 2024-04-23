@@ -6,20 +6,21 @@ use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 #[async_trait]
 pub trait Vcs: Debug {
     /// Get the local checkout branch name.
-    async fn get_local_branch(&self) -> miette::Result<&str>;
+    async fn get_local_branch(&self) -> miette::Result<Arc<String>>;
 
     /// Get the revision hash/number of the local branch's HEAD.
-    async fn get_local_branch_revision(&self) -> miette::Result<&str>;
+    async fn get_local_branch_revision(&self) -> miette::Result<Arc<String>>;
 
     /// Get the remote checkout default name. Typically master/main on git, and trunk on svn.
-    async fn get_default_branch(&self) -> miette::Result<&str>;
+    async fn get_default_branch(&self) -> miette::Result<Arc<String>>;
 
     /// Get the revision hash/number of the default branch's HEAD.
-    async fn get_default_branch_revision(&self) -> miette::Result<&str>;
+    async fn get_default_branch_revision(&self) -> miette::Result<Arc<String>>;
 
     /// Get a map of hashes for the provided files. Files *must* be relative from
     /// the workspace root.
@@ -41,7 +42,7 @@ pub trait Vcs: Debug {
     async fn get_repository_root(&self) -> miette::Result<PathBuf>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
-    async fn get_repository_slug(&self) -> miette::Result<&str>;
+    async fn get_repository_slug(&self) -> miette::Result<Arc<String>>;
 
     /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> miette::Result<TouchedFiles>;

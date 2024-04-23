@@ -1,12 +1,9 @@
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
-use dashmap::{
-    iter::{Iter, IterMut},
-    DashMap,
-};
 use moon_env::MoonEnvironment;
 use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
+use scc::HashMap;
 use starbase_utils::fs;
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use tracing::debug;
@@ -21,7 +18,7 @@ pub struct PluginRegistry<T: Plugin> {
     pub proto_env: Arc<ProtoEnvironment>,
 
     loader: PluginLoader,
-    plugins: Arc<DashMap<Id, T>>,
+    plugins: Arc<HashMap<Id, T>>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
@@ -52,7 +49,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
         Self {
             loader,
-            plugins: Arc::new(DashMap::new()),
+            plugins: Arc::new(HashMap::default()),
             moon_env,
             proto_env,
             type_of,
@@ -104,7 +101,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<DashMap<Id, T>> {
+    pub fn get_cache(&self) -> Arc<HashMap<Id, T>> {
         Arc::clone(&self.plugins)
     }
 
@@ -121,10 +118,14 @@ impl<T: Plugin> PluginRegistry<T> {
         F: FnOnce(&T) -> Fut,
         Fut: Future<Output = miette::Result<R>> + Send + 'static,
     {
-        let plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
-            name: self.type_of.get_label().to_owned(),
-            id: id.to_owned(),
-        })?;
+        let plugin = self
+            .plugins
+            .get_async(id)
+            .await
+            .ok_or_else(|| PluginError::UnknownId {
+                name: self.type_of.get_label().to_owned(),
+                id: id.to_owned(),
+            })?;
 
         debug!(
             kind = self.type_of.get_label(),
@@ -132,7 +133,7 @@ impl<T: Plugin> PluginRegistry<T> {
             "Accessing information from the plugin (async)",
         );
 
-        op(plugin.value()).await
+        op(plugin.get()).await
     }
 
     pub fn access_sync<F, R>(&self, id: &Id, op: F) -> miette::Result<R>
@@ -150,7 +151,7 @@ impl<T: Plugin> PluginRegistry<T> {
             "Accessing information from the plugin (sync)",
         );
 
-        op(plugin.value())
+        op(plugin.get())
     }
 
     pub async fn perform<F, Fut, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
@@ -158,13 +159,14 @@ impl<T: Plugin> PluginRegistry<T> {
         F: FnMut(&mut T, MoonContext) -> Fut,
         Fut: Future<Output = miette::Result<R>> + Send + 'static,
     {
-        let mut plugin = self
-            .plugins
-            .get_mut(id)
-            .ok_or_else(|| PluginError::UnknownId {
-                name: self.type_of.get_label().to_owned(),
-                id: id.to_owned(),
-            })?;
+        let mut plugin =
+            self.plugins
+                .get_async(id)
+                .await
+                .ok_or_else(|| PluginError::UnknownId {
+                    name: self.type_of.get_label().to_owned(),
+                    id: id.to_owned(),
+                })?;
 
         debug!(
             kind = self.type_of.get_label(),
@@ -172,20 +174,17 @@ impl<T: Plugin> PluginRegistry<T> {
             "Performing an action on the plugin (async)",
         );
 
-        op(plugin.value_mut(), self.create_context()).await
+        op(plugin.get_mut(), self.create_context()).await
     }
 
     pub fn perform_sync<F, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
     where
         F: FnMut(&mut T, MoonContext) -> miette::Result<R>,
     {
-        let mut plugin = self
-            .plugins
-            .get_mut(id)
-            .ok_or_else(|| PluginError::UnknownId {
-                name: self.type_of.get_label().to_owned(),
-                id: id.to_owned(),
-            })?;
+        let mut plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
+            name: self.type_of.get_label().to_owned(),
+            id: id.to_owned(),
+        })?;
 
         debug!(
             kind = self.type_of.get_label(),
@@ -193,16 +192,16 @@ impl<T: Plugin> PluginRegistry<T> {
             "Performing an action on the plugin (sync)",
         );
 
-        op(plugin.value_mut(), self.create_context())
+        op(plugin.get_mut(), self.create_context())
     }
 
-    pub fn iter(&self) -> Iter<'_, Id, T> {
-        self.plugins.iter()
-    }
+    // pub fn iter(&self) -> Iter<'_, Id, T> {
+    //     self.plugins.iter()
+    // }
 
-    pub fn iter_mut(&self) -> IterMut<'_, Id, T> {
-        self.plugins.iter_mut()
-    }
+    // pub fn iter_mut(&self) -> IterMut<'_, Id, T> {
+    //     self.plugins.iter_mut()
+    // }
 
     pub async fn load<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
@@ -225,7 +224,7 @@ impl<T: Plugin> PluginRegistry<T> {
     {
         let id = id.as_ref();
 
-        if self.plugins.contains_key(id) {
+        if self.plugins.contains(id) {
             return Err(PluginError::ExistingId {
                 name: self.type_of.get_label().to_owned(),
                 id: id.to_owned(),
@@ -280,6 +279,6 @@ impl<T: Plugin> PluginRegistry<T> {
             "Registered plugin",
         );
 
-        self.plugins.insert(id, plugin);
+        let _ = self.plugins.insert(id, plugin);
     }
 }

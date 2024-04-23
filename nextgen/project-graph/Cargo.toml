@@ -22,9 +22,9 @@ moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
 moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
-once_map = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 serde = { workspace = true, features = ["rc"] }
 starbase_events = { workspace = true }
 starbase_utils = { workspace = true }

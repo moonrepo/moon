@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-moon_action = { path = "../action" }
+moon_action = { path = "../../../nextgen/action" }
 moon_action_context = { path = "../../../nextgen/action-context" }
 moon_cache_item = { path = "../../../nextgen/cache-item" }
 moon_common = { path = "../../../nextgen/common" }

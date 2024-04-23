@@ -29,7 +29,9 @@ export interface Action {
 	error: string | null;
 	finishedAt: string | null;
 	flaky: boolean;
-	label: string | null;
+	label: string;
+	node: ActionNode;
+	nodeIndex: number;
 	startedAt: string | null;
 	status: ActionStatus;
 }
@@ -83,14 +85,14 @@ export type ActionNode =
 	| ActionNodeSyncWorkspace;
 
 export interface ActionNodeInstallDeps {
-	action: 'InstallDeps';
+	action: 'install-deps';
 	params: {
 		runtime: Runtime;
 	};
 }
 
 export interface ActionNodeInstallProjectDeps {
-	action: 'InstallProjectDeps';
+	action: 'install-project-deps';
 	params: {
 		runtime: Runtime;
 		project: string;
@@ -98,8 +100,10 @@ export interface ActionNodeInstallProjectDeps {
 }
 
 export interface ActionNodeRunTask {
-	action: 'RunTask';
+	action: 'run-task';
 	params: {
+		args: string[];
+		env: [string, string][];
 		interactive: boolean;
 		persistent: boolean;
 		runtime: Runtime;
@@ -108,14 +112,14 @@ export interface ActionNodeRunTask {
 }
 
 export interface ActionNodeSetupTool {
-	action: 'SetupTool';
+	action: 'setup-tool';
 	params: {
 		runtime: Runtime;
 	};
 }
 
 export interface ActionNodeSyncProject {
-	action: 'SyncProject';
+	action: 'sync-project';
 	params: {
 		runtime: Runtime;
 		project: string;
@@ -123,7 +127,7 @@ export interface ActionNodeSyncProject {
 }
 
 export interface ActionNodeSyncWorkspace {
-	action: 'SyncWorkspace';
+	action: 'sync-workspace';
 	params: {};
 }
 

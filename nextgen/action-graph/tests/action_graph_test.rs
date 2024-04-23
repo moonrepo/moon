@@ -2,11 +2,12 @@
 
 mod utils;
 
+use moon_action::*;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{TaskArgs, TaskDependencyConfig};
-use moon_platform_runtime::*;
+use moon_config::{PlatformType, TaskArgs, TaskDependencyConfig};
+use moon_platform::*;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_project_graph;
@@ -109,13 +110,13 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    }
+                    })
                 ]
             );
         }
@@ -136,13 +137,13 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    }
+                    })
                 ]
             );
         }
@@ -165,17 +166,17 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallProjectDeps {
+                    }),
+                    ActionNode::install_project_deps(InstallProjectDepsNode {
                         project: Id::raw("out"),
                         runtime: create_node_runtime()
-                    },
+                    }),
                 ]
             );
         }
@@ -204,13 +205,13 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    }
+                    })
                 ]
             );
 
@@ -226,13 +227,13 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    }
+                    })
                 ]
             );
         }
@@ -262,25 +263,18 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    }
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
                 ]
             );
         }
@@ -311,25 +305,18 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    }
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
                 ]
             );
         }
@@ -418,29 +405,22 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_rust_runtime()
-                    },
-                    ActionNode::InstallProjectDeps {
+                    }),
+                    ActionNode::install_project_deps(InstallProjectDepsNode {
                         project: Id::raw("bar"),
                         runtime: create_rust_runtime()
-                    },
-                    ActionNode::SetupTool {
+                    }),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_rust_runtime(),
-                        target: task.target
-                    }
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(task.target, create_rust_runtime()))
                 ]
             );
         }
@@ -464,14 +444,11 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::RunTask {
-                    args: vec![],
-                    env: vec![],
-                    interactive: true,
-                    persistent: false,
-                    runtime: Runtime::system(),
-                    target: task.target
-                }
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    node.interactive = true;
+                    node
+                })
             );
         }
 
@@ -499,14 +476,11 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::RunTask {
-                    args: vec![],
-                    env: vec![],
-                    interactive: true,
-                    persistent: false,
-                    runtime: Runtime::system(),
-                    target: task.target
-                }
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    node.interactive = true;
+                    node
+                })
             );
         }
 
@@ -529,14 +503,11 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::RunTask {
-                    args: vec![],
-                    env: vec![],
-                    interactive: false,
-                    persistent: true,
-                    runtime: Runtime::system(),
-                    target: task.target
-                }
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    node.persistent = true;
+                    node
+                })
             );
         }
 
@@ -587,41 +558,31 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["x".into(), "y".into(), "z".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    }
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime()
+                    )),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["x".into(), "y".into(), "z".into()];
+                        node
+                    })
                 ]
             );
         }
@@ -664,25 +625,22 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
+                    }),
                 ]
             );
         }
@@ -725,25 +683,22 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
+                    }),
                 ]
             );
         }
@@ -795,41 +750,31 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![("FOO".into(), "1".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![("BAR".into(), "2".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    }
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime()
+                    )),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
+                    })
                 ]
             );
         }
@@ -872,25 +817,22 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![("FOO".into(), "1".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
+                    }),
                 ]
             );
         }
@@ -956,49 +898,39 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::InstallDeps {
+                    }),
+                    ActionNode::install_deps(InstallDepsNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::RunTask {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![("FOO".into(), "1".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![("BAR".into(), "2".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    },
-                    ActionNode::RunTask {
-                        args: vec!["x".into(), "y".into(), "z".into()],
-                        env: vec![("BAR".into(), "2".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    },
+                    }),
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime()
+                    )),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
+                    }),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["x".into(), "y".into(), "z".into()];
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
+                    }),
                 ]
             );
         }
@@ -1605,9 +1537,9 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool { runtime: system },
-                    ActionNode::SetupTool { runtime: node },
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode { runtime: system }),
+                    ActionNode::setup_tool(SetupToolNode { runtime: node }),
                 ]
             );
         }
@@ -1637,10 +1569,10 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool { runtime: node1 },
-                    ActionNode::SetupTool { runtime: node2 },
-                    ActionNode::SetupTool { runtime: node3 },
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode { runtime: node1 }),
+                    ActionNode::setup_tool(SetupToolNode { runtime: node2 }),
+                    ActionNode::setup_tool(SetupToolNode { runtime: node3 }),
                 ]
             );
         }
@@ -1659,8 +1591,8 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool { runtime: system },
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode { runtime: system }),
                 ]
             );
         }
@@ -1683,14 +1615,14 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
-                    }
+                    })
                 ]
             );
         }
@@ -1709,18 +1641,18 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("foo"),
                         runtime: Runtime::system()
-                    }
+                    })
                 ]
             );
         }
@@ -1745,22 +1677,22 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("foo"),
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("qux"),
                         runtime: Runtime::system()
-                    },
+                    }),
                 ]
             );
         }
@@ -1781,18 +1713,18 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: Runtime::system()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("foo"),
                         runtime: Runtime::system()
-                    }
+                    })
                 ]
             );
         }
@@ -1815,21 +1747,21 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SetupTool {
+                    }),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_rust_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("qux"),
                         runtime: create_rust_runtime()
-                    },
+                    }),
                 ]
             );
         }
@@ -1852,27 +1784,27 @@ mod action_graph {
             assert_eq!(
                 topo(graph),
                 vec![
-                    ActionNode::SyncWorkspace,
-                    ActionNode::SetupTool {
+                    ActionNode::sync_workspace(),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
-                    },
-                    ActionNode::SetupTool {
+                    }),
+                    ActionNode::setup_tool(SetupToolNode {
                         runtime: Runtime::new_override(
                             PlatformType::Node,
                             RuntimeReq::with_version(Version::new(18, 0, 0))
                         )
-                    },
-                    ActionNode::SyncProject {
+                    }),
+                    ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("baz"),
                         runtime: Runtime::new_override(
                             PlatformType::Node,
                             RuntimeReq::with_version(Version::new(18, 0, 0))
                         )
-                    },
+                    }),
                 ]
             );
         }
@@ -1891,7 +1823,7 @@ mod action_graph {
             let graph = builder.build().unwrap();
 
             assert_snapshot!(graph.to_dot());
-            assert_eq!(topo(graph), vec![ActionNode::SyncWorkspace]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
 
         #[tokio::test]
@@ -1905,7 +1837,7 @@ mod action_graph {
 
             let graph = builder.build().unwrap();
 
-            assert_eq!(topo(graph), vec![ActionNode::SyncWorkspace]);
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }
     }
 }

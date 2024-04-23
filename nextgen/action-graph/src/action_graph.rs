@@ -1,6 +1,6 @@
 use crate::action_graph_error::ActionGraphError;
-use crate::action_node::ActionNode;
 use graph_cycles::Cycles;
+use moon_action::ActionNode;
 use moon_common::{color, is_test_env};
 use petgraph::dot::{Config, Dot};
 use petgraph::prelude::*;

@@ -575,10 +575,7 @@ impl<'a> Runner<'a> {
             color::id(&self.task.target)
         );
 
-        let _ = context.target_states.insert(
-            self.task.target.clone(),
-            TargetState::Completed(hash.clone()),
-        );
+        context.set_target_state(&self.task.target, TargetState::Completed(hash.clone()));
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate

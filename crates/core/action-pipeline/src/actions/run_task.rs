@@ -44,9 +44,7 @@ pub async fn run_task(
         for dep in &task.deps {
             if let Some(dep_state) = context.target_states.get(&dep.target) {
                 if !dep_state.get().is_complete() {
-                    let _ = context
-                        .target_states
-                        .insert(target.clone(), TargetState::Skipped);
+                    context.set_target_state(target, TargetState::Skipped);
 
                     debug!(
                         target: LOG_TARGET,
@@ -81,9 +79,7 @@ pub async fn run_task(
 
         // We must give this task a fake hash for it to be considered complete
         // for other tasks! This case triggers for noop or cache disabled tasks.
-        let _ = context
-            .target_states
-            .insert(target.clone(), TargetState::Passthrough);
+        context.set_target_state(target, TargetState::Passthrough);
     }
 
     let attempts_result = {
@@ -118,9 +114,7 @@ pub async fn run_task(
             let status = if action.set_attempts(attempts, &task.command) {
                 ActionStatus::Passed
             } else {
-                let _ = context
-                    .target_states
-                    .insert(target.clone(), TargetState::Failed);
+                context.set_target_state(target, TargetState::Failed);
 
                 if action.allow_failure {
                     warn!(
@@ -141,9 +135,7 @@ pub async fn run_task(
             Ok(status)
         }
         Err(err) => {
-            let _ = context
-                .target_states
-                .insert(target.clone(), TargetState::Failed);
+            context.set_target_state(target, TargetState::Failed);
 
             Err(err)
         }

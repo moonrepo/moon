@@ -78,6 +78,10 @@ impl ActionContext {
         mutex
     }
 
+    pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {
+        let _ = self.target_states.insert(target.as_ref().to_owned(), state);
+    }
+
     pub fn should_inherit_args<T: AsRef<Target>>(&self, target: T) -> bool {
         if self.passthrough_args.is_empty() {
             return false;

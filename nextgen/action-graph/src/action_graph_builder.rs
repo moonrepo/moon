@@ -1,5 +1,8 @@
 use crate::action_graph::ActionGraph;
-use moon_action::{ActionNode, RunTaskNode, RuntimeNode, ScopedRuntimeNode};
+use moon_action::{
+    ActionNode, InstallDepsNode, InstallProjectDepsNode, RunTaskNode, SetupToolNode,
+    SyncProjectNode,
+};
 use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
 use moon_config::{PlatformType, TaskDependencyConfig};
@@ -127,12 +130,12 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         let node = if in_project {
-            ActionNode::InstallProjectDeps(ScopedRuntimeNode {
+            ActionNode::install_project_deps(InstallProjectDepsNode {
                 project: project.id.to_owned(),
                 runtime: self.get_runtime(project, platform_type, true),
             })
         } else {
-            ActionNode::InstallDeps(RuntimeNode {
+            ActionNode::install_deps(InstallDepsNode {
                 runtime: self.get_runtime(project, platform_type, false),
             })
         };
@@ -178,7 +181,7 @@ impl<'app> ActionGraphBuilder<'app> {
             env.extend(config.env.clone().into_iter().collect::<Vec<_>>());
         }
 
-        let node = ActionNode::RunTask(RunTaskNode {
+        let node = ActionNode::run_task(RunTaskNode {
             args,
             env,
             interactive: task.is_interactive() || reqs.interactive,
@@ -422,7 +425,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
-        let node = ActionNode::SetupTool(RuntimeNode {
+        let node = ActionNode::setup_tool(SetupToolNode {
             runtime: runtime.to_owned(),
         });
 
@@ -447,7 +450,7 @@ impl<'app> ActionGraphBuilder<'app> {
         project: &Project,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
-        let node = ActionNode::SyncProject(ScopedRuntimeNode {
+        let node = ActionNode::sync_project(SyncProjectNode {
             project: project.id.clone(),
             runtime: self.get_runtime(project, project.platform, true),
         });

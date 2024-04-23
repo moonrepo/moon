@@ -461,7 +461,7 @@ impl Subscriber for MoonbaseSubscriber {
                                 let archive_path = archive_path.to_owned();
 
                                 // Create a fake action label so that we can check the CI cache
-                                let action_label = ActionNode::RunTask(RunTaskNode {
+                                let action_label = ActionNode::run_task(RunTaskNode {
                                     args: vec![],
                                     env: vec![],
                                     interactive: false,

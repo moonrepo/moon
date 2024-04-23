@@ -4,7 +4,7 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
-use moon_action::{Action, ActionNode, ActionStatus, RunTaskNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_console::{Checkpoint, Console};
@@ -365,7 +365,7 @@ impl Pipeline {
             console.out.print_checkpoint(
                 Checkpoint::RunFailed,
                 match &*result.node {
-                    ActionNode::RunTask(RunTaskNode { target, .. }) => target.as_str(),
+                    ActionNode::RunTask(inner) => inner.target.as_str(),
                     _ => &result.label,
                 },
             )?;

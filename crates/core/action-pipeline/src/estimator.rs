@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode, ActionStatus, RunTaskNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::time::Duration;
@@ -68,8 +68,8 @@ impl Estimator {
                 | ActionNode::InstallProjectDeps(_) => {
                     install_duration += task_duration;
                 }
-                ActionNode::RunTask(RunTaskNode { target, .. }) => {
-                    let task_id = target.task_id.to_string();
+                ActionNode::RunTask(inner) => {
+                    let task_id = inner.target.task_id.to_string();
 
                     if let Some(task) = tasks.get_mut(&task_id) {
                         task.count += 1;

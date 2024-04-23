@@ -9,11 +9,17 @@ pub struct RuntimeNode {
     pub runtime: Runtime,
 }
 
+pub type InstallDepsNode = RuntimeNode;
+pub type SetupToolNode = RuntimeNode;
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ScopedRuntimeNode {
     pub project: Id,
     pub runtime: Runtime,
 }
+
+pub type InstallProjectDepsNode = ScopedRuntimeNode;
+pub type SyncProjectNode = ScopedRuntimeNode;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct RunTaskNode {
@@ -26,26 +32,25 @@ pub struct RunTaskNode {
 }
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize)]
-#[serde(tag = "action", content = "params")]
-// 192
+#[serde(tag = "action", content = "params", rename_all = "kebab-case")]
 pub enum ActionNode {
     #[default]
     None,
 
     /// Install tool dependencies in the workspace root.
-    InstallDeps(RuntimeNode),
+    InstallDeps(Box<RuntimeNode>),
 
     /// Install tool dependencies in the project root.
-    InstallProjectDeps(ScopedRuntimeNode),
+    InstallProjectDeps(Box<ScopedRuntimeNode>),
 
     /// Run a project's task.
-    RunTask(RunTaskNode),
+    RunTask(Box<RunTaskNode>),
 
     /// Setup a tool + version for the provided platform.
-    SetupTool(RuntimeNode),
+    SetupTool(Box<RuntimeNode>),
 
     /// Sync a project with language specific semantics.
-    SyncProject(ScopedRuntimeNode),
+    SyncProject(Box<ScopedRuntimeNode>),
 
     /// Sync the entire moon workspace.
     /// Install system dependencies.
@@ -53,6 +58,26 @@ pub enum ActionNode {
 }
 
 impl ActionNode {
+    pub fn install_deps(node: InstallDepsNode) -> Self {
+        Self::InstallDeps(Box::new(node))
+    }
+
+    pub fn install_project_deps(node: InstallProjectDepsNode) -> Self {
+        Self::InstallProjectDeps(Box::new(node))
+    }
+
+    pub fn run_task(node: RunTaskNode) -> Self {
+        Self::RunTask(Box::new(node))
+    }
+
+    pub fn setup_tool(node: SetupToolNode) -> Self {
+        Self::SetupTool(Box::new(node))
+    }
+
+    pub fn sync_project(node: SyncProjectNode) -> Self {
+        Self::SyncProject(Box::new(node))
+    }
+
     pub fn get_runtime(&self) -> &Runtime {
         match self {
             Self::InstallDeps(inner) => &inner.runtime,

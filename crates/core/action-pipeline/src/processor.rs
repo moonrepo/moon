@@ -3,7 +3,7 @@ use crate::actions::run_task::run_task;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
-use moon_action::{Action, ActionNode, ActionStatus, RunTaskNode, RuntimeNode, ScopedRuntimeNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_console::Console;
 use moon_emitter::{Emitter, Event};
@@ -46,15 +46,19 @@ pub async fn process_action(
         ActionNode::None => Ok(ActionStatus::Skipped),
 
         // Setup and install the specific tool
-        ActionNode::SetupTool(RuntimeNode { runtime }) => {
-            emitter.emit(Event::ToolInstalling { runtime }).await?;
+        ActionNode::SetupTool(inner) => {
+            emitter
+                .emit(Event::ToolInstalling {
+                    runtime: &inner.runtime,
+                })
+                .await?;
 
-            let setup_result = setup_tool(&mut action, context, workspace, runtime).await;
+            let setup_result = setup_tool(&mut action, context, workspace, &inner.runtime).await;
 
             emitter
                 .emit(Event::ToolInstalled {
                     error: extract_error(&setup_result),
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
@@ -62,21 +66,22 @@ pub async fn process_action(
         }
 
         // Install dependencies in the workspace root
-        ActionNode::InstallDeps(RuntimeNode { runtime }) => {
+        ActionNode::InstallDeps(inner) => {
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
-            let install_result = install_deps(&mut action, context, workspace, runtime, None).await;
+            let install_result =
+                install_deps(&mut action, context, workspace, &inner.runtime, None).await;
 
             emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&install_result),
                     project: None,
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
@@ -84,27 +89,30 @@ pub async fn process_action(
         }
 
         // Install dependencies in the project root
-        ActionNode::InstallProjectDeps(ScopedRuntimeNode {
-            runtime,
-            project: project_id,
-        }) => {
-            let project = project_graph.get(project_id)?;
+        ActionNode::InstallProjectDeps(inner) => {
+            let project = project_graph.get(&inner.project)?;
 
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: Some(&project),
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
-            let install_result =
-                install_deps(&mut action, context, workspace, runtime, Some(&project)).await;
+            let install_result = install_deps(
+                &mut action,
+                context,
+                workspace,
+                &inner.runtime,
+                Some(&project),
+            )
+            .await;
 
             emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&install_result),
                     project: Some(&project),
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
@@ -112,16 +120,13 @@ pub async fn process_action(
         }
 
         // Sync a project within the graph
-        ActionNode::SyncProject(ScopedRuntimeNode {
-            runtime,
-            project: project_id,
-        }) => {
-            let project = project_graph.get(project_id)?;
+        ActionNode::SyncProject(inner) => {
+            let project = project_graph.get(&inner.project)?;
 
             emitter
                 .emit(Event::ProjectSyncing {
                     project: &project,
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
@@ -131,7 +136,7 @@ pub async fn process_action(
                 workspace,
                 project_graph,
                 &project,
-                runtime,
+                &inner.runtime,
             )
             .await;
 
@@ -139,7 +144,7 @@ pub async fn process_action(
                 .emit(Event::ProjectSynced {
                     error: extract_error(&sync_result),
                     project: &project,
-                    runtime,
+                    runtime: &inner.runtime,
                 })
                 .await?;
 
@@ -162,12 +167,14 @@ pub async fn process_action(
         }
 
         // Run a task within a project
-        ActionNode::RunTask(RunTaskNode {
-            runtime, target, ..
-        }) => {
-            let project = project_graph.get(target.get_project_id().unwrap())?;
+        ActionNode::RunTask(inner) => {
+            let project = project_graph.get(inner.target.get_project_id().unwrap())?;
 
-            emitter.emit(Event::TargetRunning { target }).await?;
+            emitter
+                .emit(Event::TargetRunning {
+                    target: &inner.target,
+                })
+                .await?;
 
             let run_result = run_task(
                 &mut action,
@@ -176,15 +183,15 @@ pub async fn process_action(
                 workspace,
                 console,
                 &project,
-                target,
-                runtime,
+                &inner.target,
+                &inner.runtime,
             )
             .await;
 
             emitter
                 .emit(Event::TargetRan {
                     error: extract_error(&run_result),
-                    target,
+                    target: &inner.target,
                 })
                 .await?;
 

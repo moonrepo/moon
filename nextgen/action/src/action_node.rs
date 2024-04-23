@@ -38,22 +38,21 @@ pub enum ActionNode {
     None,
 
     /// Install tool dependencies in the workspace root.
-    InstallDeps(Box<RuntimeNode>),
+    InstallDeps(Box<InstallDepsNode>),
 
     /// Install tool dependencies in the project root.
-    InstallProjectDeps(Box<ScopedRuntimeNode>),
+    InstallProjectDeps(Box<InstallProjectDepsNode>),
 
     /// Run a project's task.
     RunTask(Box<RunTaskNode>),
 
     /// Setup a tool + version for the provided platform.
-    SetupTool(Box<RuntimeNode>),
+    SetupTool(Box<SetupToolNode>),
 
     /// Sync a project with language specific semantics.
-    SyncProject(Box<ScopedRuntimeNode>),
+    SyncProject(Box<SyncProjectNode>),
 
-    /// Sync the entire moon workspace.
-    /// Install system dependencies.
+    /// Sync the entire moon workspace and install system dependencies.
     SyncWorkspace,
 }
 
@@ -76,6 +75,10 @@ impl ActionNode {
 
     pub fn sync_project(node: SyncProjectNode) -> Self {
         Self::SyncProject(Box::new(node))
+    }
+
+    pub fn sync_workspace() -> Self {
+        Self::SyncWorkspace
     }
 
     pub fn get_runtime(&self) -> &Runtime {

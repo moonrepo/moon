@@ -486,7 +486,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn sync_workspace(&mut self) -> NodeIndex {
-        let node = ActionNode::SyncWorkspace;
+        let node = ActionNode::sync_workspace();
 
         if let Some(index) = self.get_index_from_node(&node) {
             return *index;

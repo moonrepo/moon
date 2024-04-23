@@ -141,11 +141,11 @@ impl Subscriber for MoonbaseSubscriber {
                     }
 
                     if branch.is_empty() {
-                        branch = workspace.vcs.get_local_branch().await?.to_owned();
+                        branch = (*workspace.vcs.get_local_branch().await?).clone();
                     }
 
                     if revision.is_empty() {
-                        revision = workspace.vcs.get_local_branch_revision().await?.to_owned();
+                        revision = (*workspace.vcs.get_local_branch_revision().await?).clone();
                     }
 
                     let affected_targets = context

@@ -224,7 +224,8 @@ pub async fn init(
             git.get_remote_default_branch().await?
         } else {
             git.get_default_branch().await?
-        },
+        }
+        .as_str(),
     );
 
     // Create workspace file

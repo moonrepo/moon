@@ -1,12 +1,13 @@
 use moon_process::{output_to_string, Command};
-use once_map::OnceMap;
+use scc::HashCache;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ProcessCache {
     /// Output cache of all executed commands.
-    cache: OnceMap<String, String>,
+    cache: HashCache<String, Arc<String>>,
 
     /// Binary/command to run.
     pub bin: String,
@@ -18,7 +19,7 @@ pub struct ProcessCache {
 impl ProcessCache {
     pub fn new(bin: &str, root: &Path) -> Self {
         Self {
-            cache: OnceMap::new(),
+            cache: HashCache::new(),
             bin: bin.to_string(),
             root: root.to_path_buf(),
         }
@@ -40,7 +41,7 @@ impl ProcessCache {
         command
     }
 
-    pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<&str>
+    pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -53,7 +54,7 @@ impl ProcessCache {
         args: I,
         trim: bool,
         format: impl FnOnce(String) -> String,
-    ) -> miette::Result<&str>
+    ) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -62,7 +63,7 @@ impl ProcessCache {
             .await
     }
 
-    pub async fn run_command(&self, command: Command, trim: bool) -> miette::Result<&str> {
+    pub async fn run_command(&self, command: Command, trim: bool) -> miette::Result<Arc<String>> {
         self.run_command_with_formatter(command, trim, |s| s).await
     }
 
@@ -71,21 +72,24 @@ impl ProcessCache {
         command: Command,
         trim: bool,
         format: impl FnOnce(String) -> String,
-    ) -> miette::Result<&str> {
+    ) -> miette::Result<Arc<String>> {
         let mut executor = command.create_async();
         let cache_key = executor.inspector.get_cache_key();
 
-        // Execute and insert output into the cache if not already present
-        if !self.cache.contains_key(&cache_key) {
-            let output = executor.exec_capture_output().await?;
-
-            self.cache.insert(cache_key.clone(), |_| {
-                let value = output_to_string(&output.stdout);
-
-                format(if trim { value.trim().to_owned() } else { value })
-            });
+        // First check if the data has already been cached
+        if let Some(cache) = self.cache.read_async(&cache_key, |_, v| v.clone()).await {
+            return Ok(cache);
         }
 
-        Ok(self.cache.get(&cache_key).unwrap())
+        // Otherwise acquire an entry to lock the row
+        let entry = self.cache.entry_async(cache_key).await;
+
+        let output = executor.exec_capture_output().await?;
+        let value = output_to_string(&output.stdout);
+        let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
+
+        entry.put_entry(Arc::clone(&cache));
+
+        Ok(cache)
     }
 }

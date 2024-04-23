@@ -3,7 +3,7 @@ use crate::actions::run_task::run_task;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
-use moon_action::{Action, ActionNode, ActionStatus};
+use moon_action::{Action, ActionNode, ActionStatus, RunTaskNode, RuntimeNode, ScopedRuntimeNode};
 use moon_action_context::ActionContext;
 use moon_console::Console;
 use moon_emitter::{Emitter, Event};
@@ -46,7 +46,7 @@ pub async fn process_action(
         ActionNode::None => Ok(ActionStatus::Skipped),
 
         // Setup and install the specific tool
-        ActionNode::SetupTool { runtime } => {
+        ActionNode::SetupTool(RuntimeNode { runtime }) => {
             emitter.emit(Event::ToolInstalling { runtime }).await?;
 
             let setup_result = setup_tool(&mut action, context, workspace, runtime).await;
@@ -62,7 +62,7 @@ pub async fn process_action(
         }
 
         // Install dependencies in the workspace root
-        ActionNode::InstallDeps { runtime } => {
+        ActionNode::InstallDeps(RuntimeNode { runtime }) => {
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
@@ -84,10 +84,10 @@ pub async fn process_action(
         }
 
         // Install dependencies in the project root
-        ActionNode::InstallProjectDeps {
+        ActionNode::InstallProjectDeps(ScopedRuntimeNode {
             runtime,
             project: project_id,
-        } => {
+        }) => {
             let project = project_graph.get(project_id)?;
 
             emitter
@@ -112,10 +112,10 @@ pub async fn process_action(
         }
 
         // Sync a project within the graph
-        ActionNode::SyncProject {
+        ActionNode::SyncProject(ScopedRuntimeNode {
             runtime,
             project: project_id,
-        } => {
+        }) => {
             let project = project_graph.get(project_id)?;
 
             emitter
@@ -162,9 +162,9 @@ pub async fn process_action(
         }
 
         // Run a task within a project
-        ActionNode::RunTask {
+        ActionNode::RunTask(RunTaskNode {
             runtime, target, ..
-        } => {
+        }) => {
             let project = project_graph.get(target.get_project_id().unwrap())?;
 
             emitter.emit(Event::TargetRunning { target }).await?;

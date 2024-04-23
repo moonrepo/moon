@@ -319,9 +319,9 @@ impl<'a> Runner<'a> {
         }
 
         // Dependency specific args/env
-        if let ActionNode::RunTask { args, env, .. } = &*self.node {
-            command.args(args);
-            command.envs(env.to_owned());
+        if let ActionNode::RunTask(inner) = &*self.node {
+            command.args(inner.args.clone());
+            command.envs(inner.env.clone());
         }
 
         // Affected files (must be last args)

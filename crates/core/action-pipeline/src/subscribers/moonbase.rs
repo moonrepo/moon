@@ -1,5 +1,5 @@
 use ci_env::get_environment;
-use moon_action::{ActionNode, ActionStatus};
+use moon_action::{ActionNode, ActionStatus, RunTaskNode};
 use moon_api::{
     endpoints::ArtifactWriteInput,
     graphql::{
@@ -461,14 +461,14 @@ impl Subscriber for MoonbaseSubscriber {
                                 let archive_path = archive_path.to_owned();
 
                                 // Create a fake action label so that we can check the CI cache
-                                let action_label = ActionNode::RunTask {
+                                let action_label = ActionNode::RunTask(RunTaskNode {
                                     args: vec![],
                                     env: vec![],
                                     interactive: false,
                                     persistent: false,
                                     runtime: Runtime::system(),
                                     target: (*target).to_owned(),
-                                }
+                                })
                                 .label();
                                 let job_id = self.job_ids.get(&action_label).cloned();
 

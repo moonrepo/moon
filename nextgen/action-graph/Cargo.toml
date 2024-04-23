@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 # TODO remove

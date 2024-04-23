@@ -1,5 +1,5 @@
 use crate::action_graph::ActionGraph;
-use crate::action_node::ActionNode;
+use moon_action::{ActionNode, RunTaskNode, RuntimeNode, ScopedRuntimeNode};
 use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
 use moon_config::{PlatformType, TaskDependencyConfig};
@@ -127,14 +127,14 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         let node = if in_project {
-            ActionNode::InstallProjectDeps {
+            ActionNode::InstallProjectDeps(ScopedRuntimeNode {
                 project: project.id.to_owned(),
                 runtime: self.get_runtime(project, platform_type, true),
-            }
+            })
         } else {
-            ActionNode::InstallDeps {
+            ActionNode::InstallDeps(RuntimeNode {
                 runtime: self.get_runtime(project, platform_type, false),
-            }
+            })
         };
 
         if node.get_runtime().platform.is_system() {
@@ -178,14 +178,14 @@ impl<'app> ActionGraphBuilder<'app> {
             env.extend(config.env.clone().into_iter().collect::<Vec<_>>());
         }
 
-        let node = ActionNode::RunTask {
+        let node = ActionNode::RunTask(RunTaskNode {
             args,
             env,
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             runtime: self.get_runtime(project, task.platform, true),
             target: task.target.to_owned(),
-        };
+        });
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(*index));
@@ -422,9 +422,9 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
-        let node = ActionNode::SetupTool {
+        let node = ActionNode::SetupTool(RuntimeNode {
             runtime: runtime.to_owned(),
-        };
+        });
 
         if let Some(index) = self.get_index_from_node(&node) {
             return *index;
@@ -447,10 +447,10 @@ impl<'app> ActionGraphBuilder<'app> {
         project: &Project,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<NodeIndex> {
-        let node = ActionNode::SyncProject {
+        let node = ActionNode::SyncProject(ScopedRuntimeNode {
             project: project.id.clone(),
             runtime: self.get_runtime(project, project.platform, true),
-        };
+        });
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);

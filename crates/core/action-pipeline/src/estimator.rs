@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode, ActionStatus};
+use moon_action::{Action, ActionNode, ActionStatus, RunTaskNode};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::time::Duration;
@@ -63,12 +63,12 @@ impl Estimator {
             }
 
             match &*result.node {
-                ActionNode::SetupTool { .. }
-                | ActionNode::InstallDeps { .. }
-                | ActionNode::InstallProjectDeps { .. } => {
+                ActionNode::SetupTool(_)
+                | ActionNode::InstallDeps(_)
+                | ActionNode::InstallProjectDeps(_) => {
                     install_duration += task_duration;
                 }
-                ActionNode::RunTask { target, .. } => {
+                ActionNode::RunTask(RunTaskNode { target, .. }) => {
                     let task_id = target.task_id.to_string();
 
                     if let Some(task) = tasks.get_mut(&task_id) {

@@ -1,13 +1,11 @@
+use crate::attempt::Attempt;
 use moon_action_graph::ActionNode;
 use moon_common::color;
-use moon_utils::time::{chrono::prelude::*, now_timestamp};
+use moon_time::chrono::NaiveDateTime;
+use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-
-fn has_failed(status: &ActionStatus) -> bool {
-    matches!(status, ActionStatus::Failed) || matches!(status, ActionStatus::FailedAndAbort)
-}
 
 #[derive(Copy, Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -21,58 +19,6 @@ pub enum ActionStatus {
     #[default]
     Running,
     Skipped, // When nothing happened
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Attempt {
-    pub duration: Option<Duration>,
-
-    pub exit_code: Option<i32>,
-
-    pub finished_at: Option<NaiveDateTime>,
-
-    pub index: u8,
-
-    pub started_at: NaiveDateTime,
-
-    #[serde(skip)]
-    pub start_time: Option<Instant>,
-
-    pub status: ActionStatus,
-
-    pub stderr: Option<String>,
-
-    pub stdout: Option<String>,
-}
-
-impl Attempt {
-    pub fn new(index: u8) -> Self {
-        Attempt {
-            duration: None,
-            exit_code: None,
-            finished_at: None,
-            index,
-            started_at: now_timestamp(),
-            start_time: Some(Instant::now()),
-            status: ActionStatus::Running,
-            stderr: None,
-            stdout: None,
-        }
-    }
-
-    pub fn done(&mut self, status: ActionStatus) {
-        self.finished_at = Some(now_timestamp());
-        self.status = status;
-
-        if let Some(start) = &self.start_time {
-            self.duration = Some(start.elapsed());
-        }
-    }
-
-    pub fn has_failed(&self) -> bool {
-        has_failed(&self.status)
-    }
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -95,15 +41,8 @@ pub struct Action {
 
     pub flaky: bool,
 
-    pub label: String,
-
-    #[serde(skip)]
-    pub log_target: String,
-
-    #[serde(skip)]
     pub node: Arc<ActionNode>,
 
-    #[serde(skip)]
     pub node_index: usize,
 
     pub started_at: Option<NaiveDateTime>,
@@ -125,8 +64,6 @@ impl Action {
             error_report: None,
             finished_at: None,
             flaky: false,
-            label: node.label(),
-            log_target: String::new(),
             node: Arc::new(node),
             node_index: 0,
             started_at: None,
@@ -160,7 +97,10 @@ impl Action {
     }
 
     pub fn has_failed(&self) -> bool {
-        has_failed(&self.status)
+        matches!(
+            &self.status,
+            ActionStatus::Failed | ActionStatus::FailedAndAbort
+        )
     }
 
     pub fn get_error(&mut self) -> miette::Report {
@@ -175,8 +115,12 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
+    pub fn get_label(&self) -> String {
+        self.node.label()
+    }
+
     pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {
-        let some_failed = attempts.iter().any(|a| has_failed(&a.status));
+        let some_failed = attempts.iter().any(|attempt| attempt.has_failed());
         let mut passed = false;
 
         if let Some(last) = attempts.last() {

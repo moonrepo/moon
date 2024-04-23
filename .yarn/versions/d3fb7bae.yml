@@ -10,6 +10,7 @@ releases:
   '@moonrepo/types': patch
 
 declined:
+  - '@moonrepo/nx-compat'
   - '@moonrepo/report'
   - '@moonrepo/runtime'
   - website

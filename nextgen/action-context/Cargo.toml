@@ -8,8 +8,8 @@ publish = false
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
 clap = { workspace = true }
-dashmap = { workspace = true, features = ["serde"] }
 relative-path = { workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }
+scc = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 tokio = { workspace = true }

@@ -21,10 +21,10 @@ moon_query = { path = "../query" }
 moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
 moon_vcs = { path = "../vcs" }
-dashmap = { workspace = true }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 serde = { workspace = true, features = ["rc"] }
 starbase_events = { workspace = true }
 starbase_utils = { workspace = true }

@@ -1,18 +1,13 @@
-use dashmap::DashMap;
 use moon_process::{output_to_string, Command};
+use scc::HashCache;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 #[derive(Debug)]
 pub struct ProcessCache {
     /// Output cache of all executed commands.
-    cache: DashMap<String, Arc<String>>,
-
-    /// Avoids concurrent commands of the same cache key from all
-    /// reading/writing the same data, by storing them in a queue.
-    queue: DashMap<String, Mutex<()>>,
+    cache: HashCache<String, Arc<String>>,
 
     /// Binary/command to run.
     pub bin: String,
@@ -24,8 +19,7 @@ pub struct ProcessCache {
 impl ProcessCache {
     pub fn new(bin: &str, root: &Path) -> Self {
         Self {
-            cache: DashMap::new(),
-            queue: DashMap::new(),
+            cache: HashCache::new(),
             bin: bin.to_string(),
             root: root.to_path_buf(),
         }
@@ -83,28 +77,18 @@ impl ProcessCache {
         let cache_key = executor.inspector.get_cache_key();
 
         // First check if the data has already been cached
-        if let Some(cache) = self.cache.get(&cache_key) {
-            return Ok(Arc::clone(cache.value()));
+        if let Some(cache) = self.cache.read_async(&cache_key, |_, v| v.clone()).await {
+            return Ok(cache);
         }
 
-        // Otherwise wait in the queue for the cache to be written
-        let entry = self
-            .queue
-            .entry(cache_key.clone())
-            .or_insert_with(|| Mutex::new(()));
-        let _guard = entry.value().lock().await;
+        // Otherwise acquire an entry to lock the row
+        let entry = self.cache.entry_async(cache_key).await;
 
-        // Check the cache again incase of a lock race condition
-        if let Some(cache) = self.cache.get(&cache_key) {
-            return Ok(Arc::clone(cache.value()));
-        }
-
-        // Otherwise write to the cache!
         let output = executor.exec_capture_output().await?;
         let value = output_to_string(&output.stdout);
         let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
 
-        self.cache.insert(cache_key, Arc::clone(&cache));
+        entry.put_entry(Arc::clone(&cache));
 
         Ok(cache)
     }

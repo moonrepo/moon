@@ -1,5 +1,4 @@
 use crate::project_graph_error::ProjectGraphError;
-use dashmap::DashMap;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
@@ -11,6 +10,7 @@ use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use rustc_hash::FxHashMap;
+use scc::HashMap;
 use serde::Serialize;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
@@ -46,7 +46,7 @@ impl ProjectNode {
 #[derive(Default)]
 pub struct ProjectGraph {
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
-    fs_cache: DashMap<PathBuf, Arc<String>>,
+    fs_cache: HashMap<PathBuf, Arc<String>>,
 
     /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
     graph: GraphType,
@@ -58,7 +58,7 @@ pub struct ProjectGraph {
     projects: Arc<RwLock<ProjectsCache>>,
 
     /// Cache of query results, mapped by query input to project IDs.
-    query_cache: DashMap<String, Arc<Vec<Id>>>,
+    query_cache: HashMap<String, Arc<Vec<Id>>>,
 
     /// The current working directory.
     pub working_dir: PathBuf,
@@ -77,8 +77,8 @@ impl ProjectGraph {
             projects: Arc::new(RwLock::new(FxHashMap::default())),
             working_dir: workspace_root.to_owned(),
             workspace_root: workspace_root.to_owned(),
-            fs_cache: DashMap::new(),
-            query_cache: DashMap::new(),
+            fs_cache: HashMap::new(),
+            query_cache: HashMap::new(),
         }
     }
 
@@ -254,11 +254,11 @@ impl ProjectGraph {
         }
 
         Ok(Self {
-            fs_cache: DashMap::new(),
+            fs_cache: HashMap::new(),
             graph,
             nodes,
             projects: self.projects.clone(),
-            query_cache: DashMap::new(),
+            query_cache: HashMap::new(),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
         })
@@ -353,8 +353,8 @@ impl ProjectGraph {
             .expect("Querying the project graph requires a query input string.");
         let cache_key = query_input.to_string();
 
-        if let Some(cache) = self.query_cache.get(&cache_key) {
-            return Ok(Arc::clone(cache.value()));
+        if let Some(cache) = self.query_cache.read(&cache_key, |_, v| v.clone()) {
+            return Ok(cache);
         }
 
         debug!("Querying projects with {}", color::shell(query_input));
@@ -384,8 +384,7 @@ impl ProjectGraph {
         );
 
         let ids = Arc::new(project_ids);
-
-        self.query_cache.insert(cache_key, Arc::clone(&ids));
+        let _ = self.query_cache.insert(cache_key, Arc::clone(&ids));
 
         Ok(ids)
     }
@@ -393,8 +392,8 @@ impl ProjectGraph {
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {
         let cache_key = search.to_path_buf();
 
-        if let Some(cache) = self.fs_cache.get(&cache_key) {
-            return Ok(Arc::clone(cache.value()));
+        if let Some(cache) = self.fs_cache.read(&cache_key, |_, v| v.clone()) {
+            return Ok(cache);
         }
 
         // Find the deepest matching path in case sub-projects are being used
@@ -427,8 +426,7 @@ impl ProjectGraph {
         }
 
         let id = Arc::new(possible_id);
-
-        self.fs_cache.insert(cache_key, Arc::clone(&id));
+        let _ = self.fs_cache.insert(cache_key, Arc::clone(&id));
 
         Ok(id)
     }

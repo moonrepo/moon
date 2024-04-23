@@ -233,7 +233,7 @@ impl<'a> Runner<'a> {
 
             // TODO avoid cloning if possible
             if let Some(entry) = context.target_states.get(&dep.target) {
-                state = match entry.value() {
+                state = match entry.get() {
                     TargetState::Completed(hash) => Some(hash.to_owned()),
                     TargetState::Passthrough => Some("passthrough".into()),
                     _ => None,
@@ -575,7 +575,7 @@ impl<'a> Runner<'a> {
             color::id(&self.task.target)
         );
 
-        context.target_states.insert(
+        let _ = context.target_states.insert(
             self.task.target.clone(),
             TargetState::Completed(hash.clone()),
         );

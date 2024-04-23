@@ -1299,7 +1299,6 @@ dependencies = [
  "lock_api",
  "once_cell",
  "parking_lot_core",
- "serde",
 ]
 
 [[package]]
@@ -3060,11 +3059,11 @@ name = "moon_action_context"
 version = "0.0.1"
 dependencies = [
  "clap",
- "dashmap",
  "moon_common",
  "moon_target",
  "relative-path",
  "rustc-hash",
+ "scc",
  "serde",
  "tokio",
 ]
@@ -3858,12 +3857,12 @@ name = "moon_plugin"
 version = "0.0.1"
 dependencies = [
  "convert_case",
- "dashmap",
  "miette",
  "moon_env",
  "moon_pdk_api",
  "proto_core",
  "rustc-hash",
+ "scc",
  "serde_json",
  "starbase_sandbox",
  "starbase_styles",
@@ -3960,7 +3959,6 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
- "dashmap",
  "miette",
  "moon_cache",
  "moon_common",
@@ -3977,6 +3975,7 @@ dependencies = [
  "moon_vcs",
  "petgraph",
  "rustc-hash",
+ "scc",
  "serde",
  "starbase_events",
  "starbase_sandbox",
@@ -4323,7 +4322,6 @@ name = "moon_vcs"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "dashmap",
  "git-url-parse",
  "ignore",
  "miette",
@@ -4332,6 +4330,7 @@ dependencies = [
  "once_cell",
  "regex",
  "rustc-hash",
+ "scc",
  "semver",
  "starbase_sandbox",
  "thiserror",
@@ -5501,6 +5500,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "scc"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec96560eea317a9cc4e0bb1f6a2c93c09a19b8c4fc5cb3fcc0ec1c094cd783e2"
+dependencies = [
+ "sdd",
+ "serde",
+]
+
+[[package]]
 name = "schannel"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5584,6 +5593,12 @@ dependencies = [
  "ring",
  "untrusted",
 ]
+
+[[package]]
+name = "sdd"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b84345e4c9bd703274a082fb80caaa99b7612be48dfaa1dd9266577ec412309d"
 
 [[package]]
 name = "security-framework"

@@ -1,3 +1,4 @@
+use crate::{HashEngine, StateEngine};
 use moon_cache_item::*;
 use moon_common::consts;
 use moon_time::parse_duration;
@@ -13,24 +14,22 @@ pub struct CacheEngine {
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
 
-    /// The `.moon/cache/states` directory. Stores state information about anything...
-    /// tools, dependencies, projects, tasks, etc.
-    pub states_dir: PathBuf,
+    pub hash: HashEngine,
+
+    pub state: StateEngine,
 }
 
 impl CacheEngine {
     pub fn new(workspace_root: &Path) -> miette::Result<CacheEngine> {
         let dir = workspace_root.join(consts::CONFIG_DIRNAME).join("cache");
-        let states_dir = dir.join("states");
         let cache_tag = dir.join("CACHEDIR.TAG");
 
         debug!(
             cache_dir = ?dir,
-            states_dir = ?states_dir,
             "Creating cache engine",
         );
 
-        fs::create_dir_all(&states_dir)?;
+        fs::create_dir_all(&dir)?;
 
         // Create a cache directory tag
         if !cache_tag.exists() {
@@ -43,8 +42,9 @@ impl CacheEngine {
         }
 
         Ok(CacheEngine {
+            hash: HashEngine::new(&dir)?,
+            state: StateEngine::new(&dir)?,
             cache_dir: dir,
-            states_dir,
         })
     }
 
@@ -53,13 +53,6 @@ impl CacheEngine {
         T: Default + DeserializeOwned + Serialize,
     {
         CacheItem::<T>::load(self.resolve_path(path))
-    }
-
-    pub fn cache_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
-    where
-        T: Default + DeserializeOwned + Serialize,
-    {
-        self.cache(self.states_dir.join(path.as_ref()))
     }
 
     pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
@@ -109,13 +102,6 @@ impl CacheEngine {
         json::write_file(path, &data, false)?;
 
         Ok(())
-    }
-
-    pub fn write_state<T>(&self, path: impl AsRef<OsStr>, state: &T) -> miette::Result<()>
-    where
-        T: ?Sized + Serialize,
-    {
-        self.write(self.states_dir.join(path.as_ref()), state)
     }
 
     fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {

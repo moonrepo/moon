@@ -40,9 +40,13 @@ pub async fn sync_project(
     }
 
     // Create a snapshot for tasks to reference
-    workspace
-        .cache_engine
-        .write_state(project.get_cache_dir().join("snapshot.json"), project)?;
+    workspace.cache_engine.state.save_state(
+        workspace
+            .cache_engine
+            .state
+            .get_project_snapshot_path(&project.id),
+        project,
+    )?;
 
     // Collect all project dependencies so we can pass them along.
     // We can't pass the graph itself because of circuler references between crates!

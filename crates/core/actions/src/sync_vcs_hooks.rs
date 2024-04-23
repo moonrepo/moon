@@ -5,7 +5,7 @@ use moon_workspace::Workspace;
 pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<()> {
     let vcs_config = &workspace.config.vcs;
     let cache_engine = &workspace.cache_engine;
-    let hash_engine = &workspace.hash_engine;
+    let hash_engine = &cache_engine.hash;
 
     // Hash all the hook commands
     let mut hooks_hash = HooksHash::new(&vcs_config.manager);
@@ -15,7 +15,9 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
     }
 
     // Check the cache before creating the files
-    let mut state = cache_engine.cache_state::<CommonState>("vcsHooks.json")?;
+    let mut state = cache_engine
+        .state
+        .load_state::<CommonState>("vcsHooks.json")?;
     let hash = hash_engine.save_manifest_without_hasher("VCS hooks", &hooks_hash)?;
 
     if force || hash != state.data.last_hash {

@@ -11,7 +11,7 @@ pub async fn sync_codeowners(
     force: bool,
 ) -> miette::Result<PathBuf> {
     let cache_engine = &workspace.cache_engine;
-    let hash_engine = &workspace.hash_engine;
+    let hash_engine = &cache_engine.hash;
 
     // Sort the projects based on config
     let mut projects = project_graph.get_all_unexpanded();
@@ -45,7 +45,9 @@ pub async fn sync_codeowners(
     let file_path = codeowners.file_path.clone();
 
     // Check the cache before writing the file
-    let mut state = cache_engine.cache_state::<CommonState>("codeowners.json")?;
+    let mut state = cache_engine
+        .state
+        .load_state::<CommonState>("codeowners.json")?;
     let hash = hash_engine.save_manifest_without_hasher("CODEOWNERS", &codeowners_hash)?;
 
     if force || hash != state.data.last_hash {

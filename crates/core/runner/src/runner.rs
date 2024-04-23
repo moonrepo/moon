@@ -82,9 +82,13 @@ impl<'a> Runner<'a> {
         task: &'a Task,
         console: Arc<Console>,
     ) -> miette::Result<Runner<'a>> {
-        let mut cache = workspace
-            .cache_engine
-            .cache_state::<RunTargetState>(task.get_cache_dir().join("lastRun.json"))?;
+        let mut cache = workspace.cache_engine.state.load_state::<RunTargetState>(
+            workspace
+                .cache_engine
+                .state
+                .get_target_dir(&task.target)
+                .join("lastRun.json"),
+        )?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();
@@ -420,8 +424,8 @@ impl<'a> Runner<'a> {
             path::to_string(
                 self.workspace
                     .cache_engine
-                    .states_dir
-                    .join(self.project.get_cache_dir().join("snapshot.json")),
+                    .state
+                    .get_project_snapshot_path(&self.project.id),
             )?,
         );
 
@@ -551,7 +555,8 @@ impl<'a> Runner<'a> {
     ) -> miette::Result<Option<HydrateFrom>> {
         let mut hasher = self
             .workspace
-            .hash_engine
+            .cache_engine
+            .hash
             .create_hasher(format!("Run {} target", self.task.target));
 
         self.hash_common_target(context, &mut hasher).await?;
@@ -595,7 +600,7 @@ impl<'a> Runner<'a> {
         self.cache.data.hash = hash.clone();
 
         // Refresh the hash manifest
-        self.workspace.hash_engine.save_manifest(hasher)?;
+        self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self

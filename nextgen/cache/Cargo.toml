@@ -11,6 +11,8 @@ publish = false
 [dependencies]
 moon_cache_item = { path = "../cache-item" }
 moon_common = { path = "../common" }
+moon_hash = { path = "../hash" }
+moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
 serde = { workspace = true }

@@ -1,4 +1,4 @@
-use crate::hasher::ContentHasher;
+use moon_hash::ContentHasher;
 use serde::Serialize;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};

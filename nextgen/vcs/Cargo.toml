@@ -21,6 +21,7 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 semver = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

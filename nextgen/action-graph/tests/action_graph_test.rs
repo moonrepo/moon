@@ -444,7 +444,11 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::run_task(RunTaskNode::new(task.target, Runtime::system()))
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    node.interactive = true;
+                    node
+                })
             );
         }
 
@@ -472,7 +476,11 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::run_task(RunTaskNode::new(task.target, Runtime::system()))
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    node.interactive = true;
+                    node
+                })
             );
         }
 
@@ -495,7 +503,11 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::run_task(RunTaskNode::new(task.target, Runtime::system()))
+                &ActionNode::run_task({
+                    let mut node = RunTaskNode::new(task.target, Runtime::system());
+                    node.persistent = true;
+                    node
+                })
             );
         }
 

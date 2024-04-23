@@ -3046,11 +3046,11 @@ name = "moon_action"
 version = "0.0.1"
 dependencies = [
  "miette",
- "moon_action_graph",
  "moon_common",
  "moon_platform_runtime",
  "moon_target",
- "moon_utils",
+ "moon_time",
+ "rustc-hash",
  "serde",
 ]
 
@@ -3074,10 +3074,10 @@ version = "0.0.1"
 dependencies = [
  "graph-cycles",
  "miette",
+ "moon_action",
  "moon_common",
  "moon_config",
  "moon_platform",
- "moon_platform_runtime",
  "moon_project",
  "moon_project_graph",
  "moon_query",

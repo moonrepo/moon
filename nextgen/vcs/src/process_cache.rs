@@ -1,4 +1,5 @@
 use moon_process::{output_to_string, Command};
+use scc::hash_cache::Entry;
 use scc::HashCache;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -82,13 +83,18 @@ impl ProcessCache {
         }
 
         // Otherwise acquire an entry to lock the row
-        let entry = self.cache.entry_async(cache_key).await;
+        let cache = match self.cache.entry_async(cache_key).await {
+            Entry::Occupied(o) => o.get().clone(),
+            Entry::Vacant(v) => {
+                let output = executor.exec_capture_output().await?;
+                let value = output_to_string(&output.stdout);
+                let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
 
-        let output = executor.exec_capture_output().await?;
-        let value = output_to_string(&output.stdout);
-        let cache = Arc::new(format(if trim { value.trim().to_owned() } else { value }));
+                v.put_entry(Arc::clone(&cache));
 
-        entry.put_entry(Arc::clone(&cache));
+                cache
+            }
+        };
 
         Ok(cache)
     }

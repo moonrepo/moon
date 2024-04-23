@@ -319,9 +319,9 @@ impl<'a> Runner<'a> {
         }
 
         // Dependency specific args/env
-        if let ActionNode::RunTask { args, env, .. } = &*self.node {
-            command.args(args);
-            command.envs(env.to_owned());
+        if let ActionNode::RunTask(inner) = &*self.node {
+            command.args(inner.args.clone());
+            command.envs(inner.env.clone());
         }
 
         // Affected files (must be last args)
@@ -726,7 +726,7 @@ impl<'a> Runner<'a> {
             match possible_output {
                 // zero and non-zero exit codes
                 Ok(out) => {
-                    attempt.done(if out.status.success() {
+                    attempt.finish(if out.status.success() {
                         ActionStatus::Passed
                     } else {
                         ActionStatus::Failed
@@ -775,7 +775,7 @@ impl<'a> Runner<'a> {
                 }
                 // process itself failed
                 Err(error) => {
-                    attempt.done(ActionStatus::Failed);
+                    attempt.finish(ActionStatus::Failed);
                     attempts.push(attempt);
 
                     interval_handle.abort();

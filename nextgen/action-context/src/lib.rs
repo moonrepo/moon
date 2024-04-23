@@ -1,8 +1,8 @@
 use clap::ValueEnum;
-use dashmap::DashMap;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
 use rustc_hash::FxHashSet;
+use scc::HashMap;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
@@ -41,7 +41,7 @@ pub struct ActionContext {
     /// Active mutexes for tasks to acquire locks against.
     /// @mutable
     #[serde(skip)]
-    pub named_mutexes: DashMap<String, Arc<Mutex<()>>>,
+    pub named_mutexes: HashMap<String, Arc<Mutex<()>>>,
 
     /// Additional arguments passed after `--` to passthrough.
     pub passthrough_args: Vec<String>,
@@ -54,7 +54,7 @@ pub struct ActionContext {
 
     /// The current state of running tasks (via their target).
     /// @mutable
-    pub target_states: DashMap<Target, TargetState>,
+    pub target_states: HashMap<Target, TargetState>,
 
     /// Files that have currently been touched.
     pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
@@ -65,16 +65,21 @@ pub struct ActionContext {
 
 impl ActionContext {
     pub fn get_or_create_mutex(&self, name: &str) -> Arc<Mutex<()>> {
-        if let Some(value) = self.named_mutexes.get(name) {
-            return Arc::clone(&value);
+        if let Some(value) = self.named_mutexes.read(name, |_, v| v.clone()) {
+            return value;
         }
 
         let mutex = Arc::new(Mutex::new(()));
 
-        self.named_mutexes
+        let _ = self
+            .named_mutexes
             .insert(name.to_owned(), Arc::clone(&mutex));
 
         mutex
+    }
+
+    pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {
+        let _ = self.target_states.insert(target.as_ref().to_owned(), state);
     }
 
     pub fn should_inherit_args<T: AsRef<Target>>(&self, target: T) -> bool {

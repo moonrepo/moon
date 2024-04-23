@@ -12,6 +12,11 @@ const action: Action = {
 	error: null,
 	flaky: false,
 	label: 'RunTask(app:build)',
+	node: {
+		action: 'sync-workspace',
+		params: {},
+	},
+	nodeIndex: 0,
 	status: 'passed',
 	finishedAt: '2022-09-12T22:50:12.932311Z',
 	startedAt: '2022-09-12T22:50:12.932311Z',

@@ -9,11 +9,11 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 # TODO remove
 moon_platform = { path = "../../crates/core/platform" }
-moon_platform_runtime = { path = "../platform-runtime" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }

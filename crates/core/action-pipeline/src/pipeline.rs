@@ -365,7 +365,7 @@ impl Pipeline {
             console.out.print_checkpoint(
                 Checkpoint::RunFailed,
                 match &*result.node {
-                    ActionNode::RunTask { target, .. } => target.as_str(),
+                    ActionNode::RunTask(inner) => inner.target.as_str(),
                     _ => &result.label,
                 },
             )?;

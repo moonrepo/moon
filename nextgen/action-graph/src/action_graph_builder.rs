@@ -174,11 +174,11 @@ impl<'app> ActionGraphBuilder<'app> {
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
         let mut args = vec![];
-        let mut env = vec![];
+        let mut env = FxHashMap::default();
 
         if let Some(config) = config {
             args.extend(parse_task_args(&config.args)?);
-            env.extend(config.env.clone().into_iter().collect::<Vec<_>>());
+            env.extend(config.env.clone());
         }
 
         let node = ActionNode::run_task(RunTaskNode {

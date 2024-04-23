@@ -1,10 +1,11 @@
 use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use moon_target::Target;
+use rustc_hash::FxHashMap;
 use serde::Serialize;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct RuntimeNode {
     pub runtime: Runtime,
 }
@@ -12,7 +13,7 @@ pub struct RuntimeNode {
 pub type InstallDepsNode = RuntimeNode;
 pub type SetupToolNode = RuntimeNode;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ScopedRuntimeNode {
     pub project: Id,
     pub runtime: Runtime,
@@ -21,17 +22,30 @@ pub struct ScopedRuntimeNode {
 pub type InstallProjectDepsNode = ScopedRuntimeNode;
 pub type SyncProjectNode = ScopedRuntimeNode;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct RunTaskNode {
     pub args: Vec<String>,
-    pub env: Vec<(String, String)>,
+    pub env: FxHashMap<String, String>,
     pub interactive: bool, // Interactive with stdin
     pub persistent: bool,  // Never terminates
     pub runtime: Runtime,
     pub target: Target,
 }
 
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize)]
+impl RunTaskNode {
+    pub fn new(target: Target, runtime: Runtime) -> Self {
+        Self {
+            args: vec![],
+            env: FxHashMap::default(),
+            interactive: false,
+            persistent: false,
+            runtime,
+            target,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(tag = "action", content = "params", rename_all = "kebab-case")]
 pub enum ActionNode {
     #[default]
@@ -152,6 +166,25 @@ impl ActionNode {
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),
+        }
+    }
+}
+
+impl Hash for ActionNode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write(self.label().as_bytes());
+
+        // For tasks with passthrough arguments and environment variables,
+        // we need to ensure the hash is more unique in the graph
+        if let Self::RunTask(node) = self {
+            for arg in &node.args {
+                state.write(arg.as_bytes());
+            }
+
+            for (key, value) in &node.env {
+                state.write(key.as_bytes());
+                state.write(value.as_bytes());
+            }
         }
     }
 }

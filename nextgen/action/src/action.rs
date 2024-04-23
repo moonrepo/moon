@@ -118,10 +118,6 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
-    pub fn get_label(&self) -> String {
-        self.node.label()
-    }
-
     pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {
         let some_failed = attempts.iter().any(|attempt| attempt.has_failed());
         let mut passed = false;

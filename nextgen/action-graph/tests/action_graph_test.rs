@@ -6,8 +6,8 @@ use moon_action::*;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{TaskArgs, TaskDependencyConfig};
-use moon_platform_runtime::*;
+use moon_config::{PlatformType, TaskArgs, TaskDependencyConfig};
+use moon_platform::*;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_project_graph;
@@ -274,14 +274,7 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    })
+                    ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
                 ]
             );
         }
@@ -323,14 +316,7 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
-                    })
+                    ActionNode::run_task(RunTaskNode::new(task.target, create_node_runtime()))
                 ]
             );
         }
@@ -434,14 +420,7 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_rust_runtime(),
-                        target: task.target
-                    })
+                    ActionNode::run_task(RunTaskNode::new(task.target, create_rust_runtime()))
                 ]
             );
         }
@@ -465,14 +444,7 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::run_task(RunTaskNode {
-                    args: vec![],
-                    env: vec![],
-                    interactive: true,
-                    persistent: false,
-                    runtime: Runtime::system(),
-                    target: task.target
-                })
+                &ActionNode::run_task(RunTaskNode::new(task.target, Runtime::system()))
             );
         }
 
@@ -500,14 +472,7 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::run_task(RunTaskNode {
-                    args: vec![],
-                    env: vec![],
-                    interactive: true,
-                    persistent: false,
-                    runtime: Runtime::system(),
-                    target: task.target
-                })
+                &ActionNode::run_task(RunTaskNode::new(task.target, Runtime::system()))
             );
         }
 
@@ -530,14 +495,7 @@ mod action_graph {
 
             assert_eq!(
                 topo(graph).last().unwrap(),
-                &ActionNode::run_task(RunTaskNode {
-                    args: vec![],
-                    env: vec![],
-                    interactive: false,
-                    persistent: true,
-                    runtime: Runtime::system(),
-                    target: task.target
-                })
+                &ActionNode::run_task(RunTaskNode::new(task.target, Runtime::system()))
             );
         }
 
@@ -599,29 +557,19 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime()
+                    )),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["x".into(), "y".into(), "z".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["x".into(), "y".into(), "z".into()];
+                        node
                     })
                 ]
             );
@@ -676,13 +624,10 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
                     }),
                 ]
             );
@@ -737,13 +682,10 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node
                     }),
                 ]
             );
@@ -807,29 +749,19 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime()
+                    )),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![("FOO".into(), "1".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![("BAR".into(), "2".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
                     })
                 ]
             );
@@ -884,13 +816,10 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![("FOO".into(), "1".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
                     }),
                 ]
             );
@@ -968,37 +897,27 @@ mod action_graph {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec![],
-                        env: vec![],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task(RunTaskNode::new(
+                        task.target.clone(),
+                        create_node_runtime()
+                    )),
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![("FOO".into(), "1".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target.clone(), create_node_runtime());
+                        node.args = vec!["a".into(), "b".into(), "c".into()];
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
                     }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        env: vec![("BAR".into(), "2".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target.clone()
-                    }),
-                    ActionNode::run_task(RunTaskNode {
-                        args: vec!["x".into(), "y".into(), "z".into()],
-                        env: vec![("BAR".into(), "2".into())],
-                        interactive: false,
-                        persistent: false,
-                        runtime: create_node_runtime(),
-                        target: task.target
+                    ActionNode::run_task({
+                        let mut node = RunTaskNode::new(task.target, create_node_runtime());
+                        node.args = vec!["x".into(), "y".into(), "z".into()];
+                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node
                     }),
                 ]
             );

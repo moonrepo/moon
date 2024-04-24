@@ -114,7 +114,8 @@ pub async fn install_deps(
     let manifest_path = working_dir.join(&manifest);
     let lockfile_path = working_dir.join(&lockfile);
     let mut hasher = workspace
-        .hash_engine
+        .cache_engine
+        .hash
         .create_hasher(format!("Install {} deps", runtime.label()));
     let mut last_modified = 0;
 
@@ -145,16 +146,21 @@ pub async fn install_deps(
     }
 
     // Install dependencies in the working directory
-    let hash = workspace.hash_engine.save_manifest(hasher)?;
+    let hash = workspace.cache_engine.hash.save_manifest(hasher)?;
 
     let state_path = format!("deps{runtime}.json");
-    let mut state = workspace.cache_engine.cache_state::<DependenciesState>(
-        if let Some(project) = &project {
-            project.get_cache_dir().join(state_path)
+    let mut state = workspace
+        .cache_engine
+        .state
+        .load_state::<DependenciesState>(if let Some(project) = &project {
+            workspace
+                .cache_engine
+                .state
+                .get_project_dir(&project.id)
+                .join(state_path)
         } else {
             PathBuf::from(state_path)
-        },
-    )?;
+        })?;
 
     if hash != state.data.last_hash
         || last_modified == 0

@@ -1,4 +1,3 @@
-use moon_cache_item::CommonState;
 use moon_codeowners::{CodeownersGenerator, CodeownersHash};
 use moon_config::CodeownersOrderBy;
 use moon_project_graph::ProjectGraph;
@@ -10,8 +9,7 @@ pub async fn sync_codeowners(
     project_graph: &ProjectGraph,
     force: bool,
 ) -> miette::Result<PathBuf> {
-    let cache_engine = &workspace.cache_engine;
-    let hash_engine = &workspace.hash_engine;
+    let mut generator = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
 
     // Sort the projects based on config
     let mut projects = project_graph.get_all_unexpanded();
@@ -22,19 +20,18 @@ pub async fn sync_codeowners(
         CodeownersOrderBy::ProjectName => a.id.cmp(&d.id),
     });
 
-    // Generate the codeowners file
+    // Generate a hash for the codeowners file
     let mut codeowners_hash = CodeownersHash::new(&workspace.config.codeowners);
-    let mut codeowners = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
 
     if !workspace.config.codeowners.global_paths.is_empty() {
-        codeowners.add_workspace_entries(&workspace.config.codeowners)?;
+        generator.add_workspace_entries(&workspace.config.codeowners)?;
     }
 
-    for project in &projects {
+    for project in projects {
         if !project.config.owners.paths.is_empty() {
             codeowners_hash.add_project(&project.id, &project.config.owners);
 
-            codeowners.add_project_entry(
+            generator.add_project_entry(
                 &project.id,
                 project.source.as_str(),
                 &project.config.owners,
@@ -42,17 +39,20 @@ pub async fn sync_codeowners(
         }
     }
 
-    let file_path = codeowners.file_path.clone();
+    let file_path = generator.file_path.clone();
 
-    // Check the cache before writing the file
-    let mut state = cache_engine.cache_state::<CommonState>("codeowners.json")?;
-    let hash = hash_engine.save_manifest_without_hasher("CODEOWNERS", &codeowners_hash)?;
-
-    if force || hash != state.data.last_hash {
-        codeowners.generate()?;
-
-        state.data.last_hash = hash;
-        state.save()?;
+    // Force run the generator and bypass cache
+    if force {
+        generator.generate()?;
+    }
+    // Only generate if the hash has changed
+    else {
+        workspace
+            .cache_engine
+            .execute_if_changed("codeowners.json", codeowners_hash, || async {
+                generator.generate()
+            })
+            .await?;
     }
 
     Ok(file_path)

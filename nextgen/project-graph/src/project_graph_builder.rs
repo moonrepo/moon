@@ -11,7 +11,6 @@ use moon_config::{
     DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
     WorkspaceConfig, WorkspaceProjects,
 };
-use moon_hash::HashEngine;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -99,7 +98,6 @@ impl<'app> ProjectGraphBuilder<'app> {
     pub async fn generate(
         context: ProjectGraphBuilderContext<'app>,
         cache_engine: &CacheEngine,
-        hash_engine: &HashEngine,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
         let is_vcs_enabled = context
             .vcs
@@ -121,13 +119,17 @@ impl<'app> ProjectGraphBuilder<'app> {
         graph_contents.add_aliases(&graph.aliases);
         graph_contents.add_configs(graph.hash_required_configs().await?);
 
-        let hash = hash_engine.save_manifest_without_hasher("Project graph", &graph_contents)?;
+        let hash = cache_engine
+            .hash
+            .save_manifest_without_hasher("Project graph", &graph_contents)?;
 
         debug!(hash, "Generated hash for project graph");
 
         // Check the current state and cache
-        let mut state = cache_engine.cache_state::<ProjectsState>("projects.json")?;
-        let cache_path = cache_engine.states_dir.join("partialProjectGraph.json");
+        let mut state = cache_engine
+            .state
+            .load_state::<ProjectsState>("projects.json")?;
+        let cache_path = cache_engine.state.resolve_path("partialProjectGraph.json");
 
         if hash == state.data.last_hash && cache_path.exists() {
             debug!(

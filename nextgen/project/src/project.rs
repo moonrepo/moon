@@ -59,11 +59,6 @@ cacheable!(
 );
 
 impl Project {
-    /// Return a cache directory for this project, relative from the cache root.
-    pub fn get_cache_dir(&self) -> PathBuf {
-        PathBuf::from(self.id.as_str())
-    }
-
     /// Return a list of project IDs this project depends on.
     pub fn get_dependency_ids(&self) -> Vec<&Id> {
         self.dependencies

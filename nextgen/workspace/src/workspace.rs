@@ -3,7 +3,6 @@ use moon_api::Moonbase;
 use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_hash::HashEngine;
 use moon_vcs::{BoxedVcs, Git};
 use proto_core::{ProtoConfig, ProtoEnvironment, Version};
 use starbase::Resource;
@@ -136,9 +135,6 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: Arc<WorkspaceConfig>,
 
-    /// Engine for reading and writing hashes/outputs.
-    pub hash_engine: Arc<HashEngine>,
-
     /// Local `.prototools` config.
     pub proto_config: Arc<ProtoConfig>,
 
@@ -202,7 +198,6 @@ impl Workspace {
 
         // Setup components
         let cache_engine = CacheEngine::new(&root_dir)?;
-        let hash_engine = HashEngine::new(&cache_engine.cache_dir)?;
         let vcs = Git::load(
             &root_dir,
             &config.vcs.default_branch,
@@ -212,7 +207,6 @@ impl Workspace {
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),
             config: Arc::new(config),
-            hash_engine: Arc::new(hash_engine),
             proto_config: Arc::new(proto_config.to_owned()),
             root: root_dir,
             session: None,

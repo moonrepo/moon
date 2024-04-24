@@ -1,3 +1,4 @@
+use crate::{merge_clean_results, resolve_path, HashEngine, StateEngine};
 use moon_cache_item::*;
 use moon_common::consts;
 use moon_time::parse_duration;
@@ -5,6 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_utils::{fs, json};
 use std::ffi::OsStr;
+use std::future::Future;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -13,24 +15,24 @@ pub struct CacheEngine {
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
 
-    /// The `.moon/cache/states` directory. Stores state information about anything...
-    /// tools, dependencies, projects, tasks, etc.
-    pub states_dir: PathBuf,
+    /// Manages reading and writing of content hashable items.
+    pub hash: HashEngine,
+
+    /// Manages states of projects, tasks, tools, and more.
+    pub state: StateEngine,
 }
 
 impl CacheEngine {
     pub fn new(workspace_root: &Path) -> miette::Result<CacheEngine> {
         let dir = workspace_root.join(consts::CONFIG_DIRNAME).join("cache");
-        let states_dir = dir.join("states");
         let cache_tag = dir.join("CACHEDIR.TAG");
 
         debug!(
             cache_dir = ?dir,
-            states_dir = ?states_dir,
             "Creating cache engine",
         );
 
-        fs::create_dir_all(&states_dir)?;
+        fs::create_dir_all(&dir)?;
 
         // Create a cache directory tag
         if !cache_tag.exists() {
@@ -43,8 +45,9 @@ impl CacheEngine {
         }
 
         Ok(CacheEngine {
+            hash: HashEngine::new(&dir)?,
+            state: StateEngine::new(&dir)?,
             cache_dir: dir,
-            states_dir,
         })
     }
 
@@ -55,50 +58,39 @@ impl CacheEngine {
         CacheItem::<T>::load(self.resolve_path(path))
     }
 
-    pub fn cache_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
-    where
-        T: Default + DeserializeOwned + Serialize,
-    {
-        self.cache(self.states_dir.join(path.as_ref()))
-    }
-
     pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
-        let duration =
-            parse_duration(lifetime).map_err(|e| miette::miette!("Invalid lifetime: {e}"))?;
+        let duration = parse_duration(lifetime)
+            .map_err(|error| miette::miette!("Invalid lifetime: {error}"))?;
 
         debug!(
             "Cleaning up and deleting stale cached artifacts older than \"{}\"",
             lifetime
         );
 
-        let mut deleted = 0;
-        let mut bytes = 0;
-
-        if all {
-            let stats = fs::remove_dir_stale_contents(&self.cache_dir, duration)?;
-            deleted += stats.files_deleted;
-            bytes += stats.bytes_saved;
+        let result = if all {
+            merge_clean_results(
+                self.state.clean_stale_cache(duration)?,
+                self.hash.clean_stale_cache(duration)?,
+            )
         } else {
-            let stats = fs::remove_dir_stale_contents(self.cache_dir.join("hashes"), duration)?;
-            deleted += stats.files_deleted;
-            bytes += stats.bytes_saved;
+            self.hash.clean_stale_cache(duration)?
+        };
 
-            let stats = fs::remove_dir_stale_contents(self.cache_dir.join("outputs"), duration)?;
-            deleted += stats.files_deleted;
-            bytes += stats.bytes_saved;
-        }
+        debug!(
+            "Deleted {} artifacts and saved {} bytes",
+            result.files_deleted, result.bytes_saved
+        );
 
-        debug!("Deleted {} artifacts and saved {} bytes", deleted, bytes);
-
-        Ok((deleted, bytes))
+        Ok((result.files_deleted, result.bytes_saved))
     }
 
     pub fn get_mode(&self) -> CacheMode {
         get_cache_mode()
     }
 
-    pub fn write<T>(&self, path: impl AsRef<OsStr>, data: &T) -> miette::Result<()>
+    pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
     where
+        K: AsRef<OsStr>,
         T: ?Sized + Serialize,
     {
         let path = self.resolve_path(path);
@@ -111,20 +103,35 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub fn write_state<T>(&self, path: impl AsRef<OsStr>, state: &T) -> miette::Result<()>
+    pub async fn execute_if_changed<K, T, F, Fut>(
+        &self,
+        path: K,
+        data: T,
+        op: F,
+    ) -> miette::Result<()>
     where
-        T: ?Sized + Serialize,
+        K: AsRef<OsStr>,
+        T: Serialize,
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<()>> + Send,
     {
-        self.write(self.states_dir.join(path.as_ref()), state)
+        let path = self.resolve_path(path);
+        let name = fs::file_name(&path);
+
+        let mut state = self.state.load_state::<CommonState>(&name)?;
+        let hash = self.hash.save_manifest_without_hasher(&name, data)?;
+
+        if hash != state.data.last_hash {
+            op().await?;
+
+            state.data.last_hash = hash;
+            state.save()?;
+        }
+
+        Ok(())
     }
 
-    fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
-        let path = PathBuf::from(path.as_ref());
-
-        if path.is_absolute() {
-            path
-        } else {
-            self.cache_dir.join(path)
-        }
+    pub fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
+        resolve_path(&self.cache_dir, path)
     }
 }

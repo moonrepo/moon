@@ -18,7 +18,10 @@ mod cache_engine {
     fn returns_default_if_cache_missing() {
         let sandbox = create_empty_sandbox();
         let engine = CacheEngine::new(sandbox.path()).unwrap();
-        let item = engine.cache_state::<CommonState>("state.json").unwrap();
+        let item = engine
+            .state
+            .load_state::<CommonState>("state.json")
+            .unwrap();
 
         assert_eq!(item.data, CommonState::default());
     }
@@ -32,7 +35,10 @@ mod cache_engine {
         );
 
         let engine = CacheEngine::new(sandbox.path()).unwrap();
-        let item = engine.cache_state::<CommonState>("state.json").unwrap();
+        let item = engine
+            .state
+            .load_state::<CommonState>("state.json")
+            .unwrap();
 
         assert_eq!(
             item.data,
@@ -71,8 +77,8 @@ mod cache_engine {
         env::set_var("MOON_CACHE", "read");
 
         engine
-            .write_state(
-                "test.json",
+            .write(
+                engine.state.resolve_path("test.json"),
                 &CommonState {
                     last_hash: "abc123".into(),
                 },

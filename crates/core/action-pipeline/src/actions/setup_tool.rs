@@ -52,7 +52,8 @@ pub async fn setup_tool(
 
     let mut state = workspace
         .cache_engine
-        .cache_state::<ToolState>(format!("tool{}-{}.json", runtime, runtime.requirement))?;
+        .state
+        .load_state::<ToolState>(format!("tool{}-{}.json", runtime, runtime.requirement))?;
 
     // Install and setup the specific tool + version in the toolchain!
     let installed_count = PlatformManager::write()

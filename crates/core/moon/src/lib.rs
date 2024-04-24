@@ -212,9 +212,7 @@ pub async fn build_project_graph(workspace: &mut Workspace) -> miette::Result<Pr
 
 pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraph> {
     let context = create_project_graph_context(workspace).await;
-    let builder =
-        ProjectGraphBuilder::generate(context, &workspace.cache_engine, &workspace.hash_engine)
-            .await?;
+    let builder = ProjectGraphBuilder::generate(context, &workspace.cache_engine).await?;
 
     let graph = builder.build().await?;
 

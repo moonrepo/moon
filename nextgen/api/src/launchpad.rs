@@ -66,7 +66,9 @@ impl Launchpad {
         moon_env: &MoonEnvironment,
         bypass_cache: bool,
     ) -> miette::Result<Option<VersionCheck>> {
-        let mut state = cache_engine.cache_state::<CurrentVersionState>("moonVersion.json")?;
+        let mut state = cache_engine
+            .state
+            .load_state::<CurrentVersionState>("moonVersion.json")?;
 
         if let Some(last_check) = state.data.last_check {
             if (last_check + ALERT_PAUSE_DURATION) > SystemTime::now() && !bypass_cache {

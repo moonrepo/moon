@@ -1,11 +1,14 @@
-use moon_cache_item::CommonState;
 use moon_vcs_hooks::{HooksGenerator, HooksHash};
 use moon_workspace::Workspace;
 
 pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<()> {
     let vcs_config = &workspace.config.vcs;
-    let cache_engine = &workspace.cache_engine;
-    let hash_engine = &cache_engine.hash;
+    let generator = HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config);
+
+    // Force run the generator and bypass cache
+    if force {
+        return generator.generate().await;
+    }
 
     // Hash all the hook commands
     let mut hooks_hash = HooksHash::new(&vcs_config.manager);
@@ -14,20 +17,13 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
         hooks_hash.add_hook(hook_name, commands);
     }
 
-    // Check the cache before creating the files
-    let mut state = cache_engine
-        .state
-        .load_state::<CommonState>("vcsHooks.json")?;
-    let hash = hash_engine.save_manifest_without_hasher("VCS hooks", &hooks_hash)?;
-
-    if force || hash != state.data.last_hash {
-        HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config)
-            .generate()
-            .await?;
-
-        state.data.last_hash = hash;
-        state.save()?;
-    }
+    // Only generate if the hash has changed
+    workspace
+        .cache_engine
+        .execute_if_changed("vcsHooks.json", hooks_hash, || async {
+            generator.generate().await
+        })
+        .await?;
 
     Ok(())
 }

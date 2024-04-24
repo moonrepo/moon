@@ -6,6 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_utils::{fs, json};
 use std::ffi::OsStr;
+use std::future::Future;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -87,8 +88,9 @@ impl CacheEngine {
         get_cache_mode()
     }
 
-    pub fn write<T>(&self, path: impl AsRef<OsStr>, data: &T) -> miette::Result<()>
+    pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
     where
+        K: AsRef<OsStr>,
         T: ?Sized + Serialize,
     {
         let path = self.resolve_path(path);
@@ -97,6 +99,34 @@ impl CacheEngine {
 
         // This purposefully ignores the cache mode and always writes!
         json::write_file(path, &data, false)?;
+
+        Ok(())
+    }
+
+    pub async fn execute_if_changed<K, T, F, Fut>(
+        &self,
+        path: K,
+        data: T,
+        op: F,
+    ) -> miette::Result<()>
+    where
+        K: AsRef<OsStr>,
+        T: Serialize,
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<()>> + Send,
+    {
+        let path = self.resolve_path(path);
+        let name = fs::file_name(&path);
+
+        let mut state = self.state.load_state::<CommonState>(&name)?;
+        let hash = self.hash.save_manifest_without_hasher(&name, data)?;
+
+        if hash != state.data.last_hash {
+            op().await?;
+
+            state.data.last_hash = hash;
+            state.save()?;
+        }
 
         Ok(())
     }

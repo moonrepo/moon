@@ -82,13 +82,10 @@ impl<'a> Runner<'a> {
         task: &'a Task,
         console: Arc<Console>,
     ) -> miette::Result<Runner<'a>> {
-        let mut cache = workspace.cache_engine.state.load_state::<RunTargetState>(
-            workspace
-                .cache_engine
-                .state
-                .get_target_dir(&task.target)
-                .join("lastRun.json"),
-        )?;
+        let mut cache = workspace
+            .cache_engine
+            .state
+            .load_target_state::<RunTargetState>(&task.target)?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();

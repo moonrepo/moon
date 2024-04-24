@@ -1,4 +1,4 @@
-use crate::{HashEngine, StateEngine};
+use crate::{merge_clean_results, resolve_path, HashEngine, StateEngine};
 use moon_cache_item::*;
 use moon_common::consts;
 use moon_time::parse_duration;
@@ -14,8 +14,10 @@ pub struct CacheEngine {
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
 
+    /// Manages reading and writing of content hashable items.
     pub hash: HashEngine,
 
+    /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
 }
 
@@ -56,34 +58,29 @@ impl CacheEngine {
     }
 
     pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
-        let duration =
-            parse_duration(lifetime).map_err(|e| miette::miette!("Invalid lifetime: {e}"))?;
+        let duration = parse_duration(lifetime)
+            .map_err(|error| miette::miette!("Invalid lifetime: {error}"))?;
 
         debug!(
             "Cleaning up and deleting stale cached artifacts older than \"{}\"",
             lifetime
         );
 
-        let mut deleted = 0;
-        let mut bytes = 0;
-
-        if all {
-            let stats = fs::remove_dir_stale_contents(&self.cache_dir, duration)?;
-            deleted += stats.files_deleted;
-            bytes += stats.bytes_saved;
+        let result = if all {
+            merge_clean_results(
+                self.state.clean_stale_cache(duration)?,
+                self.hash.clean_stale_cache(duration)?,
+            )
         } else {
-            let stats = fs::remove_dir_stale_contents(self.cache_dir.join("hashes"), duration)?;
-            deleted += stats.files_deleted;
-            bytes += stats.bytes_saved;
+            self.hash.clean_stale_cache(duration)?
+        };
 
-            let stats = fs::remove_dir_stale_contents(self.cache_dir.join("outputs"), duration)?;
-            deleted += stats.files_deleted;
-            bytes += stats.bytes_saved;
-        }
+        debug!(
+            "Deleted {} artifacts and saved {} bytes",
+            result.files_deleted, result.bytes_saved
+        );
 
-        debug!("Deleted {} artifacts and saved {} bytes", deleted, bytes);
-
-        Ok((deleted, bytes))
+        Ok((result.files_deleted, result.bytes_saved))
     }
 
     pub fn get_mode(&self) -> CacheMode {
@@ -104,13 +101,7 @@ impl CacheEngine {
         Ok(())
     }
 
-    fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
-        let path = PathBuf::from(path.as_ref());
-
-        if path.is_absolute() {
-            path
-        } else {
-            self.cache_dir.join(path)
-        }
+    pub fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
+        resolve_path(&self.cache_dir, path)
     }
 }

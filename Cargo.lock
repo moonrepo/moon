@@ -4195,13 +4195,16 @@ name = "moon_task_runner"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_api",
  "moon_cache",
  "moon_cache_item",
  "moon_common",
  "moon_config",
+ "moon_process",
  "moon_task",
  "starbase_archive",
  "starbase_utils",
+ "thiserror",
  "tracing",
 ]
 

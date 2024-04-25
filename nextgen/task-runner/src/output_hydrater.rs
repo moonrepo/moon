@@ -14,16 +14,40 @@ pub enum HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
+    cache_engine: &'task CacheEngine,
     task: &'task Task,
     workspace_root: &'task Path,
 }
 
 impl<'task> OutputHydrater<'task> {
-    pub fn unpack_archive(&self, hash: &str, cache_engine: &CacheEngine) -> miette::Result<bool> {
-        let archive_file = cache_engine.hash.get_archive_path(hash);
+    pub async fn hydrate(&self, hash: &str, from: HydrateFrom) -> miette::Result<()> {
+        // Only hydrate when the hash is different from the previous build,
+        // as we can assume the outputs from the previous build still exist?
+        if hash.is_empty() || matches!(from, HydrateFrom::PreviousOutput) {
+            return Ok(());
+        }
 
+        let archive_file = self.cache_engine.hash.get_archive_path(hash);
+
+        if self.cache_engine.get_mode().is_readable() {
+            // Attempt to download from remote cache to `.moon/outputs/<hash>`
+            if !archive_file.exists() {
+                self.download_from_remote_storage(&archive_file, hash)
+                    .await?;
+            }
+
+            // Otherwise hydrate the cached archive into the task's outputs
+            if archive_file.exists() {
+                self.unpack_local_archive(&archive_file)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn unpack_local_archive(&self, archive_file: &Path) -> miette::Result<bool> {
         // If cache disabled or archive doesn't exist, do nothing
-        if !cache_engine.get_mode().is_readable() || !archive_file.exists() {
+        if !self.cache_engine.get_mode().is_readable() || !archive_file.exists() {
             return Ok(false);
         }
 
@@ -39,7 +63,7 @@ impl<'task> OutputHydrater<'task> {
         }
 
         // Unpack the archive and handle log files
-        let state_dir = cache_engine.state.get_target_dir(&self.task.target);
+        let state_dir = self.cache_engine.state.get_target_dir(&self.task.target);
         let stdout_log = self.workspace_root.join("stdout.log");
         let stderr_log = self.workspace_root.join("stderr.log");
 
@@ -75,5 +99,13 @@ impl<'task> OutputHydrater<'task> {
         }
 
         Ok(true)
+    }
+
+    pub async fn download_from_remote_storage(
+        &self,
+        _archive_file: &Path,
+        _hash: &str,
+    ) -> miette::Result<()> {
+        Ok(())
     }
 }

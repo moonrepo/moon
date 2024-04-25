@@ -1,19 +1,51 @@
+use crate::task_runner_error::TaskRunnerError;
 use moon_cache::CacheEngine;
 use moon_config::{ProjectConfig, WorkspaceConfig};
 use moon_task::{TargetError, TargetScope, Task};
 use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
 use starbase_utils::glob;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+/// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
+/// so that subsequent builds are faster, and any local outputs
+/// can be hydrated easily.
 pub struct OutputArchiver<'task> {
-    task: &'task Task,
+    cache_engine: &'task CacheEngine,
     project_config: &'task ProjectConfig,
+    task: &'task Task,
     workspace_config: &'task WorkspaceConfig,
     workspace_root: &'task Path,
 }
 
 impl<'task> OutputArchiver<'task> {
+    pub async fn archive(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
+        if hash.is_empty() || !self.is_archivable()? {
+            return Ok(None);
+        }
+
+        // Check that outputs actually exist
+        if !self.task.outputs.is_empty() && !self.has_outputs_been_created(false)? {
+            return Err(TaskRunnerError::MissingOutputs {
+                target: self.task.target.to_string(),
+            }
+            .into());
+        }
+
+        // If so, create and pack the archive!
+        let archive_file = self.cache_engine.hash.get_archive_path(hash);
+
+        if self.cache_engine.get_mode().is_writable() && !archive_file.exists() {
+            self.create_local_archive(&archive_file)?;
+
+            if archive_file.exists() {
+                self.upload_to_remote_storage(&archive_file, hash).await?;
+            }
+        }
+
+        Ok(Some(archive_file))
+    }
+
     pub fn is_archivable(&self) -> miette::Result<bool> {
         let task = self.task;
 
@@ -74,14 +106,7 @@ impl<'task> OutputArchiver<'task> {
         Ok(true)
     }
 
-    pub fn create_archive(&self, hash: &str, cache_engine: &CacheEngine) -> miette::Result<bool> {
-        let archive_file = cache_engine.hash.get_archive_path(hash);
-
-        // If cache disabled or archive already exists, do nothing
-        if !cache_engine.get_mode().is_writable() || archive_file.exists() {
-            return Ok(false);
-        }
-
+    pub fn create_local_archive(&self, archive_file: &Path) -> miette::Result<()> {
         // Create the archiver instance based on task outputs
         let mut archive = Archiver::new(&self.workspace_root, &archive_file);
 
@@ -94,7 +119,7 @@ impl<'task> OutputArchiver<'task> {
         }
 
         // Also include stdout/stderr logs at the root of the tarball
-        let state_dir = cache_engine.state.get_target_dir(&self.task.target);
+        let state_dir = self.cache_engine.state.get_target_dir(&self.task.target);
 
         archive.add_source_file(state_dir.join("stdout.log"), None);
 
@@ -102,6 +127,14 @@ impl<'task> OutputArchiver<'task> {
 
         archive.pack(TarPacker::new_gz)?;
 
-        Ok(true)
+        Ok(())
+    }
+
+    pub async fn upload_to_remote_storage(
+        &self,
+        _archive_file: &Path,
+        _hash: &str,
+    ) -> miette::Result<()> {
+        Ok(())
     }
 }

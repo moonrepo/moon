@@ -106,39 +106,6 @@ impl<'a> Runner<'a> {
     /// so that subsequent builds are faster, and any local outputs
     /// can be hydrated easily.
     pub async fn archive_outputs(&self) -> miette::Result<()> {
-        let hash = &self.cache.data.hash;
-
-        if hash.is_empty() || !self.is_archivable()? {
-            return Ok(());
-        }
-
-        // Check that outputs actually exist
-        if !self.task.outputs.is_empty() && !self.has_outputs(false)? {
-            return Err(RunnerError::MissingOutput(self.task.target.id.clone()).into());
-        }
-
-        // If so, then cache the archive
-        if let EventFlow::Return(archive_path) = self
-            .emitter
-            .emit(Event::TargetOutputArchiving {
-                hash,
-                project: self.project,
-                target: &self.task.target,
-                task: self.task,
-            })
-            .await?
-        {
-            self.emitter
-                .emit(Event::TargetOutputArchived {
-                    archive_path: archive_path.into(),
-                    hash,
-                    project: self.project,
-                    target: &self.task.target,
-                    task: self.task,
-                })
-                .await?;
-        }
-
         Ok(())
     }
 

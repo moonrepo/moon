@@ -9,12 +9,15 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
 moon_cache_item = { path = "../cache-item" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_process = { path = "../process" }
 moon_task = { path = "../task" }
 miette = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_utils = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }

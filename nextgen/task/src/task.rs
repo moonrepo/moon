@@ -139,7 +139,7 @@ impl Task {
         for file in touched_files {
             if self.input_files.contains(file) {
                 debug!(
-                    target = ?self.target,
+                    target = self.target.as_str(),
                     input = ?file,
                     "Affected by input file",
                 );

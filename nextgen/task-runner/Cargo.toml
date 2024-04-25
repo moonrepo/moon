@@ -1,0 +1,20 @@
+[package]
+name = "moon_task_runner"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "System for running tasks."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_cache = { path = "../cache" }
+moon_cache_item = { path = "../cache-item" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_task = { path = "../task" }
+miette = { workspace = true }
+starbase_archive = { workspace = true }
+starbase_utils = { workspace = true }
+tracing = { workspace = true }

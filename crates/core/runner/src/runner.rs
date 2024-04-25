@@ -481,65 +481,12 @@ impl<'a> Runner<'a> {
         }
     }
 
-    pub fn has_outputs(&self, bypass_globs: bool) -> miette::Result<bool> {
-        // If using globs, we have no way to truly determine if all outputs
-        // exist on the current file system, so always hydrate...
-        if bypass_globs && !self.task.output_globs.is_empty() {
-            return Ok(false);
-        }
-
-        // Check paths first since they are literal
-        for output in &self.task.output_files {
-            if !output.to_path(&self.workspace.root).exists() {
-                return Ok(false);
-            }
-        }
-
-        // Check globs last, as they are costly
-        if !self.task.output_globs.is_empty() {
-            let outputs = glob::walk_files(&self.workspace.root, &self.task.output_globs)?;
-
-            return Ok(!outputs.is_empty());
-        }
-
+    pub fn has_outputs(&self, _bypass_globs: bool) -> miette::Result<bool> {
         Ok(true)
     }
 
-    /// Determine if the current task can be archived.
     pub fn is_archivable(&self) -> miette::Result<bool> {
-        let task = self.task;
-
-        if task.is_build_type() {
-            return Ok(true);
-        }
-
-        for target in &self.workspace.config.runner.archivable_targets {
-            let is_matching_task = task.target.task_id == target.task_id;
-
-            match &target.scope {
-                TargetScope::All => {
-                    if is_matching_task {
-                        return Ok(true);
-                    }
-                }
-                TargetScope::Project(project_locator) => {
-                    if let Some(owner_id) = task.target.get_project_id() {
-                        if owner_id == project_locator && is_matching_task {
-                            return Ok(true);
-                        }
-                    }
-                }
-                TargetScope::Tag(tag_id) => {
-                    if self.project.config.tags.contains(tag_id) && is_matching_task {
-                        return Ok(true);
-                    }
-                }
-                TargetScope::Deps => return Err(TargetError::NoDepsInRunContext.into()),
-                TargetScope::OwnSelf => return Err(TargetError::NoSelfInRunContext.into()),
-            };
-        }
-
-        Ok(false)
+        Ok(true)
     }
 
     /// Hash the target based on all current parameters and return early

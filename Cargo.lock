@@ -4191,6 +4191,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_task_runner"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_cache",
+ "moon_cache_item",
+ "moon_common",
+ "moon_config",
+ "moon_task",
+ "starbase_archive",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_test_utils"
 version = "0.0.1"
 dependencies = [

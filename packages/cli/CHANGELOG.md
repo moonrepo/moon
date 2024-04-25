@@ -14,6 +14,7 @@
 
 #### 🐞 Fixes
 
+- Fixed task `deps.env` not supporting variable substitution.
 - Fixed an issue where Git hooks would overwrite non-local hooks. The `core.hooksPath` setting is
   now only used if the path is within the current repository.
 

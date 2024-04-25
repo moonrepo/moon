@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where Git hooks would overwrite non-local hooks. The `core.hooksPath` setting is
+  now only used if the path is within the current repository.
+
 ## 1.24.1
 
 #### 🐞 Fixes

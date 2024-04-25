@@ -102,6 +102,25 @@ async fn cleans_up_hooks() {
 #[cfg(not(windows))]
 mod unix {
     use super::*;
+    use std::path::PathBuf;
+
+    #[tokio::test]
+    async fn doesnt_create_outside_repo_root() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+        sandbox.run_git(|git| {
+            git.args(["config", "--local", "core.hooksPath", "/tmp/git_hooks"]);
+        });
+
+        run_generator(sandbox.path()).await;
+
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+        assert!(!PathBuf::from("/tmp/git_hooks").exists());
+    }
 
     #[tokio::test]
     async fn creates_local_hook_files() {

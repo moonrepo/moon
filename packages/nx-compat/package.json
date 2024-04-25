@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/nx-compat",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "commonjs",
   "description": "Execute Nx targets from the moon.",
   "keywords": [

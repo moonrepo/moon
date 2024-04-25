@@ -380,16 +380,28 @@ impl Vcs for Git {
     }
 
     async fn get_hooks_dir(&self) -> miette::Result<PathBuf> {
+        // Only use the hooks path if it's within the current repository
+        let is_in_repo =
+            |dir: &Path| dir.is_absolute() && dir.starts_with(self.git_root.parent().unwrap());
+
         if let Ok(output) = self
             .process
             .run(["config", "--get", "core.hooksPath"], true)
             .await
         {
-            return Ok(PathBuf::from(output));
+            let dir = PathBuf::from(output);
+
+            if is_in_repo(&dir) {
+                return Ok(dir);
+            }
         }
 
         if let Ok(dir) = env::var("GIT_DIR") {
-            return Ok(PathBuf::from(dir).join("hooks"));
+            let dir = PathBuf::from(dir).join("hooks");
+
+            if is_in_repo(&dir) {
+                return Ok(dir);
+            }
         }
 
         Ok(self.git_root.join("hooks"))

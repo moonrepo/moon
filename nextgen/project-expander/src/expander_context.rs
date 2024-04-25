@@ -20,6 +20,16 @@ pub struct ExpanderContext<'graph, 'query> {
     pub workspace_root: &'graph Path,
 }
 
+pub fn substitute_env_vars(mut env: FxHashMap<String, String>) -> FxHashMap<String, String> {
+    let cloned_env = env.clone();
+
+    for (key, value) in env.iter_mut() {
+        *value = substitute_env_var(key, value, &cloned_env);
+    }
+
+    env
+}
+
 pub fn substitute_env_var(
     base_name: &str,
     value: &str,

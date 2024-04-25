@@ -1,4 +1,4 @@
-use crate::expander_context::{substitute_env_var, ExpanderContext};
+use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
@@ -107,6 +107,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
             // Add the dep if it has not already been
             let mut dep_args = parse_task_args(&dep.args)?;
+            let dep_env = self.token.expand_env_with_task(task, &dep.env)?;
 
             if !dep_args.is_empty() {
                 dep_args = self.token.expand_args_with_task(task, &dep_args)?;
@@ -118,7 +119,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 } else {
                     TaskArgs::List(dep_args)
                 },
-                env: self.token.expand_env_with_task(task, &dep.env)?,
+                env: substitute_env_vars(dep_env),
                 optional: dep.optional,
                 target: Target::new(&dep_project.id, &dep.target.task_id)?,
             };
@@ -237,11 +238,11 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             trace!(
                 target = task.target.as_str(),
                 env_files = ?env_paths,
-                "Loading environment variables from dotenv files",
+                "Loading environment variables from .env files",
             );
 
             let mut missing_paths = vec![];
-            let mut env_vars = FxHashMap::default();
+            let mut merged_env_vars = FxHashMap::default();
 
             // The file may not have been committed, so avoid crashing
             for env_path in env_paths {
@@ -255,7 +256,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         let (key, val) = line.map_err(handle_error)?;
 
                         // Overwrite previous values
-                        env_vars.insert(key, val);
+                        merged_env_vars.insert(key, val);
                     }
                 } else {
                     missing_paths.push(env_path);
@@ -263,7 +264,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             }
 
             // Don't override task-level variables
-            for (key, val) in env_vars {
+            for (key, val) in merged_env_vars {
                 env.entry(key).or_insert(val);
             }
 
@@ -277,14 +278,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             }
         }
 
-        // Substitute environment variables
-        let cloned_env = env.clone();
-
-        for (key, value) in env.iter_mut() {
-            *value = substitute_env_var(key, value, &cloned_env);
-        }
-
-        task.env = env;
+        task.env = substitute_env_vars(env);
 
         Ok(())
     }

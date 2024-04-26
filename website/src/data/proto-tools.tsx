@@ -525,6 +525,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
+	'openapi-changes': {
+		author: 'ngoldack',
+		bins: ['openapi-changes'],
+		description: 'The world\'s sexiest OpenAPI breaking changes detector. Discover what changed between two OpenAPI specs, or a single spec over time. Supports OpenAPI 3.1, 3.0 and Swagger',
+		homepageUrl: 'https://github.com/pb33f/openapi-changes',
+		name: 'openapi-changes',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/ngoldack/proto-tools/main/tools/openapi-changes/openapi-changes.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/ngoldack/proto-tools',
+	},
 	oxlint: {
 		author: 'Phault',
 		bins: ['oxlint'],
@@ -690,6 +702,18 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/uv/plugin.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	wiretap: {
+		author: 'ngoldack',
+		bins: ['wiretap'],
+		description: 'The world\'s coolest API Validation and compliance tool. Validate APIs against OpenAPI specifications and much more',
+		homepageUrl: 'https://github.com/pb33f/wiretap',
+		name: 'wiretap',
+		noIcon: true,
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/ngoldack/proto-tools/main/tools/wiretap/wiretap.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/ngoldack/proto-tools',
 	},
 	wizer: {
 		author: 'Phault',

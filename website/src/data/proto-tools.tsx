@@ -528,7 +528,8 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	'openapi-changes': {
 		author: 'ngoldack',
 		bins: ['openapi-changes'],
-		description: 'The world\'s sexiest OpenAPI breaking changes detector. Discover what changed between two OpenAPI specs, or a single spec over time. Supports OpenAPI 3.1, 3.0 and Swagger',
+		description:
+			"The world's sexiest OpenAPI breaking changes detector. Discover what changed between two OpenAPI specs, or a single spec over time. Supports OpenAPI 3.1, 3.0 and Swagger",
 		homepageUrl: 'https://github.com/pb33f/openapi-changes',
 		name: 'openapi-changes',
 		noIcon: true,
@@ -706,7 +707,8 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	wiretap: {
 		author: 'ngoldack',
 		bins: ['wiretap'],
-		description: 'The world\'s coolest API Validation and compliance tool. Validate APIs against OpenAPI specifications and much more',
+		description:
+			"The world's coolest API Validation and compliance tool. Validate APIs against OpenAPI specifications and much more",
 		homepageUrl: 'https://github.com/pb33f/wiretap',
 		name: 'wiretap',
 		noIcon: true,

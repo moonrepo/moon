@@ -166,8 +166,7 @@ impl Task {
         Ok(false)
     }
 
-    /// Return a list of all workspace-relative input files for
-    /// the task
+    /// Return a list of all workspace-relative input files.
     pub fn get_input_files(
         &self,
         workspace_root: &Path,
@@ -175,10 +174,8 @@ impl Task {
         let mut list = vec![];
 
         for path in &self.input_files {
-            let file = path.to_path(workspace_root);
-
             // Detect if file actually exists
-            if file.is_file() {
+            if path.to_path(workspace_root).is_file() {
                 list.push(path.to_owned());
             }
         }
@@ -191,15 +188,12 @@ impl Task {
 
             // Glob results are absolute paths!
             for file in walk_paths {
-                let path =
+                list.push(
                     WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
-                        .unwrap();
-
-                list.push(path);
+                        .unwrap(),
+                );
             }
         }
-
-        list.sort();
 
         Ok(list)
     }

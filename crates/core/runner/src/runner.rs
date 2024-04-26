@@ -30,28 +30,6 @@ use tokio::{
 
 const LOG_TARGET: &str = "moon:runner";
 
-#[cfg(unix)]
-fn create_unix_shell(shell: &moon_config::TaskUnixShell) -> Shell {
-    use moon_config::TaskUnixShell;
-
-    match shell {
-        TaskUnixShell::Bash => Shell::new("bash"),
-        TaskUnixShell::Elvish => Shell::new("elvish"),
-        TaskUnixShell::Fish => Shell::new("fish"),
-        TaskUnixShell::Zsh => Shell::new("zsh"),
-    }
-}
-
-#[cfg(windows)]
-fn create_windows_shell(shell: &moon_config::TaskWindowsShell) -> Shell {
-    use moon_config::TaskWindowsShell;
-
-    match shell {
-        TaskWindowsShell::Bash => Shell::new("bash"),
-        TaskWindowsShell::Pwsh => Shell::new("pwsh"),
-    }
-}
-
 pub enum HydrateFrom {
     LocalCache,
     PreviousOutput,
@@ -248,195 +226,15 @@ impl<'a> Runner<'a> {
             color::path(working_dir)
         );
 
-        let mut command = PlatformManager::read()
+        let command = PlatformManager::read()
             .get(task.platform)?
             .create_run_target_command(context, project, task, runtime, working_dir)
             .await?;
 
-        command
-            .cwd(working_dir)
-            .env("PWD", working_dir)
-            // We need to handle non-zero's manually
-            .set_error_on_nonzero(false);
-
-        self.create_env_vars(&mut command).await?;
-
-        // Wrap in a shell
-        if task.options.shell.is_none() || task.options.shell.is_some_and(|s| !s) {
-            command.without_shell();
-        } else {
-            #[cfg(unix)]
-            if let Some(shell) = task.options.unix_shell.as_ref() {
-                command.with_shell(create_unix_shell(shell));
-            }
-
-            #[cfg(windows)]
-            if let Some(shell) = task.options.windows_shell.as_ref() {
-                command.with_shell(create_windows_shell(shell));
-            }
-        }
-
-        // Passthrough args
-        if context.should_inherit_args(&self.task.target) {
-            command.args(&context.passthrough_args);
-        }
-
-        // Terminal colors
-        if self.workspace.config.runner.inherit_colors_for_piped_tasks {
-            command.inherit_colors();
-        }
-
-        // Dependency specific args/env
-        if let ActionNode::RunTask(inner) = &*self.node {
-            command.args(inner.args.clone());
-            command.envs(inner.env.clone());
-        }
-
-        // Affected files (must be last args)
-        if let Some(check_affected) = &self.task.options.affected_files {
-            let mut files = if context.affected_only {
-                self.task
-                    .get_affected_files(&context.touched_files, self.project.source.as_str())?
-            } else {
-                Vec::with_capacity(0)
-            };
-
-            if files.is_empty() && self.task.options.affected_pass_inputs {
-                files = self
-                    .task
-                    .get_input_files(&self.workspace.root)?
-                    .into_iter()
-                    .filter_map(|f| {
-                        f.strip_prefix(&self.project.source)
-                            .ok()
-                            .map(ToOwned::to_owned)
-                    })
-                    .collect();
-
-                if files.is_empty() {
-                    warn!(
-                        target: LOG_TARGET,
-                        "No input files detected for {}, defaulting to '.'. This will be deprecated in a future version.",
-                        color::label(&task.target),
-                    );
-                }
-            }
-
-            files.sort();
-
-            if matches!(
-                check_affected,
-                TaskOptionAffectedFiles::Env | TaskOptionAffectedFiles::Enabled(true)
-            ) {
-                command.env(
-                    "MOON_AFFECTED_FILES",
-                    if files.is_empty() {
-                        ".".into()
-                    } else {
-                        files
-                            .iter()
-                            .map(|f| f.as_str().to_string())
-                            .collect::<Vec<_>>()
-                            .join(",")
-                    },
-                );
-            }
-
-            if matches!(
-                check_affected,
-                TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
-            ) {
-                if files.is_empty() {
-                    command.arg_if_missing(".");
-                } else {
-                    // Mimic relative from ("./")
-                    command.args(files.iter().map(|f| format!("./{f}")));
-                }
-            }
-        }
-
         Ok(command)
     }
 
-    pub async fn create_env_vars(&self, command: &mut Command) -> miette::Result<()> {
-        let mut env_vars = FxHashMap::default();
-
-        env_vars.insert(
-            "MOON_CACHE_DIR".to_owned(),
-            path::to_string(&self.workspace.cache_engine.cache_dir)?,
-        );
-        env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.to_string());
-        env_vars.insert(
-            "MOON_PROJECT_ROOT".to_owned(),
-            path::to_string(&self.project.root)?,
-        );
-        env_vars.insert(
-            "MOON_PROJECT_SOURCE".to_owned(),
-            self.project.source.to_string(),
-        );
-        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.to_string());
-        env_vars.insert(
-            "MOON_WORKSPACE_ROOT".to_owned(),
-            path::to_string(&self.workspace.root)?,
-        );
-        env_vars.insert(
-            "MOON_WORKING_DIR".to_owned(),
-            path::to_string(&self.workspace.working_dir)?,
-        );
-        env_vars.insert(
-            "MOON_PROJECT_SNAPSHOT".to_owned(),
-            path::to_string(
-                self.workspace
-                    .cache_engine
-                    .state
-                    .get_project_snapshot_path(&self.project.id),
-            )?,
-        );
-
-        command.envs(env_vars);
-        command.envs(get_proto_env_vars());
-
-        // Pin versions for each tool in the toolchain
-        if let Some(bun_config) = &self.workspace.toolchain_config.bun {
-            if let Some(version) = &bun_config.version {
-                command.env_if_missing("PROTO_BUN_VERSION", version.to_string());
-            }
-        }
-
-        if let Some(deno_config) = &self.workspace.toolchain_config.deno {
-            if let Some(version) = &deno_config.version {
-                command.env_if_missing("PROTO_DENO_VERSION", version.to_string());
-            }
-        }
-
-        if let Some(node_config) = &self.workspace.toolchain_config.node {
-            if let Some(version) = &node_config.version {
-                command.env_if_missing("PROTO_NODE_VERSION", version.to_string());
-            }
-
-            if let Some(version) = &node_config.npm.version {
-                command.env_if_missing("PROTO_NPM_VERSION", version.to_string());
-            }
-
-            if let Some(pnpm_config) = &node_config.pnpm {
-                if let Some(version) = &pnpm_config.version {
-                    command.env_if_missing("PROTO_PNPM_VERSION", version.to_string());
-                }
-            }
-
-            if let Some(yarn_config) = &node_config.yarn {
-                if let Some(version) = &yarn_config.version {
-                    command.env_if_missing("PROTO_YARN_VERSION", version.to_string());
-                }
-            }
-
-            if let Some(bunpm_config) = &node_config.bun {
-                if let Some(version) = &bunpm_config.version {
-                    command.env_if_missing("PROTO_BUN_VERSION", version.to_string());
-                }
-            }
-        }
-
+    pub async fn create_env_vars(&self, _command: &mut Command) -> miette::Result<()> {
         Ok(())
     }
 

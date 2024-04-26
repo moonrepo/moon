@@ -7,6 +7,7 @@ use starbase_utils::fs;
 use std::path::Path;
 use tracing::warn;
 
+#[derive(Clone, Copy)]
 pub enum HydrateFrom {
     LocalCache,
     PreviousOutput,
@@ -14,9 +15,9 @@ pub enum HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
-    cache_engine: &'task CacheEngine,
-    task: &'task Task,
-    workspace_root: &'task Path,
+    pub cache_engine: &'task CacheEngine,
+    pub task: &'task Task,
+    pub workspace_root: &'task Path,
 }
 
 impl<'task> OutputHydrater<'task> {
@@ -82,14 +83,13 @@ impl<'task> OutputHydrater<'task> {
             Err(error) => {
                 warn!(
                     target = self.task.target.as_str(),
-                    "Failed to hydrate {} outputs from cache: {}",
-                    color::label(&self.task.target),
+                    "Failed to hydrate task outputs from cache: {}",
                     color::muted_light(error.to_string()),
                 );
 
                 // Delete target outputs to ensure a clean slate
                 for output in &self.task.output_files {
-                    fs::remove_file(output.to_logical_path(&self.workspace_root));
+                    fs::remove_file(output.to_logical_path(&self.workspace_root))?;
                 }
 
                 // And delete workspace root log files

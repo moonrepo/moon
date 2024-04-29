@@ -1,7 +1,10 @@
+use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
+use crate::run_state::RunTaskState;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus};
 use moon_action_context::{ActionContext, TargetState};
+use moon_cache::CacheItem;
 use moon_platform::PlatformManager;
 use moon_project::Project;
 use moon_task::Task;
@@ -16,12 +19,73 @@ pub struct TaskRunner<'task> {
     task: &'task Task,
     workspace: &'task Workspace,
 
-    hash: String,
+    archiver: OutputArchiver<'task>,
+    cache: CacheItem<RunTaskState>,
+    hydrater: OutputHydrater<'task>,
 }
 
 impl<'task> TaskRunner<'task> {
-    pub fn is_cached(&self) -> Option<HydrateFrom> {
-        None
+    pub fn new(
+        node: &'task ActionNode,
+        project: &'task Project,
+        task: &'task Task,
+        workspace: &'task Workspace,
+    ) -> miette::Result<Self> {
+        let mut cache = workspace
+            .cache_engine
+            .state
+            .load_target_state::<RunTaskState>(&task.target)?;
+
+        if cache.data.target.is_empty() {
+            cache.data.target = task.target.to_string();
+        }
+
+        Ok(Self {
+            cache,
+            archiver: OutputArchiver {
+                project_config: &project.config,
+                task,
+                workspace,
+            },
+            hydrater: OutputHydrater { task, workspace },
+            node,
+            project,
+            task,
+            workspace,
+        })
+    }
+
+    pub async fn is_cached(&self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
+        let cache_engine = &self.workspace.cache_engine;
+
+        // If hash is the same as the previous build, we can simply abort!
+        // However, ensure the outputs also exist, otherwise we should hydrate
+        if self.cache.data.exit_code == 0
+            && self.cache.data.hash == hash
+            && self.archiver.has_outputs_been_created(true)?
+        {
+            return Ok(Some(HydrateFrom::PreviousOutput));
+        }
+
+        if !cache_engine.get_mode().is_readable() {
+            return Ok(None);
+        }
+
+        // Check if archive exists in moonbase (remote storage) by querying the artifacts
+        // endpoint. This only checks that the database record exists!
+        if let Some(moonbase) = &self.workspace.session {
+            if let Some(_) = moonbase.read_artifact(hash).await? {
+                return Ok(Some(HydrateFrom::RemoteCache));
+            }
+        }
+
+        // Check to see if a build with the provided hash has been cached locally.
+        // We only check for the archive, as the manifest is purely for local debugging!
+        if cache_engine.hash.get_archive_path(hash).exists() {
+            return Ok(Some(HydrateFrom::LocalCache));
+        }
+
+        Ok(None)
     }
 
     pub fn is_cache_enabled(&self) -> bool {
@@ -120,18 +184,6 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    pub async fn hydrate(&self, from: HydrateFrom) -> miette::Result<()> {
-        OutputHydrater {
-            cache_engine: &self.workspace.cache_engine,
-            task: self.task,
-            workspace_root: &self.workspace.root,
-        }
-        .hydrate(&self.hash, from)
-        .await?;
-
-        Ok(())
-    }
-
     pub async fn run(&self, context: &ActionContext) -> miette::Result<ActionStatus> {
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
@@ -145,10 +197,10 @@ impl<'task> TaskRunner<'task> {
 
         // Exit early if this build has already been cached/hashed
         if self.is_cache_enabled() {
-            if let Some(from) = self.is_cached() {
-                context.set_target_state(&self.task.target, TargetState::Completed(hash));
+            if let Some(from) = self.is_cached(&hash).await? {
+                self.hydrater.hydrate(&hash, from).await?;
 
-                self.hydrate(from).await?;
+                context.set_target_state(&self.task.target, TargetState::Completed(hash));
 
                 return Ok(match from {
                     HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,

@@ -16,6 +16,7 @@ graphql_client = { version = "0.13.0", features = ["reqwest-rustls"] }
 miette = { workspace = true }
 proto_core = { workspace = true }
 reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
+rustc-hash = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }

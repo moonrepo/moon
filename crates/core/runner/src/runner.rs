@@ -176,13 +176,6 @@ impl<'a> Runner<'a> {
             &project.root
         };
 
-        debug!(
-            target: LOG_TARGET,
-            "Creating {} command (in working directory {})",
-            color::label(&task.target),
-            color::path(working_dir)
-        );
-
         let command = PlatformManager::read()
             .get(task.platform)?
             .create_run_target_command(context, project, task, runtime, working_dir)
@@ -220,21 +213,6 @@ impl<'a> Runner<'a> {
         runtime: &Runtime,
     ) -> miette::Result<Option<HydrateFrom>> {
         let hash = String::new();
-
-        // Hash is the same as the previous build, so simply abort!
-        // However, ensure the outputs also exist, otherwise we should hydrate
-        if self.cache.data.exit_code == 0
-            && self.cache.data.hash == hash
-            && self.has_outputs(true)?
-        {
-            debug!(
-                target: LOG_TARGET,
-                "Cache hit for hash {}, reusing previous build",
-                color::hash(&hash),
-            );
-
-            return Ok(Some(HydrateFrom::PreviousOutput));
-        }
 
         self.cache.data.hash = hash.clone();
 

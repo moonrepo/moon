@@ -3164,6 +3164,7 @@ dependencies = [
  "moon_time",
  "proto_core",
  "reqwest 0.12.3",
+ "rustc-hash",
  "semver",
  "serde",
  "starbase_utils",

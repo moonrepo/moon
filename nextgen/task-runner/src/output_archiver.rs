@@ -1,4 +1,5 @@
 use crate::task_runner_error::TaskRunnerError;
+use moon_common::color;
 use moon_config::ProjectConfig;
 use moon_task::{TargetError, TargetScope, Task};
 use moon_workspace::Workspace;
@@ -6,6 +7,7 @@ use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
+use tracing::{debug, warn};
 
 /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
 /// so that subsequent builds are faster, and any local outputs
@@ -33,11 +35,25 @@ impl<'task> OutputArchiver<'task> {
         // If so, create and pack the archive!
         let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
 
-        if self.workspace.cache_engine.get_mode().is_writable() && !archive_file.exists() {
-            self.create_local_archive(&archive_file)?;
+        if !self.workspace.cache_engine.get_mode().is_writable() {
+            debug!(
+                target = self.task.target.as_str(),
+                hash, "Cache is not writable, skipping output archiving"
+            );
+
+            return Ok(None);
+        }
+
+        if !archive_file.exists() {
+            debug!(
+                target = self.task.target.as_str(),
+                hash, "Archiving task outputs from project"
+            );
+
+            self.create_local_archive(hash, &archive_file)?;
 
             if archive_file.exists() {
-                self.upload_to_remote_storage(&archive_file, hash).await?;
+                self.upload_to_remote_storage(hash, &archive_file).await?;
             }
         }
 
@@ -104,7 +120,13 @@ impl<'task> OutputArchiver<'task> {
         Ok(true)
     }
 
-    pub fn create_local_archive(&self, archive_file: &Path) -> miette::Result<()> {
+    pub fn create_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
+        debug!(
+            target = self.task.target.as_str(),
+            hash,
+            archive_file = ?archive_file, "Packing archive from project"
+        );
+
         // Create the archiver instance based on task outputs
         let mut archive = Archiver::new(&self.workspace.root, &archive_file);
 
@@ -116,7 +138,7 @@ impl<'task> OutputArchiver<'task> {
             archive.add_source_glob(output_glob.as_str());
         }
 
-        // Also include stdout/stderr logs at the root of the tarball
+        // Also include stdout/stderr logs in the tarball
         let state_dir = self
             .workspace
             .cache_engine
@@ -127,23 +149,29 @@ impl<'task> OutputArchiver<'task> {
 
         archive.add_source_file(state_dir.join("stderr.log"), None);
 
-        archive.pack(TarPacker::new_gz)?;
+        // Pack the archive
+        if let Err(error) = archive.pack(TarPacker::new_gz) {
+            warn!(
+                target = self.task.target.as_str(),
+                hash,
+                archive_file = ?archive_file,
+                "Failed to package outputs into archive: {}",
+                color::muted_light(error.to_string()),
+            );
+        }
 
         Ok(())
     }
 
     pub async fn upload_to_remote_storage(
         &self,
-        archive_file: &Path,
         hash: &str,
+        archive_file: &Path,
     ) -> miette::Result<()> {
         if let Some(moonbase) = &self.workspace.session {
-            if let Err(error) = moonbase
+            moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)
-                .await
-            {
-                // TODO log error
-            }
+                .await?;
         }
 
         Ok(())

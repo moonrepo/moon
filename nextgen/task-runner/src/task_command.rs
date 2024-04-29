@@ -3,7 +3,6 @@ use moon_action_context::ActionContext;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_config::TaskOptionAffectedFiles;
 use moon_platform::PlatformManager;
-use moon_platform_runtime::Runtime;
 use moon_process::{Command, Shell};
 use moon_project::Project;
 use moon_task::Task;

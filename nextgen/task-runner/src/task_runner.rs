@@ -11,7 +11,7 @@ use moon_task::Task;
 use moon_task_hasher::TaskHasher;
 use moon_workspace::Workspace;
 use std::collections::BTreeMap;
-use tracing::debug;
+use tracing::{debug, trace};
 
 pub struct TaskRunner<'task> {
     node: &'task ActionNode,
@@ -58,32 +58,68 @@ impl<'task> TaskRunner<'task> {
     pub async fn is_cached(&self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
         let cache_engine = &self.workspace.cache_engine;
 
+        debug!(
+            target = self.task.target.as_str(),
+            hash, "Checking if task has been cached using hash"
+        );
+
         // If hash is the same as the previous build, we can simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
         if self.cache.data.exit_code == 0
             && self.cache.data.hash == hash
             && self.archiver.has_outputs_been_created(true)?
         {
+            debug!(
+                target = self.task.target.as_str(),
+                hash, "Hash matches previous run, reusing existing outputs"
+            );
+
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
         if !cache_engine.get_mode().is_readable() {
+            debug!(
+                target = self.task.target.as_str(),
+                hash, "Cache is not readable, continuing run"
+            );
+
             return Ok(None);
+        }
+
+        // Check to see if a build with the provided hash has been cached locally.
+        // We only check for the archive, as the manifest is purely for local debugging!
+        let archive_file = cache_engine.hash.get_archive_path(hash);
+
+        if archive_file.exists() {
+            debug!(
+                target = self.task.target.as_str(),
+                hash,
+                archive_file = ?archive_file,
+                "Cache hit in local cache, will reuse existing archive"
+            );
+
+            return Ok(Some(HydrateFrom::LocalCache));
         }
 
         // Check if archive exists in moonbase (remote storage) by querying the artifacts
         // endpoint. This only checks that the database record exists!
         if let Some(moonbase) = &self.workspace.session {
-            if let Some(_) = moonbase.read_artifact(hash).await? {
+            if let Some((artifact, _)) = moonbase.read_artifact(hash).await? {
+                debug!(
+                    target = self.task.target.as_str(),
+                    hash,
+                    artifact_id = artifact.id,
+                    "Cache hit in remote cache, will attempt to download the archive"
+                );
+
                 return Ok(Some(HydrateFrom::RemoteCache));
             }
         }
 
-        // Check to see if a build with the provided hash has been cached locally.
-        // We only check for the archive, as the manifest is purely for local debugging!
-        if cache_engine.hash.get_archive_path(hash).exists() {
-            return Ok(Some(HydrateFrom::LocalCache));
-        }
+        debug!(
+            target = self.task.target.as_str(),
+            hash, "Cache miss, continuing run"
+        );
 
         Ok(None)
     }
@@ -125,6 +161,11 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub async fn generate_hash(&self, context: &ActionContext) -> miette::Result<String> {
+        debug!(
+            target = self.task.target.as_str(),
+            "Generating a unique hash for this task"
+        );
+
         let mut hasher = self
             .workspace
             .cache_engine
@@ -132,6 +173,11 @@ impl<'task> TaskRunner<'task> {
             .create_hasher(self.node.label());
 
         // Hash common fields
+        trace!(
+            target = self.task.target.as_str(),
+            "Including common task related fields in the hash"
+        );
+
         let mut task_hasher = TaskHasher::new(
             self.project,
             self.task,
@@ -169,6 +215,12 @@ impl<'task> TaskRunner<'task> {
         hasher.hash_content(task_hasher.hash())?;
 
         // Hash platform fields
+        trace!(
+            target = self.task.target.as_str(),
+            platform = ?self.task.platform,
+            "Including platform specific fields in the hash"
+        );
+
         PlatformManager::read()
             .get(self.task.platform)?
             .hash_run_target(
@@ -180,6 +232,12 @@ impl<'task> TaskRunner<'task> {
             .await?;
 
         let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
+
+        debug!(
+            target = self.task.target.as_str(),
+            hash = &hash,
+            "Generated a unique hash"
+        );
 
         Ok(hash)
     }
@@ -208,6 +266,12 @@ impl<'task> TaskRunner<'task> {
                 });
             }
         } else {
+            debug!(
+                target = self.task.target.as_str(),
+                hash = &hash,
+                "Caching is disabled for task, will attempt to run a command"
+            );
+
             // We must give this task a fake hash for it to be considered complete
             // for other tasks! This case triggers for noop or cache disabled tasks.
             context.set_target_state(&self.task.target, TargetState::Passthrough);

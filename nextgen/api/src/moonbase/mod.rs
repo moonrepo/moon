@@ -34,7 +34,7 @@ pub struct Moonbase {
 
     download_urls: Arc<RwLock<FxHashMap<String, Option<String>>>>,
 
-    upload_requests: Arc<RwLock<Vec<JoinHandle<miette::Result<()>>>>>,
+    upload_requests: Arc<RwLock<Vec<JoinHandle<()>>>>,
 }
 
 impl Moonbase {
@@ -161,8 +161,20 @@ impl Moonbase {
     ) -> miette::Result<()> {
         if self.remote_caching_enabled {
             if let Some(download_url) = self.download_urls.read().await.get(hash) {
-                self.download_artifact(hash, dest_path, download_url)
-                    .await?;
+                debug!(
+                    hash,
+                    archive_file = ?dest_path,
+                    "Downloading archive (artifact) from remote storage",
+                );
+
+                if let Err(error) = self.download_artifact(hash, dest_path, download_url).await {
+                    warn!(
+                        hash,
+                        archive_file = ?dest_path,
+                        "Failed to download archive from remote storage: {}",
+                        color::muted_light(error.to_string()),
+                    );
+                }
             }
         }
 
@@ -221,8 +233,15 @@ impl Moonbase {
             Err(_) => 0,
         };
 
+        debug!(
+            hash,
+            archive_file = ?src_path,
+            size,
+            "Uploading archive (artifact) to remote storage",
+        );
+
         // Create the database record then upload to cloud storage
-        let (_, presigned_url) = self
+        let Ok((_, presigned_url)) = self
             .write_artifact(
                 &hash,
                 ArtifactWriteInput {
@@ -230,7 +249,10 @@ impl Moonbase {
                     size: size as usize,
                 },
             )
-            .await?;
+            .await
+        else {
+            return Ok(());
+        };
 
         // Run this in the background so we don't slow down the pipeline
         // while waiting for very large archives to upload
@@ -242,9 +264,17 @@ impl Moonbase {
             .write()
             .await
             .push(tokio::spawn(async move {
-                moonbase
+                if let Err(error) = moonbase
                     .upload_artifact(&hash, &src_path, presigned_url)
                     .await
+                {
+                    warn!(
+                        hash,
+                        archive_file = ?src_path,
+                        "Failed to upload archive to remote storage: {}",
+                        color::muted_light(error.to_string()),
+                    );
+                }
             }));
 
         Ok(())

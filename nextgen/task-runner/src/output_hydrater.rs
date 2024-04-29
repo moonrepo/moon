@@ -1,4 +1,3 @@
-use moon_cache::CacheEngine;
 use moon_common::color;
 use moon_task::Task;
 use moon_workspace::Workspace;
@@ -6,7 +5,7 @@ use starbase_archive::tar::TarUnpacker;
 use starbase_archive::Archiver;
 use starbase_utils::fs;
 use std::path::Path;
-use tracing::warn;
+use tracing::{debug, warn};
 
 #[derive(Clone, Copy)]
 pub enum HydrateFrom {
@@ -31,22 +30,38 @@ impl<'task> OutputHydrater<'task> {
         let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
 
         if self.workspace.cache_engine.get_mode().is_readable() {
+            debug!(
+                target = self.task.target.as_str(),
+                hash, "Hydrating cached outputs into project"
+            );
+
             // Attempt to download from remote cache to `.moon/outputs/<hash>`
-            if !archive_file.exists() {
-                self.download_from_remote_storage(&archive_file, hash)
+            if !archive_file.exists() && matches!(from, HydrateFrom::RemoteCache) {
+                self.download_from_remote_storage(hash, &archive_file)
                     .await?;
             }
 
             // Otherwise hydrate the cached archive into the task's outputs
             if archive_file.exists() {
-                self.unpack_local_archive(&archive_file)?;
+                self.unpack_local_archive(hash, &archive_file)?;
             }
+        } else {
+            debug!(
+                target = self.task.target.as_str(),
+                hash, "Cache is not readable, skipping output hydration"
+            );
         }
 
         Ok(())
     }
 
-    pub fn unpack_local_archive(&self, archive_file: &Path) -> miette::Result<bool> {
+    pub fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
+        debug!(
+            target = self.task.target.as_str(),
+            hash,
+            archive_file = ?archive_file, "Unpacking archive into project"
+        );
+
         // Create the archiver instance based on task outputs
         let mut archive = Archiver::new(&self.workspace.root, &archive_file);
 
@@ -58,42 +73,19 @@ impl<'task> OutputHydrater<'task> {
             archive.add_source_glob(output_glob.as_str());
         }
 
-        // Unpack the archive and handle log files
-        let state_dir = self
-            .workspace
-            .cache_engine
-            .state
-            .get_target_dir(&self.task.target);
-        let stdout_log = self.workspace.root.join("stdout.log");
-        let stderr_log = self.workspace.root.join("stderr.log");
+        // Unpack the archive
+        if let Err(error) = archive.unpack(TarUnpacker::new_gz) {
+            warn!(
+                target = self.task.target.as_str(),
+                hash,
+                archive_file = ?archive_file,
+                "Failed to hydrate outputs from archive: {}",
+                color::muted_light(error.to_string()),
+            );
 
-        match archive.unpack(TarUnpacker::new_gz) {
-            Ok(_) => {
-                // Old archives place the log files in the root of the
-                // archive/workspace, so move them manually
-                if stdout_log.exists() {
-                    fs::rename(stdout_log, state_dir.join("stdout.log"))?;
-                }
-
-                if stderr_log.exists() {
-                    fs::rename(stderr_log, state_dir.join("stderr.log"))?;
-                }
-            }
-            Err(error) => {
-                warn!(
-                    target = self.task.target.as_str(),
-                    "Failed to hydrate task outputs from cache: {}",
-                    color::muted_light(error.to_string()),
-                );
-
-                // Delete target outputs to ensure a clean slate
-                for output in &self.task.output_files {
-                    fs::remove_file(output.to_logical_path(&self.workspace.root))?;
-                }
-
-                // And delete workspace root log files
-                fs::remove_file(stdout_log)?;
-                fs::remove_file(stderr_log)?;
+            // Delete target outputs to ensure a clean slate
+            for output in &self.task.output_files {
+                fs::remove_file(output.to_logical_path(&self.workspace.root))?;
             }
         }
 
@@ -102,16 +94,13 @@ impl<'task> OutputHydrater<'task> {
 
     pub async fn download_from_remote_storage(
         &self,
-        archive_file: &Path,
         hash: &str,
+        archive_file: &Path,
     ) -> miette::Result<()> {
         if let Some(moonbase) = &self.workspace.session {
-            if let Err(error) = moonbase
+            moonbase
                 .download_artifact_from_remote_storage(hash, archive_file)
-                .await
-            {
-                // TODO log error
-            }
+                .await?;
         }
 
         Ok(())

@@ -18,13 +18,13 @@ pub enum TaskRunnerError {
         error: ProcessError,
     },
 
-    #[diagnostic(code(task_runner::missing_dep_hash))]
+    #[diagnostic(code(task_runner::missing_dependency_hash))]
     #[error(
         "Encountered a missing hash for target {}, which is a dependency of {}.\nThis either means the dependency hasn't ran, has failed, or there's a misconfiguration.\n\nTry disabling the target's cache, or marking it as local.",
-        .0.style(Style::Label),
-        .1.style(Style::Label),
+        .dep_target.style(Style::Label),
+        .target.style(Style::Label),
     )]
-    MissingDependencyHash(String, String),
+    MissingDependencyHash { dep_target: String, target: String },
 
     #[diagnostic(code(task_runner::missing_outputs))]
     #[error("Task {} defines outputs, but none exist after being ran.", .target.style(Style::Label))]

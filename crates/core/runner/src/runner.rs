@@ -159,49 +159,6 @@ impl<'a> Runner<'a> {
         context: &ActionContext,
         hasher: &mut ContentHasher,
     ) -> miette::Result<()> {
-        let mut task_hasher = TaskHasher::new(
-            self.project,
-            self.task,
-            &self.workspace.vcs,
-            &self.workspace.root,
-            &self.workspace.config.hasher,
-        );
-
-        if context.should_inherit_args(&self.task.target) {
-            task_hasher.hash_args(&context.passthrough_args);
-        }
-
-        let mut deps = BTreeMap::default();
-
-        // todo, move into hasher!
-        for dep in &self.task.deps {
-            let mut state = None;
-
-            // TODO avoid cloning if possible
-            if let Some(entry) = context.target_states.get(&dep.target) {
-                state = match entry.get() {
-                    TargetState::Completed(hash) => Some(hash.to_owned()),
-                    TargetState::Passthrough => Some("passthrough".into()),
-                    _ => None,
-                };
-            }
-
-            if state.is_none() {
-                return Err(RunnerError::MissingDependencyHash(
-                    dep.target.id.to_owned(),
-                    self.task.target.id.to_owned(),
-                )
-                .into());
-            }
-
-            deps.insert(&dep.target, state.unwrap());
-        }
-
-        task_hasher.hash_deps(deps);
-        task_hasher.hash_inputs().await?;
-
-        hasher.hash_content(task_hasher.hash())?;
-
         Ok(())
     }
 
@@ -262,34 +219,7 @@ impl<'a> Runner<'a> {
         context: &ActionContext,
         runtime: &Runtime,
     ) -> miette::Result<Option<HydrateFrom>> {
-        let mut hasher = self
-            .workspace
-            .cache_engine
-            .hash
-            .create_hasher(format!("Run {} target", self.task.target));
-
-        self.hash_common_target(context, &mut hasher).await?;
-
-        PlatformManager::read()
-            .get(self.task.platform)?
-            .hash_run_target(
-                self.project,
-                runtime,
-                &mut hasher,
-                &self.workspace.config.hasher,
-            )
-            .await?;
-
-        let hash = hasher.generate_hash()?;
-
-        debug!(
-            target: LOG_TARGET,
-            "Generated hash {} for target {}",
-            color::hash(&hash),
-            color::id(&self.task.target)
-        );
-
-        context.set_target_state(&self.task.target, TargetState::Completed(hash.clone()));
+        let hash = String::new();
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
@@ -307,9 +237,6 @@ impl<'a> Runner<'a> {
         }
 
         self.cache.data.hash = hash.clone();
-
-        // Refresh the hash manifest
-        self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self

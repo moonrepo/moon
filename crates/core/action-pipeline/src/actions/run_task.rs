@@ -39,28 +39,6 @@ pub async fn run_task(
     runner.node = Arc::clone(&action.node);
     action.allow_failure = task.options.allow_failure;
 
-    // If a dependency failed, we should skip this target
-    if !task.deps.is_empty() {
-        for dep in &task.deps {
-            if let Some(dep_state) = context.target_states.get(&dep.target) {
-                if !dep_state.get().is_complete() {
-                    context.set_target_state(target, TargetState::Skipped);
-
-                    debug!(
-                        target: LOG_TARGET,
-                        "Dependency {} of {} has failed or has been skipped, skipping this target",
-                        color::label(&dep.target),
-                        color::label(&task.target)
-                    );
-
-                    runner.print_checkpoint(Checkpoint::RunFailed, ["skipped".to_owned()])?;
-
-                    return Ok(ActionStatus::Skipped);
-                }
-            }
-        }
-    }
-
     // If the VCS root does not exist (like in a Docker container),
     // we should avoid failing and simply disable caching.
     let is_cache_enabled = task.options.cache && workspace.vcs.is_enabled();

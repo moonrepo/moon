@@ -4207,6 +4207,7 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_task",
+ "moon_task_hasher",
  "moon_workspace",
  "serde",
  "starbase_archive",

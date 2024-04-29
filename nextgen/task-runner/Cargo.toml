@@ -22,6 +22,7 @@ moon_platform_runtime = { path = "../platform-runtime" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
+moon_task_hasher = { path = "../task-hasher" }
 moon_workspace = { path = "../workspace" }
 miette = { workspace = true }
 serde = { workspace = true }

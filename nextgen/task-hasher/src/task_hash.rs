@@ -15,7 +15,7 @@ hash_content!(
         pub args: Vec<&'task str>,
 
         // Task `deps` mapped to their hash
-        pub deps: BTreeMap<&'task Target, String>, // &'task str>,
+        pub deps: BTreeMap<&'task Target, String>,
 
         // Environment variables
         pub env: BTreeMap<&'task str, &'task str>,

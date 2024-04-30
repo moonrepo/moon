@@ -9,6 +9,7 @@ node_modules/
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+!.yarn/declined.txt
 .pnp.*
 
 # Build folders

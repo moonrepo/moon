@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.c154a7a8.css">
-<script src="/assets/js/runtime~main.6a287b1e.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.e4f05572.js" defer="defer"></script>
 <script src="/assets/js/main.2b140d93.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -53,7 +53,7 @@ have the <a href="/docs/config/project#runinci"><code>runInCI</code></a> task op
 solution, but may not vibe with your workflow or requirements.</p>
 <p>If you&#x27;d prefer more control, you can pass a list of targets to <code>moon ci</code>, instead of moon
 attempting to detect them. When providing targets, <code>moon ci</code> will still only run them if affected by
-touched files, but will ignore the <code>runInCI</code> option.</p>
+touched files, but will still filter with the <code>runInCI</code> option.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Run all builds</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ci :build</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># In another job, run tests</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ci :test :lint</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <h2 class="anchor anchorWithStickyNavbar_JmGV" id="comparing-revisions">Comparing revisions<a href="#comparing-revisions" class="hash-link" aria-label="Direct link to Comparing revisions" title="Direct link to Comparing revisions">​</a></h2>
 <p>By default the command will attempt to detect the base and head revisions automatically based on the

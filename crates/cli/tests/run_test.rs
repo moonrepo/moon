@@ -589,6 +589,8 @@ mod target_scopes {
             cmd.arg("run")
                 .arg("runFromProject")
                 .arg("localOnly")
+                // Allows local to run
+                .env_remove("CI")
                 .current_dir(sandbox.path().join("base"));
         });
         let output = assert.output();
@@ -1883,7 +1885,8 @@ mod interactive {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")
                 .arg("interactive:promptWithLocal")
-                .write_stdin("with-local");
+                .write_stdin("with-local")
+                .env_remove("CI");
         });
 
         // Test doesn't output the input (answer) we provide, so check for the question

@@ -221,7 +221,7 @@ cacheable!(
         /// This _does not_ apply to indirect or transient dependencies.
         pub run_deps_in_parallel: Option<bool>,
 
-        /// Whether to run the task in CI or not, when executing `moon ci`.
+        /// Whether to run the task in CI or not, when executing `moon ci` or `moon run`.
         #[serde(rename = "runInCI")]
         pub run_in_ci: Option<bool>,
 

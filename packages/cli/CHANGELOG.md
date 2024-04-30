@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where internal tasks would still run when running a task using "closest project"
+  detection.
+- Fixed an issue where task's with `runInCI` weren't always being filtered properly.
+
 ## 1.24.2
 
 #### 🐞 Fixes

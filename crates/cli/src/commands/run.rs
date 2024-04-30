@@ -149,10 +149,11 @@ pub async fn run_target(
 
     // Run targets, optionally based on affected files
     let mut primary_targets = vec![];
-    let requirements = RunRequirements {
+    let mut requirements = RunRequirements {
         ci: is_ci(),
         dependents: args.dependents,
         initial_locators: target_locators.iter().collect(),
+        resolved_locators: vec![],
         interactive: args.interactive,
         touched_files: if should_run_affected {
             Some(&touched_files)
@@ -164,7 +165,7 @@ pub async fn run_target(
     for locator in target_locators {
         primary_targets.extend(
             action_graph_builder
-                .run_task_by_target_locator(locator, &requirements)?
+                .run_task_by_target_locator(locator, &mut requirements)?
                 .0,
         );
     }

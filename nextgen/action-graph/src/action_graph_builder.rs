@@ -19,8 +19,16 @@ pub struct RunRequirements<'app> {
     pub ci: bool,
     pub dependents: bool,
     pub initial_locators: Vec<&'app TargetLocator>,
+    pub resolved_locators: Vec<TargetLocator>,
     pub interactive: bool,
     pub touched_files: Option<&'app TouchedFilePaths>,
+}
+
+impl<'app> RunRequirements<'app> {
+    pub fn has_target(&self, target: &Target) -> bool {
+        self.resolved_locators.iter().any(|loc| loc == target)
+            || self.initial_locators.iter().any(|loc| *loc == target)
+    }
 }
 
 pub struct ActionGraphBuilder<'app> {
@@ -170,6 +178,17 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: &RunRequirements<'app>,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
+        if reqs.ci && !task.should_run_in_ci() {
+            debug!(
+                task = task.target.as_str(),
+                "Not running task {} because {} is false",
+                color::label(&task.target.id),
+                color::property("runInCI"),
+            );
+
+            return Ok(None);
+        }
+
         let mut args = vec![];
         let mut env = vec![];
 
@@ -290,6 +309,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
             for project in projects_to_build {
                 for dep_task in project.tasks.values() {
+                    // Allow internal here, since depended on tasks should still run!
                     if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
                         continue;
                     }
@@ -317,14 +337,19 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
         &mut self,
         target_locator: T,
-        reqs: &RunRequirements<'app>,
+        reqs: &mut RunRequirements<'app>,
     ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         match target_locator.as_ref() {
             TargetLocator::Qualified(target) => self.run_task_by_target(target, reqs),
-            TargetLocator::TaskFromWorkingDir(task_id) => self.run_task_by_target(
-                Target::new(&self.project_graph.get_from_path(None)?.id, task_id)?,
-                reqs,
-            ),
+            TargetLocator::TaskFromWorkingDir(task_id) => {
+                let project = self.project_graph.get_from_path(None)?;
+                let target = Target::new(&project.id, task_id)?;
+
+                reqs.resolved_locators
+                    .push(TargetLocator::Qualified(target.clone()));
+
+                self.run_task_by_target(target, reqs)
+            }
         }
     }
 
@@ -375,9 +400,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 let task = project.get_task(&target.task_id)?;
 
                 // Don't allow internal tasks to be ran
-                if task.is_internal()
-                    && reqs.initial_locators.iter().any(|loc| *loc == &task.target)
-                {
+                if task.is_internal() && reqs.has_target(&task.target) {
                     return Err(ProjectError::UnknownTask {
                         task_id: task.target.task_id.clone(),
                         project_id: project.id.clone(),

@@ -1414,7 +1414,7 @@ mod action_graph {
             builder
                 .run_task_by_target_locator(
                     TargetLocator::Qualified(Target::parse("server:build").unwrap()),
-                    &RunRequirements::default(),
+                    &mut RunRequirements::default(),
                 )
                 .unwrap();
 
@@ -1435,7 +1435,7 @@ mod action_graph {
             builder
                 .run_task_by_target_locator(
                     TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    &RunRequirements::default(),
+                    &mut RunRequirements::default(),
                 )
                 .unwrap();
 
@@ -1457,7 +1457,7 @@ mod action_graph {
             builder
                 .run_task_by_target_locator(
                     TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    &RunRequirements::default(),
+                    &mut RunRequirements::default(),
                 )
                 .unwrap();
         }

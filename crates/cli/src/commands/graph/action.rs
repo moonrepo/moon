@@ -30,7 +30,7 @@ pub async fn internal_action_graph(
     let project_graph = generate_project_graph(workspace).await?;
     let mut action_graph_builder = build_action_graph(&project_graph)?;
 
-    let requirements = RunRequirements {
+    let mut requirements = RunRequirements {
         dependents: args.dependents,
         ..Default::default()
     };
@@ -38,7 +38,7 @@ pub async fn internal_action_graph(
     // Focus a target and its dependencies/dependents
     if let Some(locators) = &args.targets {
         for locator in locators {
-            action_graph_builder.run_task_by_target_locator(locator, &requirements)?;
+            action_graph_builder.run_task_by_target_locator(locator, &mut requirements)?;
         }
 
         // Show all targets and actions

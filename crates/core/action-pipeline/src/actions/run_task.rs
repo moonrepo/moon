@@ -39,27 +39,6 @@ pub async fn run_task(
     runner.node = Arc::clone(&action.node);
     action.allow_failure = task.options.allow_failure;
 
-    // If the VCS root does not exist (like in a Docker container),
-    // we should avoid failing and simply disable caching.
-    let is_cache_enabled = task.options.cache && workspace.vcs.is_enabled();
-
-    // Abort early if this build has already been cached/hashed
-    if is_cache_enabled {
-        if let Some(cache_location) = runner.is_cached(&context, runtime).await? {
-            return runner.hydrate(cache_location).await;
-        }
-    } else {
-        debug!(
-            target: LOG_TARGET,
-            "Cache disabled for target {}",
-            color::label(&task.target),
-        );
-
-        // We must give this task a fake hash for it to be considered complete
-        // for other tasks! This case triggers for noop or cache disabled tasks.
-        context.set_target_state(target, TargetState::Passthrough);
-    }
-
     let attempts_result = {
         if let Some(mutex_name) = &task.options.mutex {
             debug!(

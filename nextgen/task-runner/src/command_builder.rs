@@ -10,7 +10,7 @@ use moon_workspace::Workspace;
 use std::path::Path;
 use tracing::{debug, trace};
 
-pub struct TaskCommand<'task> {
+pub struct CommandBuilder<'task> {
     project: &'task Project,
     task: &'task Task,
     working_dir: &'task Path,
@@ -20,7 +20,7 @@ pub struct TaskCommand<'task> {
     command: Command,
 }
 
-impl<'task> TaskCommand<'task> {
+impl<'task> CommandBuilder<'task> {
     pub fn new(workspace: &'task Workspace, project: &'task Project, task: &'task Task) -> Self {
         let working_dir = if task.options.run_from_workspace_root {
             &workspace.root

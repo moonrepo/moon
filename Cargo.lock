@@ -4209,6 +4209,7 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_task_hasher",
+ "moon_time",
  "moon_workspace",
  "serde",
  "starbase_archive",

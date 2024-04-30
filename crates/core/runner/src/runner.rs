@@ -80,20 +80,11 @@ impl<'a> Runner<'a> {
         })
     }
 
-    /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
-    /// so that subsequent builds are faster, and any local outputs
-    /// can be hydrated easily.
     pub async fn archive_outputs(&self) -> miette::Result<()> {
         Ok(())
     }
 
     pub async fn hydrate(&self, from: HydrateFrom) -> miette::Result<ActionStatus> {
-        // Only hydrate when the hash is different from the previous build,
-        // as we can assume the outputs from the previous build still exist?
-        if matches!(from, HydrateFrom::LocalCache) || matches!(from, HydrateFrom::RemoteCache) {
-            self.hydrate_outputs().await?;
-        }
-
         let mut comments = vec![match from {
             HydrateFrom::LocalCache => "cached",
             HydrateFrom::RemoteCache => "cached from remote",
@@ -115,49 +106,14 @@ impl<'a> Runner<'a> {
         })
     }
 
-    /// If we are cached (hash match), hydrate the project with the
-    /// cached task outputs found in the hashed archive.
     pub async fn hydrate_outputs(&self) -> miette::Result<()> {
-        let hash = &self.cache.data.hash;
-
-        if hash.is_empty() {
-            return Ok(());
-        }
-
-        // Hydrate outputs from the cache
-        if let EventFlow::Return(archive_path) = self
-            .emitter
-            .emit(Event::TargetOutputHydrating {
-                hash,
-                project: self.project,
-                target: &self.task.target,
-                task: self.task,
-            })
-            .await?
-        {
-            self.emitter
-                .emit(Event::TargetOutputHydrated {
-                    archive_path: archive_path.into(),
-                    hash,
-                    project: self.project,
-                    target: &self.task.target,
-                    task: self.task,
-                })
-                .await?;
-        }
-
-        // Update the run state with the new hash
-        self.cache.save()?;
-
         Ok(())
     }
 
-    /// Create a hasher that is shared amongst all platforms.
-    /// Primarily includes task information.
     pub async fn hash_common_target(
         &self,
-        context: &ActionContext,
-        hasher: &mut ContentHasher,
+        _context: &ActionContext,
+        _hasher: &mut ContentHasher,
     ) -> miette::Result<()> {
         Ok(())
     }
@@ -204,56 +160,11 @@ impl<'a> Runner<'a> {
         Ok(true)
     }
 
-    /// Hash the target based on all current parameters and return early
-    /// if this target hash has already been cached. Based on the state
-    /// of the target and project, determine the hydration strategy as well.
     pub async fn is_cached(
         &mut self,
-        context: &ActionContext,
-        runtime: &Runtime,
+        _context: &ActionContext,
+        _runtime: &Runtime,
     ) -> miette::Result<Option<HydrateFrom>> {
-        let hash = String::new();
-
-        self.cache.data.hash = hash.clone();
-
-        // Check if that hash exists in the cache
-        if let EventFlow::Return(value) = self
-            .emitter
-            .emit(Event::TargetOutputCacheCheck {
-                hash: &hash,
-                target: &self.task.target,
-            })
-            .await?
-        {
-            match value.as_ref() {
-                "local-cache" => {
-                    debug!(
-                        target: LOG_TARGET,
-                        "Cache hit for hash {}, hydrating from local cache",
-                        color::hash(&hash),
-                    );
-
-                    return Ok(Some(HydrateFrom::LocalCache));
-                }
-                "remote-cache" => {
-                    debug!(
-                        target: LOG_TARGET,
-                        "Cache hit for hash {}, hydrating from remote cache",
-                        color::hash(&hash),
-                    );
-
-                    return Ok(Some(HydrateFrom::RemoteCache));
-                }
-                _ => {}
-            }
-        }
-
-        debug!(
-            target: LOG_TARGET,
-            "Cache miss for hash {}, continuing run",
-            color::hash(&hash),
-        );
-
         Ok(None)
     }
 

@@ -9,6 +9,7 @@ use moon_platform::PlatformManager;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
+use moon_time::now_millis;
 use moon_workspace::Workspace;
 use std::collections::BTreeMap;
 use tracing::{debug, trace};
@@ -242,7 +243,7 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    pub async fn run(&self, context: &ActionContext) -> miette::Result<ActionStatus> {
+    pub async fn run(&mut self, context: &ActionContext) -> miette::Result<ActionStatus> {
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
             context.set_target_state(&self.task.target, TargetState::Skipped);
@@ -257,6 +258,8 @@ impl<'task> TaskRunner<'task> {
         if self.is_cache_enabled() {
             if let Some(from) = self.is_cached(&hash).await? {
                 self.hydrater.hydrate(&hash, from).await?;
+
+                self.persist_cache(&hash)?;
 
                 context.set_target_state(&self.task.target, TargetState::Completed(hash));
 
@@ -277,6 +280,17 @@ impl<'task> TaskRunner<'task> {
             context.set_target_state(&self.task.target, TargetState::Passthrough);
         }
 
+        // Otherwise build and execute the command as a child process
+        self.persist_cache(&hash)?;
+
         Ok(ActionStatus::Passed)
+    }
+
+    fn persist_cache(&mut self, hash: &str) -> miette::Result<()> {
+        self.cache.data.hash = hash.to_owned();
+        self.cache.data.last_run_time = now_millis();
+        self.cache.save()?;
+
+        Ok(())
     }
 }

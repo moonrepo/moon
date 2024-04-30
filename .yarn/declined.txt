@@ -1,5 +1,5 @@
 declined:
-  - '@moonrepo/nx-report'
+  - '@moonrepo/nx-compat'
   - '@moonrepo/report'
   - '@moonrepo/runtime'
   - website

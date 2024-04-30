@@ -298,6 +298,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
             for project in projects_to_build {
                 for dep_task in project.tasks.values() {
+                    // Allow internal here, since depended on tasks should still run!
                     if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
                         continue;
                     }
@@ -365,7 +366,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if task.is_internal() {
+                        if !self.should_task_run(task, reqs) {
                             continue;
                         }
 
@@ -410,7 +411,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if task.is_internal() {
+                        if !self.should_task_run(task, reqs) {
                             continue;
                         }
 
@@ -529,5 +530,23 @@ impl<'app> ActionGraphBuilder<'app> {
         self.indices.insert(node, index);
 
         index
+    }
+
+    fn should_task_run(&self, task: &Task, reqs: &RunRequirements) -> bool {
+        if task.is_internal() {
+            return false;
+        }
+
+        if reqs.ci && !task.should_run_in_ci() {
+            debug!(
+                "Not running task {} because {} is false",
+                color::label(&task.target.id),
+                color::property("runInCI"),
+            );
+
+            return false;
+        }
+
+        true
     }
 }

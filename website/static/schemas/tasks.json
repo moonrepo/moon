@@ -580,7 +580,7 @@
         },
         "runInCI": {
           "title": "runInCI",
-          "description": "Whether to run the task in CI or not, when executing moon ci.",
+          "description": "Whether to run the task in CI or not, when executing moon ci or moon run.",
           "anyOf": [
             {
               "type": "boolean"
@@ -589,7 +589,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`."
+          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci` or `moon run`."
         },
         "shell": {
           "title": "shell",

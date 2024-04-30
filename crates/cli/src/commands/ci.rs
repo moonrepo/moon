@@ -17,7 +17,6 @@ use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::sync::Arc;
-use tracing::debug;
 
 type TargetList = Vec<Target>;
 
@@ -146,7 +145,7 @@ fn gather_runnable_targets(
     project_graph: &ProjectGraph,
     args: &CiArgs,
 ) -> AppResult<TargetList> {
-    console.print_header("Gathering runnable targets")?;
+    console.print_header("Gathering potential targets")?;
 
     let mut targets = vec![];
 
@@ -156,16 +155,7 @@ fn gather_runnable_targets(
     if args.targets.is_empty() {
         for project in projects {
             for task in project.get_tasks()? {
-                if task.should_run_in_ci() {
-                    targets.push(task.target.clone());
-                } else {
-                    debug!(
-                        "Not running target {} because it either has no {} or {} is false",
-                        color::label(&task.target.id),
-                        color::property("outputs"),
-                        color::property("runInCI"),
-                    );
-                }
+                targets.push(task.target.clone());
             }
         }
     } else {

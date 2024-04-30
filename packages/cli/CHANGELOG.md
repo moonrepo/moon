@@ -16,6 +16,7 @@
 
 - Fixed an issue where internal tasks would still run when running a task using "closest project"
   detection.
+- Fixed an issue where task's with `runInCI` weren't always being filtered properly.
 
 ## 1.24.2
 

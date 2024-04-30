@@ -12,7 +12,8 @@ By default this will run all tasks that are affected by touched files and have t
 $ moon ci
 ```
 
-However, you can provide a list of targets to run, instead of relying on `runInCI`.
+However, you can also provide a list of targets to explicitly run, which will still be filtered down
+by `runInCI`.
 
 ```shell
 $ moon ci :build :lint

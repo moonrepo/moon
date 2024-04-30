@@ -118,7 +118,7 @@ export interface TaskOptionsConfig {
 	runDepsInParallel: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot: boolean | null;
-	/** Whether to run the task in CI or not, when executing `moon ci`. */
+	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
 	runInCI: boolean | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
@@ -337,7 +337,7 @@ export interface PartialTaskOptionsConfig {
 	runDepsInParallel?: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */
 	runFromWorkspaceRoot?: boolean | null;
-	/** Whether to run the task in CI or not, when executing `moon ci`. */
+	/** Whether to run the task in CI or not, when executing `moon ci` or `moon run`. */
 	runInCI?: boolean | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task

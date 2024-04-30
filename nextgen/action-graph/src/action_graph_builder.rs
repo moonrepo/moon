@@ -178,6 +178,17 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: &RunRequirements<'app>,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
+        if reqs.ci && !task.should_run_in_ci() {
+            debug!(
+                task = task.target.as_str(),
+                "Not running task {} because {} is false",
+                color::label(&task.target.id),
+                color::property("runInCI"),
+            );
+
+            return Ok(None);
+        }
+
         let mut args = vec![];
         let mut env = vec![];
 
@@ -366,7 +377,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if !self.should_task_run(task, reqs) {
+                        if task.is_internal() {
                             continue;
                         }
 
@@ -411,7 +422,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 for project in projects {
                     // Don't error if the task does not exist
                     if let Ok(task) = project.get_task(&target.task_id) {
-                        if !self.should_task_run(task, reqs) {
+                        if task.is_internal() {
                             continue;
                         }
 
@@ -530,23 +541,5 @@ impl<'app> ActionGraphBuilder<'app> {
         self.indices.insert(node, index);
 
         index
-    }
-
-    fn should_task_run(&self, task: &Task, reqs: &RunRequirements) -> bool {
-        if task.is_internal() {
-            return false;
-        }
-
-        if reqs.ci && !task.should_run_in_ci() {
-            debug!(
-                "Not running task {} because {} is false",
-                color::label(&task.target.id),
-                color::property("runInCI"),
-            );
-
-            return false;
-        }
-
-        true
     }
 }

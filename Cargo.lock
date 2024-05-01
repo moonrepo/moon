@@ -3116,8 +3116,8 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_project_graph",
- "moon_runner",
  "moon_target",
+ "moon_task_runner",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
@@ -4215,6 +4215,7 @@ dependencies = [
  "starbase_archive",
  "starbase_utils",
  "thiserror",
+ "tokio",
  "tracing",
 ]
 

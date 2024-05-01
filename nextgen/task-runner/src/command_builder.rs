@@ -11,6 +11,7 @@ use std::path::Path;
 use tracing::{debug, trace};
 
 pub struct CommandBuilder<'task> {
+    node: &'task ActionNode,
     project: &'task Project,
     task: &'task Task,
     working_dir: &'task Path,
@@ -21,7 +22,12 @@ pub struct CommandBuilder<'task> {
 }
 
 impl<'task> CommandBuilder<'task> {
-    pub fn new(workspace: &'task Workspace, project: &'task Project, task: &'task Task) -> Self {
+    pub fn new(
+        workspace: &'task Workspace,
+        project: &'task Project,
+        task: &'task Task,
+        node: &'task ActionNode,
+    ) -> Self {
         let working_dir = if task.options.run_from_workspace_root {
             &workspace.root
         } else {
@@ -29,6 +35,7 @@ impl<'task> CommandBuilder<'task> {
         };
 
         Self {
+            node,
             project,
             task,
             working_dir,
@@ -37,18 +44,14 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
-    pub async fn build(
-        mut self,
-        context: &ActionContext,
-        node: &ActionNode,
-    ) -> miette::Result<Command> {
+    pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
         self.command = PlatformManager::read()
             .get(self.task.platform)?
             .create_run_target_command(
                 context,
                 self.project,
                 self.task,
-                node.get_runtime(),
+                self.node.get_runtime(),
                 self.working_dir,
             )
             .await?;
@@ -66,8 +69,8 @@ impl<'task> CommandBuilder<'task> {
             .set_error_on_nonzero(false);
 
         // Order is important!
-        self.inject_args(context, node);
-        self.inject_env(node);
+        self.inject_args(context);
+        self.inject_env();
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
@@ -75,9 +78,9 @@ impl<'task> CommandBuilder<'task> {
         Ok(self.command)
     }
 
-    fn inject_args(&mut self, context: &ActionContext, node: &ActionNode) {
+    fn inject_args(&mut self, context: &ActionContext) {
         // Must be first!
-        if let ActionNode::RunTask(inner) = node {
+        if let ActionNode::RunTask(inner) = &self.node {
             trace!(
                 target = self.task.target.as_str(),
                 args = ?inner.args,
@@ -98,9 +101,9 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
-    fn inject_env(&mut self, node: &ActionNode) {
+    fn inject_env(&mut self) {
         // Must be first!
-        if let ActionNode::RunTask(inner) = node {
+        if let ActionNode::RunTask(inner) = &self.node {
             trace!(
                 target = self.task.target.as_str(),
                 env = ?inner.env,

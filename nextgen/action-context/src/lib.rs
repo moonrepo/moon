@@ -78,6 +78,10 @@ impl ActionContext {
         mutex
     }
 
+    pub fn is_primary_target<T: AsRef<Target>>(&self, target: T) -> bool {
+        self.primary_targets.contains(target.as_ref())
+    }
+
     pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {
         let _ = self.target_states.insert(target.as_ref().to_owned(), state);
     }

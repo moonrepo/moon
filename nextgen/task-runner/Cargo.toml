@@ -30,4 +30,5 @@ serde = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }

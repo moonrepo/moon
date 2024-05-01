@@ -2,6 +2,8 @@ use crate::action::ActionStatus;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
+use std::mem;
+use std::process::Output;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -49,6 +51,18 @@ impl Attempt {
         if let Some(start) = &self.start_time {
             self.duration = Some(start.elapsed());
         }
+    }
+
+    pub fn finish_from_output(&mut self, output: &mut Output) {
+        self.exit_code = output.status.code();
+        self.stdout = Some(String::from_utf8(mem::take(&mut output.stdout)).unwrap_or_default());
+        self.stderr = Some(String::from_utf8(mem::take(&mut output.stderr)).unwrap_or_default());
+
+        self.finish(if output.status.success() {
+            ActionStatus::Passed
+        } else {
+            ActionStatus::Failed
+        });
     }
 
     pub fn has_failed(&self) -> bool {

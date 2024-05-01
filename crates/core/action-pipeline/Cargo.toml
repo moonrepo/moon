@@ -21,8 +21,8 @@ moon_platform = { path = "../platform" }
 moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../../nextgen/project" }
 moon_project_graph = { path = "../../../nextgen/project-graph" }
-moon_runner = { path = "../runner" }
 moon_target = { path = "../../../nextgen/target" }
+moon_task_runner = { path = "../../../nextgen/task-runner" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../../../nextgen/workspace" }

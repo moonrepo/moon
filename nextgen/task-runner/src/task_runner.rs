@@ -1,8 +1,10 @@
+use crate::command_builder::CommandBuilder;
+use crate::command_executor::CommandExecutor;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::RunTaskState;
 use crate::task_runner_error::TaskRunnerError;
-use moon_action::{ActionNode, ActionStatus};
+use moon_action::{ActionNode, ActionStatus, Attempt};
 use moon_action_context::{ActionContext, TargetState};
 use moon_cache::CacheItem;
 use moon_platform::PlatformManager;
@@ -11,8 +13,23 @@ use moon_task::Task;
 use moon_task_hasher::TaskHasher;
 use moon_time::now_millis;
 use moon_workspace::Workspace;
+use starbase_utils::fs;
 use std::collections::BTreeMap;
 use tracing::{debug, trace};
+
+pub struct TaskRunResult {
+    pub attempts: Vec<Attempt>,
+    pub status: ActionStatus,
+}
+
+impl TaskRunResult {
+    pub fn new(status: ActionStatus) -> Self {
+        Self {
+            attempts: vec![],
+            status,
+        }
+    }
+}
 
 pub struct TaskRunner<'task> {
     node: &'task ActionNode,
@@ -27,10 +44,10 @@ pub struct TaskRunner<'task> {
 
 impl<'task> TaskRunner<'task> {
     pub fn new(
-        node: &'task ActionNode,
+        workspace: &'task Workspace,
         project: &'task Project,
         task: &'task Task,
-        workspace: &'task Workspace,
+        node: &'task ActionNode,
     ) -> miette::Result<Self> {
         let mut cache = workspace
             .cache_engine
@@ -56,7 +73,70 @@ impl<'task> TaskRunner<'task> {
         })
     }
 
-    pub async fn is_cached(&self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
+    pub async fn run(&mut self, context: &ActionContext) -> miette::Result<TaskRunResult> {
+        let target = &self.task.target;
+
+        // If a dependency has failed or been skipped, we should skip this task
+        if !self.is_dependencies_complete(context)? {
+            context.set_target_state(target, TargetState::Skipped);
+
+            return Ok(TaskRunResult::new(ActionStatus::Skipped));
+        }
+
+        // Generate a unique hash so we can check the cache
+        let hash = self.generate_hash(context).await?;
+
+        // Exit early if this build has already been cached/hashed
+        if self.is_cache_enabled() {
+            if let Some(from) = self.is_cached(&hash).await? {
+                self.hydrater.hydrate(&hash, from).await?;
+
+                self.persist_cache(&hash)?;
+
+                context.set_target_state(target, TargetState::Completed(hash));
+
+                return Ok(TaskRunResult::new(match from {
+                    HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+                    _ => ActionStatus::Cached,
+                }));
+            }
+        } else {
+            debug!(
+                target = self.task.target.as_str(),
+                hash = &hash,
+                "Caching is disabled for task, will attempt to run a command"
+            );
+
+            // We must give this task a fake hash for it to be considered complete
+            // for other tasks! This case triggers for noop or cache disabled tasks.
+            context.set_target_state(target, TargetState::Passthrough);
+        }
+
+        // Otherwise build and execute the command as a child process
+        match self.execute_command(context).await {
+            Ok(attempts) => {
+                self.archiver.archive(&hash).await?;
+
+                self.persist_cache(&hash)?;
+
+                context.set_target_state(target, TargetState::Completed(hash));
+
+                Ok(TaskRunResult {
+                    status: ActionStatus::Passed,
+                    attempts,
+                })
+            }
+            Err(error) => {
+                self.persist_cache(&hash)?;
+
+                context.set_target_state(target, TargetState::Failed);
+
+                Err(error)
+            }
+        }
+    }
+
+    async fn is_cached(&self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
         let cache_engine = &self.workspace.cache_engine;
 
         debug!(
@@ -125,13 +205,13 @@ impl<'task> TaskRunner<'task> {
         Ok(None)
     }
 
-    pub fn is_cache_enabled(&self) -> bool {
+    fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
         self.task.options.cache && self.workspace.vcs.is_enabled()
     }
 
-    pub fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
+    fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
         if self.task.deps.is_empty() {
             return Ok(true);
         }
@@ -161,7 +241,7 @@ impl<'task> TaskRunner<'task> {
         return Ok(true);
     }
 
-    pub async fn generate_hash(&self, context: &ActionContext) -> miette::Result<String> {
+    async fn generate_hash(&self, context: &ActionContext) -> miette::Result<String> {
         debug!(
             target = self.task.target.as_str(),
             "Generating a unique hash for this task"
@@ -243,47 +323,50 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    pub async fn run(&mut self, context: &ActionContext) -> miette::Result<ActionStatus> {
-        // If a dependency has failed or been skipped, we should skip this task
-        if !self.is_dependencies_complete(context)? {
-            context.set_target_state(&self.task.target, TargetState::Skipped);
-
-            return Ok(ActionStatus::Skipped);
+    async fn execute_command(&mut self, context: &ActionContext) -> miette::Result<Vec<Attempt>> {
+        if self.task.is_no_op() {
+            return Ok(vec![]);
         }
 
-        // Generate a unique hash so we can check the cache
-        let hash = self.generate_hash(context).await?;
+        // Build the command from the current task
+        let command = CommandBuilder::new(&self.workspace, &self.project, &self.task, &self.node)
+            .build(context)
+            .await?;
 
-        // Exit early if this build has already been cached/hashed
-        if self.is_cache_enabled() {
-            if let Some(from) = self.is_cached(&hash).await? {
-                self.hydrater.hydrate(&hash, from).await?;
+        // Execute the command and gather all attempts made
+        let executor = CommandExecutor::new(&self.task, &self.node, command);
 
-                self.persist_cache(&hash)?;
+        let attempts = if let Some(mutex_name) = &self.task.options.mutex {
+            let mutex = context.get_or_create_mutex(mutex_name);
+            let _guard = mutex.lock().await;
 
-                context.set_target_state(&self.task.target, TargetState::Completed(hash));
-
-                return Ok(match from {
-                    HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
-                    _ => ActionStatus::Cached,
-                });
-            }
+            // This execution is required within this block so that the
+            // guard above isn't immediately dropped!
+            executor.execute(context).await?
         } else {
-            debug!(
-                target = self.task.target.as_str(),
-                hash = &hash,
-                "Caching is disabled for task, will attempt to run a command"
-            );
+            executor.execute(context).await?
+        };
 
-            // We must give this task a fake hash for it to be considered complete
-            // for other tasks! This case triggers for noop or cache disabled tasks.
-            context.set_target_state(&self.task.target, TargetState::Passthrough);
+        // Persist the last attempt state
+        if let Some(last_attempt) = attempts.last() {
+            let state_dir = self
+                .workspace
+                .cache_engine
+                .state
+                .get_target_dir(&self.task.target);
+
+            self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
+
+            if let Some(log) = &last_attempt.stderr {
+                let _ = fs::write_file(state_dir.join("stderr.log"), log);
+            }
+
+            if let Some(log) = &last_attempt.stdout {
+                let _ = fs::write_file(state_dir.join("stdout.log"), log);
+            }
         }
 
-        // Otherwise build and execute the command as a child process
-        self.persist_cache(&hash)?;
-
-        Ok(ActionStatus::Passed)
+        Ok(vec![])
     }
 
     fn persist_cache(&mut self, hash: &str) -> miette::Result<()> {

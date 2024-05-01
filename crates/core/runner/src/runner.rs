@@ -168,169 +168,12 @@ impl<'a> Runner<'a> {
         Ok(None)
     }
 
-    /// Run the command as a child process and capture its output. If the process fails
-    /// and `retry_count` is greater than 0, attempt the process again in case it passes.
     pub async fn run_command(
         &mut self,
-        context: &ActionContext,
-        command: &mut Command,
+        _context: &ActionContext,
+        _command: &mut Command,
     ) -> miette::Result<Vec<Attempt>> {
-        let attempt_total = self.task.options.retry_count + 1;
-        let mut attempt_index = 1;
-        let mut attempts = vec![];
-        let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
-        let is_primary = context.primary_targets.contains(&self.task.target);
-        let is_real_ci = is_ci() && !is_test_env();
-        let is_persistent = self.node.is_persistent() || self.task.is_persistent();
-        let output;
-        let error;
-
-        // When a task is configured as local (no caching), or the interactive flag is passed,
-        // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        let is_interactive = (!self.task.options.cache && context.primary_targets.len() == 1)
-            || self.node.is_interactive()
-            || self.task.is_interactive();
-
-        // When the primary target, always stream the output for a better developer experience.
-        // However, transitive targets can opt into streaming as well.
-        let should_stream_output = if let Some(output_style) = &self.task.options.output_style {
-            matches!(output_style, TaskOutputStyle::Stream)
-        } else {
-            is_primary || is_real_ci
-        };
-
-        // Transitive targets may run concurrently, so differentiate them with a prefix.
-        let stream_prefix = if is_real_ci || !is_primary || context.primary_targets.len() > 1 {
-            Some(&self.task.target.id)
-        } else {
-            None
-        };
-
-        // For long-running process, log a message every 30 seconds to indicate it's still running
-        let console_clone = self.console.clone();
-        let interval_target = self.task.target.clone();
-        let interval_handle = task::spawn(async move {
-            if is_persistent || is_interactive {
-                return;
-            }
-
-            let mut secs = 0;
-
-            loop {
-                sleep(Duration::from_secs(30)).await;
-                secs += 30;
-
-                let _ = console_clone.out.print_checkpoint_with_comments(
-                    Checkpoint::RunStarted,
-                    &interval_target,
-                    [format!("running for {}s", secs)],
-                );
-            }
-        });
-
-        command.with_console(self.console.clone());
-
-        loop {
-            let mut attempt = Attempt::new(attempt_index);
-
-            self.print_target_label(Checkpoint::RunStarted, &attempt, attempt_total)?;
-            self.print_target_command(context, command)?;
-
-            let possible_output = if should_stream_output {
-                if let Some(prefix) = stream_prefix {
-                    command.set_prefix(prefix, primary_longest_width);
-                }
-
-                if is_interactive {
-                    command.create_async().exec_stream_output().await
-                } else {
-                    command
-                        .create_async()
-                        .exec_stream_and_capture_output()
-                        .await
-                }
-            } else {
-                command.create_async().exec_capture_output().await
-            };
-
-            match possible_output {
-                // zero and non-zero exit codes
-                Ok(out) => {
-                    attempt.finish(if out.status.success() {
-                        ActionStatus::Passed
-                    } else {
-                        ActionStatus::Failed
-                    });
-
-                    if should_stream_output {
-                        self.handle_streamed_output(&mut attempt, attempt_total, &out)?;
-                    } else {
-                        self.handle_captured_output(&mut attempt, attempt_total, &out)?;
-                    }
-
-                    attempts.push(attempt);
-
-                    if out.status.success() {
-                        error = None;
-                        output = out;
-
-                        break;
-                    } else if attempt_index >= attempt_total {
-                        error = Some(RunnerError::RunFailed {
-                            target: self.task.target.id.clone(),
-                            query: format!(
-                                "moon query hash {}",
-                                if is_test_env() {
-                                    "hash1234"
-                                } else {
-                                    self.get_short_hash()
-                                }
-                            ),
-                            error: output_to_error(self.task.command.clone(), &out, false),
-                        });
-                        output = out;
-
-                        break;
-                    } else {
-                        attempt_index += 1;
-
-                        warn!(
-                            target: LOG_TARGET,
-                            "Target {} failed, running again with attempt {} (exit code {})",
-                            color::label(&self.task.target),
-                            attempt_index,
-                            out.status.code().unwrap_or(-1)
-                        );
-                    }
-                }
-                // process itself failed
-                Err(error) => {
-                    attempt.finish(ActionStatus::Failed);
-                    attempts.push(attempt);
-
-                    interval_handle.abort();
-
-                    return Err(error);
-                }
-            }
-        }
-
-        interval_handle.abort();
-
-        // Write the cache with the result and output
-        self.cache.data.exit_code = output.status.code().unwrap_or(0);
-
-        save_output_logs(
-            self.cache.get_dir(),
-            output_to_string(&output.stdout),
-            output_to_string(&output.stderr),
-        )?;
-
-        if let Some(error) = error {
-            return Err(error.into());
-        }
-
-        Ok(attempts)
+        Ok(vec![])
     }
 
     pub async fn create_and_run_command(
@@ -338,26 +181,7 @@ impl<'a> Runner<'a> {
         context: &ActionContext,
         runtime: &Runtime,
     ) -> miette::Result<Vec<Attempt>> {
-        let result = if self.task.is_no_op() {
-            debug!(
-                target: LOG_TARGET,
-                "Target {} is a no operation, skipping",
-                color::label(&self.task.target),
-            );
-
-            self.print_target_label(Checkpoint::RunPassed, &Attempt::new(0), 0)?;
-
-            Ok(vec![])
-        } else {
-            let mut command = self.create_command(context, runtime).await?;
-
-            self.run_command(context, &mut command).await
-        };
-
-        self.cache.data.last_run_time = time::now_millis();
-        self.cache.save()?;
-
-        result
+        Ok(vec![])
     }
 
     pub fn print_cache_item(&self) -> miette::Result<()> {

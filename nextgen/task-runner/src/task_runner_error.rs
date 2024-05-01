@@ -7,13 +7,11 @@ use thiserror::Error;
 pub enum TaskRunnerError {
     #[diagnostic(code(task_runner::run_failed))]
     #[error(
-        "Task {} failed to run. View hash details with {}.",
+        "Task {} failed to run. Inspect the logs for more information.",
         .target.style(Style::Label),
-        .query.style(Style::Shell),
     )]
     RunFailed {
         target: String,
-        query: String,
         #[source]
         error: ProcessError,
     },

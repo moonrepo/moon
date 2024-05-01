@@ -4203,6 +4203,7 @@ dependencies = [
  "moon_cache_item",
  "moon_common",
  "moon_config",
+ "moon_console",
  "moon_platform",
  "moon_platform_runtime",
  "moon_process",

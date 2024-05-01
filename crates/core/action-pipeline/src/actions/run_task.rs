@@ -20,7 +20,7 @@ pub async fn run_task(
     context: Arc<ActionContext>,
     _emitter: Arc<Emitter>,
     workspace: Arc<Workspace>,
-    _console: Arc<Console>,
+    console: Arc<Console>,
     project: &Project,
     target: &Target,
     _runtime: &Runtime,
@@ -32,7 +32,7 @@ pub async fn run_task(
     action.allow_failure = task.options.allow_failure;
 
     let result = TaskRunner::new(&workspace, &project, task, &action.node)?
-        .run(&context)
+        .run(&context, console)
         .await?;
 
     Ok(if action.set_attempts(result.attempts, &task.command) {

@@ -7,6 +7,7 @@ use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Attempt};
 use moon_action_context::{ActionContext, TargetState};
 use moon_cache::CacheItem;
+use moon_console::Console;
 use moon_platform::PlatformManager;
 use moon_project::Project;
 use moon_task::Task;
@@ -15,6 +16,7 @@ use moon_time::now_millis;
 use moon_workspace::Workspace;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
+use std::sync::Arc;
 use tracing::{debug, trace};
 
 pub struct TaskRunResult {
@@ -73,7 +75,11 @@ impl<'task> TaskRunner<'task> {
         })
     }
 
-    pub async fn run(&mut self, context: &ActionContext) -> miette::Result<TaskRunResult> {
+    pub async fn run(
+        &mut self,
+        context: &ActionContext,
+        console: Arc<Console>,
+    ) -> miette::Result<TaskRunResult> {
         let target = &self.task.target;
 
         // If a dependency has failed or been skipped, we should skip this task
@@ -102,7 +108,7 @@ impl<'task> TaskRunner<'task> {
             }
         } else {
             debug!(
-                target = self.task.target.as_str(),
+                task = self.task.target.as_str(),
                 hash = &hash,
                 "Caching is disabled for task, will attempt to run a command"
             );
@@ -113,7 +119,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Otherwise build and execute the command as a child process
-        match self.execute_command(context).await {
+        match self.execute_command(context, Arc::clone(&console)).await {
             Ok(attempts) => {
                 self.archiver.archive(&hash).await?;
 
@@ -140,7 +146,7 @@ impl<'task> TaskRunner<'task> {
         let cache_engine = &self.workspace.cache_engine;
 
         debug!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             hash, "Checking if task has been cached using hash"
         );
 
@@ -151,7 +157,7 @@ impl<'task> TaskRunner<'task> {
             && self.archiver.has_outputs_been_created(true)?
         {
             debug!(
-                target = self.task.target.as_str(),
+                task = self.task.target.as_str(),
                 hash, "Hash matches previous run, reusing existing outputs"
             );
 
@@ -160,7 +166,7 @@ impl<'task> TaskRunner<'task> {
 
         if !cache_engine.get_mode().is_readable() {
             debug!(
-                target = self.task.target.as_str(),
+                task = self.task.target.as_str(),
                 hash, "Cache is not readable, continuing run"
             );
 
@@ -173,7 +179,7 @@ impl<'task> TaskRunner<'task> {
 
         if archive_file.exists() {
             debug!(
-                target = self.task.target.as_str(),
+                task = self.task.target.as_str(),
                 hash,
                 archive_file = ?archive_file,
                 "Cache hit in local cache, will reuse existing archive"
@@ -187,7 +193,7 @@ impl<'task> TaskRunner<'task> {
         if let Some(moonbase) = &self.workspace.session {
             if let Some((artifact, _)) = moonbase.read_artifact(hash).await? {
                 debug!(
-                    target = self.task.target.as_str(),
+                    task = self.task.target.as_str(),
                     hash,
                     artifact_id = artifact.id,
                     "Cache hit in remote cache, will attempt to download the archive"
@@ -198,7 +204,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         debug!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             hash, "Cache miss, continuing run"
         );
 
@@ -223,7 +229,7 @@ impl<'task> TaskRunner<'task> {
                 }
 
                 debug!(
-                    target = self.task.target.as_str(),
+                    task = self.task.target.as_str(),
                     dependency = dep.target.as_str(),
                     "Task dependency has failed or has been skipped, skipping this task",
                 );
@@ -243,7 +249,7 @@ impl<'task> TaskRunner<'task> {
 
     async fn generate_hash(&self, context: &ActionContext) -> miette::Result<String> {
         debug!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             "Generating a unique hash for this task"
         );
 
@@ -255,7 +261,7 @@ impl<'task> TaskRunner<'task> {
 
         // Hash common fields
         trace!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             "Including common task related fields in the hash"
         );
 
@@ -297,7 +303,7 @@ impl<'task> TaskRunner<'task> {
 
         // Hash platform fields
         trace!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             platform = ?self.task.platform,
             "Including platform specific fields in the hash"
         );
@@ -315,7 +321,7 @@ impl<'task> TaskRunner<'task> {
         let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
         debug!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             hash = &hash,
             "Generated a unique hash"
         );
@@ -323,7 +329,11 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    async fn execute_command(&mut self, context: &ActionContext) -> miette::Result<Vec<Attempt>> {
+    async fn execute_command(
+        &mut self,
+        context: &ActionContext,
+        console: Arc<Console>,
+    ) -> miette::Result<Vec<Attempt>> {
         if self.task.is_no_op() {
             return Ok(vec![]);
         }
@@ -342,9 +352,9 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(context).await?
+            executor.execute(context, console).await?
         } else {
-            executor.execute(context).await?
+            executor.execute(context, console).await?
         };
 
         // Persist the last attempt state

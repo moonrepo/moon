@@ -57,7 +57,7 @@ impl<'task> CommandBuilder<'task> {
             .await?;
 
         debug!(
-            target = self.task.target.as_str(),
+            task = self.task.target.as_str(),
             command = self.command.bin.to_str(),
             working_dir = ?self.working_dir,
             "Creating task command to execute",
@@ -81,36 +81,42 @@ impl<'task> CommandBuilder<'task> {
     fn inject_args(&mut self, context: &ActionContext) {
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node {
-            trace!(
-                target = self.task.target.as_str(),
-                args = ?inner.args,
-                "Inheriting args from dependent task"
-            );
+            if !inner.args.is_empty() {
+                trace!(
+                    task = self.task.target.as_str(),
+                    args = ?inner.args,
+                    "Inheriting args from dependent task"
+                );
 
-            self.command.args(&inner.args);
+                self.command.args(&inner.args);
+            }
         }
 
         if context.should_inherit_args(&self.task.target) {
-            trace!(
-                target = self.task.target.as_str(),
-                args = ?context.passthrough_args,
-                "Inheriting args passed through the command line"
-            );
+            if !context.passthrough_args.is_empty() {
+                trace!(
+                    task = self.task.target.as_str(),
+                    args = ?context.passthrough_args,
+                    "Inheriting args passed through the command line"
+                );
 
-            self.command.args(&context.passthrough_args);
+                self.command.args(&context.passthrough_args);
+            }
         }
     }
 
     fn inject_env(&mut self) {
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node {
-            trace!(
-                target = self.task.target.as_str(),
-                env = ?inner.env,
-                "Inheriting env from dependent task"
-            );
+            if !inner.env.is_empty() {
+                trace!(
+                    task = self.task.target.as_str(),
+                    env = ?inner.env,
+                    "Inheriting env from dependent task"
+                );
 
-            self.command.envs(&inner.env);
+                self.command.envs(&inner.env);
+            }
         }
 
         self.command.env("PWD", self.working_dir);

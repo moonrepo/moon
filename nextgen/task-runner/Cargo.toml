@@ -16,6 +16,7 @@ moon_cache = { path = "../cache" }
 moon_cache_item = { path = "../cache-item" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_console = { path = "../console" }
 # TODO remove
 moon_platform = { path = "../../crates/core/platform" }
 moon_platform_runtime = { path = "../platform-runtime" }

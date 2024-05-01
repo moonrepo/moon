@@ -3,9 +3,11 @@ use moon_action::{ActionNode, ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
+use moon_console::Console;
 use moon_process::{output_to_error, Command, Output};
 use moon_task::Task;
 use std::mem;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::sleep;
@@ -49,13 +51,19 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
-    pub async fn execute(mut self, context: &ActionContext) -> miette::Result<Vec<Attempt>> {
+    pub async fn execute(
+        mut self,
+        context: &ActionContext,
+        console: Arc<Console>,
+    ) -> miette::Result<Vec<Attempt>> {
         self.prepate_state(context);
 
         // For long-running process, log a message on an interval to indicate it's still running
         self.start_monitoring();
 
         // Execute the command on a loop as an attempt for every retry count we have
+        self.command.with_console(console);
+
         loop {
             let attempt = Attempt::new(self.attempt_index);
             let mut command = self.command.create_async();

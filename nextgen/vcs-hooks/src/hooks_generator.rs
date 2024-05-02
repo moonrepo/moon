@@ -210,6 +210,7 @@ impl<'app> HooksGenerator<'app> {
         for command in commands {
             contents.push(command);
         }
+        contents.push("\n");
 
         self.create_file(file_path, contents.join("\n"))?;
 

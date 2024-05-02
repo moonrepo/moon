@@ -16,11 +16,10 @@ pub enum ConsoleStream {
 
 pub struct ConsoleBuffer {
     buffer: Arc<Mutex<Vec<u8>>>,
-    closed: bool,
     channel: Option<Sender<bool>>,
-    handle: Option<JoinHandle<()>>,
     stream: ConsoleStream,
 
+    pub(crate) handle: Option<JoinHandle<()>>,
     pub(crate) quiet: Option<Arc<AtomicBool>>,
     pub(crate) test_mode: bool,
 }
@@ -40,7 +39,6 @@ impl ConsoleBuffer {
 
         Self {
             buffer,
-            closed: false,
             channel: Some(tx),
             handle,
             stream,
@@ -72,39 +70,24 @@ impl ConsoleBuffer {
             .is_some_and(|quiet| quiet.load(Ordering::Relaxed))
     }
 
-    pub fn close(&mut self) -> miette::Result<()> {
+    pub fn close(&self) -> miette::Result<()> {
         self.flush()?;
 
-        self.closed = true;
-
         // Send the closed message
-        if let Some(channel) = self.channel.take() {
+        if let Some(channel) = &self.channel {
             let _ = channel.send(true);
-        }
-
-        // Attempt to close the thread
-        if let Some(handle) = self.handle.take() {
-            let _ = handle.join();
         }
 
         Ok(())
     }
 
     pub fn flush(&self) -> miette::Result<()> {
-        if self.closed {
-            return Ok(());
-        }
-
         flush(&mut self.buffer.lock(), self.stream).into_diagnostic()?;
 
         Ok(())
     }
 
     pub fn write_raw<F: FnMut(&mut Vec<u8>)>(&self, mut op: F) -> miette::Result<()> {
-        if self.closed {
-            return Ok(());
-        }
-
         // When testing just flush immediately
         if self.test_mode {
             let mut buffer = Vec::new();
@@ -166,7 +149,6 @@ impl Clone for ConsoleBuffer {
     fn clone(&self) -> Self {
         Self {
             buffer: Arc::clone(&self.buffer),
-            closed: self.closed,
             stream: self.stream,
             quiet: self.quiet.clone(),
             test_mode: self.test_mode,

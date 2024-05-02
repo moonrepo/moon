@@ -6,13 +6,17 @@ use moon_common::is_formatted_output;
 use starbase::Resource;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread::JoinHandle;
 
 pub type ConsoleTheme = RenderConfig<'static>;
 
-#[derive(Clone, Resource)]
+#[derive(Resource)]
 pub struct Console {
     pub err: Arc<ConsoleBuffer>,
+    err_handle: Option<JoinHandle<()>>,
+
     pub out: Arc<ConsoleBuffer>,
+    out_handle: Option<JoinHandle<()>>,
 
     quiet: Arc<AtomicBool>,
     reporter: Arc<BoxedReporter>,
@@ -30,7 +34,9 @@ impl Console {
         out.quiet = Some(Arc::clone(&quiet));
 
         Self {
+            err_handle: err.handle.take(),
             err: Arc::new(err),
+            out_handle: out.handle.take(),
             out: Arc::new(out),
             quiet,
             reporter: Arc::new(Box::new(EmptyReporter)),
@@ -41,7 +47,9 @@ impl Console {
     pub fn new_testing() -> Self {
         Self {
             err: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stderr)),
+            err_handle: None,
             out: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stdout)),
+            out_handle: None,
             quiet: Arc::new(AtomicBool::new(false)),
             reporter: Arc::new(Box::new(EmptyReporter)),
             theme: Arc::new(ConsoleTheme::empty()),
@@ -49,25 +57,15 @@ impl Console {
     }
 
     pub fn close(&mut self) -> miette::Result<()> {
-        dbg!(
-            "ERR",
-            Arc::weak_count(&self.err),
-            Arc::strong_count(&self.err)
-        );
-        dbg!(
-            "OUT",
-            Arc::weak_count(&self.out),
-            Arc::strong_count(&self.out)
-        );
+        self.err.close()?;
+        self.out.close()?;
 
-        if let Some(err) = Arc::get_mut(&mut self.err) {
-            dbg!("STDERR");
-            err.close()?;
+        if let Some(handle) = self.err_handle.take() {
+            let _ = handle.join();
         }
 
-        if let Some(out) = Arc::get_mut(&mut self.out) {
-            dbg!("STDOUT");
-            out.close()?;
+        if let Some(handle) = self.out_handle.take() {
+            let _ = handle.join();
         }
 
         Ok(())
@@ -97,6 +95,19 @@ impl Console {
     }
 }
 
+impl Clone for Console {
+    fn clone(&self) -> Self {
+        Self {
+            err: self.err.clone(),
+            err_handle: None,
+            out: self.out.clone(),
+            out_handle: None,
+            quiet: self.quiet.clone(),
+            reporter: self.reporter.clone(),
+            theme: self.theme.clone(),
+        }
+    }
+}
 impl Drop for Console {
     fn drop(&mut self) {
         self.close().unwrap();

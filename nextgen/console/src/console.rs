@@ -88,7 +88,7 @@ impl Console {
         Arc::clone(&self.theme)
     }
 
-    pub fn with_reporter(&mut self, mut reporter: impl Reporter + 'static) {
+    pub fn set_reporter(&mut self, mut reporter: impl Reporter + 'static) {
         reporter.inherit_streams(self.stderr(), self.stdout());
         reporter.inherit_theme(self.theme());
 
@@ -109,6 +109,7 @@ impl Clone for Console {
         }
     }
 }
+
 impl Drop for Console {
     fn drop(&mut self) {
         self.close().unwrap();

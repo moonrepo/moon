@@ -57,6 +57,17 @@ impl ConsoleBuffer {
         console
     }
 
+    pub fn empty(stream: ConsoleStream) -> Self {
+        Self {
+            buffer: Arc::new(Mutex::new(Vec::new())),
+            channel: None,
+            stream,
+            handle: None,
+            quiet: None,
+            test_mode: false,
+        }
+    }
+
     pub fn is_terminal(&self) -> bool {
         match self.stream {
             ConsoleStream::Stderr => io::stderr().is_terminal(),

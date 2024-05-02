@@ -3343,6 +3343,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_console_reporter",
  "moon_deno_lang",
  "moon_deno_tool",
  "moon_env",

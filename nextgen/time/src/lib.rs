@@ -22,7 +22,7 @@ pub fn is_stale(timestamp: u128, duration: Duration) -> bool {
     timestamp == 0 || now_millis() >= timestamp + duration.as_millis()
 }
 
-pub fn elapsed(duration: Duration) -> String {
+pub fn elapsed_opt(duration: Duration) -> Option<String> {
     // if is_test_env() {
     //     return String::from("100ms"); // Snapshots
     // }
@@ -31,7 +31,7 @@ pub fn elapsed(duration: Duration) -> String {
     let nanos = duration.subsec_nanos();
 
     if secs == 0 && nanos == 0 {
-        return String::from("0s");
+        return None;
     }
 
     let years = secs / 31_557_600;
@@ -75,10 +75,14 @@ pub fn elapsed(duration: Duration) -> String {
     }
 
     if parts.is_empty() {
-        parts.push(String::from("0s"))
+        return None;
     }
 
-    parts.join(" ")
+    Some(parts.join(" "))
+}
+
+pub fn elapsed(duration: Duration) -> String {
+    elapsed_opt(duration).unwrap_or_else(|| String::from("0s"))
 }
 
 #[cfg(test)]

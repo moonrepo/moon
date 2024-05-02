@@ -7,7 +7,16 @@ use std::process::Output;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AttemptType {
+    CacheHydration,
+    NoOperation,
+    #[default]
+    TaskExecution,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Attempt {
     pub duration: Option<Duration>,
@@ -15,8 +24,6 @@ pub struct Attempt {
     pub exit_code: Option<i32>,
 
     pub finished_at: Option<NaiveDateTime>,
-
-    pub index: u8,
 
     pub started_at: NaiveDateTime,
 
@@ -28,20 +35,23 @@ pub struct Attempt {
     pub stderr: Option<Arc<String>>,
 
     pub stdout: Option<Arc<String>>,
+
+    #[serde(rename = "type")]
+    pub type_of: AttemptType,
 }
 
 impl Attempt {
-    pub fn new(index: u8) -> Self {
+    pub fn new(type_of: AttemptType) -> Self {
         Attempt {
             duration: None,
             exit_code: None,
             finished_at: None,
-            index,
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
             stderr: None,
             stdout: None,
+            type_of,
         }
     }
 
@@ -89,7 +99,7 @@ impl Attempt {
     pub fn is_cached(&self) -> bool {
         matches!(
             &self.status,
-            ActionStatus::Cached | ActionStatus::CachedFromRemote | ActionStatus::Passed
+            ActionStatus::Cached | ActionStatus::CachedFromRemote
         )
     }
 }

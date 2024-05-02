@@ -1,7 +1,7 @@
-use moon_action::{ActionStatus, Attempt};
+use moon_action::{ActionStatus, Attempt, AttemptType};
 use moon_common::is_test_env;
 use moon_config::TaskOutputStyle;
-use moon_console::{Checkpoint, ConsoleBuffer, Reporter, TaskReportState};
+use moon_console::{Checkpoint, ConsoleBuffer, ConsoleStream, Reporter, TaskReportState};
 use moon_target::Target;
 use moon_time as time;
 use std::sync::Arc;
@@ -12,6 +12,13 @@ pub struct DefaultReporter {
 }
 
 impl DefaultReporter {
+    pub fn new() -> Self {
+        Self {
+            err: Arc::new(ConsoleBuffer::empty(ConsoleStream::Stderr)),
+            out: Arc::new(ConsoleBuffer::empty(ConsoleStream::Stdout)),
+        }
+    }
+
     pub fn print_task_checkpoint(
         &self,
         target: &Target,
@@ -20,37 +27,41 @@ impl DefaultReporter {
     ) -> miette::Result<()> {
         let mut comments = vec![];
 
-        match attempt.status {
-            ActionStatus::Cached => {
-                comments.push("cached".into());
-            }
-            ActionStatus::CachedFromRemote => {
-                comments.push("cached from remote".into());
-            }
-            ActionStatus::Skipped => {
-                comments.push("skipped".into());
-            }
-            ActionStatus::NoOperation => {
+        match attempt.type_of {
+            AttemptType::NoOperation => {
                 comments.push("no op".into());
             }
-            _ => {
-                if state.attempt_current > 1 {
-                    comments.push(format!(
-                        "attempt {}/{}",
-                        state.attempt_current, state.attempt_total
-                    ));
+            _ => match attempt.status {
+                ActionStatus::Cached => {
+                    comments.push("cached".into());
                 }
-            }
+                ActionStatus::CachedFromRemote => {
+                    comments.push("cached from remote".into());
+                }
+                ActionStatus::Skipped => {
+                    comments.push("skipped".into());
+                }
+                _ => {
+                    if state.attempt_current > 1 {
+                        comments.push(format!(
+                            "attempt {}/{}",
+                            state.attempt_current, state.attempt_total
+                        ));
+                    }
+                }
+            },
         };
 
         if let Some(duration) = attempt.duration {
-            comments.push(time::elapsed(duration));
+            if let Some(elapsed) = time::elapsed_opt(duration) {
+                comments.push(elapsed);
+            }
         }
 
-        if let Some(hash) = &state.hash {
-            // Do not include the hash while testing, as the hash
-            // constantly changes and breaks our local snapshots
-            if !is_test_env() && attempt.finished_at.is_some() {
+        // Do not include the hash while testing, as the hash
+        // constantly changes and breaks our local snapshots
+        if !is_test_env() {
+            if let Some(hash) = &state.hash {
                 comments.push(hash[0..8].to_owned());
             }
         }
@@ -58,10 +69,10 @@ impl DefaultReporter {
         self.out.print_checkpoint_with_comments(
             if attempt.has_failed() {
                 Checkpoint::RunFailed
-            } else if attempt.duration.is_none() {
-                Checkpoint::RunStarted
-            } else {
+            } else if attempt.has_passed() {
                 Checkpoint::RunPassed
+            } else {
+                Checkpoint::RunStarted
             },
             target,
             comments,
@@ -125,6 +136,7 @@ impl Reporter for DefaultReporter {
         self.out = out;
     }
 
+    // Print a checkpoint when a task execution starts, for each attemp
     fn on_task_started(
         &self,
         target: &Target,
@@ -136,6 +148,7 @@ impl Reporter for DefaultReporter {
         Ok(())
     }
 
+    // If the task has been running for a long time, print a checkpoint
     fn on_task_running(&self, target: &Target, secs: u32) -> miette::Result<()> {
         self.out.print_checkpoint_with_comments(
             Checkpoint::RunStarted,
@@ -146,6 +159,7 @@ impl Reporter for DefaultReporter {
         Ok(())
     }
 
+    // When an attempt has finished, print the output and checkpoint
     fn on_task_finished(
         &self,
         target: &Target,
@@ -153,12 +167,30 @@ impl Reporter for DefaultReporter {
         state: &TaskReportState,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        self.print_task_checkpoint(target, attempt, state)?;
+        // If successful, print the checkpoint so that the header appears
+        // above the stderr/out output below
+        if attempt.has_passed() {
+            self.print_task_checkpoint(target, attempt, state)?;
+        }
 
         // Task was either cached or captured, so there was no output
         // sent to the console, so manually print the logs we have
         if attempt.is_cached() || !state.output_streamed {
             self.print_attempt_output(attempt, state)?;
+        }
+
+        Ok(())
+    }
+
+    fn on_task_completed(
+        &self,
+        target: &Target,
+        attempts: &[Attempt],
+        state: &TaskReportState,
+        _error: Option<&miette::Report>,
+    ) -> miette::Result<()> {
+        if let Some(attempt) = attempts.last() {
+            self.print_task_checkpoint(target, attempt, state)?;
         }
 
         Ok(())

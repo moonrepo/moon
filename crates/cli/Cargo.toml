@@ -28,6 +28,7 @@ moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config", features = ["template"] }
 moon_console = { path = "../../nextgen/console" }
+moon_console_reporter = { path = "../../nextgen/console-reporter" }
 moon_deno_lang = { path = "../deno/lang" }
 moon_deno_tool = { path = "../deno/tool" }
 moon_env = { path = "../../nextgen/env" }

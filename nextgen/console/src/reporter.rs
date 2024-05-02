@@ -6,6 +6,7 @@ use moon_config::TaskOutputStyle;
 use moon_target::Target;
 use std::sync::Arc;
 
+#[derive(Default)]
 pub struct TaskReportState {
     pub attempt_current: u8,
     pub attempt_total: u8,

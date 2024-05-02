@@ -1,5 +1,5 @@
 use crate::task_runner_error::TaskRunnerError;
-use moon_action::{ActionNode, ActionStatus, Attempt};
+use moon_action::{ActionNode, ActionStatus, Attempt, AttemptType};
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -69,7 +69,7 @@ impl<'task> CommandExecutor<'task> {
 
         // Execute the command on a loop as an attempt for every retry count we have
         let execution_error: Option<miette::Report> = loop {
-            let mut attempt = Attempt::new(self.attempt_index);
+            let mut attempt = Attempt::new(AttemptType::TaskExecution);
             state.attempt_current = self.attempt_index;
 
             console

@@ -2,6 +2,7 @@ use crate::app::GlobalArgs;
 use moon_app_components::{Console, ExtensionRegistry, MoonEnv, ProtoEnv, WorkspaceRoot};
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_console::Checkpoint;
+use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
 use moon_platform_plugin::PlatformRegistry;
 use moon_plugin::{PluginRegistry, PluginType};
@@ -23,7 +24,10 @@ pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
     states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
 
-    resources.set(Console::new(quiet));
+    let mut console = Console::new(quiet);
+    console.set_reporter(DefaultReporter::new());
+
+    resources.set(console);
 }
 
 #[system]

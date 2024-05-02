@@ -71,4 +71,18 @@ impl Attempt {
             ActionStatus::Failed | ActionStatus::FailedAndAbort
         )
     }
+
+    pub fn has_passed(&self) -> bool {
+        matches!(
+            &self.status,
+            ActionStatus::Cached | ActionStatus::CachedFromRemote | ActionStatus::Passed
+        )
+    }
+
+    pub fn is_cached(&self) -> bool {
+        matches!(
+            &self.status,
+            ActionStatus::Cached | ActionStatus::CachedFromRemote | ActionStatus::Passed
+        )
+    }
 }

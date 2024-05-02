@@ -85,18 +85,6 @@ impl<'a> Runner<'a> {
     }
 
     pub async fn hydrate(&self, from: HydrateFrom) -> miette::Result<ActionStatus> {
-        let mut comments = vec![match from {
-            HydrateFrom::LocalCache => "cached",
-            HydrateFrom::RemoteCache => "cached from remote",
-            HydrateFrom::PreviousOutput => "cached from previous run",
-        }
-        .to_owned()];
-
-        if self.should_print_short_hash() {
-            comments.push(self.get_short_hash().to_owned());
-        }
-
-        self.print_checkpoint(Checkpoint::RunPassed, comments)?;
         self.print_cache_item()?;
 
         Ok(if matches!(from, HydrateFrom::RemoteCache) {
@@ -144,14 +132,6 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn get_short_hash(&self) -> &str {
-        if self.cache.data.hash.is_empty() {
-            "" // Empty when cache is disabled
-        } else {
-            &self.cache.data.hash[0..8]
-        }
-    }
-
     pub fn has_outputs(&self, _bypass_globs: bool) -> miette::Result<bool> {
         Ok(true)
     }
@@ -193,53 +173,12 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn print_checkpoint<C: AsRef<[String]>>(
-        &self,
-        checkpoint: Checkpoint,
-        comments: C,
-    ) -> miette::Result<()> {
-        self.console
-            .out
-            .print_checkpoint_with_comments(checkpoint, &self.task.target, comments)?;
-
-        Ok(())
-    }
-
     pub fn print_output_with_style(
         &self,
         stdout: &str,
         stderr: &str,
         failed: bool,
     ) -> miette::Result<()> {
-        let print_stdout = || -> miette::Result<()> { self.console.out.write_line(stdout) };
-        let print_stderr = || -> miette::Result<()> { self.console.err.write_line(stderr) };
-
-        match self.task.options.output_style {
-            // Only show output on failure
-            Some(TaskOutputStyle::BufferOnlyFailure) => {
-                if failed {
-                    print_stdout()?;
-                    print_stderr()?;
-                }
-            }
-            // Only show the hash
-            Some(TaskOutputStyle::Hash) => {
-                let hash = &self.cache.data.hash;
-
-                if !hash.is_empty() {
-                    // Print to stderr so it can be captured
-                    self.console.err.write_line(hash)?;
-                }
-            }
-            // Show nothing
-            Some(TaskOutputStyle::None) => {}
-            // Show output on both success and failure
-            _ => {
-                print_stdout()?;
-                print_stderr()?;
-            }
-        };
-
         Ok(())
     }
 
@@ -283,24 +222,6 @@ impl<'a> Runner<'a> {
         attempt: &Attempt,
         attempt_total: u8,
     ) -> miette::Result<()> {
-        let mut comments = vec![];
-
-        if self.task.is_no_op() {
-            comments.push("no op".to_owned());
-        } else if attempt.index > 1 {
-            comments.push(format!("{}/{}", attempt.index, attempt_total));
-        }
-
-        if let Some(duration) = attempt.duration {
-            comments.push(time::elapsed(duration));
-        }
-
-        if self.should_print_short_hash() && attempt.finished_at.is_some() {
-            comments.push(self.get_short_hash().to_owned());
-        }
-
-        self.print_checkpoint(checkpoint, comments)?;
-
         Ok(())
     }
 
@@ -312,25 +233,6 @@ impl<'a> Runner<'a> {
         attempt_total: u8,
         output: &Output,
     ) -> miette::Result<()> {
-        self.print_target_label(
-            if output.status.success() {
-                Checkpoint::RunPassed
-            } else {
-                Checkpoint::RunFailed
-            },
-            attempt,
-            attempt_total,
-        )?;
-
-        let stdout = output_to_string(&output.stdout);
-        let stderr = output_to_string(&output.stderr);
-
-        self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
-
-        attempt.exit_code = output.status.code();
-        attempt.stdout = Some(stdout);
-        attempt.stderr = Some(stderr);
-
         Ok(())
     }
 
@@ -342,20 +244,6 @@ impl<'a> Runner<'a> {
         attempt_total: u8,
         output: &Output,
     ) -> miette::Result<()> {
-        self.print_target_label(
-            if output.status.success() {
-                Checkpoint::RunPassed
-            } else {
-                Checkpoint::RunFailed
-            },
-            attempt,
-            attempt_total,
-        )?;
-
-        attempt.exit_code = output.status.code();
-        attempt.stdout = Some(output_to_string(&output.stdout));
-        attempt.stderr = Some(output_to_string(&output.stderr));
-
         Ok(())
     }
 

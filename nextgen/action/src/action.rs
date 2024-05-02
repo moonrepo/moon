@@ -120,7 +120,7 @@ impl Action {
 
     pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {
         let some_failed = attempts.iter().any(|attempt| attempt.has_failed());
-        let mut passed = false;
+        let mut passed = true;
 
         if let Some(last) = attempts.last() {
             if last.has_failed() {
@@ -132,11 +132,8 @@ impl Action {
                 }
 
                 self.error = Some(message);
-            } else {
-                passed = true;
+                passed = false;
             }
-        } else {
-            passed = true;
         }
 
         self.attempts = Some(attempts);

@@ -3474,6 +3474,7 @@ version = "0.0.1"
 dependencies = [
  "inquire",
  "miette",
+ "moon_action",
  "moon_common",
  "parking_lot",
  "starbase",
@@ -3484,7 +3485,13 @@ dependencies = [
 name = "moon_console_reporter"
 version = "0.0.1"
 dependencies = [
+ "miette",
+ "moon_action",
+ "moon_common",
+ "moon_config",
  "moon_console",
+ "moon_task",
+ "moon_time",
 ]
 
 [[package]]

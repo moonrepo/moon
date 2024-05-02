@@ -1,0 +1,12 @@
+[package]
+name = "moon_console_reporter"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Customizable reporters for console output."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_console = { path = "../console" }

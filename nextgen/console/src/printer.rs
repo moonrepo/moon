@@ -1,4 +1,4 @@
-use crate::console::ConsoleBuffer;
+use crate::buffer::ConsoleBuffer;
 use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{self, no_color, Color, OwoStyle};
 

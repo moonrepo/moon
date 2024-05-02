@@ -19,7 +19,6 @@ fn is_ci_env() -> bool {
 /// Run the command as a child process and capture its output. If the process fails
 /// and `retry_count` is greater than 0, attempt the process again in case it passes.
 pub struct CommandExecutor<'task> {
-    node: &'task ActionNode,
     task: &'task Task,
 
     command: Command,
@@ -45,7 +44,6 @@ impl<'task> CommandExecutor<'task> {
             persistent: node.is_persistent() || task.is_persistent(),
             stream: false,
             handle: None,
-            node,
             task,
             command,
         }

@@ -3481,6 +3481,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_console_reporter"
+version = "0.0.1"
+dependencies = [
+ "moon_console",
+]
+
+[[package]]
 name = "moon_deno_lang"
 version = "0.0.1"
 dependencies = [

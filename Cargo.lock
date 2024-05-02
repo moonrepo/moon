@@ -3476,6 +3476,8 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_common",
+ "moon_config",
+ "moon_target",
  "parking_lot",
  "starbase",
  "starbase_styles",
@@ -3490,7 +3492,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
- "moon_task",
+ "moon_target",
  "moon_time",
 ]
 

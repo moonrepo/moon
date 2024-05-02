@@ -4,6 +4,7 @@ use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
 use std::mem;
 use std::process::Output;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -24,9 +25,9 @@ pub struct Attempt {
 
     pub status: ActionStatus,
 
-    pub stderr: Option<String>,
+    pub stderr: Option<Arc<String>>,
 
-    pub stdout: Option<String>,
+    pub stdout: Option<Arc<String>>,
 }
 
 impl Attempt {
@@ -55,8 +56,14 @@ impl Attempt {
 
     pub fn finish_from_output(&mut self, output: &mut Output) {
         self.exit_code = output.status.code();
-        self.stdout = Some(String::from_utf8(mem::take(&mut output.stdout)).unwrap_or_default());
-        self.stderr = Some(String::from_utf8(mem::take(&mut output.stderr)).unwrap_or_default());
+
+        self.stdout = Some(Arc::new(
+            String::from_utf8(mem::take(&mut output.stdout)).unwrap_or_default(),
+        ));
+
+        self.stderr = Some(Arc::new(
+            String::from_utf8(mem::take(&mut output.stderr)).unwrap_or_default(),
+        ));
 
         self.finish(if output.status.success() {
             ActionStatus::Passed

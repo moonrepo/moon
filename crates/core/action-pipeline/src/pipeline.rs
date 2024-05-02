@@ -377,7 +377,7 @@ impl Pipeline {
                     if let Some(stdout) = &attempt.stdout {
                         if !stdout.is_empty() {
                             has_stdout = true;
-                            console.out.write_line(stdout)?;
+                            console.out.write_line(stdout.as_bytes())?;
                         }
                     }
 
@@ -387,7 +387,7 @@ impl Pipeline {
                         }
 
                         if !stderr.is_empty() {
-                            console.out.write_line(stderr)?;
+                            console.out.write_line(stderr.as_bytes())?;
                         }
                     }
                 }

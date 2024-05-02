@@ -13,6 +13,6 @@ moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
-moon_task = { path = "../task" }
+moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 miette = { workspace = true }

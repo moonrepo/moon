@@ -1,9 +1,8 @@
-use crate::reporter_ext::*;
-use moon_action::{Action, ActionStatus, Attempt};
+use moon_action::{ActionStatus, Attempt};
 use moon_common::is_test_env;
 use moon_config::TaskOutputStyle;
-use moon_console::{Checkpoint, ConsoleBuffer, Reporter};
-use moon_task::Task;
+use moon_console::{Checkpoint, ConsoleBuffer, Reporter, TaskReportState};
+use moon_target::Target;
 use moon_time as time;
 use std::sync::Arc;
 
@@ -15,20 +14,11 @@ pub struct DefaultReporter {
 impl DefaultReporter {
     pub fn print_task_checkpoint(
         &self,
-        task: &Task,
+        target: &Target,
         attempt: &Attempt,
         state: &TaskReportState,
     ) -> miette::Result<()> {
         let mut comments = vec![];
-
-        if task.is_no_op() {
-            comments.push("no op".to_owned());
-        } else if state.attempt_current > 1 {
-            comments.push(format!(
-                "attempt {}/{}",
-                state.attempt_current, state.attempt_total
-            ));
-        }
 
         match attempt.status {
             ActionStatus::Cached => {
@@ -40,7 +30,17 @@ impl DefaultReporter {
             ActionStatus::Skipped => {
                 comments.push("skipped".into());
             }
-            _ => {}
+            ActionStatus::NoOperation => {
+                comments.push("no op".into());
+            }
+            _ => {
+                if state.attempt_current > 1 {
+                    comments.push(format!(
+                        "attempt {}/{}",
+                        state.attempt_current, state.attempt_total
+                    ));
+                }
+            }
         };
 
         if let Some(duration) = attempt.duration {
@@ -63,7 +63,7 @@ impl DefaultReporter {
             } else {
                 Checkpoint::RunPassed
             },
-            &task.target,
+            target,
             comments,
         )?;
 
@@ -72,13 +72,12 @@ impl DefaultReporter {
 
     pub fn print_attempt_output(
         &self,
-        task: &Task,
         attempt: &Attempt,
         state: &TaskReportState,
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
             if let Some(out) = &attempt.stdout {
-                self.out.write_line(out)?;
+                self.out.write_line(out.as_bytes())?;
             }
 
             Ok(())
@@ -86,13 +85,13 @@ impl DefaultReporter {
 
         let print_stderr = || -> miette::Result<()> {
             if let Some(out) = &attempt.stderr {
-                self.err.write_line(out)?;
+                self.err.write_line(out.as_bytes())?;
             }
 
             Ok(())
         };
 
-        match task.options.output_style {
+        match state.output_style {
             // Only show output on failure
             Some(TaskOutputStyle::BufferOnlyFailure) => {
                 if attempt.has_failed() {
@@ -121,71 +120,45 @@ impl DefaultReporter {
 }
 
 impl Reporter for DefaultReporter {
-    fn inherit_streams(
-        &mut self,
-        err: Arc<ConsoleBuffer>,
-        out: Arc<ConsoleBuffer>,
-    ) -> miette::Result<()> {
+    fn inherit_streams(&mut self, err: Arc<ConsoleBuffer>, out: Arc<ConsoleBuffer>) {
         self.err = err;
         self.out = out;
-
-        Ok(())
     }
 
-    fn on_action_started(&mut self, _action: &Action) -> miette::Result<()> {
-        Ok(())
-    }
-
-    fn on_action_completed(
-        &mut self,
-        _action: &Action,
-        _error: Option<miette::Report>,
-    ) -> miette::Result<()> {
-        Ok(())
-    }
-
-    fn on_pipeline_aborted(&mut self, _error: Option<miette::Report>) -> miette::Result<()> {
-        Ok(())
-    }
-
-    fn on_pipeline_started(&mut self) -> miette::Result<()> {
-        Ok(())
-    }
-
-    fn on_pipeline_completeed(&mut self, _error: Option<miette::Report>) -> miette::Result<()> {
-        Ok(())
-    }
-}
-
-impl TaskReporterExt for DefaultReporter {
     fn on_task_started(
-        &mut self,
-        task: &Task,
+        &self,
+        target: &Target,
         attempt: &Attempt,
         state: &TaskReportState,
     ) -> miette::Result<()> {
-        self.print_task_checkpoint(task, attempt, state)?;
+        self.print_task_checkpoint(target, attempt, state)?;
 
         Ok(())
     }
 
-    fn on_task_running(&mut self, _task: &Task, _state: &TaskReportState) -> miette::Result<()> {
+    fn on_task_running(&self, target: &Target, secs: u32) -> miette::Result<()> {
+        self.out.print_checkpoint_with_comments(
+            Checkpoint::RunStarted,
+            target,
+            [format!("running for {}s", secs)],
+        )?;
+
         Ok(())
     }
 
     fn on_task_finished(
-        &mut self,
-        task: &Task,
+        &self,
+        target: &Target,
         attempt: &Attempt,
         state: &TaskReportState,
-        _error: Option<miette::Report>,
+        _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        self.print_task_checkpoint(task, attempt, state)?;
+        self.print_task_checkpoint(target, attempt, state)?;
 
         // Task was either cached or captured, so there was no output
         // sent to the console, so manually print the logs we have
-        if attempt.is_cached() || !state.streamed_output {
-            self.print_attempt_output(task, attempt, state)?;
+        if attempt.is_cached() || !state.output_streamed {
+            self.print_attempt_output(attempt, state)?;
         }
 
         Ok(())

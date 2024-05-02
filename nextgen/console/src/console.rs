@@ -18,8 +18,9 @@ pub struct Console {
     pub out: Arc<ConsoleBuffer>,
     out_handle: Option<JoinHandle<()>>,
 
+    pub reporter: Arc<BoxedReporter>,
+
     quiet: Arc<AtomicBool>,
-    reporter: Arc<BoxedReporter>,
     theme: Arc<ConsoleTheme>,
 }
 

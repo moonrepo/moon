@@ -19,6 +19,7 @@ pub enum ActionStatus {
     #[default]
     Running,
     Skipped, // When nothing happened
+    NoOperation,
 }
 
 #[derive(Debug, Default, Serialize)]

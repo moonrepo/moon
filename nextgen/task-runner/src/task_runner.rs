@@ -119,7 +119,10 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Otherwise build and execute the command as a child process
-        match self.execute_command(context, Arc::clone(&console)).await {
+        match self
+            .execute_command(&hash, context, Arc::clone(&console))
+            .await
+        {
             Ok(attempts) => {
                 self.archiver.archive(&hash).await?;
 
@@ -331,6 +334,7 @@ impl<'task> TaskRunner<'task> {
 
     async fn execute_command(
         &mut self,
+        hash: &str,
         context: &ActionContext,
         console: Arc<Console>,
     ) -> miette::Result<Vec<Attempt>> {
@@ -352,9 +356,9 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(context, console).await?
+            executor.execute(hash, context, console).await?
         } else {
-            executor.execute(context, console).await?
+            executor.execute(hash, context, console).await?
         };
 
         // Persist the last attempt state
@@ -368,11 +372,11 @@ impl<'task> TaskRunner<'task> {
             self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
 
             if let Some(log) = &last_attempt.stderr {
-                let _ = fs::write_file(state_dir.join("stderr.log"), log);
+                let _ = fs::write_file(state_dir.join("stderr.log"), log.as_bytes());
             }
 
             if let Some(log) = &last_attempt.stdout {
-                let _ = fs::write_file(state_dir.join("stdout.log"), log);
+                let _ = fs::write_file(state_dir.join("stdout.log"), log.as_bytes());
             }
         }
 

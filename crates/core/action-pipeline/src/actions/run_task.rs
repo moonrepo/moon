@@ -32,7 +32,7 @@ pub async fn run_task(
     action.allow_failure = task.options.allow_failure;
 
     let attempts = TaskRunner::new(&workspace, &project, task, &action.node)?
-        .run_and_persist(&context, console)
+        .run_and_persist(&context, &console)
         .await?;
 
     Ok(if action.set_attempts(attempts, &task.command) {

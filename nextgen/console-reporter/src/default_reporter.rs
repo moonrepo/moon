@@ -88,7 +88,7 @@ impl DefaultReporter {
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
             if let Some(out) = &attempt.stdout {
-                self.out.write_line(out.as_bytes())?;
+                self.out.write_line(out.trim())?;
             }
 
             Ok(())
@@ -96,7 +96,7 @@ impl DefaultReporter {
 
         let print_stderr = || -> miette::Result<()> {
             if let Some(out) = &attempt.stderr {
-                self.err.write_line(out.as_bytes())?;
+                self.err.write_line(out.trim())?;
             }
 
             Ok(())

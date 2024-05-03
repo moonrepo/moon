@@ -67,19 +67,23 @@ impl Attempt {
     pub fn finish_from_output(&mut self, output: &mut Output) {
         self.exit_code = output.status.code();
 
-        self.stdout = Some(Arc::new(
-            String::from_utf8(mem::take(&mut output.stdout)).unwrap_or_default(),
-        ));
+        self.set_stderr(String::from_utf8(mem::take(&mut output.stderr)).unwrap_or_default());
 
-        self.stderr = Some(Arc::new(
-            String::from_utf8(mem::take(&mut output.stderr)).unwrap_or_default(),
-        ));
+        self.set_stdout(String::from_utf8(mem::take(&mut output.stdout)).unwrap_or_default());
 
         self.finish(if output.status.success() {
             ActionStatus::Passed
         } else {
             ActionStatus::Failed
         });
+    }
+
+    pub fn set_stderr(&mut self, output: String) {
+        self.stderr = Some(Arc::new(output));
+    }
+
+    pub fn set_stdout(&mut self, output: String) {
+        self.stdout = Some(Arc::new(output));
     }
 
     pub fn has_failed(&self) -> bool {

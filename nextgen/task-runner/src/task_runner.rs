@@ -16,7 +16,6 @@ use moon_time::now_millis;
 use moon_workspace::Workspace;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 use tracing::{debug, trace};
 
 pub struct TaskRunner<'task> {
@@ -64,23 +63,21 @@ impl<'task> TaskRunner<'task> {
     pub async fn run(
         &mut self,
         context: &ActionContext,
-        console: Arc<Console>,
+        console: &Console,
     ) -> miette::Result<Vec<Attempt>> {
         let target = &self.task.target;
 
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
-            return self.skip_execution(context, &console);
+            return self.skip(context, console);
         }
 
         // Generate a unique hash so we can check the cache
         let hash = self.generate_hash(context).await?;
 
         // Exit early if this build has already been cached/hashed
-        if self.is_cache_enabled() {
-            if let Some(attempts) = self.hydrate_from_cache(&hash, context, &console).await? {
-                return Ok(attempts);
-            }
+        if let Some(attempts) = self.hydrate(&hash, context, console).await? {
+            return Ok(attempts);
         } else {
             debug!(
                 task = self.task.target.as_str(),
@@ -94,14 +91,18 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Otherwise build and execute the command as a child process
-        self.execute_command(&hash, context, Arc::clone(&console))
-            .await
+        let attempts = self.execute(&hash, context, console).await?;
+
+        // If we created outputs, archive them into the cache
+        self.archive(&hash, &attempts).await?;
+
+        Ok(attempts)
     }
 
     pub async fn run_and_persist(
         &mut self,
         context: &ActionContext,
-        console: Arc<Console>,
+        console: &Console,
     ) -> miette::Result<Vec<Attempt>> {
         let result = self.run(context, console).await;
 
@@ -322,11 +323,11 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    async fn execute_command(
+    async fn execute(
         &mut self,
         hash: &str,
         context: &ActionContext,
-        console: Arc<Console>,
+        console: &Console,
     ) -> miette::Result<Vec<Attempt>> {
         if self.task.is_no_op() {
             return Ok(vec![Attempt::new(AttemptType::NoOperation)]);
@@ -338,7 +339,13 @@ impl<'task> TaskRunner<'task> {
             .await?;
 
         // Execute the command and gather all attempts made
-        let executor = CommandExecutor::new(&self.task, &self.node, command);
+        let executor = CommandExecutor::new(
+            &self.workspace,
+            &self.project,
+            &self.task,
+            &self.node,
+            command,
+        );
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mutex = context.get_or_create_mutex(mutex_name);
@@ -351,29 +358,20 @@ impl<'task> TaskRunner<'task> {
             executor.execute(hash, context, console).await
         };
 
-        match result {
-            Ok(attempts) => {
-                // If we created outputs, archive them into the cache
-                self.archiver.archive(&hash).await?;
+        // Update the actione state based on the result
+        context.set_target_state(
+            &self.task.target,
+            if result.is_ok() {
+                TargetState::Completed(hash.to_owned())
+            } else {
+                TargetState::Failed
+            },
+        );
 
-                context
-                    .set_target_state(&self.task.target, TargetState::Completed(hash.to_owned()));
-
-                Ok(attempts)
-            }
-            Err(error) => {
-                context.set_target_state(&self.task.target, TargetState::Failed);
-
-                Err(error)
-            }
-        }
+        result
     }
 
-    fn skip_execution(
-        &self,
-        context: &ActionContext,
-        console: &Console,
-    ) -> miette::Result<Vec<Attempt>> {
+    fn skip(&self, context: &ActionContext, console: &Console) -> miette::Result<Vec<Attempt>> {
         let mut attempt = Attempt::new(AttemptType::TaskExecution);
         attempt.finish(ActionStatus::Skipped);
 
@@ -389,12 +387,16 @@ impl<'task> TaskRunner<'task> {
         Ok(attempts)
     }
 
-    async fn hydrate_from_cache(
+    async fn hydrate(
         &self,
         hash: &str,
         context: &ActionContext,
         console: &Console,
     ) -> miette::Result<Option<Vec<Attempt>>> {
+        if !self.is_cache_enabled() {
+            return Ok(None);
+        }
+
         let Some(from) = self.is_cached(hash).await? else {
             return Ok(None);
         };
@@ -403,6 +405,7 @@ impl<'task> TaskRunner<'task> {
         let mut attempt = Attempt::new(AttemptType::CacheHydration);
 
         self.hydrater.hydrate(hash, from).await?;
+        self.load_logs(&mut attempt)?;
 
         attempt.finish(match from {
             HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
@@ -422,5 +425,56 @@ impl<'task> TaskRunner<'task> {
         context.set_target_state(&self.task.target, TargetState::Completed(hash.to_owned()));
 
         Ok(Some(attempts))
+    }
+
+    async fn archive(&mut self, hash: &str, attempts: &[Attempt]) -> miette::Result<()> {
+        if self.is_cache_enabled() {
+            self.archiver.archive(&hash).await?;
+        }
+
+        if let Some(last_attempt) = attempts.last() {
+            self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
+            self.save_logs(last_attempt)?;
+        }
+
+        Ok(())
+    }
+
+    fn load_logs(&self, attempt: &mut Attempt) -> miette::Result<()> {
+        let state_dir = self
+            .workspace
+            .cache_engine
+            .state
+            .get_target_dir(&self.task.target);
+        let err_path = state_dir.join("stderr.log");
+        let out_path = state_dir.join("stdout.log");
+
+        if err_path.exists() {
+            attempt.set_stderr(fs::read_file(err_path)?);
+        }
+
+        if out_path.exists() {
+            attempt.set_stdout(fs::read_file(out_path)?);
+        }
+
+        Ok(())
+    }
+
+    fn save_logs(&self, attempt: &Attempt) -> miette::Result<()> {
+        let state_dir = self
+            .workspace
+            .cache_engine
+            .state
+            .get_target_dir(&self.task.target);
+
+        if let Some(log) = &attempt.stderr {
+            fs::write_file(state_dir.join("stderr.log"), log.as_bytes())?;
+        }
+
+        if let Some(log) = &attempt.stdout {
+            fs::write_file(state_dir.join("stdout.log"), log.as_bytes())?;
+        }
+
+        Ok(())
     }
 }

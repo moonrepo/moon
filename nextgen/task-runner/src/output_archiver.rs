@@ -35,16 +35,16 @@ impl<'task> OutputArchiver<'task> {
         // If so, create and pack the archive!
         let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
 
-        if !self.workspace.cache_engine.get_mode().is_writable() {
-            debug!(
-                task = self.task.target.as_str(),
-                hash, "Cache is not writable, skipping output archiving"
-            );
-
-            return Ok(None);
-        }
-
         if !archive_file.exists() {
+            if !self.workspace.cache_engine.get_mode().is_writable() {
+                debug!(
+                    task = self.task.target.as_str(),
+                    hash, "Cache is not writable, skipping output archiving"
+                );
+
+                return Ok(None);
+            }
+
             debug!(
                 task = self.task.target.as_str(),
                 hash, "Archiving task outputs from project"

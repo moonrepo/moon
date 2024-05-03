@@ -1,11 +1,14 @@
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Attempt, AttemptType};
 use moon_action_context::ActionContext;
-use moon_common::{is_ci, is_test_env};
+use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::{Console, TaskReportState};
+use moon_process::args::join_args;
 use moon_process::{output_to_error, Command};
+use moon_project::Project;
 use moon_task::Task;
+use moon_workspace::Workspace;
 use std::mem;
 use std::sync::Arc;
 use std::time::Duration;
@@ -20,6 +23,8 @@ fn is_ci_env() -> bool {
 /// and `retry_count` is greater than 0, attempt the process again in case it passes.
 pub struct CommandExecutor<'task> {
     task: &'task Task,
+    project: &'task Project,
+    workspace: &'task Workspace,
 
     command: Command,
     handle: Option<JoinHandle<()>>,
@@ -35,7 +40,13 @@ pub struct CommandExecutor<'task> {
 }
 
 impl<'task> CommandExecutor<'task> {
-    pub fn new(task: &'task Task, node: &'task ActionNode, command: Command) -> Self {
+    pub fn new(
+        workspace: &'task Workspace,
+        project: &'task Project,
+        task: &'task Task,
+        node: &'task ActionNode,
+        command: Command,
+    ) -> Self {
         Self {
             attempts: vec![],
             attempt_index: 0,
@@ -44,6 +55,8 @@ impl<'task> CommandExecutor<'task> {
             persistent: node.is_persistent() || task.is_persistent(),
             stream: false,
             handle: None,
+            workspace,
+            project,
             task,
             command,
         }
@@ -53,9 +66,9 @@ impl<'task> CommandExecutor<'task> {
         mut self,
         hash: &str,
         context: &ActionContext,
-        console: Arc<Console>,
+        console: &Console,
     ) -> miette::Result<Vec<Attempt>> {
-        self.command.with_console(Arc::clone(&console));
+        self.command.with_console(Arc::new(console.clone()));
 
         // Prepare state for the executor, and each attempt
         let mut state = self.prepate_state(context);
@@ -65,7 +78,7 @@ impl<'task> CommandExecutor<'task> {
         }
 
         // For long-running process, log a message on an interval to indicate it's still running
-        self.start_monitoring(Arc::clone(&console));
+        self.start_monitoring(console);
 
         // Execute the command on a loop as an attempt for every retry count we have
         let execution_error: Option<miette::Report> = loop {
@@ -75,6 +88,8 @@ impl<'task> CommandExecutor<'task> {
             console
                 .reporter
                 .on_task_started(&self.task.target, &attempt, &state)?;
+
+            self.print_command(context, console)?;
 
             // Attempt to execute command
             let mut command = self.command.create_async();
@@ -152,11 +167,12 @@ impl<'task> CommandExecutor<'task> {
         Ok(mem::take(&mut self.attempts))
     }
 
-    fn start_monitoring(&mut self, console: Arc<Console>) {
+    fn start_monitoring(&mut self, console: &Console) {
         if self.persistent || self.interactive {
             return;
         }
 
+        let console = console.clone();
         let target = self.task.target.clone();
 
         self.handle = Some(task::spawn(async move {
@@ -213,6 +229,37 @@ impl<'task> CommandExecutor<'task> {
             output_streamed: self.stream,
             output_style: self.task.options.output_style.clone(),
         }
+    }
+
+    fn print_command(&self, context: &ActionContext, console: &Console) -> miette::Result<()> {
+        if !self.workspace.config.runner.log_running_command {
+            return Ok(());
+        }
+
+        let task = &self.task;
+
+        let mut args = vec![&task.command];
+        args.extend(&task.args);
+
+        if context.should_inherit_args(&task.target) {
+            args.extend(&context.passthrough_args);
+        }
+
+        let command_line = join_args(args);
+
+        let message = color::muted_light(self.command.inspect().format_command(
+            &command_line,
+            &self.workspace.root,
+            Some(if task.options.run_from_workspace_root {
+                &self.workspace.root
+            } else {
+                &self.project.root
+            }),
+        ));
+
+        console.out.write_line(message)?;
+
+        Ok(())
     }
 }
 

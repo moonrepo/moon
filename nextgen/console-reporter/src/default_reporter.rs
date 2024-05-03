@@ -136,7 +136,7 @@ impl Reporter for DefaultReporter {
         self.out = out;
     }
 
-    // Print a checkpoint when a task execution starts, for each attemp
+    // Print a checkpoint when a task execution starts, for each attempt
     fn on_task_started(
         &self,
         target: &Target,
@@ -159,20 +159,14 @@ impl Reporter for DefaultReporter {
         Ok(())
     }
 
-    // When an attempt has finished, print the output and checkpoint
+    // When an attempt has finished, print the output if captured
     fn on_task_finished(
         &self,
-        target: &Target,
+        _target: &Target,
         attempt: &Attempt,
         state: &TaskReportState,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        // If successful, print the checkpoint so that the header appears
-        // above the stderr/out output below
-        if attempt.has_passed() {
-            self.print_task_checkpoint(target, attempt, state)?;
-        }
-
         // Task was either cached or captured, so there was no output
         // sent to the console, so manually print the logs we have
         if attempt.is_cached() || !state.output_streamed {
@@ -182,6 +176,7 @@ impl Reporter for DefaultReporter {
         Ok(())
     }
 
+    // When all attempts have completed, print the final checkpoint
     fn on_task_completed(
         &self,
         target: &Target,

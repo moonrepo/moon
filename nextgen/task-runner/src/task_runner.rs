@@ -203,7 +203,9 @@ impl<'task> TaskRunner<'task> {
     fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
-        self.task.options.cache && self.workspace.vcs.is_enabled()
+        self.task.options.cache
+            && self.workspace.vcs.is_enabled()
+            && self.workspace.cache_engine.get_mode().is_readable()
     }
 
     fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {

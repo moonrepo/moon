@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a regression where `runInCI` was being overzealously applied to `moon run` commands.
+- Fixed generated VCS hooks not containing a trailing newline.
+
 ## 1.24.3
 
 #### 🐞 Fixes

@@ -218,6 +218,7 @@ fn generate_action_graph(
     // Run dependents to ensure consumers still work correctly
     let requirements = RunRequirements {
         ci: true,
+        ci_check: true,
         dependents: true,
         touched_files: Some(touched_files),
         ..Default::default()

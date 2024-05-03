@@ -151,6 +151,7 @@ pub async fn run_target(
     let mut primary_targets = vec![];
     let mut requirements = RunRequirements {
         ci: is_ci(),
+        ci_check: false,
         dependents: args.dependents,
         initial_locators: target_locators.iter().collect(),
         resolved_locators: vec![],

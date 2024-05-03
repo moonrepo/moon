@@ -140,6 +140,22 @@ mod unix {
     }
 
     #[tokio::test]
+    async fn creates_hook_files_with_trailing_newline() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        run_generator(sandbox.path()).await;
+
+        let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.sh");
+
+        assert!(pre_commit.exists());
+        assert_eq!(
+            fs::read_to_string(pre_commit).unwrap().chars().last(),
+            Some('\n')
+        )
+    }
+
+    #[tokio::test]
     async fn links_git_hooks() {
         let sandbox = create_empty_sandbox();
         sandbox.enable_git();

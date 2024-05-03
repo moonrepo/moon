@@ -1002,6 +1002,126 @@ mod action_graph {
                 ]
             );
         }
+
+        mod run_in_ci {
+            use super::*;
+
+            #[tokio::test]
+            async fn graphs_if_ci_check_true() {
+                let sandbox = create_sandbox("projects");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("bar").unwrap();
+
+                let mut task = create_task("build", "bar");
+                task.options.run_in_ci = true;
+
+                builder
+                    .run_task(
+                        &project,
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build().unwrap();
+
+                assert!(!topo(graph).is_empty());
+            }
+        }
+
+        mod dont_run_in_ci {
+            use super::*;
+
+            #[tokio::test]
+            async fn doesnt_graph_if_ci_check_true() {
+                let sandbox = create_sandbox("projects");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("bar").unwrap();
+
+                let mut task = create_task("build", "bar");
+                task.options.run_in_ci = false;
+
+                builder
+                    .run_task(
+                        &project,
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build().unwrap();
+
+                assert!(topo(graph).is_empty());
+            }
+
+            #[tokio::test]
+            async fn graphs_if_ci_check_false() {
+                let sandbox = create_sandbox("projects");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("bar").unwrap();
+
+                let mut task = create_task("build", "bar");
+                task.options.run_in_ci = false;
+
+                builder
+                    .run_task(
+                        &project,
+                        &task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: false,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build().unwrap();
+
+                assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test]
+            async fn graphs_if_ci_false() {
+                let sandbox = create_sandbox("projects");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("bar").unwrap();
+
+                let mut task = create_task("build", "bar");
+                task.options.run_in_ci = false;
+
+                builder
+                    .run_task(
+                        &project,
+                        &task,
+                        &RunRequirements {
+                            ci: false,
+                            ci_check: false,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build().unwrap();
+
+                assert!(!topo(graph).is_empty());
+            }
+        }
     }
 
     mod run_task_dependencies {

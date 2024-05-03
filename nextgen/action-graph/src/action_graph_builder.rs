@@ -181,7 +181,7 @@ impl<'app> ActionGraphBuilder<'app> {
     ) -> miette::Result<Option<NodeIndex>> {
         // Only apply checks when requested. This applies to `moon ci`,
         // but not `moon run`, since the latter should be able to
-        // manually run local tasks in CI.
+        // manually run local tasks in CI (deploys, etc).
         if reqs.ci && reqs.ci_check && !task.should_run_in_ci() {
             debug!(
                 task = task.target.as_str(),

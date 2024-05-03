@@ -16,8 +16,9 @@ type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
 #[derive(Default)]
 pub struct RunRequirements<'app> {
-    pub ci: bool,
-    pub dependents: bool,
+    pub ci: bool,         // Are we in a CI environment
+    pub ci_check: bool,   // Check the `runInCI` option
+    pub dependents: bool, // Run dependent tasks as well
     pub initial_locators: Vec<&'app TargetLocator>,
     pub resolved_locators: Vec<TargetLocator>,
     pub interactive: bool,
@@ -178,7 +179,10 @@ impl<'app> ActionGraphBuilder<'app> {
         reqs: &RunRequirements<'app>,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
-        if reqs.ci && !task.should_run_in_ci() {
+        // Only apply checks when requested. This applies to `moon ci`,
+        // but not `moon run`, since the latter should be able to
+        // manually run local tasks in CI.
+        if reqs.ci && reqs.ci_check && !task.should_run_in_ci() {
             debug!(
                 task = task.target.as_str(),
                 "Not running task {} because {} is false",
@@ -309,8 +313,16 @@ impl<'app> ActionGraphBuilder<'app> {
 
             for project in projects_to_build {
                 for dep_task in project.tasks.values() {
-                    // Allow internal here, since depended on tasks should still run!
-                    if dep_task.is_persistent() || parent_reqs.ci && !dep_task.should_run_in_ci() {
+                    // Don't skip internal tasks, since they are a dependency of the parent
+                    // task, and must still run! They just can't be ran manually.
+                    if dep_task.is_persistent() {
+                        continue;
+                    }
+
+                    // Since these are transient tasks, we should always filter out tasks
+                    // that should not run in CI, as we don't know what side-effects it
+                    // will cause. This applies to both `moon ci` and `moon run`.
+                    if parent_reqs.ci && !dep_task.should_run_in_ci() {
                         continue;
                     }
 

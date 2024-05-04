@@ -258,7 +258,7 @@ pub async fn init(
 
     stdout.write_line(format!(
         "  Learn more: {}",
-        color::url("https://monorepo.dev/docs")
+        color::url("https://moonrepo.dev/docs")
     ))?;
 
     stdout.write_line(format!(

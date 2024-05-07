@@ -31,6 +31,8 @@ pub fn create_task(project: &Project) -> Task {
         ..Default::default()
     };
     task.env.insert("KEY".into(), "value".into());
+    task.input_files.insert("apps/project/literal.txt".into());
+    task.input_globs.insert("apps/project/file.*".into());
     task
 }
 

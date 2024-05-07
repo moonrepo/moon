@@ -159,6 +159,8 @@ impl<'task> CommandBuilder<'task> {
 
     fn inject_shell(&mut self) {
         if self.task.options.shell == Some(true) {
+            // Process command set's a shell by default!
+
             #[cfg(unix)]
             if let Some(shell) = &self.task.options.unix_shell {
                 use moon_config::TaskUnixShell;

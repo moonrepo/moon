@@ -100,8 +100,14 @@ impl ActionContext {
 
         // :task == scope:task
         for locator in &self.initial_targets {
-            if target.is_all_task(locator.as_str()) {
-                return true;
+            // if target.is_all_task(locator.as_str()) {
+            //     return true;
+            // }
+
+            if let TargetLocator::Qualified(inner) = locator {
+                if inner.is_all_task(&target.task_id) {
+                    return true;
+                }
             }
         }
 

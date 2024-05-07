@@ -33,3 +33,8 @@ starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils2 = { path = "../test-utils" }
+proto_core = { workspace = true }
+starbase_sandbox = { workspace = true }

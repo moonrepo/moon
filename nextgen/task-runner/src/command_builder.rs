@@ -16,6 +16,7 @@ pub struct CommandBuilder<'task> {
     task: &'task Task,
     working_dir: &'task Path,
     workspace: &'task Workspace,
+    platform_manager: &'task PlatformManager,
 
     // To be built
     command: Command,
@@ -40,12 +41,18 @@ impl<'task> CommandBuilder<'task> {
             task,
             working_dir,
             workspace,
+            platform_manager: PlatformManager::read(),
             command: Command::new("noop"),
         }
     }
 
+    pub fn set_platform_manager(&mut self, manager: &'task PlatformManager) {
+        self.platform_manager = manager;
+    }
+
     pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
-        self.command = PlatformManager::read()
+        self.command = self
+            .platform_manager
             .get(self.task.platform)?
             .create_run_target_command(
                 context,

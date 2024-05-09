@@ -10,3 +10,6 @@ cached = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 yarn-lock-parser = "0.7.0"
+
+[lints]
+workspace = true

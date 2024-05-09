@@ -11,14 +11,16 @@ pub struct DefaultReporter {
     out: Arc<ConsoleBuffer>,
 }
 
-impl DefaultReporter {
-    pub fn new() -> Self {
+impl Default for DefaultReporter {
+    fn default() -> Self {
         Self {
             err: Arc::new(ConsoleBuffer::empty(ConsoleStream::Stderr)),
             out: Arc::new(ConsoleBuffer::empty(ConsoleStream::Stdout)),
         }
     }
+}
 
+impl DefaultReporter {
     pub fn print_task_checkpoint(
         &self,
         target: &Target,

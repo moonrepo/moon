@@ -243,7 +243,7 @@ impl Moonbase {
         // Create the database record then upload to cloud storage
         let Ok((_, presigned_url)) = self
             .write_artifact(
-                &hash,
+                hash,
                 ArtifactWriteInput {
                     target: target_id.to_owned(),
                     size: size as usize,
@@ -315,11 +315,11 @@ impl Moonbase {
                 let status = response.status();
 
                 if status.is_success() {
-                    self.mark_upload_complete(&hash, true, job_id).await?;
+                    self.mark_upload_complete(hash, true, job_id).await?;
 
                     Ok(())
                 } else {
-                    self.mark_upload_complete(&hash, false, job_id).await?;
+                    self.mark_upload_complete(hash, false, job_id).await?;
 
                     Err(MoonbaseError::ArtifactUploadFailure {
                         hash: hash.to_string(),
@@ -332,7 +332,7 @@ impl Moonbase {
                 }
             }
             Err(error) => {
-                self.mark_upload_complete(&hash, false, job_id).await?;
+                self.mark_upload_complete(hash, false, job_id).await?;
 
                 Err(MoonbaseError::ArtifactUploadFailure {
                     hash: hash.to_string(),

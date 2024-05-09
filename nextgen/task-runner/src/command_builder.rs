@@ -99,16 +99,14 @@ impl<'task> CommandBuilder<'task> {
             }
         }
 
-        if context.should_inherit_args(&self.task.target) {
-            if !context.passthrough_args.is_empty() {
-                trace!(
-                    task = self.task.target.as_str(),
-                    args = ?context.passthrough_args,
-                    "Inheriting args passed through the command line"
-                );
+        if context.should_inherit_args(&self.task.target) && !context.passthrough_args.is_empty() {
+            trace!(
+                task = self.task.target.as_str(),
+                args = ?context.passthrough_args,
+                "Inheriting args passed through the command line"
+            );
 
-                self.command.args(&context.passthrough_args);
-            }
+            self.command.args(&context.passthrough_args);
         }
     }
 

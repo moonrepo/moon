@@ -12,3 +12,6 @@ publish = false
 chrono = { workspace = true }
 humantime = "2.1.0"
 miette = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,3 +1,5 @@
+#![allow(clippy::field_reassign_with_default)]
+
 mod utils;
 
 use moon_action::ActionNode;
@@ -13,7 +15,7 @@ use starbase_sandbox::{create_sandbox, Sandbox};
 use std::ffi::OsString;
 use utils::*;
 
-fn get_env<'a, 'b>(command: &'a Command, key: &'b str) -> Option<&'a str> {
+fn get_env<'a>(command: &'a Command, key: &str) -> Option<&'a str> {
     command
         .env
         .get(&OsString::from(key))

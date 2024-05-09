@@ -28,7 +28,7 @@ impl OutputArchiverContainer {
 
         OutputArchiver {
             project_config: &self.project.config,
-            task: &task,
+            task,
             workspace: &self.workspace,
         }
     }

@@ -25,7 +25,7 @@ pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
     states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
 
     let mut console = Console::new(quiet);
-    console.set_reporter(DefaultReporter::new());
+    console.set_reporter(DefaultReporter::default());
 
     resources.set(console);
 }

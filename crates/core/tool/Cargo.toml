@@ -16,3 +16,6 @@ rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 warpgate = { workspace = true }
+
+[lints]
+workspace = true

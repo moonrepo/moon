@@ -16,3 +16,6 @@ moon_console = { path = "../console" }
 moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
+
+[lints]
+workspace = true

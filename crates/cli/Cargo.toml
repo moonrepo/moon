@@ -101,3 +101,6 @@ moon_test_utils = { path = "../core/test-utils" }
 httpmock = "0.7.0"
 serial_test = "3.0.0"
 starbase_archive = { workspace = true }
+
+[lints]
+workspace = true

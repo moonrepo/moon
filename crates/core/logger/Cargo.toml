@@ -8,3 +8,6 @@ publish = false
 console = { workspace = true }
 log = "0.4.21"
 starbase_styles = { workspace = true }
+
+[lints]
+workspace = true

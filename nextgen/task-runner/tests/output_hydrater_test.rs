@@ -47,7 +47,7 @@ impl OutputHydraterContainer {
         let task = self.project.get_task(task_id).unwrap();
 
         OutputHydrater {
-            task: &task,
+            task,
             workspace: &self.workspace,
         }
     }

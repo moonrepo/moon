@@ -17,16 +17,13 @@ impl Subscriber for LocalCacheSubscriber {
         event: &Event<'e>,
         workspace: &Workspace,
     ) -> miette::Result<EventFlow> {
-        match event {
-            // After the run has finished, clean any stale archives.
-            Event::PipelineFinished { .. } => {
-                if workspace.config.runner.auto_clean_cache {
-                    workspace
-                        .cache_engine
-                        .clean_stale_cache(&workspace.config.runner.cache_lifetime, false)?;
-                }
+        // After the run has finished, clean any stale archives.
+        if let Event::PipelineFinished { .. } = event {
+            if workspace.config.runner.auto_clean_cache {
+                workspace
+                    .cache_engine
+                    .clean_stale_cache(&workspace.config.runner.cache_lifetime, false)?;
             }
-            _ => {}
         }
 
         Ok(EventFlow::Continue)

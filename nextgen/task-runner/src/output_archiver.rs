@@ -128,7 +128,7 @@ impl<'task> OutputArchiver<'task> {
         );
 
         // Create the archiver instance based on task outputs
-        let mut archive = Archiver::new(&self.workspace.root, &archive_file);
+        let mut archive = Archiver::new(&self.workspace.root, archive_file);
 
         for output_file in &self.task.output_files {
             archive.add_source_file(output_file.as_str(), None);

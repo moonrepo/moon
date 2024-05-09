@@ -236,7 +236,7 @@ impl<'task> TaskRunner<'task> {
             }
         }
 
-        return Ok(true);
+        Ok(true)
     }
 
     async fn generate_hash(&mut self, context: &ActionContext) -> miette::Result<String> {
@@ -334,18 +334,13 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Build the command from the current task
-        let command = CommandBuilder::new(&self.workspace, &self.project, &self.task, &self.node)
+        let command = CommandBuilder::new(self.workspace, self.project, self.task, self.node)
             .build(context)
             .await?;
 
         // Execute the command and gather all attempts made
-        let executor = CommandExecutor::new(
-            &self.workspace,
-            &self.project,
-            &self.task,
-            &self.node,
-            command,
-        );
+        let executor =
+            CommandExecutor::new(self.workspace, self.project, self.task, self.node, command);
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mutex = context.get_or_create_mutex(mutex_name);
@@ -415,8 +410,10 @@ impl<'task> TaskRunner<'task> {
         // Update the state and print the output
         let attempts = vec![attempt];
 
-        let mut state = TaskReportState::default();
-        state.hash = Some(hash.to_owned());
+        let state = TaskReportState {
+            hash: Some(hash.to_owned()),
+            ..Default::default()
+        };
 
         console
             .reporter
@@ -429,7 +426,7 @@ impl<'task> TaskRunner<'task> {
 
     async fn archive(&mut self, hash: &str, attempts: &[Attempt]) -> miette::Result<()> {
         if self.is_cache_enabled() {
-            self.archiver.archive(&hash).await?;
+            self.archiver.archive(hash).await?;
         }
 
         if let Some(last_attempt) = attempts.last() {

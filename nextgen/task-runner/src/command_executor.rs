@@ -227,7 +227,7 @@ impl<'task> CommandExecutor<'task> {
             attempt_total: self.attempt_total,
             hash: None,
             output_streamed: self.stream,
-            output_style: self.task.options.output_style.clone(),
+            output_style: self.task.options.output_style,
         }
     }
 

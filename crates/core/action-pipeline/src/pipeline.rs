@@ -27,6 +27,8 @@ const LOG_TARGET: &str = "moon:action-pipeline";
 pub type ActionResults = Vec<Action>;
 
 pub struct Pipeline {
+    aborted: bool,
+
     bail: bool,
 
     concurrency: Option<usize>,
@@ -43,6 +45,7 @@ pub struct Pipeline {
 impl Pipeline {
     pub fn new(workspace: Workspace, project_graph: ProjectGraph) -> Self {
         Pipeline {
+            aborted: false,
             bail: false,
             concurrency: None,
             duration: None,
@@ -73,6 +76,34 @@ impl Pipeline {
         console: Arc<Console>,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
+        let result = self
+            .run_internal(action_graph, console.clone(), context)
+            .await;
+
+        match result {
+            Ok(actions) => {
+                console.reporter.on_pipeline_completed(None)?;
+
+                Ok(actions)
+            }
+            Err(error) => {
+                if self.aborted {
+                    console.reporter.on_pipeline_aborted(Some(&error))?;
+                } else {
+                    console.reporter.on_pipeline_completed(Some(&error))?;
+                }
+
+                Err(error)
+            }
+        }
+    }
+
+    pub async fn run_internal(
+        &mut self,
+        action_graph: ActionGraph,
+        console: Arc<Console>,
+        context: Option<ActionContext>,
+    ) -> miette::Result<ActionResults> {
         let start = Instant::now();
         let context = Arc::new(context.unwrap_or_default());
         let emitter = Arc::new(create_emitter(Arc::clone(&self.workspace)).await);
@@ -93,6 +124,8 @@ impl Pipeline {
                 context: &context,
             })
             .await?;
+
+        console.reporter.on_pipeline_started()?;
 
         // Launch a separate thread to listen for ctrl+c
         let cancel_token = CancellationToken::new();
@@ -301,7 +334,7 @@ impl Pipeline {
     }
 
     async fn run_handles(
-        &self,
+        &mut self,
         handles: Vec<JoinHandle<miette::Result<Action>>>,
         results: &mut ActionResults,
         emitter: &Emitter,
@@ -336,6 +369,8 @@ impl Pipeline {
         }
 
         if let Some(abort_error) = abort_error {
+            self.aborted = true;
+
             if show_abort_log {
                 error!("Encountered a critical error, aborting the action pipeline");
             }

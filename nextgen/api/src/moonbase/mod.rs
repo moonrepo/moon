@@ -159,22 +159,24 @@ impl Moonbase {
         hash: &str,
         dest_path: &Path,
     ) -> miette::Result<()> {
-        if self.remote_caching_enabled {
-            if let Some(download_url) = self.download_urls.read().await.get(hash) {
-                debug!(
+        if !self.remote_caching_enabled {
+            return Ok(());
+        }
+
+        if let Some(download_url) = self.download_urls.read().await.get(hash) {
+            debug!(
+                hash,
+                archive_file = ?dest_path,
+                "Downloading archive (artifact) from remote storage",
+            );
+
+            if let Err(error) = self.download_artifact(hash, dest_path, download_url).await {
+                warn!(
                     hash,
                     archive_file = ?dest_path,
-                    "Downloading archive (artifact) from remote storage",
+                    "Failed to download archive from remote storage: {}",
+                    color::muted_light(error.to_string()),
                 );
-
-                if let Err(error) = self.download_artifact(hash, dest_path, download_url).await {
-                    warn!(
-                        hash,
-                        archive_file = ?dest_path,
-                        "Failed to download archive from remote storage: {}",
-                        color::muted_light(error.to_string()),
-                    );
-                }
             }
         }
 

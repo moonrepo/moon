@@ -123,7 +123,7 @@ impl Task {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
                     debug!(
-                        target = self.target.as_str(),
+                        task = self.target.as_str(),
                         env_key = var_name,
                         env_val = var,
                         "Affected by environment variable",
@@ -139,7 +139,7 @@ impl Task {
         for file in touched_files {
             if self.input_files.contains(file) {
                 debug!(
-                    target = self.target.as_str(),
+                    task = self.target.as_str(),
                     input = ?file,
                     "Affected by input file",
                 );
@@ -149,7 +149,7 @@ impl Task {
 
             if globset.matches(file.as_str()) {
                 debug!(
-                    target = self.target.as_str(),
+                    task = self.target.as_str(),
                     input = ?file,
                     "Affected by input glob",
                 );
@@ -158,10 +158,7 @@ impl Task {
             }
         }
 
-        debug!(
-            target = self.target.as_str(),
-            "Not affected by touched files"
-        );
+        debug!(task = self.target.as_str(), "Not affected by touched files");
 
         Ok(false)
     }

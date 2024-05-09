@@ -42,6 +42,8 @@ pub async fn process_action(
         })
         .await?;
 
+    console.reporter.on_action_started(&action)?;
+
     let result = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
 
@@ -181,7 +183,7 @@ pub async fn process_action(
                 context,
                 Arc::clone(&emitter),
                 workspace,
-                console,
+                Arc::clone(&console),
                 &project,
                 &inner.target,
                 &inner.runtime,
@@ -204,8 +206,16 @@ pub async fn process_action(
     match result {
         Ok(status) => {
             action.finish(status);
+
+            console.reporter.on_action_completed(&action, None)?;
         }
         Err(error) => {
+            action.finish(ActionStatus::Failed);
+
+            console
+                .reporter
+                .on_action_completed(&action, Some(&error))?;
+
             action.fail(error);
         }
     };

@@ -96,7 +96,6 @@ impl Action {
     pub fn fail(&mut self, error: miette::Report) {
         self.error = Some(error.to_string());
         self.error_report = Some(error);
-        self.finish(ActionStatus::Failed);
     }
 
     pub fn has_failed(&self) -> bool {

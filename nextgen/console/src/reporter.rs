@@ -24,7 +24,7 @@ pub trait Reporter: Send + Sync {
         Ok(())
     }
 
-    fn on_pipeline_completeed(&self, _error: Option<&Report>) -> miette::Result<()> {
+    fn on_pipeline_completed(&self, _error: Option<&Report>) -> miette::Result<()> {
         Ok(())
     }
 

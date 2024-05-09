@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use moon_action::{ActionNode, RunTaskNode};
 use moon_platform::Runtime;
 use moon_task::Task;

@@ -1,6 +1,7 @@
+// Public for tests
 pub mod command_builder;
 mod command_executor;
-mod output_archiver;
+pub mod output_archiver;
 mod output_hydrater;
 mod run_state;
 mod task_runner;

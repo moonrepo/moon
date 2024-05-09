@@ -20,11 +20,15 @@ pub struct OutputHydrater<'task> {
 }
 
 impl<'task> OutputHydrater<'task> {
-    pub async fn hydrate(&self, hash: &str, from: HydrateFrom) -> miette::Result<()> {
+    pub async fn hydrate(&self, hash: &str, from: HydrateFrom) -> miette::Result<bool> {
+        if hash.is_empty() {
+            return Ok(false);
+        }
+
         // Only hydrate when the hash is different from the previous build,
         // as we can assume the outputs from the previous build still exist?
-        if hash.is_empty() || matches!(from, HydrateFrom::PreviousOutput) {
-            return Ok(());
+        if matches!(from, HydrateFrom::PreviousOutput) {
+            return Ok(true);
         }
 
         let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
@@ -44,6 +48,8 @@ impl<'task> OutputHydrater<'task> {
             // Otherwise hydrate the cached archive into the task's outputs
             if archive_file.exists() {
                 self.unpack_local_archive(hash, &archive_file)?;
+
+                return Ok(true);
             }
         } else {
             debug!(
@@ -52,7 +58,7 @@ impl<'task> OutputHydrater<'task> {
             );
         }
 
-        Ok(())
+        Ok(false)
     }
 
     pub fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {

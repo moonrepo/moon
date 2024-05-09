@@ -53,7 +53,7 @@ async fn generate_container() -> (Sandbox, OutputArchiverContainer) {
 mod output_archiver {
     use super::*;
 
-    mod archive {
+    mod pack {
         use super::*;
 
         #[tokio::test]

@@ -5,6 +5,7 @@ use moon_task::Target;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_test_utils2::{generate_project_graph_from_sandbox, ProjectGraph};
 use moon_workspace::Workspace;
+use starbase_archive::Archiver;
 use starbase_sandbox::{create_sandbox, Sandbox};
 use std::env;
 use std::fs;
@@ -136,15 +137,58 @@ mod output_archiver {
             env::remove_var("MOON_CACHE");
         }
 
-        // TODO
         #[tokio::test]
-        async fn inclueds_input_files_in_archive() {
+        async fn includes_input_files_in_archive() {
             let (sandbox, container) = generate_container().await;
             sandbox.create_file("project/file.txt", "");
 
             let archiver = container.build("file-outputs");
-
             let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/file.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn includes_input_globs_in_archive() {
+            let (sandbox, container) = generate_container().await;
+            sandbox.create_file("project/one.txt", "");
+            sandbox.create_file("project/two.txt", "");
+            sandbox.create_file("project/three.txt", "");
+
+            let archiver = container.build("glob-outputs");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/one.txt").exists());
+            assert!(dir.join("project/two.txt").exists());
+            assert!(dir.join("project/three.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn includes_std_logs_in_archive() {
+            let (sandbox, container) = generate_container().await;
+            sandbox.create_file(".moon/cache/states/project/file-outputs/stdout.log", "out");
+            sandbox.create_file(".moon/cache/states/project/file-outputs/stderr.log", "err");
+            sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.build("file-outputs");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            let err = dir.join(".moon/cache/states/project/file-outputs/stderr.log");
+            let out = dir.join(".moon/cache/states/project/file-outputs/stdout.log");
+
+            assert!(err.exists());
+            assert!(out.exists());
+            assert_eq!(fs::read_to_string(err).unwrap(), "err");
+            assert_eq!(fs::read_to_string(out).unwrap(), "out");
         }
     }
 

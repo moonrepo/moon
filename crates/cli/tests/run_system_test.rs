@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use moon_common::Id;
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
-use moon_runner::RunTargetState;
+use moon_task_runner::RunTaskState;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
@@ -312,7 +312,7 @@ mod unix {
 
             assert!(cache_path.exists());
 
-            let state: RunTargetState = json::read_file(cache_path).unwrap();
+            let state: RunTaskState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()

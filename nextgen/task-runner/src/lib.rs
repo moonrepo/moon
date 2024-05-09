@@ -7,5 +7,6 @@ mod run_state;
 mod task_runner;
 mod task_runner_error;
 
+pub use run_state::*;
 pub use task_runner::*;
 pub use task_runner_error::*;

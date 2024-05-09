@@ -96,7 +96,7 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_cache = { path = "../../nextgen/cache" }
 moon_notifier = { path = "../core/notifier" }
-moon_runner = { path = "../core/runner" }
+moon_task_runner = { path = "../../nextgen/task-runner" }
 moon_test_utils = { path = "../core/test-utils" }
 httpmock = "0.7.0"
 serial_test = "3.0.0"

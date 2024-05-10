@@ -100,6 +100,11 @@ impl Attempt {
         )
     }
 
+    pub fn has_output(&self) -> bool {
+        self.stderr.as_ref().is_some_and(|err| !err.is_empty())
+            || self.stdout.as_ref().is_some_and(|out| !out.is_empty())
+    }
+
     pub fn is_cached(&self) -> bool {
         matches!(
             &self.status,

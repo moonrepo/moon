@@ -18,6 +18,19 @@
   `target-output.archived`, `target-output.hydrating`, `target-output.hydrated`,
   `target-output.cache-check`.
 
+#### 🚀 Updates
+
+- Added a `--summary` flag to `moon run` and `moon check` that will include a summary of all actions
+  that were processed/failed within the pipeline. This is the same output used in `moon ci`.
+- Added a new console reporting layer, that handles the rendering of output in the terminal.
+  - This enables us to support additional reporters in the future, each with unique UIs.
+  - Slightly tweaked our current UI rendering. You may notice some differences.
+
+#### 🐞 Fixes
+
+- Fixed an issue where actions within the run report were not reflecting the correct status of their
+  last execution attempt.
+
 #### ⚙️ Internal
 
 - Greatly reduced the amount of concurrent locks being held during task execution. May see slight

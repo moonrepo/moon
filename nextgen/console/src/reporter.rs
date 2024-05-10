@@ -7,13 +7,13 @@ use moon_target::Target;
 use std::sync::Arc;
 use std::time::Duration;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct PipelineReportState {
-    pub compact: bool,
     pub duration: Option<Duration>,
+    pub summarize: bool,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct TaskReportState {
     pub attempt_current: u8,
     pub attempt_total: u8,

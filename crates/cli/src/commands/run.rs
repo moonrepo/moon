@@ -45,6 +45,13 @@ pub struct RunArgs {
     pub query: Option<String>,
 
     #[arg(
+        long,
+        short = 's',
+        help = "Include a summary of all actions that were processed in the pipeline"
+    )]
+    pub summary: bool,
+
+    #[arg(
         short = 'u',
         long = "updateCache",
         help = "Bypass cache and force update any existing items"
@@ -220,6 +227,7 @@ pub async fn run_target(
 
     pipeline
         .bail_on_error()
+        .summarize(args.summary || is_ci())
         .generate_report("runReport.json")
         .run(action_graph, Arc::new(console.to_owned()), Some(context))
         .await?;

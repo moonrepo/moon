@@ -9,6 +9,7 @@ const MUTED_COLORS: [u8; 4] = [240, 242, 244, 246];
 const SETUP_COLORS: [u8; 4] = [198, 205, 212, 219];
 const ANNOUNCEMENT_COLORS: [u8; 4] = [35, 42, 49, 86];
 
+#[derive(Clone, Copy)]
 pub enum Checkpoint {
     Announcement,
     RunFailed,

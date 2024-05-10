@@ -40,6 +40,8 @@ pub struct Pipeline {
 
     results: Vec<Action>,
 
+    summarize: bool,
+
     workspace: Arc<Workspace>,
 }
 
@@ -53,6 +55,7 @@ impl Pipeline {
             project_graph: Arc::new(project_graph),
             report_name: None,
             results: vec![],
+            summarize: false,
             workspace: Arc::new(workspace),
         }
     }
@@ -64,6 +67,11 @@ impl Pipeline {
 
     pub fn concurrency(&mut self, value: usize) -> &Self {
         self.concurrency = Some(value);
+        self
+    }
+
+    pub fn summarize(&mut self, value: bool) -> &mut Self {
+        self.summarize = value;
         self
     }
 
@@ -85,8 +93,8 @@ impl Pipeline {
         let actions = mem::take(&mut self.results);
 
         let state = PipelineReportState {
-            compact: false,
             duration: self.duration,
+            summarize: self.summarize,
         };
 
         match result {

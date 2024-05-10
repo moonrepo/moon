@@ -95,6 +95,10 @@ impl DefaultReporter {
             comments,
         )?;
 
+        // if !matches!(checkpoint, Checkpoint::RunStarted) {
+        //     self.out.write_newline()?;
+        // }
+
         Ok(())
     }
 
@@ -152,22 +156,14 @@ impl DefaultReporter {
                 continue;
             }
 
-            self.out.print_checkpoint(
-                Checkpoint::RunFailed,
-                match &*action.node {
-                    ActionNode::RunTask(inner) => inner.target.as_str(),
-                    _ => &action.label,
-                },
-            )?;
-
             if let Some(attempts) = &action.attempts {
-                if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
+                if let Some(attempt) = attempts.iter().rfind(|attempt| attempt.has_failed()) {
                     let mut has_stdout = false;
 
                     if let Some(stdout) = &attempt.stdout {
                         if !stdout.is_empty() {
                             has_stdout = true;
-                            self.out.write_line(stdout.as_bytes())?;
+                            self.out.write_line(stdout.trim())?;
                         }
                     }
 
@@ -177,11 +173,19 @@ impl DefaultReporter {
                         }
 
                         if !stderr.is_empty() {
-                            self.out.write_line(stderr.as_bytes())?;
+                            self.out.write_line(stderr.trim())?;
                         }
                     }
                 }
             }
+
+            self.out.print_checkpoint(
+                Checkpoint::RunFailed,
+                match &*action.node {
+                    ActionNode::RunTask(inner) => inner.target.as_str(),
+                    _ => &action.label,
+                },
+            )?;
 
             self.out.write_newline()?;
         }
@@ -201,7 +205,7 @@ impl DefaultReporter {
         let mut skipped_count = 0;
 
         for action in actions {
-            if state.compact && !matches!(*action.node, ActionNode::RunTask { .. }) {
+            if !state.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
                 continue;
             }
 
@@ -259,12 +263,12 @@ impl DefaultReporter {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 
-        if state.compact {
-            self.out.print_entry("Tasks", &counts_message)?;
-            self.out.print_entry(" Time", &elapsed_time)?;
-        } else {
+        if state.summarize {
             self.out.print_entry("Actions", &counts_message)?;
             self.out.print_entry("   Time", &elapsed_time)?;
+        } else {
+            self.out.print_entry("Tasks", &counts_message)?;
+            self.out.print_entry(" Time", &elapsed_time)?;
         }
 
         Ok(())
@@ -283,10 +287,14 @@ impl DefaultReporter {
 
             let mut meta: Vec<String> = vec![];
 
-            if let Some(status_comment) =
-                self.get_status_meta_comment(action.status, || action.duration.map(time::elapsed))
-            {
+            if let Some(status_comment) = self.get_status_meta_comment(action.status, || None) {
                 meta.push(status_comment);
+            }
+
+            if let Some(duration) = action.duration {
+                if let Some(elapsed) = time::elapsed_opt(duration) {
+                    meta.push(elapsed);
+                }
             }
 
             if let Some(hash) = &action.hash {
@@ -321,8 +329,8 @@ impl Reporter for DefaultReporter {
             return Ok(());
         }
 
-        // If compact, only show stats. This is typically for local!
-        if state.compact {
+        // If no summary, only show stats. This is typically for local!
+        if !state.summarize {
             self.out.write_newline()?;
             self.print_pipeline_stats(actions, state)?;
             self.out.write_newline()?;
@@ -330,10 +338,8 @@ impl Reporter for DefaultReporter {
             return Ok(());
         }
 
-        let failed_count = actions.iter().any(|action| action.has_failed());
-
         // Otherwise, show all the information we can.
-        if failed_count {
+        if actions.iter().any(|action| action.has_failed()) {
             self.out.print_header("Review")?;
             self.print_pipeline_failures(actions)?;
         }
@@ -379,9 +385,9 @@ impl Reporter for DefaultReporter {
         state: &TaskReportState,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        // Task was either cached or captured, so there was no output
-        // sent to the console, so manually print the logs we have
-        if attempt.is_cached() || !state.output_streamed {
+        // Task output was captured, so there was no output
+        // sent to the console, so manually print the logs we have!
+        if !state.output_streamed && attempt.has_output() {
             self.print_attempt_output(attempt, state)?;
         }
 
@@ -397,6 +403,16 @@ impl Reporter for DefaultReporter {
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
         if let Some(attempt) = attempts.last() {
+            // If cached, the finished event above is not fired,
+            // so handle printing the captured logs here!
+            if attempt.is_cached() && attempt.has_output() {
+                self.out.write_newline()?;
+                self.print_attempt_output(attempt, state)?;
+            }
+
+            // Then print the success checkpoint. The success
+            // checkpoint should always appear after the output,
+            // and "contain" it within the start checkpoint!
             self.print_task_checkpoint(target, attempt, state)?;
         }
 

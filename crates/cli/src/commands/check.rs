@@ -22,6 +22,13 @@ pub struct CheckArgs {
     all: bool,
 
     #[arg(
+        long,
+        short = 's',
+        help = "Include a summary of all actions that were processed in the pipeline"
+    )]
+    pub summary: bool,
+
+    #[arg(
         short = 'u',
         long = "updateCache",
         help = "Bypass cache and force update any existing items"
@@ -77,6 +84,7 @@ pub async fn check(
     run_target(
         &targets,
         &RunArgs {
+            summary: args.summary,
             update_cache: args.update_cache,
             ..RunArgs::default()
         },

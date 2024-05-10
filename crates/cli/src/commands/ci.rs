@@ -287,6 +287,7 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     }
 
     let results = pipeline
+        .summarize(true)
         .generate_report("ciReport.json")
         .run(
             action_graph,

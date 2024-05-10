@@ -12,6 +12,12 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Removed the following webhook events associated with task outputs: `target-output.archiving`,
+  `target-output.archived`, `target-output.hydrating`, `target-output.hydrated`,
+  `target-output.cache-check`.
+
 #### ⚙️ Internal
 
 - Greatly reduced the amount of concurrent locks being held during task execution. May see slight

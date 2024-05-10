@@ -7,7 +7,7 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Checkpoint, Console, PipelineReportState};
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
@@ -39,6 +39,8 @@ pub struct Pipeline {
 
     report_name: Option<String>,
 
+    results: Vec<Action>,
+
     workspace: Arc<Workspace>,
 }
 
@@ -51,6 +53,7 @@ impl Pipeline {
             duration: None,
             project_graph: Arc::new(project_graph),
             report_name: None,
+            results: vec![],
             workspace: Arc::new(workspace),
         }
     }
@@ -80,17 +83,29 @@ impl Pipeline {
             .run_internal(action_graph, console.clone(), context)
             .await;
 
+        let actions = mem::take(&mut self.results);
+
+        let state = PipelineReportState {
+            duration: self.duration,
+        };
+
         match result {
-            Ok(actions) => {
-                console.reporter.on_pipeline_completed(None)?;
+            Ok(_) => {
+                console
+                    .reporter
+                    .on_pipeline_completed(&actions, &state, None)?;
 
                 Ok(actions)
             }
             Err(error) => {
                 if self.aborted {
-                    console.reporter.on_pipeline_aborted(Some(&error))?;
+                    console
+                        .reporter
+                        .on_pipeline_aborted(&actions, &state, Some(&error))?;
                 } else {
-                    console.reporter.on_pipeline_completed(Some(&error))?;
+                    console
+                        .reporter
+                        .on_pipeline_completed(&actions, &state, Some(&error))?;
                 }
 
                 Err(error)
@@ -103,7 +118,7 @@ impl Pipeline {
         action_graph: ActionGraph,
         console: Arc<Console>,
         context: Option<ActionContext>,
-    ) -> miette::Result<ActionResults> {
+    ) -> miette::Result<()> {
         let start = Instant::now();
         let context = Arc::new(context.unwrap_or_default());
         let emitter = Arc::new(create_emitter(Arc::clone(&self.workspace)).await);
@@ -125,7 +140,9 @@ impl Pipeline {
             })
             .await?;
 
-        console.reporter.on_pipeline_started()?;
+        console
+            .reporter
+            .on_pipeline_started(&action_graph.get_nodes())?;
 
         // Launch a separate thread to listen for ctrl+c
         let cancel_token = CancellationToken::new();
@@ -142,7 +159,6 @@ impl Pipeline {
             self.concurrency.unwrap_or_else(num_cpus::get),
         ));
 
-        let mut results: ActionResults = vec![];
         let mut action_handles = vec![];
         let mut persistent_nodes = vec![];
         let mut action_graph_iter = action_graph.try_iter()?;
@@ -153,7 +169,7 @@ impl Pipeline {
             let Some(node_index) = action_graph_iter.next() else {
                 // Nothing new to run since they're waiting on currently
                 // running actions, so exhaust the current list
-                self.run_handles(mem::take(&mut action_handles), &mut results, &emitter)
+                self.run_handles(mem::take(&mut action_handles), &emitter)
                     .await?;
 
                 continue;
@@ -229,7 +245,7 @@ impl Pipeline {
 
             // Run this in isolation by exhausting the current list of handles
             if node.is_interactive() || semaphore.available_permits() == 0 {
-                self.run_handles(mem::take(&mut action_handles), &mut results, &emitter)
+                self.run_handles(mem::take(&mut action_handles), &emitter)
                     .await?;
             }
         }
@@ -290,17 +306,16 @@ impl Pipeline {
         }
 
         // Run any remaining actions
-        self.run_handles(action_handles, &mut results, &emitter)
-            .await?;
+        self.run_handles(action_handles, &emitter).await?;
 
         let duration = start.elapsed();
-        let estimate = Estimator::calculate(&results, duration);
+        let estimate = Estimator::calculate(&self.results, duration);
         let context = Arc::into_inner(context).unwrap();
         let mut passed_count = 0;
         let mut cached_count = 0;
         let mut failed_count = 0;
 
-        for result in &results {
+        for result in &self.results {
             if result.has_failed() {
                 failed_count += 1;
             } else if result.was_cached() {
@@ -328,15 +343,15 @@ impl Pipeline {
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, &context, estimate).await?;
+        self.create_run_report(&self.results, &context, estimate)
+            .await?;
 
-        Ok(results)
+        Ok(())
     }
 
     async fn run_handles(
         &mut self,
         handles: Vec<JoinHandle<miette::Result<Action>>>,
-        results: &mut ActionResults,
         emitter: &Emitter,
     ) -> miette::Result<()> {
         let mut abort_error: Option<miette::Report> = None;
@@ -355,7 +370,7 @@ impl Pipeline {
                         if self.bail && result.should_bail() || result.should_abort() {
                             abort_error = Some(result.get_error());
                         } else {
-                            results.push(result);
+                            self.results.push(result);
                         }
                     }
                     Ok(Err(error)) => {

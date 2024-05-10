@@ -1,10 +1,16 @@
 use crate::buffer::ConsoleBuffer;
 use crate::console::ConsoleTheme;
 use miette::Error as Report;
-use moon_action::{Action, Attempt};
+use moon_action::{Action, ActionNode, Attempt};
 use moon_config::TaskOutputStyle;
 use moon_target::Target;
 use std::sync::Arc;
+use std::time::Duration;
+
+#[derive(Default)]
+pub struct PipelineReportState {
+    pub duration: Option<Duration>,
+}
 
 #[derive(Default)]
 pub struct TaskReportState {
@@ -20,15 +26,25 @@ pub trait Reporter: Send + Sync {
 
     fn inherit_theme(&mut self, _theme: Arc<ConsoleTheme>) {}
 
-    fn on_pipeline_started(&self) -> miette::Result<()> {
+    fn on_pipeline_started(&self, _nodes: &[&ActionNode]) -> miette::Result<()> {
         Ok(())
     }
 
-    fn on_pipeline_completed(&self, _error: Option<&Report>) -> miette::Result<()> {
+    fn on_pipeline_completed(
+        &self,
+        _actions: &[Action],
+        _state: &PipelineReportState,
+        _error: Option<&Report>,
+    ) -> miette::Result<()> {
         Ok(())
     }
 
-    fn on_pipeline_aborted(&self, _error: Option<&Report>) -> miette::Result<()> {
+    fn on_pipeline_aborted(
+        &self,
+        _actions: &[Action],
+        _state: &PipelineReportState,
+        _error: Option<&Report>,
+    ) -> miette::Result<()> {
         Ok(())
     }
 

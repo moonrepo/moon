@@ -3,9 +3,8 @@ use moon_action_context::ActionContext;
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
 use moon_target::Target;
-use moon_task::Task;
 use serde::Serialize;
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 #[derive(Serialize)]
 #[serde(untagged, rename_all = "camelCase")]
@@ -77,38 +76,6 @@ pub enum Event<'e> {
         error: Option<String>,
         target: &'e Target,
     },
-    TargetOutputArchiving {
-        hash: &'e str,
-        project: &'e Project,
-        target: &'e Target,
-        task: &'e Task,
-    },
-    #[serde(rename_all = "camelCase")]
-    TargetOutputArchived {
-        archive_path: PathBuf,
-        hash: &'e str,
-        project: &'e Project,
-        target: &'e Target,
-        task: &'e Task,
-    },
-    TargetOutputHydrating {
-        hash: &'e str,
-        project: &'e Project,
-        target: &'e Target,
-        task: &'e Task,
-    },
-    #[serde(rename_all = "camelCase")]
-    TargetOutputHydrated {
-        archive_path: PathBuf,
-        hash: &'e str,
-        project: &'e Project,
-        target: &'e Target,
-        task: &'e Task,
-    },
-    TargetOutputCacheCheck {
-        hash: &'e str,
-        target: &'e Target,
-    },
 
     // Installing a tool
     ToolInstalling {
@@ -134,11 +101,6 @@ impl<'e> Event<'e> {
             Event::PipelineFinished { .. } => "pipeline.finished",
             Event::TargetRunning { .. } => "target.running",
             Event::TargetRan { .. } => "target.ran",
-            Event::TargetOutputArchiving { .. } => "target-output.archiving",
-            Event::TargetOutputArchived { .. } => "target-output.archived",
-            Event::TargetOutputHydrating { .. } => "target-output.hydrating",
-            Event::TargetOutputHydrated { .. } => "target-output.hydrated",
-            Event::TargetOutputCacheCheck { .. } => "target-output.cache-check",
             Event::ToolInstalling { .. } => "tool.installing",
             Event::ToolInstalled { .. } => "tool.installed",
             Event::WorkspaceSyncing => "workspace.syncing",

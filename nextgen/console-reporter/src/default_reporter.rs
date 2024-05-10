@@ -1,7 +1,8 @@
-use moon_action::{ActionStatus, Attempt, AttemptType};
-use moon_common::is_test_env;
+use moon_action::{Action, ActionNode, ActionStatus, Attempt, AttemptType};
+use moon_common::color::paint;
+use moon_common::{color, is_test_env};
 use moon_config::TaskOutputStyle;
-use moon_console::{Checkpoint, ConsoleBuffer, ConsoleStream, Reporter, TaskReportState};
+use moon_console::*;
 use moon_target::Target;
 use moon_time as time;
 use std::sync::Arc;
@@ -21,7 +22,24 @@ impl Default for DefaultReporter {
 }
 
 impl DefaultReporter {
-    pub fn print_task_checkpoint(
+    fn get_status_meta_comment(
+        &self,
+        status: ActionStatus,
+        fallback: impl Fn() -> Option<String>,
+    ) -> Option<String> {
+        match status {
+            ActionStatus::Cached => Some("cached".into()),
+            ActionStatus::CachedFromRemote => Some("cached from remote".into()),
+            ActionStatus::Skipped => Some("skipped".into()),
+            _ => fallback(),
+        }
+    }
+
+    fn get_short_hash(&self, hash: &str) -> String {
+        hash[0..8].to_owned()
+    }
+
+    fn print_task_checkpoint(
         &self,
         target: &Target,
         attempt: &Attempt,
@@ -33,25 +51,22 @@ impl DefaultReporter {
             AttemptType::NoOperation => {
                 comments.push("no op".into());
             }
-            _ => match attempt.status {
-                ActionStatus::Cached => {
-                    comments.push("cached".into());
-                }
-                ActionStatus::CachedFromRemote => {
-                    comments.push("cached from remote".into());
-                }
-                ActionStatus::Skipped => {
-                    comments.push("skipped".into());
-                }
-                _ => {
+            _ => {
+                let status_comment = self.get_status_meta_comment(attempt.status, || {
                     if state.attempt_current > 1 {
-                        comments.push(format!(
+                        Some(format!(
                             "attempt {}/{}",
                             state.attempt_current, state.attempt_total
-                        ));
+                        ))
+                    } else {
+                        None
                     }
+                });
+
+                if let Some(comment) = status_comment {
+                    comments.push(comment);
                 }
-            },
+            }
         };
 
         if let Some(duration) = attempt.duration {
@@ -64,7 +79,7 @@ impl DefaultReporter {
         // constantly changes and breaks our local snapshots
         if !is_test_env() {
             if let Some(hash) = &state.hash {
-                comments.push(hash[0..8].to_owned());
+                comments.push(self.get_short_hash(hash));
             }
         }
 
@@ -130,12 +145,207 @@ impl DefaultReporter {
 
         Ok(())
     }
+
+    fn print_pipeline_failures(&self, actions: &[Action]) -> miette::Result<()> {
+        for action in actions {
+            if !action.has_failed() {
+                continue;
+            }
+
+            self.out.print_checkpoint(
+                Checkpoint::RunFailed,
+                match &*action.node {
+                    ActionNode::RunTask(inner) => inner.target.as_str(),
+                    _ => &action.label,
+                },
+            )?;
+
+            if let Some(attempts) = &action.attempts {
+                if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
+                    let mut has_stdout = false;
+
+                    if let Some(stdout) = &attempt.stdout {
+                        if !stdout.is_empty() {
+                            has_stdout = true;
+                            self.out.write_line(stdout.as_bytes())?;
+                        }
+                    }
+
+                    if let Some(stderr) = &attempt.stderr {
+                        if has_stdout {
+                            self.out.write_newline()?;
+                        }
+
+                        if !stderr.is_empty() {
+                            self.out.write_line(stderr.as_bytes())?;
+                        }
+                    }
+                }
+            }
+
+            self.out.write_newline()?;
+        }
+
+        Ok(())
+    }
+
+    fn print_pipeline_stats(
+        &self,
+        actions: &[Action],
+        state: &PipelineReportState,
+    ) -> miette::Result<()> {
+        let mut cached_count = 0;
+        let mut pass_count = 0;
+        let mut fail_count = 0;
+        let mut invalid_count = 0;
+        let mut skipped_count = 0;
+
+        for action in actions {
+            if state.compact && !matches!(*action.node, ActionNode::RunTask { .. }) {
+                continue;
+            }
+
+            match action.status {
+                ActionStatus::Cached | ActionStatus::CachedFromRemote => {
+                    cached_count += 1;
+                    pass_count += 1;
+                }
+                ActionStatus::Passed => {
+                    pass_count += 1;
+                }
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
+                    fail_count += 1;
+                }
+                ActionStatus::Invalid => {
+                    invalid_count += 1;
+                }
+                ActionStatus::Skipped => {
+                    skipped_count += 1;
+                }
+                ActionStatus::Running => {}
+            }
+        }
+
+        let mut counts_message = vec![];
+
+        if pass_count > 0 {
+            if cached_count > 0 {
+                counts_message.push(format!(
+                    "{} {}",
+                    color::success(format!("{pass_count} completed")),
+                    color::label(format!("({cached_count} cached)"))
+                ));
+            } else {
+                counts_message.push(color::success(format!("{pass_count} completed")));
+            }
+        }
+
+        if fail_count > 0 {
+            counts_message.push(color::failure(format!("{fail_count} failed")));
+        }
+
+        if invalid_count > 0 {
+            counts_message.push(color::invalid(format!("{invalid_count} invalid")));
+        }
+
+        if skipped_count > 0 {
+            counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
+        }
+
+        let counts_message = counts_message.join(&color::muted(", "));
+        let mut elapsed_time = time::elapsed(state.duration.unwrap());
+
+        if pass_count == cached_count && fail_count == 0 {
+            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
+        }
+
+        if state.compact {
+            self.out.print_entry("Tasks", &counts_message)?;
+            self.out.print_entry(" Time", &elapsed_time)?;
+        } else {
+            self.out.print_entry("Actions", &counts_message)?;
+            self.out.print_entry("   Time", &elapsed_time)?;
+        }
+
+        Ok(())
+    }
+
+    fn print_pipeline_summary(&self, actions: &[Action]) -> miette::Result<()> {
+        for action in actions {
+            let status = match action.status {
+                ActionStatus::Passed => color::success("pass"),
+                ActionStatus::Cached | ActionStatus::CachedFromRemote => color::label("pass"),
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
+                ActionStatus::Invalid => color::invalid("warn"),
+                ActionStatus::Skipped => color::muted_light("skip"),
+                ActionStatus::Running => color::muted_light("oops"),
+            };
+
+            let mut meta: Vec<String> = vec![];
+
+            if let Some(status_comment) =
+                self.get_status_meta_comment(action.status, || action.duration.map(time::elapsed))
+            {
+                meta.push(status_comment);
+            }
+
+            if let Some(hash) = &action.hash {
+                meta.push(self.get_short_hash(hash));
+            }
+
+            self.out.write_line(format!(
+                "{} {} {}",
+                status,
+                action.label,
+                self.out.format_comments(meta),
+            ))?;
+        }
+
+        Ok(())
+    }
 }
 
 impl Reporter for DefaultReporter {
     fn inherit_streams(&mut self, err: Arc<ConsoleBuffer>, out: Arc<ConsoleBuffer>) {
         self.err = err;
         self.out = out;
+    }
+
+    fn on_pipeline_completed(
+        &self,
+        actions: &[Action],
+        state: &PipelineReportState,
+        _error: Option<&miette::Report>,
+    ) -> miette::Result<()> {
+        if self.out.is_quiet() {
+            return Ok(());
+        }
+
+        // If compact, only show stats. This is typically for local!
+        if state.compact {
+            self.out.write_newline()?;
+            self.print_pipeline_stats(actions, state)?;
+            self.out.write_newline()?;
+
+            return Ok(());
+        }
+
+        let failed_count = actions.iter().any(|action| action.has_failed());
+
+        // Otherwise, show all the information we can.
+        if failed_count {
+            self.out.print_header("Review")?;
+            self.print_pipeline_failures(actions)?;
+        }
+
+        self.out.print_header("Summary")?;
+        self.print_pipeline_summary(actions)?;
+
+        self.out.print_header("Stats")?;
+        self.print_pipeline_stats(actions, state)?;
+        self.out.write_newline()?;
+
+        Ok(())
     }
 
     // Print a checkpoint when a task execution starts, for each attempt
@@ -192,4 +402,19 @@ impl Reporter for DefaultReporter {
 
         Ok(())
     }
+}
+
+fn label_to_the_moon() -> String {
+    [
+        paint(55, "❯"),
+        paint(56, "❯❯"),
+        paint(57, "❯ t"),
+        paint(63, "o t"),
+        paint(69, "he "),
+        paint(75, "mo"),
+        paint(81, "on"),
+    ]
+    .into_iter()
+    .collect::<Vec<_>>()
+    .join("")
 }

@@ -41,6 +41,8 @@ pub struct Action {
 
     pub flaky: bool,
 
+    pub hash: Option<String>,
+
     pub label: String,
 
     pub node: Arc<ActionNode>,
@@ -66,6 +68,7 @@ impl Action {
             error_report: None,
             finished_at: None,
             flaky: false,
+            hash: None,
             label: node.label(),
             node: Arc::new(node),
             node_index: 0,
@@ -117,11 +120,14 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
-    pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {
+    pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) {
         let some_failed = attempts.iter().any(|attempt| attempt.has_failed());
         let mut passed = true;
+        let mut status = ActionStatus::Passed;
 
         if let Some(last) = attempts.last() {
+            status = last.status;
+
             if last.has_failed() {
                 let mut message = format!("Failed to run {}", color::shell(command));
 
@@ -137,8 +143,7 @@ impl Action {
 
         self.attempts = Some(attempts);
         self.flaky = some_failed && passed;
-
-        passed
+        self.status = status;
     }
 
     pub fn should_abort(&self) -> bool {

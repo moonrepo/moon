@@ -9,6 +9,7 @@ use std::time::Duration;
 
 #[derive(Default)]
 pub struct PipelineReportState {
+    pub compact: bool,
     pub duration: Option<Duration>,
 }
 

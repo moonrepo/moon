@@ -218,13 +218,11 @@ pub async fn run_target(
         pipeline.concurrency(concurrency);
     }
 
-    let results = pipeline
+    pipeline
         .bail_on_error()
         .generate_report("runReport.json")
         .run(action_graph, Arc::new(console.to_owned()), Some(context))
         .await?;
-
-    pipeline.render_stats(&results, console, true)?;
 
     Ok(())
 }

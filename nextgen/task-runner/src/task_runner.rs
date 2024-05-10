@@ -18,6 +18,11 @@ use starbase_utils::fs;
 use std::collections::BTreeMap;
 use tracing::{debug, trace};
 
+pub struct TaskRunResult {
+    pub attempts: Vec<Attempt>,
+    pub hash: Option<String>,
+}
+
 pub struct TaskRunner<'task> {
     node: &'task ActionNode,
     project: &'task Project,
@@ -64,12 +69,18 @@ impl<'task> TaskRunner<'task> {
         &mut self,
         context: &ActionContext,
         console: &Console,
-    ) -> miette::Result<Vec<Attempt>> {
+    ) -> miette::Result<TaskRunResult> {
         let target = &self.task.target;
+        let mut result = TaskRunResult {
+            attempts: vec![],
+            hash: None,
+        };
 
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
-            return self.skip(context, console);
+            result.attempts = self.skip(context, console)?;
+
+            return Ok(result);
         }
 
         // Generate a unique hash so we can check the cache
@@ -77,7 +88,10 @@ impl<'task> TaskRunner<'task> {
 
         // Exit early if this build has already been cached/hashed
         if let Some(attempts) = self.hydrate(&hash, context, console).await? {
-            return Ok(attempts);
+            result.attempts = attempts;
+            result.hash = Some(hash);
+
+            return Ok(result);
         } else {
             debug!(
                 task = self.task.target.as_str(),
@@ -96,18 +110,23 @@ impl<'task> TaskRunner<'task> {
         // If we created outputs, archive them into the cache
         self.archive(&hash, &attempts).await?;
 
-        Ok(attempts)
+        result.attempts = attempts;
+        result.hash = Some(hash);
+
+        Ok(result)
     }
 
     pub async fn run_and_persist(
         &mut self,
         context: &ActionContext,
         console: &Console,
-    ) -> miette::Result<Vec<Attempt>> {
+    ) -> miette::Result<TaskRunResult> {
         let result = self.run(context, console).await;
 
-        if let Ok(attempts) = &result {
-            if let Some(last_attempt) = attempts.last() {
+        // action.hash = Some(self.cache.data.hash.clone());
+
+        if let Ok(res) = &result {
+            if let Some(last_attempt) = res.attempts.last() {
                 let state_dir = self
                     .workspace
                     .cache_engine

@@ -4,17 +4,16 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
-use moon_action::{Action, ActionNode, ActionStatus};
+use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
-use moon_console::{Checkpoint, Console, PipelineReportState};
+use moon_console::{Console, PipelineReportState};
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_utils::{is_ci, is_test_env, time};
+use moon_utils::{is_ci, is_test_env};
 use moon_workspace::Workspace;
-use starbase_styles::color;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -86,6 +85,7 @@ impl Pipeline {
         let actions = mem::take(&mut self.results);
 
         let state = PipelineReportState {
+            compact: false,
             duration: self.duration,
         };
 
@@ -398,200 +398,6 @@ impl Pipeline {
 
             return Err(abort_error);
         }
-
-        Ok(())
-    }
-
-    pub fn render_summary(&self, results: &ActionResults, console: &Console) -> miette::Result<()> {
-        console.out.write_newline()?;
-
-        let mut count = 0;
-
-        for result in results {
-            if !result.has_failed() {
-                continue;
-            }
-
-            console.out.print_checkpoint(
-                Checkpoint::RunFailed,
-                match &*result.node {
-                    ActionNode::RunTask(inner) => inner.target.as_str(),
-                    _ => &result.label,
-                },
-            )?;
-
-            if let Some(attempts) = &result.attempts {
-                if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
-                    let mut has_stdout = false;
-
-                    if let Some(stdout) = &attempt.stdout {
-                        if !stdout.is_empty() {
-                            has_stdout = true;
-                            console.out.write_line(stdout.as_bytes())?;
-                        }
-                    }
-
-                    if let Some(stderr) = &attempt.stderr {
-                        if has_stdout {
-                            console.out.write_newline()?;
-                        }
-
-                        if !stderr.is_empty() {
-                            console.out.write_line(stderr.as_bytes())?;
-                        }
-                    }
-                }
-            }
-
-            console.out.write_newline()?;
-            count += 1;
-        }
-
-        if count == 0 {
-            console.out.write_line("No failed actions to summarize.")?;
-        }
-
-        console.out.write_newline()?;
-
-        Ok(())
-    }
-
-    pub fn render_results(
-        &self,
-        results: &ActionResults,
-        console: &Console,
-    ) -> miette::Result<bool> {
-        console.out.write_newline()?;
-
-        let mut failed = false;
-
-        for result in results {
-            let status = match result.status {
-                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::CachedFromRemote => {
-                    color::success("pass")
-                }
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    if !result.allow_failure {
-                        failed = true;
-                    }
-
-                    color::failure("fail")
-                }
-                ActionStatus::Invalid => color::invalid("warn"),
-                ActionStatus::Skipped => color::muted_light("skip"),
-                _ => color::muted_light("oops"),
-            };
-
-            let mut meta: Vec<String> = vec![];
-
-            if matches!(
-                result.status,
-                ActionStatus::Cached | ActionStatus::CachedFromRemote
-            ) {
-                meta.push(String::from("cached"));
-            } else if matches!(result.status, ActionStatus::Skipped) {
-                meta.push(String::from("skipped"));
-            } else if let Some(duration) = result.duration {
-                meta.push(time::elapsed(duration));
-            }
-
-            console.out.write_line(format!(
-                "{} {} {}",
-                status,
-                result.label,
-                console.out.format_comments(meta),
-            ))?;
-        }
-
-        console.out.write_newline()?;
-
-        Ok(failed)
-    }
-
-    pub fn render_stats(
-        &self,
-        results: &ActionResults,
-        console: &Console,
-        compact: bool,
-    ) -> miette::Result<()> {
-        if console.out.is_quiet() {
-            return Ok(());
-        }
-
-        let mut cached_count = 0;
-        let mut pass_count = 0;
-        let mut fail_count = 0;
-        let mut invalid_count = 0;
-        let mut skipped_count = 0;
-
-        for result in results {
-            if compact && !matches!(*result.node, ActionNode::RunTask { .. }) {
-                continue;
-            }
-
-            match result.status {
-                ActionStatus::Cached | ActionStatus::CachedFromRemote => {
-                    cached_count += 1;
-                    pass_count += 1;
-                }
-                ActionStatus::Passed => {
-                    pass_count += 1;
-                }
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    fail_count += 1;
-                }
-                ActionStatus::Invalid => {
-                    invalid_count += 1;
-                }
-                ActionStatus::Skipped => {
-                    skipped_count += 1;
-                }
-                _ => {}
-            }
-        }
-
-        let mut counts_message = vec![];
-
-        if pass_count > 0 {
-            if cached_count > 0 {
-                counts_message.push(color::success(format!(
-                    "{pass_count} completed ({cached_count} cached)"
-                )));
-            } else {
-                counts_message.push(color::success(format!("{pass_count} completed")));
-            }
-        }
-
-        if fail_count > 0 {
-            counts_message.push(color::failure(format!("{fail_count} failed")));
-        }
-
-        if invalid_count > 0 {
-            counts_message.push(color::invalid(format!("{invalid_count} invalid")));
-        }
-
-        if skipped_count > 0 {
-            counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
-        }
-
-        console.out.write_newline()?;
-
-        let counts_message = counts_message.join(&color::muted(", "));
-        let mut elapsed_time = time::elapsed(self.duration.unwrap());
-
-        if pass_count == cached_count && fail_count == 0 {
-            elapsed_time = format!("{} {}", elapsed_time, crate::label_to_the_moon());
-        }
-
-        if compact {
-            console.out.print_entry("Tasks", &counts_message)?;
-            console.out.print_entry(" Time", &elapsed_time)?;
-        } else {
-            console.out.print_entry("Actions", &counts_message)?;
-            console.out.print_entry("   Time", &elapsed_time)?;
-        }
-
-        console.out.write_newline()?;
 
         Ok(())
     }

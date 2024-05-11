@@ -7,7 +7,7 @@ use thiserror::Error;
 pub enum TaskRunnerError {
     #[diagnostic(code(task_runner::run_failed))]
     #[error(
-        "Task {} failed to run. Inspect the state log files for more information.",
+        "Task {} failed to run.",
         .target.style(Style::Label),
     )]
     RunFailed {

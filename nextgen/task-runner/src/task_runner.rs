@@ -9,6 +9,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_cache::CacheItem;
 use moon_console::{Console, TaskReportState};
 use moon_platform::PlatformManager;
+use moon_process::ProcessError;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
@@ -394,9 +395,22 @@ impl<'task> TaskRunner<'task> {
             },
         );
 
-        let attempts = result?;
+        // Extract the attempts from the result
+        self.attempts.extend(result?);
 
-        self.attempts.extend(attempts);
+        // If our last task execution was a failure, return a hard error
+        if let Some(last_attempt) = Attempt::get_last_failed_execution(&self.attempts) {
+            if last_attempt.has_failed() {
+                return Err(TaskRunnerError::RunFailed {
+                    target: self.task.target.to_string(),
+                    error: ProcessError::ExitNonZero {
+                        bin: self.task.command.clone(),
+                        code: last_attempt.exit_code.unwrap_or(-1),
+                    },
+                }
+                .into());
+            }
+        }
 
         Ok(())
     }

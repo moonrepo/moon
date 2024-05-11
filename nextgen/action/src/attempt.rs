@@ -86,11 +86,15 @@ impl Attempt {
     }
 
     pub fn set_stderr(&mut self, output: String) {
-        self.stderr = Some(Arc::new(output));
+        if !output.is_empty() {
+            self.stderr = Some(Arc::new(output));
+        }
     }
 
     pub fn set_stdout(&mut self, output: String) {
-        self.stdout = Some(Arc::new(output));
+        if !output.is_empty() {
+            self.stdout = Some(Arc::new(output));
+        }
     }
 
     pub fn has_failed(&self) -> bool {

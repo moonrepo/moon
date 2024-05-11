@@ -219,8 +219,6 @@ fn runs_task_with_a_mutex_in_sequence() {
 
     let stop = start.elapsed();
 
-    dbg!(&start, &stop);
-
     assert!(stop.as_millis() > 3000);
 }
 

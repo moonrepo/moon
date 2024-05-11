@@ -194,9 +194,9 @@ impl DefaultReporter {
         actions: &[Action],
         state: &PipelineReportState,
     ) -> miette::Result<()> {
+        let mut passed_count = 0;
         let mut cached_count = 0;
-        let mut pass_count = 0;
-        let mut fail_count = 0;
+        let mut failed_count = 0;
         let mut invalid_count = 0;
         let mut skipped_count = 0;
 
@@ -208,13 +208,13 @@ impl DefaultReporter {
             match action.status {
                 ActionStatus::Cached | ActionStatus::CachedFromRemote => {
                     cached_count += 1;
-                    pass_count += 1;
+                    passed_count += 1;
                 }
                 ActionStatus::Passed => {
-                    pass_count += 1;
+                    passed_count += 1;
                 }
                 ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    fail_count += 1;
+                    failed_count += 1;
                 }
                 ActionStatus::Invalid => {
                     invalid_count += 1;
@@ -228,20 +228,20 @@ impl DefaultReporter {
 
         let mut counts_message = vec![];
 
-        if pass_count > 0 {
+        if passed_count > 0 {
             if cached_count > 0 {
                 counts_message.push(format!(
                     "{} {}",
-                    color::success(format!("{pass_count} completed")),
+                    color::success(format!("{passed_count} completed")),
                     color::label(format!("({cached_count} cached)"))
                 ));
             } else {
-                counts_message.push(color::success(format!("{pass_count} completed")));
+                counts_message.push(color::success(format!("{passed_count} completed")));
             }
         }
 
-        if fail_count > 0 {
-            counts_message.push(color::failure(format!("{fail_count} failed")));
+        if failed_count > 0 {
+            counts_message.push(color::failure(format!("{failed_count} failed")));
         }
 
         if invalid_count > 0 {
@@ -253,9 +253,9 @@ impl DefaultReporter {
         }
 
         let counts_message = counts_message.join(&color::muted(", "));
-        let mut elapsed_time = time::elapsed(state.duration.unwrap());
+        let mut elapsed_time = time::elapsed(state.duration.unwrap_or_default());
 
-        if pass_count == cached_count && fail_count == 0 {
+        if passed_count == cached_count && failed_count == 0 {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 
@@ -321,7 +321,7 @@ impl Reporter for DefaultReporter {
         state: &PipelineReportState,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if self.out.is_quiet() {
+        if actions.is_empty() || self.out.is_quiet() {
             return Ok(());
         }
 

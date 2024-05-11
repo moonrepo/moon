@@ -1,11 +1,10 @@
-use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Attempt, AttemptType};
 use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::{Console, TaskReportState};
 use moon_process::args::join_args;
-use moon_process::{output_to_error, Command};
+use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_workspace::Workspace;
@@ -49,7 +48,7 @@ impl<'task> CommandExecutor<'task> {
     ) -> Self {
         Self {
             attempts: vec![],
-            attempt_index: 0,
+            attempt_index: 1,
             attempt_total: task.options.retry_count + 1,
             interactive: node.is_interactive() || task.is_interactive(),
             persistent: node.is_persistent() || task.is_persistent(),
@@ -121,15 +120,9 @@ impl<'task> CommandExecutor<'task> {
                         self.attempt_index += 1;
                         continue;
                     }
-                    // We've hit our max attempts, so error
+                    // We've hit our max attempts, so break
                     else {
-                        break Some(
-                            TaskRunnerError::RunFailed {
-                                target: self.task.target.to_string(),
-                                error: output_to_error(self.task.command.clone(), &output, false),
-                            }
-                            .into(),
-                        );
+                        break None;
                     }
                 }
 

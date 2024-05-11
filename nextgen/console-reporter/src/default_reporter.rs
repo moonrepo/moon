@@ -104,16 +104,20 @@ impl DefaultReporter {
         state: &TaskReportState,
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
-            if let Some(out) = &attempt.stdout {
-                self.out.write_line(out.trim())?;
+            if let Some(execution) = &attempt.execution {
+                if let Some(out) = &execution.stdout {
+                    self.out.write_line(out.trim())?;
+                }
             }
 
             Ok(())
         };
 
         let print_stderr = || -> miette::Result<()> {
-            if let Some(out) = &attempt.stderr {
-                self.err.write_line(out.trim())?;
+            if let Some(execution) = &attempt.execution {
+                if let Some(out) = &execution.stderr {
+                    self.err.write_line(out.trim())?;
+                }
             }
 
             Ok(())
@@ -156,20 +160,22 @@ impl DefaultReporter {
                 if let Some(attempt) = Attempt::get_last_failed_execution(attempts) {
                     let mut has_stdout = false;
 
-                    if let Some(stdout) = &attempt.stdout {
-                        if !stdout.is_empty() {
-                            has_stdout = true;
-                            self.out.write_line(stdout.trim())?;
-                        }
-                    }
-
-                    if let Some(stderr) = &attempt.stderr {
-                        if has_stdout {
-                            self.out.write_newline()?;
+                    if let Some(execution) = &attempt.execution {
+                        if let Some(stdout) = &execution.stdout {
+                            if !stdout.is_empty() {
+                                has_stdout = true;
+                                self.out.write_line(stdout.trim())?;
+                            }
                         }
 
-                        if !stderr.is_empty() {
-                            self.out.write_line(stderr.trim())?;
+                        if let Some(stderr) = &execution.stderr {
+                            if has_stdout {
+                                self.out.write_newline()?;
+                            }
+
+                            if !stderr.is_empty() {
+                                self.out.write_line(stderr.trim())?;
+                            }
                         }
                     }
                 }

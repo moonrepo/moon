@@ -118,8 +118,8 @@ impl<'task> TaskRunner<'task> {
     ) -> miette::Result<TaskRunResult> {
         let result = self.run(context, console).await;
 
-        if let Some(last_attempt) = Attempt::get_last_failed_execution(&self.attempts) {
-            self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
+        if let Some(last_attempt) = Attempt::get_last_execution(&self.attempts) {
+            self.cache.data.exit_code = last_attempt.get_exit_code();
             self.save_logs(last_attempt)?;
         }
 
@@ -274,6 +274,8 @@ impl<'task> TaskRunner<'task> {
             "Generating a unique hash for this task"
         );
 
+        let mut attempt = Attempt::new(AttemptType::HashGeneration);
+
         let mut hasher = self
             .workspace
             .cache_engine
@@ -341,6 +343,9 @@ impl<'task> TaskRunner<'task> {
 
         let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
+        attempt.finish(ActionStatus::Passed);
+        self.attempts.push(attempt);
+
         debug!(
             task = self.task.target.as_str(),
             hash = &hash,
@@ -357,10 +362,10 @@ impl<'task> TaskRunner<'task> {
         console: &Console,
     ) -> miette::Result<()> {
         if self.task.is_no_op() {
-            let mut attempt = Attempt::new(AttemptType::NoOperation);
-            attempt.finish(ActionStatus::Passed);
-
-            self.attempts.push(attempt);
+            self.attempts.push(Attempt::new_finished(
+                AttemptType::NoOperation,
+                ActionStatus::Passed,
+            ));
 
             return Ok(());
         }
@@ -375,8 +380,12 @@ impl<'task> TaskRunner<'task> {
             CommandExecutor::new(self.workspace, self.project, self.task, self.node, command);
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
+            let mut attempt = Attempt::new(AttemptType::MutexAcquisition);
             let mutex = context.get_or_create_mutex(mutex_name);
             let _guard = mutex.lock().await;
+
+            attempt.finish(ActionStatus::Passed);
+            self.attempts.push(attempt);
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
@@ -405,7 +414,7 @@ impl<'task> TaskRunner<'task> {
                     target: self.task.target.to_string(),
                     error: ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
-                        code: last_attempt.exit_code.unwrap_or(-1),
+                        code: last_attempt.get_exit_code(),
                     },
                 }
                 .into());
@@ -416,10 +425,10 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
-        let mut attempt = Attempt::new(AttemptType::TaskExecution);
-        attempt.finish(ActionStatus::Skipped);
-
-        self.attempts.push(attempt);
+        self.attempts.push(Attempt::new_finished(
+            AttemptType::TaskExecution,
+            ActionStatus::Skipped,
+        ));
 
         context.set_target_state(&self.task.target, TargetState::Skipped);
 
@@ -431,30 +440,33 @@ impl<'task> TaskRunner<'task> {
             return Ok(false);
         }
 
-        let mut attempt = Attempt::new(AttemptType::CacheHydration);
+        let mut attempt = Attempt::new(AttemptType::OutputHydration);
 
-        let Some(from) = self.is_cached(hash).await? else {
-            attempt.finish(ActionStatus::Skipped);
+        let hydrated = match self.is_cached(hash).await? {
+            Some(from) => {
+                self.hydrater.hydrate(hash, from).await?;
+                self.load_logs(&mut attempt)?;
 
-            self.attempts.push(attempt);
+                attempt.finish(match from {
+                    HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+                    _ => ActionStatus::Cached,
+                });
 
-            return Ok(false);
+                context
+                    .set_target_state(&self.task.target, TargetState::Completed(hash.to_owned()));
+
+                true
+            }
+            None => {
+                attempt.finish(ActionStatus::Skipped);
+
+                false
+            }
         };
-
-        self.hydrater.hydrate(hash, from).await?;
-        self.load_logs(&mut attempt)?;
-
-        attempt.finish(match from {
-            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
-            _ => ActionStatus::Cached,
-        });
 
         self.attempts.push(attempt);
 
-        // Update the state and print the output
-        context.set_target_state(&self.task.target, TargetState::Completed(hash.to_owned()));
-
-        Ok(true)
+        Ok(hydrated)
     }
 
     async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
@@ -464,13 +476,20 @@ impl<'task> TaskRunner<'task> {
 
         let mut attempt = Attempt::new(AttemptType::ArchiveCreation);
 
-        self.archiver.archive(hash).await?;
-
-        attempt.finish(ActionStatus::Passed);
+        let archived = match self.archiver.archive(hash).await? {
+            Some(_) => {
+                attempt.finish(ActionStatus::Passed);
+                true
+            }
+            None => {
+                attempt.finish(ActionStatus::Skipped);
+                false
+            }
+        };
 
         self.attempts.push(attempt);
 
-        Ok(true)
+        Ok(archived)
     }
 
     fn load_logs(&self, attempt: &mut Attempt) -> miette::Result<()> {
@@ -482,12 +501,14 @@ impl<'task> TaskRunner<'task> {
         let err_path = state_dir.join("stderr.log");
         let out_path = state_dir.join("stdout.log");
 
-        if err_path.exists() {
-            attempt.set_stderr(fs::read_file(err_path)?);
-        }
+        if let Some(execution) = &mut attempt.execution {
+            if err_path.exists() {
+                execution.set_stderr(fs::read_file(err_path)?);
+            }
 
-        if out_path.exists() {
-            attempt.set_stdout(fs::read_file(out_path)?);
+            if out_path.exists() {
+                execution.set_stdout(fs::read_file(out_path)?);
+            }
         }
 
         Ok(())
@@ -500,12 +521,14 @@ impl<'task> TaskRunner<'task> {
             .state
             .get_target_dir(&self.task.target);
 
-        if let Some(log) = &attempt.stderr {
-            fs::write_file(state_dir.join("stderr.log"), log.as_bytes())?;
-        }
+        if let Some(execution) = &attempt.execution {
+            if let Some(log) = &execution.stderr {
+                fs::write_file(state_dir.join("stderr.log"), log.as_bytes())?;
+            }
 
-        if let Some(log) = &attempt.stdout {
-            fs::write_file(state_dir.join("stdout.log"), log.as_bytes())?;
+            if let Some(log) = &execution.stdout {
+                fs::write_file(state_dir.join("stdout.log"), log.as_bytes())?;
+            }
         }
 
         Ok(())

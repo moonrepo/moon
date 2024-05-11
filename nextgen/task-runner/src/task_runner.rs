@@ -16,6 +16,7 @@ use moon_time::now_millis;
 use moon_workspace::Workspace;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
+use std::mem;
 use tracing::{debug, trace};
 
 pub struct TaskRunResult {
@@ -32,6 +33,8 @@ pub struct TaskRunner<'task> {
     archiver: OutputArchiver<'task>,
     cache: CacheItem<RunTaskState>,
     hydrater: OutputHydrater<'task>,
+
+    attempts: Vec<Attempt>,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -62,6 +65,7 @@ impl<'task> TaskRunner<'task> {
             project,
             task,
             workspace,
+            attempts: vec![],
         })
     }
 
@@ -69,29 +73,22 @@ impl<'task> TaskRunner<'task> {
         &mut self,
         context: &ActionContext,
         console: &Console,
-    ) -> miette::Result<TaskRunResult> {
+    ) -> miette::Result<Option<String>> {
         let target = &self.task.target;
-        let mut result = TaskRunResult {
-            attempts: vec![],
-            hash: None,
-        };
 
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
-            result.attempts = self.skip(context, console)?;
+            self.skip(context)?;
 
-            return Ok(result);
+            return Ok(None);
         }
 
         // Generate a unique hash so we can check the cache
         let hash = self.generate_hash(context).await?;
 
         // Exit early if this build has already been cached/hashed
-        if let Some(attempts) = self.hydrate(&hash, context, console).await? {
-            result.attempts = attempts;
-            result.hash = Some(hash);
-
-            return Ok(result);
+        if self.hydrate(&hash, context).await? {
+            return Ok(Some(hash));
         } else {
             debug!(
                 task = self.task.target.as_str(),
@@ -105,15 +102,12 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Otherwise build and execute the command as a child process
-        let attempts = self.execute(&hash, context, console).await?;
+        self.execute(&hash, context, console).await?;
 
         // If we created outputs, archive them into the cache
-        self.archive(&hash, &attempts).await?;
+        self.archive(&hash).await?;
 
-        result.attempts = attempts;
-        result.hash = Some(hash);
-
-        Ok(result)
+        Ok(Some(hash))
     }
 
     pub async fn run_and_persist(
@@ -123,32 +117,44 @@ impl<'task> TaskRunner<'task> {
     ) -> miette::Result<TaskRunResult> {
         let result = self.run(context, console).await;
 
-        // action.hash = Some(self.cache.data.hash.clone());
-
-        if let Ok(res) = &result {
-            if let Some(last_attempt) = res.attempts.last() {
-                let state_dir = self
-                    .workspace
-                    .cache_engine
-                    .state
-                    .get_target_dir(&self.task.target);
-
-                self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
-
-                if let Some(log) = &last_attempt.stderr {
-                    let _ = fs::write_file(state_dir.join("stderr.log"), log.as_bytes());
-                }
-
-                if let Some(log) = &last_attempt.stdout {
-                    let _ = fs::write_file(state_dir.join("stdout.log"), log.as_bytes());
-                }
-            }
+        if let Some(last_attempt) = Attempt::get_last_failed_execution(&self.attempts) {
+            self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
+            self.save_logs(last_attempt)?;
         }
 
         self.cache.data.last_run_time = now_millis();
         self.cache.save()?;
 
-        result
+        // We lose the attempt state here, is that ok?
+        let mut state = TaskReportState::default();
+
+        match result {
+            Ok(maybe_hash) => {
+                state.hash = maybe_hash.clone();
+
+                console.reporter.on_task_completed(
+                    &self.task.target,
+                    &self.attempts,
+                    &state,
+                    None,
+                )?;
+
+                Ok(TaskRunResult {
+                    attempts: mem::take(&mut self.attempts),
+                    hash: maybe_hash,
+                })
+            }
+            Err(error) => {
+                console.reporter.on_task_completed(
+                    &self.task.target,
+                    &self.attempts,
+                    &state,
+                    Some(&error),
+                )?;
+
+                Err(error)
+            }
+        }
     }
 
     async fn is_cached(&self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
@@ -347,9 +353,11 @@ impl<'task> TaskRunner<'task> {
         hash: &str,
         context: &ActionContext,
         console: &Console,
-    ) -> miette::Result<Vec<Attempt>> {
+    ) -> miette::Result<()> {
         if self.task.is_no_op() {
-            return Ok(vec![Attempt::new(AttemptType::NoOperation)]);
+            self.attempts.push(Attempt::new(AttemptType::NoOperation));
+
+            return Ok(());
         }
 
         // Build the command from the current task
@@ -372,7 +380,7 @@ impl<'task> TaskRunner<'task> {
             executor.execute(hash, context, console).await
         };
 
-        // Update the actione state based on the result
+        // Update the action state based on the result
         context.set_target_state(
             &self.task.target,
             if result.is_ok() {
@@ -382,41 +390,38 @@ impl<'task> TaskRunner<'task> {
             },
         );
 
-        result
+        let attempts = result?;
+
+        self.attempts.extend(attempts);
+
+        Ok(())
     }
 
-    fn skip(&self, context: &ActionContext, console: &Console) -> miette::Result<Vec<Attempt>> {
+    fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
         let mut attempt = Attempt::new(AttemptType::TaskExecution);
         attempt.finish(ActionStatus::Skipped);
 
-        let attempts = vec![attempt];
-        let state = TaskReportState::default();
-
-        console
-            .reporter
-            .on_task_completed(&self.task.target, &attempts, &state, None)?;
+        self.attempts.push(attempt);
 
         context.set_target_state(&self.task.target, TargetState::Skipped);
 
-        Ok(attempts)
+        Ok(())
     }
 
-    async fn hydrate(
-        &self,
-        hash: &str,
-        context: &ActionContext,
-        console: &Console,
-    ) -> miette::Result<Option<Vec<Attempt>>> {
+    async fn hydrate(&mut self, hash: &str, context: &ActionContext) -> miette::Result<bool> {
         if !self.is_cache_enabled() {
-            return Ok(None);
+            return Ok(false);
         }
 
-        let Some(from) = self.is_cached(hash).await? else {
-            return Ok(None);
-        };
-
-        // Create an attempt to track how long hydration takes
         let mut attempt = Attempt::new(AttemptType::CacheHydration);
+
+        let Some(from) = self.is_cached(hash).await? else {
+            attempt.finish(ActionStatus::Skipped);
+
+            self.attempts.push(attempt);
+
+            return Ok(false);
+        };
 
         self.hydrater.hydrate(hash, from).await?;
         self.load_logs(&mut attempt)?;
@@ -426,34 +431,28 @@ impl<'task> TaskRunner<'task> {
             _ => ActionStatus::Cached,
         });
 
+        self.attempts.push(attempt);
+
         // Update the state and print the output
-        let attempts = vec![attempt];
-
-        let state = TaskReportState {
-            hash: Some(hash.to_owned()),
-            ..Default::default()
-        };
-
-        console
-            .reporter
-            .on_task_completed(&self.task.target, &attempts, &state, None)?;
-
         context.set_target_state(&self.task.target, TargetState::Completed(hash.to_owned()));
 
-        Ok(Some(attempts))
+        Ok(true)
     }
 
-    async fn archive(&mut self, hash: &str, attempts: &[Attempt]) -> miette::Result<()> {
-        if self.is_cache_enabled() {
-            self.archiver.archive(hash).await?;
+    async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
+        if !self.is_cache_enabled() || !self.archiver.is_archivable()? {
+            return Ok(false);
         }
 
-        if let Some(last_attempt) = attempts.last() {
-            self.cache.data.exit_code = last_attempt.exit_code.unwrap_or(-1);
-            self.save_logs(last_attempt)?;
-        }
+        let mut attempt = Attempt::new(AttemptType::ArchiveCreation);
 
-        Ok(())
+        self.archiver.archive(hash).await?;
+
+        attempt.finish(ActionStatus::Passed);
+
+        self.attempts.push(attempt);
+
+        Ok(true)
     }
 
     fn load_logs(&self, attempt: &mut Attempt) -> miette::Result<()> {

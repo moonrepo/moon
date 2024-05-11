@@ -21,10 +21,6 @@ pub struct OutputHydrater<'task> {
 
 impl<'task> OutputHydrater<'task> {
     pub async fn hydrate(&self, hash: &str, from: HydrateFrom) -> miette::Result<bool> {
-        if hash.is_empty() {
-            return Ok(false);
-        }
-
         // Only hydrate when the hash is different from the previous build,
         // as we can assume the outputs from the previous build still exist?
         if matches!(from, HydrateFrom::PreviousOutput) {

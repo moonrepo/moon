@@ -1,5 +1,6 @@
 use crate::action_node::ActionNode;
 use crate::attempt::Attempt;
+use crate::AttemptType;
 use moon_common::color;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
@@ -129,14 +130,17 @@ impl Action {
             status = last.status;
 
             if last.has_failed() {
-                let mut message = format!("Failed to run {}", color::shell(command));
+                if matches!(last.type_of, AttemptType::TaskExecution) {
+                    let mut message = format!("Failed to run {}", color::shell(command));
 
-                if let Some(code) = last.exit_code {
-                    message += " ";
-                    message += color::muted_light(format!("(exit code {})", code)).as_str();
+                    if let Some(code) = last.exit_code {
+                        message += " ";
+                        message += color::muted_light(format!("(exit code {})", code)).as_str();
+                    }
+
+                    self.error = Some(message);
                 }
 
-                self.error = Some(message);
                 passed = false;
             }
         }

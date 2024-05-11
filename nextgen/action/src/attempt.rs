@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AttemptType {
+    ArchiveCreation,
     CacheHydration,
     NoOperation,
     #[default]
@@ -53,6 +54,12 @@ impl Attempt {
             stdout: None,
             type_of,
         }
+    }
+
+    pub fn get_last_failed_execution(attempts: &[Attempt]) -> Option<&Attempt> {
+        attempts.iter().rfind(|attempt| {
+            attempt.has_failed() && matches!(attempt.type_of, AttemptType::TaskExecution)
+        })
     }
 
     pub fn finish(&mut self, status: ActionStatus) {

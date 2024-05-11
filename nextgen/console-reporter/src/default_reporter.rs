@@ -157,7 +157,7 @@ impl DefaultReporter {
             }
 
             if let Some(attempts) = &action.attempts {
-                if let Some(attempt) = attempts.iter().rfind(|attempt| attempt.has_failed()) {
+                if let Some(attempt) = Attempt::get_last_failed_execution(attempts) {
                     let mut has_stdout = false;
 
                     if let Some(stdout) = &attempt.stdout {
@@ -349,6 +349,7 @@ impl Reporter for DefaultReporter {
 
         self.out.print_header("Stats")?;
         self.print_pipeline_stats(actions, state)?;
+
         self.out.write_newline()?;
 
         Ok(())
@@ -402,14 +403,16 @@ impl Reporter for DefaultReporter {
         state: &TaskReportState,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if let Some(attempt) = attempts.last() {
+        if let Some(attempt) = Attempt::get_last_failed_execution(attempts) {
             // If cached, the finished event above is not fired,
             // so handle printing the captured logs here!
             if attempt.is_cached() && attempt.has_output() {
                 self.out.write_newline()?;
                 self.print_attempt_output(attempt, state)?;
             }
+        }
 
+        if let Some(attempt) = attempts.last() {
             // Then print the success checkpoint. The success
             // checkpoint should always appear after the output,
             // and "contain" it within the start checkpoint!

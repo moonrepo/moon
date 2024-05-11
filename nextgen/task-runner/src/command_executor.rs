@@ -151,13 +151,6 @@ impl<'task> CommandExecutor<'task> {
             }
         };
 
-        console.reporter.on_task_completed(
-            &self.task.target,
-            &self.attempts,
-            &state,
-            execution_error.as_ref(),
-        )?;
-
         self.stop_monitoring();
 
         if let Some(error) = execution_error {

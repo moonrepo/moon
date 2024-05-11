@@ -1,7 +1,7 @@
-use std::time::{Duration, SystemTime};
-
 pub use chrono;
 pub use humantime::{format_duration, parse_duration};
+use std::env;
+use std::time::{Duration, SystemTime};
 
 pub fn now_timestamp() -> chrono::NaiveDateTime {
     chrono::Utc::now().naive_utc()
@@ -23,9 +23,9 @@ pub fn is_stale(timestamp: u128, duration: Duration) -> bool {
 }
 
 pub fn elapsed_opt(duration: Duration) -> Option<String> {
-    // if is_test_env() {
-    //     return String::from("100ms"); // Snapshots
-    // }
+    if env::var("MOON_TEST").is_ok() {
+        return Some("100ms".into()); // Snapshots
+    }
 
     let secs = duration.as_secs();
     let nanos = duration.subsec_nanos();

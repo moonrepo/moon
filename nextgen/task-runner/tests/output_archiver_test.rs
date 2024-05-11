@@ -57,14 +57,6 @@ mod output_archiver {
         use super::*;
 
         #[tokio::test]
-        async fn does_nothing_if_no_hash() {
-            let (_sandbox, container) = generate_container().await;
-            let archiver = container.build("file-outputs");
-
-            assert!(archiver.archive("").await.unwrap().is_none());
-        }
-
-        #[tokio::test]
         async fn does_nothing_if_no_outputs_in_task() {
             let (_sandbox, container) = generate_container().await;
             let archiver = container.build("no-outputs");

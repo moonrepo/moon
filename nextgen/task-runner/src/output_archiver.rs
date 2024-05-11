@@ -20,8 +20,12 @@ pub struct OutputArchiver<'task> {
 
 impl<'task> OutputArchiver<'task> {
     pub async fn archive(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
+        if self.task.outputs.is_empty() {
+            return Ok(None);
+        }
+
         // Check that outputs actually exist
-        if !self.task.outputs.is_empty() && !self.has_outputs_been_created(false)? {
+        if !self.has_outputs_been_created(false)? {
             return Err(TaskRunnerError::MissingOutputs {
                 target: self.task.target.to_string(),
             }

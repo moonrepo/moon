@@ -157,7 +157,7 @@ impl<'task> TaskRunner<'task> {
         }
     }
 
-    async fn is_cached(&self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
+    async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
         let cache_engine = &self.workspace.cache_engine;
 
         debug!(
@@ -187,6 +187,9 @@ impl<'task> TaskRunner<'task> {
 
             return Ok(None);
         }
+
+        // Set this *after* we checked the previous cache
+        self.cache.data.hash = hash.to_owned();
 
         // Check to see if a build with the provided hash has been cached locally.
         // We only check for the archive, as the manifest is purely for local debugging!
@@ -337,8 +340,6 @@ impl<'task> TaskRunner<'task> {
 
         let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
-        self.cache.data.hash = hash.clone();
-
         debug!(
             task = self.task.target.as_str(),
             hash = &hash,
@@ -355,7 +356,10 @@ impl<'task> TaskRunner<'task> {
         console: &Console,
     ) -> miette::Result<()> {
         if self.task.is_no_op() {
-            self.attempts.push(Attempt::new(AttemptType::NoOperation));
+            let mut attempt = Attempt::new(AttemptType::NoOperation);
+            attempt.finish(ActionStatus::Passed);
+
+            self.attempts.push(attempt);
 
             return Ok(());
         }

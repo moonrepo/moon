@@ -66,22 +66,22 @@ impl DefaultReporter {
                 if let Some(comment) = status_comment {
                     comments.push(comment);
                 }
+
+                if let Some(duration) = attempt.duration {
+                    if let Some(elapsed) = time::elapsed_opt(duration) {
+                        comments.push(elapsed);
+                    }
+                }
+
+                // Do not include the hash while testing, as the hash
+                // constantly changes and breaks our local snapshots
+                if !is_test_env() {
+                    if let Some(hash) = &state.hash {
+                        comments.push(self.get_short_hash(hash));
+                    }
+                }
             }
         };
-
-        if let Some(duration) = attempt.duration {
-            if let Some(elapsed) = time::elapsed_opt(duration) {
-                comments.push(elapsed);
-            }
-        }
-
-        // Do not include the hash while testing, as the hash
-        // constantly changes and breaks our local snapshots
-        if !is_test_env() {
-            if let Some(hash) = &state.hash {
-                comments.push(self.get_short_hash(hash));
-            }
-        }
 
         self.out.print_checkpoint_with_comments(
             if attempt.has_failed() {
@@ -94,10 +94,6 @@ impl DefaultReporter {
             target,
             comments,
         )?;
-
-        // if !matches!(checkpoint, Checkpoint::RunStarted) {
-        //     self.out.write_newline()?;
-        // }
 
         Ok(())
     }
@@ -285,27 +281,27 @@ impl DefaultReporter {
                 ActionStatus::Running => color::muted_light("oops"),
             };
 
-            let mut meta: Vec<String> = vec![];
+            let mut comments: Vec<String> = vec![];
 
             if let Some(status_comment) = self.get_status_meta_comment(action.status, || None) {
-                meta.push(status_comment);
+                comments.push(status_comment);
             }
 
             if let Some(duration) = action.duration {
                 if let Some(elapsed) = time::elapsed_opt(duration) {
-                    meta.push(elapsed);
+                    comments.push(elapsed);
                 }
             }
 
             if let Some(hash) = &action.hash {
-                meta.push(self.get_short_hash(hash));
+                comments.push(self.get_short_hash(hash));
             }
 
             self.out.write_line(format!(
                 "{} {} {}",
                 status,
                 action.label,
-                self.out.format_comments(meta),
+                self.out.format_comments(comments),
             ))?;
         }
 

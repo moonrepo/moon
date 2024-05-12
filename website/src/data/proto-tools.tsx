@@ -312,6 +312,17 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
 	},
+	gleam: {
+		author: 'vancegillies',
+		bins: ['gleam'],
+		description: 'A statically typed language for the Erlang VM and JavaScript',
+		homepageUrl: 'https://gleam.run/',
+		name: 'gleam',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/vancegillies/proto-gleam-plugin/main/gleam.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/vancegillies/proto-gleam-plugin/blob/main/gleam.toml',
+	},
 	gojq: {
 		author: 'stk0vrfl0w',
 		bins: ['gojq'],

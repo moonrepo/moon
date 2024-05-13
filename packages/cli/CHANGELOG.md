@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where proto managed tools may error with "Failed to detect an applicable version".
+
 ## 1.24.4
 
 #### 🐞 Fixes

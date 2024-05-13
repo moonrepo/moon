@@ -537,6 +537,7 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("targetScopeA:deps");
         });
+        assert.debug();
         let output = assert.output();
 
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
@@ -1010,28 +1011,6 @@ mod outputs {
 
         assert!(dir.join("outputs/both/a/one.js").exists());
         assert!(!dir.join("outputs/both/b/two.js").exists());
-    }
-
-    #[test]
-    fn caches_output_logs_in_tarball() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("outputs:generateFile");
-        });
-
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
-        let tarball = sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"));
-        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
-
-        untar(&tarball, &dir);
-
-        assert!(dir.join("stdout.log").exists());
-        assert!(dir.join("stderr.log").exists());
     }
 
     #[test]

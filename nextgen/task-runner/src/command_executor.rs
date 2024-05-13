@@ -72,6 +72,7 @@ impl<'task> CommandExecutor<'task> {
         // Prepare state for the executor, and each attempt
         let mut state = self.prepate_state(context);
 
+        // Hash is empty if cache is disabled
         if !hash.is_empty() {
             state.hash = Some(hash.to_owned());
         }

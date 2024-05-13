@@ -4,15 +4,11 @@ expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:buffer
-▪▪▪▪ outputStyles:buffer (100ms)
 stdout
-
+▪▪▪▪ outputStyles:buffer (100ms)
 ▪▪▪▪ outputStyles:bufferPrimary (no op)
 
 Tasks: 2 completed
  Time: 100ms
 
 stderr
-
-
-

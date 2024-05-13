@@ -4,16 +4,10 @@ expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:bufferFailureFail
-▪▪▪▪ outputStyles:bufferFailureFail (100ms)
 stdout
-
+▪▪▪▪ outputStyles:bufferFailureFail (100ms)
 stderr
-
 Error: task_runner::run_failed
 
-  × Task outputStyles:bufferFailureFail failed to run. View hash details with
-  │ moon query hash hash1234.
+  × Task outputStyles:bufferFailureFail failed to run.
   ╰─▶ Process node failed with a 1 exit code.
-
-
-

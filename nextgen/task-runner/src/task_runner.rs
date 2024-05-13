@@ -75,8 +75,6 @@ impl<'task> TaskRunner<'task> {
         context: &ActionContext,
         console: &Console,
     ) -> miette::Result<Option<String>> {
-        let target = &self.task.target;
-
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
             self.skip(context)?;
@@ -84,31 +82,35 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Generate a unique hash so we can check the cache
-        let hash = self.generate_hash(context).await?;
+        if self.is_cache_enabled() {
+            let hash = self.generate_hash(context).await?;
 
-        // Exit early if this build has already been cached/hashed
-        if self.hydrate(&hash, context).await? {
+            // Exit early if this build has already been cached/hashed
+            if self.hydrate(&hash, context).await? {
+                return Ok(Some(hash));
+            }
+
+            // Otherwise build and execute the command as a child process
+            self.execute(&hash, context, console).await?;
+
+            // If we created outputs, archive them into the cache
+            self.archive(&hash).await?;
+
             return Ok(Some(hash));
-        } else {
-            debug!(
-                task = self.task.target.as_str(),
-                hash = &hash,
-                "Caching is disabled for task, will attempt to run a command"
-            );
-
-            // We must give this task a fake hash for it to be considered complete
-            // for other tasks! This case triggers for noop or cache disabled tasks.
-            context.set_target_state(target, TargetState::Passthrough);
         }
 
-        // Otherwise build and execute the command as a child process
-        self.execute(&hash, context, console).await?;
+        debug!(
+            task = self.task.target.as_str(),
+            "Caching is disabled for task, will not generate a hash, and will attempt to run a command as normal"
+        );
 
-        // If we created outputs, archive them into the cache
-        self.archive(&hash).await?;
+        // Mark it as passthrough early so that other tasks that depend on it don't fail
+        // context.set_target_state(&self.task.target, TargetState::Passthrough);
 
-        Ok(Some(hash))
+        // Build and execute the command as a child process
+        self.execute("", context, console).await?;
+
+        Ok(None)
     }
 
     pub async fn run_and_persist(
@@ -398,7 +400,11 @@ impl<'task> TaskRunner<'task> {
         context.set_target_state(
             &self.task.target,
             if result.is_ok() {
-                TargetState::Completed(hash.to_owned())
+                if hash.is_empty() {
+                    TargetState::Passthrough // Cache disabled
+                } else {
+                    TargetState::Completed(hash.to_owned())
+                }
             } else {
                 TargetState::Failed
             },

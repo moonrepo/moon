@@ -1,0 +1,19 @@
+tasks:
+  success:
+    command: 'Write-Output "test"'
+    platform: system
+    options:
+      shell: true
+
+  failure:
+    command: 'Exit 1'
+    platform: system
+    options:
+      shell: true
+
+  retry:
+    command: 'Exit 1'
+    platform: system
+    options:
+      shell: true
+      retryCount: 3

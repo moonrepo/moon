@@ -18,6 +18,13 @@ fn is_ci_env() -> bool {
     is_ci() && !is_test_env()
 }
 
+#[derive(Debug)]
+pub struct CommandExecuteResult {
+    pub attempts: Vec<Attempt>,
+    pub error: Option<miette::Report>,
+    pub state: TaskReportState,
+}
+
 /// Run the command as a child process and capture its output. If the process fails
 /// and `retry_count` is greater than 0, attempt the process again in case it passes.
 pub struct CommandExecutor<'task> {
@@ -43,7 +50,7 @@ impl<'task> CommandExecutor<'task> {
         workspace: &'task Workspace,
         project: &'task Project,
         task: &'task Task,
-        node: &'task ActionNode,
+        node: &ActionNode,
         command: Command,
     ) -> Self {
         Self {
@@ -66,7 +73,7 @@ impl<'task> CommandExecutor<'task> {
         hash: &str,
         context: &ActionContext,
         console: &Console,
-    ) -> miette::Result<Vec<Attempt>> {
+    ) -> miette::Result<CommandExecuteResult> {
         self.command.with_console(Arc::new(console.clone()));
 
         // Prepare state for the executor, and each attempt
@@ -147,11 +154,11 @@ impl<'task> CommandExecutor<'task> {
 
         self.stop_monitoring();
 
-        if let Some(error) = execution_error {
-            return Err(error);
-        }
-
-        Ok(mem::take(&mut self.attempts))
+        Ok(CommandExecuteResult {
+            attempts: mem::take(&mut self.attempts),
+            error: execution_error,
+            state,
+        })
     }
 
     fn start_monitoring(&mut self, console: &Console) {

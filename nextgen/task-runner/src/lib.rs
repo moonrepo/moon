@@ -1,6 +1,6 @@
 // Public for tests
 pub mod command_builder;
-mod command_executor;
+pub mod command_executor;
 pub mod output_archiver;
 pub mod output_hydrater;
 mod run_state;

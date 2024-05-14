@@ -1,0 +1,19 @@
+tasks:
+  success:
+    command: 'echo "test"'
+    platform: system
+    options:
+      shell: true
+
+  failure:
+    command: 'exit 1'
+    platform: system
+    options:
+      shell: true
+
+  retry:
+    command: 'exit 1'
+    platform: system
+    options:
+      shell: true
+      retryCount: 3

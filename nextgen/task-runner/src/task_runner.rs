@@ -411,7 +411,16 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Extract the attempts from the result
-        self.attempts.extend(result?);
+        let result = result?;
+
+        self.attempts.extend(result.attempts);
+
+        // If the execution as a whole failed, return the error.
+        // We do this here instead of in `execute` so that we can
+        // capture the attempts and report them.
+        if let Some(result_error) = result.error {
+            return Err(result_error);
+        }
 
         // If our last task execution was a failure, return a hard error
         if let Some(last_attempt) = Attempt::get_last_failed_execution(&self.attempts) {

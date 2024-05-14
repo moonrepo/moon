@@ -1,9 +1,13 @@
 #![allow(dead_code)]
 
 use moon_action::{ActionNode, RunTaskNode};
+use moon_action_context::ActionContext;
 use moon_platform::{PlatformManager, Runtime};
+use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
+use moon_task_runner::command_builder::CommandBuilder;
+use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
 use moon_test_utils2::{
@@ -51,7 +55,7 @@ impl TaskRunnerContainer {
         }
     }
 
-    pub async fn new_for_os(fixture: &str) -> Self {
+    pub async fn new_os(fixture: &str) -> Self {
         Self::new_for_project(fixture, if cfg!(windows) { "windows" } else { "unix" }).await
     }
 
@@ -76,5 +80,50 @@ impl TaskRunnerContainer {
             task,
             workspace: &self.workspace,
         }
+    }
+
+    pub async fn create_command(&self, context: ActionContext) -> Command {
+        self.create_command_with_config(context, |_, _| {}).await
+    }
+
+    pub async fn create_command_with_config(
+        &self,
+        context: ActionContext,
+        mut op: impl FnMut(&mut Task, &mut ActionNode),
+    ) -> Command {
+        let mut task = self.project.get_task("base").unwrap().clone();
+        let mut node = create_node(&task);
+
+        op(&mut task, &mut node);
+
+        self.internal_create_command(&context, &task, &node).await
+    }
+
+    pub async fn create_command_executor(
+        &self,
+        task_id: &str,
+        context: &ActionContext,
+    ) -> CommandExecutor {
+        let task = self.project.get_task(task_id).unwrap();
+        let node = create_node(task);
+
+        CommandExecutor::new(
+            &self.workspace,
+            &self.project,
+            task,
+            &node,
+            self.internal_create_command(context, task, &node).await,
+        )
+    }
+
+    async fn internal_create_command(
+        &self,
+        context: &ActionContext,
+        task: &Task,
+        node: &ActionNode,
+    ) -> Command {
+        let mut builder = CommandBuilder::new(&self.workspace, &self.project, task, node);
+        builder.set_platform_manager(&self.platform_manager);
+        builder.build(context).await.unwrap()
     }
 }

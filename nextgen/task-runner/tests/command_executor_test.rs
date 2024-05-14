@@ -1,88 +1,21 @@
 mod utils;
 
-use moon_action::{ActionNode, ActionStatus, AttemptType};
+use moon_action::{ActionStatus, AttemptType};
 use moon_action_context::ActionContext;
 use moon_console::Console;
-use moon_process::Command;
-use moon_project::Project;
-use moon_task::Task;
-use moon_task_runner::command_builder::CommandBuilder;
-use moon_task_runner::command_executor::CommandExecutor;
-use moon_test_utils2::{
-    generate_platform_manager_from_sandbox, generate_project_graph_from_sandbox, ProjectGraph,
-};
-use moon_workspace::Workspace;
-use starbase_sandbox::{create_sandbox, Sandbox};
-use std::sync::Arc;
 use utils::*;
-
-pub struct CommandExecutorContainer {
-    pub project_graph: ProjectGraph,
-    pub project: Arc<Project>,
-    pub workspace: Workspace,
-}
-
-impl CommandExecutorContainer {
-    pub fn modify_workspace(&mut self, mut op: impl FnMut(&mut Workspace)) {
-        op(&mut self.workspace);
-    }
-
-    pub async fn build_command(
-        &self,
-        task: &Task,
-        node: &ActionNode,
-        context: &ActionContext,
-    ) -> Command {
-        let platform = generate_platform_manager_from_sandbox(&self.workspace.root).await;
-
-        let mut builder = CommandBuilder::new(&self.workspace, &self.project, task, node);
-        builder.set_platform_manager(&platform);
-        builder.build(context).await.unwrap()
-    }
-
-    pub async fn build(&self, task_id: &str, context: &ActionContext) -> CommandExecutor {
-        let task = self.project.get_task(task_id).unwrap();
-        let node = create_node(task);
-
-        CommandExecutor::new(
-            &self.workspace,
-            &self.project,
-            task,
-            &node,
-            self.build_command(task, &node, context).await,
-        )
-    }
-}
-
-async fn generate_container() -> (Sandbox, CommandExecutorContainer) {
-    let sandbox = create_sandbox("executor");
-    let workspace = create_workspace(sandbox.path());
-    let project_graph = generate_project_graph_from_sandbox(sandbox.path()).await;
-    let project = project_graph
-        .get(if cfg!(windows) { "windows" } else { "unix" })
-        .unwrap();
-
-    (
-        sandbox,
-        CommandExecutorContainer {
-            project,
-            project_graph,
-            workspace,
-        },
-    )
-}
 
 mod command_executor {
     use super::*;
 
     #[tokio::test]
     async fn returns_attempt_on_success() {
-        let (_sandbox, container) = generate_container().await;
+        let container = TaskRunnerContainer::new_os("executor").await;
         let context = ActionContext::default();
         let console = Console::new_testing();
 
         let result = container
-            .build("success", &context)
+            .create_command_executor("success", &context)
             .await
             .execute("hash123", &context, &console)
             .await
@@ -108,12 +41,12 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempt_on_failure() {
-        let (_sandbox, container) = generate_container().await;
+        let container = TaskRunnerContainer::new_os("executor").await;
         let context = ActionContext::default();
         let console = Console::new_testing();
 
         let result = container
-            .build("failure", &context)
+            .create_command_executor("failure", &context)
             .await
             .execute("hash123", &context, &console)
             .await
@@ -138,12 +71,12 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempts_for_each_retry() {
-        let (_sandbox, container) = generate_container().await;
+        let container = TaskRunnerContainer::new_os("executor").await;
         let context = ActionContext::default();
         let console = Console::new_testing();
 
         let result = container
-            .build("retry", &context)
+            .create_command_executor("retry", &context)
             .await
             .execute("", &context, &console)
             .await

@@ -2,7 +2,6 @@ mod utils;
 
 use moon_action::{ActionStatus, AttemptType};
 use moon_action_context::ActionContext;
-use moon_console::Console;
 use utils::*;
 
 mod command_executor {
@@ -12,12 +11,11 @@ mod command_executor {
     async fn returns_attempt_on_success() {
         let container = TaskRunnerContainer::new_os("executor").await;
         let context = ActionContext::default();
-        let console = Console::new_testing();
 
         let result = container
             .create_command_executor("success", &context)
             .await
-            .execute("hash123", &context, &console)
+            .execute(&context, Some("hash123"))
             .await
             .unwrap();
 
@@ -43,12 +41,11 @@ mod command_executor {
     async fn returns_attempt_on_failure() {
         let container = TaskRunnerContainer::new_os("executor").await;
         let context = ActionContext::default();
-        let console = Console::new_testing();
 
         let result = container
             .create_command_executor("failure", &context)
             .await
-            .execute("hash123", &context, &console)
+            .execute(&context, Some("hash123"))
             .await
             .unwrap();
 
@@ -73,12 +70,11 @@ mod command_executor {
     async fn returns_attempts_for_each_retry() {
         let container = TaskRunnerContainer::new_os("executor").await;
         let context = ActionContext::default();
-        let console = Console::new_testing();
 
         let result = container
             .create_command_executor("retry", &context)
             .await
-            .execute("", &context, &console)
+            .execute(&context, None)
             .await
             .unwrap();
 

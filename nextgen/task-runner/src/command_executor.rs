@@ -33,6 +33,7 @@ pub struct CommandExecutor<'task> {
     workspace: &'task Workspace,
 
     command: Command,
+    console: Arc<Console>,
     handle: Option<JoinHandle<()>>,
 
     attempts: Vec<Attempt>,
@@ -51,8 +52,11 @@ impl<'task> CommandExecutor<'task> {
         project: &'task Project,
         task: &'task Task,
         node: &ActionNode,
-        command: Command,
+        console: Arc<Console>,
+        mut command: Command,
     ) -> Self {
+        command.with_console(console.clone());
+
         Self {
             attempts: vec![],
             attempt_index: 1,
@@ -65,38 +69,34 @@ impl<'task> CommandExecutor<'task> {
             project,
             task,
             command,
+            console,
         }
     }
 
     pub async fn execute(
         mut self,
-        hash: &str,
         context: &ActionContext,
-        console: &Console,
+        hash: Option<&str>,
     ) -> miette::Result<CommandExecuteResult> {
-        self.command.with_console(Arc::new(console.clone()));
-
         // Prepare state for the executor, and each attempt
         let mut state = self.prepate_state(context);
 
         // Hash is empty if cache is disabled
-        if !hash.is_empty() {
-            state.hash = Some(hash.to_owned());
-        }
+        state.hash = hash.map(|h| h.to_string());
 
         // For long-running process, log a message on an interval to indicate it's still running
-        self.start_monitoring(console);
+        self.start_monitoring();
 
         // Execute the command on a loop as an attempt for every retry count we have
         let execution_error: Option<miette::Report> = loop {
             let mut attempt = Attempt::new(AttemptType::TaskExecution);
             state.attempt_current = self.attempt_index;
 
-            console
+            self.console
                 .reporter
                 .on_task_started(&self.task.target, &attempt, &state)?;
 
-            self.print_command(context, console)?;
+            self.print_command(context)?;
 
             // Attempt to execute command
             let mut command = self.command.create_async();
@@ -113,9 +113,12 @@ impl<'task> CommandExecutor<'task> {
                 Ok(mut output) => {
                     attempt.finish_from_output(&mut output);
 
-                    console
-                        .reporter
-                        .on_task_finished(&self.task.target, &attempt, &state, None)?;
+                    self.console.reporter.on_task_finished(
+                        &self.task.target,
+                        &attempt,
+                        &state,
+                        None,
+                    )?;
 
                     self.attempts.push(attempt);
 
@@ -138,7 +141,7 @@ impl<'task> CommandExecutor<'task> {
                 Err(error) => {
                     attempt.finish(ActionStatus::Failed);
 
-                    console.reporter.on_task_finished(
+                    self.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
                         &state,
@@ -161,12 +164,12 @@ impl<'task> CommandExecutor<'task> {
         })
     }
 
-    fn start_monitoring(&mut self, console: &Console) {
+    fn start_monitoring(&mut self) {
         if self.persistent || self.interactive {
             return;
         }
 
-        let console = console.clone();
+        let console = self.console.clone();
         let target = self.task.target.clone();
 
         self.handle = Some(task::spawn(async move {
@@ -225,7 +228,7 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
-    fn print_command(&self, context: &ActionContext, console: &Console) -> miette::Result<()> {
+    fn print_command(&self, context: &ActionContext) -> miette::Result<()> {
         if !self.workspace.config.runner.log_running_command {
             return Ok(());
         }
@@ -251,7 +254,7 @@ impl<'task> CommandExecutor<'task> {
             }),
         ));
 
-        console.out.write_line(message)?;
+        self.console.out.write_line(message)?;
 
         Ok(())
     }

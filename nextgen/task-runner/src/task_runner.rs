@@ -18,6 +18,7 @@ use moon_workspace::Workspace;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::mem;
+use std::sync::Arc;
 use tracing::{debug, trace};
 
 pub struct TaskRunResult {
@@ -26,13 +27,13 @@ pub struct TaskRunResult {
 }
 
 pub struct TaskRunner<'task> {
-    node: &'task ActionNode,
     project: &'task Project,
     task: &'task Task,
     workspace: &'task Workspace,
 
     archiver: OutputArchiver<'task>,
     cache: CacheItem<RunTaskState>,
+    console: Arc<Console>,
     hydrater: OutputHydrater<'task>,
 
     attempts: Vec<Attempt>,
@@ -43,7 +44,7 @@ impl<'task> TaskRunner<'task> {
         workspace: &'task Workspace,
         project: &'task Project,
         task: &'task Task,
-        node: &'task ActionNode,
+        console: Arc<Console>,
     ) -> miette::Result<Self> {
         let mut cache = workspace
             .cache_engine
@@ -56,13 +57,13 @@ impl<'task> TaskRunner<'task> {
 
         Ok(Self {
             cache,
+            console,
             archiver: OutputArchiver {
                 project_config: &project.config,
                 task,
                 workspace,
             },
             hydrater: OutputHydrater { task, workspace },
-            node,
             project,
             task,
             workspace,
@@ -73,7 +74,7 @@ impl<'task> TaskRunner<'task> {
     pub async fn run(
         &mut self,
         context: &ActionContext,
-        console: &Console,
+        node: &ActionNode,
     ) -> miette::Result<Option<String>> {
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
@@ -83,7 +84,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         if self.is_cache_enabled() {
-            let hash = self.generate_hash(context).await?;
+            let hash = self.generate_hash(context, node).await?;
 
             // Exit early if this build has already been cached/hashed
             if self.hydrate(&hash, context).await? {
@@ -91,7 +92,7 @@ impl<'task> TaskRunner<'task> {
             }
 
             // Otherwise build and execute the command as a child process
-            self.execute(&hash, context, console).await?;
+            self.execute(context, node, Some(&hash)).await?;
 
             // If we created outputs, archive them into the cache
             self.archive(&hash).await?;
@@ -108,7 +109,7 @@ impl<'task> TaskRunner<'task> {
         // context.set_target_state(&self.task.target, TargetState::Passthrough);
 
         // Build and execute the command as a child process
-        self.execute("", context, console).await?;
+        self.execute(context, node, None).await?;
 
         Ok(None)
     }
@@ -116,9 +117,9 @@ impl<'task> TaskRunner<'task> {
     pub async fn run_and_persist(
         &mut self,
         context: &ActionContext,
-        console: &Console,
+        node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
-        let result = self.run(context, console).await;
+        let result = self.run(context, node).await;
 
         if let Some(last_attempt) = Attempt::get_last_execution(&self.attempts) {
             self.cache.data.exit_code = last_attempt.get_exit_code();
@@ -135,7 +136,7 @@ impl<'task> TaskRunner<'task> {
             Ok(maybe_hash) => {
                 state.hash = maybe_hash.clone();
 
-                console.reporter.on_task_completed(
+                self.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.attempts,
                     &state,
@@ -148,7 +149,7 @@ impl<'task> TaskRunner<'task> {
                 })
             }
             Err(error) => {
-                console.reporter.on_task_completed(
+                self.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.attempts,
                     &state,
@@ -270,19 +271,18 @@ impl<'task> TaskRunner<'task> {
         Ok(true)
     }
 
-    async fn generate_hash(&mut self, context: &ActionContext) -> miette::Result<String> {
+    async fn generate_hash(
+        &mut self,
+        context: &ActionContext,
+        node: &ActionNode,
+    ) -> miette::Result<String> {
         debug!(
             task = self.task.target.as_str(),
             "Generating a unique hash for this task"
         );
 
         let mut attempt = Attempt::new(AttemptType::HashGeneration);
-
-        let mut hasher = self
-            .workspace
-            .cache_engine
-            .hash
-            .create_hasher(self.node.label());
+        let mut hasher = self.workspace.cache_engine.hash.create_hasher(node.label());
 
         // Hash common fields
         trace!(
@@ -337,7 +337,7 @@ impl<'task> TaskRunner<'task> {
             .get(self.task.platform)?
             .hash_run_target(
                 self.project,
-                self.node.get_runtime(),
+                node.get_runtime(),
                 &mut hasher,
                 &self.workspace.config.hasher,
             )
@@ -359,9 +359,9 @@ impl<'task> TaskRunner<'task> {
 
     async fn execute(
         &mut self,
-        hash: &str,
         context: &ActionContext,
-        console: &Console,
+        node: &ActionNode,
+        hash: Option<&str>,
     ) -> miette::Result<()> {
         if self.task.is_no_op() {
             self.attempts.push(Attempt::new_finished(
@@ -373,13 +373,19 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Build the command from the current task
-        let command = CommandBuilder::new(self.workspace, self.project, self.task, self.node)
+        let command = CommandBuilder::new(self.workspace, self.project, self.task, node)
             .build(context)
             .await?;
 
         // Execute the command and gather all attempts made
-        let executor =
-            CommandExecutor::new(self.workspace, self.project, self.task, self.node, command);
+        let executor = CommandExecutor::new(
+            self.workspace,
+            self.project,
+            self.task,
+            node,
+            self.console.clone(),
+            command,
+        );
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut attempt = Attempt::new(AttemptType::MutexAcquisition);
@@ -391,19 +397,19 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(hash, context, console).await
+            executor.execute(context, hash).await
         } else {
-            executor.execute(hash, context, console).await
+            executor.execute(context, hash).await
         };
 
         // Update the action state based on the result
         context.set_target_state(
             &self.task.target,
             if result.is_ok() {
-                if hash.is_empty() {
-                    TargetState::Passthrough // Cache disabled
+                if let Some(hash) = &hash {
+                    TargetState::Completed(hash.to_string())
                 } else {
-                    TargetState::Completed(hash.to_owned())
+                    TargetState::Passthrough // Cache disabled
                 }
             } else {
                 TargetState::Failed

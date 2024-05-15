@@ -2,6 +2,7 @@
 
 use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
+use moon_console::Console;
 use moon_platform::{PlatformManager, Runtime};
 use moon_process::Command;
 use moon_project::Project;
@@ -10,6 +11,7 @@ use moon_task_runner::command_builder::CommandBuilder;
 use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
+use moon_task_runner::TaskRunner;
 use moon_test_utils2::{
     generate_platform_manager_from_sandbox, generate_project_graph_from_sandbox, ProjectGraph,
 };
@@ -32,6 +34,7 @@ pub fn create_node(task: &Task) -> ActionNode {
 
 pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
+    pub console: Arc<Console>,
     pub platform_manager: PlatformManager,
     pub project_graph: ProjectGraph,
     pub project: Arc<Project>,
@@ -48,6 +51,7 @@ impl TaskRunnerContainer {
 
         Self {
             sandbox,
+            console: Arc::new(Console::new_testing()),
             platform_manager,
             project_graph,
             project,
@@ -112,8 +116,15 @@ impl TaskRunnerContainer {
             &self.project,
             task,
             &node,
+            self.console.clone(),
             self.internal_create_command(context, task, &node).await,
         )
+    }
+
+    pub async fn create_runner(&self, task_id: &str) -> TaskRunner {
+        let task = self.project.get_task(task_id).unwrap();
+
+        TaskRunner::new(&self.workspace, &self.project, task, self.console.clone()).unwrap()
     }
 
     async fn internal_create_command(

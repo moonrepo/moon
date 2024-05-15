@@ -28,8 +28,8 @@ pub async fn run_task(
     env::set_var("MOON_RUNNING_ACTION", "run-task");
 
     let task = project.get_task(&target.task_id)?;
-    let result = TaskRunner::new(&workspace, project, task, &action.node)?
-        .run_and_persist(&context, &console)
+    let result = TaskRunner::new(&workspace, project, task, console)?
+        .run_and_persist(&context, &action.node)
         .await?;
 
     action.allow_failure = task.options.allow_failure;

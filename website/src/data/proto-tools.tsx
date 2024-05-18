@@ -264,6 +264,17 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 		pluginType: 'wasm',
 		repoUrl: 'https://github.com/Phault/proto-dotnet-plugin',
 	},
+	doppler: {
+		author: 'Maktouch',
+		bins: ['doppler'],
+		description:
+			'The official CLI for interacting with your Doppler secrets and configuration.',
+		homepageUrl: 'https://www.doppler.com/',
+		name: 'Doppler',
+		pluginLocator: 'source:https://raw.githubusercontent.com/maktouch/proto-toml-plugins/main/plugins/doppler.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/maktouch/proto-toml-plugins',
+	},
 	dprint: {
 		author: 'Phault',
 		bins: ['dprint'],
@@ -298,6 +309,17 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 			'source:https://raw.githubusercontent.com/Phault/proto-toml-plugins/main/flyctl/plugin.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/Phault/proto-toml-plugins',
+	},
+	gh: {
+		author: 'Maktouch',
+		bins: ['gh'],
+		description:
+			'Take GitHub to the command line',
+		homepageUrl: 'https://cli.github.com/',
+		name: 'Github CLI',
+		pluginLocator: 'source:https://raw.githubusercontent.com/maktouch/proto-toml-plugins/main/plugins/gh.toml',
+		pluginType: 'toml',
+		repoUrl: 'https://github.com/maktouch/proto-toml-plugins',
 	},
 	gitleaks: {
 		author: 'Phault',

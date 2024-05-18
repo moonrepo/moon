@@ -10,6 +10,12 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Reworked the binary provided by `@moonrepo/cli` to work better on Windows.
+
 ## 1.24.5
 
 #### 🐞 Fixes

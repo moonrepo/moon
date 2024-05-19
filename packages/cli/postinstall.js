@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // Based on the great parcel-css
 // https://github.com/parcel-bundler/parcel-css/blob/master/cli/postinstall.js
 

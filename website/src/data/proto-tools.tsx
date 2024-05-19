@@ -267,11 +267,11 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	doppler: {
 		author: 'Maktouch',
 		bins: ['doppler'],
-		description:
-			'The official CLI for interacting with your Doppler secrets and configuration.',
+		description: 'The official CLI for interacting with your Doppler secrets and configuration.',
 		homepageUrl: 'https://www.doppler.com/',
 		name: 'Doppler',
-		pluginLocator: 'source:https://raw.githubusercontent.com/maktouch/proto-toml-plugins/main/plugins/doppler.toml',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/maktouch/proto-toml-plugins/main/plugins/doppler.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/maktouch/proto-toml-plugins',
 	},
@@ -313,11 +313,11 @@ export const THIRD_PARTY_TOOLS: Record<string, ProtoTool | ProtoTool[]> = {
 	gh: {
 		author: 'Maktouch',
 		bins: ['gh'],
-		description:
-			'Take GitHub to the command line',
+		description: 'Take GitHub to the command line',
 		homepageUrl: 'https://cli.github.com/',
 		name: 'Github CLI',
-		pluginLocator: 'source:https://raw.githubusercontent.com/maktouch/proto-toml-plugins/main/plugins/gh.toml',
+		pluginLocator:
+			'source:https://raw.githubusercontent.com/maktouch/proto-toml-plugins/main/plugins/gh.toml',
 		pluginType: 'toml',
 		repoUrl: 'https://github.com/maktouch/proto-toml-plugins',
 	},

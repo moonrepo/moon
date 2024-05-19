@@ -36,7 +36,6 @@ use app::App as CLI;
 use app_error::ExitCode;
 use clap::Parser;
 use enums::{CacheMode, LogLevel};
-use moon_common::consts::BIN_NAME;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
@@ -81,6 +80,10 @@ fn detect_running_version(args: &[OsString]) {
     env::set_var("MOON_VERSION", version);
 }
 
+pub fn is_arg_executable(arg: &str) -> bool {
+    arg.ends_with("moon") || arg.ends_with("moon.exe") || arg.ends_with("moon.js")
+}
+
 fn gather_args() -> Vec<OsString> {
     let mut args: Vec<OsString> = vec![];
     let mut leading_args: Vec<OsString> = vec![];
@@ -89,7 +92,7 @@ fn gather_args() -> Vec<OsString> {
     env::args_os().enumerate().for_each(|(index, arg)| {
         if let Some(a) = arg.to_str() {
             // Script being executed, so persist it
-            if index == 0 && a.ends_with(BIN_NAME) {
+            if index == 0 && is_arg_executable(a) {
                 leading_args.push(arg);
                 return;
             }

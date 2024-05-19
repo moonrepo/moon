@@ -20,13 +20,6 @@ jobs:
       - run: node ./scripts/version/checkBumpForRustChanges.mjs
       # This just tests package building, which release uses
       - run: bash ./scripts/release/buildPackages.sh
-  clibin:
-    name: CLI binary check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash ./scripts/checks/cliBinary.sh
-        shell: bash
   installer:
     name: Install script check
     runs-on: ${{ matrix.os }}

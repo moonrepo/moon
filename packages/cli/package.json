@@ -1,6 +1,7 @@
 {
   "name": "@moonrepo/cli",
   "version": "1.24.5",
+  "type": "commonjs",
   "description": "moon command line and core system.",
   "keywords": [
     "moon",
@@ -9,13 +10,13 @@
     "core"
   ],
   "files": [
-    "moon",
+    "moon.js",
     "postinstall.js"
   ],
   "author": "Miles Johnson",
   "license": "MIT",
   "bin": {
-    "moon": "moon"
+    "moon": "moon.js"
   },
   "repository": {
     "type": "git",

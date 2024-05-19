@@ -3383,7 +3383,7 @@ __metadata:
     "@moonrepo/core-windows-x64-msvc":
       optional: true
   bin:
-    moon: moon
+    moon: moon.js
   languageName: unknown
   linkType: soft
 

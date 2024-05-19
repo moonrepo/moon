@@ -1,7 +1,7 @@
 use miette::IntoDiagnostic;
 use mimalloc::MiMalloc;
 use moon_cli::commands::upgrade::is_musl;
-use moon_cli::run_cli;
+use moon_cli::{is_arg_executable, run_cli};
 use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
 use moon_utils::is_test_env;
 use starbase::MainResult;
@@ -126,7 +126,7 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> miette::Result<()> {
         .enumerate()
         .filter(|(i, arg)| {
             if *i == 0 {
-                !arg.ends_with(BIN_NAME)
+                !is_arg_executable(arg)
             } else {
                 true
             }

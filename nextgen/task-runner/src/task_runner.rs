@@ -438,7 +438,7 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
+    pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
         self.attempts.push(Attempt::new_finished(
             AttemptType::TaskExecution,
             ActionStatus::Skipped,
@@ -482,7 +482,7 @@ impl<'task> TaskRunner<'task> {
         Ok(hydrated)
     }
 
-    async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
+    pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
         if !self.is_cache_enabled() || !self.archiver.is_archivable()? {
             return Ok(false);
         }

@@ -14,3 +14,8 @@ tasks:
 
   no-deps:
     command: noop
+
+  no-cache:
+    command: noop
+    options:
+      cache: false

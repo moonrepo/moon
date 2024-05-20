@@ -454,4 +454,92 @@ mod task_runner {
                 .unwrap();
         }
     }
+
+    mod skip {
+        use super::*;
+
+        #[tokio::test]
+        async fn creates_an_attempt() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+
+            runner.skip(&context).unwrap();
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
+            assert_eq!(attempt.status, ActionStatus::Skipped);
+        }
+
+        #[tokio::test]
+        async fn sets_skipped_state() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+
+            runner.skip(&context).unwrap();
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Skipped
+            );
+        }
+    }
+
+    mod archive {
+        use super::*;
+
+        #[tokio::test]
+        async fn creates_a_passed_attempt_if_archived() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+            container.sandbox.create_file("project/file.txt", "");
+
+            let mut runner = container.create_runner("outputs");
+            let result = runner.archive("hash123").await.unwrap();
+
+            assert!(result);
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::ArchiveCreation);
+            assert_eq!(attempt.status, ActionStatus::Passed);
+        }
+
+        #[tokio::test]
+        async fn returns_early_if_cache_disabled() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("no-cache");
+
+            assert!(!runner.archive("hash123").await.unwrap());
+            assert!(runner.attempts.last().is_none());
+        }
+
+        #[tokio::test]
+        async fn returns_early_if_no_vcs() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("outputs");
+
+            assert!(!runner.archive("hash123").await.unwrap());
+            assert!(runner.attempts.last().is_none());
+        }
+
+        #[tokio::test]
+        async fn returns_early_if_not_archiveable() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("base");
+
+            assert!(!runner.archive("hash123").await.unwrap());
+            assert!(runner.attempts.last().is_none());
+        }
+    }
 }

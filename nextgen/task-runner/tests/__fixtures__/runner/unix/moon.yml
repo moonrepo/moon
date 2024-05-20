@@ -17,3 +17,11 @@ tasks:
     options:
       shell: true
       retryCount: 3
+
+  create-file:
+    command: 'touch file.txt'
+    outputs:
+      - 'file.txt'
+    platform: system
+    options:
+      shell: true

@@ -14,18 +14,18 @@ pub enum ProfileType {
     Heap,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "state", content = "hash", rename_all = "lowercase")]
 pub enum TargetState {
-    Completed(String),
+    Passed(String), // hash
+    Passthrough,    // no hash (cache off)
     Failed,
     Skipped,
-    Passthrough,
 }
 
 impl TargetState {
     pub fn is_complete(&self) -> bool {
-        matches!(self, TargetState::Completed(_) | TargetState::Passthrough)
+        matches!(self, TargetState::Passed(_) | TargetState::Passthrough)
     }
 }
 

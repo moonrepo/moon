@@ -6,3 +6,11 @@ tasks:
     command: noop
     outputs:
       - 'file.txt'
+
+  has-deps:
+    command: noop
+    deps:
+      - 'base'
+
+  no-deps:
+    command: noop

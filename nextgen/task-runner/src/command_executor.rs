@@ -1,5 +1,5 @@
 use moon_action::{ActionNode, ActionStatus, Attempt, AttemptType};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::{Console, TaskReportState};
@@ -22,7 +22,8 @@ fn is_ci_env() -> bool {
 pub struct CommandExecuteResult {
     pub attempts: Vec<Attempt>,
     pub error: Option<miette::Report>,
-    pub state: TaskReportState,
+    pub report_state: TaskReportState,
+    pub run_state: TargetState,
 }
 
 /// Run the command as a child process and capture its output. If the process fails
@@ -79,10 +80,11 @@ impl<'task> CommandExecutor<'task> {
         hash: Option<&str>,
     ) -> miette::Result<CommandExecuteResult> {
         // Prepare state for the executor, and each attempt
-        let mut state = self.prepate_state(context);
+        let mut report_state = self.prepate_state(context);
+        let mut run_state = TargetState::Failed;
 
         // Hash is empty if cache is disabled
-        state.hash = hash.map(|h| h.to_string());
+        report_state.hash = hash.map(|h| h.to_string());
 
         // For long-running process, log a message on an interval to indicate it's still running
         self.start_monitoring();
@@ -90,11 +92,11 @@ impl<'task> CommandExecutor<'task> {
         // Execute the command on a loop as an attempt for every retry count we have
         let execution_error: Option<miette::Report> = loop {
             let mut attempt = Attempt::new(AttemptType::TaskExecution);
-            state.attempt_current = self.attempt_index;
+            report_state.attempt_current = self.attempt_index;
 
             self.console
                 .reporter
-                .on_task_started(&self.task.target, &attempt, &state)?;
+                .on_task_started(&self.task.target, &attempt, &report_state)?;
 
             self.print_command(context)?;
 
@@ -116,7 +118,7 @@ impl<'task> CommandExecutor<'task> {
                     self.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
-                        &state,
+                        &report_state,
                         None,
                     )?;
 
@@ -124,6 +126,10 @@ impl<'task> CommandExecutor<'task> {
 
                     // Successful execution, so break the loop
                     if output.status.success() {
+                        run_state = hash.map_or(TargetState::Passthrough, |hash| {
+                            TargetState::Passed(hash.to_string())
+                        });
+
                         break None;
                     }
                     // Unsuccessful execution (maybe flaky), attempt again
@@ -144,7 +150,7 @@ impl<'task> CommandExecutor<'task> {
                     self.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
-                        &state,
+                        &report_state,
                         Some(&error),
                     )?;
 
@@ -160,7 +166,8 @@ impl<'task> CommandExecutor<'task> {
         Ok(CommandExecuteResult {
             attempts: mem::take(&mut self.attempts),
             error: execution_error,
-            state,
+            report_state,
+            run_state,
         })
     }
 

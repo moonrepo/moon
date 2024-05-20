@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_action::{ActionStatus, AttemptType};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use utils::*;
 
 mod command_executor {
@@ -9,7 +9,7 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempt_on_success() {
-        let container = TaskRunnerContainer::new_os("executor").await;
+        let container = TaskRunnerContainer::new_os("runner").await;
         let context = ActionContext::default();
 
         let result = container
@@ -21,9 +21,10 @@ mod command_executor {
 
         // Check state
         assert!(result.error.is_none());
-        assert_eq!(result.state.hash.unwrap(), "hash123");
-        assert_eq!(result.state.attempt_current, 1);
-        assert_eq!(result.state.attempt_total, 1);
+        assert_eq!(result.report_state.hash.unwrap(), "hash123");
+        assert_eq!(result.report_state.attempt_current, 1);
+        assert_eq!(result.report_state.attempt_total, 1);
+        assert_eq!(result.run_state, TargetState::Passed("hash123".into()));
 
         // Check attempt
         assert_eq!(result.attempts.len(), 1);
@@ -39,7 +40,7 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempt_on_failure() {
-        let container = TaskRunnerContainer::new_os("executor").await;
+        let container = TaskRunnerContainer::new_os("runner").await;
         let context = ActionContext::default();
 
         let result = container
@@ -51,9 +52,10 @@ mod command_executor {
 
         // Check state
         assert!(result.error.is_none());
-        assert_eq!(result.state.hash.unwrap(), "hash123");
-        assert_eq!(result.state.attempt_current, 1);
-        assert_eq!(result.state.attempt_total, 1);
+        assert_eq!(result.report_state.hash.unwrap(), "hash123");
+        assert_eq!(result.report_state.attempt_current, 1);
+        assert_eq!(result.report_state.attempt_total, 1);
+        assert_eq!(result.run_state, TargetState::Failed);
 
         // Check attempt
         assert_eq!(result.attempts.len(), 1);
@@ -68,7 +70,7 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempts_for_each_retry() {
-        let container = TaskRunnerContainer::new_os("executor").await;
+        let container = TaskRunnerContainer::new_os("runner").await;
         let context = ActionContext::default();
 
         let result = container
@@ -80,9 +82,10 @@ mod command_executor {
 
         // Check state
         assert!(result.error.is_none());
-        assert!(result.state.hash.is_none());
-        assert_eq!(result.state.attempt_current, 4);
-        assert_eq!(result.state.attempt_total, 4);
+        assert!(result.report_state.hash.is_none());
+        assert_eq!(result.report_state.attempt_current, 4);
+        assert_eq!(result.report_state.attempt_total, 4);
+        assert_eq!(result.run_state, TargetState::Failed);
 
         // Check attempt
         assert_eq!(result.attempts.len(), 4);

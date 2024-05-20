@@ -1,5 +1,8 @@
 mod utils;
 
+use moon_action::{ActionStatus, AttemptType};
+use moon_action_context::*;
+use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use std::env;
 use utils::*;
@@ -151,6 +154,304 @@ mod task_runner {
 
                 env::remove_var("MOON_CACHE");
             }
+        }
+    }
+
+    mod is_dependencies_complete {
+        use super::*;
+
+        #[tokio::test]
+        async fn returns_true_if_no_deps() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let runner = container.create_runner("no-deps");
+            let context = ActionContext::default();
+
+            assert!(runner.is_dependencies_complete(&context).unwrap());
+        }
+
+        #[tokio::test]
+        async fn returns_false_if_dep_failed() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let runner = container.create_runner("has-deps");
+            let context = ActionContext::default();
+
+            context
+                .target_states
+                .insert(Target::new("project", "base").unwrap(), TargetState::Failed)
+                .unwrap();
+
+            assert!(!runner.is_dependencies_complete(&context).unwrap());
+        }
+
+        #[tokio::test]
+        async fn returns_false_if_dep_skipped() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let runner = container.create_runner("has-deps");
+            let context = ActionContext::default();
+
+            context
+                .target_states
+                .insert(
+                    Target::new("project", "base").unwrap(),
+                    TargetState::Skipped,
+                )
+                .unwrap();
+
+            assert!(!runner.is_dependencies_complete(&context).unwrap());
+        }
+
+        #[tokio::test]
+        async fn returns_true_if_dep_passed() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let runner = container.create_runner("no-deps");
+            let context = ActionContext::default();
+
+            context
+                .target_states
+                .insert(
+                    Target::new("project", "base").unwrap(),
+                    TargetState::Passed("hash123".into()),
+                )
+                .unwrap();
+
+            assert_eq!(runner.is_dependencies_complete(&context).unwrap(), true);
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Encountered a missing hash for target project:base")]
+        async fn errors_if_dep_not_ran() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let runner = container.create_runner("has-deps");
+            let context = ActionContext::default();
+
+            runner.is_dependencies_complete(&context).unwrap();
+        }
+    }
+
+    mod generate_hash {
+        use super::*;
+
+        #[tokio::test]
+        async fn generates_a_hash() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+            let node = container.create_action_node("base");
+
+            let hash = runner.generate_hash(&context, &node).await.unwrap();
+
+            // 64 bytes
+            assert_eq!(hash.len(), 64);
+        }
+
+        #[tokio::test]
+        async fn generates_a_different_hash_via_passthrough_args() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("base");
+            let mut context = ActionContext::default();
+            let node = container.create_action_node("base");
+
+            let before_hash = runner.generate_hash(&context, &node).await.unwrap();
+
+            context
+                .primary_targets
+                .insert(Target::new("project", "base").unwrap());
+            context.passthrough_args.push("--extra".into());
+
+            let after_hash = runner.generate_hash(&context, &node).await.unwrap();
+
+            assert_ne!(before_hash, after_hash);
+        }
+
+        #[tokio::test]
+        async fn creates_an_attempt() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+            let node = container.create_action_node("base");
+
+            runner.generate_hash(&context, &node).await.unwrap();
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::HashGeneration);
+            assert_eq!(attempt.status, ActionStatus::Passed);
+        }
+
+        #[tokio::test]
+        async fn creates_a_manifest_file() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+            let node = container.create_action_node("base");
+
+            let hash = runner.generate_hash(&context, &node).await.unwrap();
+
+            assert!(container
+                .sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{hash}.json"))
+                .exists());
+        }
+    }
+
+    mod execute {
+        use super::*;
+
+        #[tokio::test]
+        async fn returns_immediately_for_no_op() {
+            let container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+            let node = container.create_action_node("base");
+
+            runner.execute(&context, &node, None).await.unwrap();
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::NoOperation);
+            assert_eq!(attempt.status, ActionStatus::Passed);
+        }
+
+        #[tokio::test]
+        async fn executes_and_sets_success_state() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("success");
+            let node = container.create_action_node("success");
+            let context = ActionContext::default();
+
+            runner
+                .execute(&context, &node, Some("hash123"))
+                .await
+                .unwrap();
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Passed("hash123".into())
+            );
+        }
+
+        #[tokio::test]
+        async fn executes_and_sets_success_state_without_hash() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("success");
+            let node = container.create_action_node("success");
+            let context = ActionContext::default();
+
+            runner.execute(&context, &node, None).await.unwrap();
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Passthrough
+            );
+        }
+
+        #[tokio::test]
+        async fn executes_and_sets_failed_state() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("failure");
+            let node = container.create_action_node("failure");
+            let context = ActionContext::default();
+
+            // Swallow panic so we can check attempts
+            let _ = runner.execute(&context, &node, Some("hash123")).await;
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Failed
+            );
+        }
+
+        #[tokio::test]
+        async fn executes_and_creates_attempt_on_success() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("success");
+            let node = container.create_action_node("success");
+            let context = ActionContext::default();
+
+            runner
+                .execute(&context, &node, Some("hash123"))
+                .await
+                .unwrap();
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
+            assert_eq!(attempt.status, ActionStatus::Passed);
+
+            let exec = attempt.execution.as_ref().unwrap();
+
+            assert_eq!(exec.exit_code, Some(0));
+            assert_eq!(exec.stdout.as_ref().unwrap().trim(), "test");
+        }
+
+        #[tokio::test]
+        async fn executes_and_creates_attempt_on_failure() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("failure");
+            let node = container.create_action_node("failure");
+            let context = ActionContext::default();
+
+            // Swallow panic so we can check attempts
+            let _ = runner.execute(&context, &node, Some("hash123")).await;
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
+            assert_eq!(attempt.status, ActionStatus::Failed);
+
+            let exec = attempt.execution.as_ref().unwrap();
+
+            assert_eq!(exec.exit_code, Some(1));
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "failed to run")]
+        async fn errors_when_task_exec_fails() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("failure");
+            let node = container.create_action_node("failure");
+            let context = ActionContext::default();
+
+            runner
+                .execute(&context, &node, Some("hash123"))
+                .await
+                .unwrap();
         }
     }
 }

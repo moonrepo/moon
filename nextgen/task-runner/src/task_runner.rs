@@ -28,16 +28,16 @@ pub struct TaskRunResult {
 
 pub struct TaskRunner<'task> {
     project: &'task Project,
-    task: &'task Task,
+    pub task: &'task Task,
     workspace: &'task Workspace,
+    platform_manager: &'task PlatformManager,
 
     archiver: OutputArchiver<'task>,
     console: Arc<Console>,
     hydrater: OutputHydrater<'task>,
 
-    attempts: Vec<Attempt>,
-
     // Public for testing
+    pub attempts: Vec<Attempt>,
     pub cache: CacheItem<RunTaskState>,
 }
 
@@ -66,11 +66,16 @@ impl<'task> TaskRunner<'task> {
                 workspace,
             },
             hydrater: OutputHydrater { task, workspace },
+            platform_manager: PlatformManager::read(),
             project,
             task,
             workspace,
             attempts: vec![],
         })
+    }
+
+    pub fn set_platform_manager(&mut self, manager: &'task PlatformManager) {
+        self.platform_manager = manager;
     }
 
     pub async fn run(
@@ -235,13 +240,13 @@ impl<'task> TaskRunner<'task> {
         Ok(None)
     }
 
-    fn is_cache_enabled(&self) -> bool {
+    pub fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
         self.task.options.cache && self.workspace.vcs.is_enabled()
     }
 
-    fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
+    pub fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
         if self.task.deps.is_empty() {
             return Ok(true);
         }
@@ -271,7 +276,7 @@ impl<'task> TaskRunner<'task> {
         Ok(true)
     }
 
-    async fn generate_hash(
+    pub async fn generate_hash(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
@@ -308,7 +313,7 @@ impl<'task> TaskRunner<'task> {
             for dep in &self.task.deps {
                 if let Some(entry) = context.target_states.get(&dep.target) {
                     match entry.get() {
-                        TargetState::Completed(hash) => {
+                        TargetState::Passed(hash) => {
                             deps.insert(&dep.target, hash.clone());
                         }
                         TargetState::Passthrough => {
@@ -333,7 +338,7 @@ impl<'task> TaskRunner<'task> {
             "Including platform specific fields in the hash"
         );
 
-        PlatformManager::read()
+        self.platform_manager
             .get(self.task.platform)?
             .hash_run_target(
                 self.project,
@@ -357,7 +362,7 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    async fn execute(
+    pub async fn execute(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
@@ -373,9 +378,10 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Build the command from the current task
-        let command = CommandBuilder::new(self.workspace, self.project, self.task, node)
-            .build(context)
-            .await?;
+        let mut builder = CommandBuilder::new(self.workspace, self.project, self.task, node);
+        builder.set_platform_manager(&self.platform_manager);
+
+        let command = builder.build(context).await?;
 
         // Execute the command and gather all attempts made
         let executor = CommandExecutor::new(
@@ -397,28 +403,15 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(context, hash).await
+            executor.execute(context, hash).await?
         } else {
-            executor.execute(context, hash).await
+            executor.execute(context, hash).await?
         };
 
         // Update the action state based on the result
-        context.set_target_state(
-            &self.task.target,
-            if result.is_ok() {
-                if let Some(hash) = &hash {
-                    TargetState::Completed(hash.to_string())
-                } else {
-                    TargetState::Passthrough // Cache disabled
-                }
-            } else {
-                TargetState::Failed
-            },
-        );
+        context.set_target_state(&self.task.target, result.run_state);
 
         // Extract the attempts from the result
-        let result = result?;
-
         self.attempts.extend(result.attempts);
 
         // If the execution as a whole failed, return the error.
@@ -473,8 +466,7 @@ impl<'task> TaskRunner<'task> {
                     _ => ActionStatus::Cached,
                 });
 
-                context
-                    .set_target_state(&self.task.target, TargetState::Completed(hash.to_owned()));
+                context.set_target_state(&self.task.target, TargetState::Passed(hash.to_owned()));
 
                 true
             }

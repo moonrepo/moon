@@ -124,7 +124,16 @@ impl TaskRunnerContainer {
     pub fn create_runner(&self, task_id: &str) -> TaskRunner {
         let task = self.project.get_task(task_id).unwrap();
 
-        TaskRunner::new(&self.workspace, &self.project, task, self.console.clone()).unwrap()
+        let mut runner =
+            TaskRunner::new(&self.workspace, &self.project, task, self.console.clone()).unwrap();
+        runner.set_platform_manager(&self.platform_manager);
+        runner
+    }
+
+    pub fn create_action_node(&self, task_id: &str) -> ActionNode {
+        let task = self.project.get_task(task_id).unwrap();
+
+        create_node(task)
     }
 
     async fn internal_create_command(

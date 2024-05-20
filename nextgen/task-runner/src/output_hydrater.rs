@@ -7,7 +7,7 @@ use starbase_utils::fs;
 use std::path::Path;
 use tracing::{debug, warn};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HydrateFrom {
     LocalCache,
     PreviousOutput,

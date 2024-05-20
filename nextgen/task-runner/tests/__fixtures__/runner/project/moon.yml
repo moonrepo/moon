@@ -1,0 +1,8 @@
+tasks:
+  base:
+    command: noop
+
+  outputs:
+    command: noop
+    outputs:
+      - 'file.txt'

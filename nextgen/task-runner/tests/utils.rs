@@ -121,7 +121,7 @@ impl TaskRunnerContainer {
         )
     }
 
-    pub async fn create_runner(&self, task_id: &str) -> TaskRunner {
+    pub fn create_runner(&self, task_id: &str) -> TaskRunner {
         let task = self.project.get_task(task_id).unwrap();
 
         TaskRunner::new(&self.workspace, &self.project, task, self.console.clone()).unwrap()

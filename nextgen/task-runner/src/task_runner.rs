@@ -32,11 +32,13 @@ pub struct TaskRunner<'task> {
     workspace: &'task Workspace,
 
     archiver: OutputArchiver<'task>,
-    cache: CacheItem<RunTaskState>,
     console: Arc<Console>,
     hydrater: OutputHydrater<'task>,
 
     attempts: Vec<Attempt>,
+
+    // Public for testing
+    pub cache: CacheItem<RunTaskState>,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -161,7 +163,7 @@ impl<'task> TaskRunner<'task> {
         }
     }
 
-    async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
+    pub async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
         let cache_engine = &self.workspace.cache_engine;
 
         debug!(
@@ -236,9 +238,7 @@ impl<'task> TaskRunner<'task> {
     fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
-        self.task.options.cache
-            && self.workspace.vcs.is_enabled()
-            && self.workspace.cache_engine.get_mode().is_readable()
+        self.task.options.cache && self.workspace.vcs.is_enabled()
     }
 
     fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {

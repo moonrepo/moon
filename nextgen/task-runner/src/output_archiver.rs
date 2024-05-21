@@ -20,7 +20,7 @@ pub struct OutputArchiver<'task> {
 
 impl<'task> OutputArchiver<'task> {
     pub async fn archive(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
-        if self.task.outputs.is_empty() {
+        if !self.is_archivable()? {
             return Ok(None);
         }
 

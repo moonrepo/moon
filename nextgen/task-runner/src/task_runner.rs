@@ -94,7 +94,7 @@ impl<'task> TaskRunner<'task> {
             let hash = self.generate_hash(context, node).await?;
 
             // Exit early if this build has already been cached/hashed
-            if self.hydrate(&hash, context).await? {
+            if self.hydrate(context, &hash).await? {
                 return Ok(Some(hash));
             }
 
@@ -449,11 +449,26 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    async fn hydrate(&mut self, hash: &str, context: &ActionContext) -> miette::Result<bool> {
-        if !self.is_cache_enabled() {
-            return Ok(false);
-        }
+    pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
+        let mut attempt = Attempt::new(AttemptType::ArchiveCreation);
 
+        let archived = match self.archiver.archive(hash).await? {
+            Some(_) => {
+                attempt.finish(ActionStatus::Passed);
+                true
+            }
+            None => {
+                attempt.finish(ActionStatus::Skipped);
+                false
+            }
+        };
+
+        self.attempts.push(attempt);
+
+        Ok(archived)
+    }
+
+    async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
         let mut attempt = Attempt::new(AttemptType::OutputHydration);
 
         let hydrated = match self.is_cached(hash).await? {
@@ -480,29 +495,6 @@ impl<'task> TaskRunner<'task> {
         self.attempts.push(attempt);
 
         Ok(hydrated)
-    }
-
-    pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
-        if !self.is_cache_enabled() || !self.archiver.is_archivable()? {
-            return Ok(false);
-        }
-
-        let mut attempt = Attempt::new(AttemptType::ArchiveCreation);
-
-        let archived = match self.archiver.archive(hash).await? {
-            Some(_) => {
-                attempt.finish(ActionStatus::Passed);
-                true
-            }
-            None => {
-                attempt.finish(ActionStatus::Skipped);
-                false
-            }
-        };
-
-        self.attempts.push(attempt);
-
-        Ok(archived)
     }
 
     fn load_logs(&self, attempt: &mut Attempt) -> miette::Result<()> {

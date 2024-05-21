@@ -439,6 +439,28 @@ mod task_runner {
         }
 
         #[tokio::test]
+        async fn creates_attempt_for_mutex_acquire() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("with-mutex");
+            let node = container.create_action_node("with-mutex");
+            let context = ActionContext::default();
+
+            // Swallow panic so we can check attempts
+            let _ = runner.execute(&context, &node, Some("hash123")).await;
+
+            let attempt = runner
+                .attempts
+                .iter()
+                .find(|a| matches!(a.type_of, AttemptType::MutexAcquisition))
+                .unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::MutexAcquisition);
+            assert_eq!(attempt.status, ActionStatus::Passed);
+        }
+
+        #[tokio::test]
         #[should_panic(expected = "failed to run")]
         async fn errors_when_task_exec_fails() {
             let container = TaskRunnerContainer::new_os("runner").await;
@@ -493,6 +515,7 @@ mod task_runner {
 
     mod archive {
         use super::*;
+        use std::sync::Arc;
 
         #[tokio::test]
         async fn creates_a_passed_attempt_if_archived() {
@@ -512,34 +535,36 @@ mod task_runner {
         }
 
         #[tokio::test]
-        async fn returns_early_if_cache_disabled() {
-            let container = TaskRunnerContainer::new("runner").await;
-            container.sandbox.enable_git();
-
-            let mut runner = container.create_runner("no-cache");
-
-            assert!(!runner.archive("hash123").await.unwrap());
-            assert!(runner.attempts.last().is_none());
-        }
-
-        #[tokio::test]
-        async fn returns_early_if_no_vcs() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("outputs");
-
-            assert!(!runner.archive("hash123").await.unwrap());
-            assert!(runner.attempts.last().is_none());
-        }
-
-        #[tokio::test]
-        async fn returns_early_if_not_archiveable() {
+        async fn creates_a_skipped_attempt_if_not_archiveable() {
             let container = TaskRunnerContainer::new("runner").await;
             container.sandbox.enable_git();
 
             let mut runner = container.create_runner("base");
+            let result = runner.archive("hash123").await.unwrap();
 
-            assert!(!runner.archive("hash123").await.unwrap());
-            assert!(runner.attempts.last().is_none());
+            assert!(!result);
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::ArchiveCreation);
+            assert_eq!(attempt.status, ActionStatus::Skipped);
+        }
+
+        #[tokio::test]
+        async fn can_archive_tasks_without_outputs() {
+            let mut container = TaskRunnerContainer::new("runner").await;
+            container.sandbox.enable_git();
+
+            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+                config
+                    .runner
+                    .archivable_targets
+                    .push(Target::new("project", "base").unwrap());
+            }
+
+            let mut runner = container.create_runner("base");
+
+            assert!(runner.archive("hash123").await.unwrap());
         }
     }
 }

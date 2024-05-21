@@ -25,3 +25,10 @@ tasks:
     platform: system
     options:
       shell: true
+
+  with-mutex:
+    command: 'echo "test"'
+    platform: system
+    options:
+      mutex: lock
+      shell: true

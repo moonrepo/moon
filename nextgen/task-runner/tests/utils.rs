@@ -38,6 +38,7 @@ pub struct TaskRunnerContainer {
     pub platform_manager: PlatformManager,
     pub project_graph: ProjectGraph,
     pub project: Arc<Project>,
+    pub project_id: String,
     pub workspace: Workspace,
 }
 
@@ -55,6 +56,7 @@ impl TaskRunnerContainer {
             platform_manager,
             project_graph,
             project,
+            project_id: project_id.to_owned(),
             workspace,
         }
     }

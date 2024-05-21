@@ -125,11 +125,11 @@ impl Action {
         let mut passed = true;
         let mut status = ActionStatus::Passed;
 
-        if let Some(last) = attempts.last() {
-            status = last.status;
+        if let Some(last_attempt) = Attempt::get_last_execution(&attempts) {
+            status = last_attempt.status;
 
-            if last.has_failed() {
-                if let Some(exection) = &last.execution {
+            if last_attempt.has_failed() {
+                if let Some(exection) = &last_attempt.execution {
                     let mut message = format!("Failed to run {}", color::shell(command));
 
                     if let Some(code) = exection.exit_code {

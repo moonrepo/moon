@@ -29,7 +29,7 @@ pub async fn run_task(
 
     let task = project.get_task(&target.task_id)?;
     let result = TaskRunner::new(&workspace, project, task, console)?
-        .run_and_persist(&context, &action.node)
+        .run(&context, &action.node)
         .await?;
 
     action.allow_failure = task.options.allow_failure;

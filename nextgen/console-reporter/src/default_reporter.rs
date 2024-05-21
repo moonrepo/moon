@@ -405,19 +405,19 @@ impl Reporter for DefaultReporter {
         item: &TaskReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if let Some(attempt) = Attempt::get_last_failed_execution(attempts) {
+        if let Some(attempt) = Attempt::get_last_execution(attempts) {
             // If cached, the finished event above is not fired,
             // so handle printing the captured logs here!
             if attempt.is_cached() && attempt.has_output() {
                 self.out.write_newline()?;
                 self.print_attempt_output(attempt, item)?;
             }
-        }
 
-        if let Some(attempt) = attempts.last() {
             // Then print the success checkpoint. The success
             // checkpoint should always appear after the output,
             // and "contain" it within the start checkpoint!
+            self.print_task_checkpoint(target, attempt, item)?;
+        } else if let Some(attempt) = attempts.last() {
             self.print_task_checkpoint(target, attempt, item)?;
         }
 

@@ -78,7 +78,7 @@ impl<'task> TaskRunner<'task> {
         self.platform_manager = manager;
     }
 
-    pub async fn run(
+    async fn internal_run(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
@@ -90,6 +90,14 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
+        // If the task is a no-operation, we should exit early
+        if self.task.is_no_op() {
+            self.skip_noop(context)?;
+
+            return Ok(None);
+        }
+
+        // If cache is enabled, then generate a hash and manage outputs
         if self.is_cache_enabled() {
             let hash = self.generate_hash(context, node).await?;
 
@@ -112,26 +120,18 @@ impl<'task> TaskRunner<'task> {
             "Caching is disabled for task, will not generate a hash, and will attempt to run a command as normal"
         );
 
-        // Mark it as passthrough early so that other tasks that depend on it don't fail
-        // context.set_target_state(&self.task.target, TargetState::Passthrough);
-
-        // Build and execute the command as a child process
+        // Otherwise build and execute the command as a child process
         self.execute(context, node, None).await?;
 
         Ok(None)
     }
 
-    pub async fn run_and_persist(
+    pub async fn run(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
-        let result = self.run(context, node).await;
-
-        if let Some(last_attempt) = Attempt::get_last_execution(&self.attempts) {
-            self.cache.data.exit_code = last_attempt.get_exit_code();
-            self.save_logs(last_attempt)?;
-        }
+        let result = self.internal_run(context, node).await;
 
         self.cache.data.last_run_time = now_millis();
         self.cache.save()?;
@@ -368,15 +368,6 @@ impl<'task> TaskRunner<'task> {
         node: &ActionNode,
         hash: Option<&str>,
     ) -> miette::Result<()> {
-        if self.task.is_no_op() {
-            self.attempts.push(Attempt::new_finished(
-                AttemptType::NoOperation,
-                ActionStatus::Passed,
-            ));
-
-            return Ok(());
-        }
-
         // Build the command from the current task
         let mut builder = CommandBuilder::new(self.workspace, self.project, self.task, node);
         builder.set_platform_manager(&self.platform_manager);
@@ -408,6 +399,11 @@ impl<'task> TaskRunner<'task> {
             executor.execute(context, hash).await?
         };
 
+        if let Some(last_attempt) = Attempt::get_last_execution(&result.attempts) {
+            self.cache.data.exit_code = last_attempt.get_exit_code();
+            self.save_logs(last_attempt)?;
+        }
+
         // Update the action state based on the result
         context.set_target_state(&self.task.target, result.run_state);
 
@@ -423,16 +419,14 @@ impl<'task> TaskRunner<'task> {
 
         // If our last task execution was a failure, return a hard error
         if let Some(last_attempt) = Attempt::get_last_failed_execution(&self.attempts) {
-            if last_attempt.has_failed() {
-                return Err(TaskRunnerError::RunFailed {
-                    target: self.task.target.to_string(),
-                    error: ProcessError::ExitNonZero {
-                        bin: self.task.command.clone(),
-                        code: last_attempt.get_exit_code(),
-                    },
-                }
-                .into());
+            return Err(TaskRunnerError::RunFailed {
+                target: self.task.target.to_string(),
+                error: ProcessError::ExitNonZero {
+                    bin: self.task.command.clone(),
+                    code: last_attempt.get_exit_code(),
+                },
             }
+            .into());
         }
 
         Ok(())
@@ -445,6 +439,17 @@ impl<'task> TaskRunner<'task> {
         ));
 
         context.set_target_state(&self.task.target, TargetState::Skipped);
+
+        Ok(())
+    }
+
+    pub fn skip_noop(&mut self, context: &ActionContext) -> miette::Result<()> {
+        self.attempts.push(Attempt::new_finished(
+            AttemptType::NoOperation,
+            ActionStatus::Passed,
+        ));
+
+        context.set_target_state(&self.task.target, TargetState::Passthrough);
 
         Ok(())
     }

@@ -308,23 +308,6 @@ mod task_runner {
         use super::*;
 
         #[tokio::test]
-        async fn returns_immediately_for_no_op() {
-            let container = TaskRunnerContainer::new("runner").await;
-            container.sandbox.enable_git();
-
-            let mut runner = container.create_runner("base");
-            let context = ActionContext::default();
-            let node = container.create_action_node("base");
-
-            runner.execute(&context, &node, None).await.unwrap();
-
-            let attempt = runner.attempts.last().unwrap();
-
-            assert_eq!(attempt.type_of, AttemptType::NoOperation);
-            assert_eq!(attempt.status, ActionStatus::Passed);
-        }
-
-        #[tokio::test]
         async fn executes_and_sets_success_state() {
             let container = TaskRunnerContainer::new_os("runner").await;
             container.sandbox.enable_git();
@@ -439,6 +422,29 @@ mod task_runner {
         }
 
         #[tokio::test]
+        async fn saves_stdlog_file_to_cache() {
+            let container = TaskRunnerContainer::new_os("runner").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner("success");
+            let node = container.create_action_node("success");
+            let context = ActionContext::default();
+
+            runner
+                .execute(&context, &node, Some("hash123"))
+                .await
+                .unwrap();
+
+            assert!(container
+                .sandbox
+                .path()
+                .join(".moon/cache/states")
+                .join(container.project_id)
+                .join("success/stdout.log")
+                .exists());
+        }
+
+        #[tokio::test]
         async fn creates_attempt_for_mutex_acquire() {
             let container = TaskRunnerContainer::new_os("runner").await;
             container.sandbox.enable_git();
@@ -509,6 +515,42 @@ mod task_runner {
                     .unwrap()
                     .get(),
                 &TargetState::Skipped
+            );
+        }
+    }
+
+    mod skip_noop {
+        use super::*;
+
+        #[tokio::test]
+        async fn creates_an_attempt() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+
+            runner.skip_noop(&context).unwrap();
+
+            let attempt = runner.attempts.last().unwrap();
+
+            assert_eq!(attempt.type_of, AttemptType::NoOperation);
+            assert_eq!(attempt.status, ActionStatus::Passed);
+        }
+
+        #[tokio::test]
+        async fn sets_passthrough_state() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+
+            runner.skip_noop(&context).unwrap();
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Passthrough
             );
         }
     }

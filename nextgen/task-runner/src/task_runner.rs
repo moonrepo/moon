@@ -46,6 +46,11 @@ impl<'task> TaskRunner<'task> {
         task: &'task Task,
         console: Arc<Console>,
     ) -> miette::Result<Self> {
+        debug!(
+            task = task.target.as_str(),
+            "Creating a task runner for target"
+        );
+
         let mut cache = workspace
             .cache_engine
             .state
@@ -97,6 +102,11 @@ impl<'task> TaskRunner<'task> {
 
         // If cache is enabled, then generate a hash and manage outputs
         if self.is_cache_enabled() {
+            debug!(
+                task = self.task.target.as_str(),
+                "Caching is enabled for task, will generate a hash and manage outputs"
+            );
+
             let hash = self.generate_hash(context, node).await?;
 
             // Exit early if this build has already been cached/hashed
@@ -332,7 +342,7 @@ impl<'task> TaskRunner<'task> {
         trace!(
             task = self.task.target.as_str(),
             platform = ?self.task.platform,
-            "Including platform specific fields in the hash"
+            "Including toolchain specific fields in the hash"
         );
 
         self.platform_manager
@@ -367,6 +377,11 @@ impl<'task> TaskRunner<'task> {
         node: &ActionNode,
         hash: Option<&str>,
     ) -> miette::Result<()> {
+        debug!(
+            task = self.task.target.as_str(),
+            "Building and executing the task command"
+        );
+
         // Build the command from the current task
         let mut builder = CommandBuilder::new(self.workspace, self.project, self.task, node);
         builder.set_platform_manager(self.platform_manager);
@@ -385,10 +400,24 @@ impl<'task> TaskRunner<'task> {
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::new(OperationType::MutexAcquisition);
+
+            debug!(
+                task = self.task.target.as_str(),
+                mutex = mutex_name,
+                "Waiting to acquire task mutex lock"
+            );
+
             let mutex = context.get_or_create_mutex(mutex_name);
             let _guard = mutex.lock().await;
 
+            debug!(
+                task = self.task.target.as_str(),
+                mutex = mutex_name,
+                "Acquired task mutex lock"
+            );
+
             operation.finish(ActionStatus::Passed);
+
             self.operations.push(operation);
 
             // This execution is required within this block so that the
@@ -399,7 +428,6 @@ impl<'task> TaskRunner<'task> {
         };
 
         if let Some(last_attempt) = result.attempts.get_last_execution() {
-            self.cache.data.exit_code = last_attempt.get_exit_code();
             self.save_logs(last_attempt)?;
         }
 
@@ -434,6 +462,8 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
+        debug!(task = self.task.target.as_str(), "Skipping task");
+
         self.operations.push(Operation::new_finished(
             OperationType::TaskExecution,
             ActionStatus::Skipped,
@@ -445,6 +475,11 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub fn skip_noop(&mut self, context: &ActionContext) -> miette::Result<()> {
+        debug!(
+            task = self.task.target.as_str(),
+            "Skipping task as its a no-operation"
+        );
+
         self.operations.push(Operation::new_finished(
             OperationType::NoOperation,
             ActionStatus::Passed,
@@ -458,13 +493,28 @@ impl<'task> TaskRunner<'task> {
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::new(OperationType::ArchiveCreation);
 
+        debug!(
+            task = self.task.target.as_str(),
+            "Running cache archiving operation"
+        );
+
         let archived = match self.archiver.archive(hash).await? {
-            Some(_) => {
+            Some(archive_file) => {
+                debug!(
+                    task = self.task.target.as_str(),
+                    archive_file = ?archive_file,
+                    "Ran cache archiving operation"
+                );
+
                 operation.finish(ActionStatus::Passed);
+
                 true
             }
             None => {
+                debug!(task = self.task.target.as_str(), "Nothing to archive");
+
                 operation.finish(ActionStatus::Skipped);
+
                 false
             }
         };
@@ -474,33 +524,54 @@ impl<'task> TaskRunner<'task> {
         Ok(archived)
     }
 
-    async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
+    pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::new(OperationType::OutputHydration);
 
-        let hydrated = match self.is_cached(hash).await? {
-            Some(from) => {
-                self.hydrater.hydrate(hash, from).await?;
-                self.load_logs(&mut operation)?;
+        debug!(
+            task = self.task.target.as_str(),
+            "Running cache hydration operation"
+        );
 
-                operation.finish(match from {
-                    HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
-                    _ => ActionStatus::Cached,
-                });
+        // Not cached
+        let Some(from) = self.is_cached(hash).await? else {
+            debug!(task = self.task.target.as_str(), "Nothing to hydrate");
 
-                context.set_target_state(&self.task.target, TargetState::Passed(hash.to_owned()));
+            operation.finish(ActionStatus::Skipped);
 
-                true
-            }
-            None => {
-                operation.finish(ActionStatus::Skipped);
+            self.operations.push(operation);
 
-                false
-            }
+            return Ok(false);
         };
+
+        // Did not hydrate
+        if !self.hydrater.hydrate(hash, from).await? {
+            debug!(task = self.task.target.as_str(), "Did not hydrate");
+
+            operation.finish(ActionStatus::Invalid);
+
+            self.operations.push(operation);
+
+            return Ok(false);
+        }
+
+        // Did hydrate
+        debug!(
+            task = self.task.target.as_str(),
+            "Ran cache hydration operation"
+        );
+
+        self.load_logs(&mut operation)?;
+
+        operation.finish(match from {
+            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+            _ => ActionStatus::Cached,
+        });
+
+        context.set_target_state(&self.task.target, TargetState::Passed(hash.to_owned()));
 
         self.operations.push(operation);
 
-        Ok(hydrated)
+        Ok(true)
     }
 
     fn load_logs(&self, operation: &mut Operation) -> miette::Result<()> {
@@ -512,32 +583,36 @@ impl<'task> TaskRunner<'task> {
         let err_path = state_dir.join("stderr.log");
         let out_path = state_dir.join("stdout.log");
 
-        if let Some(execution) = &mut operation.execution {
-            if err_path.exists() {
-                execution.set_stderr(fs::read_file(err_path)?);
-            }
+        let output = operation.output.get_or_insert(Default::default());
 
-            if out_path.exists() {
-                execution.set_stdout(fs::read_file(out_path)?);
-            }
+        output.exit_code = Some(self.cache.data.exit_code);
+
+        if err_path.exists() {
+            output.set_stderr(fs::read_file(err_path)?);
+        }
+
+        if out_path.exists() {
+            output.set_stdout(fs::read_file(out_path)?);
         }
 
         Ok(())
     }
 
-    fn save_logs(&self, operation: &Operation) -> miette::Result<()> {
+    fn save_logs(&mut self, operation: &Operation) -> miette::Result<()> {
         let state_dir = self
             .workspace
             .cache_engine
             .state
             .get_target_dir(&self.task.target);
 
-        if let Some(execution) = &operation.execution {
-            if let Some(log) = &execution.stderr {
+        if let Some(output) = &operation.output {
+            self.cache.data.exit_code = operation.get_exit_code();
+
+            if let Some(log) = &output.stderr {
                 fs::write_file(state_dir.join("stderr.log"), log.as_bytes())?;
             }
 
-            if let Some(log) = &execution.stdout {
+            if let Some(log) = &output.stdout {
                 fs::write_file(state_dir.join("stdout.log"), log.as_bytes())?;
             }
         }

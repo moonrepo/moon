@@ -98,14 +98,14 @@ impl DefaultReporter {
         Ok(())
     }
 
-    pub fn print_attempt_output(
+    pub fn print_operation_output(
         &self,
-        attempt: &Operation,
+        operation: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
-            if let Some(execution) = &attempt.execution {
-                if let Some(out) = &execution.stdout {
+            if let Some(output) = &operation.output {
+                if let Some(out) = &output.stdout {
                     self.out.write_line(out.trim())?;
                 }
             }
@@ -114,8 +114,8 @@ impl DefaultReporter {
         };
 
         let print_stderr = || -> miette::Result<()> {
-            if let Some(execution) = &attempt.execution {
-                if let Some(out) = &execution.stderr {
+            if let Some(output) = &operation.output {
+                if let Some(out) = &output.stderr {
                     self.err.write_line(out.trim())?;
                 }
             }
@@ -126,7 +126,7 @@ impl DefaultReporter {
         match item.output_style {
             // Only show output on failure
             Some(TaskOutputStyle::BufferOnlyFailure) => {
-                if attempt.has_failed() {
+                if operation.has_failed() {
                     print_stdout()?;
                     print_stderr()?;
                 }
@@ -160,15 +160,15 @@ impl DefaultReporter {
                 if attempt.has_failed() {
                     let mut has_stdout = false;
 
-                    if let Some(execution) = &attempt.execution {
-                        if let Some(stdout) = &execution.stdout {
+                    if let Some(output) = &attempt.output {
+                        if let Some(stdout) = &output.stdout {
                             if !stdout.is_empty() {
                                 has_stdout = true;
                                 self.out.write_line(stdout.trim())?;
                             }
                         }
 
-                        if let Some(stderr) = &execution.stderr {
+                        if let Some(stderr) = &output.stderr {
                             if has_stdout {
                                 self.out.write_newline()?;
                             }
@@ -391,7 +391,7 @@ impl Reporter for DefaultReporter {
         // Task output was captured, so there was no output
         // sent to the console, so manually print the logs we have!
         if !item.output_streamed && attempt.has_output() {
-            self.print_attempt_output(attempt, item)?;
+            self.print_operation_output(attempt, item)?;
         }
 
         Ok(())
@@ -405,18 +405,18 @@ impl Reporter for DefaultReporter {
         item: &TaskReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if let Some(attempt) = operations.get_last_execution() {
+        if let Some(operation) = operations.get_last_process() {
             // If cached, the finished event above is not fired,
             // so handle printing the captured logs here!
-            if attempt.is_cached() && attempt.has_output() {
+            if operation.is_cached() && operation.has_output() {
                 self.out.write_newline()?;
-                self.print_attempt_output(attempt, item)?;
+                self.print_operation_output(operation, item)?;
             }
 
             // Then print the success checkpoint. The success
             // checkpoint should always appear after the output,
             // and "contain" it within the start checkpoint!
-            self.print_task_checkpoint(target, attempt, item)?;
+            self.print_task_checkpoint(target, operation, item)?;
         } else if let Some(operation) = operations.last() {
             self.print_task_checkpoint(target, operation, item)?;
         }

@@ -4,6 +4,7 @@ use moon_action::{ActionStatus, OperationType};
 use moon_action_context::*;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
+use moon_task_runner::TaskRunner;
 use std::env;
 use utils::*;
 
@@ -393,10 +394,10 @@ mod task_runner {
             assert_eq!(operation.type_of, OperationType::TaskExecution);
             assert_eq!(operation.status, ActionStatus::Passed);
 
-            let exec = operation.execution.as_ref().unwrap();
+            let output = operation.output.as_ref().unwrap();
 
-            assert_eq!(exec.exit_code, Some(0));
-            assert_eq!(exec.stdout.as_ref().unwrap().trim(), "test");
+            assert_eq!(output.exit_code, Some(0));
+            assert_eq!(output.stdout.as_ref().unwrap().trim(), "test");
         }
 
         #[tokio::test]
@@ -416,9 +417,9 @@ mod task_runner {
             assert_eq!(operation.type_of, OperationType::TaskExecution);
             assert_eq!(operation.status, ActionStatus::Failed);
 
-            let exec = operation.execution.as_ref().unwrap();
+            let output = operation.output.as_ref().unwrap();
 
-            assert_eq!(exec.exit_code, Some(1));
+            assert_eq!(output.exit_code, Some(1));
         }
 
         #[tokio::test]
@@ -607,6 +608,167 @@ mod task_runner {
             let mut runner = container.create_runner("base");
 
             assert!(runner.archive("hash123").await.unwrap());
+        }
+    }
+
+    mod hydrate {
+        use super::*;
+
+        mod not_cached {
+            use super::*;
+
+            #[tokio::test]
+            async fn creates_a_skipped_operation_if_no_cache() {
+                let container = TaskRunnerContainer::new("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("outputs");
+
+                let context = ActionContext::default();
+                let result = runner.hydrate(&context, "hash123").await.unwrap();
+
+                assert!(!result);
+
+                let operation = runner.operations.last().unwrap();
+
+                assert_eq!(operation.type_of, OperationType::OutputHydration);
+                assert_eq!(operation.status, ActionStatus::Skipped);
+            }
+        }
+
+        mod previous_output {
+            use super::*;
+
+            fn setup_previous_state(container: &TaskRunnerContainer, runner: &mut TaskRunner) {
+                container.sandbox.enable_git();
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+            }
+
+            #[tokio::test]
+            async fn creates_a_cached_operation() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("outputs");
+
+                setup_previous_state(&container, &mut runner);
+
+                let context = ActionContext::default();
+                let result = runner.hydrate(&context, "hash123").await.unwrap();
+
+                assert!(result);
+
+                let operation = runner.operations.last().unwrap();
+
+                assert_eq!(operation.type_of, OperationType::OutputHydration);
+                assert_eq!(operation.status, ActionStatus::Cached);
+            }
+
+            #[tokio::test]
+            async fn sets_passed_state() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("outputs");
+
+                setup_previous_state(&container, &mut runner);
+
+                let context = ActionContext::default();
+                runner.hydrate(&context, "hash123").await.unwrap();
+
+                assert_eq!(
+                    context
+                        .target_states
+                        .get(&runner.task.target)
+                        .unwrap()
+                        .get(),
+                    &TargetState::Passed("hash123".into())
+                );
+            }
+        }
+
+        mod local_cache {
+            use std::fs;
+
+            use super::*;
+
+            fn setup_local_state(container: &TaskRunnerContainer, _runner: &mut TaskRunner) {
+                container.sandbox.enable_git();
+                container.pack_archive("outputs");
+            }
+
+            #[tokio::test]
+            async fn creates_a_cached_operation() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("outputs");
+
+                setup_local_state(&container, &mut runner);
+
+                let context = ActionContext::default();
+                let result = runner.hydrate(&context, "hash123").await.unwrap();
+
+                assert!(result);
+
+                let operation = runner.operations.last().unwrap();
+
+                assert_eq!(operation.type_of, OperationType::OutputHydration);
+                assert_eq!(operation.status, ActionStatus::Cached);
+            }
+
+            #[tokio::test]
+            async fn sets_passed_state() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("outputs");
+
+                setup_local_state(&container, &mut runner);
+
+                let context = ActionContext::default();
+                runner.hydrate(&context, "hash123").await.unwrap();
+
+                assert_eq!(
+                    context
+                        .target_states
+                        .get(&runner.task.target)
+                        .unwrap()
+                        .get(),
+                    &TargetState::Passed("hash123".into())
+                );
+            }
+
+            #[tokio::test]
+            async fn unpacks_archive_into_project() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("outputs");
+
+                setup_local_state(&container, &mut runner);
+
+                let context = ActionContext::default();
+                runner.hydrate(&context, "hash123").await.unwrap();
+
+                let output_file = container.sandbox.path().join("project/file.txt");
+
+                assert!(output_file.exists());
+                assert_eq!(fs::read_to_string(output_file).unwrap(), "content");
+            }
+
+            #[tokio::test]
+            async fn loads_stdlogs_in_archive_into_operation() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("outputs");
+
+                setup_local_state(&container, &mut runner);
+
+                let context = ActionContext::default();
+                let result = runner.hydrate(&context, "hash123").await.unwrap();
+
+                assert!(result);
+
+                let operation = runner.operations.last().unwrap();
+                let output = operation.output.as_ref().unwrap();
+
+                assert_eq!(output.exit_code.unwrap(), 0);
+                assert_eq!(output.stderr.as_deref().unwrap(), "stderr");
+                assert_eq!(output.stdout.as_deref().unwrap(), "stdout");
+            }
         }
     }
 }

@@ -17,8 +17,10 @@ use moon_test_utils2::{
 };
 use moon_workspace::Workspace;
 use proto_core::ProtoEnvironment;
+use starbase_archive::Archiver;
 use starbase_sandbox::{create_sandbox, Sandbox};
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn create_workspace(root: &Path) -> Workspace {
@@ -136,6 +138,40 @@ impl TaskRunnerContainer {
         let task = self.project.get_task(task_id).unwrap();
 
         create_node(task)
+    }
+
+    pub fn pack_archive(&self, task_id: &str) -> PathBuf {
+        let sandbox = &self.sandbox;
+        let file = sandbox.path().join(".moon/cache/outputs/hash123.tar.gz");
+
+        let out = format!(
+            ".moon/cache/states/{}/{}/stdout.log",
+            self.project_id, task_id,
+        );
+
+        let err = format!(
+            ".moon/cache/states/{}/{}/stderr.log",
+            self.project_id, task_id,
+        );
+
+        let txt = format!("{}/file.txt", self.project_id);
+
+        sandbox.create_file(&out, "stdout");
+        sandbox.create_file(&err, "stderr");
+        sandbox.create_file(&txt, "content");
+
+        let mut archiver = Archiver::new(sandbox.path(), &file);
+        archiver.add_source_file(&out, None);
+        archiver.add_source_file(&err, None);
+        archiver.add_source_file(&txt, None);
+        archiver.pack_from_ext().unwrap();
+
+        // Remove sources so we can test unpacking
+        fs::remove_file(sandbox.path().join(out)).unwrap();
+        fs::remove_file(sandbox.path().join(err)).unwrap();
+        fs::remove_file(sandbox.path().join(txt)).unwrap();
+
+        file
     }
 
     async fn internal_create_command(

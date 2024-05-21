@@ -12,6 +12,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::sleep;
+use tracing::debug;
 
 fn is_ci_env() -> bool {
     is_ci() && !is_test_env()
@@ -93,6 +94,14 @@ impl<'task> CommandExecutor<'task> {
             let mut attempt = Operation::new(OperationType::TaskExecution);
             report_item.attempt_current = self.attempt_index;
 
+            debug!(
+                task = self.task.target.as_str(),
+                command = self.command.bin.to_str(),
+                "Running task (attempt {} of {})",
+                self.attempt_index,
+                self.attempt_total
+            );
+
             self.console
                 .reporter
                 .on_task_started(&self.task.target, &attempt, &report_item)?;
@@ -112,6 +121,13 @@ impl<'task> CommandExecutor<'task> {
             match attempt_result {
                 // Zero and non-zero exit codes
                 Ok(mut output) => {
+                    debug!(
+                        task = self.task.target.as_str(),
+                        command = self.command.bin.to_str(),
+                        exit_code = output.status.code(),
+                        "Ran task, checking conditions",
+                    );
+
                     attempt.finish_from_output(&mut output);
 
                     self.console.reporter.on_task_finished(
@@ -125,6 +141,11 @@ impl<'task> CommandExecutor<'task> {
 
                     // Successful execution, so break the loop
                     if output.status.success() {
+                        debug!(
+                            task = self.task.target.as_str(),
+                            "Task was successful, proceeding to next step",
+                        );
+
                         run_state = hash.map_or(TargetState::Passthrough, |hash| {
                             TargetState::Passed(hash.to_string())
                         });
@@ -133,17 +154,33 @@ impl<'task> CommandExecutor<'task> {
                     }
                     // Unsuccessful execution (maybe flaky), attempt again
                     else if self.attempt_index < self.attempt_total {
+                        debug!(
+                            task = self.task.target.as_str(),
+                            "Task was unsuccessful, attempting again",
+                        );
+
                         self.attempt_index += 1;
                         continue;
                     }
                     // We've hit our max attempts, so break
                     else {
+                        debug!(
+                            task = self.task.target.as_str(),
+                            "Task was unsuccessful, failing early as we hit our max attempts",
+                        );
+
                         break None;
                     }
                 }
 
                 // Process unexpectedly crashed
                 Err(error) => {
+                    debug!(
+                        task = self.task.target.as_str(),
+                        command = self.command.bin.to_str(),
+                        "Failed to run task, an unexpected error occurred",
+                    );
+
                     attempt.finish(ActionStatus::Failed);
 
                     self.console.reporter.on_task_finished(

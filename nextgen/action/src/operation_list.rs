@@ -8,20 +8,9 @@ pub struct OperationList(Vec<Operation>);
 
 impl OperationList {
     pub fn get_final_status(&self) -> ActionStatus {
-        for operation in self.0.iter().rev() {
-            // Only these types of operations should be used for the final action
-            // status, as the other operation types are merely for metrics tracking
-            if matches!(
-                operation.type_of,
-                OperationType::NoOperation
-                    | OperationType::TaskExecution
-                    | OperationType::OutputHydration
-            ) {
-                return operation.status;
-            }
-        }
-
-        ActionStatus::Invalid
+        self.get_last_process()
+            .map(|op| op.status)
+            .unwrap_or(ActionStatus::Invalid)
     }
 
     pub fn get_hash(&self) -> Option<&str> {
@@ -31,6 +20,31 @@ impl OperationList {
             .and_then(|op| op.hash.as_deref())
     }
 
+    /// Returns the last "metric based" operation.
+    pub fn get_last_metric(&self) -> Option<&Operation> {
+        self.0.iter().rfind(|op| {
+            matches!(
+                op.type_of,
+                OperationType::ArchiveCreation
+                    | OperationType::MutexAcquisition
+                    | OperationType::HashGeneration
+            )
+        })
+    }
+
+    /// Returns the last "process based" operation.
+    pub fn get_last_process(&self) -> Option<&Operation> {
+        self.0.iter().rfind(|op| {
+            matches!(
+                op.type_of,
+                OperationType::NoOperation
+                    | OperationType::TaskExecution
+                    | OperationType::OutputHydration
+            )
+        })
+    }
+
+    /// Returns the last task execution operation.
     pub fn get_last_execution(&self) -> Option<&Operation> {
         self.0
             .iter()

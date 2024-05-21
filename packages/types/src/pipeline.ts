@@ -30,7 +30,7 @@ export type OperationType =
 	| 'output-hydration'
 	| 'task-execution';
 
-export interface OperationExecution {
+export interface OperationOutput {
 	exitCode: number | null;
 	stderr: string | null;
 	stdout: string | null;
@@ -38,9 +38,9 @@ export interface OperationExecution {
 
 export interface Operation {
 	duration: Duration | null;
-	execution: OperationExecution | null;
 	finishedAt: string | null;
 	hash: string | null;
+	output: OperationOutput | null;
 	startedAt: string;
 	status: ActionStatus;
 	type: OperationType;

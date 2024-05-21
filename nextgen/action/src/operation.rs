@@ -10,18 +10,20 @@ use std::time::{Duration, Instant};
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum OperationType {
-    ArchiveCreation,
-    HashGeneration,
-    MutexAcquisition,
+    // Processes
     #[default]
     NoOperation,
     OutputHydration,
     TaskExecution,
+    // Metrics
+    ArchiveCreation,
+    HashGeneration,
+    MutexAcquisition,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OperationExecution {
+pub struct OperationOutput {
     pub exit_code: Option<i32>,
 
     pub stderr: Option<Arc<String>>,
@@ -29,7 +31,7 @@ pub struct OperationExecution {
     pub stdout: Option<Arc<String>>,
 }
 
-impl OperationExecution {
+impl OperationOutput {
     pub fn set_stderr(&mut self, output: String) {
         if !output.is_empty() {
             self.stderr = Some(Arc::new(output));
@@ -48,11 +50,11 @@ impl OperationExecution {
 pub struct Operation {
     pub duration: Option<Duration>,
 
-    pub execution: Option<OperationExecution>,
-
     pub finished_at: Option<NaiveDateTime>,
 
     pub hash: Option<String>,
+
+    pub output: Option<OperationOutput>,
 
     pub started_at: NaiveDateTime,
 
@@ -69,9 +71,9 @@ impl Operation {
     pub fn new(type_of: OperationType) -> Self {
         Operation {
             duration: None,
-            execution: None,
             finished_at: None,
             hash: None,
+            output: None,
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
@@ -84,7 +86,7 @@ impl Operation {
 
         Operation {
             duration: None,
-            execution: None,
+            output: None,
             finished_at: Some(time),
             hash: None,
             started_at: time,
@@ -95,7 +97,7 @@ impl Operation {
     }
 
     pub fn get_exit_code(&self) -> i32 {
-        self.execution
+        self.output
             .as_ref()
             .and_then(|exec| exec.exit_code)
             .unwrap_or(-1)
@@ -110,19 +112,23 @@ impl Operation {
         }
     }
 
-    pub fn finish_from_output(&mut self, output: &mut Output) {
-        let mut execution = OperationExecution {
-            exit_code: output.status.code(),
+    pub fn finish_from_output(&mut self, process_output: &mut Output) {
+        let mut output = OperationOutput {
+            exit_code: process_output.status.code(),
             ..Default::default()
         };
 
-        execution.set_stderr(String::from_utf8(mem::take(&mut output.stderr)).unwrap_or_default());
+        output.set_stderr(
+            String::from_utf8(mem::take(&mut process_output.stderr)).unwrap_or_default(),
+        );
 
-        execution.set_stdout(String::from_utf8(mem::take(&mut output.stdout)).unwrap_or_default());
+        output.set_stdout(
+            String::from_utf8(mem::take(&mut process_output.stdout)).unwrap_or_default(),
+        );
 
-        self.execution = Some(execution);
+        self.output = Some(output);
 
-        self.finish(if output.status.success() {
+        self.finish(if process_output.status.success() {
             ActionStatus::Passed
         } else {
             ActionStatus::Failed
@@ -144,7 +150,7 @@ impl Operation {
     }
 
     pub fn has_output(&self) -> bool {
-        self.execution.as_ref().is_some_and(|exec| {
+        self.output.as_ref().is_some_and(|exec| {
             exec.stderr.as_ref().is_some_and(|err| !err.is_empty())
                 || exec.stdout.as_ref().is_some_and(|out| !out.is_empty())
         })

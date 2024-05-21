@@ -1,5 +1,5 @@
 use crate::action_node::ActionNode;
-use crate::attempt::Attempt;
+use crate::operation_list::OperationList;
 use moon_common::color;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
@@ -26,8 +26,6 @@ pub enum ActionStatus {
 pub struct Action {
     pub allow_failure: bool,
 
-    pub attempts: Option<Vec<Attempt>>,
-
     pub created_at: NaiveDateTime,
 
     pub duration: Option<Duration>,
@@ -41,13 +39,13 @@ pub struct Action {
 
     pub flaky: bool,
 
-    pub hash: Option<String>,
-
     pub label: String,
 
     pub node: Arc<ActionNode>,
 
     pub node_index: usize,
+
+    pub operations: OperationList,
 
     pub started_at: Option<NaiveDateTime>,
 
@@ -61,17 +59,16 @@ impl Action {
     pub fn new(node: ActionNode) -> Self {
         Action {
             allow_failure: false,
-            attempts: None,
             created_at: now_timestamp(),
             duration: None,
             error: None,
             error_report: None,
             finished_at: None,
             flaky: false,
-            hash: None,
             label: node.label(),
             node: Arc::new(node),
             node_index: 0,
+            operations: OperationList::default(),
             started_at: None,
             start_time: None,
             status: ActionStatus::Running,
@@ -120,14 +117,8 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
-    pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) {
-        let some_failed = attempts.iter().any(|attempt| attempt.has_failed());
-        let mut passed = true;
-        let mut status = ActionStatus::Passed;
-
-        if let Some(last_attempt) = Attempt::get_last_execution(&attempts) {
-            status = last_attempt.status;
-
+    pub fn set_operations(&mut self, operations: OperationList, command: &str) {
+        if let Some(last_attempt) = operations.get_last_execution() {
             if last_attempt.has_failed() {
                 if let Some(exection) = &last_attempt.execution {
                     let mut message = format!("Failed to run {}", color::shell(command));
@@ -139,14 +130,12 @@ impl Action {
 
                     self.error = Some(message);
                 }
-
-                passed = false;
             }
         }
 
-        self.attempts = Some(attempts);
-        self.flaky = some_failed && passed;
-        self.status = status;
+        self.flaky = operations.is_flaky();
+        self.status = operations.get_final_status();
+        self.operations = operations;
     }
 
     pub fn should_abort(&self) -> bool {

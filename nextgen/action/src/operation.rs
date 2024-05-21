@@ -9,19 +9,19 @@ use std::time::{Duration, Instant};
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum AttemptType {
+pub enum OperationType {
     ArchiveCreation,
     HashGeneration,
     MutexAcquisition,
+    #[default]
     NoOperation,
     OutputHydration,
-    #[default]
     TaskExecution,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct AttemptExecution {
+pub struct OperationExecution {
     pub exit_code: Option<i32>,
 
     pub stderr: Option<Arc<String>>,
@@ -29,7 +29,7 @@ pub struct AttemptExecution {
     pub stdout: Option<Arc<String>>,
 }
 
-impl AttemptExecution {
+impl OperationExecution {
     pub fn set_stderr(&mut self, output: String) {
         if !output.is_empty() {
             self.stderr = Some(Arc::new(output));
@@ -45,12 +45,14 @@ impl AttemptExecution {
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Attempt {
+pub struct Operation {
     pub duration: Option<Duration>,
 
-    pub execution: Option<AttemptExecution>,
+    pub execution: Option<OperationExecution>,
 
     pub finished_at: Option<NaiveDateTime>,
+
+    pub hash: Option<String>,
 
     pub started_at: NaiveDateTime,
 
@@ -60,15 +62,16 @@ pub struct Attempt {
     pub status: ActionStatus,
 
     #[serde(rename = "type")]
-    pub type_of: AttemptType,
+    pub type_of: OperationType,
 }
 
-impl Attempt {
-    pub fn new(type_of: AttemptType) -> Self {
-        Attempt {
+impl Operation {
+    pub fn new(type_of: OperationType) -> Self {
+        Operation {
             duration: None,
             execution: None,
             finished_at: None,
+            hash: None,
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
@@ -76,13 +79,14 @@ impl Attempt {
         }
     }
 
-    pub fn new_finished(type_of: AttemptType, status: ActionStatus) -> Self {
+    pub fn new_finished(type_of: OperationType, status: ActionStatus) -> Self {
         let time = now_timestamp();
 
-        Attempt {
+        Operation {
             duration: None,
             execution: None,
             finished_at: Some(time),
+            hash: None,
             started_at: time,
             start_time: None,
             status,
@@ -97,18 +101,6 @@ impl Attempt {
             .unwrap_or(-1)
     }
 
-    pub fn get_last_execution(attempts: &[Attempt]) -> Option<&Attempt> {
-        attempts
-            .iter()
-            .rfind(|attempt| matches!(attempt.type_of, AttemptType::TaskExecution))
-    }
-
-    pub fn get_last_failed_execution(attempts: &[Attempt]) -> Option<&Attempt> {
-        attempts.iter().rfind(|attempt| {
-            attempt.has_failed() && matches!(attempt.type_of, AttemptType::TaskExecution)
-        })
-    }
-
     pub fn finish(&mut self, status: ActionStatus) {
         self.finished_at = Some(now_timestamp());
         self.status = status;
@@ -119,7 +111,7 @@ impl Attempt {
     }
 
     pub fn finish_from_output(&mut self, output: &mut Output) {
-        let mut execution = AttemptExecution {
+        let mut execution = OperationExecution {
             exit_code: output.status.code(),
             ..Default::default()
         };

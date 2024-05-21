@@ -33,8 +33,7 @@ pub async fn run_task(
         .await?;
 
     action.allow_failure = task.options.allow_failure;
-    action.hash = result.hash;
-    action.set_attempts(result.attempts, &task.command);
+    action.set_operations(result.operations, &task.command);
 
     if action.has_failed() && action.allow_failure {
         warn!(

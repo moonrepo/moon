@@ -1,4 +1,4 @@
-use moon_action::{ActionNode, ActionStatus, Attempt, AttemptType};
+use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationType};
 use moon_action_context::{ActionContext, TargetState};
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -8,7 +8,6 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_workspace::Workspace;
-use std::mem;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
@@ -20,7 +19,7 @@ fn is_ci_env() -> bool {
 
 #[derive(Debug)]
 pub struct CommandExecuteResult {
-    pub attempts: Vec<Attempt>,
+    pub attempts: OperationList,
     pub error: Option<miette::Report>,
     pub report_item: TaskReportItem,
     pub run_state: TargetState,
@@ -37,7 +36,7 @@ pub struct CommandExecutor<'task> {
     console: Arc<Console>,
     handle: Option<JoinHandle<()>>,
 
-    attempts: Vec<Attempt>,
+    attempts: OperationList,
     attempt_index: u8,
     attempt_total: u8,
 
@@ -59,7 +58,7 @@ impl<'task> CommandExecutor<'task> {
         command.with_console(console.clone());
 
         Self {
-            attempts: vec![],
+            attempts: OperationList::default(),
             attempt_index: 1,
             attempt_total: task.options.retry_count + 1,
             interactive: node.is_interactive() || task.is_interactive(),
@@ -91,7 +90,7 @@ impl<'task> CommandExecutor<'task> {
 
         // Execute the command on a loop as an attempt for every retry count we have
         let execution_error: Option<miette::Report> = loop {
-            let mut attempt = Attempt::new(AttemptType::TaskExecution);
+            let mut attempt = Operation::new(OperationType::TaskExecution);
             report_item.attempt_current = self.attempt_index;
 
             self.console
@@ -164,7 +163,7 @@ impl<'task> CommandExecutor<'task> {
         self.stop_monitoring();
 
         Ok(CommandExecuteResult {
-            attempts: mem::take(&mut self.attempts),
+            attempts: self.attempts.take(),
             error: execution_error,
             report_item,
             run_state,

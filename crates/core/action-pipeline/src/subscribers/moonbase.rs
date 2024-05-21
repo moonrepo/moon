@@ -1,5 +1,5 @@
 use ci_env::get_environment;
-use moon_action::ActionStatus;
+use moon_action::{ActionStatus, OperationType};
 use moon_api::graphql::{
     self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun, GraphQLQuery,
     UpdateJob, UpdateRun,
@@ -320,7 +320,13 @@ impl Subscriber for MoonbaseSubscriber {
                             status: Some(map_status(&action.status)),
                         };
 
-                        if let Some(attempts) = &action.attempts {
+                        let attempts = action
+                            .operations
+                            .iter()
+                            .filter(|op| matches!(op.type_of, OperationType::TaskExecution))
+                            .collect::<Vec<_>>();
+
+                        if !attempts.is_empty() {
                             input.attempts = Some(
                                 attempts
                                     .iter()

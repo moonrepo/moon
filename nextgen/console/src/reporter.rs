@@ -1,7 +1,7 @@
 use crate::buffer::ConsoleBuffer;
 use crate::console::ConsoleTheme;
 use miette::Error as Report;
-use moon_action::{Action, ActionNode, Attempt};
+use moon_action::{Action, ActionNode, Operation, OperationList};
 use moon_config::TaskOutputStyle;
 use moon_target::Target;
 use std::sync::Arc;
@@ -60,7 +60,7 @@ pub trait Reporter: Send + Sync {
     fn on_task_started(
         &self,
         _target: &Target,
-        _attempt: &Attempt,
+        _attempt: &Operation,
         _item: &TaskReportItem,
     ) -> miette::Result<()> {
         Ok(())
@@ -73,7 +73,7 @@ pub trait Reporter: Send + Sync {
     fn on_task_finished(
         &self,
         _target: &Target,
-        _attempt: &Attempt,
+        _attempt: &Operation,
         _item: &TaskReportItem,
         _error: Option<&Report>,
     ) -> miette::Result<()> {
@@ -83,7 +83,7 @@ pub trait Reporter: Send + Sync {
     fn on_task_completed(
         &self,
         _target: &Target,
-        _attempts: &[Attempt],
+        _operations: &OperationList,
         _item: &TaskReportItem,
         _error: Option<&Report>,
     ) -> miette::Result<()> {

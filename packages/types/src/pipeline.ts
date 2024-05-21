@@ -10,6 +10,7 @@ export type ActionStatus =
 	| 'running'
 	| 'skipped';
 
+/** @deprecated */
 export interface Attempt {
 	duration: Duration | null;
 	exitCode: number | null;
@@ -21,8 +22,33 @@ export interface Attempt {
 	stdout: string | null;
 }
 
+export type OperationType =
+	| 'archive-creation'
+	| 'hash-generation'
+	| 'mutex-acquisition'
+	| 'no-operation'
+	| 'output-hydration'
+	| 'task-execution';
+
+export interface OperationExecution {
+	exitCode: number | null;
+	stderr: string | null;
+	stdout: string | null;
+}
+
+export interface Operation {
+	duration: Duration | null;
+	execution: OperationExecution | null;
+	finishedAt: string | null;
+	hash: string | null;
+	startedAt: string;
+	status: ActionStatus;
+	type: OperationType;
+}
+
 export interface Action {
 	allowFailure: boolean;
+	/** @deprecated */
 	attempts: Attempt[] | null;
 	createdAt: string;
 	duration: Duration | null;
@@ -32,6 +58,7 @@ export interface Action {
 	label: string;
 	node: ActionNode;
 	nodeIndex: number;
+	operations: Operation[];
 	startedAt: string | null;
 	status: ActionStatus;
 }

@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode, ActionStatus, Attempt, AttemptType};
+use moon_action::{Action, ActionNode, ActionStatus, Operation, OperationList, OperationType};
 use moon_common::color::paint;
 use moon_common::{color, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -42,17 +42,17 @@ impl DefaultReporter {
     fn print_task_checkpoint(
         &self,
         target: &Target,
-        attempt: &Attempt,
+        operation: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
         let mut comments = vec![];
 
-        match attempt.type_of {
-            AttemptType::NoOperation => {
+        match operation.type_of {
+            OperationType::NoOperation => {
                 comments.push("no op".into());
             }
             _ => {
-                let status_comment = self.get_status_meta_comment(attempt.status, || {
+                let status_comment = self.get_status_meta_comment(operation.status, || {
                     if item.attempt_current > 1 {
                         Some(format!(
                             "attempt {}/{}",
@@ -67,7 +67,7 @@ impl DefaultReporter {
                     comments.push(comment);
                 }
 
-                if let Some(duration) = attempt.duration {
+                if let Some(duration) = operation.duration {
                     if let Some(elapsed) = time::elapsed_opt(duration) {
                         comments.push(elapsed);
                     }
@@ -84,9 +84,9 @@ impl DefaultReporter {
         };
 
         self.out.print_checkpoint_with_comments(
-            if attempt.has_failed() {
+            if operation.has_failed() {
                 Checkpoint::RunFailed
-            } else if attempt.has_passed() {
+            } else if operation.has_passed() {
                 Checkpoint::RunPassed
             } else {
                 Checkpoint::RunStarted
@@ -100,7 +100,7 @@ impl DefaultReporter {
 
     pub fn print_attempt_output(
         &self,
-        attempt: &Attempt,
+        attempt: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
@@ -156,8 +156,8 @@ impl DefaultReporter {
                 continue;
             }
 
-            if let Some(attempts) = &action.attempts {
-                if let Some(attempt) = Attempt::get_last_failed_execution(attempts) {
+            if let Some(attempt) = action.operations.get_last_execution() {
+                if attempt.has_failed() {
                     let mut has_stdout = false;
 
                     if let Some(execution) = &attempt.execution {
@@ -299,7 +299,7 @@ impl DefaultReporter {
                 }
             }
 
-            if let Some(hash) = &action.hash {
+            if let Some(hash) = action.operations.get_hash() {
                 comments.push(self.get_short_hash(hash));
             }
 
@@ -361,7 +361,7 @@ impl Reporter for DefaultReporter {
     fn on_task_started(
         &self,
         target: &Target,
-        attempt: &Attempt,
+        attempt: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
         self.print_task_checkpoint(target, attempt, item)?;
@@ -384,7 +384,7 @@ impl Reporter for DefaultReporter {
     fn on_task_finished(
         &self,
         _target: &Target,
-        attempt: &Attempt,
+        attempt: &Operation,
         item: &TaskReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
@@ -401,11 +401,11 @@ impl Reporter for DefaultReporter {
     fn on_task_completed(
         &self,
         target: &Target,
-        attempts: &[Attempt],
+        operations: &OperationList,
         item: &TaskReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if let Some(attempt) = Attempt::get_last_execution(attempts) {
+        if let Some(attempt) = operations.get_last_execution() {
             // If cached, the finished event above is not fired,
             // so handle printing the captured logs here!
             if attempt.is_cached() && attempt.has_output() {
@@ -417,8 +417,8 @@ impl Reporter for DefaultReporter {
             // checkpoint should always appear after the output,
             // and "contain" it within the start checkpoint!
             self.print_task_checkpoint(target, attempt, item)?;
-        } else if let Some(attempt) = attempts.last() {
-            self.print_task_checkpoint(target, attempt, item)?;
+        } else if let Some(operation) = operations.last() {
+            self.print_task_checkpoint(target, operation, item)?;
         }
 
         Ok(())

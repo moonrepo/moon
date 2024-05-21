@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_action::{ActionStatus, AttemptType};
+use moon_action::{ActionStatus, OperationType};
 use moon_action_context::*;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
@@ -214,7 +214,7 @@ mod task_runner {
                 )
                 .unwrap();
 
-            assert_eq!(runner.is_dependencies_complete(&context).unwrap(), true);
+            assert!(runner.is_dependencies_complete(&context).unwrap());
         }
 
         #[tokio::test]
@@ -268,7 +268,7 @@ mod task_runner {
         }
 
         #[tokio::test]
-        async fn creates_an_attempt() {
+        async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner").await;
             container.sandbox.enable_git();
 
@@ -278,10 +278,10 @@ mod task_runner {
 
             runner.generate_hash(&context, &node).await.unwrap();
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::HashGeneration);
-            assert_eq!(attempt.status, ActionStatus::Passed);
+            assert_eq!(operation.type_of, OperationType::HashGeneration);
+            assert_eq!(operation.status, ActionStatus::Passed);
         }
 
         #[tokio::test]
@@ -361,7 +361,7 @@ mod task_runner {
             let node = container.create_action_node("failure");
             let context = ActionContext::default();
 
-            // Swallow panic so we can check attempts
+            // Swallow panic so we can check operations
             let _ = runner.execute(&context, &node, Some("hash123")).await;
 
             assert_eq!(
@@ -375,7 +375,7 @@ mod task_runner {
         }
 
         #[tokio::test]
-        async fn executes_and_creates_attempt_on_success() {
+        async fn executes_and_creates_operation_on_success() {
             let container = TaskRunnerContainer::new_os("runner").await;
             container.sandbox.enable_git();
 
@@ -388,19 +388,19 @@ mod task_runner {
                 .await
                 .unwrap();
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
-            assert_eq!(attempt.status, ActionStatus::Passed);
+            assert_eq!(operation.type_of, OperationType::TaskExecution);
+            assert_eq!(operation.status, ActionStatus::Passed);
 
-            let exec = attempt.execution.as_ref().unwrap();
+            let exec = operation.execution.as_ref().unwrap();
 
             assert_eq!(exec.exit_code, Some(0));
             assert_eq!(exec.stdout.as_ref().unwrap().trim(), "test");
         }
 
         #[tokio::test]
-        async fn executes_and_creates_attempt_on_failure() {
+        async fn executes_and_creates_operation_on_failure() {
             let container = TaskRunnerContainer::new_os("runner").await;
             container.sandbox.enable_git();
 
@@ -408,15 +408,15 @@ mod task_runner {
             let node = container.create_action_node("failure");
             let context = ActionContext::default();
 
-            // Swallow panic so we can check attempts
+            // Swallow panic so we can check operations
             let _ = runner.execute(&context, &node, Some("hash123")).await;
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
-            assert_eq!(attempt.status, ActionStatus::Failed);
+            assert_eq!(operation.type_of, OperationType::TaskExecution);
+            assert_eq!(operation.status, ActionStatus::Failed);
 
-            let exec = attempt.execution.as_ref().unwrap();
+            let exec = operation.execution.as_ref().unwrap();
 
             assert_eq!(exec.exit_code, Some(1));
         }
@@ -445,7 +445,7 @@ mod task_runner {
         }
 
         #[tokio::test]
-        async fn creates_attempt_for_mutex_acquire() {
+        async fn creates_operation_for_mutex_acquire() {
             let container = TaskRunnerContainer::new_os("runner").await;
             container.sandbox.enable_git();
 
@@ -453,17 +453,17 @@ mod task_runner {
             let node = container.create_action_node("with-mutex");
             let context = ActionContext::default();
 
-            // Swallow panic so we can check attempts
+            // Swallow panic so we can check operations
             let _ = runner.execute(&context, &node, Some("hash123")).await;
 
-            let attempt = runner
-                .attempts
+            let operation = runner
+                .operations
                 .iter()
-                .find(|a| matches!(a.type_of, AttemptType::MutexAcquisition))
+                .find(|a| matches!(a.type_of, OperationType::MutexAcquisition))
                 .unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::MutexAcquisition);
-            assert_eq!(attempt.status, ActionStatus::Passed);
+            assert_eq!(operation.type_of, OperationType::MutexAcquisition);
+            assert_eq!(operation.status, ActionStatus::Passed);
         }
 
         #[tokio::test]
@@ -487,17 +487,17 @@ mod task_runner {
         use super::*;
 
         #[tokio::test]
-        async fn creates_an_attempt() {
+        async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner").await;
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
             runner.skip(&context).unwrap();
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
-            assert_eq!(attempt.status, ActionStatus::Skipped);
+            assert_eq!(operation.type_of, OperationType::TaskExecution);
+            assert_eq!(operation.status, ActionStatus::Skipped);
         }
 
         #[tokio::test]
@@ -523,17 +523,17 @@ mod task_runner {
         use super::*;
 
         #[tokio::test]
-        async fn creates_an_attempt() {
+        async fn creates_an_operation() {
             let container = TaskRunnerContainer::new("runner").await;
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
             runner.skip_noop(&context).unwrap();
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::NoOperation);
-            assert_eq!(attempt.status, ActionStatus::Passed);
+            assert_eq!(operation.type_of, OperationType::NoOperation);
+            assert_eq!(operation.status, ActionStatus::Passed);
         }
 
         #[tokio::test]
@@ -560,7 +560,7 @@ mod task_runner {
         use std::sync::Arc;
 
         #[tokio::test]
-        async fn creates_a_passed_attempt_if_archived() {
+        async fn creates_a_passed_operation_if_archived() {
             let container = TaskRunnerContainer::new("runner").await;
             container.sandbox.enable_git();
             container.sandbox.create_file("project/file.txt", "");
@@ -570,14 +570,14 @@ mod task_runner {
 
             assert!(result);
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::ArchiveCreation);
-            assert_eq!(attempt.status, ActionStatus::Passed);
+            assert_eq!(operation.type_of, OperationType::ArchiveCreation);
+            assert_eq!(operation.status, ActionStatus::Passed);
         }
 
         #[tokio::test]
-        async fn creates_a_skipped_attempt_if_not_archiveable() {
+        async fn creates_a_skipped_operation_if_not_archiveable() {
             let container = TaskRunnerContainer::new("runner").await;
             container.sandbox.enable_git();
 
@@ -586,10 +586,10 @@ mod task_runner {
 
             assert!(!result);
 
-            let attempt = runner.attempts.last().unwrap();
+            let operation = runner.operations.last().unwrap();
 
-            assert_eq!(attempt.type_of, AttemptType::ArchiveCreation);
-            assert_eq!(attempt.status, ActionStatus::Skipped);
+            assert_eq!(operation.type_of, OperationType::ArchiveCreation);
+            assert_eq!(operation.status, ActionStatus::Skipped);
         }
 
         #[tokio::test]

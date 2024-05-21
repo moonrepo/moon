@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_action::{ActionStatus, AttemptType};
+use moon_action::{ActionStatus, OperationType};
 use moon_action_context::{ActionContext, TargetState};
 use utils::*;
 
@@ -33,7 +33,7 @@ mod command_executor {
         let exec = attempt.execution.as_ref().unwrap();
 
         assert_eq!(attempt.status, ActionStatus::Passed);
-        assert_eq!(attempt.type_of, AttemptType::TaskExecution);
+        assert_eq!(attempt.type_of, OperationType::TaskExecution);
         assert_eq!(exec.exit_code.unwrap(), 0);
         assert_eq!(exec.stdout.as_ref().unwrap().trim(), "test");
     }
@@ -64,7 +64,7 @@ mod command_executor {
         let exec = attempt.execution.as_ref().unwrap();
 
         assert_eq!(attempt.status, ActionStatus::Failed);
-        assert_eq!(attempt.type_of, AttemptType::TaskExecution);
+        assert_eq!(attempt.type_of, OperationType::TaskExecution);
         assert_eq!(exec.exit_code.unwrap(), 1);
     }
 
@@ -95,7 +95,7 @@ mod command_executor {
             let exec = attempt.execution.as_ref().unwrap();
 
             assert_eq!(attempt.status, ActionStatus::Failed);
-            assert_eq!(attempt.type_of, AttemptType::TaskExecution);
+            assert_eq!(attempt.type_of, OperationType::TaskExecution);
             assert_eq!(exec.exit_code.unwrap(), 1);
         }
     }

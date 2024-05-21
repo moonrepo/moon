@@ -7,10 +7,10 @@ releases:
   '@moonrepo/core-macos-arm64': minor
   '@moonrepo/core-macos-x64': minor
   '@moonrepo/core-windows-x64-msvc': minor
+  '@moonrepo/report': patch
   '@moonrepo/types': patch
 
 declined:
   - '@moonrepo/nx-compat'
-  - '@moonrepo/report'
   - '@moonrepo/runtime'
   - website

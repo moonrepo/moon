@@ -4,7 +4,7 @@ use moon_config::{
     PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
 };
 use moon_target::Target;
-use moon_task_runner::RunTaskState;
+use moon_task_runner::TaskRunState;
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
     predicates::{self, prelude::*},
@@ -44,7 +44,7 @@ where
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     let engine = CacheEngine::new(fixture).unwrap();
-    let cache: RunTaskState = json::read_file(
+    let cache: TaskRunState = json::read_file(
         engine
             .state
             .states_dir

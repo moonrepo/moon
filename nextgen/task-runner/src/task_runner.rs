@@ -2,12 +2,12 @@ use crate::command_builder::CommandBuilder;
 use crate::command_executor::CommandExecutor;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
-use crate::run_state::RunTaskState;
+use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Attempt, AttemptType};
 use moon_action_context::{ActionContext, TargetState};
 use moon_cache::CacheItem;
-use moon_console::{Console, TaskReportState};
+use moon_console::{Console, TaskReportItem};
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
@@ -38,7 +38,7 @@ pub struct TaskRunner<'task> {
 
     // Public for testing
     pub attempts: Vec<Attempt>,
-    pub cache: CacheItem<RunTaskState>,
+    pub cache: CacheItem<TaskRunState>,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -51,7 +51,7 @@ impl<'task> TaskRunner<'task> {
         let mut cache = workspace
             .cache_engine
             .state
-            .load_target_state::<RunTaskState>(&task.target)?;
+            .load_target_state::<TaskRunState>(&task.target)?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();
@@ -137,16 +137,16 @@ impl<'task> TaskRunner<'task> {
         self.cache.save()?;
 
         // We lose the attempt state here, is that ok?
-        let mut state = TaskReportState::default();
+        let mut item = TaskReportItem::default();
 
         match result {
             Ok(maybe_hash) => {
-                state.hash = maybe_hash.clone();
+                item.hash = maybe_hash.clone();
 
                 self.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.attempts,
-                    &state,
+                    &item,
                     None,
                 )?;
 
@@ -159,7 +159,7 @@ impl<'task> TaskRunner<'task> {
                 self.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.attempts,
-                    &state,
+                    &item,
                     Some(&error),
                 )?;
 

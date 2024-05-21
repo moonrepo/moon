@@ -37,7 +37,7 @@ export interface Action {
 }
 
 export interface TargetState {
-	state: 'completed' | 'failed' | 'passthrough' | 'skipped';
+	state: 'failed' | 'passed' | 'passthrough' | 'skipped';
 	hash?: string;
 }
 
@@ -103,7 +103,7 @@ export interface ActionNodeRunTask {
 	action: 'run-task';
 	params: {
 		args: string[];
-		env: [string, string][];
+		env: Record<string, string>;
 		interactive: boolean;
 		persistent: boolean;
 		runtime: Runtime;
@@ -128,7 +128,6 @@ export interface ActionNodeSyncProject {
 
 export interface ActionNodeSyncWorkspace {
 	action: 'sync-workspace';
-	params: {};
 }
 
 // GRAPH

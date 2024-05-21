@@ -21,9 +21,9 @@ mod command_executor {
 
         // Check state
         assert!(result.error.is_none());
-        assert_eq!(result.report_state.hash.unwrap(), "hash123");
-        assert_eq!(result.report_state.attempt_current, 1);
-        assert_eq!(result.report_state.attempt_total, 1);
+        assert_eq!(result.report_item.hash.unwrap(), "hash123");
+        assert_eq!(result.report_item.attempt_current, 1);
+        assert_eq!(result.report_item.attempt_total, 1);
         assert_eq!(result.run_state, TargetState::Passed("hash123".into()));
 
         // Check attempt
@@ -52,9 +52,9 @@ mod command_executor {
 
         // Check state
         assert!(result.error.is_none());
-        assert_eq!(result.report_state.hash.unwrap(), "hash123");
-        assert_eq!(result.report_state.attempt_current, 1);
-        assert_eq!(result.report_state.attempt_total, 1);
+        assert_eq!(result.report_item.hash.unwrap(), "hash123");
+        assert_eq!(result.report_item.attempt_current, 1);
+        assert_eq!(result.report_item.attempt_total, 1);
         assert_eq!(result.run_state, TargetState::Failed);
 
         // Check attempt
@@ -82,9 +82,9 @@ mod command_executor {
 
         // Check state
         assert!(result.error.is_none());
-        assert!(result.report_state.hash.is_none());
-        assert_eq!(result.report_state.attempt_current, 4);
-        assert_eq!(result.report_state.attempt_total, 4);
+        assert!(result.report_item.hash.is_none());
+        assert_eq!(result.report_item.attempt_current, 4);
+        assert_eq!(result.report_item.attempt_total, 4);
         assert_eq!(result.run_state, TargetState::Failed);
 
         // Check attempt

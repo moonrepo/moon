@@ -7,7 +7,7 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
-use moon_console::{Console, PipelineReportState};
+use moon_console::{Console, PipelineReportItem};
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
@@ -92,7 +92,7 @@ impl Pipeline {
 
         let actions = mem::take(&mut self.results);
 
-        let state = PipelineReportState {
+        let item = PipelineReportItem {
             duration: self.duration,
             summarize: self.summarize,
         };
@@ -101,7 +101,7 @@ impl Pipeline {
             Ok(_) => {
                 console
                     .reporter
-                    .on_pipeline_completed(&actions, &state, None)?;
+                    .on_pipeline_completed(&actions, &item, None)?;
 
                 Ok(actions)
             }
@@ -109,11 +109,11 @@ impl Pipeline {
                 if self.aborted {
                     console
                         .reporter
-                        .on_pipeline_aborted(&actions, &state, Some(&error))?;
+                        .on_pipeline_aborted(&actions, &item, Some(&error))?;
                 } else {
                     console
                         .reporter
-                        .on_pipeline_completed(&actions, &state, Some(&error))?;
+                        .on_pipeline_completed(&actions, &item, Some(&error))?;
                 }
 
                 Err(error)

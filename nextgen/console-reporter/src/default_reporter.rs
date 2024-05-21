@@ -43,7 +43,7 @@ impl DefaultReporter {
         &self,
         target: &Target,
         attempt: &Attempt,
-        state: &TaskReportState,
+        item: &TaskReportItem,
     ) -> miette::Result<()> {
         let mut comments = vec![];
 
@@ -53,10 +53,10 @@ impl DefaultReporter {
             }
             _ => {
                 let status_comment = self.get_status_meta_comment(attempt.status, || {
-                    if state.attempt_current > 1 {
+                    if item.attempt_current > 1 {
                         Some(format!(
                             "attempt {}/{}",
-                            state.attempt_current, state.attempt_total
+                            item.attempt_current, item.attempt_total
                         ))
                     } else {
                         None
@@ -76,7 +76,7 @@ impl DefaultReporter {
                 // Do not include the hash while testing, as the hash
                 // constantly changes and breaks our local snapshots
                 if !is_test_env() {
-                    if let Some(hash) = &state.hash {
+                    if let Some(hash) = &item.hash {
                         comments.push(self.get_short_hash(hash));
                     }
                 }
@@ -101,7 +101,7 @@ impl DefaultReporter {
     pub fn print_attempt_output(
         &self,
         attempt: &Attempt,
-        state: &TaskReportState,
+        item: &TaskReportItem,
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
             if let Some(execution) = &attempt.execution {
@@ -123,7 +123,7 @@ impl DefaultReporter {
             Ok(())
         };
 
-        match state.output_style {
+        match item.output_style {
             // Only show output on failure
             Some(TaskOutputStyle::BufferOnlyFailure) => {
                 if attempt.has_failed() {
@@ -133,7 +133,7 @@ impl DefaultReporter {
             }
             // Only show the hash
             Some(TaskOutputStyle::Hash) => {
-                if let Some(hash) = &state.hash {
+                if let Some(hash) = &item.hash {
                     // Print to stderr so it can be captured
                     self.err.write_line(hash)?;
                 }
@@ -198,7 +198,7 @@ impl DefaultReporter {
     fn print_pipeline_stats(
         &self,
         actions: &[Action],
-        state: &PipelineReportState,
+        item: &PipelineReportItem,
     ) -> miette::Result<()> {
         let mut passed_count = 0;
         let mut cached_count = 0;
@@ -207,7 +207,7 @@ impl DefaultReporter {
         let mut skipped_count = 0;
 
         for action in actions {
-            if !state.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
+            if !item.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
                 continue;
             }
 
@@ -259,13 +259,13 @@ impl DefaultReporter {
         }
 
         let counts_message = counts_message.join(&color::muted(", "));
-        let mut elapsed_time = time::elapsed(state.duration.unwrap_or_default());
+        let mut elapsed_time = time::elapsed(item.duration.unwrap_or_default());
 
         if passed_count == cached_count && failed_count == 0 {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 
-        if state.summarize {
+        if item.summarize {
             self.out.print_entry("Actions", &counts_message)?;
             self.out.print_entry("   Time", &elapsed_time)?;
         } else {
@@ -324,7 +324,7 @@ impl Reporter for DefaultReporter {
     fn on_pipeline_completed(
         &self,
         actions: &[Action],
-        state: &PipelineReportState,
+        item: &PipelineReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
         if actions.is_empty() || self.out.is_quiet() {
@@ -332,9 +332,9 @@ impl Reporter for DefaultReporter {
         }
 
         // If no summary, only show stats. This is typically for local!
-        if !state.summarize {
+        if !item.summarize {
             self.out.write_newline()?;
-            self.print_pipeline_stats(actions, state)?;
+            self.print_pipeline_stats(actions, item)?;
             self.out.write_newline()?;
 
             return Ok(());
@@ -350,7 +350,7 @@ impl Reporter for DefaultReporter {
         self.print_pipeline_summary(actions)?;
 
         self.out.print_header("Stats")?;
-        self.print_pipeline_stats(actions, state)?;
+        self.print_pipeline_stats(actions, item)?;
 
         self.out.write_newline()?;
 
@@ -362,9 +362,9 @@ impl Reporter for DefaultReporter {
         &self,
         target: &Target,
         attempt: &Attempt,
-        state: &TaskReportState,
+        item: &TaskReportItem,
     ) -> miette::Result<()> {
-        self.print_task_checkpoint(target, attempt, state)?;
+        self.print_task_checkpoint(target, attempt, item)?;
 
         Ok(())
     }
@@ -385,13 +385,13 @@ impl Reporter for DefaultReporter {
         &self,
         _target: &Target,
         attempt: &Attempt,
-        state: &TaskReportState,
+        item: &TaskReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
         // Task output was captured, so there was no output
         // sent to the console, so manually print the logs we have!
-        if !state.output_streamed && attempt.has_output() {
-            self.print_attempt_output(attempt, state)?;
+        if !item.output_streamed && attempt.has_output() {
+            self.print_attempt_output(attempt, item)?;
         }
 
         Ok(())
@@ -402,7 +402,7 @@ impl Reporter for DefaultReporter {
         &self,
         target: &Target,
         attempts: &[Attempt],
-        state: &TaskReportState,
+        item: &TaskReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
         if let Some(attempt) = Attempt::get_last_failed_execution(attempts) {
@@ -410,7 +410,7 @@ impl Reporter for DefaultReporter {
             // so handle printing the captured logs here!
             if attempt.is_cached() && attempt.has_output() {
                 self.out.write_newline()?;
-                self.print_attempt_output(attempt, state)?;
+                self.print_attempt_output(attempt, item)?;
             }
         }
 
@@ -418,7 +418,7 @@ impl Reporter for DefaultReporter {
             // Then print the success checkpoint. The success
             // checkpoint should always appear after the output,
             // and "contain" it within the start checkpoint!
-            self.print_task_checkpoint(target, attempt, state)?;
+            self.print_task_checkpoint(target, attempt, item)?;
         }
 
         Ok(())

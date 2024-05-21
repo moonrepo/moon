@@ -8,13 +8,13 @@ use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Debug, Default)]
-pub struct PipelineReportState {
+pub struct PipelineReportItem {
     pub duration: Option<Duration>,
     pub summarize: bool,
 }
 
 #[derive(Debug, Default)]
-pub struct TaskReportState {
+pub struct TaskReportItem {
     pub attempt_current: u8,
     pub attempt_total: u8,
     pub hash: Option<String>,
@@ -34,7 +34,7 @@ pub trait Reporter: Send + Sync {
     fn on_pipeline_completed(
         &self,
         _actions: &[Action],
-        _state: &PipelineReportState,
+        _item: &PipelineReportItem,
         _error: Option<&Report>,
     ) -> miette::Result<()> {
         Ok(())
@@ -43,7 +43,7 @@ pub trait Reporter: Send + Sync {
     fn on_pipeline_aborted(
         &self,
         _actions: &[Action],
-        _state: &PipelineReportState,
+        _item: &PipelineReportItem,
         _error: Option<&Report>,
     ) -> miette::Result<()> {
         Ok(())
@@ -61,7 +61,7 @@ pub trait Reporter: Send + Sync {
         &self,
         _target: &Target,
         _attempt: &Attempt,
-        _state: &TaskReportState,
+        _item: &TaskReportItem,
     ) -> miette::Result<()> {
         Ok(())
     }
@@ -74,7 +74,7 @@ pub trait Reporter: Send + Sync {
         &self,
         _target: &Target,
         _attempt: &Attempt,
-        _state: &TaskReportState,
+        _item: &TaskReportItem,
         _error: Option<&Report>,
     ) -> miette::Result<()> {
         Ok(())
@@ -84,7 +84,7 @@ pub trait Reporter: Send + Sync {
         &self,
         _target: &Target,
         _attempts: &[Attempt],
-        _state: &TaskReportState,
+        _item: &TaskReportItem,
         _error: Option<&Report>,
     ) -> miette::Result<()> {
         Ok(())

@@ -493,7 +493,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert(Target::new("project", "base").unwrap(), TargetState::Failed)
+                .insert(Target::new("project", "dep").unwrap(), TargetState::Failed)
                 .unwrap();
 
             assert!(!runner.is_dependencies_complete(&context).unwrap());
@@ -507,10 +507,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert(
-                    Target::new("project", "base").unwrap(),
-                    TargetState::Skipped,
-                )
+                .insert(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                 .unwrap();
 
             assert!(!runner.is_dependencies_complete(&context).unwrap());
@@ -525,7 +522,7 @@ mod task_runner {
             context
                 .target_states
                 .insert(
-                    Target::new("project", "base").unwrap(),
+                    Target::new("project", "dep").unwrap(),
                     TargetState::Passed("hash123".into()),
                 )
                 .unwrap();
@@ -534,7 +531,7 @@ mod task_runner {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Encountered a missing hash for target project:base")]
+        #[should_panic(expected = "Encountered a missing hash for target project:dep")]
         async fn errors_if_dep_not_ran() {
             let container = TaskRunnerContainer::new("runner").await;
             let runner = container.create_runner("has-deps");

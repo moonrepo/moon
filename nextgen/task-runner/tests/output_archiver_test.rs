@@ -182,6 +182,120 @@ mod output_archiver {
             assert!(!dir.join("project/b.txt").exists());
             assert!(dir.join("project/c.txt").exists());
         }
+
+        #[tokio::test]
+        async fn caches_one_file() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver("output-one-file");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/file.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn caches_many_files() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            let archiver = container.create_archiver("output-many-files");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/a.txt").exists());
+            assert!(dir.join("project/b.txt").exists());
+            assert!(dir.join("project/c.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn caches_one_directory() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/dir/file.txt", "");
+
+            let archiver = container.create_archiver("output-one-dir");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/dir/file.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn caches_many_directories() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/a/file.txt", "");
+            container.sandbox.create_file("project/b/file.txt", "");
+            container.sandbox.create_file("project/c/file.txt", "");
+
+            let archiver = container.create_archiver("output-many-dirs");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/a/file.txt").exists());
+            assert!(dir.join("project/b/file.txt").exists());
+            assert!(dir.join("project/c/file.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn caches_file_and_directory() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/file.txt", "");
+            container.sandbox.create_file("project/dir/file.txt", "");
+
+            let archiver = container.create_archiver("output-file-and-dir");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/file.txt").exists());
+            assert!(dir.join("project/dir/file.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn caches_files_from_workspace() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("root.txt", "");
+            container.sandbox.create_file("shared/a.txt", "");
+            container.sandbox.create_file("shared/z.txt", "");
+
+            let archiver = container.create_archiver("output-workspace");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("root.txt").exists());
+            assert!(dir.join("shared/a.txt").exists());
+            assert!(dir.join("shared/z.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn caches_files_from_workspace_and_project() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("root.txt", "");
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver("output-workspace-and-project");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("root.txt").exists());
+            assert!(dir.join("project/file.txt").exists());
+        }
     }
 
     mod is_archivable {

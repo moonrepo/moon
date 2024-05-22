@@ -16,7 +16,9 @@ pub fn is_docker_container() -> bool {
 
 #[inline]
 pub fn is_test_env() -> bool {
-    env::var("MOON_TEST").is_ok() || env::var("STARBASE_TEST").is_ok()
+    env::var("MOON_TEST").is_ok()
+        || env::var("STARBASE_TEST").is_ok()
+        || env::var("NEXTEST").is_ok()
 }
 
 #[inline]

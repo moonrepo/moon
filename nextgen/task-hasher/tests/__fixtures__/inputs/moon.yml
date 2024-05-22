@@ -35,3 +35,13 @@ tasks:
     command: noop
     inputs:
       - 'dir/{a,xy}z.txt'
+
+  envFile:
+    command: noop
+    options:
+      envFile: true
+
+  envFileList:
+    command: noop
+    options:
+      envFile: ['.env.prod', '.env.local']

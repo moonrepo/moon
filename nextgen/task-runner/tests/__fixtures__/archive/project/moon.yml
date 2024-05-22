@@ -45,3 +45,45 @@ tasks:
   test-type:
     command: noop
     type: test
+
+  output-one-file:
+    command: noop
+    outputs:
+      - 'file.txt'
+
+  output-many-files:
+    command: noop
+    outputs:
+      - 'a.txt'
+      - 'b.txt'
+      - 'c.txt'
+
+  output-one-dir:
+    command: noop
+    outputs:
+      - 'dir'
+
+  output-many-dirs:
+    command: noop
+    outputs:
+      - 'a'
+      - 'b/**/*'
+      - 'c'
+
+  output-file-and-dir:
+    command: noop
+    outputs:
+      - 'file.txt'
+      - 'dir'
+
+  output-workspace:
+    command: noop
+    outputs:
+      - '/root.txt'
+      - '/shared/*.txt'
+
+  output-workspace-and-project:
+    command: noop
+    outputs:
+      - '/root.txt'
+      - 'file.txt'

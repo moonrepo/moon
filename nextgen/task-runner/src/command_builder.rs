@@ -151,8 +151,11 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
         self.command.env("PROTO_NO_PROGRESS", "true");
         self.command.env("PROTO_VERSION", PROTO_CLI_VERSION);
-        self.command
-            .envs(self.workspace.toolchain_config.get_version_env_vars());
+
+        for (key, value) in self.workspace.toolchain_config.get_version_env_vars() {
+            // Don't overwrite proto version variables inherited from platforms
+            self.command.env_if_missing(key, value);
+        }
     }
 
     fn inject_shell(&mut self) {

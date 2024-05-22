@@ -9,9 +9,5 @@ stdout
 stderr
 Error: task_runner::run_failed
 
-  × Task rust:exitNonZero failed to run. View hash details with moon query
-  │ hash hash1234.
+  × Task rust:exitNonZero failed to run.
   ╰─▶ Process cargo failed with a 1 exit code.
-
-
-

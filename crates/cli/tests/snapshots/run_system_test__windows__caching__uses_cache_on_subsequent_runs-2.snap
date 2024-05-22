@@ -2,7 +2,7 @@
 source: crates/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
-▪▪▪▪ windows:outputs (cached from previous run)
+▪▪▪▪ windows:outputs (cached, 100ms)
 
 Tasks: 1 completed (1 cached)
  Time: 100ms ❯❯❯❯ to the moon

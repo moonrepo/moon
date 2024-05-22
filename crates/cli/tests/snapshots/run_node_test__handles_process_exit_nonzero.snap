@@ -9,9 +9,5 @@ stdout
 stderr
 Error: task_runner::run_failed
 
-  × Task node:processExitNonZero failed to run. View hash details with moon
-  │ query hash hash1234.
+  × Task node:processExitNonZero failed to run.
   ╰─▶ Process node failed with a 1 exit code.
-
-
-

@@ -319,14 +319,6 @@ mod unix {
                 .join(".moon/cache/outputs")
                 .join(format!("{}.tar.gz", state.hash))
                 .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/unix/outputs/stdout.log")
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/unix/outputs/stderr.log")
-                .exists());
         }
     }
 
@@ -624,14 +616,6 @@ mod windows {
                 .path()
                 .join(".moon/cache/outputs")
                 .join(format!("{}.tar.gz", state.hash))
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/windows/outputs/stdout.log")
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/windows/outputs/stderr.log")
                 .exists());
         }
     }

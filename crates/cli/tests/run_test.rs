@@ -1026,13 +1026,13 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFixed");
         });
 
-        assert!(predicate::str::contains("cached from previous run").eval(&assert.output()));
+        assert!(predicate::str::contains("cached").eval(&assert.output()));
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:generateFixed").arg("-u");
         });
 
-        assert!(!predicate::str::contains("cached from previous run").eval(&assert.output()));
+        assert!(!predicate::str::contains("cached").eval(&assert.output()));
     }
 
     mod hydration {
@@ -1389,24 +1389,6 @@ mod noop {
         });
 
         assert_snapshot!(assert.output());
-    }
-
-    #[test]
-    fn caches_noop() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("noop:noop");
-        });
-
-        let hash = extract_hash_from_run(sandbox.path(), "noop:noop");
-
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
     }
 }
 

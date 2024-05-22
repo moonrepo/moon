@@ -537,7 +537,7 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("targetScopeA:deps");
         });
-        assert.debug();
+
         let output = assert.output();
 
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));

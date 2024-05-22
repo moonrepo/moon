@@ -20,7 +20,9 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tracing::{debug, trace};
 
+#[derive(Debug)]
 pub struct TaskRunResult {
+    pub hash: Option<String>,
     pub operations: OperationList,
 }
 
@@ -159,6 +161,7 @@ impl<'task> TaskRunner<'task> {
                 )?;
 
                 Ok(TaskRunResult {
+                    hash: maybe_hash,
                     operations: self.operations.take(),
                 })
             }

@@ -146,6 +146,42 @@ mod output_archiver {
             assert_eq!(fs::read_to_string(err).unwrap(), "err");
             assert_eq!(fs::read_to_string(out).unwrap(), "out");
         }
+
+        #[tokio::test]
+        async fn can_ignore_output_files_with_negation() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            let archiver = container.create_archiver("file-outputs-negated");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/a.txt").exists());
+            assert!(!dir.join("project/b.txt").exists());
+            assert!(dir.join("project/c.txt").exists());
+        }
+
+        #[tokio::test]
+        async fn can_ignore_output_globs_with_negation() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            let archiver = container.create_archiver("glob-outputs-negated");
+            let file = archiver.archive("hash123").await.unwrap().unwrap();
+            let dir = container.sandbox.path().join("out");
+
+            Archiver::new(&dir, &file).unpack_from_ext().unwrap();
+
+            assert!(dir.join("project/a.txt").exists());
+            assert!(!dir.join("project/b.txt").exists());
+            assert!(dir.join("project/c.txt").exists());
+        }
     }
 
     mod is_archivable {
@@ -367,6 +403,16 @@ mod output_archiver {
             container.sandbox.create_file("project/file.txt", "");
 
             let archiver = container.create_archiver("glob-outputs");
+
+            assert!(archiver.has_outputs_been_created(false).unwrap());
+        }
+
+        #[tokio::test]
+        async fn returns_true_if_only_negated_globs() {
+            let container = TaskRunnerContainer::new("archive").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver("negated-outputs-only");
 
             assert!(archiver.has_outputs_been_created(false).unwrap());
         }

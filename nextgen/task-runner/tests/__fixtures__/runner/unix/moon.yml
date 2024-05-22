@@ -27,8 +27,26 @@ tasks:
       shell: true
 
   with-mutex:
-    command: 'echo "test"'
-    platform: system
+    extends: success
     options:
       mutex: lock
-      shell: true
+
+  without-cache:
+    extends: success
+    options:
+      cache: false
+
+  hash-inputs:
+    extends: success
+    inputs:
+      - '*.txt'
+
+  missing-output:
+    extends: success
+    outputs:
+      - 'file.txt'
+
+  missing-output-glob:
+    extends: success
+    outputs:
+      - '*.txt'

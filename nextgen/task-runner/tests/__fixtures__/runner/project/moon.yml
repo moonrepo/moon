@@ -7,10 +7,13 @@ tasks:
     outputs:
       - 'file.txt'
 
+  dep:
+    command: noop
+
   has-deps:
     command: noop
     deps:
-      - 'base'
+      - 'dep'
 
   no-deps:
     command: noop

@@ -11,6 +11,321 @@ use utils::*;
 mod task_runner {
     use super::*;
 
+    mod run {
+        use super::*;
+
+        #[tokio::test]
+        async fn skips_if_noop() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("base");
+            let node = container.create_action_node("base");
+            let context = ActionContext::default();
+
+            runner.run(&context, &node).await.unwrap();
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Passthrough
+            );
+        }
+
+        mod has_deps {
+            use super::*;
+
+            #[tokio::test]
+            #[should_panic(expected = "Encountered a missing hash for target project:dep")]
+            async fn errors_if_dep_hasnt_ran() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("has-deps");
+                let node = container.create_action_node("has-deps");
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+            }
+
+            #[tokio::test]
+            async fn skips_if_dep_skipped() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("has-deps");
+                let node = container.create_action_node("has-deps");
+
+                let context = ActionContext::default();
+                context
+                    .target_states
+                    .insert(Target::new("project", "dep").unwrap(), TargetState::Skipped)
+                    .unwrap();
+
+                runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(
+                    context
+                        .target_states
+                        .get(&runner.task.target)
+                        .unwrap()
+                        .get(),
+                    &TargetState::Skipped
+                );
+            }
+
+            #[tokio::test]
+            async fn skips_if_dep_failed() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("has-deps");
+                let node = container.create_action_node("has-deps");
+
+                let context = ActionContext::default();
+                context
+                    .target_states
+                    .insert(Target::new("project", "dep").unwrap(), TargetState::Failed)
+                    .unwrap();
+
+                runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(
+                    context
+                        .target_states
+                        .get(&runner.task.target)
+                        .unwrap()
+                        .get(),
+                    &TargetState::Skipped
+                );
+            }
+        }
+
+        mod with_cache {
+            use super::*;
+
+            #[tokio::test]
+            async fn creates_cache_state_file() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("create-file");
+                let node = container.create_action_node("create-file");
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+
+                assert!(container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/states")
+                    .join(container.project_id)
+                    .join("create-file/lastRun.json")
+                    .exists());
+            }
+
+            #[tokio::test]
+            async fn generates_a_hash() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("create-file");
+                let node = container.create_action_node("create-file");
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert!(result.hash.is_some());
+            }
+
+            #[tokio::test]
+            async fn generates_same_hashes_based_on_input() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("hash-inputs");
+                let node = container.create_action_node("hash-inputs");
+                let context = ActionContext::default();
+
+                container
+                    .sandbox
+                    .create_file(format!("{}/file.txt", container.project_id), "same");
+
+                let a = runner.run(&context, &node).await.unwrap();
+                let b = runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(a.hash, b.hash);
+            }
+
+            #[tokio::test]
+            async fn generates_different_hashes_based_on_input() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("hash-inputs");
+                let node = container.create_action_node("hash-inputs");
+                let context = ActionContext::default();
+
+                container
+                    .sandbox
+                    .create_file(format!("{}/file.txt", container.project_id), "before");
+
+                let a = runner.run(&context, &node).await.unwrap();
+
+                container
+                    .sandbox
+                    .create_file(format!("{}/file.txt", container.project_id), "after");
+
+                let b = runner.run(&context, &node).await.unwrap();
+
+                assert_ne!(a.hash, b.hash);
+            }
+
+            #[tokio::test]
+            async fn creates_operations_for_each_step() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("create-file");
+                let node = container.create_action_node("create-file");
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(result.operations.len(), 4);
+                assert_eq!(result.operations[0].type_of, OperationType::HashGeneration);
+                assert_eq!(result.operations[1].type_of, OperationType::OutputHydration);
+                assert_eq!(result.operations[2].type_of, OperationType::TaskExecution);
+                assert_eq!(result.operations[3].type_of, OperationType::ArchiveCreation);
+                assert_eq!(result.operations[0].status, ActionStatus::Passed);
+                assert_eq!(result.operations[1].status, ActionStatus::Skipped);
+                assert_eq!(result.operations[2].status, ActionStatus::Passed);
+                assert_eq!(result.operations[3].status, ActionStatus::Passed);
+            }
+
+            #[tokio::test]
+            async fn running_again_hits_the_output_cache() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("create-file");
+                let node = container.create_action_node("create-file");
+                let context = ActionContext::default();
+
+                let before = runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(before.operations.len(), 4);
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(before.hash, result.hash);
+                assert_eq!(result.operations.len(), 2);
+                assert_eq!(result.operations[0].type_of, OperationType::HashGeneration);
+                assert_eq!(result.operations[1].type_of, OperationType::OutputHydration);
+                assert_eq!(result.operations[0].status, ActionStatus::Passed);
+                assert_eq!(result.operations[1].status, ActionStatus::Cached);
+            }
+
+            #[tokio::test]
+            #[should_panic(expected = "defines outputs, but none exist")]
+            async fn errors_if_outputs_missing() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("missing-output");
+                let node = container.create_action_node("missing-output");
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+            }
+
+            #[tokio::test]
+            #[should_panic(expected = "defines outputs, but none exist")]
+            async fn errors_if_outputs_missing_via_glob() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("missing-output-glob");
+                let node = container.create_action_node("missing-output-glob");
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+            }
+        }
+
+        mod without_cache {
+            use super::*;
+
+            #[tokio::test]
+            async fn creates_cache_state_file() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("without-cache");
+                let node = container.create_action_node("without-cache");
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+
+                assert!(container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/states")
+                    .join(container.project_id)
+                    .join("without-cache/lastRun.json")
+                    .exists());
+            }
+
+            #[tokio::test]
+            async fn doesnt_generate_a_hash() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("without-cache");
+                let node = container.create_action_node("without-cache");
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert!(result.hash.is_none());
+            }
+
+            #[tokio::test]
+            async fn doesnt_create_non_task_operations() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("without-cache");
+                let node = container.create_action_node("without-cache");
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert!(result
+                    .operations
+                    .iter()
+                    .all(|op| matches!(op.type_of, OperationType::TaskExecution)));
+            }
+
+            #[tokio::test]
+            async fn running_again_reexecutes_task() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("without-cache");
+                let node = container.create_action_node("without-cache");
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(result.operations.len(), 1);
+                assert_eq!(result.operations[0].type_of, OperationType::TaskExecution);
+                assert_eq!(result.operations[0].status, ActionStatus::Passed);
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert_eq!(result.operations.len(), 1);
+                assert_eq!(result.operations[0].type_of, OperationType::TaskExecution);
+                assert_eq!(result.operations[0].status, ActionStatus::Passed);
+            }
+        }
+    }
+
     mod is_cached {
         use super::*;
 

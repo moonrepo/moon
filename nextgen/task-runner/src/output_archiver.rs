@@ -97,9 +97,16 @@ impl<'task> OutputArchiver<'task> {
     }
 
     pub fn has_outputs_been_created(&self, bypass_globs: bool) -> miette::Result<bool> {
+        let has_globs = !self.task.output_globs.is_empty();
+        let all_negated_globs = self
+            .task
+            .output_globs
+            .iter()
+            .all(|glob| glob.as_str().starts_with('!'));
+
         // If using globs, we have no way to truly determine if all outputs
         // exist on the current file system, so always hydrate...
-        if bypass_globs && !self.task.output_globs.is_empty() {
+        if bypass_globs && has_globs && !all_negated_globs {
             return Ok(false);
         }
 
@@ -110,8 +117,10 @@ impl<'task> OutputArchiver<'task> {
             }
         }
 
-        // Check globs last, as they are costly
-        if !self.task.output_globs.is_empty() {
+        // Check globs last, as they are costly!
+        // If all globs are negated, then the empty check will always
+        // fail, resulting in archives not being created
+        if has_globs && !all_negated_globs {
             let outputs = glob::walk_files(&self.workspace.root, &self.task.output_globs)?;
 
             return Ok(!outputs.is_empty());

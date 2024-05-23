@@ -35,7 +35,7 @@ pub async fn run_task(
         .run(&context, &action.node)
         .await?;
 
-    action.set_operations(result.operations, &task.command);
+    action.set_operations(result.operations);
 
     if action.has_failed() && action.allow_failure {
         warn!(

@@ -1,4 +1,4 @@
-use moon_action::{ActionStatus, Operation, OperationMeta};
+use moon_action::{Operation, OperationMeta};
 use moon_bun_tool::BunTool;
 use moon_console::{Checkpoint, Console};
 use moon_lang::has_vendor_installed_dependencies;
@@ -33,13 +33,11 @@ pub async fn install_deps(
         .out
         .print_checkpoint(Checkpoint::Setup, "bun install")?;
 
-    let mut operation = Operation::new(OperationMeta::task_execution("bun install"));
-
-    bun.install_dependencies(&(), working_dir, !is_test_env())
-        .await?;
-
-    operation.finish(ActionStatus::Passed);
-    operations.push(operation);
+    operations.push(
+        Operation::new(OperationMeta::task_execution("bun install"))
+            .track_async(|| bun.install_dependencies(&(), working_dir, !is_test_env()))
+            .await?,
+    );
 
     Ok(operations)
 }

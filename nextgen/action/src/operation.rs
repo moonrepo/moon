@@ -3,6 +3,7 @@ use crate::operation_meta::*;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
 use std::mem;
 use std::process::Output;
 use std::time::{Duration, Instant};
@@ -122,5 +123,64 @@ impl Operation {
             &self.status,
             ActionStatus::Cached | ActionStatus::CachedFromRemote
         )
+    }
+
+    pub fn track<T, F>(self, func: F) -> miette::Result<Self>
+    where
+        F: FnOnce() -> miette::Result<T>,
+    {
+        self.handle_track(func(), |_| true)
+    }
+
+    pub fn track_with_check<T, F, C>(self, func: F, checker: C) -> miette::Result<Self>
+    where
+        F: FnOnce() -> miette::Result<T>,
+        C: FnOnce(T) -> bool,
+    {
+        self.handle_track(func(), checker)
+    }
+
+    pub async fn track_async<T, F, Fut>(self, func: F) -> miette::Result<Self>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<T>>,
+    {
+        self.handle_track(func().await, |_| true)
+    }
+
+    pub async fn track_async_with_check<T, F, Fut, C>(
+        self,
+        func: F,
+        checker: C,
+    ) -> miette::Result<Self>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<T>>,
+        C: FnOnce(T) -> bool,
+    {
+        self.handle_track(func().await, checker)
+    }
+
+    fn handle_track<T>(
+        mut self,
+        result: miette::Result<T>,
+        checker: impl FnOnce(T) -> bool,
+    ) -> miette::Result<Self> {
+        match result {
+            Ok(value) => {
+                self.finish(if checker(value) {
+                    ActionStatus::Passed
+                } else {
+                    ActionStatus::Skipped
+                });
+
+                Ok(self)
+            }
+            Err(error) => {
+                self.finish(ActionStatus::Failed);
+
+                Err(error)
+            }
+        }
     }
 }

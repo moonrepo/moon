@@ -41,27 +41,24 @@ pub async fn sync_workspace(
     }
 
     if workspace.config.codeowners.sync_on_run {
-        let mut operation = Operation::new(OperationMeta::sync_operation("Codeowners"));
-
         debug!(
             target: LOG_TARGET,
             "Syncing code owners ({} enabled)",
             color::property("codeowners.syncOnRun"),
         );
 
-        let result = sync_codeowners(&workspace, &project_graph, false).await?;
-
-        operation.finish(if result.is_some() {
-            ActionStatus::Passed
-        } else {
-            ActionStatus::Skipped
-        });
-
-        action.operations.push(operation);
+        action.operations.push(
+            Operation::new(OperationMeta::sync_operation("Codeowners"))
+                .track_async_with_check(
+                    || sync_codeowners(&workspace, &project_graph, false),
+                    |result| result.is_some(),
+                )
+                .await?,
+        );
     }
 
     if workspace.config.vcs.sync_hooks {
-        let mut operation = Operation::new(OperationMeta::sync_operation("VCS hooks"));
+        Operation::new(OperationMeta::sync_operation("VCS hooks"));
 
         debug!(
             target: LOG_TARGET,
@@ -70,15 +67,11 @@ pub async fn sync_workspace(
             color::property("vcs.syncHooks"),
         );
 
-        let result = sync_vcs_hooks(&workspace, false).await?;
-
-        operation.finish(if result {
-            ActionStatus::Passed
-        } else {
-            ActionStatus::Skipped
-        });
-
-        action.operations.push(operation);
+        action.operations.push(
+            Operation::new(OperationMeta::sync_operation("VCS hooks"))
+                .track_async_with_check(|| sync_vcs_hooks(&workspace, false), |result| result)
+                .await?,
+        );
     }
 
     Ok(ActionStatus::Passed)

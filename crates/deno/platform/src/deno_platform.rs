@@ -2,7 +2,7 @@ use crate::bins_hash::DenoBinsHash;
 use crate::deps_hash::DenoDepsHash;
 use crate::target_hash::DenoTargetHash;
 use miette::IntoDiagnostic;
-use moon_action::{ActionStatus, Operation, OperationMeta};
+use moon_action::{Operation, OperationMeta};
 use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, is_test_env, Id};
 use moon_config::{
@@ -249,20 +249,21 @@ impl Platform for DenoPlatform {
                     }
                 };
 
-                let mut operation = Operation::new(OperationMeta::task_execution(format!(
-                    "deno {}",
-                    args.join(" ")
-                )));
-
-                deno.create_command(&())?
-                    .args(args)
-                    .cwd(working_dir)
-                    .create_async()
-                    .exec_stream_output()
-                    .await?;
-
-                operation.finish(ActionStatus::Passed);
-                operations.push(operation);
+                operations.push(
+                    Operation::new(OperationMeta::task_execution(format!(
+                        "deno {}",
+                        args.join(" ")
+                    )))
+                    .track_async(|| async {
+                        deno.create_command(&())?
+                            .args(args)
+                            .cwd(working_dir)
+                            .create_async()
+                            .exec_stream_output()
+                            .await
+                    })
+                    .await?,
+                );
             }
         }
 
@@ -273,15 +274,13 @@ impl Platform for DenoPlatform {
                 .out
                 .print_checkpoint(Checkpoint::Setup, "deno cache")?;
 
-            let mut operation = Operation::new(OperationMeta::task_execution(
-                "deno cache --lock deno.lock --lock-write",
-            ));
-
-            deno.install_dependencies(&(), working_dir, !is_test_env())
-                .await?;
-
-            operation.finish(ActionStatus::Passed);
-            operations.push(operation);
+            operations.push(
+                Operation::new(OperationMeta::task_execution(
+                    "deno cache --lock deno.lock --lock-write",
+                ))
+                .track_async(|| deno.install_dependencies(&(), working_dir, !is_test_env()))
+                .await?,
+            );
         }
 
         Ok(operations)

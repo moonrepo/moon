@@ -39,7 +39,7 @@ pub async fn sync(args: ArgsRef<SyncCodeownersArgs>, workspace: ResourceMut<Work
                 if let Some(path) = codeowners_path {
                     color::path(path.strip_prefix(&workspace.root).unwrap())
                 } else {
-                    "".into()
+                    "code owners".into()
                 }
             ),
             true,

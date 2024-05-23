@@ -1,6 +1,5 @@
 use crate::action_node::ActionNode;
 use crate::operation_list::OperationList;
-use moon_common::color;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
@@ -117,22 +116,7 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
-    pub fn set_operations(&mut self, operations: OperationList, command: &str) {
-        if let Some(last_attempt) = operations.get_last_process() {
-            if last_attempt.has_failed() {
-                if let Some(output) = last_attempt.get_output() {
-                    let mut message = format!("Failed to run {}", color::shell(command));
-
-                    if let Some(code) = output.exit_code {
-                        message += " ";
-                        message += color::muted_light(format!("(exit code {})", code)).as_str();
-                    }
-
-                    self.error = Some(message);
-                }
-            }
-        }
-
+    pub fn set_operations(&mut self, operations: OperationList) {
         self.flaky = operations.is_flaky();
         self.status = operations.get_final_status();
         self.operations = operations;

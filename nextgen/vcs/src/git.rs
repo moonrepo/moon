@@ -58,7 +58,7 @@ pub enum GitError {
     #[error("Failed to load and parse {}.", ".gitignore".style(Style::File))]
     GitignoreLoadFailed {
         #[source]
-        error: ignore::Error,
+        error: Box<ignore::Error>,
     },
 
     #[diagnostic(code(git::repository::extract_slug))]
@@ -162,13 +162,18 @@ impl Git {
             let mut builder = GitignoreBuilder::new(&repository_root);
 
             if let Some(error) = builder.add(ignore_path) {
-                return Err(GitError::GitignoreLoadFailed { error }.into());
+                return Err(GitError::GitignoreLoadFailed {
+                    error: Box::new(error),
+                }
+                .into());
             }
 
             ignore = Some(
                 builder
                     .build()
-                    .map_err(|error| GitError::GitignoreLoadFailed { error })?,
+                    .map_err(|error| GitError::GitignoreLoadFailed {
+                        error: Box::new(error),
+                    })?,
             );
         }
 

@@ -1,7 +1,7 @@
 #![allow(clippy::from_over_into)]
 
 use crate::validate::validate_child_relative_path;
-use schematic::{ParseError, SchemaType, Schematic};
+use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -92,8 +92,8 @@ macro_rules! path_type {
         }
 
         impl Schematic for $name {
-            fn generate_schema() -> SchemaType {
-                SchemaType::string()
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.string_default()
             }
         }
 

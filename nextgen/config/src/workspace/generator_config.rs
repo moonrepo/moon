@@ -1,11 +1,11 @@
 use crate::portable_path::FilePath;
 use crate::template::TemplateLocator;
-use schematic::{validate, Config};
+use schematic::{validate, Config, DefaultValueResult};
 
-fn default_templates<C>(_ctx: &C) -> Option<Vec<TemplateLocator>> {
-    Some(vec![TemplateLocator::File {
+fn default_templates<C>(_ctx: &C) -> DefaultValueResult<Vec<TemplateLocator>> {
+    Ok(Some(vec![TemplateLocator::File {
         path: FilePath("./templates".into()),
-    }])
+    }]))
 }
 
 /// Configures the generator for scaffolding from templates.

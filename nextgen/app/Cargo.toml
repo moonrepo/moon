@@ -18,7 +18,7 @@ moon_app_components = { path = "../app-components" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 miette = { workspace = true }
-mimalloc = { version = "0.1.39", default-features = false }
+mimalloc = { version = "0.1.42", default-features = false }
 proto_core = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }

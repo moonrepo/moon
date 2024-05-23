@@ -13,9 +13,9 @@ moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
-inquire = "0.7.4"
+inquire = "0.7.5"
 miette = { workspace = true }
-parking_lot = "0.12.1"
+parking_lot = "0.12.2"
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
 

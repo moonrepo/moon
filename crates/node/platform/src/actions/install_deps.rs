@@ -1,3 +1,4 @@
+use moon_action::{ActionStatus, Operation, OperationMeta};
 use moon_config::NodePackageManager;
 use moon_console::{Checkpoint, Console};
 use moon_lang::has_vendor_installed_dependencies;
@@ -12,7 +13,9 @@ pub async fn install_deps(
     node: &NodeTool,
     working_dir: &Path,
     console: &Console,
-) -> miette::Result<()> {
+) -> miette::Result<Vec<Operation>> {
+    let mut operations = vec![];
+
     // When in CI, we can avoid installing dependencies because
     // we can assume they've already been installed before moon runs!
     if is_ci() && has_vendor_installed_dependencies(working_dir, "node_modules") {
@@ -21,7 +24,7 @@ pub async fn install_deps(
             "In a CI environment and dependencies already exist, skipping install"
         );
 
-        return Ok(());
+        return Ok(operations);
     }
 
     let package_manager = node.get_package_manager();
@@ -30,19 +33,23 @@ pub async fn install_deps(
     {
         debug!(target: LOG_TARGET, "Installing dependencies");
 
-        console.out.print_checkpoint(
-            Checkpoint::Setup,
-            match node.config.package_manager {
-                NodePackageManager::Bun => "bun install",
-                NodePackageManager::Npm => "npm install",
-                NodePackageManager::Pnpm => "pnpm install",
-                NodePackageManager::Yarn => "yarn install",
-            },
-        )?;
+        let command = match node.config.package_manager {
+            NodePackageManager::Bun => "bun install",
+            NodePackageManager::Npm => "npm install",
+            NodePackageManager::Pnpm => "pnpm install",
+            NodePackageManager::Yarn => "yarn install",
+        };
+
+        console.out.print_checkpoint(Checkpoint::Setup, command)?;
+
+        let mut operation = Operation::new(OperationMeta::task_execution(command));
 
         package_manager
             .install_dependencies(node, working_dir, !is_test_env())
             .await?;
+
+        operation.finish(ActionStatus::Passed);
+        operations.push(operation);
     }
 
     // Dedupe dependencies
@@ -52,20 +59,24 @@ pub async fn install_deps(
     {
         debug!(target: LOG_TARGET, "Deduping dependencies");
 
-        console.out.print_checkpoint(
-            Checkpoint::Setup,
-            match node.config.package_manager {
-                NodePackageManager::Bun => "bun dedupe",
-                NodePackageManager::Npm => "npm dedupe",
-                NodePackageManager::Pnpm => "pnpm dedupe",
-                NodePackageManager::Yarn => "yarn dedupe",
-            },
-        )?;
+        let command = match node.config.package_manager {
+            NodePackageManager::Bun => "bun dedupe",
+            NodePackageManager::Npm => "npm dedupe",
+            NodePackageManager::Pnpm => "pnpm dedupe",
+            NodePackageManager::Yarn => "yarn dedupe",
+        };
+
+        console.out.print_checkpoint(Checkpoint::Setup, command)?;
+
+        let mut operation = Operation::new(OperationMeta::task_execution(command));
 
         package_manager
             .dedupe_dependencies(node, working_dir, !is_test_env())
             .await?;
+
+        operation.finish(ActionStatus::Passed);
+        operations.push(operation);
     }
 
-    Ok(())
+    Ok(operations)
 }

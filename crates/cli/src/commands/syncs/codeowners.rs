@@ -36,7 +36,11 @@ pub async fn sync(args: ArgsRef<SyncCodeownersArgs>, workspace: ResourceMut<Work
         done(
             format!(
                 "Successfully created {}",
-                color::path(codeowners_path.strip_prefix(&workspace.root).unwrap())
+                if let Some(path) = codeowners_path {
+                    color::path(path.strip_prefix(&workspace.root).unwrap())
+                } else {
+                    "".into()
+                }
             ),
             true,
         );

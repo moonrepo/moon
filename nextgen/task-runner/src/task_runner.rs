@@ -306,7 +306,7 @@ impl<'task> TaskRunner<'task> {
             "Generating a unique hash for this task"
         );
 
-        let mut operation = Operation::new(OperationMeta::HashGeneration(Default::default()));
+        let mut operation = Operation::new(OperationMeta::hash_generation());
         let mut hasher = self.workspace.cache_engine.hash.create_hasher(node.label());
 
         // Hash common fields
@@ -412,7 +412,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
-            let mut operation = Operation::new(OperationMeta::MutexAcquisition);
+            let mut operation = Operation::new(OperationMeta::mutex_acquisition());
 
             debug!(
                 task = self.task.target.as_str(),
@@ -481,7 +481,7 @@ impl<'task> TaskRunner<'task> {
         debug!(task = self.task.target.as_str(), "Skipping task");
 
         self.operations.push(Operation::new_finished(
-            OperationMeta::TaskExecution(Default::default()),
+            OperationMeta::task_execution("noop"),
             ActionStatus::Skipped,
         ));
 
@@ -497,7 +497,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         self.operations.push(Operation::new_finished(
-            OperationMeta::NoOperation,
+            OperationMeta::no_operation(),
             ActionStatus::Passed,
         ));
 
@@ -507,7 +507,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
-        let mut operation = Operation::new(OperationMeta::ArchiveCreation);
+        let mut operation = Operation::new(OperationMeta::archive_creation());
 
         debug!(
             task = self.task.target.as_str(),
@@ -541,7 +541,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
-        let mut operation = Operation::new(OperationMeta::OutputHydration(Default::default()));
+        let mut operation = Operation::new(OperationMeta::output_hydration());
 
         debug!(
             task = self.task.target.as_str(),

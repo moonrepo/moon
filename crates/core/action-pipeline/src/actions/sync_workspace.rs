@@ -1,5 +1,5 @@
 use super::should_skip_action;
-use moon_action::{Action, ActionStatus, Operation, OperationMeta, OperationMetaLabel};
+use moon_action::{Action, ActionStatus, Operation, OperationMeta};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_common::is_docker_container;
@@ -41,10 +41,7 @@ pub async fn sync_workspace(
     }
 
     if workspace.config.codeowners.sync_on_run {
-        let mut operation =
-            Operation::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
-                label: "Codeowners".into(),
-            })));
+        let mut operation = Operation::new(OperationMeta::sync_operation("Codeowners"));
 
         debug!(
             target: LOG_TARGET,
@@ -64,10 +61,7 @@ pub async fn sync_workspace(
     }
 
     if workspace.config.vcs.sync_hooks {
-        let mut operation =
-            Operation::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
-                label: "VCS hooks".into(),
-            })));
+        let mut operation = Operation::new(OperationMeta::sync_operation("VCS hooks"));
 
         debug!(
             target: LOG_TARGET,

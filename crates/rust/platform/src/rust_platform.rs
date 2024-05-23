@@ -1,6 +1,7 @@
 use crate::{
     find_cargo_lock, get_cargo_home, target_hash::RustTargetHash, toolchain_hash::RustToolchainHash,
 };
+use moon_action::{ActionStatus, Operation, OperationMeta};
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, path::exe_name, Id};
 use moon_config::{
@@ -252,8 +253,9 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<Vec<Operation>> {
         let tool = self.toolchain.get_for_version(&runtime.requirement)?;
+        let mut operations = vec![];
 
         if !self.config.components.is_empty() {
             self.console
@@ -269,7 +271,15 @@ impl Platform for RustPlatform {
             let mut args = vec!["component", "add"];
             args.extend(self.config.components.iter().map(|c| c.as_str()));
 
+            let mut operation = Operation::new(OperationMeta::task_execution(format!(
+                "rustup {}",
+                args.join(" ")
+            )));
+
             tool.exec_rustup(args, working_dir).await?;
+
+            operation.finish(ActionStatus::Passed);
+            operations.push(operation);
         }
 
         if !self.config.targets.is_empty() {
@@ -286,7 +296,15 @@ impl Platform for RustPlatform {
             let mut args = vec!["target", "add"];
             args.extend(self.config.targets.iter().map(|c| c.as_str()));
 
+            let mut operation = Operation::new(OperationMeta::task_execution(format!(
+                "rustup {}",
+                args.join(" ")
+            )));
+
             tool.exec_rustup(args, working_dir).await?;
+
+            operation.finish(ActionStatus::Passed);
+            operations.push(operation);
         }
 
         if find_cargo_lock(working_dir, &self.workspace_root).is_none() {
@@ -294,7 +312,13 @@ impl Platform for RustPlatform {
                 .out
                 .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
 
+            let mut operation =
+                Operation::new(OperationMeta::task_execution("cargo generate-lockfile"));
+
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
+
+            operation.finish(ActionStatus::Passed);
+            operations.push(operation);
         }
 
         if !self.config.bins.is_empty() {
@@ -312,8 +336,15 @@ impl Platform for RustPlatform {
                     color::shell("cargo-binstall")
                 );
 
+                let mut operation = Operation::new(OperationMeta::task_execution(
+                    "cargo install cargo-binstall --force",
+                ));
+
                 tool.exec_cargo(["install", "cargo-binstall", "--force"], working_dir)
                     .await?;
+
+                operation.finish(ActionStatus::Passed);
+                operations.push(operation);
             }
 
             // Then attempt to install binaries
@@ -341,11 +372,19 @@ impl Platform for RustPlatform {
                     }
                 };
 
+                let mut operation = Operation::new(OperationMeta::task_execution(format!(
+                    "cargo {}",
+                    args.join(" ")
+                )));
+
                 tool.exec_cargo(args, working_dir).await?;
+
+                operation.finish(ActionStatus::Passed);
+                operations.push(operation);
             }
         }
 
-        Ok(())
+        Ok(operations)
     }
 
     async fn sync_project(

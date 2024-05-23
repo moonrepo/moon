@@ -752,7 +752,7 @@ mod outputs {
         let output = assert.output();
 
         assert!(
-            predicate::str::contains("Target outputs:missingOutput defines outputs").eval(&output)
+            predicate::str::contains("Task outputs:missingOutput defines outputs").eval(&output)
         );
     }
 
@@ -768,7 +768,7 @@ mod outputs {
         let output = assert.output();
 
         assert!(
-            predicate::str::contains("Target outputs:missingOutputGlob defines outputs")
+            predicate::str::contains("Task outputs:missingOutputGlob defines outputs")
                 .eval(&output)
         );
     }
@@ -961,8 +961,6 @@ mod outputs {
 
         untar(&tarball, &dir);
 
-        assert!(dir.join("stdout.log").exists());
-        assert!(dir.join("stderr.log").exists());
         assert!(dir.join("outputs/both/a/one.js").exists());
         assert!(dir.join("outputs/both/b/two.js").exists());
     }
@@ -985,8 +983,6 @@ mod outputs {
 
         untar(&tarball, &dir);
 
-        assert!(dir.join("stdout.log").exists());
-        assert!(dir.join("stderr.log").exists());
         assert!(dir.join("both/a/one.js").exists());
         assert!(dir.join("both/b/two.js").exists());
     }

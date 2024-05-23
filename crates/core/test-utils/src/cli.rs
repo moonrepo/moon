@@ -87,8 +87,8 @@ impl<'s> SandboxAssert<'s> {
 
         let output = self.inner.get_output();
 
-        println!("STDOUT:\n{}\n", output_to_string(&output.stdout));
         println!("STDERR:\n{}\n", output_to_string(&output.stderr));
+        println!("STDOUT:\n{}\n", output_to_string(&output.stdout));
         println!("STATUS:\n{:#?}", output.status);
 
         self

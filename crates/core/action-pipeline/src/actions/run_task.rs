@@ -28,17 +28,19 @@ pub async fn run_task(
     env::set_var("MOON_RUNNING_ACTION", "run-task");
 
     let task = project.get_task(&target.task_id)?;
+
+    action.allow_failure = task.options.allow_failure;
+
     let result = TaskRunner::new(&workspace, project, task, console)?
         .run(&context, &action.node)
         .await?;
 
-    action.allow_failure = task.options.allow_failure;
     action.set_operations(result.operations, &task.command);
 
     if action.has_failed() && action.allow_failure {
         warn!(
             target: LOG_TARGET,
-            "Target {} has failed, but is marked to allow failures, continuing pipeline",
+            "Task {} has failed, but is marked to allow failures, continuing pipeline",
             color::label(&task.target),
         );
     }

@@ -544,7 +544,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
-        let mut operation = Operation::new(OperationMeta::OutputHydration);
+        let mut operation = Operation::new(OperationMeta::OutputHydration(Default::default()));
 
         debug!(
             task = self.task.target.as_str(),
@@ -594,7 +594,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn load_logs(&self, operation: &mut Operation) -> miette::Result<()> {
-        if let OperationMeta::TaskExecution(output) = &mut operation.meta {
+        if let Some(output) = operation.get_output_mut() {
             let state_dir = self
                 .workspace
                 .cache_engine

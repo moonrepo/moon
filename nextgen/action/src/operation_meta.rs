@@ -39,7 +39,7 @@ pub enum OperationMeta {
     // Processes
     #[default]
     NoOperation,
-    OutputHydration,
+    OutputHydration(Box<OperationMetaOutput>),
     TaskExecution(Box<OperationMetaOutput>),
 
     // Metrics
@@ -66,7 +66,7 @@ impl OperationMeta {
     }
 
     pub fn is_output_hydration(&self) -> bool {
-        matches!(self, Self::OutputHydration)
+        matches!(self, Self::OutputHydration(_))
     }
 
     pub fn is_task_execution(&self) -> bool {

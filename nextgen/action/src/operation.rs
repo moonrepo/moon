@@ -51,14 +51,18 @@ impl Operation {
 
     pub fn get_output(&self) -> Option<&OperationMetaOutput> {
         match &self.meta {
-            OperationMeta::TaskExecution(output) => Some(output),
+            OperationMeta::OutputHydration(output) | OperationMeta::TaskExecution(output) => {
+                Some(output)
+            }
             _ => None,
         }
     }
 
     pub fn get_output_mut(&mut self) -> Option<&mut OperationMetaOutput> {
         match &mut self.meta {
-            OperationMeta::TaskExecution(output) => Some(output),
+            OperationMeta::OutputHydration(output) | OperationMeta::TaskExecution(output) => {
+                Some(output)
+            }
             _ => None,
         }
     }

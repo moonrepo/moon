@@ -38,6 +38,7 @@ impl OperationList {
         self.0.iter().rfind(|op| {
             op.meta.is_no_operation()
                 || op.meta.is_output_hydration()
+                || op.meta.is_sync_operation()
                 || op.meta.is_task_execution()
         })
     }

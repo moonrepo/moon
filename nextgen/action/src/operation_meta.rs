@@ -7,6 +7,11 @@ pub struct OperationMetaHash {
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct OperationMetaLabel {
+    pub label: String,
+}
+
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OperationMetaOutput {
     pub command: Option<String>,
@@ -40,6 +45,7 @@ pub enum OperationMeta {
     #[default]
     NoOperation,
     OutputHydration(Box<OperationMetaOutput>),
+    SyncOperation(Box<OperationMetaLabel>),
     TaskExecution(Box<OperationMetaOutput>),
 
     // Metrics
@@ -69,7 +75,17 @@ impl OperationMeta {
         matches!(self, Self::OutputHydration(_))
     }
 
+    pub fn is_sync_operation(&self) -> bool {
+        matches!(self, Self::SyncOperation(_))
+    }
+
     pub fn is_task_execution(&self) -> bool {
         matches!(self, Self::TaskExecution(_))
+    }
+
+    pub fn set_hash(&mut self, hash: impl AsRef<str>) {
+        if let Self::HashGeneration(inner) = self {
+            inner.hash = Some(hash.as_ref().to_owned());
+        }
     }
 }

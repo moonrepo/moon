@@ -1,6 +1,6 @@
 use super::should_skip_action_matching;
 use miette::IntoDiagnostic;
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionStatus, Operation, OperationMeta, OperationMetaLabel};
 use moon_action_context::ActionContext;
 use moon_cache_item::cache_item;
 use moon_logger::{debug, warn};

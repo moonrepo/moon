@@ -370,10 +370,7 @@ impl<'task> TaskRunner<'task> {
 
         let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
-        if let OperationMeta::HashGeneration(inner) = &mut operation.meta {
-            inner.hash = Some(hash.clone());
-        }
-
+        operation.meta.set_hash(&hash);
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);

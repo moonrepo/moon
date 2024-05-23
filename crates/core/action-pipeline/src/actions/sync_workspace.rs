@@ -1,5 +1,5 @@
 use super::should_skip_action;
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionStatus, Operation, OperationMeta, OperationMetaLabel};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_common::is_docker_container;
@@ -14,7 +14,7 @@ use std::sync::Arc;
 const LOG_TARGET: &str = "moon:action:sync-workspace";
 
 pub async fn sync_workspace(
-    _action: &mut Action,
+    action: &mut Action,
     _context: Arc<ActionContext>,
     workspace: Arc<Workspace>,
     project_graph: Arc<ProjectGraph>,
@@ -41,16 +41,34 @@ pub async fn sync_workspace(
     }
 
     if workspace.config.codeowners.sync_on_run {
+        let mut operation =
+            Operation::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
+                label: "Codeowners".into(),
+            })));
+
         debug!(
             target: LOG_TARGET,
             "Syncing code owners ({} enabled)",
             color::property("codeowners.syncOnRun"),
         );
 
-        sync_codeowners(&workspace, &project_graph, false).await?;
+        let result = sync_codeowners(&workspace, &project_graph, false).await?;
+
+        operation.finish(if result.is_some() {
+            ActionStatus::Passed
+        } else {
+            ActionStatus::Skipped
+        });
+
+        action.operations.push(operation);
     }
 
     if workspace.config.vcs.sync_hooks {
+        let mut operation =
+            Operation::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
+                label: "VCS hooks".into(),
+            })));
+
         debug!(
             target: LOG_TARGET,
             "Syncing {} hooks ({} enabled)",
@@ -58,7 +76,15 @@ pub async fn sync_workspace(
             color::property("vcs.syncHooks"),
         );
 
-        sync_vcs_hooks(&workspace, false).await?;
+        let result = sync_vcs_hooks(&workspace, false).await?;
+
+        operation.finish(if result {
+            ActionStatus::Passed
+        } else {
+            ActionStatus::Skipped
+        });
+
+        action.operations.push(operation);
     }
 
     Ok(ActionStatus::Passed)

@@ -1,13 +1,15 @@
 use moon_vcs_hooks::{HooksGenerator, HooksHash};
 use moon_workspace::Workspace;
 
-pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<()> {
+pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<bool> {
     let vcs_config = &workspace.config.vcs;
     let generator = HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config);
 
     // Force run the generator and bypass cache
     if force {
-        return generator.generate().await;
+        generator.generate().await?;
+
+        return Ok(true);
     }
 
     // Hash all the hook commands
@@ -23,9 +25,7 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
         .execute_if_changed("vcsHooks.json", hooks_hash, || async {
             generator.generate().await
         })
-        .await?;
-
-    Ok(())
+        .await
 }
 
 pub async fn unsync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {

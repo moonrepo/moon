@@ -41,6 +41,7 @@
 
 - Greatly reduced the amount of concurrent locks being held during task execution. May see slight
   performance improvements.
+- Updated proto to v0.35.3 (from v0.34.4).
 
 ## 1.24.6
 

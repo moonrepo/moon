@@ -11,7 +11,7 @@ use starbase_utils::json;
 use std::sync::Arc;
 
 #[system]
-pub async fn setup(resources: ResourcesMut) {
+pub async fn setup(resources: Resources) {
     let manifest_path = { resources.get::<Workspace>().root.join(MANIFEST_NAME) };
 
     if !manifest_path.exists() {
@@ -23,7 +23,7 @@ pub async fn setup(resources: ResourcesMut) {
     }
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;
-    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
+    let project_graph = { generate_project_graph(&mut resources.get::<Workspace>()).await? };
     let mut action_graph_builder = build_action_graph(&project_graph)?;
 
     for project_id in &manifest.focused_projects {

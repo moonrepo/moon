@@ -17,13 +17,14 @@ pub struct TaskArgs {
 }
 
 #[system]
-pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
+pub async fn task(args: ArgsRef<TaskArgs>, resources: Resources) {
     let TargetScope::Project(project_locator) = &args.target.scope else {
         return Err(miette!(code = "moon::task", "A project ID is required."));
     };
 
-    let mut project_graph_builder =
-        { build_project_graph(resources.get_mut::<Workspace>()).await? };
+    let mut workspace = resources.get::<Workspace>();
+
+    let mut project_graph_builder = build_project_graph(&mut workspace).await?;
     project_graph_builder.load(project_locator).await?;
 
     let project_graph = project_graph_builder.build().await?;
@@ -37,8 +38,6 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
 
         return Ok(());
     }
-
-    let workspace = resources.get::<Workspace>();
 
     console.print_header(&args.target.id)?;
 

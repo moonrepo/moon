@@ -18,7 +18,7 @@ use tracing::debug;
 // IN ORDER:
 
 #[system]
-pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
+pub async fn load_environments(states: States, resources: Resources) {
     let quiet = { states.get::<GlobalArgs>().quiet };
 
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
@@ -31,9 +31,9 @@ pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
 }
 
 #[system]
-pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
+pub async fn load_workspace(states: States, resources: Resources) {
     let workspace = moon::load_workspace_from(
-        Arc::clone(states.get::<ProtoEnv>()),
+        Arc::clone(&states.get::<ProtoEnv>()),
         Arc::new(resources.get::<Console>().to_owned()),
     )
     .await?;
@@ -42,7 +42,7 @@ pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
 
     // Ensure our env instance is using the found workspace root,
     // as this is required for plugins to function entirely!
-    Arc::get_mut(states.get_mut::<MoonEnv>())
+    Arc::get_mut(&mut states.get::<MoonEnv>())
         .unwrap()
         .workspace_root = workspace.root.clone();
 
@@ -51,7 +51,7 @@ pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
 
 #[system]
 pub async fn create_plugin_registries(
-    resources: ResourcesMut,
+    resources: Resources,
     moon_env: StateRef<MoonEnv>,
     proto_env: StateRef<ProtoEnv>,
 ) {

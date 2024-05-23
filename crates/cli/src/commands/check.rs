@@ -40,9 +40,9 @@ pub struct CheckArgs {
 pub async fn check(
     args: ArgsRef<CheckArgs>,
     global_args: StateRef<GlobalArgs>,
-    resources: ResourcesMut,
+    resources: Resources,
 ) {
-    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
+    let project_graph = { generate_project_graph(&mut resources.get::<Workspace>()).await? };
     let mut projects: Vec<Arc<Project>> = vec![];
 
     // Load projects
@@ -89,8 +89,8 @@ pub async fn check(
             ..RunArgs::default()
         },
         global_args.concurrency,
-        resources.get::<Workspace>(),
-        resources.get::<Console>(),
+        &resources.get::<Workspace>(),
+        &resources.get::<Console>(),
         project_graph,
     )
     .await?;

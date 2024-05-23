@@ -156,7 +156,7 @@ pub struct QueryProjectsArgs {
 }
 
 #[system]
-pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut) {
+pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: Resources) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -171,14 +171,14 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
         tags: args.tags,
         tasks: args.tasks,
         touched_files: if args.affected {
-            load_touched_files(resources.get::<Workspace>()).await?
+            load_touched_files(&resources.get::<Workspace>()).await?
         } else {
             FxHashSet::default()
         },
         type_of: args.type_of,
     };
 
-    let mut projects = { query_projects(resources.get_mut::<Workspace>(), &options).await? };
+    let mut projects = { query_projects(&mut resources.get::<Workspace>(), &options).await? };
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
@@ -241,7 +241,7 @@ pub struct QueryTasksArgs {
 }
 
 #[system]
-pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
+pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: Resources) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -255,9 +255,9 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
         ..QueryProjectsOptions::default()
     };
 
-    let projects = { query_projects(resources.get_mut::<Workspace>(), &options).await? };
+    let projects = { query_projects(&mut resources.get::<Workspace>(), &options).await? };
     let touched_files = if args.affected {
-        load_touched_files(resources.get::<Workspace>()).await?
+        load_touched_files(&resources.get::<Workspace>()).await?
     } else {
         FxHashSet::default()
     };

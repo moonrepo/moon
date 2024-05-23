@@ -81,5 +81,5 @@ pub async fn internal_action_graph(
 
 #[system]
 pub async fn action_graph(args: ArgsRef<ActionGraphArgs>, workspace: ResourceMut<Workspace>) {
-    internal_action_graph(args, workspace).await?;
+    internal_action_graph(&args, workspace).await?;
 }

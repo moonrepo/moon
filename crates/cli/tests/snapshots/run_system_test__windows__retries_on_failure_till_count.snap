@@ -11,14 +11,11 @@ stdout
 ▪▪▪▪ windows:retryCount (attempt 4/4)
 stdout
 ▪▪▪▪ windows:retryCount (100ms)
-stderr
-stderr
-stderr
-stderr
+stderr 
+stderr 
+stderr 
+stderr 
 Error: task_runner::run_failed
 
   × Task windows:retryCount failed to run.
   ╰─▶ Process cmd.exe failed with a 1 exit code.
-
-
-

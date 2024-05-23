@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use moon_common::Id;
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_task_runner::TaskRunState;
@@ -7,7 +6,6 @@ use moon_test_utils::{
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
-use std::fs;
 
 fn system_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
@@ -34,6 +32,8 @@ fn system_sandbox() -> Sandbox {
 #[cfg(not(windows))]
 mod unix {
     use super::*;
+    use itertools::Itertools;
+    use std::fs;
 
     #[test]
     fn handles_echo() {

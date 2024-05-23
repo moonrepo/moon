@@ -1,4 +1,4 @@
-use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationType};
+use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -91,7 +91,7 @@ impl<'task> CommandExecutor<'task> {
 
         // Execute the command on a loop as an attempt for every retry count we have
         let execution_error: Option<miette::Report> = loop {
-            let mut attempt = Operation::new(OperationType::TaskExecution);
+            let mut attempt = Operation::new(OperationMeta::TaskExecution(Default::default()));
             report_item.attempt_current = self.attempt_index;
 
             debug!(

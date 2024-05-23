@@ -4,7 +4,7 @@ use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
-use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationType};
+use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
 use moon_cache::CacheItem;
 use moon_console::{Console, TaskReportItem};
@@ -306,7 +306,7 @@ impl<'task> TaskRunner<'task> {
             "Generating a unique hash for this task"
         );
 
-        let mut operation = Operation::new(OperationType::HashGeneration);
+        let mut operation = Operation::new(OperationMeta::HashGeneration(Default::default()));
         let mut hasher = self.workspace.cache_engine.hash.create_hasher(node.label());
 
         // Hash common fields
@@ -370,7 +370,10 @@ impl<'task> TaskRunner<'task> {
 
         let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
 
-        operation.hash = Some(hash.clone());
+        if let OperationMeta::HashGeneration(inner) = &mut operation.meta {
+            inner.hash = Some(hash.clone());
+        }
+
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
@@ -412,7 +415,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
-            let mut operation = Operation::new(OperationType::MutexAcquisition);
+            let mut operation = Operation::new(OperationMeta::MutexAcquisition);
 
             debug!(
                 task = self.task.target.as_str(),
@@ -464,7 +467,10 @@ impl<'task> TaskRunner<'task> {
                     target: self.task.target.to_string(),
                     error: Box::new(ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
-                        code: last_attempt.get_exit_code(),
+                        code: last_attempt
+                            .get_output()
+                            .map(|output| output.get_exit_code())
+                            .unwrap_or(-1),
                     }),
                 }
                 .into());
@@ -478,7 +484,7 @@ impl<'task> TaskRunner<'task> {
         debug!(task = self.task.target.as_str(), "Skipping task");
 
         self.operations.push(Operation::new_finished(
-            OperationType::TaskExecution,
+            OperationMeta::TaskExecution(Default::default()),
             ActionStatus::Skipped,
         ));
 
@@ -494,7 +500,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         self.operations.push(Operation::new_finished(
-            OperationType::NoOperation,
+            OperationMeta::NoOperation,
             ActionStatus::Passed,
         ));
 
@@ -504,7 +510,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
-        let mut operation = Operation::new(OperationType::ArchiveCreation);
+        let mut operation = Operation::new(OperationMeta::ArchiveCreation);
 
         debug!(
             task = self.task.target.as_str(),
@@ -538,7 +544,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
-        let mut operation = Operation::new(OperationType::OutputHydration);
+        let mut operation = Operation::new(OperationMeta::OutputHydration);
 
         debug!(
             task = self.task.target.as_str(),
@@ -588,24 +594,24 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn load_logs(&self, operation: &mut Operation) -> miette::Result<()> {
-        let state_dir = self
-            .workspace
-            .cache_engine
-            .state
-            .get_target_dir(&self.task.target);
-        let err_path = state_dir.join("stderr.log");
-        let out_path = state_dir.join("stdout.log");
+        if let OperationMeta::TaskExecution(output) = &mut operation.meta {
+            let state_dir = self
+                .workspace
+                .cache_engine
+                .state
+                .get_target_dir(&self.task.target);
+            let err_path = state_dir.join("stderr.log");
+            let out_path = state_dir.join("stdout.log");
 
-        let output = operation.output.get_or_insert(Default::default());
+            output.exit_code = Some(self.cache.data.exit_code);
 
-        output.exit_code = Some(self.cache.data.exit_code);
+            if err_path.exists() {
+                output.set_stderr(fs::read_file(err_path)?);
+            }
 
-        if err_path.exists() {
-            output.set_stderr(fs::read_file(err_path)?);
-        }
-
-        if out_path.exists() {
-            output.set_stdout(fs::read_file(out_path)?);
+            if out_path.exists() {
+                output.set_stdout(fs::read_file(out_path)?);
+            }
         }
 
         Ok(())
@@ -620,8 +626,8 @@ impl<'task> TaskRunner<'task> {
         let err_path = state_dir.join("stderr.log");
         let out_path = state_dir.join("stdout.log");
 
-        if let Some(output) = &operation.output {
-            self.cache.data.exit_code = operation.get_exit_code();
+        if let Some(output) = operation.get_output() {
+            self.cache.data.exit_code = output.get_exit_code();
 
             fs::write_file(
                 err_path,

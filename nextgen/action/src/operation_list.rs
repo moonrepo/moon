@@ -1,3 +1,4 @@
+use crate::OperationMeta;
 use crate::{action::ActionStatus, operation::*};
 use serde::{Deserialize, Serialize};
 use std::mem;
@@ -16,39 +17,34 @@ impl OperationList {
     pub fn get_hash(&self) -> Option<&str> {
         self.0
             .iter()
-            .find(|op| op.hash.is_some())
-            .and_then(|op| op.hash.as_deref())
+            .find(|op| op.meta.is_hash_generation())
+            .and_then(|op| match &op.meta {
+                OperationMeta::HashGeneration(inner) => inner.hash.as_deref(),
+                _ => None,
+            })
     }
 
     /// Returns the last "metric based" operation.
     pub fn get_last_metric(&self) -> Option<&Operation> {
         self.0.iter().rfind(|op| {
-            matches!(
-                op.type_of,
-                OperationType::ArchiveCreation
-                    | OperationType::MutexAcquisition
-                    | OperationType::HashGeneration
-            )
+            op.meta.is_archive_creation()
+                || op.meta.is_hash_generation()
+                || op.meta.is_mutex_acquisition()
         })
     }
 
     /// Returns the last "process based" operation.
     pub fn get_last_process(&self) -> Option<&Operation> {
         self.0.iter().rfind(|op| {
-            matches!(
-                op.type_of,
-                OperationType::NoOperation
-                    | OperationType::TaskExecution
-                    | OperationType::OutputHydration
-            )
+            op.meta.is_no_operation()
+                || op.meta.is_output_hydration()
+                || op.meta.is_task_execution()
         })
     }
 
     /// Returns the last task execution operation.
     pub fn get_last_execution(&self) -> Option<&Operation> {
-        self.0
-            .iter()
-            .rfind(|op| matches!(op.type_of, OperationType::TaskExecution))
+        self.0.iter().rfind(|op| op.meta.is_task_execution())
     }
 
     pub fn is_flaky(&self) -> bool {
@@ -57,7 +53,7 @@ impl OperationList {
         let mut last_passed = false;
 
         for operation in &self.0 {
-            if matches!(operation.type_of, OperationType::TaskExecution) {
+            if operation.meta.is_task_execution() {
                 attempt_count += 1;
                 last_passed = operation.has_passed();
 

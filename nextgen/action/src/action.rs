@@ -120,7 +120,7 @@ impl Action {
     pub fn set_operations(&mut self, operations: OperationList, command: &str) {
         if let Some(last_attempt) = operations.get_last_process() {
             if last_attempt.has_failed() {
-                if let Some(output) = &last_attempt.output {
+                if let Some(output) = last_attempt.get_output() {
                     let mut message = format!("Failed to run {}", color::shell(command));
 
                     if let Some(code) = output.exit_code {

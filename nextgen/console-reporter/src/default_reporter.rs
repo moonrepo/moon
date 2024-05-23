@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode, ActionStatus, Operation, OperationList, OperationType};
+use moon_action::{Action, ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_common::color::paint;
 use moon_common::{color, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -47,8 +47,8 @@ impl DefaultReporter {
     ) -> miette::Result<()> {
         let mut comments = vec![];
 
-        match operation.type_of {
-            OperationType::NoOperation => {
+        match operation.meta {
+            OperationMeta::NoOperation => {
                 comments.push("no op".into());
             }
             _ => {
@@ -104,7 +104,7 @@ impl DefaultReporter {
         item: &TaskReportItem,
     ) -> miette::Result<()> {
         let print_stdout = || -> miette::Result<()> {
-            if let Some(output) = &operation.output {
+            if let Some(output) = operation.get_output() {
                 if let Some(out) = &output.stdout {
                     self.out.write_line(out.trim())?;
                 }
@@ -114,7 +114,7 @@ impl DefaultReporter {
         };
 
         let print_stderr = || -> miette::Result<()> {
-            if let Some(output) = &operation.output {
+            if let Some(output) = operation.get_output() {
                 if let Some(out) = &output.stderr {
                     self.err.write_line(out.trim())?;
                 }
@@ -160,7 +160,7 @@ impl DefaultReporter {
                 if attempt.has_failed() {
                     let mut has_stdout = false;
 
-                    if let Some(output) = &attempt.output {
+                    if let Some(output) = attempt.get_output() {
                         if let Some(stdout) = &output.stdout {
                             if !stdout.is_empty() {
                                 has_stdout = true;
@@ -233,7 +233,7 @@ impl DefaultReporter {
             };
 
             if let Some(last_op) = action.operations.get_last_process() {
-                if matches!(last_op.type_of, OperationType::NoOperation) {
+                if last_op.meta.is_no_operation() {
                     noop_count += 1;
                 }
             }

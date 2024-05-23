@@ -13,7 +13,7 @@ pub enum ProcessError {
     Capture {
         bin: String,
         #[source]
-        error: std::io::Error,
+        error: Box<std::io::Error>,
     },
 
     #[diagnostic(code(process::failed))]
@@ -46,7 +46,7 @@ pub enum ProcessError {
     Stream {
         bin: String,
         #[source]
-        error: std::io::Error,
+        error: Box<std::io::Error>,
     },
 
     #[diagnostic(code(process::capture_stream::failed))]
@@ -58,7 +58,7 @@ pub enum ProcessError {
     StreamCapture {
         bin: String,
         #[source]
-        error: std::io::Error,
+        error: Box<std::io::Error>,
     },
 
     #[diagnostic(code(process::stdin::failed))]
@@ -70,6 +70,6 @@ pub enum ProcessError {
     WriteInput {
         bin: String,
         #[source]
-        error: std::io::Error,
+        error: Box<std::io::Error>,
     },
 }

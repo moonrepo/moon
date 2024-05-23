@@ -462,10 +462,10 @@ impl<'task> TaskRunner<'task> {
             if last_attempt.has_failed() {
                 return Err(TaskRunnerError::RunFailed {
                     target: self.task.target.to_string(),
-                    error: ProcessError::ExitNonZero {
+                    error: Box::new(ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
                         code: last_attempt.get_exit_code(),
-                    },
+                    }),
                 }
                 .into());
             }

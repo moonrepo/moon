@@ -8,7 +8,7 @@ use thiserror::Error;
 pub struct ArgsSplitError {
     args: String,
     #[source]
-    error: shell_words::ParseError,
+    error: Box<shell_words::ParseError>,
 }
 
 // When parsing a command line with multiple commands separated by a semicolon,
@@ -23,7 +23,7 @@ pub fn split_args<T: AsRef<str>>(line: T) -> miette::Result<Vec<String>> {
 
     Ok(shell_words::split(&line).map_err(|error| ArgsSplitError {
         args: line.to_owned(),
-        error,
+        error: Box::new(error),
     })?)
 }
 

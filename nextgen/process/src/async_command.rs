@@ -29,7 +29,7 @@ impl<'cmd> AsyncCommand<'cmd> {
                 .spawn()
                 .map_err(|error| ProcessError::Capture {
                     bin: self.get_bin_name(),
-                    error,
+                    error: Box::new(error),
                 })?;
 
             self.write_input_to_child(&mut child).await?;
@@ -39,7 +39,7 @@ impl<'cmd> AsyncCommand<'cmd> {
                 .await
                 .map_err(|error| ProcessError::Capture {
                     bin: self.get_bin_name(),
-                    error,
+                    error: Box::new(error),
                 })?;
         } else {
             output = command
@@ -47,7 +47,7 @@ impl<'cmd> AsyncCommand<'cmd> {
                 .await
                 .map_err(|error| ProcessError::Capture {
                     bin: self.get_bin_name(),
-                    error,
+                    error: Box::new(error),
                 })?;
         }
 
@@ -69,20 +69,20 @@ impl<'cmd> AsyncCommand<'cmd> {
                     .spawn()
                     .map_err(|error| ProcessError::Stream {
                         bin: self.get_bin_name(),
-                        error,
+                        error: Box::new(error),
                     })?;
 
             self.write_input_to_child(&mut child).await?;
         } else {
             child = command.spawn().map_err(|error| ProcessError::Stream {
                 bin: self.get_bin_name(),
-                error,
+                error: Box::new(error),
             })?;
         };
 
         let status = child.wait().await.map_err(|error| ProcessError::Stream {
             bin: self.get_bin_name(),
-            error,
+            error: Box::new(error),
         })?;
 
         let output = Output {
@@ -112,7 +112,7 @@ impl<'cmd> AsyncCommand<'cmd> {
             .spawn()
             .map_err(|error| ProcessError::StreamCapture {
                 bin: self.get_bin_name(),
-                error,
+                error: Box::new(error),
             })?;
 
         if self.inspector.should_pass_stdin() {
@@ -195,7 +195,7 @@ impl<'cmd> AsyncCommand<'cmd> {
             .await
             .map_err(|error| ProcessError::StreamCapture {
                 bin: self.get_bin_name(),
-                error,
+                error: Box::new(error),
             })?;
 
         let output = Output {
@@ -237,7 +237,7 @@ impl<'cmd> AsyncCommand<'cmd> {
             .await
             .map_err(|error| ProcessError::WriteInput {
                 bin: self.get_bin_name(),
-                error,
+                error: Box::new(error),
             })?;
 
         drop(stdin);

@@ -249,7 +249,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 if env_path.exists() {
                     let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
                         path: env_path.to_path_buf(),
-                        error,
+                        error: Box::new(error),
                     };
 
                     for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {

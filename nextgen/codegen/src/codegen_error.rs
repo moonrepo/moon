@@ -55,7 +55,7 @@ pub enum CodegenError {
     LoadTemplateFileFailed {
         path: PathBuf,
         #[source]
-        error: tera::Error,
+        error: Box<tera::Error>,
     },
 
     #[diagnostic(code(codegen::template_file::render_failed))]
@@ -66,7 +66,7 @@ pub enum CodegenError {
     RenderTemplateFileFailed {
         path: PathBuf,
         #[source]
-        error: tera::Error,
+        error: Box<tera::Error>,
     },
 
     #[diagnostic(code(codegen::template_file::interpolate_path))]
@@ -77,6 +77,6 @@ pub enum CodegenError {
     InterpolateTemplateFileFailed {
         path: String,
         #[source]
-        error: tera::Error,
+        error: Box<tera::Error>,
     },
 }

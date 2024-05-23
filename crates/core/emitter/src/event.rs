@@ -70,9 +70,13 @@ pub enum Event<'e> {
 
     // Running targets
     TargetRunning {
+        #[serde(skip)]
+        action: &'e Action,
         target: &'e Target,
     },
     TargetRan {
+        #[serde(skip)]
+        action: &'e Action,
         error: Option<String>,
         target: &'e Target,
     },

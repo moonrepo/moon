@@ -376,6 +376,17 @@ impl Subscriber for MoonbaseSubscriber {
                     }
                 }
 
+                Event::TargetRunning { action, target } => {
+                    // Temporary, pass this data to the moonbase instance
+                    if let Some(job_id) = self.job_ids.get(&action.label) {
+                        moonbase
+                            .job_ids
+                            .write()
+                            .await
+                            .insert(target.to_string(), *job_id);
+                    }
+                }
+
                 _ => {}
             }
         }
@@ -385,6 +396,8 @@ impl Subscriber for MoonbaseSubscriber {
             for future in self.requests.drain(0..) {
                 let _ = future.await;
             }
+
+            moonbase.wait_for_requests().await;
         }
 
         Ok(EventFlow::Continue)

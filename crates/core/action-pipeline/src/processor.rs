@@ -174,6 +174,7 @@ pub async fn process_action(
 
             emitter
                 .emit(Event::TargetRunning {
+                    action: &action,
                     target: &inner.target,
                 })
                 .await?;
@@ -192,6 +193,7 @@ pub async fn process_action(
 
             emitter
                 .emit(Event::TargetRan {
+                    action: &action,
                     error: extract_error(&run_result),
                     target: &inner.target,
                 })

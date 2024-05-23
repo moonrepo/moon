@@ -35,6 +35,9 @@ pub struct Moonbase {
     download_urls: Arc<RwLock<FxHashMap<String, Option<String>>>>,
 
     upload_requests: Arc<RwLock<Vec<JoinHandle<()>>>>,
+
+    // Temporary (target -> id)
+    pub job_ids: Arc<RwLock<FxHashMap<String, i64>>>,
 }
 
 impl Moonbase {
@@ -79,6 +82,7 @@ impl Moonbase {
                     repository_id,
                     download_urls: Arc::new(RwLock::new(FxHashMap::default())),
                     upload_requests: Arc::new(RwLock::new(vec![])),
+                    job_ids: Arc::new(RwLock::new(FxHashMap::default())),
                 })
             }
             Ok(Response::Failure { message, status }) => {
@@ -261,13 +265,14 @@ impl Moonbase {
         let moonbase = self.clone();
         let hash = hash.to_owned();
         let src_path = src_path.to_owned();
+        let job_id = self.job_ids.read().await.get(target_id).cloned();
 
         self.upload_requests
             .write()
             .await
             .push(tokio::spawn(async move {
                 if let Err(error) = moonbase
-                    .upload_artifact(&hash, &src_path, presigned_url)
+                    .upload_artifact(&hash, &src_path, presigned_url, job_id)
                     .await
                 {
                     warn!(
@@ -287,6 +292,7 @@ impl Moonbase {
         hash: &str,
         src_path: &Path,
         upload_url: Option<String>,
+        job_id: Option<i64>,
     ) -> miette::Result<()> {
         let file = tokio::fs::File::open(src_path).await.into_diagnostic()?;
         let file_length = file
@@ -308,9 +314,6 @@ impl Moonbase {
                 .bearer_auth(&self.auth_token)
                 .header("Accept", "application/json")
         };
-
-        // TODO
-        let job_id = None;
 
         match request.send().await {
             Ok(response) => {
@@ -342,6 +345,16 @@ impl Moonbase {
                 }
                 .into())
             }
+        }
+    }
+
+    pub async fn wait_for_requests(&self) {
+        let mut requests = self.upload_requests.write().await;
+
+        for future in requests.drain(0..) {
+            // We can ignore the errors because we handle them in
+            // the tasks above by logging to the console
+            let _ = future.await;
         }
     }
 

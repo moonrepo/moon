@@ -65,7 +65,7 @@ pub async fn generate(
     console.flush()?;
 
     // Gather variables
-    let mut context = gather_variables(&args, &template, base_console)?;
+    let mut context = gather_variables(args, &template, base_console)?;
 
     // Determine the destination path
     let relative_dest = PathBuf::from(match &args.dest {

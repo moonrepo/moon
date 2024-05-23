@@ -11,5 +11,5 @@ pub async fn dep_graph(args: ArgsRef<ActionGraphArgs>, workspace: ResourceMut<Wo
         color::shell("moon action-graph")
     );
 
-    internal_action_graph(&args, workspace).await?;
+    internal_action_graph(args, workspace).await?;
 }

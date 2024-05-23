@@ -5,11 +5,12 @@ use moon_app_components::Console;
 use moon_workspace::Workspace;
 use starbase::{system, ResourceManager, SystemResult};
 use std::sync::Arc;
+use tokio::sync::RwLockWriteGuard;
 
-pub async fn internal_sync(resources: Arc<ResourceManager>) -> SystemResult {
+pub async fn internal_sync(mut resources: RwLockWriteGuard<'_, ResourceManager>) -> SystemResult {
     let done = create_progress_bar("Syncing projects...");
 
-    let project_graph = { generate_project_graph(&mut resources.get::<Workspace>()).await? };
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
 
     let mut project_count = 0;
     let mut action_graph_builder = build_action_graph(&project_graph)?;
@@ -40,6 +41,6 @@ pub async fn internal_sync(resources: Arc<ResourceManager>) -> SystemResult {
 }
 
 #[system]
-pub async fn sync(resources: Resources) {
+pub async fn sync(resources: ResourcesMut) {
     internal_sync(resources).await?;
 }

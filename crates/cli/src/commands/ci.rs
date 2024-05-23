@@ -239,11 +239,11 @@ fn generate_action_graph(
 }
 
 #[system]
-pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resources: Resources) {
-    let project_graph = { generate_project_graph(&mut resources.get::<Workspace>()).await? };
+pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resources: ResourcesMut) {
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
     let workspace = resources.get::<Workspace>();
     let mut console = CiConsole {
-        inner: &resources.get::<Console>(),
+        inner: resources.get::<Console>(),
         output: ci_env::get_output().unwrap_or(CiOutput {
             close_log_group: "",
             open_log_group: "▪▪▪▪ {name}",
@@ -251,8 +251,8 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
         last_title: String::new(),
     };
 
-    let touched_files = gather_touched_files(&mut console, &workspace, &args).await?;
-    let targets = gather_runnable_targets(&mut console, &project_graph, &args)?;
+    let touched_files = gather_touched_files(&mut console, workspace, args).await?;
+    let targets = gather_runnable_targets(&mut console, &project_graph, args)?;
 
     if targets.is_empty() {
         console.write_line(color::invalid("No targets to run"))?;
@@ -260,7 +260,7 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
+    let targets = distribute_targets_across_jobs(&mut console, args, targets)?;
     let action_graph =
         generate_action_graph(&mut console, &project_graph, &targets, &touched_files)?;
 

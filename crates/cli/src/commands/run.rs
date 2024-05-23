@@ -236,15 +236,19 @@ pub async fn run_target(
 }
 
 #[system]
-pub async fn run(args: ArgsRef<RunArgs>, global_args: StateRef<GlobalArgs>, resources: Resources) {
-    let project_graph = { generate_project_graph(&mut resources.get::<Workspace>()).await? };
+pub async fn run(
+    args: ArgsRef<RunArgs>,
+    global_args: StateRef<GlobalArgs>,
+    resources: ResourcesMut,
+) {
+    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
 
     run_target(
         &args.targets,
-        &args,
+        args,
         global_args.concurrency,
-        &resources.get::<Workspace>(),
-        &resources.get::<Console>(),
+        resources.get::<Workspace>(),
+        resources.get::<Console>(),
         project_graph,
     )
     .await?;

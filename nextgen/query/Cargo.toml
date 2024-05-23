@@ -16,3 +16,6 @@ pest = "2.7.9"
 pest_derive = "2.7.9"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
+
+[lints]
+workspace = true

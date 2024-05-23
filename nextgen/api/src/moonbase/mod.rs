@@ -7,10 +7,13 @@ use crate::moonbase::endpoints::*;
 use crate::moonbase_error::MoonbaseError;
 use miette::IntoDiagnostic;
 use moon_common::color;
+use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::io;
 use std::path::Path;
-use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
 use tokio_util::codec::{BytesCodec, FramedRead};
 use tracing::{debug, info, warn};
 
@@ -20,12 +23,21 @@ pub struct Moonbase {
 
     pub ci_insights_enabled: bool,
 
+    pub job_id: Option<i64>,
+
     #[allow(dead_code)]
     pub organization_id: i32,
 
     pub remote_caching_enabled: bool,
 
     pub repository_id: i32,
+
+    download_urls: Arc<RwLock<FxHashMap<String, Option<String>>>>,
+
+    upload_requests: Arc<RwLock<Vec<JoinHandle<()>>>>,
+
+    // Temporary (target -> id)
+    pub job_ids: Arc<RwLock<FxHashMap<String, i64>>>,
 }
 
 impl Moonbase {
@@ -64,9 +76,13 @@ impl Moonbase {
                 Some(Moonbase {
                     auth_token: token,
                     ci_insights_enabled: ci_insights,
+                    job_id: None,
                     organization_id,
                     remote_caching_enabled: remote_caching,
                     repository_id,
+                    download_urls: Arc::new(RwLock::new(FxHashMap::default())),
+                    upload_requests: Arc::new(RwLock::new(vec![])),
+                    job_ids: Arc::new(RwLock::new(FxHashMap::default())),
                 })
             }
             Ok(Response::Failure { message, status }) => {
@@ -99,7 +115,14 @@ impl Moonbase {
             Response::Success(ArtifactResponse {
                 artifact,
                 presigned_url,
-            }) => Ok(Some((artifact, presigned_url))),
+            }) => {
+                self.download_urls
+                    .write()
+                    .await
+                    .insert(artifact.hash.clone(), presigned_url.to_owned());
+
+                Ok(Some((artifact, presigned_url)))
+            }
             Response::Failure { message, status } => {
                 if status == 404 {
                     Ok(None)
@@ -133,6 +156,35 @@ impl Moonbase {
             }
             .into()),
         }
+    }
+
+    pub async fn download_artifact_from_remote_storage(
+        &self,
+        hash: &str,
+        dest_path: &Path,
+    ) -> miette::Result<()> {
+        if !self.remote_caching_enabled {
+            return Ok(());
+        }
+
+        if let Some(download_url) = self.download_urls.read().await.get(hash) {
+            debug!(
+                hash,
+                archive_file = ?dest_path,
+                "Downloading archive (artifact) from remote storage",
+            );
+
+            if let Err(error) = self.download_artifact(hash, dest_path, download_url).await {
+                warn!(
+                    hash,
+                    archive_file = ?dest_path,
+                    "Failed to download archive from remote storage: {}",
+                    color::muted_light(error.to_string()),
+                );
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn download_artifact(
@@ -172,14 +224,77 @@ impl Moonbase {
         .into())
     }
 
+    pub async fn upload_artifact_to_remote_storage(
+        &self,
+        hash: &str,
+        src_path: &Path,
+        target_id: &str,
+    ) -> miette::Result<()> {
+        if !self.remote_caching_enabled {
+            return Ok(());
+        }
+
+        let size = match fs::metadata(src_path) {
+            Ok(meta) => meta.len(),
+            Err(_) => 0,
+        };
+
+        debug!(
+            hash,
+            archive_file = ?src_path,
+            size,
+            "Uploading archive (artifact) to remote storage",
+        );
+
+        // Create the database record then upload to cloud storage
+        let Ok((_, presigned_url)) = self
+            .write_artifact(
+                hash,
+                ArtifactWriteInput {
+                    target: target_id.to_owned(),
+                    size: size as usize,
+                },
+            )
+            .await
+        else {
+            return Ok(());
+        };
+
+        // Run this in the background so we don't slow down the pipeline
+        // while waiting for very large archives to upload
+        let moonbase = self.clone();
+        let hash = hash.to_owned();
+        let src_path = src_path.to_owned();
+        let job_id = self.job_ids.read().await.get(target_id).cloned();
+
+        self.upload_requests
+            .write()
+            .await
+            .push(tokio::spawn(async move {
+                if let Err(error) = moonbase
+                    .upload_artifact(&hash, &src_path, presigned_url, job_id)
+                    .await
+                {
+                    warn!(
+                        hash,
+                        archive_file = ?src_path,
+                        "Failed to upload archive to remote storage: {}",
+                        color::muted_light(error.to_string()),
+                    );
+                }
+            }));
+
+        Ok(())
+    }
+
     pub async fn upload_artifact(
         &self,
-        hash: String,
-        path: PathBuf,
+        hash: &str,
+        src_path: &Path,
         upload_url: Option<String>,
         job_id: Option<i64>,
     ) -> miette::Result<()> {
-        let file = tokio::fs::File::open(&path).await.into_diagnostic()?;
+        let file = tokio::fs::File::open(src_path).await.into_diagnostic()?;
         let file_length = file
             .metadata()
             .await
@@ -205,11 +320,11 @@ impl Moonbase {
                 let status = response.status();
 
                 if status.is_success() {
-                    self.mark_upload_complete(&hash, true, job_id).await?;
+                    self.mark_upload_complete(hash, true, job_id).await?;
 
                     Ok(())
                 } else {
-                    self.mark_upload_complete(&hash, false, job_id).await?;
+                    self.mark_upload_complete(hash, false, job_id).await?;
 
                     Err(MoonbaseError::ArtifactUploadFailure {
                         hash: hash.to_string(),
@@ -222,7 +337,7 @@ impl Moonbase {
                 }
             }
             Err(error) => {
-                self.mark_upload_complete(&hash, false, job_id).await?;
+                self.mark_upload_complete(hash, false, job_id).await?;
 
                 Err(MoonbaseError::ArtifactUploadFailure {
                     hash: hash.to_string(),
@@ -230,6 +345,16 @@ impl Moonbase {
                 }
                 .into())
             }
+        }
+    }
+
+    pub async fn wait_for_requests(&self) {
+        let mut requests = self.upload_requests.write().await;
+
+        for future in requests.drain(0..) {
+            // We can ignore the errors because we handle them in
+            // the tasks above by logging to the console
+            let _ = future.await;
         }
     }
 

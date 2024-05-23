@@ -12,3 +12,6 @@ moon_time = { path = "../time" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true, features = ["rc"] }
+
+[lints]
+workspace = true

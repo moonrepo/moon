@@ -10,9 +10,5 @@ This should appear!
 stderr
 Error: task_runner::run_failed
 
-  × Task bun:exitCodeNonZero failed to run. View hash details with moon query
-  │ hash hash1234.
+  × Task bun:exitCodeNonZero failed to run.
   ╰─▶ Process bun failed with a 1 exit code.
-
-
-

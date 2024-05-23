@@ -1,0 +1,89 @@
+tags: ['cache']
+
+tasks:
+  no-outputs:
+    command: noop
+
+  file-outputs:
+    command: noop
+    outputs:
+      - 'file.txt'
+
+  file-outputs-negated:
+    command: noop
+    outputs:
+      - 'a.txt'
+      - '!b.txt'
+      - 'c.txt'
+
+  glob-outputs:
+    command: noop
+    outputs:
+      - '*.txt'
+
+  glob-outputs-negated:
+    command: noop
+    outputs:
+      - '*.txt'
+      - '!b.txt'
+
+  negated-outputs-only:
+    command: noop
+    outputs:
+      - '!*.txt'
+
+  build-type:
+    command: noop
+    type: build
+    outputs:
+      - '*.txt'
+
+  run-type:
+    command: noop
+    type: run
+
+  test-type:
+    command: noop
+    type: test
+
+  output-one-file:
+    command: noop
+    outputs:
+      - 'file.txt'
+
+  output-many-files:
+    command: noop
+    outputs:
+      - 'a.txt'
+      - 'b.txt'
+      - 'c.txt'
+
+  output-one-dir:
+    command: noop
+    outputs:
+      - 'dir'
+
+  output-many-dirs:
+    command: noop
+    outputs:
+      - 'a'
+      - 'b/**/*'
+      - 'c'
+
+  output-file-and-dir:
+    command: noop
+    outputs:
+      - 'file.txt'
+      - 'dir'
+
+  output-workspace:
+    command: noop
+    outputs:
+      - '/root.txt'
+      - '/shared/*.txt'
+
+  output-workspace-and-project:
+    command: noop
+    outputs:
+      - '/root.txt'
+      - 'file.txt'

@@ -19,3 +19,6 @@ miette = { workspace = true }
 proto_core = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[lints]
+workspace = true

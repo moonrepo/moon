@@ -28,3 +28,6 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
+
+[lints]
+workspace = true

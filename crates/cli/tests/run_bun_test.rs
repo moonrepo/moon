@@ -337,11 +337,11 @@ mod bun {
         }
     }
 
+    // Need multiple windows versions for this to work
+    #[cfg(not(windows))]
     mod workspace_overrides {
         use super::*;
 
-        // Need multiple windows versions for this to work
-        #[cfg(not(windows))]
         #[test]
         fn can_override_version() {
             let sandbox = bun_sandbox();

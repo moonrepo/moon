@@ -17,3 +17,6 @@ proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_utils = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

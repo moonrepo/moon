@@ -20,3 +20,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

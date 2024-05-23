@@ -17,9 +17,9 @@ function mockReport(): RunReport {
 				label: 'RunTask(types:build)',
 				node: {
 					action: 'sync-workspace',
-					params: {},
 				},
 				nodeIndex: 0,
+				operations: [],
 				status: 'cached',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',
@@ -37,9 +37,9 @@ function mockReport(): RunReport {
 				label: 'RunTask(runtime:typecheck)',
 				node: {
 					action: 'sync-workspace',
-					params: {},
 				},
 				nodeIndex: 1,
+				operations: [],
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',
@@ -57,9 +57,9 @@ function mockReport(): RunReport {
 				label: 'RunTask(types:typecheck)',
 				node: {
 					action: 'sync-workspace',
-					params: {},
 				},
 				nodeIndex: 2,
+				operations: [],
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',
@@ -77,9 +77,9 @@ function mockReport(): RunReport {
 				label: 'RunTask(website:typecheck)',
 				node: {
 					action: 'sync-workspace',
-					params: {},
 				},
 				nodeIndex: 3,
+				operations: [],
 				status: 'passed',
 				finishedAt: '2022-09-12T22:50:12.932311Z',
 				startedAt: '2022-09-12T22:50:12.932311Z',

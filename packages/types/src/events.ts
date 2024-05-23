@@ -1,6 +1,6 @@
 import type { Duration, Runtime } from './common';
 import type { Action, ActionContext, ActionNode } from './pipeline';
-import type { Project, Task } from './project';
+import type { Project } from './project';
 
 export interface ProviderEnvironment {
 	baseBranch: string | null;
@@ -31,11 +31,6 @@ export type EventType =
 	| 'pipeline.started'
 	| 'project.synced'
 	| 'project.syncing'
-	| 'target-output.archived'
-	| 'target-output.archiving'
-	| 'target-output.cache-check'
-	| 'target-output.hydrated'
-	| 'target-output.hydrating'
 	| 'target.ran'
 	| 'target.running'
 	| 'tool.installed'
@@ -131,66 +126,6 @@ export interface EventTargetRan {
 }
 
 export type PayloadTargetRan = WebhookPayload<'target.ran', EventTargetRan>;
-
-export interface EventTargetOutputArchiving {
-	hash: string;
-	project: Project;
-	target: string;
-	task: Task;
-}
-
-export type PayloadTargetOutputArchiving = WebhookPayload<
-	'target-output.archiving',
-	EventTargetOutputArchiving
->;
-
-export interface EventTargetOutputArchived {
-	archivePath: string;
-	hash: string;
-	project: Project;
-	target: string;
-	task: Task;
-}
-
-export type PayloadTargetOutputArchived = WebhookPayload<
-	'target-output.archived',
-	EventTargetOutputArchived
->;
-
-export interface EventTargetOutputHydrating {
-	hash: string;
-	project: Project;
-	target: string;
-	task: Task;
-}
-
-export type PayloadTargetOutputHydrating = WebhookPayload<
-	'target-output.hydrating',
-	EventTargetOutputHydrating
->;
-
-export interface EventTargetOutputHydrated {
-	archivePath: string;
-	hash: string;
-	project: Project;
-	target: string;
-	task: Task;
-}
-
-export type PayloadTargetOutputHydrated = WebhookPayload<
-	'target-output.hydrated',
-	EventTargetOutputHydrated
->;
-
-export interface EventTargetOutputCacheCheck {
-	hash: string;
-	target: string;
-}
-
-export type PayloadTargetOutputCacheCheck = WebhookPayload<
-	'target-output.cache-check',
-	EventTargetOutputCacheCheck
->;
 
 export interface EventToolInstalling {
 	runtime: Runtime;

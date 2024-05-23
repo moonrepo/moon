@@ -90,6 +90,59 @@ impl ToolchainConfig {
 
         tools
     }
+
+    pub fn get_version_env_vars(&self) -> FxHashMap<String, String> {
+        let mut env = FxHashMap::default();
+
+        let mut inject = |key: &str, version: &UnresolvedVersionSpec| {
+            env.entry(key.to_owned())
+                .or_insert_with(|| version.to_string());
+        };
+
+        if let Some(bun_config) = &self.bun {
+            if let Some(version) = &bun_config.version {
+                inject("PROTO_BUN_VERSION", version);
+            }
+        }
+
+        if let Some(deno_config) = &self.deno {
+            if let Some(version) = &deno_config.version {
+                inject("PROTO_DENO_VERSION", version);
+            }
+        }
+
+        if let Some(node_config) = &self.node {
+            if let Some(version) = &node_config.version {
+                inject("PROTO_NODE_VERSION", version);
+            }
+
+            if let Some(version) = &node_config.npm.version {
+                inject("PROTO_NPM_VERSION", version);
+            }
+
+            if let Some(pnpm_config) = &node_config.pnpm {
+                if let Some(version) = &pnpm_config.version {
+                    inject("PROTO_PNPM_VERSION", version);
+                }
+            }
+
+            if let Some(yarn_config) = &node_config.yarn {
+                if let Some(version) = &yarn_config.version {
+                    inject("PROTO_YARN_VERSION", version);
+                }
+            }
+
+            if let Some(bunpm_config) = &node_config.bun {
+                if let Some(version) = &bunpm_config.version {
+                    inject("PROTO_BUN_VERSION", version);
+                }
+            }
+        }
+
+        // We don't include Rust since it's a special case!
+
+        env
+    }
 }
 
 #[cfg(feature = "proto")]

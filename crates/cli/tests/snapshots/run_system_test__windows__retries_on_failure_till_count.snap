@@ -4,25 +4,18 @@ expression: assert.output()
 ---
 ▪▪▪▪ windows:retryCount
 stdout
+▪▪▪▪ windows:retryCount (attempt 2/4)
+stdout
+▪▪▪▪ windows:retryCount (attempt 3/4)
+stdout
+▪▪▪▪ windows:retryCount (attempt 4/4)
+stdout
 ▪▪▪▪ windows:retryCount (100ms)
-▪▪▪▪ windows:retryCount (2/4)
-stdout
-▪▪▪▪ windows:retryCount (2/4, 100ms)
-▪▪▪▪ windows:retryCount (3/4)
-stdout
-▪▪▪▪ windows:retryCount (3/4, 100ms)
-▪▪▪▪ windows:retryCount (4/4)
-stdout
-▪▪▪▪ windows:retryCount (4/4, 100ms)
 stderr 
 stderr 
 stderr 
 stderr 
 Error: task_runner::run_failed
 
-  × Task windows:retryCount failed to run. View hash details with moon query
-  │ hash hash1234.
+  × Task windows:retryCount failed to run.
   ╰─▶ Process cmd.exe failed with a 1 exit code.
-
-
-

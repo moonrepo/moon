@@ -1,30 +1,22 @@
 use ci_env::get_environment;
-use moon_action::{ActionNode, ActionStatus, RunTaskNode};
-use moon_api::{
-    endpoints::ArtifactWriteInput,
-    graphql::{
-        self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun,
-        GraphQLQuery, UpdateJob, UpdateRun,
-    },
+use moon_action::{ActionStatus, OperationType};
+use moon_api::graphql::{
+    self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun, GraphQLQuery,
+    UpdateJob, UpdateRun,
 };
-use moon_cache_item::get_cache_mode;
 use moon_common::is_ci;
 use moon_emitter::{Event, EventFlow, Subscriber};
-use moon_logger::{debug, error, map_list, trace, warn};
-use moon_platform::Runtime;
+use moon_logger::{debug, error, map_list, warn};
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::fs;
-use std::{env, sync::Arc};
+use std::env;
 use tokio::task::JoinHandle;
 
 const LOG_TARGET: &str = "moonbase";
 
 pub struct MoonbaseSubscriber {
-    download_urls: FxHashMap<String, Option<String>>,
-
     // Mapping of actions to job IDs
     job_ids: FxHashMap<String, i64>,
 
@@ -38,7 +30,6 @@ pub struct MoonbaseSubscriber {
 impl MoonbaseSubscriber {
     pub fn new() -> Self {
         MoonbaseSubscriber {
-            download_urls: FxHashMap::default(),
             job_ids: FxHashMap::default(),
             run_id: None,
             requests: vec![],
@@ -329,7 +320,13 @@ impl Subscriber for MoonbaseSubscriber {
                             status: Some(map_status(&action.status)),
                         };
 
-                        if let Some(attempts) = &action.attempts {
+                        let attempts = action
+                            .operations
+                            .iter()
+                            .filter(|op| matches!(op.type_of, OperationType::TaskExecution))
+                            .collect::<Vec<_>>();
+
+                        if !attempts.is_empty() {
                             input.attempts = Some(
                                 attempts
                                     .iter()
@@ -379,143 +376,14 @@ impl Subscriber for MoonbaseSubscriber {
                     }
                 }
 
-                _ => {}
-            }
-        }
-
-        // REMOTE CACHING
-
-        if moonbase.remote_caching_enabled {
-            // We don't want errors to bubble up and crash the program,
-            // so instead, we log the error (as a warning) to the console!
-            fn log_failure(error: miette::Report) {
-                warn!(
-                    target: LOG_TARGET,
-                    "Remote caching failure: {}",
-                    error.to_string()
-                );
-            }
-
-            match event {
-                // Check if archive exists in moonbase (the remote) by querying the artifacts
-                // endpoint. This only checks that the database record exists!
-                Event::TargetOutputCacheCheck { hash, .. } => {
-                    if get_cache_mode().is_readable() {
-                        match moonbase.read_artifact(hash).await {
-                            Ok(Some((artifact, presigned_url))) => {
-                                self.download_urls.insert(artifact.hash, presigned_url);
-
-                                return Ok(EventFlow::Return("remote-cache".into()));
-                            }
-                            Ok(None) => {
-                                // Not remote cached
-                            }
-                            Err(error) => {
-                                log_failure(error);
-
-                                // Fallthrough and check local cache
-                            }
-                        }
-                    }
-                }
-
-                // The local cache subscriber uses the `TargetOutputArchiving` event to create
-                // the tarball. This runs *after* it's been created so that we can upload it.
-                Event::TargetOutputArchived {
-                    archive_path,
-                    hash,
-                    target,
-                    ..
-                } => {
-                    if get_cache_mode().is_writable() && archive_path.exists() {
-                        let size = match fs::metadata(archive_path) {
-                            Ok(meta) => meta.len(),
-                            Err(_) => 0,
-                        };
-
-                        // Create the database record
-                        match moonbase
-                            .write_artifact(
-                                hash,
-                                ArtifactWriteInput {
-                                    target: target.id.to_owned(),
-                                    size: size as usize,
-                                },
-                            )
+                Event::TargetRunning { action, target } => {
+                    // Temporary, pass this data to the moonbase instance
+                    if let Some(job_id) = self.job_ids.get(&action.label) {
+                        moonbase
+                            .job_ids
+                            .write()
                             .await
-                        {
-                            // Upload to cloud storage
-                            Ok((_, presigned_url)) => {
-                                trace!(
-                                    target: LOG_TARGET,
-                                    "Uploading artifact {} ({} bytes) to remote cache",
-                                    color::file(hash),
-                                    if size == 0 {
-                                        "unknown".to_owned()
-                                    } else {
-                                        size.to_string()
-                                    }
-                                );
-
-                                let hash = (*hash).to_owned();
-                                let archive_path = archive_path.to_owned();
-
-                                // Create a fake action label so that we can check the CI cache
-                                let action_label = ActionNode::run_task(RunTaskNode::new(
-                                    (*target).to_owned(),
-                                    Runtime::system(),
-                                ))
-                                .label();
-                                let job_id = self.job_ids.get(&action_label).cloned();
-
-                                // Run this in the background so we don't slow down the pipeline
-                                // while waiting for very large archives to upload
-                                let moonbase = Arc::clone(moonbase);
-
-                                self.requests.push(tokio::spawn(async move {
-                                    if let Err(error) = moonbase
-                                        .upload_artifact(hash, archive_path, presigned_url, job_id)
-                                        .await
-                                    {
-                                        log_failure(error);
-                                    } else {
-                                        trace!(
-                                            target: LOG_TARGET,
-                                            "Artifact upload successful!",
-                                        );
-                                    }
-                                }));
-                            }
-                            Err(error) => {
-                                log_failure(error);
-                            }
-                        }
-                    }
-                }
-
-                // Attempt to download the artifact from the remote cache to `.moon/outputs/<hash>`.
-                // This runs *before* the local cache. So if the download is successful, abort
-                // the event flow, otherwise continue and let local cache attempt to hydrate.
-                Event::TargetOutputHydrating { hash, .. } => {
-                    if get_cache_mode().is_readable() {
-                        if let Some(download_url) = self.download_urls.get(*hash) {
-                            let archive_file = workspace.cache_engine.hash.get_archive_path(hash);
-
-                            trace!(
-                                target: LOG_TARGET,
-                                "Downloading artifact {} from remote cache",
-                                color::file(hash),
-                            );
-
-                            if let Err(error) = moonbase
-                                .download_artifact(hash, &archive_file, download_url)
-                                .await
-                            {
-                                log_failure(error);
-                            }
-
-                            // Fallthrough to local cache to handle the actual hydration
-                        }
+                            .insert(target.to_string(), *job_id);
                     }
                 }
 
@@ -528,6 +396,8 @@ impl Subscriber for MoonbaseSubscriber {
             for future in self.requests.drain(0..) {
                 let _ = future.await;
             }
+
+            moonbase.wait_for_requests().await;
         }
 
         Ok(EventFlow::Continue)

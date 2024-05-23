@@ -1,7 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 200
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ depsC:dependencyOrder (no op)
@@ -9,7 +8,4 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ depsA:dependencyOrder (no op)
 
 Tasks: 3 completed
- Time: 100ms
-
-
-
+ Time: 100ms ❯❯❯❯ to the moon

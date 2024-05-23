@@ -1,13 +1,11 @@
-use itertools::Itertools;
 use moon_common::Id;
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
-use moon_runner::RunTargetState;
+use moon_task_runner::TaskRunState;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
 use rustc_hash::FxHashMap;
 use starbase_utils::json;
-use std::fs;
 
 fn system_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
@@ -34,6 +32,8 @@ fn system_sandbox() -> Sandbox {
 #[cfg(not(windows))]
 mod unix {
     use super::*;
+    use itertools::Itertools;
+    use std::fs;
 
     #[test]
     fn handles_echo() {
@@ -312,20 +312,12 @@ mod unix {
 
             assert!(cache_path.exists());
 
-            let state: RunTargetState = json::read_file(cache_path).unwrap();
+            let state: TaskRunState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()
                 .join(".moon/cache/outputs")
                 .join(format!("{}.tar.gz", state.hash))
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/unix/outputs/stdout.log")
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/unix/outputs/stderr.log")
                 .exists());
         }
     }
@@ -618,20 +610,12 @@ mod windows {
 
             assert!(cache_path.exists());
 
-            let state: RunTargetState = json::read_file(cache_path).unwrap();
+            let state: TaskRunState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()
                 .join(".moon/cache/outputs")
                 .join(format!("{}.tar.gz", state.hash))
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/windows/outputs/stdout.log")
-                .exists());
-            assert!(sandbox
-                .path()
-                .join(".moon/cache/states/windows/outputs/stderr.log")
                 .exists());
         }
     }

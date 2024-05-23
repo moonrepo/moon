@@ -1,5 +1,5 @@
 use crate::action_node::ActionNode;
-use crate::attempt::Attempt;
+use crate::operation_list::OperationList;
 use moon_common::color;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,
@@ -25,8 +25,6 @@ pub enum ActionStatus {
 #[serde(rename_all = "camelCase")]
 pub struct Action {
     pub allow_failure: bool,
-
-    pub attempts: Option<Vec<Attempt>>,
 
     pub created_at: NaiveDateTime,
 
@@ -47,6 +45,8 @@ pub struct Action {
 
     pub node_index: usize,
 
+    pub operations: OperationList,
+
     pub started_at: Option<NaiveDateTime>,
 
     #[serde(skip)]
@@ -59,7 +59,6 @@ impl Action {
     pub fn new(node: ActionNode) -> Self {
         Action {
             allow_failure: false,
-            attempts: None,
             created_at: now_timestamp(),
             duration: None,
             error: None,
@@ -69,6 +68,7 @@ impl Action {
             label: node.label(),
             node: Arc::new(node),
             node_index: 0,
+            operations: OperationList::default(),
             started_at: None,
             start_time: None,
             status: ActionStatus::Running,
@@ -96,7 +96,6 @@ impl Action {
     pub fn fail(&mut self, error: miette::Report) {
         self.error = Some(error.to_string());
         self.error_report = Some(error);
-        self.finish(ActionStatus::Failed);
     }
 
     pub fn has_failed(&self) -> bool {
@@ -118,31 +117,25 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
-    pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {
-        let some_failed = attempts.iter().any(|attempt| attempt.has_failed());
-        let mut passed = false;
+    pub fn set_operations(&mut self, operations: OperationList, command: &str) {
+        if let Some(last_attempt) = operations.get_last_process() {
+            if last_attempt.has_failed() {
+                if let Some(output) = &last_attempt.output {
+                    let mut message = format!("Failed to run {}", color::shell(command));
 
-        if let Some(last) = attempts.last() {
-            if last.has_failed() {
-                let mut message = format!("Failed to run {}", color::shell(command));
+                    if let Some(code) = output.exit_code {
+                        message += " ";
+                        message += color::muted_light(format!("(exit code {})", code)).as_str();
+                    }
 
-                if let Some(code) = last.exit_code {
-                    message += " ";
-                    message += color::muted_light(format!("(exit code {})", code)).as_str();
+                    self.error = Some(message);
                 }
-
-                self.error = Some(message);
-            } else {
-                passed = true;
             }
-        } else {
-            passed = true;
         }
 
-        self.attempts = Some(attempts);
-        self.flaky = some_failed && passed;
-
-        passed
+        self.flaky = operations.is_flaky();
+        self.status = operations.get_final_status();
+        self.operations = operations;
     }
 
     pub fn should_abort(&self) -> bool {

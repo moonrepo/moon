@@ -3116,8 +3116,8 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_project_graph",
- "moon_runner",
  "moon_target",
+ "moon_task_runner",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
@@ -3164,6 +3164,7 @@ dependencies = [
  "moon_time",
  "proto_core",
  "reqwest 0.12.3",
+ "rustc-hash",
  "semver",
  "serde",
  "starbase_utils",
@@ -3342,6 +3343,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_console_reporter",
  "moon_deno_lang",
  "moon_deno_tool",
  "moon_env",
@@ -3357,12 +3359,12 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_query",
- "moon_runner",
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_system_platform",
  "moon_target",
  "moon_task",
+ "moon_task_runner",
  "moon_test_utils",
  "moon_tool",
  "moon_typescript_lang",
@@ -3473,10 +3475,26 @@ version = "0.0.1"
 dependencies = [
  "inquire",
  "miette",
+ "moon_action",
  "moon_common",
+ "moon_config",
+ "moon_target",
  "parking_lot",
  "starbase",
  "starbase_styles",
+]
+
+[[package]]
+name = "moon_console_reporter"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_action",
+ "moon_common",
+ "moon_config",
+ "moon_console",
+ "moon_target",
+ "moon_time",
 ]
 
 [[package]]
@@ -4001,44 +4019,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_runner"
-version = "0.0.1"
-dependencies = [
- "console",
- "miette",
- "moon",
- "moon_action",
- "moon_action_context",
- "moon_cache_item",
- "moon_common",
- "moon_config",
- "moon_console",
- "moon_emitter",
- "moon_hash",
- "moon_logger",
- "moon_platform",
- "moon_platform_runtime",
- "moon_process",
- "moon_project",
- "moon_target",
- "moon_task",
- "moon_task_hasher",
- "moon_test_utils",
- "moon_tool",
- "moon_utils",
- "moon_vcs",
- "moon_workspace",
- "rustc-hash",
- "serde",
- "serde_json",
- "starbase_archive",
- "starbase_styles",
- "starbase_utils",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "moon_rust_lang"
 version = "0.0.1"
 dependencies = [
@@ -4186,6 +4166,38 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_task_runner"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_action",
+ "moon_action_context",
+ "moon_api",
+ "moon_cache",
+ "moon_cache_item",
+ "moon_common",
+ "moon_config",
+ "moon_console",
+ "moon_platform",
+ "moon_platform_runtime",
+ "moon_process",
+ "moon_project",
+ "moon_task",
+ "moon_task_hasher",
+ "moon_test_utils2",
+ "moon_time",
+ "moon_workspace",
+ "proto_core",
+ "serde",
+ "starbase_archive",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror",
  "tokio",
  "tracing",
 ]

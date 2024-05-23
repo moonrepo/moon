@@ -23,3 +23,6 @@ proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_events = { workspace = true }
 tokio = { workspace = true }
+
+[lints]
+workspace = true

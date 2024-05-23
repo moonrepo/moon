@@ -5,6 +5,7 @@ use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
 use scc::HashMap;
 use starbase_utils::fs;
+use std::fmt::Debug;
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use tracing::debug;
 use warpgate::{
@@ -206,7 +207,7 @@ impl<T: Plugin> PluginRegistry<T> {
     pub async fn load<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
         I: AsRef<Id>,
-        L: AsRef<PluginLocator>,
+        L: AsRef<PluginLocator> + Debug,
     {
         self.load_with_config(id, locator, |_| Ok(())).await
     }
@@ -219,7 +220,7 @@ impl<T: Plugin> PluginRegistry<T> {
     ) -> miette::Result<()>
     where
         I: AsRef<Id>,
-        L: AsRef<PluginLocator>,
+        L: AsRef<PluginLocator> + Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
         let id = id.as_ref();

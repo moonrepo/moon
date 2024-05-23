@@ -5,7 +5,7 @@ use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::{IndexMap, IndexSet};
-use schematic::{merge, validate, Config, ConfigError};
+use schematic::{merge, validate, Config, ConfigError, MergeResult};
 use std::collections::BTreeMap;
 use std::hash::{BuildHasherDefault, Hash};
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ fn merge_fxhashmap<K, V, C>(
     mut prev: FxHashMap<K, V>,
     next: FxHashMap<K, V>,
     _context: &C,
-) -> Result<Option<FxHashMap<K, V>>, ConfigError>
+) -> MergeResult<FxHashMap<K, V>>
 where
     K: Eq + Hash,
 {
@@ -318,7 +318,7 @@ impl InheritedTasksManager {
                         format!("({}, {}, {})", language, stack, project)
                     }
                 ),
-                error,
+                error: Box::new(error),
                 help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
             })?;
 
@@ -349,7 +349,7 @@ fn load_dir(
     for entry in fs::read_dir(dir)
         .map_err(|error| ConfigError::ReadFileFailed {
             path: dir.to_path_buf(),
-            error,
+            error: Box::new(error),
         })?
         .flatten()
     {
@@ -358,7 +358,7 @@ fn load_dir(
             .file_type()
             .map_err(|error| ConfigError::ReadFileFailed {
                 path: path.to_path_buf(),
-                error,
+                error: Box::new(error),
             })?;
 
         if file_type.is_file() {

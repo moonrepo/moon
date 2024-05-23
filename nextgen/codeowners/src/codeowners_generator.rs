@@ -162,7 +162,7 @@ impl CodeownersGenerator {
 
         self.file.flush().map_err(|error| FsError::Create {
             path: self.file_path.to_path_buf(),
-            error,
+            error: Box::new(error),
         })?;
 
         Ok(())
@@ -179,7 +179,7 @@ impl CodeownersGenerator {
     fn write<T: AsRef<str>>(&mut self, message: T) -> miette::Result<()> {
         writeln!(self.file, "{}", message.as_ref()).map_err(|error| FsError::Create {
             path: self.file_path.to_path_buf(),
-            error,
+            error: Box::new(error),
         })?;
 
         Ok(())

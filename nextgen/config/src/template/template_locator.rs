@@ -1,7 +1,7 @@
 use crate::portable_path::{FilePath, PortablePath};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schematic::ParseError;
+use schematic::{ParseError, Schema, SchemaBuilder, Schematic};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -45,9 +45,9 @@ impl fmt::Display for TemplateLocator {
     }
 }
 
-impl schematic::Schematic for TemplateLocator {
-    fn generate_schema() -> schematic::SchemaType {
-        schematic::SchemaType::string()
+impl Schematic for TemplateLocator {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string_default()
     }
 }
 

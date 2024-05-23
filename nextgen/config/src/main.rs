@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Command;
 
-fn create_jsonschema_renderer() -> JsonSchemaRenderer {
+fn create_jsonschema_renderer() -> JsonSchemaRenderer<'static> {
     JsonSchemaRenderer::new(JsonSchemaOptions {
         markdown_description: true,
         mark_struct_fields_required: false,

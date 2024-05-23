@@ -1,8 +1,8 @@
 use crate::portable_path::FilePath;
 use crate::shapes::InputPath;
 use moon_common::cacheable;
-use schematic::schema::StringType;
-use schematic::{derive_enum, Config, ConfigEnum, SchemaType, Schematic, ValidateError};
+use schematic::schema::{StringType, UnionType};
+use schematic::{derive_enum, Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
 use std::str::FromStr;
@@ -35,16 +35,18 @@ pub enum TaskOptionAffectedFiles {
 }
 
 impl Schematic for TaskOptionAffectedFiles {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::boolean(),
-            SchemaType::String(StringType {
+    fn schema_name() -> Option<String> {
+        Some("TaskOptionAffectedFiles".into())
+    }
+
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.union(UnionType::new_any([
+            schema.infer::<bool>(),
+            schema.nest().string(StringType {
                 enum_values: Some(vec!["args".into(), "env".into()]),
                 ..Default::default()
             }),
-        ]);
-        schema.set_name("TaskOptionAffectedFiles");
-        schema
+        ]))
     }
 }
 
@@ -100,14 +102,16 @@ impl TaskOptionEnvFile {
 }
 
 impl Schematic for TaskOptionEnvFile {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::boolean(),
-            SchemaType::string(),
-            SchemaType::array(SchemaType::string()),
-        ]);
-        schema.set_name("TaskOptionEnvFile");
-        schema
+    fn schema_name() -> Option<String> {
+        Some("TaskOptionEnvFile".into())
+    }
+
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.union(UnionType::new_any([
+            schema.infer::<bool>(),
+            schema.infer::<String>(),
+            schema.infer::<Vec<String>>(),
+        ]))
     }
 }
 

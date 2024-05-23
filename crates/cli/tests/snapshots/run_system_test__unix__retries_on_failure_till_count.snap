@@ -4,25 +4,18 @@ expression: assert.output()
 ---
 ▪▪▪▪ unix:retryCount
 stdout
+▪▪▪▪ unix:retryCount (attempt 2/4)
+stdout
+▪▪▪▪ unix:retryCount (attempt 3/4)
+stdout
+▪▪▪▪ unix:retryCount (attempt 4/4)
+stdout
 ▪▪▪▪ unix:retryCount (100ms)
-▪▪▪▪ unix:retryCount (2/4)
-stdout
-▪▪▪▪ unix:retryCount (2/4, 100ms)
-▪▪▪▪ unix:retryCount (3/4)
-stdout
-▪▪▪▪ unix:retryCount (3/4, 100ms)
-▪▪▪▪ unix:retryCount (4/4)
-stdout
-▪▪▪▪ unix:retryCount (4/4, 100ms)
 stderr
 stderr
 stderr
 stderr
 Error: task_runner::run_failed
 
-  × Task unix:retryCount failed to run. View hash details with moon query
-  │ hash hash1234.
+  × Task unix:retryCount failed to run.
   ╰─▶ Process bash failed with a 1 exit code.
-
-
-

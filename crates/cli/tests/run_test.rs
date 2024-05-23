@@ -3,8 +3,8 @@ use moon_config::{
     HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialRunnerConfig,
     PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
 };
-use moon_runner::RunTargetState;
 use moon_target::Target;
+use moon_task_runner::TaskRunState;
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
     predicates::{self, prelude::*},
@@ -44,7 +44,7 @@ where
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     let engine = CacheEngine::new(fixture).unwrap();
-    let cache: RunTargetState = json::read_file(
+    let cache: TaskRunState = json::read_file(
         engine
             .state
             .states_dir
@@ -218,8 +218,6 @@ fn runs_task_with_a_mutex_in_sequence() {
     assert.success();
 
     let stop = start.elapsed();
-
-    dbg!(&start, &stop);
 
     assert!(stop.as_millis() > 3000);
 }
@@ -539,6 +537,7 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("targetScopeA:deps");
         });
+
         let output = assert.output();
 
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
@@ -723,11 +722,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "4f65a90e3f44c850eda3e7dd64f801d743a8bef29a6fcc5231369e55cfa43ee9"
+            "e48c523b3efef26cfb935135d3476b78aefe19d5f955be85373926b408237e8b"
         );
         assert_eq!(
             hash_glob,
-            "c0a7c576081e08902e8bdf4b191ca6621be4274f808081d78dc77619df058f4a"
+            "fb15a246e64607ae039118df9790042424dc8f0ef64295df41a582f6716e66dd"
         );
     }
 }
@@ -753,7 +752,7 @@ mod outputs {
         let output = assert.output();
 
         assert!(
-            predicate::str::contains("Target outputs:missingOutput defines outputs").eval(&output)
+            predicate::str::contains("Task outputs:missingOutput defines outputs").eval(&output)
         );
     }
 
@@ -769,7 +768,7 @@ mod outputs {
         let output = assert.output();
 
         assert!(
-            predicate::str::contains("Target outputs:missingOutputGlob defines outputs")
+            predicate::str::contains("Task outputs:missingOutputGlob defines outputs")
                 .eval(&output)
         );
     }
@@ -962,8 +961,6 @@ mod outputs {
 
         untar(&tarball, &dir);
 
-        assert!(dir.join("stdout.log").exists());
-        assert!(dir.join("stderr.log").exists());
         assert!(dir.join("outputs/both/a/one.js").exists());
         assert!(dir.join("outputs/both/b/two.js").exists());
     }
@@ -986,8 +983,6 @@ mod outputs {
 
         untar(&tarball, &dir);
 
-        assert!(dir.join("stdout.log").exists());
-        assert!(dir.join("stderr.log").exists());
         assert!(dir.join("both/a/one.js").exists());
         assert!(dir.join("both/b/two.js").exists());
     }
@@ -1015,28 +1010,6 @@ mod outputs {
     }
 
     #[test]
-    fn caches_output_logs_in_tarball() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("outputs:generateFile");
-        });
-
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
-        let tarball = sandbox
-            .path()
-            .join(".moon/cache/outputs")
-            .join(format!("{hash}.tar.gz"));
-        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
-
-        untar(&tarball, &dir);
-
-        assert!(dir.join("stdout.log").exists());
-        assert!(dir.join("stderr.log").exists());
-    }
-
-    #[test]
     fn can_bypass_cache() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
@@ -1049,13 +1022,13 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFixed");
         });
 
-        assert!(predicate::str::contains("cached from previous run").eval(&assert.output()));
+        assert!(predicate::str::contains("cached").eval(&assert.output()));
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:generateFixed").arg("-u");
         });
 
-        assert!(!predicate::str::contains("cached from previous run").eval(&assert.output()));
+        assert!(!predicate::str::contains("cached").eval(&assert.output()));
     }
 
     mod hydration {
@@ -1412,24 +1385,6 @@ mod noop {
         });
 
         assert_snapshot!(assert.output());
-    }
-
-    #[test]
-    fn caches_noop() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("noop:noop");
-        });
-
-        let hash = extract_hash_from_run(sandbox.path(), "noop:noop");
-
-        assert!(sandbox
-            .path()
-            .join(".moon/cache/hashes")
-            .join(format!("{hash}.json"))
-            .exists());
     }
 }
 

@@ -4,17 +4,16 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
-use moon_action::{Action, ActionNode, ActionStatus};
+use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
-use moon_console::{Checkpoint, Console};
+use moon_console::{Console, PipelineReportItem};
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_utils::{is_ci, is_test_env, time};
+use moon_utils::{is_ci, is_test_env};
 use moon_workspace::Workspace;
-use starbase_styles::color;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -27,6 +26,8 @@ const LOG_TARGET: &str = "moon:action-pipeline";
 pub type ActionResults = Vec<Action>;
 
 pub struct Pipeline {
+    aborted: bool,
+
     bail: bool,
 
     concurrency: Option<usize>,
@@ -37,17 +38,24 @@ pub struct Pipeline {
 
     report_name: Option<String>,
 
+    results: Vec<Action>,
+
+    summarize: bool,
+
     workspace: Arc<Workspace>,
 }
 
 impl Pipeline {
     pub fn new(workspace: Workspace, project_graph: ProjectGraph) -> Self {
         Pipeline {
+            aborted: false,
             bail: false,
             concurrency: None,
             duration: None,
             project_graph: Arc::new(project_graph),
             report_name: None,
+            results: vec![],
+            summarize: false,
             workspace: Arc::new(workspace),
         }
     }
@@ -62,6 +70,11 @@ impl Pipeline {
         self
     }
 
+    pub fn summarize(&mut self, value: bool) -> &mut Self {
+        self.summarize = value;
+        self
+    }
+
     pub fn generate_report(&mut self, name: &str) -> &mut Self {
         self.report_name = Some(name.to_owned());
         self
@@ -73,6 +86,47 @@ impl Pipeline {
         console: Arc<Console>,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
+        let result = self
+            .run_internal(action_graph, console.clone(), context)
+            .await;
+
+        let actions = mem::take(&mut self.results);
+
+        let item = PipelineReportItem {
+            duration: self.duration,
+            summarize: self.summarize,
+        };
+
+        match result {
+            Ok(_) => {
+                console
+                    .reporter
+                    .on_pipeline_completed(&actions, &item, None)?;
+
+                Ok(actions)
+            }
+            Err(error) => {
+                if self.aborted {
+                    console
+                        .reporter
+                        .on_pipeline_aborted(&actions, &item, Some(&error))?;
+                } else {
+                    console
+                        .reporter
+                        .on_pipeline_completed(&actions, &item, Some(&error))?;
+                }
+
+                Err(error)
+            }
+        }
+    }
+
+    pub async fn run_internal(
+        &mut self,
+        action_graph: ActionGraph,
+        console: Arc<Console>,
+        context: Option<ActionContext>,
+    ) -> miette::Result<()> {
         let start = Instant::now();
         let context = Arc::new(context.unwrap_or_default());
         let emitter = Arc::new(create_emitter(Arc::clone(&self.workspace)).await);
@@ -94,6 +148,10 @@ impl Pipeline {
             })
             .await?;
 
+        console
+            .reporter
+            .on_pipeline_started(&action_graph.get_nodes())?;
+
         // Launch a separate thread to listen for ctrl+c
         let cancel_token = CancellationToken::new();
         let ctrl_c_token = cancel_token.clone();
@@ -109,7 +167,6 @@ impl Pipeline {
             self.concurrency.unwrap_or_else(num_cpus::get),
         ));
 
-        let mut results: ActionResults = vec![];
         let mut action_handles = vec![];
         let mut persistent_nodes = vec![];
         let mut action_graph_iter = action_graph.try_iter()?;
@@ -120,7 +177,7 @@ impl Pipeline {
             let Some(node_index) = action_graph_iter.next() else {
                 // Nothing new to run since they're waiting on currently
                 // running actions, so exhaust the current list
-                self.run_handles(mem::take(&mut action_handles), &mut results, &emitter)
+                self.run_handles(mem::take(&mut action_handles), &emitter)
                     .await?;
 
                 continue;
@@ -196,7 +253,7 @@ impl Pipeline {
 
             // Run this in isolation by exhausting the current list of handles
             if node.is_interactive() || semaphore.available_permits() == 0 {
-                self.run_handles(mem::take(&mut action_handles), &mut results, &emitter)
+                self.run_handles(mem::take(&mut action_handles), &emitter)
                     .await?;
             }
         }
@@ -257,17 +314,16 @@ impl Pipeline {
         }
 
         // Run any remaining actions
-        self.run_handles(action_handles, &mut results, &emitter)
-            .await?;
+        self.run_handles(action_handles, &emitter).await?;
 
         let duration = start.elapsed();
-        let estimate = Estimator::calculate(&results, duration);
+        let estimate = Estimator::calculate(&self.results, duration);
         let context = Arc::into_inner(context).unwrap();
         let mut passed_count = 0;
         let mut cached_count = 0;
         let mut failed_count = 0;
 
-        for result in &results {
+        for result in &self.results {
             if result.has_failed() {
                 failed_count += 1;
             } else if result.was_cached() {
@@ -295,15 +351,15 @@ impl Pipeline {
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, &context, estimate).await?;
+        self.create_run_report(&self.results, &context, estimate)
+            .await?;
 
-        Ok(results)
+        Ok(())
     }
 
     async fn run_handles(
-        &self,
+        &mut self,
         handles: Vec<JoinHandle<miette::Result<Action>>>,
-        results: &mut ActionResults,
         emitter: &Emitter,
     ) -> miette::Result<()> {
         let mut abort_error: Option<miette::Report> = None;
@@ -322,7 +378,7 @@ impl Pipeline {
                         if self.bail && result.should_bail() || result.should_abort() {
                             abort_error = Some(result.get_error());
                         } else {
-                            results.push(result);
+                            self.results.push(result);
                         }
                     }
                     Ok(Err(error)) => {
@@ -336,6 +392,8 @@ impl Pipeline {
         }
 
         if let Some(abort_error) = abort_error {
+            self.aborted = true;
+
             if show_abort_log {
                 error!("Encountered a critical error, aborting the action pipeline");
             }
@@ -348,200 +406,6 @@ impl Pipeline {
 
             return Err(abort_error);
         }
-
-        Ok(())
-    }
-
-    pub fn render_summary(&self, results: &ActionResults, console: &Console) -> miette::Result<()> {
-        console.out.write_newline()?;
-
-        let mut count = 0;
-
-        for result in results {
-            if !result.has_failed() {
-                continue;
-            }
-
-            console.out.print_checkpoint(
-                Checkpoint::RunFailed,
-                match &*result.node {
-                    ActionNode::RunTask(inner) => inner.target.as_str(),
-                    _ => &result.label,
-                },
-            )?;
-
-            if let Some(attempts) = &result.attempts {
-                if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
-                    let mut has_stdout = false;
-
-                    if let Some(stdout) = &attempt.stdout {
-                        if !stdout.is_empty() {
-                            has_stdout = true;
-                            console.out.write_line(stdout)?;
-                        }
-                    }
-
-                    if let Some(stderr) = &attempt.stderr {
-                        if has_stdout {
-                            console.out.write_newline()?;
-                        }
-
-                        if !stderr.is_empty() {
-                            console.out.write_line(stderr)?;
-                        }
-                    }
-                }
-            }
-
-            console.out.write_newline()?;
-            count += 1;
-        }
-
-        if count == 0 {
-            console.out.write_line("No failed actions to summarize.")?;
-        }
-
-        console.out.write_newline()?;
-
-        Ok(())
-    }
-
-    pub fn render_results(
-        &self,
-        results: &ActionResults,
-        console: &Console,
-    ) -> miette::Result<bool> {
-        console.out.write_newline()?;
-
-        let mut failed = false;
-
-        for result in results {
-            let status = match result.status {
-                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::CachedFromRemote => {
-                    color::success("pass")
-                }
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    if !result.allow_failure {
-                        failed = true;
-                    }
-
-                    color::failure("fail")
-                }
-                ActionStatus::Invalid => color::invalid("warn"),
-                ActionStatus::Skipped => color::muted_light("skip"),
-                _ => color::muted_light("oops"),
-            };
-
-            let mut meta: Vec<String> = vec![];
-
-            if matches!(
-                result.status,
-                ActionStatus::Cached | ActionStatus::CachedFromRemote
-            ) {
-                meta.push(String::from("cached"));
-            } else if matches!(result.status, ActionStatus::Skipped) {
-                meta.push(String::from("skipped"));
-            } else if let Some(duration) = result.duration {
-                meta.push(time::elapsed(duration));
-            }
-
-            console.out.write_line(format!(
-                "{} {} {}",
-                status,
-                result.label,
-                console.out.format_comments(meta),
-            ))?;
-        }
-
-        console.out.write_newline()?;
-
-        Ok(failed)
-    }
-
-    pub fn render_stats(
-        &self,
-        results: &ActionResults,
-        console: &Console,
-        compact: bool,
-    ) -> miette::Result<()> {
-        if console.out.is_quiet() {
-            return Ok(());
-        }
-
-        let mut cached_count = 0;
-        let mut pass_count = 0;
-        let mut fail_count = 0;
-        let mut invalid_count = 0;
-        let mut skipped_count = 0;
-
-        for result in results {
-            if compact && !matches!(*result.node, ActionNode::RunTask { .. }) {
-                continue;
-            }
-
-            match result.status {
-                ActionStatus::Cached | ActionStatus::CachedFromRemote => {
-                    cached_count += 1;
-                    pass_count += 1;
-                }
-                ActionStatus::Passed => {
-                    pass_count += 1;
-                }
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    fail_count += 1;
-                }
-                ActionStatus::Invalid => {
-                    invalid_count += 1;
-                }
-                ActionStatus::Skipped => {
-                    skipped_count += 1;
-                }
-                _ => {}
-            }
-        }
-
-        let mut counts_message = vec![];
-
-        if pass_count > 0 {
-            if cached_count > 0 {
-                counts_message.push(color::success(format!(
-                    "{pass_count} completed ({cached_count} cached)"
-                )));
-            } else {
-                counts_message.push(color::success(format!("{pass_count} completed")));
-            }
-        }
-
-        if fail_count > 0 {
-            counts_message.push(color::failure(format!("{fail_count} failed")));
-        }
-
-        if invalid_count > 0 {
-            counts_message.push(color::invalid(format!("{invalid_count} invalid")));
-        }
-
-        if skipped_count > 0 {
-            counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
-        }
-
-        console.out.write_newline()?;
-
-        let counts_message = counts_message.join(&color::muted(", "));
-        let mut elapsed_time = time::elapsed(self.duration.unwrap());
-
-        if pass_count == cached_count && fail_count == 0 {
-            elapsed_time = format!("{} {}", elapsed_time, crate::label_to_the_moon());
-        }
-
-        if compact {
-            console.out.print_entry("Tasks", &counts_message)?;
-            console.out.print_entry(" Time", &elapsed_time)?;
-        } else {
-            console.out.print_entry("Actions", &counts_message)?;
-            console.out.print_entry("   Time", &elapsed_time)?;
-        }
-
-        console.out.write_newline()?;
 
         Ok(())
     }

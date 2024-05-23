@@ -18,3 +18,6 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+
+[lints]
+workspace = true

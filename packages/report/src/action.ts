@@ -33,16 +33,7 @@ export function hasPassed(status: ActionStatus): boolean {
 }
 
 export function isFlaky(action: Action): boolean {
-	if (action.flaky) {
-		return true;
-	}
-
-	// The flaky field above didn't always exist!
-	if (!action.attempts || action.attempts.length === 0) {
-		return false;
-	}
-
-	return hasPassed(action.status) && action.attempts.some((attempt) => hasFailed(attempt.status));
+	return action.flaky || false;
 }
 
 export function isSlow(action: Action, slowThreshold: number): boolean {

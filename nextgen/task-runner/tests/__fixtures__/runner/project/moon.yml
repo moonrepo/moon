@@ -1,0 +1,24 @@
+tasks:
+  base:
+    command: noop
+
+  outputs:
+    command: noop
+    outputs:
+      - 'file.txt'
+
+  dep:
+    command: noop
+
+  has-deps:
+    command: noop
+    deps:
+      - 'dep'
+
+  no-deps:
+    command: noop
+
+  no-cache:
+    command: noop
+    options:
+      cache: false

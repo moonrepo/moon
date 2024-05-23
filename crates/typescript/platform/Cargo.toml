@@ -23,3 +23,6 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_common = { path = "../../../nextgen/common" }
 moon_test_utils = { path = "../../core/test-utils" }
+
+[lints]
+workspace = true

@@ -26,3 +26,6 @@ yarn-lock-parser = "0.7.0"
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }
 reqwest = { workspace = true, features = ["blocking"] }
+
+[lints]
+workspace = true

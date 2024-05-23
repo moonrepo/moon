@@ -9,9 +9,5 @@ stdout
 stderr
 Error: task_runner::run_failed
 
-  × Task bun:processExitNonZero failed to run. View hash details with moon
-  │ query hash hash1234.
+  × Task bun:processExitNonZero failed to run.
   ╰─▶ Process bun failed with a 1 exit code.
-
-
-

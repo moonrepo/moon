@@ -1,4 +1,4 @@
-import type { Action, Attempt } from '@moonrepo/types';
+import type { Action } from '@moonrepo/types';
 import { isFlaky, isSlow } from '../src';
 
 const action: Action = {
@@ -14,44 +14,17 @@ const action: Action = {
 	label: 'RunTask(app:build)',
 	node: {
 		action: 'sync-workspace',
-		params: {},
 	},
 	nodeIndex: 0,
+	operations: [],
 	status: 'passed',
 	finishedAt: '2022-09-12T22:50:12.932311Z',
 	startedAt: '2022-09-12T22:50:12.932311Z',
 };
 
-const attempt: Attempt = {
-	duration: null,
-	exitCode: 0,
-	finishedAt: null,
-	index: 1,
-	startedAt: '',
-	status: 'running',
-	stdout: null,
-	stderr: null,
-};
-
 describe('isFlaky()', () => {
-	it('returns false if no attempts', () => {
+	it('returns false by default', () => {
 		expect(isFlaky({ ...action })).toBe(false);
-		expect(isFlaky({ ...action, attempts: [] })).toBe(false);
-	});
-
-	it('returns true if status is passed but an attempt failed', () => {
-		expect(
-			isFlaky({
-				...action,
-				attempts: [
-					{
-						...attempt,
-						status: 'failed',
-					},
-				],
-				status: 'passed',
-			}),
-		).toBe(true);
 	});
 
 	it('returns true if flaky field is true', () => {

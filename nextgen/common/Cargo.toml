@@ -16,3 +16,6 @@ schematic = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }
+
+[lints]
+workspace = true

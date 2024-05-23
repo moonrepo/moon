@@ -10,6 +10,7 @@ export type ActionStatus =
 	| 'running'
 	| 'skipped';
 
+/** @deprecated */
 export interface Attempt {
 	duration: Duration | null;
 	exitCode: number | null;
@@ -21,8 +22,33 @@ export interface Attempt {
 	stdout: string | null;
 }
 
+export type OperationType =
+	| 'archive-creation'
+	| 'hash-generation'
+	| 'mutex-acquisition'
+	| 'no-operation'
+	| 'output-hydration'
+	| 'task-execution';
+
+export interface OperationOutput {
+	exitCode: number | null;
+	stderr: string | null;
+	stdout: string | null;
+}
+
+export interface Operation {
+	duration: Duration | null;
+	finishedAt: string | null;
+	hash: string | null;
+	output: OperationOutput | null;
+	startedAt: string;
+	status: ActionStatus;
+	type: OperationType;
+}
+
 export interface Action {
 	allowFailure: boolean;
+	/** @deprecated */
 	attempts: Attempt[] | null;
 	createdAt: string;
 	duration: Duration | null;
@@ -32,12 +58,13 @@ export interface Action {
 	label: string;
 	node: ActionNode;
 	nodeIndex: number;
+	operations: Operation[];
 	startedAt: string | null;
 	status: ActionStatus;
 }
 
 export interface TargetState {
-	state: 'completed' | 'failed' | 'passthrough' | 'skipped';
+	state: 'failed' | 'passed' | 'passthrough' | 'skipped';
 	hash?: string;
 }
 
@@ -103,7 +130,7 @@ export interface ActionNodeRunTask {
 	action: 'run-task';
 	params: {
 		args: string[];
-		env: [string, string][];
+		env: Record<string, string>;
 		interactive: boolean;
 		persistent: boolean;
 		runtime: Runtime;
@@ -128,7 +155,6 @@ export interface ActionNodeSyncProject {
 
 export interface ActionNodeSyncWorkspace {
 	action: 'sync-workspace';
-	params: {};
 }
 
 // GRAPH

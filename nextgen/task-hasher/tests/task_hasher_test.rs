@@ -263,6 +263,57 @@ mod task_hasher {
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["created.txt"]);
         }
+
+        #[tokio::test]
+        async fn includes_env_file() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+            sandbox.create_file(".env", "");
+
+            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = project_graph.get("root").unwrap();
+
+            let expected = [".env"];
+
+            // VCS
+            let result =
+                generate_hash(&project, "envFile", &vcs, sandbox.path(), &vcs_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+
+            // Glob
+            let result =
+                generate_hash(&project, "envFile", &vcs, sandbox.path(), &glob_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+        }
+
+        #[tokio::test]
+        async fn includes_custom_env_files() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+            sandbox.create_file(".env.prod", "");
+            sandbox.create_file(".env.local", "");
+
+            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = project_graph.get("root").unwrap();
+
+            let expected = [".env.local", ".env.prod"];
+
+            // VCS
+            let result =
+                generate_hash(&project, "envFileList", &vcs, sandbox.path(), &vcs_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+
+            // Glob
+            let result =
+                generate_hash(&project, "envFileList", &vcs, sandbox.path(), &glob_config).await;
+
+            assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
+        }
     }
 
     mod output_filtering {

@@ -1,0 +1,52 @@
+tasks:
+  success:
+    command: 'Write-Output "test"'
+    platform: system
+    options:
+      shell: true
+
+  failure:
+    command: 'Exit 1'
+    platform: system
+    options:
+      shell: true
+
+  retry:
+    command: 'Exit 1'
+    platform: system
+    options:
+      shell: true
+      retryCount: 3
+
+  create-file:
+    command: 'New-Item file.txt'
+    outputs:
+      - 'file.txt'
+    platform: system
+    options:
+      shell: true
+
+  with-mutex:
+    extends: success
+    options:
+      mutex: lock
+
+  without-cache:
+    extends: success
+    options:
+      cache: false
+
+  hash-inputs:
+    extends: success
+    inputs:
+      - '*.txt'
+
+  missing-output:
+    extends: success
+    outputs:
+      - 'file.txt'
+
+  missing-output-glob:
+    extends: success
+    outputs:
+      - '*.txt'

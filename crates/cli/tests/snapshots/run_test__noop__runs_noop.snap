@@ -1,13 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 922
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ noop:noop (no op)
 
 Tasks: 1 completed
- Time: 100ms
-
-
-
+ Time: 100ms ❯❯❯❯ to the moon

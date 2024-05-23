@@ -15,7 +15,7 @@ hash_content!(
         pub args: Vec<&'task str>,
 
         // Task `deps` mapped to their hash
-        pub deps: BTreeMap<&'task Target, String>, // &'task str>,
+        pub deps: BTreeMap<&'task Target, String>,
 
         // Environment variables
         pub env: BTreeMap<&'task str, &'task str>,
@@ -60,7 +60,9 @@ impl<'task> TaskHash<'task> {
             platform: &task.platform,
             project_deps: project.get_dependency_ids(),
             target: &task.target,
-            version: "1".into(),
+            // 1 - Original implementation
+            // 2 - New task runner crate, tarball structure changed
+            version: "2".into(),
         }
     }
 }

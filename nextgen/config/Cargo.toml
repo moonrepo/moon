@@ -56,3 +56,6 @@ loader = ["schematic/url"]
 proto = ["loader", "dep:proto_core"]
 template = []
 tracing = ["dep:tracing"]
+
+[lints]
+workspace = true

@@ -13,3 +13,6 @@ clap = { workspace = true, features = ["derive"] }
 extism-pdk = { workspace = true }
 serde = { workspace = true }
 warpgate_pdk = { workspace = true }
+
+[lints]
+workspace = true

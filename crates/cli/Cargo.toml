@@ -28,6 +28,7 @@ moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config", features = ["template"] }
 moon_console = { path = "../../nextgen/console" }
+moon_console_reporter = { path = "../../nextgen/console-reporter" }
 moon_deno_lang = { path = "../deno/lang" }
 moon_deno_tool = { path = "../deno/tool" }
 moon_env = { path = "../../nextgen/env" }
@@ -95,8 +96,11 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_cache = { path = "../../nextgen/cache" }
 moon_notifier = { path = "../core/notifier" }
-moon_runner = { path = "../core/runner" }
+moon_task_runner = { path = "../../nextgen/task-runner" }
 moon_test_utils = { path = "../core/test-utils" }
 httpmock = "0.7.0"
 serial_test = "3.0.0"
 starbase_archive = { workspace = true }
+
+[lints]
+workspace = true

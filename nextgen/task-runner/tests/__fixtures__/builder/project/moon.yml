@@ -1,0 +1,9 @@
+tasks:
+  base:
+    command: 'build arg --opt'
+    platform: system
+    env:
+      KEY: value
+    inputs:
+      - 'input.txt'
+      - 'file.*'

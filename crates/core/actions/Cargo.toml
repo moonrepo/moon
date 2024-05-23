@@ -15,3 +15,6 @@ moon_vcs_hooks = { path = "../../../nextgen/vcs-hooks" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

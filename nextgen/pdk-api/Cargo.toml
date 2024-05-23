@@ -13,3 +13,6 @@ moon_config = { version = "0.0.7", path = "../config" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 warpgate_api = { workspace = true }
+
+[lints]
+workspace = true

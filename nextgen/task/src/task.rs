@@ -123,7 +123,7 @@ impl Task {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
                     debug!(
-                        target = self.target.as_str(),
+                        task = self.target.as_str(),
                         env_key = var_name,
                         env_val = var,
                         "Affected by environment variable",
@@ -139,7 +139,7 @@ impl Task {
         for file in touched_files {
             if self.input_files.contains(file) {
                 debug!(
-                    target = ?self.target,
+                    task = self.target.as_str(),
                     input = ?file,
                     "Affected by input file",
                 );
@@ -149,7 +149,7 @@ impl Task {
 
             if globset.matches(file.as_str()) {
                 debug!(
-                    target = self.target.as_str(),
+                    task = self.target.as_str(),
                     input = ?file,
                     "Affected by input glob",
                 );
@@ -158,16 +158,12 @@ impl Task {
             }
         }
 
-        debug!(
-            target = self.target.as_str(),
-            "Not affected by touched files"
-        );
+        debug!(task = self.target.as_str(), "Not affected by touched files");
 
         Ok(false)
     }
 
-    /// Return a list of all workspace-relative input files for
-    /// the task
+    /// Return a list of all workspace-relative input files.
     pub fn get_input_files(
         &self,
         workspace_root: &Path,
@@ -175,10 +171,8 @@ impl Task {
         let mut list = vec![];
 
         for path in &self.input_files {
-            let file = path.to_path(workspace_root);
-
             // Detect if file actually exists
-            if file.is_file() {
+            if path.to_path(workspace_root).is_file() {
                 list.push(path.to_owned());
             }
         }
@@ -191,15 +185,12 @@ impl Task {
 
             // Glob results are absolute paths!
             for file in walk_paths {
-                let path =
+                list.push(
                     WorkspaceRelativePathBuf::from_path(file.strip_prefix(workspace_root).unwrap())
-                        .unwrap();
-
-                list.push(path);
+                        .unwrap(),
+                );
             }
         }
-
-        list.sort();
 
         Ok(list)
     }

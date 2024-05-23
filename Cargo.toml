@@ -108,3 +108,7 @@ warpgate_pdk = "0.3.1"
 # warpgate = { path = "../proto/crates/warpgate" }
 # warpgate_api = { path = "../proto/crates/warpgate-api" }
 # warpgate_pdk = { path = "../proto/crates/warpgate-pdk" }
+
+[workspace.lints.clippy]
+# Very noisy, lots of false positives!
+assigning_clones = "allow"

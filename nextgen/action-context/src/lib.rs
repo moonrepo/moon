@@ -14,18 +14,18 @@ pub enum ProfileType {
     Heap,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "state", content = "hash", rename_all = "lowercase")]
 pub enum TargetState {
-    Completed(String),
+    Passed(String), // hash
+    Passthrough,    // no hash (cache off)
     Failed,
     Skipped,
-    Passthrough,
 }
 
 impl TargetState {
     pub fn is_complete(&self) -> bool {
-        matches!(self, TargetState::Completed(_) | TargetState::Passthrough)
+        matches!(self, TargetState::Passed(_) | TargetState::Passthrough)
     }
 }
 
@@ -78,6 +78,10 @@ impl ActionContext {
         mutex
     }
 
+    pub fn is_primary_target<T: AsRef<Target>>(&self, target: T) -> bool {
+        self.primary_targets.contains(target.as_ref())
+    }
+
     pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {
         let _ = self.target_states.insert(target.as_ref().to_owned(), state);
     }
@@ -96,8 +100,14 @@ impl ActionContext {
 
         // :task == scope:task
         for locator in &self.initial_targets {
-            if target.is_all_task(locator.as_str()) {
-                return true;
+            // if target.is_all_task(locator.as_str()) {
+            //     return true;
+            // }
+
+            if let TargetLocator::Qualified(inner) = locator {
+                if inner.is_all_task(&target.task_id) {
+                    return true;
+                }
             }
         }
 

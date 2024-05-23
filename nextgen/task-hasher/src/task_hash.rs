@@ -61,7 +61,8 @@ impl<'task> TaskHash<'task> {
             project_deps: project.get_dependency_ids(),
             target: &task.target,
             // 1 - Original implementation
-            version: "1".into(),
+            // 2 - New task runner crate, tarball structure changed
+            version: "2".into(),
         }
     }
 }

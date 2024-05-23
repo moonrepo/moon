@@ -209,8 +209,18 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Set this *after* we checked the previous cache
+        // Set this *after* we checked the previous outputs above
         self.cache.data.hash = hash.to_owned();
+
+        // If the previous run was a failure, avoid hydrating
+        if self.cache.data.exit_code > 0 {
+            debug!(
+                task = self.task.target.as_str(),
+                hash, "Previous run failed, avoiding hydration"
+            );
+
+            return Ok(None);
+        }
 
         // Check to see if a build with the provided hash has been cached locally.
         // We only check for the archive, as the manifest is purely for local debugging!
@@ -607,17 +617,33 @@ impl<'task> TaskRunner<'task> {
             .cache_engine
             .state
             .get_target_dir(&self.task.target);
+        let err_path = state_dir.join("stderr.log");
+        let out_path = state_dir.join("stdout.log");
 
         if let Some(output) = &operation.output {
             self.cache.data.exit_code = operation.get_exit_code();
 
-            if let Some(log) = &output.stderr {
-                fs::write_file(state_dir.join("stderr.log"), log.as_bytes())?;
-            }
+            fs::write_file(
+                err_path,
+                output
+                    .stderr
+                    .as_ref()
+                    .map(|log| log.as_bytes())
+                    .unwrap_or_default(),
+            )?;
 
-            if let Some(log) = &output.stdout {
-                fs::write_file(state_dir.join("stdout.log"), log.as_bytes())?;
-            }
+            fs::write_file(
+                out_path,
+                output
+                    .stdout
+                    .as_ref()
+                    .map(|log| log.as_bytes())
+                    .unwrap_or_default(),
+            )?;
+        } else {
+            // Ensure logs from a previous run are removed
+            fs::remove_file(err_path)?;
+            fs::remove_file(out_path)?;
         }
 
         Ok(())

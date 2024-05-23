@@ -227,7 +227,7 @@ pub async fn run_target(
 
     pipeline
         .bail_on_error()
-        .summarize(args.summary || is_ci())
+        .summarize(args.summary)
         .generate_report("runReport.json")
         .run(action_graph, Arc::new(console.to_owned()), Some(context))
         .await?;

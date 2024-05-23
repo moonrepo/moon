@@ -205,6 +205,7 @@ impl DefaultReporter {
         let mut failed_count = 0;
         let mut invalid_count = 0;
         let mut skipped_count = 0;
+        let mut noop_count = 0;
 
         for action in actions {
             if !item.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
@@ -229,6 +230,12 @@ impl DefaultReporter {
                     skipped_count += 1;
                 }
                 ActionStatus::Running => {}
+            };
+
+            if let Some(last_op) = action.operations.get_last_process() {
+                if matches!(last_op.type_of, OperationType::NoOperation) {
+                    noop_count += 1;
+                }
             }
         }
 
@@ -261,7 +268,7 @@ impl DefaultReporter {
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(item.duration.unwrap_or_default());
 
-        if passed_count == cached_count && failed_count == 0 {
+        if (passed_count - noop_count) == cached_count && failed_count == 0 {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 

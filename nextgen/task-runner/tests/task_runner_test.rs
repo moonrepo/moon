@@ -411,6 +411,16 @@ mod task_runner {
                     Some(HydrateFrom::PreviousOutput)
                 );
             }
+
+            #[tokio::test]
+            async fn returns_none_if_non_zero_exit() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("base");
+
+                runner.cache.data.exit_code = 1;
+
+                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+            }
         }
 
         mod local_cache {

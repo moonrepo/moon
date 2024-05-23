@@ -20,79 +20,82 @@ pub struct ProjectArgs {
 }
 
 #[system]
-pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
-    let mut project_graph_builder =
-        { build_project_graph(resources.get_mut::<Workspace>()).await? };
-    project_graph_builder.load(&args.id).await?;
+pub async fn project(args: ArgsRef<ProjectArgs>, resources: Resources) {
+    let mut workspace = resources.get_async::<Workspace>().await;
+    let console = resources.get_async::<Console>().await;
 
-    let project_graph = project_graph_builder.build().await?;
+    let project_graph = {
+        let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+        project_graph_builder.load(&args.id).await?;
+        project_graph_builder.build().await?
+    };
     let project = project_graph.get(&args.id)?;
     let config = &project.config;
 
-    let console = resources.get::<Console>().stdout();
+    let printer = console.stdout();
 
     if args.json {
-        console.write_line(serde_json::to_string_pretty(&project).into_diagnostic()?)?;
+        printer.write_line(serde_json::to_string_pretty(&project).into_diagnostic()?)?;
 
         return Ok(());
     }
 
-    console.print_header(&project.id)?;
+    printer.print_header(&project.id)?;
 
     if let Some(meta) = &config.project {
         let mut has_other_meta = false;
 
-        console.write_line(&meta.description)?;
-        console.write_newline()?;
+        printer.write_line(&meta.description)?;
+        printer.write_newline()?;
 
         if let Some(name) = &meta.name {
-            console.print_entry("Name", name)?;
+            printer.print_entry("Name", name)?;
             has_other_meta = true;
         }
 
         if let Some(owner) = &meta.owner {
-            console.print_entry("Owner", owner)?;
+            printer.print_entry("Owner", owner)?;
             has_other_meta = true;
         }
 
         if !meta.maintainers.is_empty() {
-            console.print_entry_list("Maintainers", &meta.maintainers)?;
+            printer.print_entry_list("Maintainers", &meta.maintainers)?;
             has_other_meta = true;
         }
 
         if let Some(channel) = &meta.channel {
-            console.print_entry("Channel", channel)?;
+            printer.print_entry("Channel", channel)?;
             has_other_meta = true;
         }
 
         if has_other_meta {
-            console.write_newline()?;
+            printer.write_newline()?;
         }
     }
 
-    console.print_entry("Project", color::id(&project.id))?;
+    printer.print_entry("Project", color::id(&project.id))?;
 
     if let Some(alias) = &project.alias {
-        console.print_entry("Alias", color::label(alias))?;
+        printer.print_entry("Alias", color::label(alias))?;
     }
 
-    console.print_entry("Source", color::file(&project.source))?;
+    printer.print_entry("Source", color::file(&project.source))?;
 
     // Dont show in test snapshots
     if !is_test_env() {
-        console.print_entry("Root", color::path(&project.root))?;
+        printer.print_entry("Root", color::path(&project.root))?;
     }
 
     if project.platform.is_javascript() {
-        console.print_entry("Platform", format!("{}", &project.platform))?;
+        printer.print_entry("Platform", format!("{}", &project.platform))?;
     }
 
-    console.print_entry("Language", format!("{}", &project.language))?;
-    console.print_entry("Stack", format!("{}", &project.stack))?;
-    console.print_entry("Type", format!("{}", &project.type_of))?;
+    printer.print_entry("Language", format!("{}", &project.language))?;
+    printer.print_entry("Stack", format!("{}", &project.stack))?;
+    printer.print_entry("Type", format!("{}", &project.type_of))?;
 
     if !config.tags.is_empty() {
-        console.print_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
+        printer.print_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
     }
 
     let mut deps = vec![];
@@ -108,8 +111,8 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     if !deps.is_empty() {
         deps.sort();
 
-        console.print_entry_header("Depends on")?;
-        console.print_list(deps)?;
+        printer.print_entry_header("Depends on")?;
+        printer.print_list(deps)?;
     }
 
     if let Some(inherited) = &project.inherited {
@@ -120,13 +123,13 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
                 configs.push(color::file(layer));
             }
 
-            console.print_entry_header("Inherits from")?;
-            console.print_list(configs)?;
+            printer.print_entry_header("Inherits from")?;
+            printer.print_list(configs)?;
         }
     }
 
     if !project.tasks.is_empty() {
-        console.print_entry_header("Tasks")?;
+        printer.print_entry_header("Tasks")?;
 
         for name in project.tasks.keys().sorted() {
             let task = project.tasks.get(name).unwrap();
@@ -135,22 +138,22 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
                 continue;
             }
 
-            console.print_entry(name, "")?;
+            printer.print_entry(name, "")?;
 
-            console.write_line(format!(
+            printer.write_line(format!(
                 "  {} {}",
                 color::muted("›"),
                 color::shell(format!("{} {}", task.command, task.args.join(" "))),
             ))?;
 
             if let Some(description) = &task.description {
-                console.write_line(format!("    {description}"))?;
+                printer.write_line(format!("    {description}"))?;
             }
         }
     }
 
     if !project.file_groups.is_empty() {
-        console.print_entry_header("File groups")?;
+        printer.print_entry_header("File groups")?;
 
         for group_name in project.file_groups.keys().sorted() {
             let mut files = vec![];
@@ -164,10 +167,10 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
                 files.push(color::file(file));
             }
 
-            console.print_entry_list(group_name, files)?;
+            printer.print_entry_list(group_name, files)?;
         }
     }
 
-    console.write_newline()?;
-    console.flush()?;
+    printer.write_newline()?;
+    printer.flush()?;
 }

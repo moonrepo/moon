@@ -18,40 +18,44 @@ use tracing::debug;
 // IN ORDER:
 
 #[system]
-pub async fn load_environments(states: StatesMut, resources: ResourcesMut) {
-    let quiet = { states.get::<GlobalArgs>().quiet };
-
+pub async fn load_environments(states: States) {
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
     states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
-
-    let mut console = Console::new(quiet);
-    console.set_reporter(DefaultReporter::default());
-
-    resources.set(console);
 }
 
 #[system]
-pub async fn load_workspace(states: StatesMut, resources: ResourcesMut) {
-    let workspace = moon::load_workspace_from(
-        Arc::clone(states.get::<ProtoEnv>()),
-        Arc::new(resources.get::<Console>().to_owned()),
-    )
-    .await?;
+pub async fn load_workspace(states: States, resources: Resources) {
+    let console = {
+        let quiet = states.get::<GlobalArgs>().quiet;
 
-    states.set(WorkspaceRoot(workspace.root.clone()));
+        let mut console = Console::new(quiet);
+        console.set_reporter(DefaultReporter::default());
+        console
+    };
+
+    let workspace = {
+        let proto_env = states.get_async::<ProtoEnv>().await;
+
+        moon::load_workspace_from(Arc::clone(&proto_env), Arc::new(console.clone())).await?
+    };
 
     // Ensure our env instance is using the found workspace root,
     // as this is required for plugins to function entirely!
-    Arc::get_mut(states.get_mut::<MoonEnv>())
-        .unwrap()
-        .workspace_root = workspace.root.clone();
+    {
+        let mut moon_env = states.get_async::<MoonEnv>().await;
 
-    resources.set(workspace);
+        Arc::get_mut(&mut moon_env).unwrap().workspace_root = workspace.root.clone();
+    }
+
+    states.set(WorkspaceRoot(workspace.root.clone()));
+
+    resources.set_async(console).await;
+    resources.set_async(workspace).await;
 }
 
 #[system]
 pub async fn create_plugin_registries(
-    resources: ResourcesMut,
+    resources: Resources,
     moon_env: StateRef<MoonEnv>,
     proto_env: StateRef<ProtoEnv>,
 ) {
@@ -66,19 +70,23 @@ pub async fn create_plugin_registries(
     //         .collect::<FxHashMap<_, _>>()
     // };
 
-    resources.set(ExtensionRegistry::new(
-        Arc::clone(moon_env),
-        Arc::clone(proto_env),
-    ));
-
-    resources.set(PlatformRegistry {
-        configs: FxHashMap::default(),
-        registry: PluginRegistry::new(
-            PluginType::Platform,
+    resources
+        .set_async(ExtensionRegistry::new(
             Arc::clone(moon_env),
             Arc::clone(proto_env),
-        ),
-    });
+        ))
+        .await;
+
+    resources
+        .set_async(PlatformRegistry {
+            configs: FxHashMap::default(),
+            registry: PluginRegistry::new(
+                PluginType::Platform,
+                Arc::clone(moon_env),
+                Arc::clone(proto_env),
+            ),
+        })
+        .await;
 }
 
 #[system]

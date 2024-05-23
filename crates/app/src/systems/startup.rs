@@ -15,7 +15,7 @@ use tracing::debug;
 
 /// Detect important information about the currently running moon process.
 #[system]
-pub fn detect_app_process_info(resources: ResourcesMut) {
+pub fn detect_app_process_info(resources: Resources) {
     let current_exe = env::current_exe().ok();
     let version = env!("CARGO_PKG_VERSION");
 
@@ -38,7 +38,7 @@ pub fn detect_app_process_info(resources: ResourcesMut) {
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 #[system]
-pub fn find_workspace_root(states: StatesMut) {
+pub fn find_workspace_root(states: States) {
     let working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;
 
     debug!(
@@ -86,7 +86,7 @@ pub fn find_workspace_root(states: StatesMut) {
 /// Load the workspace configuration file from the `.moon` directory in the workspace root.
 /// This file is required to exist, so error if not found.
 #[system]
-pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
+pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources: Resources) {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,
@@ -113,7 +113,7 @@ pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources:
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
 #[system]
-pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
+pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources: Resources) {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,
@@ -156,7 +156,7 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
 /// Load the tasks configuration file from the `.moon` directory if it exists.
 /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
 #[system]
-pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
+pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: Resources) {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,

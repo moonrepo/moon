@@ -55,12 +55,12 @@ semver = "1.0.23"
 serde = { version = "1.0.202", features = ["derive"] }
 serde_json = "1.0.117"
 serde_yaml = "0.9.34"
-starbase = "0.5.2" # TODO
+starbase = { version = "0.6.0", path = "../starbase/crates/framework" }
 starbase_archive = { version = "0.7.1", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.5.2" # TODO
+starbase_events = "0.6.0"
 starbase_sandbox = "0.6.0"
 starbase_styles = { version = "0.4.0", features = ["relative-path"] }
 starbase_utils = { version = "0.7.1", default-features = false, features = [

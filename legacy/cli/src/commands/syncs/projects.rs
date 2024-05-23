@@ -5,12 +5,13 @@ use moon_app_components::Console;
 use moon_workspace::Workspace;
 use starbase::{system, ResourceManager, SystemResult};
 use std::sync::Arc;
-use tokio::sync::RwLockWriteGuard;
 
-pub async fn internal_sync(mut resources: RwLockWriteGuard<'_, ResourceManager>) -> SystemResult {
+pub async fn internal_sync(resources: Arc<ResourceManager>) -> SystemResult {
     let done = create_progress_bar("Syncing projects...");
 
-    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
+    let mut workspace = resources.get_async::<Workspace>().await;
+    let console = resources.get_async::<Console>().await;
+    let project_graph = generate_project_graph(&mut workspace).await?;
 
     let mut project_count = 0;
     let mut action_graph_builder = build_action_graph(&project_graph)?;
@@ -22,14 +23,10 @@ pub async fn internal_sync(mut resources: RwLockWriteGuard<'_, ResourceManager>)
 
     let action_graph = action_graph_builder.build()?;
 
-    let mut pipeline = Pipeline::new(resources.get::<Workspace>().to_owned(), project_graph);
+    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
 
     pipeline
-        .run(
-            action_graph,
-            Arc::new(resources.get::<Console>().to_owned()),
-            None,
-        )
+        .run(action_graph, Arc::new(console.to_owned()), None)
         .await?;
 
     done(
@@ -41,6 +38,6 @@ pub async fn internal_sync(mut resources: RwLockWriteGuard<'_, ResourceManager>)
 }
 
 #[system]
-pub async fn sync(resources: ResourcesMut) {
+pub async fn sync(resources: Resources) {
     internal_sync(resources).await?;
 }

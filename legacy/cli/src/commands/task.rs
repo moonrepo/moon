@@ -17,40 +17,41 @@ pub struct TaskArgs {
 }
 
 #[system]
-pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
+pub async fn task(args: ArgsRef<TaskArgs>, resources: Resources) {
     let TargetScope::Project(project_locator) = &args.target.scope else {
         return Err(miette!(code = "moon::task", "A project ID is required."));
     };
 
-    let mut project_graph_builder =
-        { build_project_graph(resources.get_mut::<Workspace>()).await? };
-    project_graph_builder.load(project_locator).await?;
+    let mut workspace = resources.get_async::<Workspace>().await;
+    let console = resources.get_async::<Console>().await;
 
-    let project_graph = project_graph_builder.build().await?;
+    let project_graph = {
+        let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+        project_graph_builder.load(project_locator).await?;
+        project_graph_builder.build().await?
+    };
     let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 
-    let console = resources.get::<Console>().stdout();
+    let printer = console.stdout();
 
     if args.json {
-        console.write_line(serde_json::to_string_pretty(&task).into_diagnostic()?)?;
+        printer.write_line(serde_json::to_string_pretty(&task).into_diagnostic()?)?;
 
         return Ok(());
     }
 
-    let workspace = resources.get::<Workspace>();
-
-    console.print_header(&args.target.id)?;
+    printer.print_header(&args.target.id)?;
 
     if let Some(desc) = &task.description {
-        console.write_line(desc)?;
-        console.write_newline()?;
+        printer.write_line(desc)?;
+        printer.write_newline()?;
     }
 
-    console.print_entry("Task", color::id(&args.target.task_id))?;
-    console.print_entry("Project", color::id(&project.id))?;
-    console.print_entry("Platform", format!("{}", &task.platform))?;
-    console.print_entry("Type", format!("{}", &task.type_of))?;
+    printer.print_entry("Task", color::id(&args.target.task_id))?;
+    printer.print_entry("Project", color::id(&project.id))?;
+    printer.print_entry("Platform", format!("{}", &task.platform))?;
+    printer.print_entry("Type", format!("{}", &task.type_of))?;
 
     let mut modes = vec![];
 
@@ -68,17 +69,17 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     }
 
     if !modes.is_empty() {
-        console.print_entry("Modes", modes.join(", "))?;
+        printer.print_entry("Modes", modes.join(", "))?;
     }
 
-    console.print_entry_header("Process")?;
-    console.print_entry(
+    printer.print_entry_header("Process")?;
+    printer.print_entry(
         "Command",
         color::shell(format!("{} {}", task.command, task.args.join(" "))),
     )?;
 
     if !task.env.is_empty() {
-        console.print_entry_list(
+        printer.print_entry_list(
             "Environment variables",
             task.env
                 .iter()
@@ -87,7 +88,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
         )?;
     }
 
-    console.print_entry(
+    printer.print_entry(
         "Working directory",
         color::path(if task.options.run_from_workspace_root {
             &workspace.root
@@ -95,7 +96,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
             &project.root
         }),
     )?;
-    console.print_entry(
+    printer.print_entry(
         "Runs dependencies",
         if task.options.run_deps_in_parallel {
             "Concurrently"
@@ -103,11 +104,11 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
             "Serially"
         },
     )?;
-    console.print_entry_bool("Runs in CI", task.should_run_in_ci())?;
+    printer.print_entry_bool("Runs in CI", task.should_run_in_ci())?;
 
     if !task.deps.is_empty() {
-        console.print_entry_header("Depends on")?;
-        console.print_list(
+        printer.print_entry_header("Depends on")?;
+        printer.print_list(
             task.deps
                 .iter()
                 .map(|d| color::label(&d.target))
@@ -125,8 +126,8 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
                     .exclude
                     .contains(&task.id)
             {
-                console.print_entry_header("Inherits from")?;
-                console.print_list(task_layers.iter().map(color::file).collect::<Vec<_>>())?;
+                printer.print_entry_header("Inherits from")?;
+                printer.print_list(task_layers.iter().map(color::file).collect::<Vec<_>>())?;
             }
         }
     }
@@ -146,8 +147,8 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
                 .collect::<Vec<_>>(),
         );
 
-        console.print_entry_header("Inputs")?;
-        console.print_list(files)?;
+        printer.print_entry_header("Inputs")?;
+        printer.print_list(files)?;
     }
 
     if !task.output_files.is_empty() || !task.output_globs.is_empty() {
@@ -165,10 +166,10 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
                 .collect::<Vec<_>>(),
         );
 
-        console.print_entry_header("Outputs")?;
-        console.print_list(files)?;
+        printer.print_entry_header("Outputs")?;
+        printer.print_list(files)?;
     }
 
-    console.write_newline()?;
-    console.flush()?;
+    printer.write_newline()?;
+    printer.flush()?;
 }

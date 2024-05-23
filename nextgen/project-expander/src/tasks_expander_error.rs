@@ -11,7 +11,7 @@ pub enum TasksExpanderError {
     InvalidEnvFile {
         path: PathBuf,
         #[source]
-        error: dotenvy::Error,
+        error: Box<dotenvy::Error>,
     },
 
     #[diagnostic(code(task_expander::dependency::no_allowed_failures))]

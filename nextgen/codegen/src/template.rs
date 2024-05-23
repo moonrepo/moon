@@ -152,7 +152,7 @@ impl Template {
                     .add_raw_template(name.as_str(), &content)
                     .map_err(|error| CodegenError::LoadTemplateFileFailed {
                         path: source_path.clone(),
-                        error,
+                        error: Box::new(error),
                     })?;
 
                 debug!(
@@ -181,7 +181,7 @@ impl Template {
                     .add_raw_template(file.name.as_str(), &content)
                     .map_err(|error| CodegenError::LoadTemplateFileFailed {
                         path: file.source_path.clone(),
-                        error,
+                        error: Box::new(error),
                     })?;
             }
 
@@ -198,7 +198,7 @@ impl Template {
                         .render(file.name.as_str(), context)
                         .map_err(|error| CodegenError::RenderTemplateFileFailed {
                             path: file.source_path.clone(),
-                            error,
+                            error: Box::new(error),
                         })?,
                     dest,
                 )?;
@@ -253,7 +253,7 @@ impl Template {
         let path = self.engine.render_str(&name, context).map_err(|error| {
             CodegenError::InterpolateTemplateFileFailed {
                 path: name.to_owned(),
-                error,
+                error: Box::new(error),
             }
         })?;
 

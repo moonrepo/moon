@@ -20,5 +20,11 @@ pub enum MoonbaseError {
     JsonSerializeFailure(String),
 
     #[error("Failed to send request to moonbase: {0}")]
-    Http(#[from] reqwest::Error),
+    Http(#[from] Box<reqwest::Error>),
+}
+
+impl From<reqwest::Error> for MoonbaseError {
+    fn from(e: reqwest::Error) -> MoonbaseError {
+        MoonbaseError::Http(Box::new(e))
+    }
 }

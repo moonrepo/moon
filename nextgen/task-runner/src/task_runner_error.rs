@@ -13,7 +13,7 @@ pub enum TaskRunnerError {
     RunFailed {
         target: String,
         #[source]
-        error: ProcessError,
+        error: Box<ProcessError>,
     },
 
     #[diagnostic(code(task_runner::missing_dependency_hash))]

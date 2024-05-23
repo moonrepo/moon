@@ -22,29 +22,57 @@ export interface Attempt {
 	stdout: string | null;
 }
 
-export type OperationType =
-	| 'archive-creation'
-	| 'hash-generation'
-	| 'mutex-acquisition'
-	| 'no-operation'
-	| 'output-hydration'
-	| 'task-execution';
+// OPERATIONS
 
-export interface OperationOutput {
+export interface OperationMetaBaseOutput {
+	command: string | null;
 	exitCode: number | null;
 	stderr: string | null;
 	stdout: string | null;
 }
 
+export interface OperationMetaArchiveCreation {
+	type: 'archive-creation';
+}
+
+export interface OperationMetaHashGeneration {
+	type: 'hash-generation';
+	hash: string;
+}
+
+export interface OperationMetaMutexAcquisition {
+	type: 'mutex-acquisition';
+}
+
+export interface OperationMetaNoOperation {
+	type: 'no-operation';
+}
+
+export interface OperationMetaOutputHydration extends OperationMetaBaseOutput {
+	type: 'output-hydration';
+}
+
+export interface OperationMetaTaskExecution extends OperationMetaBaseOutput {
+	type: 'task-execution';
+}
+
+export type OperationMeta =
+	| OperationMetaArchiveCreation
+	| OperationMetaHashGeneration
+	| OperationMetaMutexAcquisition
+	| OperationMetaNoOperation
+	| OperationMetaOutputHydration
+	| OperationMetaTaskExecution;
+
 export interface Operation {
 	duration: Duration | null;
 	finishedAt: string | null;
-	hash: string | null;
-	output: OperationOutput | null;
+	meta: OperationMeta;
 	startedAt: string;
 	status: ActionStatus;
-	type: OperationType;
 }
+
+// ACTIONS
 
 export interface Action {
 	allowFailure: boolean;

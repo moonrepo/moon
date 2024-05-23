@@ -12,11 +12,18 @@ pub struct OperationMetaLabel {
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaOutput {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stderr: Option<Arc<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stdout: Option<Arc<String>>,
 }
 
@@ -55,61 +62,28 @@ pub enum OperationMeta {
 }
 
 impl OperationMeta {
-    pub fn archive_creation() -> Self {
-        Self::ArchiveCreation
-    }
-
     pub fn is_archive_creation(&self) -> bool {
         matches!(self, Self::ArchiveCreation)
-    }
-
-    pub fn hash_generation() -> Self {
-        Self::HashGeneration(Default::default())
     }
 
     pub fn is_hash_generation(&self) -> bool {
         matches!(self, Self::HashGeneration(_))
     }
 
-    pub fn no_operation() -> Self {
-        Self::NoOperation
-    }
-
     pub fn is_no_operation(&self) -> bool {
         matches!(self, Self::NoOperation)
-    }
-
-    pub fn mutex_acquisition() -> Self {
-        Self::MutexAcquisition
     }
 
     pub fn is_mutex_acquisition(&self) -> bool {
         matches!(self, Self::MutexAcquisition)
     }
 
-    pub fn output_hydration() -> Self {
-        Self::OutputHydration(Default::default())
-    }
-
     pub fn is_output_hydration(&self) -> bool {
         matches!(self, Self::OutputHydration(_))
     }
 
-    pub fn sync_operation(label: &str) -> Self {
-        Self::SyncOperation(Box::new(OperationMetaLabel {
-            label: label.to_owned(),
-        }))
-    }
-
     pub fn is_sync_operation(&self) -> bool {
         matches!(self, Self::SyncOperation(_))
-    }
-
-    pub fn task_execution(command: impl AsRef<str>) -> Self {
-        Self::TaskExecution(Box::new(OperationMetaOutput {
-            command: Some(command.as_ref().to_owned()),
-            ..Default::default()
-        }))
     }
 
     pub fn is_task_execution(&self) -> bool {

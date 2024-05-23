@@ -1,4 +1,4 @@
-use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
+use moon_action::{ActionNode, ActionStatus, Operation, OperationList};
 use moon_action_context::{ActionContext, TargetState};
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -93,7 +93,7 @@ impl<'task> CommandExecutor<'task> {
         let command_line = self.get_command_line(context);
 
         let execution_error: Option<miette::Report> = loop {
-            let mut attempt = Operation::new(OperationMeta::task_execution(&command_line));
+            let mut attempt = Operation::task_execution(&command_line);
             report_item.attempt_current = self.attempt_index;
 
             debug!(

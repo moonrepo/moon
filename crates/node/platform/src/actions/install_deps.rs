@@ -1,4 +1,4 @@
-use moon_action::{Operation, OperationMeta};
+use moon_action::Operation;
 use moon_config::NodePackageManager;
 use moon_console::{Checkpoint, Console};
 use moon_lang::has_vendor_installed_dependencies;
@@ -43,7 +43,7 @@ pub async fn install_deps(
         console.out.print_checkpoint(Checkpoint::Setup, command)?;
 
         operations.push(
-            Operation::new(OperationMeta::task_execution(command))
+            Operation::task_execution(command)
                 .track_async(|| {
                     package_manager.install_dependencies(node, working_dir, !is_test_env())
                 })
@@ -68,7 +68,7 @@ pub async fn install_deps(
         console.out.print_checkpoint(Checkpoint::Setup, command)?;
 
         operations.push(
-            Operation::new(OperationMeta::task_execution(command))
+            Operation::task_execution(command)
                 .track_async(|| {
                     package_manager.dedupe_dependencies(node, working_dir, !is_test_env())
                 })

@@ -1,6 +1,6 @@
 use super::should_skip_action_matching;
 use miette::IntoDiagnostic;
-use moon_action::{Action, ActionStatus, Operation, OperationMeta};
+use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_cache_item::cache_item;
 use moon_logger::{debug, warn};
@@ -110,7 +110,7 @@ pub async fn install_deps(
     };
 
     // Determine the working directory and whether lockfiles and manifests have been modified
-    let mut operation = Operation::new(OperationMeta::hash_generation());
+    let mut operation = Operation::hash_generation();
 
     let working_dir = project.map(|p| &p.root).unwrap_or_else(|| &workspace.root);
     let manifest_path = working_dir.join(&manifest);

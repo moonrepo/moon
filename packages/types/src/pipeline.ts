@@ -52,6 +52,11 @@ export interface OperationMetaOutputHydration extends OperationMetaBaseOutput {
 	type: 'output-hydration';
 }
 
+export interface OperationMetaSyncOperation {
+	type: 'sync-operation';
+	label: string;
+}
+
 export interface OperationMetaTaskExecution extends OperationMetaBaseOutput {
 	type: 'task-execution';
 }
@@ -62,6 +67,7 @@ export type OperationMeta =
 	| OperationMetaMutexAcquisition
 	| OperationMetaNoOperation
 	| OperationMetaOutputHydration
+	| OperationMetaSyncOperation
 	| OperationMetaTaskExecution;
 
 export interface Operation {

@@ -183,4 +183,41 @@ impl Operation {
             }
         }
     }
+
+    // Constructors
+
+    pub fn archive_creation() -> Self {
+        Self::new(OperationMeta::ArchiveCreation)
+    }
+
+    pub fn hash_generation() -> Self {
+        Self::new(OperationMeta::HashGeneration(Default::default()))
+    }
+
+    pub fn no_operation() -> Self {
+        Self::new(OperationMeta::NoOperation)
+    }
+
+    pub fn mutex_acquisition() -> Self {
+        Self::new(OperationMeta::MutexAcquisition)
+    }
+
+    pub fn output_hydration() -> Self {
+        Self::new(OperationMeta::OutputHydration(Default::default()))
+    }
+
+    pub fn sync_operation(label: impl AsRef<str>) -> Self {
+        Self::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
+            label: label.as_ref().to_owned(),
+        })))
+    }
+
+    pub fn task_execution(command: impl AsRef<str>) -> Self {
+        Self::new(OperationMeta::TaskExecution(Box::new(
+            OperationMetaOutput {
+                command: Some(command.as_ref().to_owned()),
+                ..Default::default()
+            },
+        )))
+    }
 }

@@ -1,7 +1,7 @@
 use crate::{
     find_cargo_lock, get_cargo_home, target_hash::RustTargetHash, toolchain_hash::RustToolchainHash,
 };
-use moon_action::{Operation, OperationMeta};
+use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, path::exe_name, Id};
 use moon_config::{
@@ -272,12 +272,9 @@ impl Platform for RustPlatform {
             args.extend(self.config.components.iter().map(|c| c.as_str()));
 
             operations.push(
-                Operation::new(OperationMeta::task_execution(format!(
-                    "rustup {}",
-                    args.join(" ")
-                )))
-                .track_async(|| tool.exec_rustup(args, working_dir))
-                .await?,
+                Operation::task_execution(format!("rustup {}", args.join(" ")))
+                    .track_async(|| tool.exec_rustup(args, working_dir))
+                    .await?,
             );
         }
 
@@ -296,12 +293,9 @@ impl Platform for RustPlatform {
             args.extend(self.config.targets.iter().map(|c| c.as_str()));
 
             operations.push(
-                Operation::new(OperationMeta::task_execution(format!(
-                    "rustup {}",
-                    args.join(" ")
-                )))
-                .track_async(|| tool.exec_rustup(args, working_dir))
-                .await?,
+                Operation::task_execution(format!("rustup {}", args.join(" ")))
+                    .track_async(|| tool.exec_rustup(args, working_dir))
+                    .await?,
             );
         }
 
@@ -311,7 +305,7 @@ impl Platform for RustPlatform {
                 .print_checkpoint(Checkpoint::Setup, "cargo generate-lockfile")?;
 
             operations.push(
-                Operation::new(OperationMeta::task_execution("cargo generate-lockfile"))
+                Operation::task_execution("cargo generate-lockfile")
                     .track_async(|| tool.exec_cargo(["generate-lockfile"], working_dir))
                     .await?,
             );
@@ -333,13 +327,11 @@ impl Platform for RustPlatform {
                 );
 
                 operations.push(
-                    Operation::new(OperationMeta::task_execution(
-                        "cargo install cargo-binstall --force",
-                    ))
-                    .track_async(|| {
-                        tool.exec_cargo(["install", "cargo-binstall", "--force"], working_dir)
-                    })
-                    .await?,
+                    Operation::task_execution("cargo install cargo-binstall --force")
+                        .track_async(|| {
+                            tool.exec_cargo(["install", "cargo-binstall", "--force"], working_dir)
+                        })
+                        .await?,
                 );
             }
 
@@ -369,12 +361,9 @@ impl Platform for RustPlatform {
                 };
 
                 operations.push(
-                    Operation::new(OperationMeta::task_execution(format!(
-                        "cargo {}",
-                        args.join(" ")
-                    )))
-                    .track_async(|| tool.exec_cargo(args, working_dir))
-                    .await?,
+                    Operation::task_execution(format!("cargo {}", args.join(" ")))
+                        .track_async(|| tool.exec_cargo(args, working_dir))
+                        .await?,
                 );
             }
         }

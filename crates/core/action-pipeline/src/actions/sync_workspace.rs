@@ -1,5 +1,5 @@
 use super::should_skip_action;
-use moon_action::{Action, ActionStatus, Operation, OperationMeta};
+use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_common::is_docker_container;
@@ -48,7 +48,7 @@ pub async fn sync_workspace(
         );
 
         action.operations.push(
-            Operation::new(OperationMeta::sync_operation("Codeowners"))
+            Operation::sync_operation("Codeowners")
                 .track_async_with_check(
                     || sync_codeowners(&workspace, &project_graph, false),
                     |result| result.is_some(),
@@ -58,8 +58,6 @@ pub async fn sync_workspace(
     }
 
     if workspace.config.vcs.sync_hooks {
-        Operation::new(OperationMeta::sync_operation("VCS hooks"));
-
         debug!(
             target: LOG_TARGET,
             "Syncing {} hooks ({} enabled)",
@@ -68,7 +66,7 @@ pub async fn sync_workspace(
         );
 
         action.operations.push(
-            Operation::new(OperationMeta::sync_operation("VCS hooks"))
+            Operation::sync_operation("VCS hooks")
                 .track_async_with_check(|| sync_vcs_hooks(&workspace, false), |result| result)
                 .await?,
         );

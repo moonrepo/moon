@@ -34,6 +34,8 @@
 
 - Fixed an issue where actions within the run report were not reflecting the correct status of their
   last execution attempt.
+- Fixed an issue where "have outputs been created" checks would fail if outputs only contained
+  negated globs, coupled with literal paths.
 
 #### ⚙️ Internal
 

@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schematic::{SchemaType, Schematic};
+use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{borrow::Borrow, fmt, ops::Deref, str::FromStr};
@@ -159,7 +159,7 @@ impl<'de> Deserialize<'de> for Id {
 }
 
 impl Schematic for Id {
-    fn generate_schema() -> SchemaType {
-        SchemaType::string()
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string_default()
     }
 }

@@ -21,7 +21,7 @@ default-members = ["crates/cli"]
 
 [workspace.dependencies]
 async-trait = "0.1.80"
-cached = "0.49.3"
+cached = "0.51.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 cd_env = "0.2.0"
 ci_env = "0.3.0"
@@ -35,37 +35,37 @@ dirs = "5.0.1"
 miette = "7.2.0"
 once_cell = "1.19.0"
 pathdiff = "0.2.1"
-petgraph = { version = "0.6.4", default-features = false, features = [
+petgraph = { version = "0.6.5", default-features = false, features = [
 	"serde-1",
 ] }
-relative-path = { version = "1.9.2" }
+relative-path = { version = "1.9.3" }
 regex = { version = "1.10.4", default-features = false, features = [
 	"std",
 	"perf",
 ] }
-reqwest = { version = "0.12.3", default-features = false, features = [
+reqwest = { version = "0.12.4", default-features = false, features = [
 	"rustls-tls-native-roots",
 	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-scc = "2.1.0"
-schematic = { version = "0.15.1", default-features = false, features = [
+scc = "2.1.1"
+schematic = { version = "0.16.1", default-features = false, features = [
 	"schema",
 ] }
-semver = "1.0.22"
-serde = { version = "1.0.198", features = ["derive"] }
-serde_json = "1.0.116"
+semver = "1.0.23"
+serde = { version = "1.0.202", features = ["derive"] }
+serde_json = "1.0.117"
 serde_yaml = "0.9.34"
-starbase = "0.5.2"
-starbase_archive = { version = "0.6.2", default-features = false, features = [
+starbase = "0.5.2" # TODO
+starbase_archive = { version = "0.7.1", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.5.2"
-starbase_sandbox = "0.5.1"
-starbase_styles = { version = "0.3.2", features = ["relative-path"] }
-starbase_utils = { version = "0.6.4", default-features = false, features = [
+starbase_events = "0.5.2" # TODO
+starbase_sandbox = "0.6.0"
+starbase_styles = { version = "0.4.0", features = ["relative-path"] }
+starbase_utils = { version = "0.7.1", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -75,7 +75,7 @@ starbase_utils = { version = "0.6.4", default-features = false, features = [
 	"yaml",
 ] }
 tera = { version = "1.19.1", features = ["preserve_order"] }
-thiserror = "1.0.58"
+thiserror = "1.0.61"
 tokio = { version = "1.37.0", default-features = false, features = [
 	"macros",
 	"process",
@@ -85,21 +85,21 @@ tokio = { version = "1.37.0", default-features = false, features = [
 	"time",
 	"tracing",
 ] }
-tokio-util = "0.7.10"
+tokio-util = "0.7.11"
 tracing = "0.1.40"
 url = "2.5.0"
 uuid = { version = "1.8.0", features = ["v4"] }
 
 # proto/plugin related
-extism = "1.2.0"
-extism-pdk = "1.1.0"
-proto_core = "0.34.4"
-proto_installer = "0.3.3"
-system_env = "0.3.0"
-version_spec = "0.3.0"
-warpgate = "0.12.1"
-warpgate_api = "0.5.1"
-warpgate_pdk = "0.3.1"
+extism = "1.3.0"
+extism-pdk = "1.2.0"
+proto_core = "0.35.4"
+proto_installer = "0.5.0"
+system_env = "0.5.0"
+version_spec = "0.5.0"
+warpgate = "0.14.1"
+warpgate_api = "0.7.1"
+warpgate_pdk = "0.5.1"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

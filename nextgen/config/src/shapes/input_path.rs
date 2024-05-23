@@ -6,7 +6,7 @@ use crate::validate::validate_child_relative_path;
 use moon_common::path::{
     expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
 };
-use schematic::{derive_enum, SchemaType, Schematic, ValidateError};
+use schematic::{derive_enum, Schema, SchemaBuilder, Schematic, ValidateError};
 use std::str::FromStr;
 
 derive_enum!(
@@ -152,8 +152,8 @@ impl Into<String> for InputPath {
 }
 
 impl Schematic for InputPath {
-    fn generate_schema() -> SchemaType {
-        SchemaType::string()
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string_default()
     }
 }
 

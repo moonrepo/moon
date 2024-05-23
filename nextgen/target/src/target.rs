@@ -3,7 +3,7 @@ use crate::target_scope::TargetScope;
 use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schematic::{SchemaType, Schematic};
+use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{
     cmp::Ordering,
@@ -196,8 +196,8 @@ impl Serialize for Target {
 }
 
 impl Schematic for Target {
-    fn generate_schema() -> SchemaType {
-        SchemaType::string()
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string_default()
     }
 }
 

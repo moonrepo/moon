@@ -76,14 +76,12 @@ cacheable!(
 
 #[cfg(feature = "loader")]
 impl InheritedTasksConfig {
+    /// Only used in testing!
     pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
         use schematic::ConfigLoader;
 
         let result = ConfigLoader::<InheritedTasksConfig>::new()
-            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
-            .file_optional(check_yml_extension(path.as_ref()))?
+            .file_optional(path.as_ref())?
             .load()?;
 
         Ok(result.config)

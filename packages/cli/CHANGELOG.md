@@ -29,6 +29,8 @@
 - Added a new console reporting layer that handles the rendering of output in the terminal.
   - This enables us to support additional reporters in the future, each with unique UIs.
   - Slightly tweaked our current UI rendering. You may notice some differences.
+- Updated external configuration files (via http extends) to be cached for 24 hours.
+  - This will fix issues with offline mode.
 
 #### 🐞 Fixes
 

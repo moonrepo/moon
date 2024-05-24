@@ -36,7 +36,7 @@ impl<'task> OutputArchiver<'task> {
         let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
 
         if !archive_file.exists() {
-            if !self.workspace.cache_engine.mode.is_writable() {
+            if !self.workspace.cache_engine.is_writable() {
                 debug!(
                     task = self.task.target.as_str(),
                     hash, "Cache is not writable, skipping output archiving"

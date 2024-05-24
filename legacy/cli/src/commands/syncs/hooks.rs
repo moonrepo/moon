@@ -15,7 +15,7 @@ pub struct SyncHooksArgs {
 }
 
 #[system]
-pub async fn sync(args: ArgsRef<SyncHooksArgs>, workspace: ResourceRef<Workspace>) {
+pub async fn sync(args: Args<SyncHooksArgs>, workspace: ResourceRef<Workspace>) {
     if workspace.config.vcs.hooks.is_empty() {
         println!(
             "No hooks available to sync. Configure them with the {} setting.",

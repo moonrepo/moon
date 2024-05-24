@@ -12,8 +12,8 @@ use std::sync::Arc;
 
 #[system]
 pub async fn setup(resources: Resources) {
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
 
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 

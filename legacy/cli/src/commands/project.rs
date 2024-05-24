@@ -20,9 +20,9 @@ pub struct ProjectArgs {
 }
 
 #[system]
-pub async fn project(args: ArgsRef<ProjectArgs>, resources: Resources) {
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+pub async fn project(args: Args<ProjectArgs>, resources: Resources) {
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
 
     let project_graph = {
         let mut project_graph_builder = build_project_graph(&mut workspace).await?;

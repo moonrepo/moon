@@ -38,12 +38,12 @@ pub struct CheckArgs {
 
 #[system]
 pub async fn check(
-    args: ArgsRef<CheckArgs>,
+    args: Args<CheckArgs>,
     global_args: StateRef<GlobalArgs>,
     resources: Resources,
 ) {
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
 
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut projects: Vec<Arc<Project>> = vec![];

@@ -27,7 +27,7 @@ pub struct QueryHashArgs {
 
 #[system]
 pub async fn hash(
-    args: ArgsRef<QueryHashArgs>,
+    args: Args<QueryHashArgs>,
     workspace: ResourceRef<Workspace>,
     console: ResourceRef<Console>,
 ) {
@@ -57,7 +57,7 @@ pub struct QueryHashDiffArgs {
 
 #[system]
 pub async fn hash_diff(
-    args: ArgsRef<QueryHashDiffArgs>,
+    args: Args<QueryHashDiffArgs>,
     workspace: ResourceRef<Workspace>,
     console: ResourceRef<Console>,
 ) {
@@ -156,10 +156,10 @@ pub struct QueryProjectsArgs {
 }
 
 #[system]
-pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: Resources) {
+pub async fn projects(args: Args<QueryProjectsArgs>, resources: Resources) {
     let args = args.to_owned();
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
 
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -242,10 +242,10 @@ pub struct QueryTasksArgs {
 }
 
 #[system]
-pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: Resources) {
+pub async fn tasks(args: Args<QueryTasksArgs>, resources: Resources) {
     let args = args.to_owned();
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
 
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -337,7 +337,7 @@ pub struct QueryTouchedFilesArgs {
 
 #[system]
 pub async fn touched_files(
-    args: ArgsRef<QueryTouchedFilesArgs>,
+    args: Args<QueryTouchedFilesArgs>,
     workspace: ResourceRef<Workspace>,
     console: ResourceRef<Console>,
 ) {

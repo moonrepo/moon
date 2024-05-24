@@ -28,7 +28,7 @@ pub struct FromPackageJsonArgs {
 
 #[system]
 pub async fn from_package_json(
-    args: ArgsRef<FromPackageJsonArgs>,
+    args: Args<FromPackageJsonArgs>,
     workspace: ResourceMut<Workspace>,
 ) -> AppResult {
     if args.skip_touched_files_check {

@@ -14,7 +14,7 @@ pub struct BinArgs {
 }
 
 #[system]
-pub async fn bin(args: ArgsRef<BinArgs>, console: ResourceRef<Console>) {
+pub async fn bin(args: Args<BinArgs>, console: ResourceRef<Console>) {
     console.quiet();
 
     let proto = ProtoEnvironment::new()?;

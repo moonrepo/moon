@@ -236,9 +236,9 @@ pub async fn run_target(
 }
 
 #[system]
-pub async fn run(args: ArgsRef<RunArgs>, global_args: StateRef<GlobalArgs>, resources: Resources) {
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+pub async fn run(args: Args<RunArgs>, global_args: StateRef<GlobalArgs>, resources: Resources) {
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
     let project_graph = generate_project_graph(&mut workspace).await?;
 
     run_target(

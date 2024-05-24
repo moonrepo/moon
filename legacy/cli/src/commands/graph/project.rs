@@ -22,7 +22,7 @@ pub struct ProjectGraphArgs {
 }
 
 #[system]
-pub async fn project_graph(args: ArgsRef<ProjectGraphArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn project_graph(args: Args<ProjectGraphArgs>, workspace: ResourceMut<Workspace>) {
     let mut project_graph = generate_project_graph(workspace).await?;
 
     if let Some(id) = &args.id {

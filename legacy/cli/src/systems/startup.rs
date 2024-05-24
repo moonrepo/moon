@@ -19,14 +19,17 @@ use tracing::debug;
 
 #[system]
 pub async fn load_environments(states: States) {
-    states.set(MoonEnv(Arc::new(MoonEnvironment::new()?)));
-    states.set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)));
+    states.set(MoonEnv(Arc::new(MoonEnvironment::new()?))).await;
+
+    states
+        .set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)))
+        .await;
 }
 
 #[system]
 pub async fn load_workspace(states: States, resources: Resources) {
     let console = {
-        let quiet = states.get::<GlobalArgs>().quiet;
+        let quiet = states.get::<GlobalArgs>().await.quiet;
 
         let mut console = Console::new(quiet);
         console.set_reporter(DefaultReporter::default());
@@ -34,7 +37,7 @@ pub async fn load_workspace(states: States, resources: Resources) {
     };
 
     let workspace = {
-        let proto_env = states.get_async::<ProtoEnv>().await;
+        let proto_env = states.get::<ProtoEnv>().await;
 
         moon::load_workspace_from(Arc::clone(&proto_env), Arc::new(console.clone())).await?
     };
@@ -42,15 +45,15 @@ pub async fn load_workspace(states: States, resources: Resources) {
     // Ensure our env instance is using the found workspace root,
     // as this is required for plugins to function entirely!
     {
-        let mut moon_env = states.get_async::<MoonEnv>().await;
+        let mut moon_env = states.get::<MoonEnv>().await;
 
         Arc::get_mut(&mut moon_env).unwrap().workspace_root = workspace.root.clone();
     }
 
-    states.set(WorkspaceRoot(workspace.root.clone()));
+    states.set(WorkspaceRoot(workspace.root.clone())).await;
 
-    resources.set_async(console).await;
-    resources.set_async(workspace).await;
+    resources.set(console).await;
+    resources.set(workspace).await;
 }
 
 #[system]
@@ -71,14 +74,14 @@ pub async fn create_plugin_registries(
     // };
 
     resources
-        .set_async(ExtensionRegistry::new(
+        .set(ExtensionRegistry::new(
             Arc::clone(moon_env),
             Arc::clone(proto_env),
         ))
         .await;
 
     resources
-        .set_async(PlatformRegistry {
+        .set(PlatformRegistry {
             configs: FxHashMap::default(),
             registry: PluginRegistry::new(
                 PluginType::Platform,

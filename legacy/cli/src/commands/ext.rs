@@ -18,7 +18,7 @@ pub struct ExtArgs {
 
 #[system]
 pub async fn ext(
-    args: ArgsRef<ExtArgs>,
+    args: Args<ExtArgs>,
     workspace: ResourceRef<Workspace>,
     extensions: ResourceRef<ExtensionRegistry>,
 ) {

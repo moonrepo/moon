@@ -21,7 +21,7 @@ pub struct RunScriptArgs {
 }
 
 #[system]
-pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn run_script(args: Args<RunScriptArgs>, workspace: ResourceMut<Workspace>) {
     let node = PlatformManager::read()
         .get(PlatformType::Node)?
         .get_tool()?

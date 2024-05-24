@@ -5,7 +5,7 @@ use starbase::system;
 use tracing::warn;
 
 #[system]
-pub async fn dep_graph(args: ArgsRef<ActionGraphArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn dep_graph(args: Args<ActionGraphArgs>, workspace: ResourceMut<Workspace>) {
     warn!(
         "This command is deprecated. Use {} instead.",
         color::shell("moon action-graph")

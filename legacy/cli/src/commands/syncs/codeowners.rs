@@ -16,7 +16,7 @@ pub struct SyncCodeownersArgs {
 }
 
 #[system]
-pub async fn sync(args: ArgsRef<SyncCodeownersArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn sync(args: Args<SyncCodeownersArgs>, workspace: ResourceMut<Workspace>) {
     let done = create_progress_bar("Syncing code owners...");
 
     if args.clean {

@@ -178,7 +178,7 @@ pub async fn init_tool(
 
 #[system]
 pub async fn init(
-    args: ArgsRef<InitArgs>,
+    args: Args<InitArgs>,
     moon_env: StateRef<MoonEnv>,
     console: ResourceRef<Console>,
 ) {

@@ -9,8 +9,8 @@ use std::sync::Arc;
 pub async fn internal_sync(resources: Arc<ResourceManager>) -> SystemResult {
     let done = create_progress_bar("Syncing projects...");
 
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let console = resources.get_async::<Console>().await;
+    let mut workspace = resources.get::<Workspace>().await;
+    let console = resources.get::<Console>().await;
     let project_graph = generate_project_graph(&mut workspace).await?;
 
     let mut project_count = 0;

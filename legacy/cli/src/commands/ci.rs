@@ -239,9 +239,9 @@ fn generate_action_graph(
 }
 
 #[system]
-pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resources: Resources) {
-    let mut workspace = resources.get_async::<Workspace>().await;
-    let base_console = resources.get_async::<Console>().await;
+pub async fn ci(args: Args<CiArgs>, global_args: StateRef<GlobalArgs>, resources: Resources) {
+    let mut workspace = resources.get::<Workspace>().await;
+    let base_console = resources.get::<Console>().await;
 
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut console = CiConsole {

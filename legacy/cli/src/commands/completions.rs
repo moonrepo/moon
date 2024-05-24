@@ -12,7 +12,7 @@ pub struct CompletionsArgs {
 }
 
 #[system]
-pub async fn completions(args: ArgsRef<CompletionsArgs>, console: ResourceRef<Console>) {
+pub async fn completions(args: Args<CompletionsArgs>, console: ResourceRef<Console>) {
     let Some(shell) = args.shell.or_else(Shell::from_env) else {
         return Err(miette!(
             code = "moon::completions",

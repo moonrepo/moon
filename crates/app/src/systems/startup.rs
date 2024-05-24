@@ -27,12 +27,14 @@ pub fn detect_app_process_info(resources: Resources) {
 
     env::set_var("MOON_VERSION", version);
 
-    resources.set(AppInfo {
-        running_exe: current_exe.clone(),
-        current_exe,
-        global: false,
-        version: Version::parse(version).unwrap(),
-    });
+    resources
+        .set(AppInfo {
+            running_exe: current_exe.clone(),
+            current_exe,
+            global: false,
+            version: Version::parse(version).unwrap(),
+        })
+        .await;
 }
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
@@ -80,7 +82,7 @@ pub fn find_workspace_root(states: States) {
         "Found workspace root",
     );
 
-    states.set(WorkspaceRoot(workspace_root));
+    states.set(WorkspaceRoot(workspace_root)).await;
 }
 
 /// Load the workspace configuration file from the `.moon` directory in the workspace root.
@@ -105,10 +107,12 @@ pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources:
 
     let config = WorkspaceConfig::load(workspace_root, &config_path)?;
 
-    resources.set(Workspace {
-        telemetry: config.telemetry,
-        config,
-    });
+    resources
+        .set(Workspace {
+            telemetry: config.telemetry,
+            config,
+        })
+        .await;
 }
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
@@ -146,11 +150,13 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         ToolchainConfig::load(workspace_root, &config_path, &proto_config)?
     };
 
-    resources.set(Toolchain {
-        config,
-        proto_config,
-        proto_home: get_proto_home()?,
-    });
+    resources
+        .set(Toolchain {
+            config,
+            proto_config,
+            proto_home: get_proto_home()?,
+        })
+        .await;
 }
 
 /// Load the tasks configuration file from the `.moon` directory if it exists.
@@ -179,5 +185,5 @@ pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: Res
         manager.configs.len(),
     );
 
-    resources.set(Tasks { manager });
+    resources.set(Tasks { manager }).await;
 }

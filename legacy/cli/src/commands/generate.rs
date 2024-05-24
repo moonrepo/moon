@@ -14,7 +14,7 @@ pub use moon_codegen::GenerateArgs;
 
 #[system]
 pub async fn generate(
-    args: ArgsRef<GenerateArgs>,
+    args: Args<GenerateArgs>,
     workspace: ResourceRef<Workspace>,
     console: ResourceRef<Console>,
     moon_env: StateRef<MoonEnv>,

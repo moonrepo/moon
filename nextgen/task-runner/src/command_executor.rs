@@ -1,4 +1,4 @@
-use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationType};
+use moon_action::{ActionNode, ActionStatus, Operation, OperationList};
 use moon_action_context::{ActionContext, TargetState};
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -90,8 +90,10 @@ impl<'task> CommandExecutor<'task> {
         self.start_monitoring();
 
         // Execute the command on a loop as an attempt for every retry count we have
+        let command_line = self.get_command_line(context);
+
         let execution_error: Option<miette::Report> = loop {
-            let mut attempt = Operation::new(OperationType::TaskExecution);
+            let mut attempt = Operation::task_execution(&command_line);
             report_item.attempt_current = self.attempt_index;
 
             debug!(
@@ -106,7 +108,7 @@ impl<'task> CommandExecutor<'task> {
                 .reporter
                 .on_task_started(&self.task.target, &attempt, &report_item)?;
 
-            self.print_command(context)?;
+            self.print_command_line(&command_line)?;
 
             // Attempt to execute command
             let mut command = self.command.create_async();
@@ -271,26 +273,26 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
-    fn print_command(&self, context: &ActionContext) -> miette::Result<()> {
+    fn get_command_line(&self, context: &ActionContext) -> String {
+        let mut args = vec![&self.task.command];
+        args.extend(&self.task.args);
+
+        if context.should_inherit_args(&self.task.target) {
+            args.extend(&context.passthrough_args);
+        }
+
+        join_args(args)
+    }
+
+    fn print_command_line(&self, command_line: &str) -> miette::Result<()> {
         if !self.workspace.config.runner.log_running_command {
             return Ok(());
         }
 
-        let task = &self.task;
-
-        let mut args = vec![&task.command];
-        args.extend(&task.args);
-
-        if context.should_inherit_args(&task.target) {
-            args.extend(&context.passthrough_args);
-        }
-
-        let command_line = join_args(args);
-
         let message = color::muted_light(self.command.inspect().format_command(
-            &command_line,
+            command_line,
             &self.workspace.root,
-            Some(if task.options.run_from_workspace_root {
+            Some(if self.task.options.run_from_workspace_root {
                 &self.workspace.root
             } else {
                 &self.project.root

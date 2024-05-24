@@ -29,13 +29,18 @@ pub async fn run_task(
 
     let task = project.get_task(&target.task_id)?;
 
+    // Must be set before running the task in case it fails and
+    // and error is bubbled up the stack
     action.allow_failure = task.options.allow_failure;
 
     let result = TaskRunner::new(&workspace, project, task, console)?
         .run(&context, &action.node)
         .await?;
+    let operations = result.operations;
 
-    action.set_operations(result.operations, &task.command);
+    action.flaky = operations.is_flaky();
+    action.status = operations.get_final_status();
+    action.operations = operations;
 
     if action.has_failed() && action.allow_failure {
         warn!(

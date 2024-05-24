@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_action::{ActionStatus, OperationType};
+use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
@@ -188,10 +188,10 @@ mod task_runner {
                 let result = runner.run(&context, &node).await.unwrap();
 
                 assert_eq!(result.operations.len(), 4);
-                assert_eq!(result.operations[0].type_of, OperationType::HashGeneration);
-                assert_eq!(result.operations[1].type_of, OperationType::OutputHydration);
-                assert_eq!(result.operations[2].type_of, OperationType::TaskExecution);
-                assert_eq!(result.operations[3].type_of, OperationType::ArchiveCreation);
+                assert!(result.operations[0].meta.is_hash_generation());
+                assert!(result.operations[1].meta.is_output_hydration());
+                assert!(result.operations[2].meta.is_task_execution());
+                assert!(result.operations[3].meta.is_archive_creation());
                 assert_eq!(result.operations[0].status, ActionStatus::Passed);
                 assert_eq!(result.operations[1].status, ActionStatus::Skipped);
                 assert_eq!(result.operations[2].status, ActionStatus::Passed);
@@ -215,8 +215,8 @@ mod task_runner {
 
                 assert_eq!(before.hash, result.hash);
                 assert_eq!(result.operations.len(), 2);
-                assert_eq!(result.operations[0].type_of, OperationType::HashGeneration);
-                assert_eq!(result.operations[1].type_of, OperationType::OutputHydration);
+                assert!(result.operations[0].meta.is_hash_generation());
+                assert!(result.operations[1].meta.is_output_hydration());
                 assert_eq!(result.operations[0].status, ActionStatus::Passed);
                 assert_eq!(result.operations[1].status, ActionStatus::Cached);
             }
@@ -299,7 +299,7 @@ mod task_runner {
                 assert!(result
                     .operations
                     .iter()
-                    .all(|op| matches!(op.type_of, OperationType::TaskExecution)));
+                    .all(|op| op.meta.is_task_execution()));
             }
 
             #[tokio::test]
@@ -314,13 +314,13 @@ mod task_runner {
                 let result = runner.run(&context, &node).await.unwrap();
 
                 assert_eq!(result.operations.len(), 1);
-                assert_eq!(result.operations[0].type_of, OperationType::TaskExecution);
+                assert!(result.operations[0].meta.is_task_execution());
                 assert_eq!(result.operations[0].status, ActionStatus::Passed);
 
                 let result = runner.run(&context, &node).await.unwrap();
 
                 assert_eq!(result.operations.len(), 1);
-                assert_eq!(result.operations[0].type_of, OperationType::TaskExecution);
+                assert!(result.operations[0].meta.is_task_execution());
                 assert_eq!(result.operations[0].status, ActionStatus::Passed);
             }
         }
@@ -603,7 +603,7 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::HashGeneration);
+            assert!(operation.meta.is_hash_generation());
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
@@ -713,10 +713,10 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::TaskExecution);
+            assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Passed);
 
-            let output = operation.output.as_ref().unwrap();
+            let output = operation.get_output().unwrap();
 
             assert_eq!(output.exit_code, Some(0));
             assert_eq!(output.stdout.as_ref().unwrap().trim(), "test");
@@ -736,10 +736,10 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::TaskExecution);
+            assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Failed);
 
-            let output = operation.output.as_ref().unwrap();
+            let output = operation.get_output().unwrap();
 
             assert_eq!(output.exit_code, Some(1));
         }
@@ -782,10 +782,9 @@ mod task_runner {
             let operation = runner
                 .operations
                 .iter()
-                .find(|a| matches!(a.type_of, OperationType::MutexAcquisition))
+                .find(|op| op.meta.is_mutex_acquisition())
                 .unwrap();
 
-            assert_eq!(operation.type_of, OperationType::MutexAcquisition);
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
@@ -819,7 +818,7 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::TaskExecution);
+            assert!(operation.meta.is_task_execution());
             assert_eq!(operation.status, ActionStatus::Skipped);
         }
 
@@ -855,7 +854,7 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::NoOperation);
+            assert!(operation.meta.is_no_operation());
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
@@ -895,7 +894,7 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::ArchiveCreation);
+            assert!(operation.meta.is_archive_creation());
             assert_eq!(operation.status, ActionStatus::Passed);
         }
 
@@ -911,7 +910,7 @@ mod task_runner {
 
             let operation = runner.operations.last().unwrap();
 
-            assert_eq!(operation.type_of, OperationType::ArchiveCreation);
+            assert!(operation.meta.is_archive_creation());
             assert_eq!(operation.status, ActionStatus::Skipped);
         }
 
@@ -953,7 +952,7 @@ mod task_runner {
 
                 let operation = runner.operations.last().unwrap();
 
-                assert_eq!(operation.type_of, OperationType::OutputHydration);
+                assert!(operation.meta.is_output_hydration());
                 assert_eq!(operation.status, ActionStatus::Skipped);
             }
         }
@@ -983,7 +982,7 @@ mod task_runner {
 
                 let operation = runner.operations.last().unwrap();
 
-                assert_eq!(operation.type_of, OperationType::OutputHydration);
+                assert!(operation.meta.is_output_hydration());
                 assert_eq!(operation.status, ActionStatus::Cached);
             }
 
@@ -1032,7 +1031,7 @@ mod task_runner {
 
                 let operation = runner.operations.last().unwrap();
 
-                assert_eq!(operation.type_of, OperationType::OutputHydration);
+                assert!(operation.meta.is_output_hydration());
                 assert_eq!(operation.status, ActionStatus::Cached);
             }
 
@@ -1085,7 +1084,7 @@ mod task_runner {
                 assert!(result);
 
                 let operation = runner.operations.last().unwrap();
-                let output = operation.output.as_ref().unwrap();
+                let output = operation.get_output().unwrap();
 
                 assert_eq!(output.exit_code.unwrap(), 0);
                 assert_eq!(output.stderr.as_deref().unwrap(), "stderr");

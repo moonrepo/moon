@@ -1,5 +1,6 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
+use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
@@ -337,15 +338,13 @@ impl Platform for NodePlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<Vec<Operation>> {
         actions::install_deps(
             self.toolchain.get_for_version(&runtime.requirement)?,
             working_dir,
             &self.console,
         )
-        .await?;
-
-        Ok(())
+        .await
     }
 
     async fn sync_project(

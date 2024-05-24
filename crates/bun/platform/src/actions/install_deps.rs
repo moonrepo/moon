@@ -1,3 +1,4 @@
+use moon_action::Operation;
 use moon_bun_tool::BunTool;
 use moon_console::{Checkpoint, Console};
 use moon_lang::has_vendor_installed_dependencies;
@@ -12,7 +13,9 @@ pub async fn install_deps(
     bun: &BunTool,
     working_dir: &Path,
     console: &Console,
-) -> miette::Result<()> {
+) -> miette::Result<Vec<Operation>> {
+    let mut operations = vec![];
+
     // When in CI, we can avoid installing dependencies because
     // we can assume they've already been installed before moon runs!
     if is_ci() && has_vendor_installed_dependencies(working_dir, "node_modules") {
@@ -21,7 +24,7 @@ pub async fn install_deps(
             "In a CI environment and dependencies already exist, skipping install"
         );
 
-        return Ok(());
+        return Ok(operations);
     }
 
     debug!(target: LOG_TARGET, "Installing dependencies");
@@ -30,8 +33,11 @@ pub async fn install_deps(
         .out
         .print_checkpoint(Checkpoint::Setup, "bun install")?;
 
-    bun.install_dependencies(&(), working_dir, !is_test_env())
-        .await?;
+    operations.push(
+        Operation::task_execution("bun install")
+            .track_async(|| bun.install_dependencies(&(), working_dir, !is_test_env()))
+            .await?,
+    );
 
-    Ok(())
+    Ok(operations)
 }

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
@@ -115,8 +116,8 @@ pub trait Platform: Send + Sync {
         context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> miette::Result<()> {
-        Ok(())
+    ) -> miette::Result<Vec<Operation>> {
+        Ok(vec![])
     }
 
     /// Sync a project (and its dependencies) when applicable.

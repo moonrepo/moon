@@ -22,12 +22,16 @@ export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 
 export type TaskOptionEnvFile = boolean | string | string[];
 
+/** The strategy in which to merge a specific task option. */
 export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 
+/** The style in which task output will be printed to the console. */
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
+/** A list of available shells on Unix. */
 export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'zsh';
 
+/** A list of available shells on Windows. */
 export type TaskWindowsShell = 'bash' | 'pwsh';
 
 /** Options to control task inheritance and execution. */
@@ -131,8 +135,10 @@ export interface TaskOptionsConfig {
 	windowsShell: TaskWindowsShell | null;
 }
 
+/** Platforms that each programming language can belong to. */
 export type PlatformType = 'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown';
 
+/** The type of task. */
 export type TaskType = 'build' | 'run' | 'test';
 
 /** Configures a task to be ran within the action pipeline. */

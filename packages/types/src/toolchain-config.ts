@@ -2,6 +2,7 @@
 
 /* eslint-disable */
 
+/** Formats that a `package.json` version dependency can be. */
 export type NodeVersionFormat =
 	| 'file'
 	| 'link'
@@ -12,6 +13,10 @@ export type NodeVersionFormat =
 	| 'workspace'
 	| 'workspace-caret'
 	| 'workspace-tilde';
+
+export type PluginLocator = string;
+
+export type UnresolvedVersionSpec = string;
 
 /**
  * Configures and enables the Bun platform.
@@ -30,7 +35,7 @@ export interface BunConfig {
 	/** List of arguments to append to `bun install` commands. */
 	installArgs: string[];
 	/** Location of the WASM plugin to use for Bun support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/**
 	 * Assumes only the root `package.json` is used for dependencies.
 	 * Can be used to support the "one version policy" pattern.
@@ -48,7 +53,7 @@ export interface BunConfig {
 	 *
 	 * @envvar MOON_BUN_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
 /** Configures to a tool-specific binary to install. */
@@ -81,13 +86,13 @@ export interface DenoConfig {
 	/** Requires and forces the use of `deno.lock` files. */
 	lockfile: boolean;
 	/** Location of the WASM plugin to use for Deno support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/**
 	 * The version of Deno to download, install, and run `deno` tasks with.
 	 *
 	 * @envvar MOON_DENO_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
 /** Options for Bun, when used as a package manager. */
@@ -95,13 +100,13 @@ export interface BunpmConfig {
 	/** List of arguments to append to `bun install` commands. */
 	installArgs: string[];
 	/** Location of the WASM plugin to use for Bun support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/**
 	 * The version of Bun to download, install, and run `bun` tasks with.
 	 *
 	 * @envvar MOON_BUN_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
 /** Options for npm, when used as a package manager. */
@@ -109,15 +114,16 @@ export interface NpmConfig {
 	/** List of arguments to append to `npm install` commands. */
 	installArgs: string[];
 	/** Location of the WASM plugin to use for npm support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/**
 	 * The version of npm to download, install, and run `npm` tasks with.
 	 *
 	 * @envvar MOON_NPM_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
+/** The available package managers for Node.js. */
 export type NodePackageManager = 'bun' | 'npm' | 'pnpm' | 'yarn';
 
 /** Options for pnpm, when used as a package manager. */
@@ -125,15 +131,16 @@ export interface PnpmConfig {
 	/** List of arguments to append to `pnpm install` commands. */
 	installArgs: string[];
 	/** Location of the WASM plugin to use for pnpm support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/**
 	 * The version of pnpm to download, install, and run `pnpm` tasks with.
 	 *
 	 * @envvar MOON_PNPM_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
+/** The available version managers for Node.js. */
 export type NodeVersionManager = 'nodenv' | 'nvm';
 
 /** Options for Yarn, when used as a package manager. */
@@ -141,7 +148,7 @@ export interface YarnConfig {
 	/** List of arguments to append to `yarn install` commands. */
 	installArgs: string[];
 	/** Location of the WASM plugin to use for Yarn support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/** Plugins to automatically install for Yarn v2 and above. */
 	plugins: string[];
 	/**
@@ -149,7 +156,7 @@ export interface YarnConfig {
 	 *
 	 * @envvar MOON_YARN_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
 /**
@@ -195,7 +202,7 @@ export interface NodeConfig {
 	 */
 	packageManager: NodePackageManager;
 	/** Location of the WASM plugin to use for Node.js support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/** Options for pnpm, when used as a package manager. */
 	pnpm: PnpmConfig | null;
 	/**
@@ -221,7 +228,7 @@ export interface NodeConfig {
 	 *
 	 * @envvar MOON_NODE_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 	/** Options for Yarn, when used as a package manager. */
 	yarn: YarnConfig | null;
 }
@@ -236,7 +243,7 @@ export interface RustConfig {
 	/** Rust components to automatically install. */
 	components: string[];
 	/** Location of the WASM plugin to use for Rust support. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 	/** When `version` is defined, syncs the version to `rust-toolchain.toml`. */
 	syncToolchainConfig: boolean;
 	/** Rust targets to automatically install. */
@@ -246,7 +253,7 @@ export interface RustConfig {
 	 *
 	 * @envvar MOON_RUST_VERSION
 	 */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
 /**
@@ -354,7 +361,7 @@ export interface PartialBunConfig {
 	/** List of arguments to append to `bun install` commands. */
 	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for Bun support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/**
 	 * Assumes only the root `package.json` is used for dependencies.
 	 * Can be used to support the "one version policy" pattern.
@@ -372,7 +379,7 @@ export interface PartialBunConfig {
 	 *
 	 * @envvar MOON_BUN_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /** Configures to a tool-specific binary to install. */
@@ -405,13 +412,13 @@ export interface PartialDenoConfig {
 	/** Requires and forces the use of `deno.lock` files. */
 	lockfile?: boolean | null;
 	/** Location of the WASM plugin to use for Deno support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/**
 	 * The version of Deno to download, install, and run `deno` tasks with.
 	 *
 	 * @envvar MOON_DENO_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /** Options for Bun, when used as a package manager. */
@@ -419,13 +426,13 @@ export interface PartialBunpmConfig {
 	/** List of arguments to append to `bun install` commands. */
 	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for Bun support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/**
 	 * The version of Bun to download, install, and run `bun` tasks with.
 	 *
 	 * @envvar MOON_BUN_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /** Options for npm, when used as a package manager. */
@@ -433,13 +440,13 @@ export interface PartialNpmConfig {
 	/** List of arguments to append to `npm install` commands. */
 	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for npm support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/**
 	 * The version of npm to download, install, and run `npm` tasks with.
 	 *
 	 * @envvar MOON_NPM_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /** Options for pnpm, when used as a package manager. */
@@ -447,13 +454,13 @@ export interface PartialPnpmConfig {
 	/** List of arguments to append to `pnpm install` commands. */
 	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for pnpm support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/**
 	 * The version of pnpm to download, install, and run `pnpm` tasks with.
 	 *
 	 * @envvar MOON_PNPM_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /** Options for Yarn, when used as a package manager. */
@@ -461,7 +468,7 @@ export interface PartialYarnConfig {
 	/** List of arguments to append to `yarn install` commands. */
 	installArgs?: string[] | null;
 	/** Location of the WASM plugin to use for Yarn support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/** Plugins to automatically install for Yarn v2 and above. */
 	plugins?: string[] | null;
 	/**
@@ -469,7 +476,7 @@ export interface PartialYarnConfig {
 	 *
 	 * @envvar MOON_YARN_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /**
@@ -515,7 +522,7 @@ export interface PartialNodeConfig {
 	 */
 	packageManager?: NodePackageManager | null;
 	/** Location of the WASM plugin to use for Node.js support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/** Options for pnpm, when used as a package manager. */
 	pnpm?: PartialPnpmConfig | null;
 	/**
@@ -541,7 +548,7 @@ export interface PartialNodeConfig {
 	 *
 	 * @envvar MOON_NODE_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 	/** Options for Yarn, when used as a package manager. */
 	yarn?: PartialYarnConfig | null;
 }
@@ -556,7 +563,7 @@ export interface PartialRustConfig {
 	/** Rust components to automatically install. */
 	components?: string[] | null;
 	/** Location of the WASM plugin to use for Rust support. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 	/** When `version` is defined, syncs the version to `rust-toolchain.toml`. */
 	syncToolchainConfig?: boolean | null;
 	/** Rust targets to automatically install. */
@@ -566,7 +573,7 @@ export interface PartialRustConfig {
 	 *
 	 * @envvar MOON_RUST_VERSION
 	 */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /**

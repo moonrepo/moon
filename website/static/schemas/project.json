@@ -205,6 +205,7 @@
       "additionalProperties": false
     },
     "DependencyScope": {
+      "description": "The scope and or relationship of the dependency.",
       "type": "string",
       "enum": [
         "build",
@@ -215,6 +216,7 @@
       ]
     },
     "DependencySource": {
+      "description": "The source where the dependency comes from. Either explicitly defined in configuration, or implicitly derived from source files.",
       "type": "string",
       "enum": [
         "explicit",
@@ -222,6 +224,7 @@
       ]
     },
     "LanguageType": {
+      "description": "Supported programming languages that each project can be written in.",
       "anyOf": [
         {
           "title": "Bash",
@@ -352,6 +355,7 @@
       ]
     },
     "PlatformType": {
+      "description": "Platforms that each programming language can belong to.",
       "type": "string",
       "enum": [
         "bun",
@@ -440,7 +444,7 @@
           "description": "Version of the tool this project will use.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -603,6 +607,7 @@
       "markdownDescription": "Overrides top-level `typescript` settings."
     },
     "ProjectType": {
+      "description": "The type of project, for categorizing.",
       "type": "string",
       "enum": [
         "application",
@@ -673,6 +678,7 @@
       "additionalProperties": false
     },
     "StackType": {
+      "description": "The technology stack of the project, for categorizing.",
       "type": "string",
       "enum": [
         "backend",
@@ -900,6 +906,7 @@
       "additionalProperties": false
     },
     "TaskMergeStrategy": {
+      "description": "The strategy in which to merge a specific task option.",
       "type": "string",
       "enum": [
         "append",
@@ -1228,6 +1235,7 @@
       "additionalProperties": false
     },
     "TaskOutputStyle": {
+      "description": "The style in which task output will be printed to the console.",
       "type": "string",
       "enum": [
         "buffer",
@@ -1238,6 +1246,7 @@
       ]
     },
     "TaskType": {
+      "description": "The type of task.",
       "type": "string",
       "enum": [
         "build",
@@ -1246,6 +1255,7 @@
       ]
     },
     "TaskUnixShell": {
+      "description": "A list of available shells on Unix.",
       "type": "string",
       "enum": [
         "bash",
@@ -1255,11 +1265,15 @@
       ]
     },
     "TaskWindowsShell": {
+      "description": "A list of available shells on Windows.",
       "type": "string",
       "enum": [
         "bash",
         "pwsh"
       ]
+    },
+    "UnresolvedVersionSpec": {
+      "type": "string"
     }
   }
 }

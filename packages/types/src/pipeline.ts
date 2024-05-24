@@ -25,10 +25,10 @@ export interface Attempt {
 // OPERATIONS
 
 export interface OperationMetaBaseOutput {
-	command: string | null;
-	exitCode: number | null;
-	stderr: string | null;
-	stdout: string | null;
+	command?: string | null;
+	exitCode?: number | null;
+	stderr?: string | null;
+	stdout?: string | null;
 }
 
 export interface OperationMetaArchiveCreation {

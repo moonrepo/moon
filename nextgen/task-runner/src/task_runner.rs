@@ -481,7 +481,7 @@ impl<'task> TaskRunner<'task> {
         debug!(task = self.task.target.as_str(), "Skipping task");
 
         self.operations.push(Operation::new_finished(
-            OperationMeta::NoOperation,
+            OperationMeta::TaskExecution(Default::default()),
             ActionStatus::Skipped,
         ));
 
@@ -497,7 +497,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         self.operations.push(Operation::new_finished(
-            OperationMeta::TaskExecution(Default::default()),
+            OperationMeta::NoOperation,
             ActionStatus::Passed,
         ));
 

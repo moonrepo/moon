@@ -116,12 +116,6 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
-    pub fn set_operations(&mut self, operations: OperationList) {
-        self.flaky = operations.is_flaky();
-        self.status = operations.get_final_status();
-        self.operations = operations;
-    }
-
     pub fn should_abort(&self) -> bool {
         matches!(self.status, ActionStatus::FailedAndAbort)
     }

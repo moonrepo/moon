@@ -264,6 +264,10 @@ export type PartialProjectDependsOn = string | PartialDependencyConfig;
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
+/**
+ * Defines ownership of source code within the current project, by mapping
+ * file paths and globs to owners. An owner is either a user, team, or group.
+ */
 export interface PartialOwnersConfig {
 	/**
 	 * Bitbucket only. A mapping of custom groups (prefixed with `@@@`),
@@ -332,6 +336,7 @@ export interface PartialProjectToolchainTypeScriptConfig {
 	syncProjectReferencesToPaths?: boolean | null;
 }
 
+/** Overrides top-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainConfig {
 	/** Overrides `bun` settings. */
 	bun?: PartialProjectToolchainCommonToolConfig | null;
@@ -345,6 +350,7 @@ export interface PartialProjectToolchainConfig {
 	typescript?: PartialProjectToolchainTypeScriptConfig | null;
 }
 
+/** Controls how tasks are inherited. */
 export interface PartialProjectWorkspaceInheritedTasksConfig {
 	/** Excludes inheriting tasks by ID. */
 	exclude?: string[] | null;
@@ -358,6 +364,7 @@ export interface PartialProjectWorkspaceInheritedTasksConfig {
 	rename?: Record<string, string> | null;
 }
 
+/** Overrides top-level workspace settings, scoped to this project. */
 export interface PartialProjectWorkspaceConfig {
 	/** Controls how tasks are inherited. */
 	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;

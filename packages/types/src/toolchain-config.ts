@@ -435,6 +435,7 @@ export interface PartialBunpmConfig {
 	version?: UnresolvedVersionSpec | null;
 }
 
+/** Options for npm, when used as a package manager. */
 export interface PartialNpmConfig {
 	/** List of arguments to append to `npm install` commands. */
 	installArgs?: string[] | null;

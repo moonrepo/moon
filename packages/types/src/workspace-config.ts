@@ -259,6 +259,7 @@ export interface WorkspaceConfig {
 	versionConstraint: string | null;
 }
 
+/** Configures code ownership rules for generating a `CODEOWNERS` file. */
 export interface PartialCodeownersConfig {
 	/**
 	 * Paths that are applied globally to all projects. Can be relative
@@ -278,6 +279,7 @@ export interface PartialCodeownersConfig {
 	syncOnRun?: boolean | null;
 }
 
+/** Configures boundaries and constraints between projects. */
 export interface PartialConstraintsConfig {
 	/**
 	 * Enforces relationships between projects based on each project's
@@ -293,6 +295,7 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<string, string[]> | null;
 }
 
+/** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
 	/**
 	 * @default true
@@ -321,6 +324,7 @@ export interface PartialExtensionConfig {
 	plugin?: PluginLocator | null;
 }
 
+/** Configures the generator for scaffolding from templates. */
 export interface PartialGeneratorConfig {
 	/**
 	 * The list of file paths, relative from the workspace root,
@@ -329,6 +333,7 @@ export interface PartialGeneratorConfig {
 	templates?: string[] | null;
 }
 
+/** Configures aspects of the content hashing engine. */
 export interface PartialHasherConfig {
 	/**
 	 * The number of files to include in each hash operation.
@@ -368,6 +373,7 @@ export interface PartialHasherConfig {
 	warnOnMissingInputs?: boolean | null;
 }
 
+/** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl?: string | null;
@@ -389,6 +395,7 @@ export type PartialWorkspaceProjects =
 	| string[]
 	| Record<string, string>;
 
+/** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PartialRunnerConfig {
 	/**
 	 * List of target's for tasks without outputs, that should be
@@ -417,6 +424,7 @@ export interface PartialRunnerConfig {
 	logRunningCommand?: boolean | null;
 }
 
+/** Configures the version control system (VCS). */
 export interface PartialVcsConfig {
 	/**
 	 * The default branch / base.

@@ -50,7 +50,7 @@ reqwest = { version = "0.12.4", default-features = false, features = [
 ] }
 rustc-hash = "1.1.0"
 scc = "2.1.1"
-schematic = { version = "0.16.1", default-features = false, features = [
+schematic = { version = "0.16.3", default-features = false, features = [
 	"schema",
 ] }
 semver = "1.0.23"

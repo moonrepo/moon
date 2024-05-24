@@ -3,9 +3,15 @@
 /* eslint-disable */
 
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { UnresolvedVersionSpec } from './toolchain-config';
 
+/** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
 
+/**
+ * The source where the dependency comes from. Either explicitly
+ * defined in configuration, or implicitly derived from source files.
+ */
 export type DependencySource = 'explicit' | 'implicit';
 
 /** Expanded information about a project dependency. */
@@ -30,6 +36,7 @@ export interface DependencyConfig {
 
 export type ProjectDependsOn = string | DependencyConfig;
 
+/** Supported programming languages that each project can be written in. */
 export type LanguageType =
 	| 'bash'
 	| 'batch'
@@ -95,12 +102,13 @@ export interface ProjectMetadataConfig {
 	owner: string | null;
 }
 
+/** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */
-	version: string | null;
+	version: UnresolvedVersionSpec | null;
 }
 
 /** Overrides top-level `typescript` settings. */
@@ -133,6 +141,7 @@ export interface ProjectToolchainConfig {
 	typescript: ProjectToolchainTypeScriptConfig | null;
 }
 
+/** The type of project, for categorizing. */
 export type ProjectType =
 	| 'application'
 	| 'automation'
@@ -308,7 +317,7 @@ export interface PartialProjectMetadataConfig {
 /** Overrides top-level toolchain settings. */
 export interface PartialProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */
-	version?: string | null;
+	version?: UnresolvedVersionSpec | null;
 }
 
 /** Overrides top-level `typescript` settings. */

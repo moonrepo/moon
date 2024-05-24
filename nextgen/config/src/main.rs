@@ -55,15 +55,22 @@ fn generate_project() {
                     "TaskUnixShell".into(),
                     "TaskWindowsShell".into(),
                     "TaskType".into(),
+                    "UnresolvedVersionSpec".into(),
                 ],
-                external_types: HashMap::from_iter([(
-                    "./tasks-config".into(),
-                    vec![
-                        "PlatformType".into(),
-                        "PartialTaskConfig".into(),
-                        "TaskConfig".into(),
-                    ],
-                )]),
+                external_types: HashMap::from_iter([
+                    (
+                        "./tasks-config".into(),
+                        vec![
+                            "PlatformType".into(),
+                            "PartialTaskConfig".into(),
+                            "TaskConfig".into(),
+                        ],
+                    ),
+                    (
+                        "./toolchain-config".into(),
+                        vec!["UnresolvedVersionSpec".into()],
+                    ),
+                ]),
                 ..Default::default()
             }),
         )
@@ -163,7 +170,14 @@ fn generate_workspace() {
     generator
         .generate(
             PathBuf::from("packages/types/src/workspace-config.ts"),
-            TypeScriptRenderer::default(),
+            TypeScriptRenderer::new(TypeScriptOptions {
+                exclude_references: vec!["PluginLocator".into()],
+                external_types: HashMap::from_iter([(
+                    "./toolchain-config".into(),
+                    vec!["PluginLocator".into()],
+                )]),
+                ..Default::default()
+            }),
         )
         .unwrap();
 }

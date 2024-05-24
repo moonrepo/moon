@@ -5,7 +5,7 @@ use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::{IndexMap, IndexSet};
-use schematic::{merge, validate, Config, ConfigError, MergeResult};
+use schematic::{merge, validate, Config, MergeResult};
 use std::collections::BTreeMap;
 use std::hash::{BuildHasherDefault, Hash};
 use std::path::PathBuf;
@@ -248,7 +248,7 @@ impl InheritedTasksManager {
     ) -> miette::Result<InheritedTasksResult> {
         use moon_common::color;
         use moon_common::path::standardize_separators;
-        use schematic::PartialConfig;
+        use schematic::{ConfigError, PartialConfig};
 
         let lookup_order = self.get_lookup_order(platform, language, stack, project, tags);
         let lookup_key = lookup_order.join(":");
@@ -344,6 +344,7 @@ fn load_dir(
     workspace_root: &Path,
     dir: &Path,
 ) -> miette::Result<()> {
+    use schematic::ConfigError;
     use std::fs;
 
     for entry in fs::read_dir(dir)

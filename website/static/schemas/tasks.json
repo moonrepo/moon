@@ -77,6 +77,7 @@
   "additionalProperties": false,
   "definitions": {
     "PlatformType": {
+      "description": "Platforms that each programming language can belong to.",
       "type": "string",
       "enum": [
         "bun",
@@ -305,6 +306,7 @@
       "additionalProperties": false
     },
     "TaskMergeStrategy": {
+      "description": "The strategy in which to merge a specific task option.",
       "type": "string",
       "enum": [
         "append",
@@ -633,6 +635,7 @@
       "additionalProperties": false
     },
     "TaskOutputStyle": {
+      "description": "The style in which task output will be printed to the console.",
       "type": "string",
       "enum": [
         "buffer",
@@ -643,6 +646,7 @@
       ]
     },
     "TaskType": {
+      "description": "The type of task.",
       "type": "string",
       "enum": [
         "build",
@@ -651,6 +655,7 @@
       ]
     },
     "TaskUnixShell": {
+      "description": "A list of available shells on Unix.",
       "type": "string",
       "enum": [
         "bash",
@@ -660,6 +665,7 @@
       ]
     },
     "TaskWindowsShell": {
+      "description": "A list of available shells on Windows.",
       "type": "string",
       "enum": [
         "bash",

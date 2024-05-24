@@ -2,6 +2,9 @@
 
 /* eslint-disable */
 
+import type { PluginLocator } from './toolchain-config';
+
+/** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-name';
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -66,7 +69,7 @@ export interface ExtensionConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config: Record<string, unknown>;
 	/** Location of the WASM plugin to use. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -78,8 +81,10 @@ export interface GeneratorConfig {
 	templates: string[];
 }
 
+/** The optimization to use when hashing. */
 export type HasherOptimization = 'accuracy' | 'performance';
 
+/** The strategy to use when walking the file system. */
 export type HasherWalkStrategy = 'glob' | 'vcs';
 
 /** Configures aspects of the content hashing engine. */
@@ -170,8 +175,13 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+/** The VCS being utilized by the repository. */
 export type VcsManager = 'git';
 
+/**
+ * The upstream version control provider, where the repository
+ * source code is stored.
+ */
 export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
@@ -311,7 +321,7 @@ export interface PartialExtensionConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config?: Record<string, unknown> | null;
 	/** Location of the WASM plugin to use. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 }
 
 /** Configures the generator for scaffolding from templates. */

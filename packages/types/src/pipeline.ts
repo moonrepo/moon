@@ -22,29 +22,63 @@ export interface Attempt {
 	stdout: string | null;
 }
 
-export type OperationType =
-	| 'archive-creation'
-	| 'hash-generation'
-	| 'mutex-acquisition'
-	| 'no-operation'
-	| 'output-hydration'
-	| 'task-execution';
+// OPERATIONS
 
-export interface OperationOutput {
-	exitCode: number | null;
-	stderr: string | null;
-	stdout: string | null;
+export interface OperationMetaBaseOutput {
+	command?: string | null;
+	exitCode?: number | null;
+	stderr?: string | null;
+	stdout?: string | null;
 }
+
+export interface OperationMetaArchiveCreation {
+	type: 'archive-creation';
+}
+
+export interface OperationMetaHashGeneration {
+	type: 'hash-generation';
+	hash: string;
+}
+
+export interface OperationMetaMutexAcquisition {
+	type: 'mutex-acquisition';
+}
+
+export interface OperationMetaNoOperation {
+	type: 'no-operation';
+}
+
+export interface OperationMetaOutputHydration extends OperationMetaBaseOutput {
+	type: 'output-hydration';
+}
+
+export interface OperationMetaSyncOperation {
+	type: 'sync-operation';
+	label: string;
+}
+
+export interface OperationMetaTaskExecution extends OperationMetaBaseOutput {
+	type: 'task-execution';
+}
+
+export type OperationMeta =
+	| OperationMetaArchiveCreation
+	| OperationMetaHashGeneration
+	| OperationMetaMutexAcquisition
+	| OperationMetaNoOperation
+	| OperationMetaOutputHydration
+	| OperationMetaSyncOperation
+	| OperationMetaTaskExecution;
 
 export interface Operation {
 	duration: Duration | null;
 	finishedAt: string | null;
-	hash: string | null;
-	output: OperationOutput | null;
+	meta: OperationMeta;
 	startedAt: string;
 	status: ActionStatus;
-	type: OperationType;
 }
+
+// ACTIONS
 
 export interface Action {
 	allowFailure: boolean;

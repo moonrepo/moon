@@ -30,6 +30,7 @@ jobs:
       - uses: actions/setup-node@v4
       - uses: moonrepo/setup-rust@v1
         with:
+          cache: false # Temporary, CI running out of space
           cache-base: '^(master|develop-)'
       - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:

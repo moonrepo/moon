@@ -1,49 +1,12 @@
 use crate::action::ActionStatus;
+use crate::operation_meta::*;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
 use std::mem;
 use std::process::Output;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
-
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum OperationType {
-    // Processes
-    #[default]
-    NoOperation,
-    OutputHydration,
-    TaskExecution,
-    // Metrics
-    ArchiveCreation,
-    HashGeneration,
-    MutexAcquisition,
-}
-
-#[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OperationOutput {
-    pub exit_code: Option<i32>,
-
-    pub stderr: Option<Arc<String>>,
-
-    pub stdout: Option<Arc<String>>,
-}
-
-impl OperationOutput {
-    pub fn set_stderr(&mut self, output: String) {
-        if !output.is_empty() {
-            self.stderr = Some(Arc::new(output));
-        }
-    }
-
-    pub fn set_stdout(&mut self, output: String) {
-        if !output.is_empty() {
-            self.stdout = Some(Arc::new(output));
-        }
-    }
-}
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -52,9 +15,7 @@ pub struct Operation {
 
     pub finished_at: Option<NaiveDateTime>,
 
-    pub hash: Option<String>,
-
-    pub output: Option<OperationOutput>,
+    pub meta: OperationMeta,
 
     pub started_at: NaiveDateTime,
 
@@ -62,45 +23,49 @@ pub struct Operation {
     pub start_time: Option<Instant>,
 
     pub status: ActionStatus,
-
-    #[serde(rename = "type")]
-    pub type_of: OperationType,
 }
 
 impl Operation {
-    pub fn new(type_of: OperationType) -> Self {
+    pub fn new(meta: OperationMeta) -> Self {
         Operation {
             duration: None,
             finished_at: None,
-            hash: None,
-            output: None,
+            meta,
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
-            type_of,
         }
     }
 
-    pub fn new_finished(type_of: OperationType, status: ActionStatus) -> Self {
+    pub fn new_finished(meta: OperationMeta, status: ActionStatus) -> Self {
         let time = now_timestamp();
 
         Operation {
             duration: None,
-            output: None,
             finished_at: Some(time),
-            hash: None,
+            meta,
             started_at: time,
             start_time: None,
             status,
-            type_of,
         }
     }
 
-    pub fn get_exit_code(&self) -> i32 {
-        self.output
-            .as_ref()
-            .and_then(|exec| exec.exit_code)
-            .unwrap_or(-1)
+    pub fn get_output(&self) -> Option<&OperationMetaOutput> {
+        match &self.meta {
+            OperationMeta::OutputHydration(output) | OperationMeta::TaskExecution(output) => {
+                Some(output)
+            }
+            _ => None,
+        }
+    }
+
+    pub fn get_output_mut(&mut self) -> Option<&mut OperationMetaOutput> {
+        match &mut self.meta {
+            OperationMeta::OutputHydration(output) | OperationMeta::TaskExecution(output) => {
+                Some(output)
+            }
+            _ => None,
+        }
     }
 
     pub fn finish(&mut self, status: ActionStatus) {
@@ -113,20 +78,17 @@ impl Operation {
     }
 
     pub fn finish_from_output(&mut self, process_output: &mut Output) {
-        let mut output = OperationOutput {
-            exit_code: process_output.status.code(),
-            ..Default::default()
-        };
+        if let Some(output) = self.get_output_mut() {
+            output.exit_code = process_output.status.code();
 
-        output.set_stderr(
-            String::from_utf8(mem::take(&mut process_output.stderr)).unwrap_or_default(),
-        );
+            output.set_stderr(
+                String::from_utf8(mem::take(&mut process_output.stderr)).unwrap_or_default(),
+            );
 
-        output.set_stdout(
-            String::from_utf8(mem::take(&mut process_output.stdout)).unwrap_or_default(),
-        );
-
-        self.output = Some(output);
+            output.set_stdout(
+                String::from_utf8(mem::take(&mut process_output.stdout)).unwrap_or_default(),
+            );
+        }
 
         self.finish(if process_output.status.success() {
             ActionStatus::Passed
@@ -150,9 +112,9 @@ impl Operation {
     }
 
     pub fn has_output(&self) -> bool {
-        self.output.as_ref().is_some_and(|exec| {
-            exec.stderr.as_ref().is_some_and(|err| !err.is_empty())
-                || exec.stdout.as_ref().is_some_and(|out| !out.is_empty())
+        self.get_output().is_some_and(|output| {
+            output.stderr.as_ref().is_some_and(|err| !err.is_empty())
+                || output.stdout.as_ref().is_some_and(|out| !out.is_empty())
         })
     }
 
@@ -161,5 +123,101 @@ impl Operation {
             &self.status,
             ActionStatus::Cached | ActionStatus::CachedFromRemote
         )
+    }
+
+    pub fn track<T, F>(self, func: F) -> miette::Result<Self>
+    where
+        F: FnOnce() -> miette::Result<T>,
+    {
+        self.handle_track(func(), |_| true)
+    }
+
+    pub fn track_with_check<T, F, C>(self, func: F, checker: C) -> miette::Result<Self>
+    where
+        F: FnOnce() -> miette::Result<T>,
+        C: FnOnce(T) -> bool,
+    {
+        self.handle_track(func(), checker)
+    }
+
+    pub async fn track_async<T, F, Fut>(self, func: F) -> miette::Result<Self>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<T>>,
+    {
+        self.handle_track(func().await, |_| true)
+    }
+
+    pub async fn track_async_with_check<T, F, Fut, C>(
+        self,
+        func: F,
+        checker: C,
+    ) -> miette::Result<Self>
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = miette::Result<T>>,
+        C: FnOnce(T) -> bool,
+    {
+        self.handle_track(func().await, checker)
+    }
+
+    fn handle_track<T>(
+        mut self,
+        result: miette::Result<T>,
+        checker: impl FnOnce(T) -> bool,
+    ) -> miette::Result<Self> {
+        match result {
+            Ok(value) => {
+                self.finish(if checker(value) {
+                    ActionStatus::Passed
+                } else {
+                    ActionStatus::Skipped
+                });
+
+                Ok(self)
+            }
+            Err(error) => {
+                self.finish(ActionStatus::Failed);
+
+                Err(error)
+            }
+        }
+    }
+
+    // Constructors
+
+    pub fn archive_creation() -> Self {
+        Self::new(OperationMeta::ArchiveCreation)
+    }
+
+    pub fn hash_generation() -> Self {
+        Self::new(OperationMeta::HashGeneration(Default::default()))
+    }
+
+    pub fn no_operation() -> Self {
+        Self::new(OperationMeta::NoOperation)
+    }
+
+    pub fn mutex_acquisition() -> Self {
+        Self::new(OperationMeta::MutexAcquisition)
+    }
+
+    pub fn output_hydration() -> Self {
+        Self::new(OperationMeta::OutputHydration(Default::default()))
+    }
+
+    pub fn sync_operation(label: impl AsRef<str>) -> Self {
+        Self::new(OperationMeta::SyncOperation(Box::new(OperationMetaLabel {
+            label: label.as_ref().to_owned(),
+        })))
+    }
+
+    pub fn task_execution(command: impl AsRef<str>) -> Self {
+        Self::new(OperationMeta::TaskExecution(Box::new(
+            OperationMetaOutput {
+                command: Some(command.as_ref().to_owned()),
+                ..Default::default()
+            },
+        )))
     }
 }

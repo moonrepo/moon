@@ -108,7 +108,7 @@ impl CacheEngine {
         path: K,
         data: T,
         op: F,
-    ) -> miette::Result<()>
+    ) -> miette::Result<bool>
     where
         K: AsRef<OsStr>,
         T: Serialize,
@@ -126,9 +126,11 @@ impl CacheEngine {
 
             state.data.last_hash = hash;
             state.save()?;
+
+            return Ok(true);
         }
 
-        Ok(())
+        Ok(false)
     }
 
     pub fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {

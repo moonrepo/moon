@@ -1,5 +1,5 @@
 use super::should_skip_action;
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_common::is_docker_container;
@@ -14,7 +14,7 @@ use std::sync::Arc;
 const LOG_TARGET: &str = "moon:action:sync-workspace";
 
 pub async fn sync_workspace(
-    _action: &mut Action,
+    action: &mut Action,
     _context: Arc<ActionContext>,
     workspace: Arc<Workspace>,
     project_graph: Arc<ProjectGraph>,
@@ -47,7 +47,14 @@ pub async fn sync_workspace(
             color::property("codeowners.syncOnRun"),
         );
 
-        sync_codeowners(&workspace, &project_graph, false).await?;
+        action.operations.push(
+            Operation::sync_operation("Codeowners")
+                .track_async_with_check(
+                    || sync_codeowners(&workspace, &project_graph, false),
+                    |result| result.is_some(),
+                )
+                .await?,
+        );
     }
 
     if workspace.config.vcs.sync_hooks {
@@ -58,7 +65,11 @@ pub async fn sync_workspace(
             color::property("vcs.syncHooks"),
         );
 
-        sync_vcs_hooks(&workspace, false).await?;
+        action.operations.push(
+            Operation::sync_operation("VCS hooks")
+                .track_async_with_check(|| sync_vcs_hooks(&workspace, false), |result| result)
+                .await?,
+        );
     }
 
     Ok(ActionStatus::Passed)

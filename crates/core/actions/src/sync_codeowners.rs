@@ -8,7 +8,7 @@ pub async fn sync_codeowners(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     force: bool,
-) -> miette::Result<PathBuf> {
+) -> miette::Result<Option<PathBuf>> {
     let mut generator = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
 
     // Sort the projects based on config
@@ -44,18 +44,21 @@ pub async fn sync_codeowners(
     // Force run the generator and bypass cache
     if force {
         generator.generate()?;
+
+        return Ok(Some(file_path));
     }
     // Only generate if the hash has changed
-    else {
-        workspace
-            .cache_engine
-            .execute_if_changed("codeowners.json", codeowners_hash, || async {
-                generator.generate()
-            })
-            .await?;
+    else if workspace
+        .cache_engine
+        .execute_if_changed("codeowners.json", codeowners_hash, || async {
+            generator.generate()
+        })
+        .await?
+    {
+        return Ok(Some(file_path));
     }
 
-    Ok(file_path)
+    Ok(None)
 }
 
 pub async fn unsync_codeowners(workspace: &Workspace) -> miette::Result<PathBuf> {

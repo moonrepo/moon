@@ -3219,6 +3219,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon",
+ "moon_action",
  "moon_action_context",
  "moon_bun_lang",
  "moon_bun_tool",
@@ -3502,6 +3503,7 @@ name = "moon_deno_platform"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_action",
  "moon_action_context",
  "moon_common",
  "moon_config",
@@ -3683,6 +3685,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon",
+ "moon_action",
  "moon_action_context",
  "moon_common",
  "moon_config",
@@ -3810,6 +3813,7 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "miette",
+ "moon_action",
  "moon_action_context",
  "moon_common",
  "moon_config",
@@ -4024,6 +4028,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon",
+ "moon_action",
  "moon_action_context",
  "moon_common",
  "moon_config",

@@ -1,6 +1,6 @@
 use super::should_skip_action_matching;
 use miette::IntoDiagnostic;
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_cache_item::cache_item;
 use moon_logger::{debug, warn};
@@ -38,7 +38,7 @@ fn get_installation_key(runtime: &Runtime, project: Option<&Project>) -> String 
 }
 
 pub async fn install_deps(
-    _action: &mut Action,
+    action: &mut Action,
     context: Arc<ActionContext>,
     workspace: Arc<Workspace>,
     runtime: &Runtime,
@@ -110,6 +110,8 @@ pub async fn install_deps(
     };
 
     // Determine the working directory and whether lockfiles and manifests have been modified
+    let mut operation = Operation::hash_generation();
+
     let working_dir = project.map(|p| &p.root).unwrap_or_else(|| &workspace.root);
     let manifest_path = working_dir.join(&manifest);
     let lockfile_path = working_dir.join(&lockfile);
@@ -148,6 +150,11 @@ pub async fn install_deps(
     // Install dependencies in the working directory
     let hash = workspace.cache_engine.hash.save_manifest(hasher)?;
 
+    operation.meta.set_hash(&hash);
+    operation.finish(ActionStatus::Passed);
+
+    action.operations.push(operation);
+
     let state_path = format!("deps{runtime}.json");
     let mut state = workspace
         .cache_engine
@@ -175,13 +182,15 @@ pub async fn install_deps(
             color::path(working_dir)
         );
 
-        platform
+        let operations = platform
             .install_deps(&context, runtime, working_dir)
             .await?;
 
         state.data.last_hash = hash;
         state.data.last_install_time = time::now_millis();
         state.save()?;
+
+        action.operations.extend(operations);
 
         env::remove_var("MOON_INSTALLING_DEPS");
 

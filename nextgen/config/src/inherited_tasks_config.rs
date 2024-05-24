@@ -1,3 +1,4 @@
+use crate::config_cache::ConfigCache;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
@@ -96,9 +97,12 @@ impl InheritedTasksConfig {
         use moon_common::color;
         use schematic::ConfigLoader;
 
+        let root = workspace_root.as_ref();
+
         Ok(ConfigLoader::<InheritedTasksConfig>::new()
+            .set_cacher(ConfigCache::new(root))
             .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
-            .set_root(workspace_root.as_ref())
+            .set_root(root)
             .file_optional(check_yml_extension(path.as_ref()))?
             .load_partial(&())?)
     }

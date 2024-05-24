@@ -2,6 +2,9 @@
 
 /* eslint-disable */
 
+import type { PluginLocator } from './toolchain-config';
+
+/** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-name';
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -66,7 +69,7 @@ export interface ExtensionConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config: Record<string, unknown>;
 	/** Location of the WASM plugin to use. */
-	plugin: string | null;
+	plugin: PluginLocator | null;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -78,8 +81,10 @@ export interface GeneratorConfig {
 	templates: string[];
 }
 
+/** The optimization to use when hashing. */
 export type HasherOptimization = 'accuracy' | 'performance';
 
+/** The strategy to use when walking the file system. */
 export type HasherWalkStrategy = 'glob' | 'vcs';
 
 /** Configures aspects of the content hashing engine. */
@@ -170,8 +175,13 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+/** The VCS being utilized by the repository. */
 export type VcsManager = 'git';
 
+/**
+ * The upstream version control provider, where the repository
+ * source code is stored.
+ */
 export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
@@ -249,7 +259,6 @@ export interface WorkspaceConfig {
 	versionConstraint: string | null;
 }
 
-/** Configures code ownership rules for generating a `CODEOWNERS` file. */
 export interface PartialCodeownersConfig {
 	/**
 	 * Paths that are applied globally to all projects. Can be relative
@@ -269,7 +278,6 @@ export interface PartialCodeownersConfig {
 	syncOnRun?: boolean | null;
 }
 
-/** Configures boundaries and constraints between projects. */
 export interface PartialConstraintsConfig {
 	/**
 	 * Enforces relationships between projects based on each project's
@@ -285,7 +293,6 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<string, string[]> | null;
 }
 
-/** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
 	/**
 	 * @default true
@@ -311,10 +318,9 @@ export interface PartialExtensionConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config?: Record<string, unknown> | null;
 	/** Location of the WASM plugin to use. */
-	plugin?: string | null;
+	plugin?: PluginLocator | null;
 }
 
-/** Configures the generator for scaffolding from templates. */
 export interface PartialGeneratorConfig {
 	/**
 	 * The list of file paths, relative from the workspace root,
@@ -323,7 +329,6 @@ export interface PartialGeneratorConfig {
 	templates?: string[] | null;
 }
 
-/** Configures aspects of the content hashing engine. */
 export interface PartialHasherConfig {
 	/**
 	 * The number of files to include in each hash operation.
@@ -363,7 +368,6 @@ export interface PartialHasherConfig {
 	warnOnMissingInputs?: boolean | null;
 }
 
-/** Configures how and where notifications are sent. */
 export interface PartialNotifierConfig {
 	/** A secure URL in which to send webhooks to. */
 	webhookUrl?: string | null;
@@ -385,7 +389,6 @@ export type PartialWorkspaceProjects =
 	| string[]
 	| Record<string, string>;
 
-/** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PartialRunnerConfig {
 	/**
 	 * List of target's for tasks without outputs, that should be
@@ -414,7 +417,6 @@ export interface PartialRunnerConfig {
 	logRunningCommand?: boolean | null;
 }
 
-/** Configures the version control system (VCS). */
 export interface PartialVcsConfig {
 	/**
 	 * The default branch / base.

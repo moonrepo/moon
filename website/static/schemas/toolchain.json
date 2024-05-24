@@ -165,7 +165,7 @@
           "description": "Location of the WASM plugin to use for Bun support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -190,7 +190,7 @@
           "description": "The version of Bun to download, install, and run bun tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -219,7 +219,7 @@
           "description": "Location of the WASM plugin to use for Bun support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -231,7 +231,7 @@
           "description": "The version of Bun to download, install, and run bun tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -272,7 +272,7 @@
           "description": "Location of the WASM plugin to use for Deno support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -284,7 +284,7 @@
           "description": "The version of Deno to download, install, and run deno tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -373,7 +373,7 @@
           "description": "Location of the WASM plugin to use for Node.js support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -424,7 +424,7 @@
           "description": "The version of Node.js to download, install, and run node tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -448,6 +448,7 @@
       "additionalProperties": false
     },
     "NodePackageManager": {
+      "description": "The available package managers for Node.js.",
       "type": "string",
       "enum": [
         "bun",
@@ -457,6 +458,7 @@
       ]
     },
     "NodeVersionFormat": {
+      "description": "Formats that a package.json version dependency can be.",
       "type": "string",
       "enum": [
         "file",
@@ -468,9 +470,11 @@
         "workspace",
         "workspace-caret",
         "workspace-tilde"
-      ]
+      ],
+      "markdownDescription": "Formats that a `package.json` version dependency can be."
     },
     "NodeVersionManager": {
+      "description": "The available version managers for Node.js.",
       "type": "string",
       "enum": [
         "nodenv",
@@ -495,7 +499,7 @@
           "description": "Location of the WASM plugin to use for npm support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -507,7 +511,7 @@
           "description": "The version of npm to download, install, and run npm tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -517,6 +521,9 @@
         }
       },
       "additionalProperties": false
+    },
+    "PluginLocator": {
+      "type": "string"
     },
     "PnpmConfig": {
       "description": "Options for pnpm, when used as a package manager.",
@@ -536,7 +543,7 @@
           "description": "Location of the WASM plugin to use for pnpm support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -548,7 +555,7 @@
           "description": "The version of pnpm to download, install, and run pnpm tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -585,7 +592,7 @@
           "description": "Location of the WASM plugin to use for Rust support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -611,7 +618,7 @@
           "description": "The version of Rust to download, install, and run cargo tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"
@@ -694,6 +701,9 @@
       },
       "additionalProperties": false
     },
+    "UnresolvedVersionSpec": {
+      "type": "string"
+    },
     "YarnConfig": {
       "description": "Options for Yarn, when used as a package manager.",
       "type": "object",
@@ -712,7 +722,7 @@
           "description": "Location of the WASM plugin to use for Yarn support.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -732,7 +742,7 @@
           "description": "The version of Yarn to download, install, and run yarn tasks with.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/UnresolvedVersionSpec"
             },
             {
               "type": "null"

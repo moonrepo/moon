@@ -81,7 +81,7 @@ pub async fn install_deps(
     }
 
     // When cache is write only, avoid install as user is typically force updating cache
-    if workspace.cache_engine.get_mode().is_write_only() {
+    if workspace.cache_engine.mode.is_write_only() {
         debug!(target: LOG_TARGET, "Force updating cache, skipping install");
 
         return Ok(ActionStatus::Skipped);

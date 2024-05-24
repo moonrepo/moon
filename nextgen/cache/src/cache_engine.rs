@@ -4,6 +4,7 @@ use moon_common::consts;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use starbase_utils::fs::RemoveDirContentsResult;
 use starbase_utils::{fs, json};
 use std::ffi::OsStr;
 use std::future::Future;
@@ -18,8 +19,14 @@ pub struct CacheEngine {
     /// Manages reading and writing of content hashable items.
     pub hash: HashEngine,
 
+    /// Current read/write mode.
+    pub mode: CacheMode,
+
     /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
+
+    /// A temporary directory for random artifacts.
+    pub temp_dir: PathBuf,
 }
 
 impl CacheEngine {
@@ -47,6 +54,8 @@ impl CacheEngine {
         Ok(CacheEngine {
             hash: HashEngine::new(&dir)?,
             state: StateEngine::new(&dir)?,
+            mode: get_cache_mode(),
+            temp_dir: dir.join("temp"),
             cache_dir: dir,
         })
     }
@@ -67,14 +76,21 @@ impl CacheEngine {
             lifetime
         );
 
-        let result = if all {
-            merge_clean_results(
-                self.state.clean_stale_cache(duration)?,
-                self.hash.clean_stale_cache(duration)?,
-            )
-        } else {
-            self.hash.clean_stale_cache(duration)?
+        let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir];
+
+        if all {
+            dirs.push(&self.state.states_dir);
+            dirs.push(&self.temp_dir);
+        }
+
+        let mut result = RemoveDirContentsResult {
+            files_deleted: 0,
+            bytes_saved: 0,
         };
+
+        for dir in dirs {
+            result = merge_clean_results(result, fs::remove_dir_stale_contents(dir, duration)?);
+        }
 
         debug!(
             "Deleted {} artifacts and saved {} bytes",
@@ -82,10 +98,6 @@ impl CacheEngine {
         );
 
         Ok((result.files_deleted, result.bytes_saved))
-    }
-
-    pub fn get_mode(&self) -> CacheMode {
-        get_cache_mode()
     }
 
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>

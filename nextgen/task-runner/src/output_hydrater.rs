@@ -29,7 +29,7 @@ impl<'task> OutputHydrater<'task> {
 
         let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
 
-        if self.workspace.cache_engine.get_mode().is_readable() {
+        if self.workspace.cache_engine.mode.is_readable() {
             debug!(
                 task = self.task.target.as_str(),
                 hash, "Hydrating cached outputs into project"

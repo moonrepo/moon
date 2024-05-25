@@ -16,7 +16,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
-  # pull_request:
+  pull_request:
 
 permissions:
   contents: write
@@ -69,20 +69,20 @@ jobs:
             docker-platform: linux/arm64
 
           - target: x86_64-apple-darwin
-            host: macos-11
+            host: macos-12
             binary: moon
-            setup: |
-              export MACOSX_DEPLOYMENT_TARGET="10.13";
+            # setup: |
+            #   export MACOSX_DEPLOYMENT_TARGET="10.13";
 
           - target: aarch64-apple-darwin
-            host: macos-11
+            host: macos-12
             binary: moon
-            setup: |
-              export CC=$(xcrun -f clang);
-              export CXX=$(xcrun -f clang++);
-              export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
-              export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
-              export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
+            # setup: |
+            #   export CC=$(xcrun -f clang);
+            #   export CXX=$(xcrun -f clang++);
+            #   export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
+            #   export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
+            #   export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
 
           - target: x86_64-pc-windows-msvc
             host: windows-2022
@@ -168,7 +168,7 @@ jobs:
             setup: yarn config set supportedArchitectures.libc "musl"
 
           - target: x86_64-apple-darwin
-            host: macos-11
+            host: macos-12
 
           - target: aarch64-apple-darwin
             host: macos-14

@@ -1,9 +1,7 @@
-use crate::merge_clean_results;
 use moon_hash::ContentHasher;
 use serde::Serialize;
-use starbase_utils::fs::{self, RemoveDirContentsResult};
+use starbase_utils::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 use tracing::debug;
 
 pub struct HashEngine {
@@ -32,13 +30,6 @@ impl HashEngine {
             hashes_dir,
             outputs_dir,
         })
-    }
-
-    pub fn clean_stale_cache(&self, duration: Duration) -> miette::Result<RemoveDirContentsResult> {
-        Ok(merge_clean_results(
-            fs::remove_dir_stale_contents(&self.hashes_dir, duration)?,
-            fs::remove_dir_stale_contents(&self.outputs_dir, duration)?,
-        ))
     }
 
     pub fn create_hasher<T: AsRef<str>>(&self, label: T) -> ContentHasher {

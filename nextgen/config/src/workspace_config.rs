@@ -1,5 +1,6 @@
 // .moon/workspace.yml
 
+use crate::config_cache::ConfigCache;
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
@@ -180,11 +181,14 @@ impl WorkspaceConfig {
         use moon_common::color;
         use schematic::ConfigLoader;
 
+        let root = workspace_root.as_ref();
+
         let mut result = ConfigLoader::<WorkspaceConfig>::new()
+            .set_cacher(ConfigCache::new(root))
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/workspace",
             ))
-            .set_root(workspace_root.as_ref())
+            .set_root(root)
             .file(check_yml_extension(path.as_ref()))?
             .load()?;
 

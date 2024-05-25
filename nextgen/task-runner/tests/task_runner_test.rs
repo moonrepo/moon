@@ -2,6 +2,7 @@ mod utils;
 
 use moon_action::ActionStatus;
 use moon_action_context::*;
+use moon_cache::CacheMode;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_task_runner::TaskRunner;
@@ -458,7 +459,7 @@ mod task_runner {
                     .sandbox
                     .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
-                env::set_var("MOON_CACHE", "off");
+                container.workspace.cache_engine.force_mode(CacheMode::Off);
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
@@ -474,7 +475,10 @@ mod task_runner {
                     .sandbox
                     .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
-                env::set_var("MOON_CACHE", "write");
+                container
+                    .workspace
+                    .cache_engine
+                    .force_mode(CacheMode::Write);
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 

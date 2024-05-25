@@ -1,9 +1,10 @@
 use std::env;
+use std::fmt;
 use tracing::warn;
 
 static mut LOGGED_WARNING: bool = false;
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum CacheMode {
     Off,
     Read,
@@ -34,6 +35,23 @@ impl From<String> for CacheMode {
                 CacheMode::ReadWrite
             }
         }
+    }
+}
+
+impl fmt::Display for CacheMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                CacheMode::Off => "off",
+                CacheMode::Read => "read",
+                CacheMode::ReadWrite => "read-write",
+                CacheMode::Write => "write",
+            }
+        )?;
+
+        Ok(())
     }
 }
 

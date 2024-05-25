@@ -3,11 +3,9 @@ use moon_cache_item::CacheItem;
 use moon_target::{Target, TargetScope};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use starbase_utils::fs::RemoveDirContentsResult;
 use starbase_utils::{fs, json};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 use tracing::debug;
 
 pub struct StateEngine {
@@ -28,10 +26,6 @@ impl StateEngine {
         fs::create_dir_all(&states_dir)?;
 
         Ok(StateEngine { states_dir })
-    }
-
-    pub fn clean_stale_cache(&self, duration: Duration) -> miette::Result<RemoveDirContentsResult> {
-        Ok(fs::remove_dir_stale_contents(&self.states_dir, duration)?)
     }
 
     pub fn get_project_dir(&self, project_id: &str) -> PathBuf {

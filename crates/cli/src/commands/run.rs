@@ -1,5 +1,5 @@
 use crate::app::GlobalArgs;
-use crate::enums::{CacheMode, TouchedStatus};
+use crate::enums::TouchedStatus;
 use crate::helpers::map_list;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
@@ -8,6 +8,7 @@ use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
 use moon_app_components::Console;
+use moon_cache::CacheMode;
 use moon_common::is_test_env;
 use moon_project_graph::ProjectGraph;
 use moon_target::TargetLocator;
@@ -16,7 +17,6 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
-use std::env;
 use std::string::ToString;
 use std::sync::Arc;
 
@@ -119,7 +119,7 @@ pub async fn run_target(
 ) -> AppResult {
     // Force cache to update using write-only mode
     if args.update_cache {
-        env::set_var("MOON_CACHE", CacheMode::Write.to_string());
+        workspace.cache_engine.force_mode(CacheMode::Write);
     }
 
     let mut should_run_affected = !args.force && args.affected;

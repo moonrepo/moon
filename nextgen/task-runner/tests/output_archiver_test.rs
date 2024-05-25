@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_cache::CacheMode;
 use moon_task::Target;
 use starbase_archive::Archiver;
 use std::env;
@@ -68,7 +69,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver("file-outputs");
 
-            env::set_var("MOON_CACHE", "off");
+            container.workspace.cache_engine.force_mode(CacheMode::Off);
 
             assert!(archiver.archive("hash123").await.unwrap().is_none());
 
@@ -82,7 +83,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver("file-outputs");
 
-            env::set_var("MOON_CACHE", "read");
+            container.workspace.cache_engine.force_mode(CacheMode::Read);
 
             assert!(archiver.archive("hash123").await.unwrap().is_none());
 

@@ -28,6 +28,7 @@ if [[ "$NPM_CHANNEL" == "canary" || "$NPM_CHANNEL" == "nightly" ]]; then
 			baseVersion=$(jq -r ".version" package.json)
 			version="$baseVersion$preid"
 
+			pkg=$(cat package.json)
 			echo "${pkg//$baseVersion/$version}" > package.json
 
 		# For core packages, append the preid to the version

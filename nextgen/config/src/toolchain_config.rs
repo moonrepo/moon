@@ -1,5 +1,6 @@
 // .moon/toolchain.yml
 
+use crate::config_cache::ConfigCache;
 use crate::language_platform::*;
 use crate::toolchain::*;
 use rustc_hash::FxHashMap;
@@ -205,11 +206,14 @@ impl ToolchainConfig {
         use moon_common::color;
         use schematic::ConfigLoader;
 
+        let root = workspace_root.as_ref();
+
         let mut result = ConfigLoader::<ToolchainConfig>::new()
+            .set_cacher(ConfigCache::new(root))
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/toolchain",
             ))
-            .set_root(workspace_root)
+            .set_root(root)
             .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 

@@ -1,3 +1,4 @@
+use crate::config_cache::ConfigCache;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
@@ -75,14 +76,12 @@ cacheable!(
 
 #[cfg(feature = "loader")]
 impl InheritedTasksConfig {
+    /// Only used in testing!
     pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
         use schematic::ConfigLoader;
 
         let result = ConfigLoader::<InheritedTasksConfig>::new()
-            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
-            .file_optional(check_yml_extension(path.as_ref()))?
+            .file_optional(path.as_ref())?
             .load()?;
 
         Ok(result.config)
@@ -96,9 +95,12 @@ impl InheritedTasksConfig {
         use moon_common::color;
         use schematic::ConfigLoader;
 
+        let root = workspace_root.as_ref();
+
         Ok(ConfigLoader::<InheritedTasksConfig>::new()
+            .set_cacher(ConfigCache::new(root))
             .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
-            .set_root(workspace_root.as_ref())
+            .set_root(root)
             .file_optional(check_yml_extension(path.as_ref()))?
             .load_partial(&())?)
     }

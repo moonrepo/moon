@@ -1,3 +1,4 @@
+mod config_cache;
 mod inherited_tasks_config;
 mod language_platform;
 pub mod patterns;

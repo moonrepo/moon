@@ -4,10 +4,13 @@ use moon_common::consts;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use starbase_utils::fs::RemoveDirContentsResult;
 use starbase_utils::{fs, json};
+use std::env;
 use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
+use std::sync::RwLock;
 use tracing::debug;
 
 pub struct CacheEngine {
@@ -20,6 +23,12 @@ pub struct CacheEngine {
 
     /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
+
+    /// A temporary directory for random artifacts.
+    pub temp_dir: PathBuf,
+
+    mode: CacheMode,
+    forced_mode: RwLock<Option<CacheMode>>,
 }
 
 impl CacheEngine {
@@ -47,8 +56,17 @@ impl CacheEngine {
         Ok(CacheEngine {
             hash: HashEngine::new(&dir)?,
             state: StateEngine::new(&dir)?,
+            temp_dir: dir.join("temp"),
             cache_dir: dir,
+            mode: get_cache_mode(),
+            forced_mode: RwLock::new(None),
         })
+    }
+
+    pub fn force_mode(&self, mode: CacheMode) {
+        let _ = self.forced_mode.write().unwrap().insert(mode);
+
+        env::set_var("MOON_CACHE", mode.to_string());
     }
 
     pub fn cache<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
@@ -67,14 +85,21 @@ impl CacheEngine {
             lifetime
         );
 
-        let result = if all {
-            merge_clean_results(
-                self.state.clean_stale_cache(duration)?,
-                self.hash.clean_stale_cache(duration)?,
-            )
-        } else {
-            self.hash.clean_stale_cache(duration)?
+        let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir];
+
+        if all {
+            dirs.push(&self.state.states_dir);
+            dirs.push(&self.temp_dir);
+        }
+
+        let mut result = RemoveDirContentsResult {
+            files_deleted: 0,
+            bytes_saved: 0,
         };
+
+        for dir in dirs {
+            result = merge_clean_results(result, fs::remove_dir_stale_contents(dir, duration)?);
+        }
 
         debug!(
             "Deleted {} artifacts and saved {} bytes",
@@ -82,10 +107,6 @@ impl CacheEngine {
         );
 
         Ok((result.files_deleted, result.bytes_saved))
-    }
-
-    pub fn get_mode(&self) -> CacheMode {
-        get_cache_mode()
     }
 
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>
@@ -135,5 +156,31 @@ impl CacheEngine {
 
     pub fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
         resolve_path(&self.cache_dir, path)
+    }
+
+    pub fn is_readable(&self) -> bool {
+        self.get_mode().is_readable()
+    }
+
+    pub fn is_read_only(&self) -> bool {
+        self.get_mode().is_read_only()
+    }
+
+    pub fn is_writable(&self) -> bool {
+        self.get_mode().is_writable()
+    }
+
+    pub fn is_write_only(&self) -> bool {
+        self.get_mode().is_write_only()
+    }
+
+    fn get_mode(&self) -> CacheMode {
+        if let Ok(lock) = self.forced_mode.read() {
+            if let Some(mode) = &*lock {
+                return *mode;
+            }
+        }
+
+        self.mode
     }
 }

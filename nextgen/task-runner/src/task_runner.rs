@@ -200,7 +200,7 @@ impl<'task> TaskRunner<'task> {
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
-        if !cache_engine.get_mode().is_readable() {
+        if !cache_engine.is_readable() {
             debug!(
                 task = self.task.target.as_str(),
                 hash, "Cache is not readable, continuing run"

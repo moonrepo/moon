@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_cache::CacheMode;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use std::env;
 use utils::*;
@@ -38,7 +39,7 @@ mod output_hydrater {
 
             let hydrater = container.create_hydrator("file-outputs");
 
-            env::set_var("MOON_CACHE", "off");
+            container.workspace.cache_engine.force_mode(CacheMode::Off);
 
             assert!(!hydrater
                 .hydrate("hash123", HydrateFrom::LocalCache)
@@ -57,7 +58,10 @@ mod output_hydrater {
 
             let hydrater = container.create_hydrator("file-outputs");
 
-            env::set_var("MOON_CACHE", "write");
+            container
+                .workspace
+                .cache_engine
+                .force_mode(CacheMode::Write);
 
             assert!(!hydrater
                 .hydrate("hash123", HydrateFrom::LocalCache)

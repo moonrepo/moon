@@ -20,10 +20,10 @@ pub struct OperationMetaOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub stderr: Option<Arc<String>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip)]
     pub stdout: Option<Arc<String>>,
 }
 

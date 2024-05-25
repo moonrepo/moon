@@ -31,6 +31,8 @@
   - Slightly tweaked our current UI rendering. You may notice some differences.
 - Updated external configuration files (via http extends) to be cached for 24 hours.
   - This will fix issues with offline mode.
+- Greatly reduced the amount of concurrent locks being held during task execution. May see slight
+  performance improvements.
 
 #### 🐞 Fixes
 
@@ -41,9 +43,8 @@
 
 #### ⚙️ Internal
 
-- Greatly reduced the amount of concurrent locks being held during task execution. May see slight
-  performance improvements.
 - Updated proto to v0.35.3 (from v0.34.4).
+- Updated macOS binaries to be built on macos-12 instead of macos-11.
 
 ## 1.24.6
 

@@ -28,16 +28,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       publish:
-        ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
-        github.event_name == 'push' && contains(github.ref, 'develop-') }}
+        ${{ true }}
+        # ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
+        # github.event_name == 'push' && contains(github.ref, 'develop-') }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
     steps:
       - uses: actions/checkout@v4
       - id: plan-step
         run: bash ./scripts/release/planRelease.sh
         env:
-          CANARY: ${{ github.event_name == 'push' && contains(github.ref, 'develop-') }}
-          NIGHTLY: ${{ github.event_name == 'schedule' }}
+          # CANARY: ${{ github.event_name == 'push' && contains(github.ref, 'develop-') }}
+          # NIGHTLY: ${{ github.event_name == 'schedule' }}
+          CANARY: true
 
   build:
     strategy:

@@ -23,7 +23,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     (graph, sandbox)
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn loads_node_aliases_name_scopes() {
     let (graph, _sandbox) = get_aliases_graph().await;
 
@@ -43,7 +43,7 @@ async fn loads_node_aliases_name_scopes() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn returns_project_using_alias() {
     let (graph, _sandbox) = get_aliases_graph().await;
 
@@ -53,7 +53,7 @@ async fn returns_project_using_alias() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn graph_uses_id_for_nodes() {
     let (graph, _sandbox) = get_aliases_graph().await;
 

@@ -47,7 +47,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.35.3 (from v0.34.4).
+- Updated proto to v0.35.4 (from v0.34.4).
 - Updated macOS binaries to be built on macos-12 instead of macos-11.
 
 ## 1.24.6

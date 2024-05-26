@@ -58,6 +58,10 @@ pub fn get_proto_paths(proto: &ProtoEnvironment) -> Vec<PathBuf> {
 }
 
 pub fn get_proto_version_env(tool: &ProtoTool) -> Option<String> {
+    if tool.version.is_none() {
+        return None;
+    }
+
     let spec = tool.get_resolved_version();
 
     // If we have a "latest" alias, use "*" as a version instead,

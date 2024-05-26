@@ -9,6 +9,7 @@ use moon_config::{
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
+use schematic::Config;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use utils::*;
@@ -237,6 +238,33 @@ fileGroups:
             );
 
             assert_eq!(config.tasks, create_merged_tasks());
+        }
+
+        #[test]
+        fn loads_from_url_and_saves_temp_file() {
+            let sandbox = create_empty_sandbox();
+            let server = MockServer::start();
+
+            server.mock(|when, then| {
+                when.method(GET).path("/config.yml");
+                then.status(200).body(SHARED_TASKS);
+            });
+
+            let temp_dir = sandbox.path().join(".moon/cache/temp");
+            let url = server.url("/config.yml");
+
+            sandbox.create_file("tasks.yml", format!(r"extends: '{url}'"));
+
+            assert!(!temp_dir.exists());
+
+            test_config(sandbox.path().join("tasks.yml"), |path| {
+                // Use load_partial instead of load since this caches!
+                let partial = InheritedTasksConfig::load_partial(sandbox.path(), path).unwrap();
+
+                Ok(InheritedTasksConfig::from_partial(partial))
+            });
+
+            assert!(temp_dir.exists());
         }
     }
 

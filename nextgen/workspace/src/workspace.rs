@@ -178,7 +178,7 @@ impl Workspace {
         let proto_config = proto_env
             .as_ref()
             .load_config_manager()?
-            .get_local_config(working_dir)?;
+            .get_local_config(&root_dir)?;
         let toolchain_config = load_toolchain_config(&root_dir, proto_config)?;
         let tasks_config = load_tasks_config(&root_dir)?;
 

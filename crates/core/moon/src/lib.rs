@@ -1,4 +1,3 @@
-use miette::IntoDiagnostic;
 use moon_action_graph::ActionGraphBuilder;
 use moon_bun_platform::BunPlatform;
 use moon_console::Console;
@@ -20,7 +19,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tokio::task::spawn_blocking;
+use tokio::task::block_in_place;
 
 static TELEMETRY: AtomicBool = AtomicBool::new(true);
 static TELEMETRY_READY: AtomicBool = AtomicBool::new(false);
@@ -49,9 +48,7 @@ pub async fn load_workspace_from(
     // loading is synchronous, but uses `reqwest::blocking` under the hood,
     // which triggers a panic when used in an async context...
     let result =
-        spawn_blocking(move || Workspace::load_from(&proto_env_clone.cwd, &proto_env_clone))
-            .await
-            .into_diagnostic()?;
+        block_in_place(move || Workspace::load_from(&proto_env_clone.cwd, &proto_env_clone));
 
     let mut workspace = match result {
         Ok(workspace) => {

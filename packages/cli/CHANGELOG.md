@@ -42,6 +42,8 @@
   negated globs, coupled with literal paths.
 - Fixed an issue where `.prototools` in the workspace root was not being respected when running moon
   commands in a sub-directory.
+- Fixed `PROTO_*_VERSION` environment variables being set to `*`, resulting in unexpected versions
+  being resolved.
 
 #### ⚙️ Internal
 

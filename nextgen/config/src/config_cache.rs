@@ -6,7 +6,6 @@ use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-#[derive(Debug)]
 pub struct ConfigCache {
     memory: FxHashMap<String, String>,
     workspace_root: PathBuf,

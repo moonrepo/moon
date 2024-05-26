@@ -6,6 +6,7 @@ use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
+#[derive(Debug)]
 pub struct ConfigCache {
     memory: FxHashMap<String, String>,
     workspace_root: PathBuf,
@@ -65,7 +66,15 @@ impl Cacher for ConfigCache {
 
     fn write(&mut self, url: &str, contents: &str) -> Result<(), ConfigError> {
         if !self.memory.contains_key(url) {
-            let _ = fs::write(self.get_temp_path(url), contents);
+            let file = self.get_temp_path(url);
+
+            if let Some(parent) = file.parent() {
+                if !parent.exists() {
+                    let _ = fs::create_dir_all(parent);
+                }
+            }
+
+            let _ = fs::write(file, contents);
 
             self.memory.insert(url.to_owned(), contents.to_owned());
         }

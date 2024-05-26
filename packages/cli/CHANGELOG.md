@@ -40,6 +40,8 @@
   last execution attempt.
 - Fixed an issue where "have outputs been created" checks would fail if outputs only contained
   negated globs, coupled with literal paths.
+- Fixed an issue where `.prototools` in the workspace root was not being respected when running moon
+  commands in a sub-directory.
 
 #### ⚙️ Internal
 

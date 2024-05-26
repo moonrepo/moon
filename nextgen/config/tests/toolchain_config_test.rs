@@ -1,8 +1,9 @@
 mod utils;
 
+use httpmock::prelude::*;
 use moon_config::{BinConfig, BinEntry, NodePackageManager, NodeVersionFormat, ToolchainConfig};
 use proto_core::{Id, PluginLocator, ProtoConfig, UnresolvedVersionSpec};
-use starbase_sandbox::create_sandbox;
+use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
 use utils::*;
 
@@ -35,6 +36,10 @@ mod toolchain_config {
 
     mod extends {
         use super::*;
+
+        const SHARED_TOOLCHAIN: &str = r"
+bun: {}
+node: {}";
 
         #[test]
         fn recursive_merges() {
@@ -73,6 +78,62 @@ mod toolchain_config {
             assert_eq!(typescript.root_config_file_name, "tsconfig.root.json");
             assert!(!typescript.create_missing_config);
             assert!(typescript.sync_project_references);
+        }
+
+        #[test]
+        fn loads_from_url() {
+            let sandbox = create_empty_sandbox();
+            let server = MockServer::start();
+
+            server.mock(|when, then| {
+                when.method(GET).path("/config.yml");
+                then.status(200).body(SHARED_TOOLCHAIN);
+            });
+
+            let url = server.url("/config.yml");
+
+            sandbox.create_file(
+                "toolchain.yml",
+                format!(
+                    r"
+extends: '{url}'
+
+deno: {{}}
+"
+                ),
+            );
+
+            let config = test_config(sandbox.path().join("toolchain.yml"), |path| {
+                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
+            });
+
+            assert!(config.bun.is_some());
+            assert!(config.deno.is_some());
+            assert!(config.node.is_some());
+        }
+
+        #[test]
+        fn loads_from_url_and_saves_temp_file() {
+            let sandbox = create_empty_sandbox();
+            let server = MockServer::start();
+
+            server.mock(|when, then| {
+                when.method(GET).path("/config.yml");
+                then.status(200).body(SHARED_TOOLCHAIN);
+            });
+
+            let temp_dir = sandbox.path().join(".moon/cache/temp");
+            let url = server.url("/config.yml");
+
+            sandbox.create_file("toolchain.yml", format!(r"extends: '{url}'"));
+
+            assert!(!temp_dir.exists());
+
+            test_config(sandbox.path().join("toolchain.yml"), |path| {
+                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
+            });
+
+            assert!(temp_dir.exists());
         }
     }
 

@@ -40,10 +40,14 @@
   last execution attempt.
 - Fixed an issue where "have outputs been created" checks would fail if outputs only contained
   negated globs, coupled with literal paths.
+- Fixed an issue where `.prototools` in the workspace root was not being respected when running moon
+  commands in a sub-directory.
+- Fixed `PROTO_*_VERSION` environment variables being set to `*`, resulting in unexpected versions
+  being resolved.
 
 #### ⚙️ Internal
 
-- Updated proto to v0.35.3 (from v0.34.4).
+- Updated proto to v0.35.4 (from v0.34.4).
 - Updated macOS binaries to be built on macos-12 instead of macos-11.
 
 ## 1.24.6

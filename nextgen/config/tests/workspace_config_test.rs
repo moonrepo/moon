@@ -1,12 +1,13 @@
 mod utils;
 
+use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig, WorkspaceProjects,
 };
 use rustc_hash::FxHashMap;
 use semver::Version;
-use starbase_sandbox::create_sandbox;
+use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use utils::*;
 
 const FILENAME: &str = ".moon/workspace.yml";
@@ -32,6 +33,11 @@ mod workspace_config {
 
     mod extends {
         use super::*;
+
+        const SHARED_WORKSPACE: &str = r"
+projects:
+    - packages/*
+";
 
         #[test]
         fn recursive_merges() {
@@ -79,6 +85,66 @@ mod workspace_config {
                 "extends: 'https://domain.com/config.txt'",
                 |path| WorkspaceConfig::load_from(path),
             );
+        }
+
+        #[test]
+        fn loads_from_url() {
+            let sandbox = create_empty_sandbox();
+            let server = MockServer::start();
+
+            server.mock(|when, then| {
+                when.method(GET).path("/config.yml");
+                then.status(200).body(SHARED_WORKSPACE);
+            });
+
+            let url = server.url("/config.yml");
+
+            sandbox.create_file(
+                "workspace.yml",
+                format!(
+                    r"
+extends: '{url}'
+
+telemetry: false
+"
+                ),
+            );
+
+            let config = test_config(sandbox.path().join("workspace.yml"), |path| {
+                WorkspaceConfig::load(sandbox.path(), path)
+            });
+
+            if let WorkspaceProjects::Globs(globs) = config.projects {
+                assert_eq!(globs, vec!["packages/*".to_owned()]);
+            } else {
+                assert!(false);
+            }
+
+            assert!(!config.telemetry);
+        }
+
+        #[test]
+        fn loads_from_url_and_saves_temp_file() {
+            let sandbox = create_empty_sandbox();
+            let server = MockServer::start();
+
+            server.mock(|when, then| {
+                when.method(GET).path("/config.yml");
+                then.status(200).body(SHARED_WORKSPACE);
+            });
+
+            let temp_dir = sandbox.path().join(".moon/cache/temp");
+            let url = server.url("/config.yml");
+
+            sandbox.create_file("workspace.yml", format!(r"extends: '{url}'"));
+
+            assert!(!temp_dir.exists());
+
+            test_config(sandbox.path().join("workspace.yml"), |path| {
+                WorkspaceConfig::load(sandbox.path(), path)
+            });
+
+            assert!(temp_dir.exists());
         }
     }
 

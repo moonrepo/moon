@@ -19,6 +19,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::task::block_in_place;
 
 static TELEMETRY: AtomicBool = AtomicBool::new(true);
 static TELEMETRY_READY: AtomicBool = AtomicBool::new(false);
@@ -41,7 +42,15 @@ pub async fn load_workspace_from(
     proto_env: Arc<ProtoEnvironment>,
     console: Arc<Console>,
 ) -> miette::Result<Workspace> {
-    let mut workspace = match Workspace::load_from(&proto_env.cwd, &proto_env) {
+    let proto_env_clone = Arc::clone(&proto_env);
+
+    // We need to load the workspace in a blocking task, because config
+    // loading is synchronous, but uses `reqwest::blocking` under the hood,
+    // which triggers a panic when used in an async context...
+    let result =
+        block_in_place(move || Workspace::load_from(&proto_env_clone.cwd, &proto_env_clone));
+
+    let mut workspace = match result {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
             workspace

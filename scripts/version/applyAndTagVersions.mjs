@@ -32,11 +32,11 @@ function logDiff(diff) {
 async function syncCargoVersion(oldVersion, newVersion) {
 	console.log('Syncing version to cli/Cargo.toml');
 
-	let toml = await fs.readFile('crates/cli/Cargo.toml', 'utf8');
+	let toml = await fs.readFile('legacy/cli/Cargo.toml', 'utf8');
 
 	toml = toml.replace(`version = "${oldVersion}"`, `version = "${newVersion}"`);
 
-	await fs.writeFile('crates/cli/Cargo.toml', toml, 'utf8');
+	await fs.writeFile('legacy/cli/Cargo.toml', toml, 'utf8');
 
 	await execa('cargo', ['check'], { stdio: 'inherit' });
 }

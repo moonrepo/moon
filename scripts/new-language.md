@@ -53,7 +53,7 @@ When reading/writing the manifests/lockfiles, the `config_cache!` macro from the
 must be used. This macro handles concurrency (avoids race conditions) and caching.
 
 The Node.js
-[`package.json` implementation](https://github.com/moonrepo/moon/blob/master/crates/node/lang/src/package.rs)
+[`package.json` implementation](https://github.com/moonrepo/moon/blob/master/legacy/node/lang/src/package.rs)
 can be used as a reference.
 
 - [ ] Implemented manifests (if applicable)
@@ -98,9 +98,9 @@ even if it's an empty object. For example, this would enable the Kotlin platform
 kotlin: {}
 ```
 
-At minimum, create a new language struct at `crates/core/config/src/toolchain/<lang>.rs`. It's ok if
-this struct is empty to start. Over time we will add toolchain support, settings to control
-automation, and more.
+At minimum, create a new language struct at `crates/config/src/toolchain/<lang>.rs`. It's ok if this
+struct is empty to start. Over time we will add toolchain support, settings to control automation,
+and more.
 
 ```rust
 #[derive(Config)]
@@ -285,15 +285,15 @@ variants.
 The `moon bin` command uses a hard-coded tool list, and is not based on the `PlatformType` or
 `ProjectLanguage` enums. Because of this, tools will need to be handled manually.
 
-- [ ] Updated `crates/cli/src/commands/bin.rs`
+- [ ] Updated `legacy/cli/src/commands/bin.rs`
 
 ### Update `docker prune` and `docker scaffold` commands
 
 By default these commands will do their best to handle languages/platforms, but each tool is
 different and may require custom logic.
 
-- [ ] Updated `crates/cli/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
-- [ ] Updated `crates/cli/src/commands/docker/prune.rs` (added another prune function)
+- [ ] Updated `legacy/cli/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
+- [ ] Updated `legacy/cli/src/commands/docker/prune.rs` (added another prune function)
 
 ### Add runner tests
 
@@ -301,7 +301,7 @@ The biggest thing to test besides the tool and platform, is that running tasks f
 correctly. There are many cases to test for: error handling, exit codes, stdout, stderr, etc. Refer
 to Node.js for a complete example.
 
-- [ ] Added `crates/cli/tests/run_<lang>_test.rs`
+- [ ] Added `legacy/cli/tests/run_<lang>_test.rs`
 
 ### Update docs
 

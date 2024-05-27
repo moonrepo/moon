@@ -104,6 +104,47 @@ performance improvements.</li>
         <category label="operation" term="operation"/>
     </entry>
     <entry>
+        <title type="html"><![CDATA[proto v0.35 - Support for more shells]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.35</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.35"/>
+        <updated>2024-05-05T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This is a light release that adds support for more terminal shells.]]></summary>
+        <content type="html"><![CDATA[<p>This is a light release that adds support for more terminal shells.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="experimental-support-for-new-shells">Experimental support for new shells<a href="https://moonrepo.dev/blog/proto-v0.35#experimental-support-for-new-shells" class="hash-link" aria-label="Direct link to Experimental support for new shells" title="Direct link to Experimental support for new shells">​</a></h2>
+<p>proto has always supported the primary and common shells like Bash, Zsh, Fish, PowerShell, and more.
+In recent years, there has been an influx of new and modern shells, built with technologies such as
+Rust. We felt it was time to start supporting some of these new shells, and have added
+<a href="https://crates.io/crates/starbase_shell" target="_blank" rel="noopener noreferrer">experimental support</a> for:</p>
+<ul>
+<li><a href="https://github.com/redox-os/ion" target="_blank" rel="noopener noreferrer">Ion</a></li>
+<li><a href="https://www.nushell.sh/" target="_blank" rel="noopener noreferrer">Nu</a></li>
+<li><a href="https://xon.sh/" target="_blank" rel="noopener noreferrer">Xonsh</a></li>
+</ul>
+<p>Furthermore, the <a href="https://moonrepo.dev/docs/proto/commands/setup"><code>proto setup</code></a> command (which is ran when installing
+proto) will now prompt the user to select a shell if one could not be detected.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="generate-trace-profiles">Generate trace profiles<a href="https://moonrepo.dev/blog/proto-v0.35#generate-trace-profiles" class="hash-link" aria-label="Direct link to Generate trace profiles" title="Direct link to Generate trace profiles">​</a></h2>
+<p>A major goal of proto is to be extremely efficient and to optimize as much as possible. To help
+accomplish this goal, we're introducing the global CLI <code>--dump</code> flag, which will generate a trace
+profile that can be loaded and reviewed in <code>chrome://tracing</code>.</p>
+<p>This will display a flame graph with labeled operations, their timing information, and any
+associated data. This is the first step in capturing this kind of information, and it will only get
+better moving forward.</p>
+<div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>Generating a profile for running a tool, either with <code>proto run node</code> or <code>node</code> itself, will not
+work. This is because the tool process <em>replaces</em> the current proto process entirely, causing the
+profile to be interrupted and abort.</p></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.35#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.35.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="shell" term="shell"/>
+        <category label="dump" term="dump"/>
+        <category label="profile" term="profile"/>
+        <category label="trace" term="trace"/>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[moon v1.24 - Task mutexes, auto-detect revisions, project dependents, and more!]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.24</id>
         <link href="https://moonrepo.dev/blog/moon-v1.24"/>
@@ -1480,61 +1521,5 @@ alleviate some of the pain points with <code>package.json</code> syncing.</li>
         <category label="bun" term="bun"/>
         <category label="typescript" term="typescript"/>
         <category label="javascript" term="javascript"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.23 - New detection strategy, tool commands, and more]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.23</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.23"/>
-        <updated>2023-11-16T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[With this release, we've reorganized our commands, improved version detection, and Windows support.]]></summary>
-        <content type="html"><![CDATA[<p>With this release, we've reorganized our commands, improved version detection, and Windows support.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-detect-strategy-setting">New <code>detect-strategy</code> setting<a href="https://moonrepo.dev/blog/proto-v0.23#new-detect-strategy-setting" class="hash-link" aria-label="Direct link to new-detect-strategy-setting" title="Direct link to new-detect-strategy-setting">​</a></h2>
-<p>Up until now, when proto would attempt to detect a version, it would use a version from the closest
-<code>.prototools</code> file, or tool specific file (<code>package.json</code>, <code>.nvmrc</code>, etc), which ever matched first.
-For the most part, this works great, but what if you wanted <code>.prototools</code> to take precedence over
-other files, even if found in a higher parent directory? You unfortunately couldn't.</p>
-<p>To support this new flow, we're introducing a new <a href="https://moonrepo.dev/docs/proto/config"><code>~/.proto/config.toml</code></a>
-setting called <a href="https://moonrepo.dev/docs/proto/config#detect-strategy"><code>detect-strategy</code></a>. This setting supports the
-following values, with more possibly in the future!</p>
-<ul>
-<li><code>first-available</code> (default) - Will use the first available version that is found. Either from
-<code>.prototools</code> or a tool specific file.</li>
-<li><code>prefer-prototools</code> - Prefer a <code>.prototools</code> version, even if found in a parent directory. If none
-found, falls back to tool specific file.</li>
-</ul>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">~/.proto/config.toml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">detect-strategy</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"prefer-prototools"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-tool-command-group-breaking">New <code>proto tool</code> command group (breaking)<a href="https://moonrepo.dev/blog/proto-v0.23#new-proto-tool-command-group-breaking" class="hash-link" aria-label="Direct link to new-proto-tool-command-group-breaking" title="Direct link to new-proto-tool-command-group-breaking">​</a></h2>
-<p>Our CLI surface area has been growing and we felt it was time to start grouping commands, starting
-with the new <a href="https://moonrepo.dev/docs/proto/commands/plugin"><code>proto tool</code></a> command. This command will contain "not
-used very often" subcommands in relation to tools and their plugins, primarily for managing plugins,
-and viewing tool information and inventory. As such, we've deprecated and moved the following
-top-level commands:</p>
-<ul>
-<li>Moved <code>proto add-plugin</code> to <code>proto tool add</code>.</li>
-<li>Moved <code>proto remove-plugin</code> to <code>proto tool remove</code>.</li>
-<li>Moved <code>proto plugins</code> to <code>proto tool list-plugins</code>.</li>
-<li>Moved <code>proto tools</code> to <code>proto tool list</code>.</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-tool-info-command">New <code>proto tool info</code> command<a href="https://moonrepo.dev/blog/proto-v0.23#new-proto-tool-info-command" class="hash-link" aria-label="Direct link to new-proto-tool-info-command" title="Direct link to new-proto-tool-info-command">​</a></h2>
-<p>Continuing with the changes above, we're also introducing a new command,
-<a href="https://moonrepo.dev/docs/proto/commands/plugin/info"><code>proto tool info</code></a>, which displays detailed information about a
-tool and its backing plugin. For example:</p>
-<div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto tool info node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">node - Node.js</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Inventory</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Store: ~/.proto/tools/node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Executable: ~/.proto/tools/node/20.0.0/bin/node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Globals directory: ~/.proto/tools/node/globals/bin</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Binaries:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    - ~/.proto/bin/node (primary)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Shims:</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    - ~/.proto/shims/node (primary)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Plugin</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Version: 0.5.2</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Source: https://github.com/moonrepo/node-plugin/releases/download/v0.5.2/node_plugin.wasm</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<blockquote>
-<p>This command also supports JSON output via <code>--json</code>.</p>
-</blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.23#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.23.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added support to plugins to ignore certain paths when detecting a version.</li>
-<li>Updated Windows to create 3 shim files for each tool: <code>.cmd</code> (cmd.exe), <code>.ps1</code> (powershell), and
-no extension (bash).</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
     </entry>
 </feed>

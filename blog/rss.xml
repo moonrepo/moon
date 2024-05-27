@@ -35,7 +35,7 @@ verifying edge cases.</p>
 </ul>
 <blockquote>
 <p>If you're interested in how the task runner was implemented, feel free to take a look at the
-<a href="https://github.com/moonrepo/moon/tree/master/nextgen/task-runner" target="_blank" rel="noopener noreferrer">Rust crate</a>, and the
+<a href="https://github.com/moonrepo/moon/tree/master/crates/task-runner" target="_blank" rel="noopener noreferrer">Rust crate</a>, and the
 <a href="https://github.com/moonrepo/moon/pull/1463" target="_blank" rel="noopener noreferrer">pull request</a> itself.</p>
 </blockquote>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="fine-grained-operations">Fine-grained operations<a href="https://moonrepo.dev/blog/moon-v1.25#fine-grained-operations" class="hash-link" aria-label="Direct link to Fine-grained operations" title="Direct link to Fine-grained operations">​</a></h3>
@@ -75,10 +75,10 @@ difficult to orchestrate output from different parts of the codebase, and in the
 each call to stdout/stderr <a href="https://nnethercote.github.io/perf-book/io.html" target="_blank" rel="noopener noreferrer">locks the I/O stream</a>,
 resulting in performance loss.</p>
 <p>To work around this, in <a href="https://moonrepo.dev/blog/moon-v1.21">v1.21</a> we implemented a new
-<a href="https://github.com/moonrepo/moon/tree/master/nextgen/console" target="_blank" rel="noopener noreferrer">console layer</a> that buffers all stdio
+<a href="https://github.com/moonrepo/moon/tree/master/crates/console" target="_blank" rel="noopener noreferrer">console layer</a> that buffers all stdio
 writes, and prints them on 100ms intervals. This avoids locking on every call, and instead batches
 them. To expand on this further, in this release we've implemented a new
-<a href="https://github.com/moonrepo/moon/tree/master/nextgen/console-reporter" target="_blank" rel="noopener noreferrer">reporter layer</a>, with a
+<a href="https://github.com/moonrepo/moon/tree/master/crates/console-reporter" target="_blank" rel="noopener noreferrer">reporter layer</a>, with a
 well-defined interface that is used to print checkpoints (the 4 squares), and status updates from
 the action pipeline (and the new task runner).</p>
 <p>This reporter layer enables new console UI implementations in the future based on your preferences.

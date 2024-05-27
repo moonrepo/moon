@@ -1,0 +1,78 @@
+---
+slug: moon-v1.25
+title: moon v1.25 - ???
+authors: [milesj]
+tags: [task, runner]
+# image: ./img/moon/v1.25.png
+---
+
+TODO
+
+<!--truncate-->
+
+## New task runner implementation
+
+TODO
+
+### Fine-grained operations
+
+TODO
+
+### Run summaries
+
+Because of the new task runner and the new console ([below](#new-console-reporting-layer)), we have
+the ability to bubble up more information than before. Based on requests from the community, we've
+taken the output from [`moon ci`](/docs/commands/ci) and applied it to both
+[`moon check`](/docs/commands/check) and [`moon run`](/docs/commands/run) behind the `--summary`
+flag.
+
+When this flag is passed, we will now summarize all actions that have ran in the pipeline (not just
+task related ones), and include failed tasks for review. For example, here's the output of
+`moon check website --summary` on moon's repository.
+
+```
+$ moon check website --summary
+
+▪▪▪▪ types:build (cached, 1ms, 21bd9add)
+▪▪▪▪ runtime:build (cached, e8363e65)
+▪▪▪▪ website:typecheck (cached, 0ab91eaa)
+▪▪▪▪ website:format (cached, 07ae2388)
+▪▪▪▪ website:test (cached, 11d33e2e)
+▪▪▪▪ website:lint (cached, 2197fbb1)
+▪▪▪▪ website:build (10606e37)
+▪▪▪▪ website:build (15s 789ms, 10606e37)
+
+SUMMARY
+
+pass SyncWorkspace
+skip SetupNodeTool(20.13.1) (skipped, 250ms)
+skip InstallNodeDeps(20.13.1) (skipped, 13ms, f341872f)
+pass SyncNodeProject(types) (1ms)
+pass SyncNodeProject(runtime) (1ms)
+pass RunTask(types:build) (cached, 140ms, 21bd9add)
+pass SyncNodeProject(website) (1ms)
+pass RunTask(runtime:build) (cached, 32ms, e8363e65)
+pass RunTask(website:build) (33s 614ms, 10606e37)
+pass RunTask(website:format) (cached, 59ms, 07ae2388)
+pass RunTask(website:lint) (cached, 101ms, 2197fbb1)
+pass RunTask(website:test) (cached, 64ms, 11d33e2e)
+pass RunTask(website:typecheck) (cached, 59ms, 0ab91eaa)
+
+STATS
+
+Actions: 11 completed (6 cached), 2 skipped
+   Time: 34s 52ms
+```
+
+## New console reporting layer
+
+TODO
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.25.0) for a full list
+of changes.
+
+- Updated external configuration files (via https extends) to be cached for 24 hours.
+- Greatly reduced the amount of concurrent locks being held during task execution. May see slight
+  performance improvements.

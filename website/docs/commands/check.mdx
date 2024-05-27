@@ -2,6 +2,8 @@
 title: check
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `moon check [...projects]` (or `moon c`) command will run _all_
 [build and test tasks](../concepts/task#types) for one or many projects. This is a convenience
 command for verifying the current state of a project, instead of running multiple
@@ -30,3 +32,4 @@ $ moon check --all
 
 - `--all` - Run check for all projects in the workspace.
 - `-u`, `--updateCache` - Bypass cache and force update any existing items.
+- `--summary` - Display a summary and stats of the current run. <VersionLabel version="1.25.0" />

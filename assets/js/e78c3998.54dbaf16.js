@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[82178],{8310:e=>{e.exports=JSON.parse('{"label":"extism","permalink":"/blog/tags/extism","allTagsPath":"/blog/tags","count":1,"unlisted":false}')}}]);

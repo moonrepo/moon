@@ -175,6 +175,7 @@
       "markdownDescription": "Configures code ownership rules for generating a `CODEOWNERS` file."
     },
     "CodeownersOrderBy": {
+      "description": "How to order ownership rules within the generated file.",
       "type": "string",
       "enum": [
         "file-source",
@@ -262,7 +263,7 @@
           "description": "Location of the WASM plugin to use.",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/PluginLocator"
             },
             {
               "type": "null"
@@ -345,6 +346,7 @@
       "additionalProperties": false
     },
     "HasherOptimization": {
+      "description": "The optimization to use when hashing.",
       "type": "string",
       "enum": [
         "accuracy",
@@ -352,6 +354,7 @@
       ]
     },
     "HasherWalkStrategy": {
+      "description": "The strategy to use when walking the file system.",
       "type": "string",
       "enum": [
         "glob",
@@ -376,6 +379,9 @@
         }
       },
       "additionalProperties": false
+    },
+    "PluginLocator": {
+      "type": "string"
     },
     "RunnerConfig": {
       "description": "Configures aspects of the task runner (also known as the action pipeline).",
@@ -477,12 +483,14 @@
       "additionalProperties": false
     },
     "VcsManager": {
+      "description": "The VCS being utilized by the repository.",
       "type": "string",
       "enum": [
         "git"
       ]
     },
     "VcsProvider": {
+      "description": "The upstream version control provider, where the repository source code is stored.",
       "type": "string",
       "enum": [
         "bitbucket",

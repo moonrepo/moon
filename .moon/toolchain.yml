@@ -1,16 +1,16 @@
 $schema: '../website/static/schemas/toolchain.json'
 
 rust:
-  version: '1.77.0'
+  version: '1.78.0'
   bins:
     - 'cargo-nextest'
   syncToolchainConfig: true
 
 node:
-  version: '20.8.0'
+  version: '20.13.1'
   packageManager: 'yarn'
   yarn:
-    version: '4.1.1'
+    version: '4.2.2'
   addEnginesConstraint: false
   inferTasksFromScripts: false
 

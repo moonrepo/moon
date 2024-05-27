@@ -22,6 +22,7 @@
 
 - Rewrote the task runner from the ground up:
   - Improved handling and reliability of output archiving and hydration.
+  - Streamlined the task execution (child process) flow.
   - Now tracks metrics for individual operations, like hash generation, output hydration, task
     execution, and more. Can be inspected in the run report.
 - Added a `--summary` flag to `moon run` and `moon check` that will include a summary of all actions
@@ -29,7 +30,7 @@
 - Added a new console reporting layer that handles the rendering of output in the terminal.
   - This enables us to support additional reporters in the future, each with unique UIs.
   - Slightly tweaked our current UI rendering. You may notice some differences.
-- Updated external configuration files (via http extends) to be cached for 24 hours.
+- Updated external configuration files (via https extends) to be cached for 24 hours.
   - This will fix issues with offline mode.
 - Greatly reduced the amount of concurrent locks being held during task execution. May see slight
   performance improvements.

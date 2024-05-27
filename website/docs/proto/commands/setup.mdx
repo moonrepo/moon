@@ -3,26 +3,29 @@ title: setup
 ---
 
 The `proto setup` command will setup proto in your current shell by modifying an applicable profile
-file and appending proto's bin directory to `PATH`.
+file and appending proto's bin directory to `PATH`. If a shell could not be detected, you'll be
+prompted to select one.
 
 ```shell
 $ proto setup
 ```
 
-During setup, the following profiles will be searched or prompted for. To override these, pass the
-`PROTO_SHELL_PROFILE` environment variable.
+During setup, the following profiles will be searched or prompted for.
 
-- All shells
-  - `~/.profile`
-  - `PROFILE` environment variable
 - Bash
   - `~/.bash_profile`
   - `~/.bashrc`
+  - `~/.profile`
 - Elvish
   - `~/.elvish/rc.elv`
   - `~/.config/elvish/rc.elv`
 - Fish
   - `~/.config/fish/config.fish`
+- Ion
+  - `~/.config/ion/initrc`
+- Nu
+  - `~/.config/nushell/env.nu`
+  - `~/.config/nushell/config.nu`
 - PowerShell
   - Windows
     - `~\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
@@ -30,6 +33,9 @@ During setup, the following profiles will be searched or prompted for. To overri
   - Unix
     - `~/.config/powershell/Microsoft.PowerShell_profile.ps1`
     - `~/.config/powershell/profile.ps1`
+- Xonsh
+  - `~/.config/xonsh/rc.xsh`
+  - `~/.xonshrc`
 - Zsh
   - `~/.zprofile`
   - `~/.zshenv`

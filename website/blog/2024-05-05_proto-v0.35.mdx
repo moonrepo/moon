@@ -1,0 +1,48 @@
+---
+slug: proto-v0.35
+title: proto v0.35 - Support for more shells
+authors: [milesj]
+tags: [shell, dump, profile, trace]
+# image: ./img/proto/v0.35.png
+---
+
+This is a light release that adds support for more terminal shells.
+
+<!--truncate-->
+
+## Experimental support for new shells
+
+proto has always supported the primary and common shells like Bash, Zsh, Fish, PowerShell, and more.
+In recent years, there has been an influx of new and modern shells, built with technologies such as
+Rust. We felt it was time to start supporting some of these new shells, and have added
+[experimental support](https://crates.io/crates/starbase_shell) for:
+
+- [Ion](https://github.com/redox-os/ion)
+- [Nu](https://www.nushell.sh/)
+- [Xonsh](https://xon.sh/)
+
+Furthermore, the [`proto setup`](/docs/proto/commands/setup) command (which is ran when installing
+proto) will now prompt the user to select a shell if one could not be detected.
+
+## Generate trace profiles
+
+A major goal of proto is to be extremely efficient and to optimize as much as possible. To help
+accomplish this goal, we're introducing the global CLI `--dump` flag, which will generate a trace
+profile that can be loaded and reviewed in `chrome://tracing`.
+
+This will display a flame graph with labeled operations, their timing information, and any
+associated data. This is the first step in capturing this kind of information, and it will only get
+better moving forward.
+
+:::caution
+
+Generating a profile for running a tool, either with `proto run node` or `node` itself, will not
+work. This is because the tool process _replaces_ the current proto process entirely, causing the
+profile to be interrupted and abort.
+
+:::
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.35.0) for a full list
+of changes.

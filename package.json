@@ -1,7 +1,7 @@
 {
   "name": "moon",
   "private": true,
-  "packageManager": "yarn@4.1.1",
+  "packageManager": "yarn@4.2.2",
   "scripts": {
     "moon": "target/debug/moon --log trace",
     "type": "target/debug/moon --log trace run :typecheck",
@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@moonrepo/cli": "workspace:*",
-    "@types/node": "^20.12.7",
+    "@types/node": "^20.12.12",
     "babel-preset-moon": "^3.0.1",
     "eslint": "^8.57.0",
     "eslint-config-moon": "^3.1.0",

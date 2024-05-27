@@ -22,6 +22,7 @@
 
 - Rewrote the task runner from the ground up:
   - Improved handling and reliability of output archiving and hydration.
+  - Streamlined the task execution (child process) flow.
   - Now tracks metrics for individual operations, like hash generation, output hydration, task
     execution, and more. Can be inspected in the run report.
 - Added a `--summary` flag to `moon run` and `moon check` that will include a summary of all actions

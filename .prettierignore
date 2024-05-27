@@ -17,7 +17,7 @@ dist/
 *.json
 
 # These are Tera templates
-crates/config/templates/
+legacy/config/templates/
 
 # visualizer
 packages/visualizer/*timestamp*

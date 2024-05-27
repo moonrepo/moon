@@ -1,0 +1,21 @@
+[package]
+name = "moon_tool"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_common = { path = "../../../crates/common" }
+moon_lang = { path = "../lang" }
+moon_platform_runtime = { path = "../../../crates/platform-runtime" }
+moon_process = { path = "../../../crates/process" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+starbase_styles = { workspace = true }
+thiserror = { workspace = true }
+warpgate = { workspace = true }
+
+[lints]
+workspace = true

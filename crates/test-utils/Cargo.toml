@@ -1,0 +1,30 @@
+[package]
+name = "moon_test_utils2"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Testing utilities."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_config = { path = "../config" }
+moon_console = { path = "../console" }
+moon_project_graph = { path = "../project-graph" }
+moon_vcs = { path = "../vcs" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+starbase_events = { workspace = true }
+starbase_sandbox = { workspace = true }
+
+# TODO Remove
+moon_platform = { path = "../../legacy/core/platform" }
+moon_bun_platform = { path = "../../legacy/bun/platform" }
+moon_deno_platform = { path = "../../legacy/deno/platform" }
+moon_node_platform = { path = "../../legacy/node/platform" }
+moon_rust_platform = { path = "../../legacy/rust/platform" }
+moon_system_platform = { path = "../../legacy/system/platform" }
+
+[lints]
+workspace = true

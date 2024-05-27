@@ -8,7 +8,7 @@ on:
       - .cargo/config.toml
       - .github/workflows/rust.yml
       - crates/**
-      - nextgen/**
+      - legacy/**
       - tests/**
       - Cargo.lock
       - Cargo.toml

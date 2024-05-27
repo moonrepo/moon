@@ -15,6 +15,6 @@ opt-level = "s"
 panic = "abort"
 
 [dependencies]
-moon_common = { path = "../../nextgen/common" }
-moon_config = { path = "../../nextgen/config" }
-moon_target = { path = "../../nextgen/target" }
+moon_common = { path = "../../crates/common" }
+moon_config = { path = "../../crates/config" }
+moon_target = { path = "../../crates/target" }

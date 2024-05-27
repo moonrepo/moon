@@ -1,0 +1,28 @@
+[package]
+name = "moon"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_action_graph = { path = "../../../crates/action-graph" }
+moon_actions = { path = "../actions" }
+moon_config = { path = "../../../crates/config" }
+moon_console = { path = "../../../crates/console" }
+moon_bun_platform = { path = "../../bun/platform" }
+moon_deno_platform = { path = "../../deno/platform" }
+moon_node_platform = { path = "../../node/platform" }
+moon_platform = { path = "../platform" }
+moon_project_graph = { path = "../../../crates/project-graph" }
+moon_rust_platform = { path = "../../rust/platform" }
+moon_system_platform = { path = "../../system/platform" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../../../crates/workspace" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+starbase_events = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

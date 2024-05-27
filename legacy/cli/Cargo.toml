@@ -1,0 +1,105 @@
+[package]
+name = "moon_cli"
+version = "1.24.6"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "moon"
+path = "src/main.rs"
+
+[lib]
+name = "moon_cli"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+moon = { path = "../core/moon" }
+moon_action_context = { path = "../../crates/action-context" }
+moon_action_graph = { path = "../../crates/action-graph" }
+moon_action_pipeline = { path = "../core/action-pipeline" }
+moon_actions = { path = "../core/actions" }
+moon_api = { path = "../../crates/api" }
+moon_app_components = { path = "../../crates/app-components" }
+moon_bun_lang = { path = "../bun/lang" }
+moon_bun_tool = { path = "../bun/tool" }
+moon_cache = { path = "../../crates/cache" }
+moon_codegen = { path = "../../crates/codegen" }
+moon_common = { path = "../../crates/common" }
+moon_config = { path = "../../crates/config", features = ["template"] }
+moon_console = { path = "../../crates/console" }
+moon_console_reporter = { path = "../../crates/console-reporter" }
+moon_deno_lang = { path = "../deno/lang" }
+moon_deno_tool = { path = "../deno/tool" }
+moon_env = { path = "../../crates/env" }
+moon_lang = { path = "../core/lang" }
+moon_node_lang = { path = "../node/lang" }
+moon_node_platform = { path = "../node/platform" }
+moon_node_tool = { path = "../node/tool" }
+moon_platform = { path = "../core/platform" }
+moon_platform_detector = { path = "../../crates/platform-detector" }
+moon_platform_plugin = { path = "../../crates/platform-plugin" }
+moon_plugin = { path = "../../crates/plugin" }
+moon_project = { path = "../../crates/project" }
+moon_project_graph = { path = "../../crates/project-graph" }
+moon_query = { path = "../../crates/query" }
+moon_rust_lang = { path = "../rust/lang" }
+moon_rust_tool = { path = "../rust/tool" }
+moon_system_platform = { path = "../system/platform" }
+moon_target = { path = "../../crates/target" }
+moon_task = { path = "../../crates/task" }
+moon_tool = { path = "../core/tool" }
+moon_typescript_lang = { path = "../typescript/lang" }
+moon_utils = { path = "../core/utils" }
+moon_vcs = { path = "../../crates/vcs" }
+moon_workspace = { path = "../../crates/workspace" }
+bytes = "1.6.0"
+ci_env = { workspace = true }
+clap = { workspace = true, features = [
+	"color",
+	"derive",
+	"env",
+	"help",
+	"suggestions",
+	"usage",
+	"wrap_help",
+] }
+clap_complete = { workspace = true }
+clap_lex = "0.7.0"
+console = { workspace = true }
+# console-subscriber = "0.1.8"
+dialoguer = { version = "0.11.0", default-features = false }
+diff = "0.1.13"
+indicatif = "0.17.8"
+itertools = "0.13.0"
+miette = { workspace = true }
+mimalloc = { version = "0.1.42", default-features = false }
+open = "5.1.3"
+petgraph = { workspace = true }
+proto_core = { workspace = true }
+proto_installer = { workspace = true }
+reqwest = { workspace = true }
+rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+starbase = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+tera = { workspace = true }
+thiserror = { workspace = true }
+tiny_http = "0.12.0"
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_notifier = { path = "../core/notifier" }
+moon_task_runner = { path = "../../crates/task-runner" }
+moon_test_utils = { path = "../core/test-utils" }
+httpmock = "0.7.0"
+serial_test = "3.1.1"
+starbase_archive = { workspace = true }
+
+[lints]
+workspace = true

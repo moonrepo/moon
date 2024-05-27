@@ -1,0 +1,6 @@
+---
+source: crates/vcs-hooks/tests/hooks_generator_test.rs
+expression: "out2.replace(\"powershell.exe\", \"pwsh.exe\")"
+---
+#!/bin/sh
+pwsh.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\.moon\hooks\post-push.ps1" $1 $2 $3

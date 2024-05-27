@@ -1,0 +1,6 @@
+---
+source: crates/vcs-hooks/tests/hooks_generator_test.rs
+expression: "out1.replace(\"powershell.exe\", \"pwsh.exe\")"
+---
+#!/bin/sh
+pwsh.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\.moon\hooks\pre-commit.ps1" $1 $2 $3

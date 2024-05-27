@@ -1,23 +1,21 @@
 [workspace]
 resolver = "2"
 members = [
-	"crates/cli",
-	"crates/core/*",
+	"crates/*",
+	"legacy/cli",
+	"legacy/core/*",
 
 	# Languages
-	"crates/bun/*",
-	"crates/deno/*",
-	"crates/javascript/*",
-	"crates/node/*",
-	"crates/rust/*",
-	"crates/system/*",
-	"crates/typescript/*",
-
-	# Next-gen
-	"nextgen/*",
+	"legacy/bun/*",
+	"legacy/deno/*",
+	"legacy/javascript/*",
+	"legacy/node/*",
+	"legacy/rust/*",
+	"legacy/system/*",
+	"legacy/typescript/*",
 ]
 exclude = ["tests/fixtures", "wasm/test-plugin"]
-default-members = ["crates/cli"]
+default-members = ["legacy/cli"]
 
 [workspace.dependencies]
 async-trait = "0.1.80"

@@ -10,7 +10,7 @@ on:
       - .github/workflows/moon.yml
       - .moon/*.yml
       - crates/**
-      - nextgen/**
+      - legacy/**
       - packages/**
       - website/**
       - package.json

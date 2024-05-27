@@ -1,0 +1,23 @@
+---
+source: crates/action-graph/tests/action_graph_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace" ]
+    1 [ label="SetupSystemTool" ]
+    2 [ label="SyncSystemProject(deps)" ]
+    3 [ label="RunTask(deps:parallel)" ]
+    4 [ label="RunTask(deps:c)" ]
+    5 [ label="RunTask(deps:a)" ]
+    6 [ label="RunTask(deps:b)" ]
+    1 -> 0 [ ]
+    2 -> 1 [ ]
+    4 -> 2 [ ]
+    5 -> 2 [ ]
+    6 -> 2 [ ]
+    3 -> 2 [ ]
+    3 -> 4 [ ]
+    3 -> 5 [ ]
+    3 -> 6 [ ]
+}
+

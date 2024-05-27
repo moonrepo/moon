@@ -1,0 +1,46 @@
+[package]
+name = "moon_node_platform"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_action = { path = "../../../crates/action" }
+moon_action_context = { path = "../../../crates/action-context" }
+moon_common = { path = "../../../crates/common" }
+moon_config = { path = "../../../crates/config" }
+moon_console = { path = "../../../crates/console" }
+moon_hash = { path = "../../../crates/hash" }
+moon_javascript_platform = { path = "../../javascript/platform" }
+moon_lang = { path = "../../core/lang" }
+moon_logger = { path = "../../core/logger" }
+moon_node_lang = { path = "../lang" }
+moon_node_tool = { path = "../tool" }
+moon_platform = { path = "../../core/platform" }
+moon_platform_detector = { path = "../../../crates/platform-detector" }
+moon_process = { path = "../../../crates/process" }
+moon_project = { path = "../../../crates/project" }
+moon_task = { path = "../../../crates/task" }
+moon_target = { path = "../../../crates/target" }
+moon_tool = { path = "../../core/tool" }
+moon_typescript_lang = { path = "../../typescript/lang" }
+moon_typescript_platform = { path = "../../typescript/platform" }
+moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
+once_cell = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+moon = { path = "../../core/moon" }
+moon_project_graph = { path = "../../../crates/project-graph" }
+moon_test_utils = { path = "../../core/test-utils" }
+
+[lints]
+workspace = true

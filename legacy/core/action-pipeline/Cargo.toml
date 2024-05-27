@@ -1,0 +1,47 @@
+[package]
+name = "moon_action_pipeline"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_action = { path = "../../../crates/action" }
+moon_action_context = { path = "../../../crates/action-context" }
+moon_action_graph = { path = "../../../crates/action-graph" }
+moon_actions = { path = "../actions" }
+moon_api = { path = "../../../crates/api" }
+moon_common = { path = "../../../crates/common" }
+moon_console = { path = "../../../crates/console" }
+moon_cache_item = { path = "../../../crates/cache-item" }
+moon_emitter = { path = "../emitter" }
+moon_hash = { path = "../../../crates/hash" }
+moon_logger = { path = "../logger" }
+moon_notifier = { path = "../notifier" }
+moon_platform = { path = "../platform" }
+moon_process = { path = "../../../crates/process" }
+moon_project = { path = "../../../crates/project" }
+moon_project_graph = { path = "../../../crates/project-graph" }
+moon_target = { path = "../../../crates/target" }
+moon_task_runner = { path = "../../../crates/task-runner" }
+moon_tool = { path = "../tool" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../../../crates/workspace" }
+ci_env = { workspace = true }
+console = { workspace = true }
+miette = { workspace = true }
+num_cpus = "1.16.0"
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+
+[dev-dependencies]
+moon = { path = "../moon" }
+moon_test_utils = { path = "../test-utils" }
+
+[lints]
+workspace = true

@@ -32,7 +32,7 @@ With this new task runner, we...
 - Increased performance by optimizing or removing certain code paths.
 
 > If you're interested in how the task runner was implemented, feel free to take a look at the
-> [Rust crate](https://github.com/moonrepo/moon/tree/master/nextgen/task-runner), and the
+> [Rust crate](https://github.com/moonrepo/moon/tree/master/crates/task-runner), and the
 > [pull request](https://github.com/moonrepo/moon/pull/1463) itself.
 
 ### Fine-grained operations
@@ -171,10 +171,10 @@ each call to stdout/stderr [locks the I/O stream](https://nnethercote.github.io/
 resulting in performance loss.
 
 To work around this, in [v1.21](./moon-v1.21) we implemented a new
-[console layer](https://github.com/moonrepo/moon/tree/master/nextgen/console) that buffers all stdio
+[console layer](https://github.com/moonrepo/moon/tree/master/crates/console) that buffers all stdio
 writes, and prints them on 100ms intervals. This avoids locking on every call, and instead batches
 them. To expand on this further, in this release we've implemented a new
-[reporter layer](https://github.com/moonrepo/moon/tree/master/nextgen/console-reporter), with a
+[reporter layer](https://github.com/moonrepo/moon/tree/master/crates/console-reporter), with a
 well-defined interface that is used to print checkpoints (the 4 squares), and status updates from
 the action pipeline (and the new task runner).
 

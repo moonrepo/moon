@@ -75,11 +75,11 @@ language.
 
 Of course this should all be tested.
 
-- [ ] Added fixture to `nextgen/config/tests/__fixtures__/inheritance`
-- [ ] Added fixture to `nextgen/project-builder/tests/__fixtures__/langs`
-- [ ] Added fixture to `nextgen/task-builder/tests/__fixtures__/builder/platforms`
-- [ ] Updated `nextgen/config/tests/inherited_tasks_config_test.rs`
-- [ ] Updated `nextgen/project-builder/tests/__fixtures__/langs/ts-config`
+- [ ] Added fixture to `crates/config/tests/__fixtures__/inheritance`
+- [ ] Added fixture to `crates/project-builder/tests/__fixtures__/langs`
+- [ ] Added fixture to `crates/task-builder/tests/__fixtures__/builder/platforms`
+- [ ] Updated `crates/config/tests/inherited_tasks_config_test.rs`
+- [ ] Updated `crates/project-builder/tests/__fixtures__/langs/ts-config`
 
 ### Create a pull request
 
@@ -123,8 +123,8 @@ pub struct ToolchainConfig {
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
 - [ ] Ran `just schemas` and updated the JSON schemas
-- [ ] Add `.prototools` support in `nextgen/config/src/toolchain_config.rs`
-- [ ] Add tests to `nextgen/config/tests/toolchain_config_test.rs`
+- [ ] Add `.prototools` support in `crates/config/src/toolchain_config.rs`
+- [ ] Add tests to `crates/config/tests/toolchain_config_test.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
 
@@ -234,8 +234,8 @@ Furthermore, when applicable, also add version support from `.prototools`.
 kotlin = "1.2.3"
 ```
 
-- [ ] Updated config struct: `nextgen/config/src/toolchain/<lang>.rs`
-- [ ] Supported proto version in `nextgen/config/src/toolchain_config.rs`
+- [ ] Updated config struct: `crates/config/src/toolchain/<lang>.rs`
+- [ ] Supported proto version in `crates/config/src/toolchain_config.rs`
 - [ ] Ran `just schemas` and updated the JSON schemas
 
 ### Integrate proto tool into moon tool crate
@@ -272,7 +272,7 @@ Refer to the Node.js implementation for examples (it can mostly be copied).
 Different projects may have different version requirements, so we need to support this through
 project-level toolchain overrides.
 
-- [ ] Updated `nextgen/config/src/project/overrides_config.rs`
+- [ ] Updated `crates/config/src/project/overrides_config.rs`
 - [ ] Updated `get_runtime_from_config` in platform crate
 
 ### Integrate `--profile` option

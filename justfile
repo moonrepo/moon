@@ -74,4 +74,4 @@ schemas:
 	cargo run -p moon_config
 
 gql:
-	graphql-client introspect-schema http://localhost:8080/graphql --output nextgen/api/schema.json --header "X-Moonbase-TestingId: 1"
+	graphql-client introspect-schema http://localhost:8080/graphql --output crates/api/schema.json --header "X-Moonbase-TestingId: 1"

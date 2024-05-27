@@ -7,7 +7,7 @@ async function run() {
 	const changedFiles = await getChangedFiles();
 	const hasRustChanges = changedFiles.some(
 		(file) =>
-			(file.startsWith('crates') || file.startsWith('nextgen')) &&
+			(file.startsWith('crates') || file.startsWith('legacy')) &&
 			file.endsWith('.rs') &&
 			!file.endsWith('_test.rs'),
 	);

@@ -1,0 +1,20 @@
+[package]
+name = "moon_rust_tool"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_config = { path = "../../../crates/config" }
+moon_console = { path = "../../../crates/console" }
+moon_logger = { path = "../../core/logger" }
+moon_platform_runtime = { path = "../../../crates/platform-runtime" }
+moon_process = { path = "../../../crates/process" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+
+[lints]
+workspace = true

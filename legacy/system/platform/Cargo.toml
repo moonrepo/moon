@@ -1,0 +1,24 @@
+[package]
+name = "moon_system_platform"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_action_context = { path = "../../../crates/action-context" }
+moon_config = { path = "../../../crates/config" }
+moon_console = { path = "../../../crates/console" }
+moon_hash = { path = "../../../crates/hash" }
+moon_platform = { path = "../../core/platform" }
+moon_process = { path = "../../../crates/process" }
+moon_project = { path = "../../../crates/project" }
+moon_task = { path = "../../../crates/task" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

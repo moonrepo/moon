@@ -1,0 +1,26 @@
+[package]
+name = "moon_javascript_platform"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_args = { path = "../../../crates/args" }
+moon_common = { path = "../../../crates/common" }
+moon_config = { path = "../../../crates/config" }
+moon_hash = { path = "../../../crates/hash" }
+moon_node_lang = { path = "../../node/lang" }
+moon_platform_detector = { path = "../../../crates/platform-detector" }
+moon_project = { path = "../../../crates/project" }
+moon_target = { path = "../../../crates/target" }
+moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
+once_cell = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

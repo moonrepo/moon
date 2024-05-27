@@ -1,0 +1,18 @@
+---
+source: crates/codegen/tests/template_test.rs
+expression: file.content
+---
+# extended
+
+This is a partial file!
+ # partials
+This is a full file!
+ # extended
+This is a local file in the same template!
+ # base
+
+
+	<label>
+		Name
+		<input type="text" />
+	</label>

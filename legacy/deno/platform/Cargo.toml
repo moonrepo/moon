@@ -1,0 +1,33 @@
+[package]
+name = "moon_deno_platform"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_action = { path = "../../../crates/action" }
+moon_action_context = { path = "../../../crates/action-context" }
+moon_common = { path = "../../../crates/common" }
+moon_config = { path = "../../../crates/config" }
+moon_console = { path = "../../../crates/console" }
+moon_deno_lang = { path = "../lang" }
+moon_deno_tool = { path = "../tool" }
+moon_hash = { path = "../../../crates/hash" }
+moon_logger = { path = "../../core/logger" }
+moon_platform = { path = "../../core/platform" }
+moon_process = { path = "../../../crates/process" }
+moon_project = { path = "../../../crates/project" }
+moon_task = { path = "../../../crates/task" }
+moon_tool = { path = "../../core/tool" }
+moon_typescript_lang = { path = "../../typescript/lang" }
+moon_typescript_platform = { path = "../../typescript/platform" }
+moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

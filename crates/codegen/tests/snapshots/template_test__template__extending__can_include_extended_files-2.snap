@@ -1,0 +1,31 @@
+---
+source: crates/codegen/tests/template_test.rs
+expression: file.content
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	
+	<link rel="stylesheet" href="style.css" />
+	<title>Index - My Webpage</title>
+	
+	<style type="text/css">
+		.important { color: #336699; }
+	</style>
+
+</head>
+<body>
+	<div id="content">
+	<h1>Index</h1>
+	<p class="important">
+		Welcome to my awesome homepage.
+	</p>
+</div>
+	<div id="footer">
+		
+		&copy; Copyright 2008
+		
+	</div>
+</body>
+</html>

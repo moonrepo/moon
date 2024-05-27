@@ -1,0 +1,23 @@
+[package]
+name = "moon_test_utils"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+moon_common = { path = "../../../crates/common" }
+moon_config = { path = "../../../crates/config" }
+assert_cmd = "2.0.14"
+assert_fs = "1.1.1"
+clean-path = "0.2.1"
+insta = "1.39.0"
+predicates = "3.1.0"
+pretty_assertions = "1.4.0"
+rustc-hash = { workspace = true }
+serde_yaml = { workspace = true }
+starbase_utils = { workspace = true }
+# symlink = "0.1.0"
+tokio = { workspace = true, features = ["full", "test-util"] }
+
+[lints]
+workspace = true

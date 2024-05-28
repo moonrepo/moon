@@ -17,17 +17,31 @@ use tracing::debug;
 
 // IN ORDER:
 
-#[system]
-pub async fn load_environments(states: States) {
+// #[system]
+// pub async fn load_environments(states: States) {
+pub async fn load_environments(
+    states: starbase::States,
+    resources: starbase::Resources,
+    emitters: starbase::Emitters,
+) -> starbase::SystemResult {
     states.set(MoonEnv(Arc::new(MoonEnvironment::new()?))).await;
 
     states
         .set(ProtoEnv(Arc::new(ProtoEnvironment::new()?)))
         .await;
+
+    // test
+
+    Ok(())
 }
 
-#[system]
-pub async fn load_workspace(states: States, resources: Resources) {
+// #[system]
+// pub async fn load_workspace(states: States, resources: Resources) {
+pub async fn load_workspace(
+    states: starbase::States,
+    resources: starbase::Resources,
+    emitters: starbase::Emitters,
+) -> starbase::SystemResult {
     let console = {
         let quiet = states.get::<GlobalArgs>().await.quiet;
 
@@ -54,14 +68,27 @@ pub async fn load_workspace(states: States, resources: Resources) {
 
     resources.set(console).await;
     resources.set(workspace).await;
+
+    // test
+    Ok(())
 }
 
-#[system]
+// #[system]
+// pub async fn create_plugin_registries(
+//     resources: Resources,
+//     moon_env: StateRef<MoonEnv>,
+//     proto_env: StateRef<ProtoEnv>,
+// ) {
 pub async fn create_plugin_registries(
-    resources: Resources,
-    moon_env: StateRef<MoonEnv>,
-    proto_env: StateRef<ProtoEnv>,
-) {
+    states: starbase::States,
+    resources: starbase::Resources,
+    emitters: starbase::Emitters,
+) -> starbase::SystemResult {
+    let moon_env_base = states.get::<MoonEnv>().await;
+    let moon_env = moon_env_base.read();
+    let proto_env_base = states.get::<ProtoEnv>().await;
+    let proto_env = proto_env_base.read();
+
     // TODO fix starbase
     // let configs = {
     //     resources
@@ -90,6 +117,10 @@ pub async fn create_plugin_registries(
             ),
         })
         .await;
+
+    // test
+
+    Ok(())
 }
 
 #[system]

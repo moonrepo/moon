@@ -4933,9 +4933,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.83"
+version = "1.0.84"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b33eb56c327dec362a9e55b3ad14f9d2f0904fb5a5b03b513ab5465399e9f43"
+checksum = "ec96c6a92621310b51366f1e28d05ef11489516e93be030060e5fc12024a49d6"
 dependencies = [
  "unicode-ident",
 ]
@@ -5888,7 +5888,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "starbase_events 0.6.0",
- "starbase_macros 0.6.1",
+ "starbase_macros 0.6.2",
  "starbase_styles 0.4.0",
  "thiserror",
  "tokio",
@@ -5923,7 +5923,7 @@ version = "0.6.0"
 dependencies = [
  "async-trait",
  "miette",
- "starbase_macros 0.6.1",
+ "starbase_macros 0.6.2",
  "tokio",
 ]
 
@@ -5935,13 +5935,15 @@ checksum = "c1b23db0b8074346e689895c7a18e97517c3492ed4cd1c330b3eeb765a861346"
 dependencies = [
  "async-trait",
  "miette",
- "starbase_macros 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "starbase_macros 0.6.1",
  "tokio",
 ]
 
 [[package]]
 name = "starbase_macros"
 version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1493d633e0179327eefc0a4ec3362325fc83a8432191c699ff0acc63caf4a985"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -5951,9 +5953,7 @@ dependencies = [
 
 [[package]]
 name = "starbase_macros"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1493d633e0179327eefc0a4ec3362325fc83a8432191c699ff0acc63caf4a985"
+version = "0.6.2"
 dependencies = [
  "darling",
  "proc-macro2",

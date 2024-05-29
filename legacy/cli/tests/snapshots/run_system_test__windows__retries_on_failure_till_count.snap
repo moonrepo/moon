@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_system_test.rs
+source: legacy/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ windows:retryCount
@@ -18,4 +18,4 @@ stderr
 Error: task_runner::run_failed
 
   × Task windows:retryCount failed to run.
-  ╰─▶ Process cmd.exe failed with a 1 exit code.
+  ╰─▶ Process cmd.exe failed: exit code 1

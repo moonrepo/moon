@@ -464,10 +464,7 @@ impl<'task> TaskRunner<'task> {
                     target: self.task.target.to_string(),
                     error: Box::new(ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
-                        code: last_attempt
-                            .get_output()
-                            .map(|output| output.get_exit_code())
-                            .unwrap_or(-1),
+                        status: last_attempt.get_output_status(),
                     }),
                 }
                 .into());

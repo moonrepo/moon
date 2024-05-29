@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Rewrote process failure error messages to include exit status information. This should help
+  uncover processes killed by signals, and help debug the -1 exit code issues.
+
 ## 1.25.0
 
 #### 💥 Breaking

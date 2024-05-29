@@ -18,22 +18,20 @@ pub enum ProcessError {
 
     #[diagnostic(code(process::failed))]
     #[error(
-        "Process {} failed with a {} exit code.",
+        "Process {} failed: {status}",
         .bin.style(Style::Shell),
-        .code.style(Style::Symbol),
     )]
-    ExitNonZero { bin: String, code: i32 },
+    ExitNonZero { bin: String, status: String },
 
     #[diagnostic(code(process::failed))]
     #[error(
-        "Process {} failed with a {} exit code. {}",
+        "Process {} failed: {status} {}",
         .bin.style(Style::Shell),
-        .code.style(Style::Symbol),
         .output.style(Style::MutedLight),
     )]
     ExitNonZeroWithOutput {
         bin: String,
-        code: i32,
+        status: String,
         output: String,
     },
 

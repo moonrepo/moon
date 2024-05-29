@@ -103,6 +103,7 @@ impl Command {
             console: self.console.clone(),
             inner: command,
             inspector,
+            current_id: None,
         }
     }
 

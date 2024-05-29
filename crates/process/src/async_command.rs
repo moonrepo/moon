@@ -12,6 +12,8 @@ pub struct AsyncCommand<'cmd> {
     pub console: Option<Arc<Console>>,
     pub inner: Command,
     pub inspector: CommandInspector<'cmd>,
+
+    pub current_id: Option<u32>,
 }
 
 impl<'cmd> AsyncCommand<'cmd> {
@@ -33,6 +35,8 @@ impl<'cmd> AsyncCommand<'cmd> {
                 })?;
 
             self.write_input_to_child(&mut child).await?;
+
+            self.current_id = child.id();
 
             output = child
                 .wait_with_output()
@@ -80,6 +84,8 @@ impl<'cmd> AsyncCommand<'cmd> {
             })?;
         };
 
+        self.current_id = child.id();
+
         let status = child.wait().await.map_err(|error| ProcessError::Stream {
             bin: self.get_bin_name(),
             error: Box::new(error),
@@ -114,6 +120,8 @@ impl<'cmd> AsyncCommand<'cmd> {
                 bin: self.get_bin_name(),
                 error: Box::new(error),
             })?;
+
+        self.current_id = child.id();
 
         if self.inspector.should_pass_stdin() {
             self.write_input_to_child(&mut child).await?;
@@ -217,7 +225,9 @@ impl<'cmd> AsyncCommand<'cmd> {
             .to_string()
     }
 
-    fn handle_nonzero_status(&self, output: &Output, with_message: bool) -> miette::Result<()> {
+    fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {
+        self.current_id = None;
+
         if self.inspector.should_error_nonzero() && !output.status.success() {
             return Err(output_to_error(self.get_bin_name(), output, with_message).into());
         }

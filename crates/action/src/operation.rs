@@ -4,7 +4,6 @@ use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
-use std::mem;
 use std::process::Output;
 use std::time::{Duration, Instant};
 
@@ -68,6 +67,22 @@ impl Operation {
         }
     }
 
+    pub fn get_output_status(&self) -> String {
+        self.get_output()
+            .and_then(|output| {
+                if let Some(code) = output.exit_code {
+                    return Some(format!("exit code {code}"));
+                }
+
+                if let Some(status) = output.exit_status {
+                    return Some(status.to_string());
+                }
+
+                None
+            })
+            .unwrap_or_else(|| "unknown failure".into())
+    }
+
     pub fn finish(&mut self, status: ActionStatus) {
         self.finished_at = Some(now_timestamp());
         self.status = status;
@@ -77,17 +92,12 @@ impl Operation {
         }
     }
 
-    pub fn finish_from_output(&mut self, process_output: &mut Output) {
+    pub fn finish_from_output(&mut self, process_output: Output) {
         if let Some(output) = self.get_output_mut() {
             output.exit_code = process_output.status.code();
-
-            output.set_stderr(
-                String::from_utf8(mem::take(&mut process_output.stderr)).unwrap_or_default(),
-            );
-
-            output.set_stdout(
-                String::from_utf8(mem::take(&mut process_output.stdout)).unwrap_or_default(),
-            );
+            output.exit_status = Some(process_output.status);
+            output.set_stderr(String::from_utf8(process_output.stderr).unwrap_or_default());
+            output.set_stdout(String::from_utf8(process_output.stdout).unwrap_or_default());
         }
 
         self.finish(if process_output.status.success() {

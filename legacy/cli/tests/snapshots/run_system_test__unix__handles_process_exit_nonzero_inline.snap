@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_system_test.rs
+source: legacy/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ unix:exitNonZeroInline
@@ -7,4 +7,4 @@ expression: assert.output()
 Error: task_runner::run_failed
 
   × Task unix:exitNonZeroInline failed to run.
-  ╰─▶ Process bash failed with a 2 exit code.
+  ╰─▶ Process bash failed: exit code 2

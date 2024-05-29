@@ -122,7 +122,9 @@ impl<'task> CommandExecutor<'task> {
             // Handle the execution result
             match attempt_result {
                 // Zero and non-zero exit codes
-                Ok(mut output) => {
+                Ok(output) => {
+                    let is_success = output.status.success();
+
                     debug!(
                         task = self.task.target.as_str(),
                         command = self.command.bin.to_str(),
@@ -130,7 +132,7 @@ impl<'task> CommandExecutor<'task> {
                         "Ran task, checking conditions",
                     );
 
-                    attempt.finish_from_output(&mut output);
+                    attempt.finish_from_output(output);
 
                     self.console.reporter.on_task_finished(
                         &self.task.target,
@@ -142,7 +144,7 @@ impl<'task> CommandExecutor<'task> {
                     self.attempts.push(attempt);
 
                     // Successful execution, so break the loop
-                    if output.status.success() {
+                    if is_success {
                         debug!(
                             task = self.task.target.as_str(),
                             "Task was successful, proceeding to next step",

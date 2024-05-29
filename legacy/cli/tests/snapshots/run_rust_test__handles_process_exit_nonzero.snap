@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_rust_test.rs
+source: legacy/cli/tests/run_rust_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ cargo generate-lockfile
@@ -10,4 +10,4 @@ stderr
 Error: task_runner::run_failed
 
   × Task rust:exitNonZero failed to run.
-  ╰─▶ Process cargo failed with a 1 exit code.
+  ╰─▶ Process cargo failed: exit code 1

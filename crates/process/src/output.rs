@@ -13,7 +13,10 @@ pub fn output_to_trimmed_string(data: &[u8]) -> String {
 }
 
 pub fn output_to_error(bin: String, output: &Output, with_message: bool) -> ProcessError {
-    let status = output.status.to_string();
+    let status = match output.status.code() {
+        Some(code) => format!("exit code {code}"),
+        None => output.status.to_string(),
+    };
 
     if !with_message {
         return ProcessError::ExitNonZero { bin, status };

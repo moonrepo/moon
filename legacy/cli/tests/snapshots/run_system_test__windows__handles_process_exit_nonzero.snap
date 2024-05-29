@@ -5,8 +5,8 @@ expression: assert.output()
 ▪▪▪▪ windows:exitNonZero
 stdout
 ▪▪▪▪ windows:exitNonZero (100ms)
-stderr 
+stderr
 Error: task_runner::run_failed
 
   × Task windows:exitNonZero failed to run.
-  ╰─▶ Process cmd.exe failed with a 1 exit code.
+  ╰─▶ Process cmd.exe failed: exit code 1

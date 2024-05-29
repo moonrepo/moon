@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_deno_test.rs
+source: legacy/cli/tests/run_deno_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ deno:unhandledPromise
@@ -10,4 +10,4 @@ error: Uncaught (in promise) "Oops"
 Error: task_runner::run_failed
 
   × Task deno:unhandledPromise failed to run.
-  ╰─▶ Process deno failed with a 1 exit code.
+  ╰─▶ Process deno failed: exit code 1

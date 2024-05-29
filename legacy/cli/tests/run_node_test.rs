@@ -324,7 +324,7 @@ fn retries_on_failure_till_count() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("1 exit code").eval(&output));
+    assert!(predicate::str::contains("exit code 1").eval(&output));
 }
 
 #[test]

@@ -13,10 +13,10 @@ pub fn output_to_trimmed_string(data: &[u8]) -> String {
 }
 
 pub fn output_to_error(bin: String, output: &Output, with_message: bool) -> ProcessError {
-    let code = output.status.code().unwrap_or(-1);
+    let status = output.status.to_string();
 
     if !with_message {
-        return ProcessError::ExitNonZero { bin, code };
+        return ProcessError::ExitNonZero { bin, status };
     }
 
     let mut message = output_to_trimmed_string(&output.stderr);
@@ -32,7 +32,7 @@ pub fn output_to_error(bin: String, output: &Output, with_message: bool) -> Proc
 
     ProcessError::ExitNonZeroWithOutput {
         bin,
-        code,
+        status,
         output: message,
     }
 }

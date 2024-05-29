@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_node_test.rs
+source: legacy/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
@@ -11,4 +11,4 @@ stderr
 Error: task_runner::run_failed
 
   × Task node:exitCodeNonZero failed to run.
-  ╰─▶ Process node failed with a 1 exit code.
+  ╰─▶ Process node failed: exit code 1

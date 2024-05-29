@@ -6,7 +6,7 @@ use moon_env::MoonEnvironment;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
-use std::env;
+use std::env::{self, consts};
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 use tracing::debug;
@@ -102,6 +102,8 @@ impl Launchpad {
 
         let mut client = reqwest::Client::new()
             .get(CURRENT_VERSION_URL)
+            .header("X-Moon-OS", consts::OS.to_owned())
+            .header("X-Moon-Arch", consts::ARCH.to_owned())
             .header("X-Moon-Version", &moon_env.version)
             .header("X-Moon-CI", ci_env::is_ci().to_string())
             .header(

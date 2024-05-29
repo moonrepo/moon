@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_system_test.rs
+source: legacy/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ windows:retryCount
@@ -11,10 +11,10 @@ stdout
 ▪▪▪▪ windows:retryCount (attempt 4/4)
 stdout
 ▪▪▪▪ windows:retryCount (100ms)
-stderr
-stderr
-stderr
-stderr
+stderr 
+stderr 
+stderr 
+stderr 
 Error: task_runner::run_failed
 
   × Task windows:retryCount failed to run.

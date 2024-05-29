@@ -1,11 +1,11 @@
 ---
-source: crates/cli/tests/run_system_test.rs
+source: legacy/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ windows:exitNonZero
 stdout
 ▪▪▪▪ windows:exitNonZero (100ms)
-stderr
+stderr 
 Error: task_runner::run_failed
 
   × Task windows:exitNonZero failed to run.

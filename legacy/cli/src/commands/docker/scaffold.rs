@@ -16,7 +16,7 @@ use starbase::{system, AppResult};
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
-use tracing::warn;
+use tracing::{debug, warn};
 
 #[derive(Args, Clone, Debug)]
 pub struct DockerScaffoldArgs {
@@ -78,6 +78,12 @@ fn scaffold_workspace(
     docker_root: &Path,
 ) -> AppResult {
     let docker_workspace_root = docker_root.join("workspace");
+    let projects = project_graph.get_all()?;
+
+    debug!(
+        scaffold_dir = ?docker_workspace_root,
+        "Scaffolding workspace skeleton, including configuration from all projects"
+    );
 
     fs::create_dir_all(&docker_workspace_root)?;
 
@@ -153,7 +159,7 @@ fn scaffold_workspace(
     // Copy each project and mimic the folder structure
     let mut has_root_project = false;
 
-    for project in project_graph.get_all()? {
+    for project in projects {
         if project.source.as_str() == "." {
             has_root_project = true;
         }
@@ -209,12 +215,16 @@ fn scaffold_workspace(
     }
 
     // Copy moon configuration
-    let moon_configs = glob::walk(
-        workspace.root.join(CONFIG_DIRNAME),
-        ["*.yml", "tasks/**/*.yml"],
-    )?;
-    let moon_configs = moon_configs
-        .iter()
+    let moon_dir = workspace.root.join(CONFIG_DIRNAME);
+
+    debug!(
+        scaffold_dir = ?docker_workspace_root,
+        moon_dir = ?moon_dir,
+        "Copying core moon configuration"
+    );
+
+    let moon_configs = glob::walk(moon_dir, ["*.yml", "tasks/**/*.yml"])?
+        .into_iter()
         .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
         .collect::<Result<Vec<String>, _>>()?;
 
@@ -231,6 +241,12 @@ fn scaffold_sources_project(
     manifest: &mut DockerManifest,
 ) -> AppResult {
     let project = project_graph.get(project_id)?;
+
+    debug!(
+        id = project_id.as_str(),
+        "Copying sources from project {}",
+        color::id(project_id),
+    );
 
     manifest.focused_projects.insert(project_id.to_owned());
 
@@ -249,6 +265,12 @@ fn scaffold_sources_project(
         // which is usually not what users want. If they do want it,
         // they can be explicitly on the command line!
         if !dep_cfg.is_root_scope() {
+            debug!(
+                id = project_id.as_str(),
+                dep_id = dep_cfg.id.as_str(),
+                "Including dependency project"
+            );
+
             scaffold_sources_project(
                 workspace,
                 project_graph,
@@ -270,6 +292,13 @@ fn scaffold_sources(
     include: &[String],
 ) -> AppResult {
     let docker_sources_root = docker_root.join("sources");
+
+    debug!(
+        scaffold_dir = ?docker_sources_root,
+        projects = ?project_ids.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+        "Scaffolding sources skeleton, including source files from focused projects"
+    );
+
     let mut manifest = DockerManifest {
         focused_projects: FxHashSet::default(),
         unfocused_projects: FxHashSet::default(),
@@ -295,9 +324,13 @@ fn scaffold_sources(
 
     // Include via globs
     if !include.is_empty() {
-        let files = glob::walk_files(&workspace.root, include)?;
-        let files = files
-            .iter()
+        debug!(
+            include = ?include,
+            "Including additional sources"
+        );
+
+        let files = glob::walk_files(&workspace.root, include)?
+            .into_iter()
             .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
             .collect::<Result<Vec<String>, _>>()?;
 
@@ -318,12 +351,24 @@ fn scaffold_sources(
 
 pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
     let ignore_file = workspace_root.join(".dockerignore");
+    let mut is_ignored = false;
 
-    let is_ignored = if ignore_file.exists() {
-        fs::read_file(&ignore_file)?.contains(".moon/cache\n")
-    } else {
-        false
-    };
+    debug!(
+        ignore_file = ?ignore_file,
+        "Checking if moon cache has been ignored"
+    );
+
+    if ignore_file.exists() {
+        let ignore = fs::read_file(&ignore_file)?;
+
+        // Check lines so we can match exactly and avoid comments or nested paths
+        for line in ignore.lines() {
+            if line.trim() == ".moon/cache" {
+                is_ignored = true;
+                break;
+            }
+        }
+    }
 
     if !is_ignored {
         warn!(
@@ -347,6 +392,11 @@ pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<
     check_docker_ignore(&workspace.root)?;
 
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
+
+    debug!(
+        scaffold_root = ?docker_root,
+        "Scaffolding monorepo structure to temporary docker directory",
+    );
 
     // Delete the docker skeleton to remove any stale files
     fs::remove_dir_all(&docker_root)?;

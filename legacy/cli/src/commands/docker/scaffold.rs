@@ -13,8 +13,10 @@ use rustc_hash::FxHashSet;
 use schematic::ConfigEnum;
 use serde::{Deserialize, Serialize};
 use starbase::{system, AppResult};
+use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
+use tracing::warn;
 
 #[derive(Args, Clone, Debug)]
 pub struct DockerScaffoldArgs {
@@ -314,8 +316,36 @@ fn scaffold_sources(
     Ok(())
 }
 
+pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
+    let ignore_file = workspace_root.join(".dockerignore");
+
+    let is_ignored = if ignore_file.exists() {
+        fs::read_file(&ignore_file)?.contains(".moon/cache\n")
+    } else {
+        false
+    };
+
+    if !is_ignored {
+        warn!(
+            ignore_file = ?ignore_file,
+            "{} must be ignored in {} to avoid interoperability issues when running {} commands inside and outside of Docker",
+            color::file(".moon/cache"),
+            color::file(".dockerignore"),
+            color::shell("moon"),
+        );
+
+        warn!(
+            "If you're not building from the workspace root, or are ignoring by other means, you can ignore this warning"
+        );
+    }
+
+    Ok(())
+}
+
 #[system]
 pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<Workspace>) {
+    check_docker_ignore(&workspace.root)?;
+
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files

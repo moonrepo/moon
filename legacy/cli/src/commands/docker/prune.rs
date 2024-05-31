@@ -16,9 +16,9 @@ use rustc_hash::FxHashSet;
 use starbase::system;
 use starbase::AppResult;
 use starbase_styles::color;
-use starbase_utils::fs;
-use starbase_utils::json;
+use starbase_utils::{fs, json};
 use std::path::Path;
+use tracing::debug;
 
 pub async fn prune_bun(
     bun: &BunTool,
@@ -37,6 +37,11 @@ pub async fn prune_bun(
             }
         }
     }
+
+    debug!(
+        packages = ?package_names,
+        "Pruning Bun dependencies (node_modules)"
+    );
 
     // Some package managers do not delete stale node modules
     fs::remove_dir_all(workspace_root.join("node_modules"))?;
@@ -58,6 +63,7 @@ pub async fn prune_deno(
     _project_graph: &ProjectGraph,
     _manifest: &DockerManifest,
 ) -> AppResult {
+    // noop
     deno.install_focused_dependencies(&(), &[], true).await?;
 
     Ok(())
@@ -81,6 +87,11 @@ pub async fn prune_node(
         }
     }
 
+    debug!(
+        packages = ?package_names,
+        "Pruning Node.js dependencies (node_modules)"
+    );
+
     // Some package managers do not delete stale node modules
     fs::remove_dir_all(workspace_root.join("node_modules"))?;
 
@@ -103,6 +114,11 @@ pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
 
     // Only delete target if relative to `Cargo.lock`
     if target_dir.exists() && lockfile_path.exists() {
+        debug!(
+            target_dir = ?target_dir,
+            "Deleting Rust target directory"
+        );
+
         fs::remove_dir_all(target_dir)?;
     }
 
@@ -124,6 +140,11 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
     let project_graph = generate_project_graph(workspace).await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let mut platforms = FxHashSet::<PlatformType>::default();
+
+    debug!(
+        projects = ?manifest.focused_projects.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+        "Pruning dependencies for focused projects"
+    );
 
     for project_id in &manifest.focused_projects {
         platforms.insert(project_graph.get(project_id)?.platform);

@@ -15,9 +15,13 @@ download-file = "moon-{arch}-pc-windows-msvc.exe"
 
 [install]
 download-url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
+download-url-canary = "https://github.com/moonrepo/moon/releases/download/canary/{download_file}"
 
 [resolve]
 git-url = "https://github.com/moonrepo/moon"
+
+[resolve.aliases]
+stable = "1"
 
 [metadata]
 self-upgrade-commands = ["upgrade"]

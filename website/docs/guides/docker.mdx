@@ -15,16 +15,28 @@ Looking to speed up your Docker builds? Want to build in the cloud?
 
 :::
 
-## Performance improvements
+## Requirements
 
-For the most part, everything should just work, but we have disabled caching and hashing in Docker
-containers and images for the following reasons:
+The first requirement, which is very important, is adding `.moon/cache` to the workspace root
+`.dockerignore` (moon assumes builds are running from the root). Not all files in `.moon/cache` are
+portable across machines/environments, so copying these file into Docker will definitely cause
+interoperability issues.
 
-- Avoids having to mount a volume for the `.git` directory.
-- Reduces the overall image size as we're avoiding creating tarballs.
-- Ensures that builds are fresh and up-to-date.
+```text title=".dockerignore"
+.moon/cache
+```
 
-## Dockerfile
+The other requirement depends on how you want to integrate Git with Docker. Since moon executes
+`git` commands under the hood, there are some special considerations to be aware of when running
+moon within Docker. There's 2 scenarios to choose from:
+
+1. (recommended) Add the `.git` folder to `.dockerignore`, so that it's not `COPY`'d. moon will
+   continue to work just fine, albeit with some functionality disabled, like caching.
+2. Ensure that the `git` library is installed in the container, and copy the `.git` folder with
+   `COPY`. moon will work with full functionality, but it will increase the overall size of the
+   image because of caching.
+
+## `Dockerfile` setup
 
 We're very familiar with how tedious `Dockerfile`s are to write and maintain, so in an effort to
 reduce this headache, we've built a handful of tools to make this process much easier. With moon,
@@ -317,17 +329,6 @@ RUN moon docker prune
 </Tabs>
 
 ## Troubleshooting
-
-### Process failure for git
-
-Since moon executes `git` commands under the hood, there are some special considerations to be aware
-of when running moon within Docker. There's basically 2 scenarios to choose from:
-
-1. Add the `.git` folder to `.dockerignore`, so that it's not `COPY`'d. moon will continue to work
-   just fine, albeit with some functionality disabled.
-2. Ensure that the `git` library is installed in the container, and copy the `.git` folder with
-   `COPY`. moon will work with full functionality, but it will increase the overall size of the
-   image because of caching.
 
 ### Supporting `node:alpine` images
 

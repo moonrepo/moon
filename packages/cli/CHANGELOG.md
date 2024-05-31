@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a check to `moon docker scaffold` that ensures that `.moon/cache` is ignored in a root
+  `.dockerignore` file. This helps to avoid interoperability issues.
+- Added more logs to `moon docker` commands to help uncover future issues.
+
 ## 1.25.1
 
 #### 🚀 Updates

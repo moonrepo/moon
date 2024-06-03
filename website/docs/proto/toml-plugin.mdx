@@ -4,6 +4,8 @@ sidebar_label: TOML
 toc_max_heading_level: 5
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The TOML plugin is by design, very simple. It's a TOML file that describes a schema for the tool,
 how it should be installed, and how it should be invoked. Since this is a static configuration file,
 it does not support any logic or complex behavior, and is merely for simple and common use cases,
@@ -203,6 +205,25 @@ To resolve a list of available versions using a JSON manifest, the following set
 [resolve]
 manifest-url = "https://someregistry.com/protostar/versions.json"
 manifest-version-key = "latest_version"
+```
+
+#### Versions and aliases<VersionLabel version="0.36.0" />
+
+As an alternative, we also support a static configuration of explicit versions and aliases. This is
+useful if you have an internal tool that is relatively stable, or does not provide a means in which
+to extract version information.
+
+- `versions` - A list of semantic versions.
+- `aliases` - A mapping of alias names to semantic versions.
+
+```toml title="protostar.toml"
+# ...
+
+[resolve]
+versions = ["1.2.3", "1.2.4", "1.2.5"]
+
+[resolve.aliases]
+stable = "1.2.4"
 ```
 
 #### Version patterns

@@ -73,7 +73,7 @@ impl FromStr for TemplateLocator {
                     }
 
                     return Err(ParseError::new(format!(
-                        "Invalid Git template locator, must be in the format of `{protocol}:url#revision`"
+                        "Invalid Git template locator, must be in the format of `{protocol}://url#revision`"
                     )));
                 }
                 "npm" | "pnpm" | "yarn" => {
@@ -86,7 +86,7 @@ impl FromStr for TemplateLocator {
                     }
 
                     return Err(ParseError::new(format!(
-                        "Invalid npm template locator, must be in the format of `{protocol}:package#version`"
+                        "Invalid npm template locator, must be in the format of `{protocol}://package#version`"
                     )));
                 }
                 "file" => {
@@ -96,7 +96,7 @@ impl FromStr for TemplateLocator {
                 }
                 other => {
                     return Err(ParseError::new(format!(
-                        "Unknown template locator prefix `{other}:`"
+                        "Unknown template locator prefix `{other}`"
                     )));
                 }
             };

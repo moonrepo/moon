@@ -1,0 +1,29 @@
+---
+title: plugin search
+sidebar_label: search
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.36.0" header />
+
+The `proto plugin search <query>` command will search for plugins provided by the community, based
+on the provided query string. Built-in plugins _are not_ searchable.
+
+```
+$ proto plugin search moon
+
+Plugins
+Available for query: moon
+
+ Plugin  Author    Format  Description                                                          Locator
+ moon    moonrepo  TOML    moon is a multi-language build system and codebase management tool.  https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml
+```
+
+### Arguments
+
+- `<query>` - Query string to match against.
+
+### Options
+
+- `--json` - Print the results in JSON format.

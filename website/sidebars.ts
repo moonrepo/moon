@@ -310,6 +310,7 @@ const sidebars: SidebarsConfig = {
 						'proto/commands/plugin/info',
 						'proto/commands/plugin/list',
 						'proto/commands/plugin/remove',
+						'proto/commands/plugin/search',
 					],
 					link: {
 						type: 'generated-index',
@@ -325,6 +326,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/status',
 				'proto/commands/unalias',
 				'proto/commands/uninstall',
+				'proto/commands/unpin',
 				'proto/commands/upgrade',
 				'proto/commands/use',
 			],

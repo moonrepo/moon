@@ -74,9 +74,9 @@ mod ext_download {
                 .insert(
                     Id::raw("example"),
                     PartialExtensionConfig {
-                        plugin: Some(PluginLocator::SourceFile {
+                        plugin: Some(PluginLocator::File {
                             file: "invalid.wasm".into(),
-                            path: PathBuf::from("invalid.wasm"),
+                            path: Some(PathBuf::from("invalid.wasm")),
                         }),
                         config: None,
                     },

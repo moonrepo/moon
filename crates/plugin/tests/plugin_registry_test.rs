@@ -107,9 +107,9 @@ mod plugin_registry {
         registry
             .load(
                 Id::raw("id"),
-                PluginLocator::SourceFile {
+                PluginLocator::File {
                     file: "".into(),
-                    path: sandbox.path().join("test.wasm"),
+                    path: Some(sandbox.path().join("test.wasm")),
                 },
             )
             .await
@@ -125,9 +125,9 @@ mod plugin_registry {
         registry
             .load(
                 Id::raw("id"),
-                PluginLocator::SourceFile {
+                PluginLocator::File {
                     file: "".into(),
-                    path: sandbox.path().join("test.wasm"),
+                    path: Some(sandbox.path().join("test.wasm")),
                 },
             )
             .await
@@ -136,9 +136,9 @@ mod plugin_registry {
         registry
             .load(
                 Id::raw("id"),
-                PluginLocator::SourceFile {
+                PluginLocator::File {
                     file: "".into(),
-                    path: sandbox.path().join("test.wasm"),
+                    path: Some(sandbox.path().join("test.wasm")),
                 },
             )
             .await

@@ -18,6 +18,10 @@
   `.dockerignore` file. This helps to avoid interoperability issues.
 - Added more logs to `moon docker` commands to help uncover future issues.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.36.0 (from v0.35.4).
+
 ## 1.25.1
 
 #### 🚀 Updates

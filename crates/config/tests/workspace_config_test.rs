@@ -433,9 +433,9 @@ generator:
                 r"
 generator:
   templates:
-    - git:github.com/org/repo#master
-    - git:gitlab.com/org/repo#main
-    - git:ghe.self.hosted.com/some/org/repo#v1.2.3
+    - git://github.com/org/repo#master
+    - git://gitlab.com/org/repo#main
+    - git://ghe.self.hosted.com/some/org/repo#v1.2.3
 ",
                 |path| WorkspaceConfig::load_from(path),
             );
@@ -466,8 +466,8 @@ generator:
                 r"
 generator:
   templates:
-    - npm:package-name#1.2.3
-    - npm:@scope/package#4.5.6
+    - npm://package-name#1.2.3
+    - npm://@scope/package#4.5.6
 ",
                 |path| WorkspaceConfig::load_from(path),
             );
@@ -489,14 +489,14 @@ generator:
 
         #[test]
         #[should_panic(
-            expected = "Invalid Git template locator, must be in the format of `git:url#revision`"
+            expected = "Invalid Git template locator, must be in the format of `git://url#revision`"
         )]
         fn errors_for_no_git_revision() {
             test_load_config(
                 FILENAME,
                 r"
 generator:
-  templates: ['git:github.com/org/repo']
+  templates: ['git://github.com/org/repo']
 ",
                 |path| WorkspaceConfig::load_from(path),
             );
@@ -504,14 +504,14 @@ generator:
 
         #[test]
         #[should_panic(
-            expected = "Invalid npm template locator, must be in the format of `npm:package#version`"
+            expected = "Invalid npm template locator, must be in the format of `npm://package#version`"
         )]
         fn errors_for_no_npm_version() {
             test_load_config(
                 FILENAME,
                 r"
 generator:
-  templates: ['npm:@scope/package']
+  templates: ['npm://@scope/package']
 ",
                 |path| WorkspaceConfig::load_from(path),
             );
@@ -761,14 +761,14 @@ vcs:
         //                 FILENAME,
         //                 r"
         // extensions:
-        //     bad.id: 'source:https://domain.com'
+        //     bad.id: 'https://domain.com'
         // ",
         //                 |path| WorkspaceConfig::load_from(path),
         //             );
         //         }
 
         #[test]
-        #[should_panic(expected = "extensions.id.plugin: Missing plugin scope or location.")]
+        #[should_panic(expected = "extensions.id.plugin: Missing plugin protocol.")]
         fn errors_invalid_locator() {
             test_load_config(
                 FILENAME,
@@ -802,7 +802,7 @@ extensions:
                 r"
 extensions:
     test-id:
-        plugin: 'source:https://domain.com'
+        plugin: 'https://domain.com'
 ",
                 |path| WorkspaceConfig::load_from(path),
             );
@@ -811,7 +811,7 @@ extensions:
                 config.extensions.get("test-id").unwrap(),
                 &ExtensionConfig {
                     config: FxHashMap::default(),
-                    plugin: Some(PluginLocator::SourceUrl {
+                    plugin: Some(PluginLocator::Url {
                         url: "https://domain.com".into()
                     }),
                 }
@@ -825,7 +825,7 @@ extensions:
                 r"
 extensions:
     test-id:
-        plugin: 'source:https://domain.com'
+        plugin: 'https://domain.com'
         fooBar: 'abc'
         bar-baz: true
 ",
@@ -839,7 +839,7 @@ extensions:
                         ("fooBar".into(), serde_json::Value::String("abc".into())),
                         ("bar-baz".into(), serde_json::Value::Bool(true)),
                     ]),
-                    plugin: Some(PluginLocator::SourceUrl {
+                    plugin: Some(PluginLocator::Url {
                         url: "https://domain.com".into()
                     }),
                 }

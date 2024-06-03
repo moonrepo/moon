@@ -10,16 +10,16 @@ import { BUILT_IN_TOOLS, THIRD_PARTY_TOOLS } from '@site/src/data/proto-tools';
 
 The following tools are supported natively in proto's toolchain.
 
-<ToolCards tools={BUILT_IN_TOOLS} />
+<ToolCards data="built-in" />
 
 ## Third-party
 
 <Button
   className="float-right -mt-8"
-  href="https://github.com/moonrepo/moon/edit/master/website/src/data/proto-tools.tsx"
+  href="https://github.com/moonrepo/proto/tree/master/registry"
   label="Add tool"
 />
 
 Additional tools can be supported through [plugins](./plugins).
 
-<ToolCards tools={THIRD_PARTY_TOOLS} />
+<ToolCards data="third-party" />

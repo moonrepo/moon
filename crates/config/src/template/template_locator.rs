@@ -35,12 +35,12 @@ pub enum TemplateLocator {
 impl fmt::Display for TemplateLocator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TemplateLocator::File { path } => write!(f, "{path}"),
+            TemplateLocator::File { path } => write!(f, "file://{path}"),
             TemplateLocator::Git {
                 remote_url,
                 revision,
-            } => write!(f, "git:{remote_url}#{revision}"),
-            TemplateLocator::Npm { package, version } => write!(f, "npm:{package}#{version}"),
+            } => write!(f, "git://{remote_url}#{revision}"),
+            TemplateLocator::Npm { package, version } => write!(f, "npm://{package}#{version}"),
         }
     }
 }
@@ -57,7 +57,11 @@ impl FromStr for TemplateLocator {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if let Some(index) = value.find(':') {
             let protocol = &value[0..index];
-            let inner_value = &value[index + 1..];
+            let mut inner_value = &value[index + 1..];
+
+            if inner_value.starts_with("//") {
+                inner_value = &value[index + 3..];
+            }
 
             match protocol {
                 "git" | "git+http" | "git+https" => {
@@ -69,7 +73,7 @@ impl FromStr for TemplateLocator {
                     }
 
                     return Err(ParseError::new(format!(
-                        "Invalid Git template locator, must be in the format of `{protocol}:url#revision`"
+                        "Invalid Git template locator, must be in the format of `{protocol}://url#revision`"
                     )));
                 }
                 "npm" | "pnpm" | "yarn" => {
@@ -82,7 +86,7 @@ impl FromStr for TemplateLocator {
                     }
 
                     return Err(ParseError::new(format!(
-                        "Invalid npm template locator, must be in the format of `{protocol}:package#version`"
+                        "Invalid npm template locator, must be in the format of `{protocol}://package#version`"
                     )));
                 }
                 "file" => {
@@ -92,7 +96,7 @@ impl FromStr for TemplateLocator {
                 }
                 other => {
                     return Err(ParseError::new(format!(
-                        "Unknown template locator prefix `{other}:`"
+                        "Unknown template locator prefix `{other}`"
                     )));
                 }
             };

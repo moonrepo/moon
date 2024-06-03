@@ -361,7 +361,7 @@ debug build:
 
 ```toml
 [plugins]
-<id> = "source:target/wasm32-wasi/debug/<name>.wasm"
+<id> = "file://./target/wasm32-wasi/debug/<name>.wasm"
 ```
 
 And everytime you make a change to the plugin, you'll need to rebuild it with:

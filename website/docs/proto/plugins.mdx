@@ -13,12 +13,12 @@ Plugins can be enabled by configuring them in
 [`.prototools` or `~/.proto/.prototools`](./config#plugins) files, within the `[plugins]` section.
 The map key is the plugin name _in kebab-case_, which is used as the binary/tool name in proto, and
 also the name for configuration and cache purposes. The map value is a
-[plugin locator string](../guides/wasm-plugins#configuring-plugin-locations) that defines a scope
+[plugin locator string](../guides/wasm-plugins#configuring-plugin-locations) that defines a protocol
 and source location.
 
 ```toml title=".prototools"
 [plugins]
-<id> = "<scope>:<location>"
+<id> = "<protocol>://<location>"
 ```
 
 ## Creating plugins

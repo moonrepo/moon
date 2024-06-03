@@ -95,13 +95,6 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // If the task is a no-operation, we should exit early
-        if self.task.is_no_op() {
-            self.skip_noop(context)?;
-
-            return Ok(None);
-        }
-
         // If cache is enabled, then generate a hash and manage outputs
         if self.is_cache_enabled() {
             debug!(
@@ -390,6 +383,13 @@ impl<'task> TaskRunner<'task> {
         node: &ActionNode,
         hash: Option<&str>,
     ) -> miette::Result<()> {
+        // If the task is a no-operation, we should exit early
+        if self.task.is_no_op() {
+            self.skip_no_op(context, hash)?;
+
+            return Ok(());
+        }
+
         debug!(
             task = self.task.target.as_str(),
             "Building and executing the task command"
@@ -444,11 +444,11 @@ impl<'task> TaskRunner<'task> {
             self.save_logs(last_attempt)?;
         }
 
-        // Update the action state based on the result
-        context.set_target_state(&self.task.target, result.run_state);
-
         // Extract the attempts from the result
         self.operations.merge(result.attempts);
+
+        // Update the action state based on the result
+        context.set_target_state(&self.task.target, result.run_state);
 
         // If the execution as a whole failed, return the error.
         // We do this here instead of in `execute` so that we can
@@ -487,7 +487,11 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    pub fn skip_noop(&mut self, context: &ActionContext) -> miette::Result<()> {
+    pub fn skip_no_op(
+        &mut self,
+        context: &ActionContext,
+        hash: Option<&str>,
+    ) -> miette::Result<()> {
         debug!(
             task = self.task.target.as_str(),
             "Skipping task as its a no-operation"
@@ -498,7 +502,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Passed,
         ));
 
-        context.set_target_state(&self.task.target, TargetState::Passthrough);
+        context.set_target_state(&self.task.target, TargetState::from_hash(hash));
 
         Ok(())
     }

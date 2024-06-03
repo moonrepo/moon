@@ -18,6 +18,11 @@
   `.dockerignore` file. This helps to avoid interoperability issues.
 - Added more logs to `moon docker` commands to help uncover future issues.
 
+#### 🐞 Fixes
+
+- Fixed an issue where `noop` tasks would not cache / invalidate cache. This is a regression from
+  the recent task runner changes.
+
 #### ⚙️ Internal
 
 - Updated proto to v0.36.0 (from v0.35.4).

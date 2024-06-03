@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_test.rs
+source: legacy/cli/tests/run_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
@@ -9,4 +9,4 @@ expression: assert.output()
 ▪▪▪▪ dependsOn:serialDeps (no op)
 
 Tasks: 4 completed
- Time: 100ms ❯❯❯❯ to the moon
+ Time: 100ms

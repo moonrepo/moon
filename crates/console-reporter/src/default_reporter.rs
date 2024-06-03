@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
+use moon_action::{Action, ActionNode, ActionStatus, Operation, OperationList};
 use moon_common::color::paint;
 use moon_common::{color, is_test_env};
 use moon_config::TaskOutputStyle;
@@ -47,41 +47,38 @@ impl DefaultReporter {
     ) -> miette::Result<()> {
         let mut comments = vec![];
 
-        match operation.meta {
-            OperationMeta::NoOperation => {
-                comments.push("no op".into());
+        if operation.meta.is_no_operation() {
+            comments.push("no op".into());
+        } else {
+            let status_comment = self.get_status_meta_comment(operation.status, || {
+                if item.attempt_current > 1 {
+                    Some(format!(
+                        "attempt {}/{}",
+                        item.attempt_current, item.attempt_total
+                    ))
+                } else {
+                    None
+                }
+            });
+
+            if let Some(comment) = status_comment {
+                comments.push(comment);
             }
-            _ => {
-                let status_comment = self.get_status_meta_comment(operation.status, || {
-                    if item.attempt_current > 1 {
-                        Some(format!(
-                            "attempt {}/{}",
-                            item.attempt_current, item.attempt_total
-                        ))
-                    } else {
-                        None
-                    }
-                });
 
-                if let Some(comment) = status_comment {
-                    comments.push(comment);
-                }
-
-                if let Some(duration) = operation.duration {
-                    if let Some(elapsed) = time::elapsed_opt(duration) {
-                        comments.push(elapsed);
-                    }
-                }
-
-                // Do not include the hash while testing, as the hash
-                // constantly changes and breaks our local snapshots
-                if !is_test_env() {
-                    if let Some(hash) = &item.hash {
-                        comments.push(self.get_short_hash(hash));
-                    }
+            if let Some(duration) = operation.duration {
+                if let Some(elapsed) = time::elapsed_opt(duration) {
+                    comments.push(elapsed);
                 }
             }
-        };
+        }
+
+        // Do not include the hash while testing, as the hash
+        // constantly changes and breaks our local snapshots
+        if !is_test_env() {
+            if let Some(hash) = &item.hash {
+                comments.push(self.get_short_hash(hash));
+            }
+        }
 
         self.out.print_checkpoint_with_comments(
             if operation.has_failed() {
@@ -205,7 +202,6 @@ impl DefaultReporter {
         let mut failed_count = 0;
         let mut invalid_count = 0;
         let mut skipped_count = 0;
-        let mut noop_count = 0;
 
         for action in actions {
             if !item.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
@@ -231,12 +227,6 @@ impl DefaultReporter {
                 }
                 ActionStatus::Running => {}
             };
-
-            if let Some(last_op) = action.operations.get_last_process() {
-                if last_op.meta.is_no_operation() {
-                    noop_count += 1;
-                }
-            }
         }
 
         let mut counts_message = vec![];
@@ -268,7 +258,7 @@ impl DefaultReporter {
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(item.duration.unwrap_or_default());
 
-        if (passed_count - noop_count) == cached_count && failed_count == 0 {
+        if passed_count == cached_count && failed_count == 0 {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 

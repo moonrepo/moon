@@ -1,0 +1,35 @@
+---
+slug: proto-v0.36
+title: proto v0.36 - ???
+authors: [milesj]
+tags: [registry]
+# image: ./img/proto/v0.35.png
+---
+
+This is a light release that adds support for more terminal shells.
+
+<!--truncate-->
+
+## New static registry
+
+Our long-term plan for proto is to provide a server-based registry in which users could publish and
+manage plugins, and immediately make them available to the community. However, this is quite a
+mountain of work, and will take some time, but making plugins available _now_ is a priority.
+
+As a temporary solution, we're introducing a static registry, in which available plugins are defined
+in static JSON files, located in the official
+[moonrepo/proto](https://github.com/moonrepo/proto/tree/master/registry) repository. This will help
+unblock new feature moving forward.
+
+## New `proto plugin search` command
+
+## New `proto unpin` command
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.36.0) for a full list
+of changes.
+
+- Updated `proto uninstall` to also remove entries from `.prototools` if the version was
+  uninstalled.
+- Updated some error messages to include copy for work arounds.

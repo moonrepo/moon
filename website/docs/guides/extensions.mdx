@@ -22,7 +22,7 @@ configured with the [`extensions`](../config/workspace#extensions) setting in
 ```yaml title=".moon/workspace.yml"
 extensions:
   example:
-    plugin: 'source:https://example.com/path/to/example.wasm'
+    plugin: 'https://example.com/path/to/example.wasm'
 ```
 
 Once configured, it can be executed with [`moon ext`](../commands/ext) by name. Arguments unique to
@@ -207,7 +207,7 @@ to be parsed correctly!
 ```yaml title=".moon/workspace.yml"
 extensions:
   example:
-    plugin: 'source:./path/to/example.wasm'
+    plugin: 'file://./path/to/example.wasm'
     someSetting: 'abc'
     anotherSetting: 123
 ```

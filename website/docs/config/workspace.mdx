@@ -245,9 +245,9 @@ command. An extension is a WASM plugin, and the location of the WASM file must b
 ```yaml title=".moon/workspace.yml" {2-5}
 extensions:
   example:
-    plugin: 'source:./path/to/example.wasm'
+    plugin: 'file://./path/to/example.wasm'
     # or
-    plugin: 'source:https://example.com/path/to/example.wasm'
+    plugin: 'https://example.com/path/to/example.wasm'
 ```
 
 Additionally, extensions support custom configuration that is passed to the WASM runtime when the
@@ -258,7 +258,7 @@ to their documentation for more information.
 ```yaml title=".moon/workspace.yml" {2-5}
 extensions:
   example:
-    plugin: 'source:./path/to/example.wasm'
+    plugin: 'file://./path/to/example.wasm'
     setting1: true
     setting2: 'abc'
 ```
@@ -284,16 +284,16 @@ A list of paths in which templates can be located. Supports the following types 
 defaults to `./templates`.
 
 - File system paths, relative from the workspace root.
-- Git repositories and a revision, prefixed with `git:`. <VersionLabel inline version="1.23.0" />
-- npm packages and a version, prefixed with `npm:`. <VersionLabel inline version="1.23.0" />
+- Git repositories and a revision, prefixed with `git://`. <VersionLabel inline version="1.23.0" />
+- npm packages and a version, prefixed with `npm://`. <VersionLabel inline version="1.23.0" />
 
 ```yaml title=".moon/workspace.yml" {2-4}
 generator:
   templates:
     - './templates'
-    - './other/templates'
-    - 'git:github.com/moonrepo/templates#master'
-    - 'npm:@moonrepo/templates#1.2.3'
+    - 'file://./other/templates'
+    - 'git://github.com/moonrepo/templates#master'
+    - 'npm://@moonrepo/templates#1.2.3'
 ```
 
 > Learn more about this in the official

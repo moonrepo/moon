@@ -32,7 +32,7 @@ export function getAuthorName(author: ProtoTool['author']): string {
 
 export async function loadToolsData(type: 'built-in' | 'third-party'): Promise<ProtoTool[]> {
 	const res = await fetch(
-		`https://raw.githubusercontent.com/moonrepo/proto/develop-0.36/registry/data/${type}.json`,
+		`https://raw.githubusercontent.com/moonrepo/proto/master/registry/data/${type}.json`,
 		{ cache: 'default' },
 	);
 

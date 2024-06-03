@@ -261,15 +261,15 @@ generator:
 
 #### Git repositories<VersionLabel version="1.23.0" />
 
-Templates locations can also reference templates in an external Git repository using the `git:`
-locator prefix. This locator requires the Git host, repository path, and revision (branch, tag,
+Templates locations can also reference templates in an external Git repository using the `git://`
+locator protocol. This locator requires the Git host, repository path, and revision (branch, tag,
 commit, etc).
 
 ```yaml title=".moon/workspace.yml"
 generator:
   templates:
-    - 'git:github.com/moonrepo/templates#master'
-    - 'git:gitlab.com/org/repo#v1.2.3'
+    - 'git://github.com/moonrepo/templates#master'
+    - 'git://gitlab.com/org/repo#v1.2.3'
 ```
 
 > Git repositories will be cloned to `~/.moon/templates` using an HTTPS URL (not a Git URL), and
@@ -277,14 +277,14 @@ generator:
 
 #### npm packages<VersionLabel version="1.23.0" />
 
-Additionally, template locations can also reference npm packages using the `npm:` locator prefix.
-This locator requires a package name and published version.
+Additionally, template locations can also reference npm packages using the `npm://` locator
+protocol. This locator requires a package name and published version.
 
 ```yaml title=".moon/workspace.yml"
 generator:
   templates:
-    - 'npm:@moonrepo/templates#1.2.3'
-    - 'npm:other-templates#4.5.6'
+    - 'npm://@moonrepo/templates#1.2.3'
+    - 'npm://other-templates#4.5.6'
 ```
 
 > npm packages will be downloaded and unpacked to `~/.moon/templates` and cached for future use.
@@ -311,9 +311,9 @@ use the same templates across all of them. So how can we share templates across 
 not try...
 
 - Git submodules
-- Git repositories (using `git:` locator)
+- Git repositories (using `git://` protocol)
 - Node.js modules
-- npm packages (using `npm:` locator)
+- npm packages (using `npm://` protocol)
 - Another packaging system
 
 Regardless of the choice, simply configure [`generator.templates`][gen-templates] to point to these
@@ -323,18 +323,19 @@ locations:
 generator:
   templates:
     - './templates'
+    - 'file://./templates'
     # Git
     - './path/to/submodule'
-    - 'git:github.com/org/repo#branch'
+    - 'git://github.com/org/repo#branch'
     # npm
     - './node_modules/@company/shared-templates'
-    - 'npm:@company/shared-templates#1.2.3'
+    - 'npm://@company/shared-templates#1.2.3'
 ```
 
 ### Git and npm layout structure
 
-If you plan to share templates using Git repositories (`git:`) or npm packages (`npm:`), then the
-layout of those projects must follow these guidelines:
+If you plan to share templates using Git repositories (`git://`) or npm packages (`npm://`), then
+the layout of those projects must follow these guidelines:
 
 - A project must support multiple templates
 - A template is denoted by a folder in the root of the project

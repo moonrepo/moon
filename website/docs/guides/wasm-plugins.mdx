@@ -266,44 +266,43 @@ error!("Oh no, something went wrong");
 To use a WASM plugin, it'll need to be configured in both moon and proto. Luckily both tools use a
 similar approach for configuring plugins called the
 [plugin locator](https://docs.rs/warpgate/latest/warpgate/enum.PluginLocator.html). A locator string
-is composed of 2 parts separated by `:`, the former is the scope (or protocol), and the latter is
-the location.
+is composed of 2 parts separated by `://`, the former is the protocol, and the latter is the
+location.
 
 ```toml
-"<scope>:<location>"
+"<protocol>://<location>"
 ```
 
 The following locator patterns are supported:
 
-### `source:`
+### `file`
 
-The `source:` locator scope supports both secure URLs and file system paths (relative from the
-config file). Files will be used as-is, while URLs will be downloaded to `~/.moon/plugins` or
-`~/.proto/plugins`.
+The `file://` protocol represents a file path, either absolute or relative (from the current
+configuration file).
 
 ```toml
-# File
-"source:./plugins/example.wasm"
+# Relative
+"file://./path/to/example.wasm"
 
-# URL
-"source:https://domain.com/path/to/plugins/example.wasm"
+# Absolute
+"file:///root/path/to/example.wasm"
 ```
 
-### `github:`
+### `github`
 
-The `github:` locator scope can be used to target and download an asset from a specific GitHub
-release. The location must be an organization + repository slug (owner/repo), and the release _must
-have_ a `.wasm` asset available to download.
+The `github://` protocol can be used to target and download an asset from a specific GitHub release.
+The location must be an organization + repository slug (owner/repo), and the release _must have_ a
+`.wasm` asset available to download.
 
 ```toml
-"github:moonrepo/example-repo"
+"github://moonrepo/example-repo"
 ```
 
 By default, the latest release will be used and cached for 7 days. If you'd prefer to target a
 specific release (preferred), append the release tag to the end of the location.
 
 ```toml
-"github:moonrepo/example-repo@v1.2.3"
+"github://moonrepo/example-repo@v1.2.3"
 ```
 
 This strategy is powered by the [GitHub API](https://api.github.com/) and is subject to rate
@@ -314,6 +313,15 @@ variable to authorize API requests with. If using GitHub Actions, it's as simple
 # In some job or step...
 env:
   GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+```
+
+### `https`
+
+The `https://` protocol is your standard URL, and must point to an absolute file path. Files will be
+downloaded to `~/.moon/plugins` or `~/.proto/plugins`. Non-secure URLs are _not supported_!
+
+```toml
+"https://domain.com/path/to/plugins/example.wasm"
 ```
 
 ## Creating a plugin

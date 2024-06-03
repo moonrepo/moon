@@ -20,8 +20,5 @@ download-url-canary = "https://github.com/moonrepo/moon/releases/download/canary
 [resolve]
 git-url = "https://github.com/moonrepo/moon"
 
-[resolve.aliases]
-stable = "1"
-
 [metadata]
 self-upgrade-commands = ["upgrade"]

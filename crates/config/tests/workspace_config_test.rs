@@ -768,7 +768,7 @@ vcs:
         //         }
 
         #[test]
-        #[should_panic(expected = "extensions.id.plugin: Missing plugin scope or location.")]
+        #[should_panic(expected = "extensions.id.plugin: Missing plugin protocol.")]
         fn errors_invalid_locator() {
             test_load_config(
                 FILENAME,
@@ -811,7 +811,7 @@ extensions:
                 config.extensions.get("test-id").unwrap(),
                 &ExtensionConfig {
                     config: FxHashMap::default(),
-                    plugin: Some(PluginLocator::SourceUrl {
+                    plugin: Some(PluginLocator::Url {
                         url: "https://domain.com".into()
                     }),
                 }
@@ -839,7 +839,7 @@ extensions:
                         ("fooBar".into(), serde_json::Value::String("abc".into())),
                         ("bar-baz".into(), serde_json::Value::Bool(true)),
                     ]),
-                    plugin: Some(PluginLocator::SourceUrl {
+                    plugin: Some(PluginLocator::Url {
                         url: "https://domain.com".into()
                     }),
                 }

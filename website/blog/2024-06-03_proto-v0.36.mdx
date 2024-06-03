@@ -1,12 +1,12 @@
 ---
 slug: proto-v0.36
-title: proto v0.36 - ???
+title: proto v0.36 - Static registry, plugin searching, and more
 authors: [milesj]
 tags: [registry]
 # image: ./img/proto/v0.35.png
 ---
 
-This is a light release that adds support for more terminal shells.
+In this release, we're taking the first step in supporting a plugin registry.
 
 <!--truncate-->
 
@@ -19,11 +19,44 @@ mountain of work, and will take some time, but making plugins available _now_ is
 As a temporary solution, we're introducing a static registry, in which available plugins are defined
 in static JSON files, located in the official
 [moonrepo/proto](https://github.com/moonrepo/proto/tree/master/registry) repository. This will help
-unblock new feature moving forward.
+unblock new features moving forward.
 
 ## New `proto plugin search` command
 
+Because of the static registry work above, we're now able to introduce a new command,
+[`proto plugin search`](/docs/proto/commands/plugin/search), that can be used to search for plugins
+provided by the community. No longer will you need to browse the documentation, or search Google for
+available plugins.
+
+```
+$ proto plugin search moon
+
+Plugins
+Available for query: moon
+
+ Plugin  Author    Format  Description                                                          Locator
+ moon    moonrepo  TOML    moon is a multi-language build system and codebase management tool.  https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml
+```
+
 ## New `proto unpin` command
+
+Additionally, a command that probably should have existed from the start, but did not, is now
+available. The [`proto unpin`](/docs/proto/commands/unpin) command does exactly as its name says, it
+unpins (removes) a version from a `.prototools` file.
+
+## Plugin locator syntax changes
+
+We've decided to slightly change the syntax of plugin locator strings by embracing the common
+protocol syntax. Instead of `source:` and `github:`, we now use `file://`, `https://`, and
+`github://`. The former syntax will continue to work for the time being, but will be removed
+entirely in the future.
+
+- `source:./file.wasm` -> `file://./file.wasm`
+- `source:https://url.com/file.wasm` -> `https://url.com/file.wasm`
+- `github:org/repo` -> `github://org/repo`
+
+> If a `proto` command modifies a `.prototools` file, the file will be saved with the new syntax.
+> Don't be surprised when this happens!
 
 ## Other changes
 
@@ -33,3 +66,7 @@ of changes.
 - Updated `proto uninstall` to also remove entries from `.prototools` if the version was
   uninstalled.
 - Updated some error messages to include copy for work arounds.
+- We now lock the bin/shims directory when creating/removing files.
+  - This is an experiment to help avoid race conditions where multiple proto processes are all
+    trying to write to the same location.
+  - If this results in too large of a performance hit, we'll remove the locking.

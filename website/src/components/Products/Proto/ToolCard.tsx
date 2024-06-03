@@ -3,38 +3,38 @@ import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';
 import CodeBlock from '@theme/CodeBlock';
 import Code from '@theme/MDXComponents/Code';
-import { ProtoTool } from '../../../data/proto-tools';
+import { getAuthorName, ProtoTool } from '../../../data/proto-tools';
 import TomlLink from '../../Docs/TomlLink';
 import WasmLink from '../../Docs/WasmLink';
 
 export interface ToolCardProps {
 	id: string;
 	tool: ProtoTool;
-	showAuthor?: boolean;
+	builtin?: boolean;
 }
 
 // eslint-disable-next-line complexity
-export default function ToolCard({ id, tool, showAuthor }: ToolCardProps) {
+export default function ToolCard({ id, tool, builtin }: ToolCardProps) {
 	const bins = tool.bins ?? [];
 	const dirs = tool.globalsDirs ?? [];
 	const detect = tool.detectionSources ?? [];
-	const usageId = tool.usageId ?? id;
+	const usageId = tool.id ?? id;
 	let usage = `proto install ${usageId}`;
 
-	if (tool.pluginLocator) {
-		usage = `proto plugin add ${usageId} "${tool.pluginLocator}"\n${usage}`;
+	if (tool.locator && !builtin) {
+		usage = `proto plugin add ${usageId} "${tool.locator}"\n${usage}`;
 	}
 
 	return (
 		<div className="relative rounded-lg px-2 py-2 border-solid border border-t-0 border-b-2 bg-gray-50 border-gray-200/75 dark:bg-slate-700 dark:border-slate-900/75">
-			{tool.pluginType === 'toml' && <TomlLink to={tool.repoUrl} noMargin />}
-			{tool.pluginType === 'wasm' && <WasmLink to={tool.repoUrl} noMargin />}
+			{tool.format === 'toml' && <TomlLink to={tool.repositoryUrl} noMargin />}
+			{tool.format === 'wasm' && <WasmLink to={tool.repositoryUrl} noMargin />}
 
 			<Heading level={5} className="mb-1">
-				<Link href={tool.homepageUrl ?? tool.repoUrl}>{tool.name}</Link>
-				{showAuthor && (
+				<Link href={tool.homepageUrl ?? tool.repositoryUrl}>{tool.name}</Link>
+				{!builtin && (
 					<Text as="span" variant="muted" size="sm" className="ml-1">
-						({tool.author})
+						({getAuthorName(tool.author)})
 					</Text>
 				)}
 			</Heading>

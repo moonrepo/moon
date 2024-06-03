@@ -1,25 +1,29 @@
-import { ProtoTool } from '../../../data/proto-tools';
+import { useEffect, useState } from 'react';
+import { getAuthorName, loadToolsData, ProtoTool } from '../../../data/proto-tools';
 import ToolCard from './ToolCard';
 
 export interface ToolCardsProps {
-	tools: Record<string, ProtoTool | ProtoTool[]>;
+	data: 'built-in' | 'third-party';
 }
 
 export default function ToolCards(props: ToolCardsProps) {
+	const [tools, setTools] = useState<ProtoTool[]>([]);
+	const isThirdParty = props.data === 'third-party';
+
+	useEffect(() => {
+		// eslint-disable-next-line promise/prefer-await-to-then, no-console
+		loadToolsData(props.data).then(setTools).catch(console.error);
+	}, []);
+
 	return (
 		<div className="grid grid-cols-2 gap-2">
-			{Object.entries(props.tools).map(([id, entry]) => {
-				const showAuthor = Array.isArray(entry);
-				const tools = Array.isArray(entry) ? entry : [entry];
+			{tools.map((tool, index) => {
+				const id = `${tool.id}-${isThirdParty ? getAuthorName(tool.author) : 'native'}-${index}`;
 
 				return (
-					<>
-						{tools.map((tool) => (
-							<div key={id} id={id}>
-								<ToolCard id={id} tool={tool} showAuthor={showAuthor} />
-							</div>
-						))}
-					</>
+					<div key={id} id={id}>
+						<ToolCard id={tool.id} tool={tool} builtin={!isThirdParty} />
+					</div>
 				);
 			})}
 		</div>

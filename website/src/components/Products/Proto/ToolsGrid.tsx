@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Text from '@site/src/ui/typography/Text';
@@ -7,13 +8,20 @@ import Go from '@site/static/img/tools/go.svg';
 import Node from '@site/static/img/tools/node.svg';
 import Python from '@site/static/img/tools/python.svg';
 import Rust from '@site/static/img/tools/rust.svg';
-import { THIRD_PARTY_TOOLS } from '../../../data/proto-tools';
+import { loadToolsData, ProtoTool } from '../../../data/proto-tools';
 
 export interface ToolsGridProps {
 	cols?: number;
 }
 
 export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
+	const [tools, setTools] = useState<ProtoTool[]>([]);
+
+	useEffect(() => {
+		// eslint-disable-next-line promise/prefer-await-to-then, no-console
+		loadToolsData('third-party').then(setTools).catch(console.error);
+	}, []);
+
 	return (
 		<div>
 			<div className={clsx('grid gap-4 px-4', cols === 6 ? 'grid-cols-6' : 'grid-cols-3')}>
@@ -61,7 +69,7 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 			<div className="text-center mt-3">
 				<Text weight="bold" variant="muted">
 					<Link href="/docs/proto/tools#third-party">
-						...with {Object.keys(THIRD_PARTY_TOOLS).length} more and growing...
+						...with {tools.length} more and growing...
 					</Link>
 				</Text>
 			</div>

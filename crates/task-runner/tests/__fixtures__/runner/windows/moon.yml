@@ -1,4 +1,7 @@
 tasks:
+  noop:
+    command: noop
+
   success:
     command: 'Write-Output "test"'
     platform: system

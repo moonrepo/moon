@@ -1,5 +1,5 @@
 ---
-source: crates/cli/tests/run_test.rs
+source: legacy/cli/tests/run_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
@@ -7,4 +7,4 @@ expression: assert.output()
 ▪▪▪▪ depsB:dependencyOrder (no op)
 
 Tasks: 2 completed
- Time: 100ms ❯❯❯❯ to the moon
+ Time: 100ms

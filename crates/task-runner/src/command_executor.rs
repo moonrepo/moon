@@ -150,10 +150,7 @@ impl<'task> CommandExecutor<'task> {
                             "Task was successful, proceeding to next step",
                         );
 
-                        run_state = hash.map_or(TargetState::Passthrough, |hash| {
-                            TargetState::Passed(hash.to_string())
-                        });
-
+                        run_state = TargetState::from_hash(hash);
                         break None;
                     }
                     // Unsuccessful execution (maybe flaky), attempt again

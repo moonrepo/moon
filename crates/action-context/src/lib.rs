@@ -24,6 +24,13 @@ pub enum TargetState {
 }
 
 impl TargetState {
+    pub fn from_hash(hash: Option<&str>) -> Self {
+        match hash {
+            Some(hash) => TargetState::Passed(hash.to_string()),
+            None => TargetState::Passthrough,
+        }
+    }
+
     pub fn is_complete(&self) -> bool {
         matches!(self, TargetState::Passed(_) | TargetState::Passthrough)
     }

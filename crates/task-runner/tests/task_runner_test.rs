@@ -135,6 +135,20 @@ mod task_runner {
             }
 
             #[tokio::test]
+            async fn generates_a_hash_for_noop() {
+                let container = TaskRunnerContainer::new_os("runner").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner("noop");
+                let node = container.create_action_node("noop");
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert!(result.hash.is_some());
+            }
+
+            #[tokio::test]
             async fn generates_same_hashes_based_on_input() {
                 let container = TaskRunnerContainer::new_os("runner").await;
                 container.sandbox.enable_git();
@@ -854,7 +868,7 @@ mod task_runner {
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
-            runner.skip_noop(&context).unwrap();
+            runner.skip_no_op(&context, None).unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -868,7 +882,7 @@ mod task_runner {
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
-            runner.skip_noop(&context).unwrap();
+            runner.skip_no_op(&context, None).unwrap();
 
             assert_eq!(
                 context
@@ -877,6 +891,23 @@ mod task_runner {
                     .unwrap()
                     .get(),
                 &TargetState::Passthrough
+            );
+        }
+        #[tokio::test]
+        async fn sets_completed_state() {
+            let container = TaskRunnerContainer::new("runner").await;
+            let mut runner = container.create_runner("base");
+            let context = ActionContext::default();
+
+            runner.skip_no_op(&context, Some("hash123")).unwrap();
+
+            assert_eq!(
+                context
+                    .target_states
+                    .get(&runner.task.target)
+                    .unwrap()
+                    .get(),
+                &TargetState::Passed("hash123".into())
             );
         }
     }

@@ -794,4 +794,9 @@ mod version_cleaning {
             "1.2.3"
         );
     }
+
+    #[test]
+    fn other() {
+        assert_eq!(clean_git_version("git version 1.8.3.1".into()), "1.8.3");
+    }
 }

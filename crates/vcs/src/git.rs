@@ -3,7 +3,7 @@ use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use miette::{Diagnostic, IntoDiagnostic};
+use miette::Diagnostic;
 use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{is_test_env, Style, Stylize};
 use once_cell::sync::Lazy;
@@ -34,26 +34,39 @@ pub fn clean_git_version(version: String) -> String {
         &version
     };
 
-    VERSION_CLEAN
-        .replace(
-            version
-                .to_lowercase()
-                .replace("git", "")
-                .replace("version", "")
-                .replace("for windows", "")
-                .replace("(32-bit)", "")
-                .replace("(64-bit)", "")
-                .replace("(32bit)", "")
-                .replace("(64bit)", "")
-                .as_str(),
-            "",
-        )
-        .trim()
-        .to_string()
+    let version = version
+        .to_lowercase()
+        .replace("git", "")
+        .replace("version", "")
+        .replace("for windows", "")
+        .replace("(32-bit)", "")
+        .replace("(64-bit)", "")
+        .replace("(32bit)", "")
+        .replace("(64bit)", "");
+
+    let version = VERSION_CLEAN.replace(&version, "");
+
+    // Some older versions have more than 3 numbers,
+    // so ignore any non major, minor, or patches
+    let mut parts = version.trim().split('.');
+
+    format!(
+        "{}.{}.{}",
+        parts.next().unwrap_or("0"),
+        parts.next().unwrap_or("0"),
+        parts.next().unwrap_or("0")
+    )
 }
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum GitError {
+    #[diagnostic(code(git::invalid_version))]
+    #[error("Invalid or unsupported git version.")]
+    InvalidVersion {
+        #[source]
+        error: Box<semver::Error>,
+    },
+
     #[diagnostic(code(git::ignore::load_invalid))]
     #[error("Failed to load and parse {}.", ".gitignore".style(Style::File))]
     GitignoreLoadFailed {
@@ -64,6 +77,18 @@ pub enum GitError {
     #[diagnostic(code(git::repository::extract_slug))]
     #[error("Failed to extract a repository slug from git remote candidates.")]
     ExtractRepoSlugFailed,
+
+    #[diagnostic(code(git::worktree::parse_failed))]
+    #[error("Failed to parse .git worktree file.")]
+    ParseWorktreeFailed,
+
+    #[diagnostic(code(git::worktree::load_failed))]
+    #[error("Failed to load .git worktree file {}.", .path.style(Style::Path))]
+    LoadWorktreeFailed {
+        path: PathBuf,
+        #[source]
+        error: Box<std::io::Error>,
+    },
 }
 
 #[derive(Debug)]
@@ -660,7 +685,11 @@ impl Vcs for Git {
             .run_with_formatter(["--version"], true, clean_git_version)
             .await?;
 
-        Ok(Version::parse(&version).into_diagnostic()?)
+        Ok(
+            Version::parse(&version).map_err(|error| GitError::InvalidVersion {
+                error: Box::new(error),
+            })?,
+        )
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {
@@ -708,15 +737,24 @@ impl Vcs for Git {
 }
 
 fn extract_gitdir_from_worktree(git_file: &Path) -> miette::Result<PathBuf> {
-    let contents = std::fs::read_to_string(git_file).into_diagnostic()?;
+    let contents =
+        std::fs::read_to_string(git_file).map_err(|error| GitError::LoadWorktreeFailed {
+            path: git_file.to_owned(),
+            error: Box::new(error),
+        })?;
 
     for line in contents.lines() {
         if let Some(suffix) = line.strip_prefix("gitdir:") {
-            return PathBuf::from(suffix.trim())
+            let git_dir = PathBuf::from(suffix.trim());
+
+            return Ok(git_dir
                 .canonicalize()
-                .into_diagnostic();
+                .map_err(|error| GitError::LoadWorktreeFailed {
+                    path: git_dir,
+                    error: Box::new(error),
+                })?);
         }
     }
 
-    Err(miette::miette!("Failed to parse .git worktree file."))
+    Err(GitError::ParseWorktreeFailed.into())
 }

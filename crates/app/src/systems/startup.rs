@@ -3,13 +3,14 @@
 use crate::app_error::AppError;
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use proto_core::{get_proto_home, ProtoConfig, PROTO_CONFIG_NAME};
-use semver::Version;
+use moon_env::MoonEnvironment;
+use proto_core::{ProtoConfig, ProtoEnvironment};
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
 use std::env;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::{debug, instrument};
 
 // /// Detect important information about the currently running moon process.
@@ -80,101 +81,112 @@ pub fn find_workspace_root(working_dir: &Path) -> AppResult<PathBuf> {
     Ok(workspace_root)
 }
 
-// /// Load the workspace configuration file from the `.moon` directory in the workspace root.
-// /// This file is required to exist, so error if not found.
-// #[system]
-// pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
-//     let config_name = format!(
-//         "{}/{}",
-//         consts::CONFIG_DIRNAME,
-//         consts::CONFIG_WORKSPACE_FILENAME
-//     );
-//     let config_path = workspace_root.join(&config_name);
+/// Detect information for moon from the environment.
+#[instrument]
+pub fn detect_moon_environment(
+    working_dir: &Path,
+    workspace_root: &Path,
+) -> AppResult<Arc<MoonEnvironment>> {
+    let mut env = MoonEnvironment::new()?;
+    env.working_dir = working_dir.to_path_buf();
+    env.workspace_root = workspace_root.to_path_buf();
 
-//     debug!(
-//         file = ?config_path,
-//         "Loading {} (required)", color::file(&config_name),
-//     );
+    Ok(Arc::new(env))
+}
 
-//     if !config_path.exists() {
-//         return Err(AppError::MissingConfigFile(config_name).into());
-//     }
+/// Detect information for proto from the environment.
+#[instrument]
+pub fn detect_proto_environment(
+    working_dir: &Path,
+    _workspace_root: &Path,
+) -> AppResult<Arc<ProtoEnvironment>> {
+    let mut env = ProtoEnvironment::new()?;
+    env.cwd = working_dir.to_path_buf();
+    // env.workspace_root = workspace_root.to_path_buf();
 
-//     let config = WorkspaceConfig::load(workspace_root, &config_path)?;
+    Ok(Arc::new(env))
+}
 
-//     resources.set(Workspace {
-//         telemetry: config.telemetry,
-//         config,
-//     });
-// }
+/// Load the workspace configuration file from the `.moon` directory in the workspace root.
+/// This file is required to exist, so error if not found.
+#[instrument]
+pub fn load_workspace_config(workspace_root: &Path) -> AppResult<WorkspaceConfig> {
+    let config_name = format!(
+        "{}/{}",
+        consts::CONFIG_DIRNAME,
+        consts::CONFIG_WORKSPACE_FILENAME
+    );
+    let config_file = workspace_root.join(&config_name);
 
-// /// Load the toolchain configuration file from the `.moon` directory if it exists.
-// #[system]
-// pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
-//     let config_name = format!(
-//         "{}/{}",
-//         consts::CONFIG_DIRNAME,
-//         consts::CONFIG_TOOLCHAIN_FILENAME
-//     );
-//     let config_path = workspace_root.join(&config_name);
-//     let proto_path = workspace_root.join(PROTO_CONFIG_NAME);
+    debug!(
+        config_file = ?config_file,
+        "Loading {} (required)", color::file(&config_name),
+    );
 
-//     debug!(
-//         file = ?config_path,
-//         "Attempting to load {} (optional)",
-//         color::file(&config_name),
-//     );
+    if !config_file.exists() {
+        return Err(AppError::MissingConfigFile(config_name).into());
+    }
 
-//     if proto_path.exists() {
-//         debug!(
-//             "Found a {} file in the root, loading into the toolchain",
-//             color::file(PROTO_CONFIG_NAME)
-//         );
-//     }
+    let config = WorkspaceConfig::load(workspace_root, &config_file)?;
 
-//     // TODO
-//     let proto_config = ProtoConfig::default();
+    Ok(config)
+}
 
-//     let config = if config_path.exists() {
-//         debug!("Config file does not exist, using defaults");
+/// Load the toolchain configuration file from the `.moon` directory if it exists.
+#[instrument]
+pub fn load_toolchain_config(
+    workspace_root: &Path,
+    proto_config: &ProtoConfig,
+) -> AppResult<ToolchainConfig> {
+    let config_name = format!(
+        "{}/{}",
+        consts::CONFIG_DIRNAME,
+        consts::CONFIG_TOOLCHAIN_FILENAME
+    );
+    let config_file = workspace_root.join(&config_name);
 
-//         ToolchainConfig::default()
-//     } else {
-//         ToolchainConfig::load(workspace_root, &config_path, &proto_config)?
-//     };
+    debug!(
+        config_file = ?config_file,
+        "Attempting to load {} (optional)",
+        color::file(config_name),
+    );
 
-//     resources.set(Toolchain {
-//         config,
-//         proto_config,
-//         proto_home: get_proto_home()?,
-//     });
-// }
+    let config = if config_file.exists() {
+        debug!("Config file does not exist, using defaults");
 
-// /// Load the tasks configuration file from the `.moon` directory if it exists.
-// /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
-// #[system]
-// pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
-//     let config_name = format!(
-//         "{}/{}",
-//         consts::CONFIG_DIRNAME,
-//         consts::CONFIG_TASKS_FILENAME
-//     );
-//     let config_path = workspace_root.join(&config_name);
+        ToolchainConfig::default()
+    } else {
+        ToolchainConfig::load(workspace_root, &config_file, proto_config)?
+    };
 
-//     debug!(
-//         file = ?config_path,
-//         "Attempting to load {} and {} (optional)",
-//         color::file(&config_name),
-//         color::file(format!("{}/tasks/**/*.yml", consts::CONFIG_DIRNAME)),
-//     );
+    Ok(config)
+}
 
-//     let manager = InheritedTasksManager::load_from(workspace_root)?;
+/// Load the tasks configuration file from the `.moon` directory if it exists.
+/// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
+#[instrument]
+pub fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasksManager>> {
+    let config_name = format!(
+        "{}/{}",
+        consts::CONFIG_DIRNAME,
+        consts::CONFIG_TASKS_FILENAME
+    );
+    let config_file = workspace_root.join(&config_name);
 
-//     debug!(
-//         scopes = ?manager.configs.keys(),
-//         "Loaded {} task configs to inherit",
-//         manager.configs.len(),
-//     );
+    debug!(
+        config_file = ?config_file,
+        "Attempting to load {} and {} (optional)",
+        color::file(config_name),
+        color::file(format!("{}/tasks/**/*.yml", consts::CONFIG_DIRNAME)),
+    );
 
-//     resources.set(Tasks { manager });
-// }
+    let manager = InheritedTasksManager::load_from(workspace_root)?;
+
+    debug!(
+        scopes = ?manager.configs.keys(),
+        "Loaded {} task configs to inherit",
+        manager.configs.len(),
+    );
+
+    Ok(Arc::new(manager))
+}

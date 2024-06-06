@@ -9,6 +9,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_env = { path = "../env" }
+moon_vcs = { path = "../vcs" }
 async-trait = { workspace = true }
 clap = { workspace = true }
 miette = { workspace = true }

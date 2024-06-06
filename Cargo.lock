@@ -2997,6 +2997,7 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_env",
+ "moon_vcs",
  "proto_core",
  "semver",
  "starbase",

@@ -65,7 +65,7 @@ clap = { workspace = true, features = [
 	"wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_lex = "0.7.0"
+clap_lex = "0.7.1"
 console = { workspace = true }
 # console-subscriber = "0.1.8"
 dialoguer = { version = "0.11.0", default-features = false }
@@ -74,7 +74,7 @@ indicatif = "0.17.8"
 itertools = "0.13.0"
 miette = { workspace = true }
 mimalloc = { version = "0.1.42", default-features = false }
-open = "5.1.3"
+open = "5.1.4"
 petgraph = { workspace = true }
 proto_core = { workspace = true }
 proto_installer = { workspace = true }

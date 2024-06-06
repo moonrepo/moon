@@ -4,21 +4,10 @@ version = "0.0.1"
 edition = "2021"
 publish = false
 
-[[bin]]
-name = "moon_app"
-path = "src/main.rs"
-
-[lib]
-name = "moon_app"
-path = "src/lib.rs"
-crate-type = ["rlib"]
-
 [dependencies]
-moon_app_components = { path = "../app-components" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 miette = { workspace = true }
-mimalloc = { version = "0.1.42", default-features = false }
 proto_core = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }

@@ -183,7 +183,7 @@ checksum = "2cd762e110c8ed629b11b6cde59458cc1c71de78ebbcc30099fc8e0403a2a2ec"
 dependencies = [
  "anstyle",
  "doc-comment",
- "globwalk 0.9.1",
+ "globwalk",
  "predicates",
  "predicates-core",
  "predicates-tree",
@@ -696,7 +696,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8cb1d556b8b8f36e5ca74938008be3ac102f5dcb5b68a0477e4249ae2291cd3"
 dependencies = [
  "serde",
- "toml 0.8.13",
+ "toml 0.8.14",
 ]
 
 [[package]]
@@ -768,9 +768,9 @@ dependencies = [
 
 [[package]]
 name = "chrono-tz"
-version = "0.8.5"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91d7b79e99bfaa0d47da0687c43aa3b7381938a62ad3a6498599039321f660b7"
+checksum = "93698b29de5e97ad0ae26447b344c482a7284c737d9ddc5f9e52b74a336671bb"
 dependencies = [
  "chrono",
  "chrono-tz-build",
@@ -779,9 +779,9 @@ dependencies = [
 
 [[package]]
 name = "chrono-tz-build"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "433e39f13c9a060046954e0592a8d0a4bcb1040125cbf91cb8ee58964cfb350f"
+checksum = "0c088aee841df9c3041febbb73934cfc39708749bf96dc827e3359cd39ef11b1"
 dependencies = [
  "parse-zoneinfo",
  "phf",
@@ -805,9 +805,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.4"
+version = "4.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90bc066a67923782aa8515dbaea16946c5bcc5addbd668bb80af688e53e548a0"
+checksum = "a9689a29b593160de5bc4aacab7b5d54fb52231de70122626c178e6a368994c7"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -815,9 +815,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.2"
+version = "4.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae129e2e766ae0ec03484e609954119f123cc1fe650337e155d03b022f24f7b4"
+checksum = "2e5387378c84f6faa26890ebf9f0a92989f8873d4d380467bcd0d8d8620424df"
 dependencies = [
  "anstream",
  "anstyle",
@@ -828,18 +828,18 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.5.2"
+version = "4.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd79504325bf38b10165b02e89b4347300f855f273c4cb30c4a3209e6583275e"
+checksum = "84733fe9ab28bdce67389f0300221a5c4cd29f6def6417636d7b7ca5e5f3e3b2"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "4.5.4"
+version = "4.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "528131438037fd55894f62d6e9f068b8f45ac57ffa77517819645d10aed04f64"
+checksum = "c780290ccf4fb26629baa7a1081e68ced113f1d3ec302fa5948f1c381ebf06c6"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -849,9 +849,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
+checksum = "4b82cf0babdbd58558212896d1a4272303a57bdb245c2bf1147185fb45640e70"
 
 [[package]]
 name = "clean-path"
@@ -1147,15 +1147,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-channel"
-version = "0.5.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33480d6946193aa8033910124896ca395333cae7e2d1113d1fef6c3272217df2"
-dependencies = [
- "crossbeam-utils",
-]
-
-[[package]]
 name = "crossbeam-deque"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1263,15 +1254,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef552e6f588e446098f6ba40d89ac146c8c7b64aade83c051ee00bb5d2bc18d"
 dependencies = [
  "uuid",
-]
-
-[[package]]
-name = "deranged"
-version = "0.3.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b42b6fa04a440b495c8b04d0e71b707c585f83cb9cb28cf8cd0d976c315e31b4"
-dependencies = [
- "powerfmt",
 ]
 
 [[package]]
@@ -1536,7 +1518,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "toml 0.8.13",
+ "toml 0.8.14",
  "tracing",
  "tracing-subscriber",
  "ureq",
@@ -1979,17 +1961,6 @@ dependencies = [
  "log",
  "regex-automata 0.4.4",
  "regex-syntax 0.8.2",
-]
-
-[[package]]
-name = "globwalk"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93e3af942408868f6934a7b85134a3230832b9977cf66125df2f9edcfce4ddcc"
-dependencies = [
- "bitflags 1.3.2",
- "ignore",
- "walkdir",
 ]
 
 [[package]]
@@ -3020,7 +2991,7 @@ dependencies = [
  "moon_workspace",
  "proto_core",
  "rustc-hash",
- "starbase_events 0.5.2",
+ "starbase_events",
  "tokio",
 ]
 
@@ -3109,7 +3080,7 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "serde",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tokio",
@@ -3163,14 +3134,12 @@ name = "moon_app"
 version = "0.0.1"
 dependencies = [
  "miette",
- "mimalloc",
- "moon_app_components",
  "moon_common",
  "moon_config",
  "proto_core",
  "semver",
  "starbase",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tokio",
@@ -3245,7 +3214,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tokio",
 ]
@@ -3368,7 +3337,7 @@ dependencies = [
  "serial_test",
  "starbase",
  "starbase_archive",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tera",
  "thiserror",
@@ -3426,7 +3395,7 @@ dependencies = [
  "relative-path",
  "schematic",
  "serde",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "thiserror",
 ]
 
@@ -3466,7 +3435,7 @@ dependencies = [
  "moon_target",
  "parking_lot",
  "starbase",
- "starbase_styles 0.4.0",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -3495,7 +3464,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
 ]
 
@@ -3633,7 +3602,7 @@ dependencies = [
  "once_cell",
  "rustc-hash",
  "serde",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tracing",
 ]
@@ -3652,7 +3621,7 @@ version = "0.0.1"
 dependencies = [
  "console",
  "log",
- "starbase_styles 0.4.0",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -3674,7 +3643,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "yarn-lock-parser",
@@ -3715,7 +3684,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tokio",
 ]
@@ -3735,7 +3704,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
 ]
 
@@ -3753,7 +3722,7 @@ dependencies = [
  "reqwest 0.12.4",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "tokio",
  "uuid",
 ]
@@ -3801,7 +3770,7 @@ dependencies = [
  "num_cpus",
  "rand",
  "serde",
- "starbase_events 0.5.2",
+ "starbase_events",
  "thiserror",
  "tokio",
  "tokio-util",
@@ -3873,7 +3842,7 @@ dependencies = [
  "scc",
  "serde_json",
  "starbase_sandbox",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tokio",
@@ -3985,7 +3954,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "serde",
- "starbase_events 0.5.2",
+ "starbase_events",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror",
@@ -4019,7 +3988,7 @@ dependencies = [
  "moon_test_utils",
  "rustc-hash",
  "serde",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
 ]
 
@@ -4051,7 +4020,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tokio",
 ]
@@ -4225,7 +4194,7 @@ dependencies = [
  "moon_system_platform",
  "moon_vcs",
  "proto_core",
- "starbase_events 0.5.2",
+ "starbase_events",
  "starbase_sandbox",
 ]
 
@@ -4250,7 +4219,7 @@ dependencies = [
  "moon_process",
  "proto_core",
  "rustc-hash",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "thiserror",
  "warpgate",
 ]
@@ -4267,7 +4236,7 @@ dependencies = [
  "moon_utils",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "typescript_tsconfig_json",
 ]
@@ -4288,7 +4257,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tracing",
 ]
@@ -4315,7 +4284,7 @@ dependencies = [
  "rustc-hash",
  "semver",
  "serde",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "tokio",
 ]
@@ -4372,7 +4341,7 @@ dependencies = [
  "proto_core",
  "starbase",
  "starbase_sandbox",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tracing",
@@ -4463,12 +4432,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "num-conv"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
-
-[[package]]
 name = "num-traits"
 version = "0.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4525,9 +4488,9 @@ dependencies = [
 
 [[package]]
 name = "open"
-version = "5.1.3"
+version = "5.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eb49fbd5616580e9974662cb96a3463da4476e649a7e4b258df0de065db0657"
+checksum = "b5ca541f22b1c46d4bb9801014f234758ab4297e7870b904b6a8415b980a7388"
 dependencies = [
  "is-wsl",
  "libc",
@@ -4632,9 +4595,9 @@ checksum = "bb813b8af86854136c6922af0598d719255ecb2179515e6e7730d468f05c9cae"
 
 [[package]]
 name = "parking_lot"
-version = "0.12.2"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e4af0ca4f6caed20e900d564c242b8e5d4903fdacf31d3daf527b66fe6f42fb"
+checksum = "f1bf18183cf54e8d6059647fc3063646a1801cf30896933ec2311622cc4b9a27"
 dependencies = [
  "lock_api",
  "parking_lot_core",
@@ -4885,12 +4848,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7170ef9988bc169ba16dd36a7fa041e5c4cbeb6a35b76d4c03daded371eae7c0"
 
 [[package]]
-name = "powerfmt"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
-
-[[package]]
 name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4964,9 +4921,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.83"
+version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b33eb56c327dec362a9e55b3ad14f9d2f0904fb5a5b03b513ab5465399e9f43"
+checksum = "22244ce15aa966053a896d1accb3a6e68469b97c7f33f284b99f0d576879fc23"
 dependencies = [
  "unicode-ident",
 ]
@@ -5017,8 +4974,8 @@ dependencies = [
  "sha2",
  "shell-words",
  "starbase_archive",
- "starbase_events 0.6.0",
- "starbase_styles 0.4.0",
+ "starbase_events",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tracing",
@@ -5038,7 +4995,7 @@ dependencies = [
  "miette",
  "reqwest 0.12.4",
  "starbase_archive",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "system_env",
  "thiserror",
@@ -5554,9 +5511,9 @@ dependencies = [
  "serde_json",
  "serde_path_to_error",
  "serde_yaml",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "thiserror",
- "toml 0.8.13",
+ "toml 0.8.14",
  "tracing",
 ]
 
@@ -5582,7 +5539,7 @@ dependencies = [
  "indexmap 2.2.6",
  "semver",
  "serde_json",
- "toml 0.8.13",
+ "toml 0.8.14",
  "url",
 ]
 
@@ -5911,37 +5868,32 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.5.2"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51aabb1ce14221dde2bed79fdf000cb3b6ea868a898b89a7f2115c8e3f9fda65"
+checksum = "dc83d02c07678fe6ddfe36d648f675b022b1dee6f21d950152d49c1998da10de"
 dependencies = [
  "async-trait",
  "chrono",
  "miette",
- "num_cpus",
- "rustc-hash",
- "starbase_events 0.5.2",
- "starbase_macros 0.5.2",
- "starbase_styles 0.3.2",
- "thiserror",
+ "starbase_styles",
  "tokio",
  "tracing",
- "tracing-appender",
+ "tracing-chrome",
  "tracing-log",
  "tracing-subscriber",
 ]
 
 [[package]]
 name = "starbase_archive"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6c534fa921df0a5ee7d59029a53fa9f91db6dadfaf4e8cfd15785079e1ec7cb"
+checksum = "54d347cbbd17a64ae97be309a1afaf86a3db4c46859ec1d111befe495ce5276e"
 dependencies = [
  "binstall-tar",
  "flate2",
  "miette",
  "rustc-hash",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tracing",
@@ -5952,45 +5904,21 @@ dependencies = [
 
 [[package]]
 name = "starbase_events"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f827e4a761763f8fd73b04e59b6cd846578354e4f980b416295835b34799b67"
-dependencies = [
- "async-trait",
- "miette",
- "starbase_macros 0.5.2",
- "tokio",
-]
-
-[[package]]
-name = "starbase_events"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1b23db0b8074346e689895c7a18e97517c3492ed4cd1c330b3eeb765a861346"
-dependencies = [
- "async-trait",
- "miette",
- "starbase_macros 0.6.1",
- "tokio",
-]
-
-[[package]]
-name = "starbase_macros"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28244a7d1a32c2cb320259ce6bde97175b67e788584841a0b43e638f5eb4d13b"
-dependencies = [
- "darling",
- "proc-macro2",
- "quote",
- "syn 2.0.66",
-]
-
-[[package]]
-name = "starbase_macros"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1493d633e0179327eefc0a4ec3362325fc83a8432191c699ff0acc63caf4a985"
+checksum = "c96e6586ad2f10fcbc6d30fe330b7ea88709de3d55db6259a64e309937016b4e"
+dependencies = [
+ "async-trait",
+ "miette",
+ "starbase_macros",
+ "tokio",
+]
+
+[[package]]
+name = "starbase_macros"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "052d4a67b75ca00709992b99a332679b21d621d3aad441a11d89dc4e1d42bd14"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -6000,9 +5928,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.6.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4527717975a09f1eea17706fe771e76de32e55632bcb67b871b5f389dc5b6f21"
+checksum = "9dc8cc21fc2c389549297a2049074bf22a34aceb8ed8d31be6e1df42648abcb8"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -6016,23 +5944,12 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54cf9dc0a7a9029e35631a9bce4c35d4212c369d9f92516abfca9f1b2a268720"
-dependencies = [
- "dirs 5.0.1",
- "miette",
- "owo-colors 4.0.0",
- "supports-color",
-]
-
-[[package]]
-name = "starbase_styles"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e483937f25c81ee4a5b70b608436025d23bffa656d62793ea5bbe6e9b94206d"
 dependencies = [
  "dirs 5.0.1",
+ "miette",
  "owo-colors 4.0.0",
  "relative-path",
  "supports-color",
@@ -6040,9 +5957,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc87e39c8390c2bf72ba24c38d1776f1a77745e7c756eea3c0d5d7c5a6798b4d"
+checksum = "036e612de9948748656e525a0464c0866b2471616a65d8131db7ad6a200a0db0"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",
@@ -6056,10 +5973,10 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "thiserror",
  "tokio",
- "toml 0.8.13",
+ "toml 0.8.14",
  "tracing",
  "url",
  "wax",
@@ -6235,13 +6152,13 @@ dependencies = [
 
 [[package]]
 name = "tera"
-version = "1.19.1"
+version = "1.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "970dff17c11e884a4a09bc76e3a17ef71e01bb13447a11e85226e254fe6d10b8"
+checksum = "ab9d851b45e865f178319da0abdbfe6acbc4328759ff18dafc3a41c16b4cd2ee"
 dependencies = [
  "chrono",
  "chrono-tz",
- "globwalk 0.8.1",
+ "globwalk",
  "humansize",
  "lazy_static",
  "percent-encoding",
@@ -6324,37 +6241,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "time"
-version = "0.3.36"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dfd88e563464686c916c7e46e623e520ddc6d79fa6641390f2e3fa86e83e885"
-dependencies = [
- "deranged",
- "itoa",
- "num-conv",
- "powerfmt",
- "serde",
- "time-core",
- "time-macros",
-]
-
-[[package]]
-name = "time-core"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
-
-[[package]]
-name = "time-macros"
-version = "0.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f252a68540fde3a3877aeea552b832b40ab9a69e318efd078774a01ddee1ccf"
-dependencies = [
- "num-conv",
- "time-core",
-]
-
-[[package]]
 name = "tiny-keccak"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6392,9 +6278,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.37.0"
+version = "1.38.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1adbebffeca75fcfd058afa480fb6c0b81e165a0323f9c9d39c9697e37c46787"
+checksum = "ba4f4a02a7a80d6f274636f0aa95c7e383b912d41fe721a31f29e29698585a4a"
 dependencies = [
  "backtrace",
  "bytes",
@@ -6412,9 +6298,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b8a1e28f2deaa14e508979454cb3a223b10b938b45af148bc0986de36f1923b"
+checksum = "5f5ae998a069d4b5aba8ee9dad856af7d520c3699e6159b185c2acd48155d39a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6488,14 +6374,14 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.13"
+version = "0.8.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4e43f8cc456c9704c851ae29c67e17ef65d2c30017c17a9765b89c382dc8bba"
+checksum = "6f49eb2ab21d2f26bd6db7bf383edc527a7ebaee412d17af4d40fdccd442f335"
 dependencies = [
  "serde",
  "serde_spanned",
  "toml_datetime",
- "toml_edit 0.22.13",
+ "toml_edit 0.22.14",
 ]
 
 [[package]]
@@ -6533,9 +6419,9 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.22.13"
+version = "0.22.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c127785850e8c20836d49732ae6abfa47616e60bf9d9f57c43c250361a9db96c"
+checksum = "f21c7aaf97f1bd9ca9d4f9e73b0a6c74bd5afef56f2bc931943a6e1c37e04e38"
 dependencies = [
  "indexmap 2.2.6",
  "serde",
@@ -6585,18 +6471,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tracing-appender"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3566e8ce28cc0a3fe42519fc80e6b4c943cc4c8cef275620eb8dac2d3d4e06cf"
-dependencies = [
- "crossbeam-channel",
- "thiserror",
- "time",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "tracing-attributes"
 version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6605,6 +6479,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.66",
+]
+
+[[package]]
+name = "tracing-chrome"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf0a738ed5d6450a9fb96e86a23ad808de2b727fd1394585da5cdd6788ffe724"
+dependencies = [
+ "serde_json",
+ "tracing-core",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -6955,7 +6840,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "starbase_archive",
- "starbase_styles 0.4.0",
+ "starbase_styles",
  "starbase_utils",
  "system_env",
  "thiserror",
@@ -7944,9 +7829,9 @@ checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
 
 [[package]]
 name = "zip"
-version = "2.1.2"
+version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "098d5d7737fb0b70814faa73c17df84f047d38dd31d13bbf2ec3fb354b5abf45"
+checksum = "775a2b471036342aa69bc5a602bc889cb0a06cda00477d0c69566757d5553d39"
 dependencies = [
  "arbitrary",
  "crc32fast",

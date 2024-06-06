@@ -14,8 +14,8 @@ members = [
 	"legacy/system/*",
 	"legacy/typescript/*",
 ]
-exclude = ["tests/fixtures", "wasm/test-plugin"]
-default-members = ["legacy/cli"]
+exclude = ["tests/fixtures", "wasm/test-plugin", "legacy/cli"]
+# default-members = ["legacy/cli"]
 
 [workspace.dependencies]
 async-trait = "0.1.80"
@@ -23,11 +23,11 @@ cached = "0.51.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 cd_env = "0.2.0"
 ci_env = "0.3.0"
-clap = { version = "4.5.4", default-features = false, features = [
+clap = { version = "4.5.6", default-features = false, features = [
 	"std",
 	"error-context",
 ] }
-clap_complete = "4.5.2"
+clap_complete = "4.5.4"
 console = "0.15.8"
 dirs = "5.0.1"
 miette = "7.2.0"
@@ -48,23 +48,23 @@ reqwest = { version = "0.12.4", default-features = false, features = [
 ] }
 rustc-hash = "1.1.0"
 scc = "2.1.1"
-schematic = { version = "0.16.3", default-features = false, features = [
+schematic = { version = "0.16.4", default-features = false, features = [
 	"schema",
 ] }
 serial_test = "3.1.1"
 semver = "1.0.23"
-serde = { version = "1.0.202", features = ["derive"] }
+serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"
 serde_yaml = "0.9.34"
-starbase = "0.5.2" # TODO
-starbase_archive = { version = "0.7.1", default-features = false, features = [
+starbase = "0.7.2" # TODO
+starbase_archive = { version = "0.7.3", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.5.2" # TODO
-starbase_sandbox = "0.6.0"
+starbase_events = "0.6.1" # TODO
+starbase_sandbox = "0.6.2"
 starbase_styles = { version = "0.4.0", features = ["relative-path"] }
-starbase_utils = { version = "0.7.1", default-features = false, features = [
+starbase_utils = { version = "0.7.4", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -73,9 +73,9 @@ starbase_utils = { version = "0.7.1", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
-tera = { version = "1.19.1", features = ["preserve_order"] }
+tera = { version = "1.20.0", features = ["preserve_order"] }
 thiserror = "1.0.61"
-tokio = { version = "1.37.0", default-features = false, features = [
+tokio = { version = "1.38.0", default-features = false, features = [
 	"macros",
 	"process",
 	"rt-multi-thread",

@@ -13,28 +13,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-// /// Detect important information about the currently running moon process.
-// #[system]
-// pub fn detect_app_process_info(resources: ResourcesMut) {
-//     let current_exe = env::current_exe().ok();
-//     let version = env!("CARGO_PKG_VERSION");
-
-//     if let Some(exe) = &current_exe {
-//         debug!(current_bin = ?exe, "Running moon v{}", version);
-//     } else {
-//         debug!("Running moon v{}", version);
-//     }
-
-//     env::set_var("MOON_VERSION", version);
-
-//     resources.set(AppInfo {
-//         running_exe: current_exe.clone(),
-//         current_exe,
-//         global: false,
-//         version: Version::parse(version).unwrap(),
-//     });
-// }
-
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 #[instrument]
@@ -110,7 +88,7 @@ pub fn detect_proto_environment(
 /// Load the workspace configuration file from the `.moon` directory in the workspace root.
 /// This file is required to exist, so error if not found.
 #[instrument]
-pub fn load_workspace_config(workspace_root: &Path) -> AppResult<WorkspaceConfig> {
+pub fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,
@@ -129,7 +107,7 @@ pub fn load_workspace_config(workspace_root: &Path) -> AppResult<WorkspaceConfig
 
     let config = WorkspaceConfig::load(workspace_root, &config_file)?;
 
-    Ok(config)
+    Ok(Arc::new(config))
 }
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
@@ -137,7 +115,7 @@ pub fn load_workspace_config(workspace_root: &Path) -> AppResult<WorkspaceConfig
 pub fn load_toolchain_config(
     workspace_root: &Path,
     proto_config: &ProtoConfig,
-) -> AppResult<ToolchainConfig> {
+) -> AppResult<Arc<ToolchainConfig>> {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,
@@ -159,7 +137,7 @@ pub fn load_toolchain_config(
         ToolchainConfig::load(workspace_root, &config_file, proto_config)?
     };
 
-    Ok(config)
+    Ok(Arc::new(config))
 }
 
 /// Load the tasks configuration file from the `.moon` directory if it exists.

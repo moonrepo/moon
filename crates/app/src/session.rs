@@ -1,9 +1,12 @@
 use crate::app_error::AppError;
 use crate::systems::*;
 use async_trait::async_trait;
+use moon_cache::CacheEngine;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
 use moon_env::MoonEnvironment;
+use moon_vcs::{BoxedVcs, Git};
+use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use starbase::{AppResult, AppSession};
 use std::env;
@@ -16,15 +19,17 @@ pub struct MoonSession {
     pub console: Arc<Console>,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
-    // vcs
-    // engines
     // graphs
     // registries
 
+    // Lazy components
+    cache_engine: OnceCell<Arc<CacheEngine>>,
+    vcs_adapter: OnceCell<Arc<BoxedVcs>>,
+
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
-    pub toolchain_config: ToolchainConfig,
-    pub workspace_config: WorkspaceConfig,
+    pub toolchain_config: Arc<ToolchainConfig>,
+    pub workspace_config: Arc<WorkspaceConfig>,
 
     // Paths
     pub working_dir: PathBuf,
@@ -33,15 +38,40 @@ pub struct MoonSession {
 impl MoonSession {
     pub fn new() -> Self {
         Self {
+            cache_engine: OnceCell::new(),
             console: Arc::new(Console::new(false)),
             moon_env: Arc::new(MoonEnvironment::default()),
             proto_env: Arc::new(ProtoEnvironment::new().unwrap()), // TODO
             tasks_config: Arc::new(InheritedTasksManager::default()),
-            toolchain_config: ToolchainConfig::default(),
+            toolchain_config: Arc::new(ToolchainConfig::default()),
             working_dir: PathBuf::new(),
             workspace_root: PathBuf::new(),
-            workspace_config: WorkspaceConfig::default(),
+            workspace_config: Arc::new(WorkspaceConfig::default()),
+            vcs_adapter: OnceCell::new(),
         }
+    }
+
+    pub fn get_cache_engine(&self) -> AppResult<Arc<CacheEngine>> {
+        let item = self
+            .cache_engine
+            .get_or_try_init(|| CacheEngine::new(&self.workspace_root).map(Arc::new))?;
+
+        Ok(Arc::clone(item))
+    }
+
+    pub fn get_vcs_adapter(&self) -> AppResult<Arc<BoxedVcs>> {
+        let item = self.vcs_adapter.get_or_try_init(|| {
+            let config = &self.workspace_config.vcs;
+            let git = Git::load(
+                &self.workspace_root,
+                &config.default_branch,
+                &config.remote_candidates,
+            )?;
+
+            Ok::<_, miette::Report>(Arc::new(Box::new(git)))
+        })?;
+
+        Ok(Arc::clone(item))
     }
 }
 

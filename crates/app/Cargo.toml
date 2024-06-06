@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
@@ -13,6 +14,7 @@ moon_vcs = { path = "../vcs" }
 async-trait = { workspace = true }
 clap = { workspace = true }
 miette = { workspace = true }
+once_cell = { workspace = true }
 proto_core = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }

@@ -115,9 +115,10 @@ The `migrate-turborepo` extension can be used to migrate a Turborepo powered rep
 This process will convert the root `turbo.json` file, and any `turbo.json` files found within the
 repository. The following changes are made:
 
-- Migrates `pipeline` global tasks to [`.moon/tasks/node.yml`](../config/tasks#tasks) (or `bun.yml`)
-  and project scoped tasks to [`moon.yml`](../config/project#tasks). Task commands will execute
-  `package.json` scripts through a package manager.
+- Migrates `pipeline` (v1) and `tasks` (v2) global tasks to
+  [`.moon/tasks/node.yml`](../config/tasks#tasks) (or `bun.yml`) and project scoped tasks to
+  [`moon.yml`](../config/project#tasks). Task commands will execute `package.json` scripts through a
+  package manager.
 - Migrates root `global*` settings to [`.moon/tasks/node.yml`](../config/tasks#implicitinputs) (or
   `bun.yml`) as `implicitInputs`.
 

@@ -5,17 +5,17 @@ use std::env;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct MoonEnvironment {
-    pub cwd: PathBuf,
     pub id_file: PathBuf,
     pub plugins_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub templates_dir: PathBuf,
     pub home: PathBuf,       // ~
     pub store_root: PathBuf, // ~/.moon
-    pub test_mode: bool,
+    pub test_only: bool,
     pub version: String,
+    pub working_dir: PathBuf,
     pub workspace_root: PathBuf,
 }
 
@@ -40,13 +40,6 @@ impl MoonEnvironment {
     pub fn from<P: AsRef<Path>>(root: P) -> miette::Result<Self> {
         let store_root = root.as_ref();
 
-        let cwd = env::current_dir().map_err(|_| {
-            miette!(
-                code = "env::missing_cwd",
-                "Unable to determine your current working directory."
-            )
-        })?;
-
         debug!(store = ?store_root, "Creating moon environment, detecting store");
 
         Ok(MoonEnvironment {
@@ -56,24 +49,25 @@ impl MoonEnvironment {
             templates_dir: store_root.join("templates"),
             home: dirs::home_dir().unwrap(),
             store_root: store_root.to_owned(),
-            test_mode: false,
+            test_only: false,
             version: env::var("MOON_VERSION").unwrap_or_default(),
-            workspace_root: cwd.clone(),
-            cwd,
+            working_dir: PathBuf::new(),
+            workspace_root: PathBuf::new(),
         })
     }
 
     pub fn new_testing(sandbox: &Path) -> Self {
         let mut env = Self::from(sandbox.join(".moon")).unwrap();
-        env.cwd = sandbox.to_path_buf();
+        env.working_dir = sandbox.to_path_buf();
+        env.workspace_root = sandbox.to_path_buf();
         env.home = sandbox.join(".home");
-        env.test_mode = true;
+        env.test_only = true;
         env
     }
 
     pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
         BTreeMap::from_iter([
-            (self.cwd.clone(), "/cwd".into()),
+            (self.working_dir.clone(), "/cwd".into()),
             (self.store_root.clone(), "/moon".into()),
             (self.home.clone(), "/userhome".into()),
             (self.workspace_root.clone(), "/workspace".into()),

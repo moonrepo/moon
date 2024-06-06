@@ -5,7 +5,6 @@ use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_vcs::{BoxedVcs, Git};
 use proto_core::{ProtoConfig, ProtoEnvironment, Version};
-use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
 use std::env;
@@ -127,7 +126,7 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
     WorkspaceConfig::load_from(root_dir)
 }
 
-#[derive(Clone, Resource)]
+#[derive(Clone)]
 pub struct Workspace {
     /// Engine for reading and writing cache/states.
     pub cache_engine: Arc<CacheEngine>,

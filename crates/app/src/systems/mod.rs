@@ -1,4 +1,1 @@
-mod startup;
-
-#[allow(unused_imports)]
-pub use startup::*;
+pub mod startup;

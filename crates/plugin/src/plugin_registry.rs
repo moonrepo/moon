@@ -60,7 +60,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_context(&self) -> MoonContext {
         MoonContext {
-            working_dir: to_virtual_path(self.get_virtual_paths(), &self.moon_env.cwd),
+            working_dir: to_virtual_path(self.get_virtual_paths(), &self.moon_env.working_dir),
             workspace_root: to_virtual_path(
                 self.get_virtual_paths(),
                 &self.moon_env.workspace_root,
@@ -245,7 +245,7 @@ impl<T: Plugin> PluginRegistry<T> {
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(HostData {
             virtual_paths: self.virtual_paths.clone(),
-            working_dir: self.moon_env.cwd.clone(),
+            working_dir: self.moon_env.working_dir.clone(),
         });
 
         // Create the manifest and let the consumer configure it

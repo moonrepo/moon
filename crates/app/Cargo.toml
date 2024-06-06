@@ -7,6 +7,10 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_console = { path = "../console" }
+moon_env = { path = "../env" }
+async-trait = { workspace = true }
+clap = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 semver = { workspace = true }

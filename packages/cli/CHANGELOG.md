@@ -12,6 +12,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Improved error messages around git version and worktree parsing.
+
+#### 🐞 Fixes
+
+- Fixed `git` version parsing when the version contains invalid semver parts.
+
 #### 🔋 Extensions
 
 - Updated `download` to v0.0.5.

@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.734b9780.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.2f41f6a1.js" defer="defer"></script>
 <script src="/assets/js/main.9a0442bf.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -92,9 +92,10 @@ inputs, or runtime commands.</li>
 This process will convert the root <code>turbo.json</code> file, and any <code>turbo.json</code> files found within the
 repository. The following changes are made:</p>
 <ul>
-<li>Migrates <code>pipeline</code> global tasks to <a href="/docs/config/tasks#tasks"><code>.moon/tasks/node.yml</code></a> (or <code>bun.yml</code>)
-and project scoped tasks to <a href="/docs/config/project#tasks"><code>moon.yml</code></a>. Task commands will execute
-<code>package.json</code> scripts through a package manager.</li>
+<li>Migrates <code>pipeline</code> (v1) and <code>tasks</code> (v2) global tasks to
+<a href="/docs/config/tasks#tasks"><code>.moon/tasks/node.yml</code></a> (or <code>bun.yml</code>) and project scoped tasks to
+<a href="/docs/config/project#tasks"><code>moon.yml</code></a>. Task commands will execute <code>package.json</code> scripts through a
+package manager.</li>
 <li>Migrates root <code>global*</code> settings to <a href="/docs/config/tasks#implicitinputs"><code>.moon/tasks/node.yml</code></a> (or
 <code>bun.yml</code>) as <code>implicitInputs</code>.</li>
 </ul>

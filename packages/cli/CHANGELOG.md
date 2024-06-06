@@ -10,6 +10,15 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🔋 Extensions
+
+- Updated `download` to v0.0.5.
+- Updated `migrate-nx` to v0.0.5.
+- Updated `migrate-turborepo` to v0.1.2.
+  - Added Turborepo v2 support.
+
 ## 1.25.2
 
 #### 🚀 Updates

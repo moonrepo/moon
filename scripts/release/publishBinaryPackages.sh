@@ -13,7 +13,7 @@ echo "Channel: $tag"
 for package in packages/cli packages/core-*; do
 	echo "$package"
 
-	if [[ -z "${GITHUB_TOKEN}" ]]; then
+	if [[ -z "$GITHUB_TOKEN" ]]; then
 		# Testing locally
 		echo "Not publishing"
 	else
@@ -25,8 +25,7 @@ for package in packages/cli packages/core-*; do
 done
 
 # Set the tag to use for GitHub releases
-version=$(cat packages/cli/package.json | jq -r '.version')
-tag="v$version"
+tag="v$CLI_VERSION"
 
 echo "Setting tag name to $tag"
 echo "npm-tag-name=$tag" >> "$GITHUB_OUTPUT"

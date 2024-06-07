@@ -10,6 +10,7 @@ use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use starbase::{AppResult, AppSession};
 use std::env;
+use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -35,6 +36,7 @@ pub struct MoonSession {
     pub working_dir: PathBuf,
     pub workspace_root: PathBuf,
 }
+
 impl MoonSession {
     pub fn new() -> Self {
         Self {
@@ -73,6 +75,10 @@ impl MoonSession {
 
         Ok(Arc::clone(item))
     }
+
+    pub fn is_telemetry_enabled(&self) -> bool {
+        self.workspace_config.telemetry
+    }
 }
 
 #[async_trait]
@@ -104,5 +110,16 @@ impl AppSession for MoonSession {
         self.tasks_config = startup::load_tasks_configs(&self.workspace_root)?;
 
         Ok(())
+    }
+}
+
+impl fmt::Debug for MoonSession {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MoonSession")
+            .field("moon_env", &self.moon_env)
+            .field("tasks_config", &self.tasks_config)
+            .field("toolchain_config", &self.toolchain_config)
+            .field("workspace_config", &self.workspace_config)
+            .finish()
     }
 }

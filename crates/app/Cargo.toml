@@ -4,6 +4,10 @@ version = "0.0.1"
 edition = "2021"
 publish = false
 
+[[bin]]
+name = "moon"
+path = "src/main.rs"
+
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }

@@ -14,6 +14,7 @@ pub struct MoonEnvironment {
     pub home: PathBuf,       // ~
     pub store_root: PathBuf, // ~/.moon
     pub test_only: bool,
+    #[deprecated]
     pub version: String,
     pub working_dir: PathBuf,
     pub workspace_root: PathBuf,

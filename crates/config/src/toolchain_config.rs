@@ -167,6 +167,7 @@ impl ToolchainConfig {
         is_using_tool_version!(self, bun);
         is_using_tool_version!(self, deno);
         is_using_tool_version!(self, node);
+        is_using_tool_version!(self, node, bun);
         is_using_tool_version!(self, node, pnpm);
         is_using_tool_version!(self, node, yarn);
         is_using_tool_version!(self, rust);
@@ -192,6 +193,21 @@ impl ToolchainConfig {
 
         if let Some(node_config) = &mut self.node {
             node_config.inherit_proto(proto_config)?;
+
+            // If bun and node are both enabled, and bun is being used
+            // as a package manager within node, we need to keep the
+            // versions in sync between both tools. The bun toolchain
+            // version takes precedence!
+            match (&mut self.bun, &mut node_config.bun) {
+                (Some(bun_config), Some(bunpm_config)) => {
+                    if bun_config.version.is_some() {
+                        bunpm_config.version = bun_config.version.clone();
+                    } else if bunpm_config.version.is_some() {
+                        bun_config.version = bunpm_config.version.clone();
+                    }
+                }
+                _ => {}
+            };
         }
 
         Ok(())

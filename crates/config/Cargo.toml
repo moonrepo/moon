@@ -48,6 +48,7 @@ tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 httpmock = "0.7.0"
+serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [features]

@@ -16,7 +16,7 @@ on:
   schedule:
     - cron: '0 0 * * *'
   # Uncomment to test in PRs (its safe)
-  pull_request:
+  # pull_request:
 
 permissions:
   contents: write
@@ -39,9 +39,9 @@ jobs:
       - id: plan-step
         run: bash ./scripts/release/planRelease.sh
         env:
-          # CANARY: ${{ github.event_name == 'push' && contains(github.ref, 'develop-') }}
-          # NIGHTLY: ${{ github.event_name == 'schedule' }}
-          CANARY: true
+          CANARY: ${{ github.event_name == 'push' && contains(github.ref, 'develop-') }}
+          NIGHTLY: ${{ github.event_name == 'schedule' }}
+          # CANARY: true
 
   build:
     strategy:

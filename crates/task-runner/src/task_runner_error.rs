@@ -18,7 +18,7 @@ pub enum TaskRunnerError {
 
     #[diagnostic(code(task_runner::missing_dependency_hash))]
     #[error(
-        "Encountered a missing hash for target {}, which is a dependency of {}.\nThis either means the dependency hasn't ran, has failed, or there's a misconfiguration.\n\nTry disabling the target's cache, or marking it as local.",
+        "Encountered a missing hash for task {}, which is a dependency of {}.\nThis either means the dependency hasn't ran, has failed, or there's a misconfiguration.\n\nTry disabling the task's cache, or marking it as local.",
         .dep_target.style(Style::Label),
         .target.style(Style::Label),
     )]

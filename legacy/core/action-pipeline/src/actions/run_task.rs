@@ -1,5 +1,5 @@
 use moon_action::{Action, ActionStatus};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use moon_console::Console;
 use moon_emitter::Emitter;
 use moon_logger::warn;
@@ -33,10 +33,16 @@ pub async fn run_task(
     // and error is bubbled up the stack
     action.allow_failure = task.options.allow_failure;
 
-    let result = TaskRunner::new(&workspace, project, task, console)?
+    // If the task is persistent, set the status early since it "never finshes",
+    // and the runner will error about a missing hash if it's a dependency
+    if task.is_persistent() {
+        context.set_target_state(&task.target, TargetState::Passthrough);
+    }
+
+    let operations = TaskRunner::new(&workspace, project, task, console)?
         .run(&context, &action.node)
-        .await?;
-    let operations = result.operations;
+        .await?
+        .operations;
 
     action.flaky = operations.is_flaky();
     action.status = operations.get_final_status();

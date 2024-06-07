@@ -98,7 +98,7 @@ moon_notifier = { path = "../core/notifier" }
 moon_task_runner = { path = "../../crates/task-runner" }
 moon_test_utils = { path = "../core/test-utils" }
 httpmock = "0.7.0"
-serial_test = "3.1.1"
+serial_test = { workspace = true }
 starbase_archive = { workspace = true }
 
 [lints]

@@ -3,6 +3,7 @@ mod utils;
 use httpmock::prelude::*;
 use moon_config::{BinConfig, BinEntry, NodePackageManager, NodeVersionFormat, ToolchainConfig};
 use proto_core::{Id, PluginLocator, ProtoConfig, UnresolvedVersionSpec};
+use serial_test::serial;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
 use utils::*;
@@ -188,6 +189,7 @@ deno: {{}}
         }
 
         #[test]
+        #[serial]
         fn proto_version_doesnt_override() {
             let config = test_load_config(
                 FILENAME,
@@ -214,6 +216,7 @@ bun:
         }
 
         #[test]
+        #[serial]
         fn inherits_version_from_env_var() {
             env::set_var("MOON_BUN_VERSION", "1.0.0");
 
@@ -221,7 +224,7 @@ bun:
                 FILENAME,
                 r"
 bun:
-    version: 3.0.0
+  version: 3.0.0
 ",
                 |path| {
                     let mut proto = ProtoConfig::default();
@@ -238,6 +241,31 @@ bun:
 
             assert_eq!(
                 config.bun.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+        }
+
+        #[test]
+        fn inherits_version_from_node_pm() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+bun: {}
+node:
+  packageManager: bun
+  bun:
+    version: 1.0.0
+",
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+            );
+
+            assert_eq!(
+                config.bun.unwrap().version.unwrap(),
+                UnresolvedVersionSpec::parse("1.0.0").unwrap()
+            );
+
+            assert_eq!(
+                config.node.unwrap().bun.unwrap().version.unwrap(),
                 UnresolvedVersionSpec::parse("1.0.0").unwrap()
             );
         }
@@ -341,6 +369,7 @@ deno:
         }
 
         #[test]
+        #[serial]
         fn proto_version_doesnt_override() {
             let config = test_load_config(
                 FILENAME,
@@ -367,6 +396,7 @@ deno:
         }
 
         #[test]
+        #[serial]
         fn inherits_version_from_env_var() {
             env::set_var("MOON_DENO_VERSION", "1.20.0");
 
@@ -466,6 +496,7 @@ node:
         }
 
         #[test]
+        #[serial]
         fn proto_version_doesnt_override() {
             let config = test_load_config(
                 FILENAME,
@@ -492,6 +523,7 @@ node:
         }
 
         #[test]
+        #[serial]
         fn inherits_version_from_env_var() {
             env::set_var("MOON_NODE_VERSION", "19.0.0");
 
@@ -524,6 +556,7 @@ node:
             use super::*;
 
             #[test]
+            #[serial]
             fn proto_version_doesnt_override() {
                 let config = test_load_config(
                     FILENAME,
@@ -567,6 +600,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn inherits_version_from_env_var() {
                 env::set_var("MOON_NPM_VERSION", "10.0.0");
 
@@ -682,6 +716,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn proto_version_doesnt_override() {
                 let config = test_load_config(
                     FILENAME,
@@ -708,6 +743,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn inherits_version_from_env_var() {
                 env::set_var("MOON_PNPM_VERSION", "10.0.0");
 
@@ -806,6 +842,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn proto_version_doesnt_override() {
                 let config = test_load_config(
                     FILENAME,
@@ -832,6 +869,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn inherits_version_from_env_var() {
                 env::set_var("MOON_YARN_VERSION", "10.0.0");
 
@@ -930,6 +968,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn proto_version_doesnt_override() {
                 let config = test_load_config(
                     FILENAME,
@@ -956,6 +995,7 @@ node:
             }
 
             #[test]
+            #[serial]
             fn inherits_version_from_env_var() {
                 env::set_var("MOON_BUN_VERSION", "1.0.0");
 
@@ -978,6 +1018,31 @@ node:
                 );
 
                 env::remove_var("MOON_BUN_VERSION");
+
+                assert_eq!(
+                    config.node.unwrap().bun.unwrap().version.unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap()
+                );
+            }
+
+            #[test]
+            #[serial]
+            fn inherits_version_from_bun_tool() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+bun:
+  version: 1.0.0
+node:
+  packageManager: bun
+",
+                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                );
+
+                assert_eq!(
+                    config.bun.unwrap().version.unwrap(),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap()
+                );
 
                 assert_eq!(
                     config.node.unwrap().bun.unwrap().version.unwrap(),
@@ -1112,6 +1177,7 @@ rust:
         }
 
         #[test]
+        #[serial]
         fn proto_version_doesnt_override() {
             let config = test_load_config(
                 FILENAME,
@@ -1138,15 +1204,16 @@ rust:
         }
 
         #[test]
+        #[serial]
         fn inherits_version_from_env_var() {
             env::set_var("MOON_RUST_VERSION", "1.70.0");
 
             let config = test_load_config(
                 FILENAME,
                 r"
-        rust:
-          version: 1.60.0
-        ",
+rust:
+  version: 1.60.0
+",
                 |path| {
                     let mut proto = ProtoConfig::default();
                     proto.versions.insert(

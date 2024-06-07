@@ -3447,6 +3447,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "serial_test",
  "starbase_sandbox",
  "tracing",
  "version_spec",

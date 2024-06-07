@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `bun.version` and `node.bun.version` to stay in sync when one is defined and the other
+  isn't. This helps to avoid tool discrepancies.
+
 ## 1.25.3
 
 #### 🚀 Updates

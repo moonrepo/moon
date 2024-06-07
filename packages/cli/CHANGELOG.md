@@ -19,6 +19,8 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where persistent tasks depending on each other would sometimes error with
+  "Encountered a missing hash".
 - Fixed nightly and canary releases not showing the correct version in `moon --version`.
 
 ## 1.25.3

@@ -198,15 +198,12 @@ impl ToolchainConfig {
             // as a package manager within node, we need to keep the
             // versions in sync between both tools. The bun toolchain
             // version takes precedence!
-            match (&mut self.bun, &mut node_config.bun) {
-                (Some(bun_config), Some(bunpm_config)) => {
-                    if bun_config.version.is_some() && bunpm_config.version.is_none() {
-                        bunpm_config.version = bun_config.version.clone();
-                    } else if bunpm_config.version.is_some() && bun_config.version.is_none() {
-                        bun_config.version = bunpm_config.version.clone();
-                    }
+            if let (Some(bun_config), Some(bunpm_config)) = (&mut self.bun, &mut node_config.bun) {
+                if bun_config.version.is_some() && bunpm_config.version.is_none() {
+                    bunpm_config.version = bun_config.version.clone();
+                } else if bunpm_config.version.is_some() && bun_config.version.is_none() {
+                    bun_config.version = bunpm_config.version.clone();
                 }
-                _ => {}
             };
         }
 

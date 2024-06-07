@@ -31,6 +31,9 @@ jobs:
         ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
         github.event_name == 'push' && contains(github.ref, 'develop-') }}
       npm-channel: ${{ steps.plan-step.outputs.npm-channel }}
+      cli-version: ${{ steps.plan-step.outputs.cli-version }}
+      cli-version-base: ${{ steps.plan-step.outputs.cli-version-base }}
+      cli-version-build: ${{ steps.plan-step.outputs.cli-version-build }}
     steps:
       - uses: actions/checkout@v4
       - id: plan-step
@@ -108,6 +111,8 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
+          CLI_VERSION: ${{ needs.plan.outputs.cli-version }}
+          CLI_VERSION_BASE: ${{ needs.plan.outputs.cli-version-base }}
       - name: Install Depot CLI
         if: ${{ matrix.docker-target }}
         uses: depot/setup-action@v1
@@ -241,6 +246,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CLI_VERSION: ${{ needs.plan.outputs.cli-version }}
+          CLI_VERSION_BASE: ${{ needs.plan.outputs.cli-version-base }}
+          CLI_VERSION_BUILD: ${{ needs.plan.outputs.cli-version-build }}
       - if:
           ${{ needs.plan.outputs.npm-channel == 'latest' || needs.plan.outputs.npm-channel == 'next'
           }}
@@ -304,3 +312,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CHANNEL: ${{ needs.plan.outputs.npm-channel }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CLI_VERSION: ${{ needs.plan.outputs.cli-version }}
+          CLI_VERSION_BASE: ${{ needs.plan.outputs.cli-version-base }}
+          CLI_VERSION_BUILD: ${{ needs.plan.outputs.cli-version-build }}

@@ -7,10 +7,23 @@ export RUSTFLAGS="-C strip=symbols"
 source "$dir/../helpers.sh"
 
 target="$TARGET"
+oldVersion="$CLI_VERSION_BASE"
+newVersion="$CLI_VERSION"
+
+# Set the cli version before building (it may change for canary/nightly)
+
+echo "Old version: $oldVersion"
+echo "New version: $newVersion"
+
+if [[ "$oldVersion" != "$newVersion" ]]; then
+	toml=$(cat legacy/cli/Cargo.toml)
+	echo "${toml//$oldVersion/$newVersion}" > legacy/cli/Cargo.toml
+fi
+
+# Build the binary with the provided target
 
 echo "Target: $target"
 echo "Args: $@"
 
-# Build the binary with the provided target
 rustup target add "$target"
 cargo build --release --target "$target" $@

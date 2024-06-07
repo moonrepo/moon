@@ -13,11 +13,8 @@ if [ -d ".yarn/versions" ]; then
 fi
 
 if [[ "$NPM_CHANNEL" == "canary" || "$NPM_CHANNEL" == "nightly" ]]; then
-	timestamp=$(date +%Y%m%d%H%M)
-	preid="-$NPM_CHANNEL.$timestamp"
-
-	echo "Detected \"$NPM_CHANNEL\" build, appending timestamp to versions"
-	echo "Prerelease: $preid"
+	echo "Detected \"$NPM_CHANNEL\" build, appending build metadata to versions"
+	echo "Build: $CLI_VERSION_BUILD"
 
 	for package in packages/*; do
 		echo "$package"
@@ -25,15 +22,12 @@ if [[ "$NPM_CHANNEL" == "canary" || "$NPM_CHANNEL" == "nightly" ]]; then
 
 		# For the cli package, replace itself and all dep versions
 		if [[ "$package" == *"cli"* ]]; then
-			baseVersion=$(jq -r ".version" package.json)
-			version="$baseVersion$preid"
-
 			pkg=$(cat package.json)
-			echo "${pkg//$baseVersion/$version}" > package.json
+			echo "${pkg//$CLI_VERSION_BASE/$CLI_VERSION}" > package.json
 
 		# For core packages, append the preid to the version
 		else
-			pkg=$(jq ".version += \"$preid\"" package.json)
+			pkg=$(jq ".version += \"$CLI_VERSION_BUILD\"" package.json)
 			echo "$pkg" > package.json
 		fi
 

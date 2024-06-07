@@ -17,6 +17,10 @@
 - Updated `bun.version` and `node.bun.version` to stay in sync when one is defined and the other
   isn't. This helps to avoid tool discrepancies.
 
+#### 🐞 Fixes
+
+- Fixed nightly and canary releases not showing the correct version in `moon --version`.
+
 ## 1.25.3
 
 #### 🚀 Updates

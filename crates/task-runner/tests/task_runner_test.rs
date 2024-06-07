@@ -38,7 +38,7 @@ mod task_runner {
             use super::*;
 
             #[tokio::test]
-            #[should_panic(expected = "Encountered a missing hash for target project:dep")]
+            #[should_panic(expected = "Encountered a missing hash for task project:dep")]
             async fn errors_if_dep_hasnt_ran() {
                 let container = TaskRunnerContainer::new("runner").await;
                 let mut runner = container.create_runner("has-deps");
@@ -559,7 +559,7 @@ mod task_runner {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Encountered a missing hash for target project:dep")]
+        #[should_panic(expected = "Encountered a missing hash for task project:dep")]
         async fn errors_if_dep_not_ran() {
             let container = TaskRunnerContainer::new("runner").await;
             let runner = container.create_runner("has-deps");

@@ -6,6 +6,7 @@ use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use starbase::AppResult;
+use starbase_utils::json;
 use std::env;
 use std::fmt::Display;
 use tera::{Context, Tera};
@@ -97,14 +98,14 @@ pub fn respond_to_request(
 ) -> AppResult {
     let response = match req.url() {
         "/graph-data" => {
-            let mut response = Response::from_data(serde_json::to_string(graph).into_diagnostic()?);
+            let mut response = Response::from_data(json::format(graph, false)?);
             response.add_header(
                 Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap(),
             );
             response
         }
         _ => {
-            let graph_data = serde_json::to_string(graph).into_diagnostic()?;
+            let graph_data = json::format(graph, false)?;
             let js_url = get_js_url();
             let context = RenderContext {
                 page_title,

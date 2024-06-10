@@ -1,12 +1,12 @@
 use crate::commands::graph::utils::{action_graph_repr, respond_to_request, setup_server};
+use crate::session::CliSession;
 use clap::Args;
-use miette::IntoDiagnostic;
-use moon::{build_action_graph, generate_project_graph};
 use moon_action_graph::RunRequirements;
-use moon_target::TargetLocator;
-use moon_workspace::Workspace;
-use starbase::{system, SystemResult};
+use moon_task::TargetLocator;
+use starbase::AppResult;
 use starbase_styles::color;
+use starbase_utils::json;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ActionGraphArgs {
@@ -23,12 +23,10 @@ pub struct ActionGraphArgs {
     json: bool,
 }
 
-pub async fn internal_action_graph(
-    args: &ActionGraphArgs,
-    workspace: &mut Workspace,
-) -> SystemResult {
-    let project_graph = generate_project_graph(workspace).await?;
-    let mut action_graph_builder = build_action_graph(&project_graph)?;
+#[instrument]
+pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResult {
+    let project_graph = session.get_project_graph().await?;
+    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
 
     let mut requirements = RunRequirements {
         dependents: args.dependents,
@@ -61,7 +59,7 @@ pub async fn internal_action_graph(
     let graph_info = action_graph_repr(&action_graph).await;
 
     if args.json {
-        println!("{}", serde_json::to_string(&graph_info).into_diagnostic()?);
+        println!("{}", json::format(&graph_info, false)?);
 
         return Ok(());
     }
@@ -77,9 +75,4 @@ pub async fn internal_action_graph(
     }
 
     Ok(())
-}
-
-#[system]
-pub async fn action_graph(args: ArgsRef<ActionGraphArgs>, workspace: ResourceMut<Workspace>) {
-    internal_action_graph(args, workspace).await?;
 }

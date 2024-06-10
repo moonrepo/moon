@@ -1,10 +1,12 @@
-use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
+use std::sync::Arc;
+
+use super::utils::{project_graph_repr, respond_to_request, setup_server};
+use crate::session::CliSession;
 use clap::Args;
-use moon::generate_project_graph;
 use moon_common::Id;
-use moon_workspace::Workspace;
-use starbase::system;
+use starbase::AppResult;
 use starbase_styles::color;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ProjectGraphArgs {
@@ -21,12 +23,12 @@ pub struct ProjectGraphArgs {
     json: bool,
 }
 
-#[system]
-pub async fn project_graph(args: ArgsRef<ProjectGraphArgs>, workspace: ResourceMut<Workspace>) {
-    let mut project_graph = generate_project_graph(workspace).await?;
+#[instrument(skip_all)]
+pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppResult {
+    let mut project_graph = session.get_project_graph().await?;
 
     if let Some(id) = &args.id {
-        project_graph = project_graph.into_focused(id, args.dependents)?;
+        project_graph = Arc::new(project_graph.into_focused(id, args.dependents)?);
     }
 
     // Force expand all projects
@@ -54,4 +56,6 @@ pub async fn project_graph(args: ArgsRef<ProjectGraphArgs>, workspace: ResourceM
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Project graph".to_owned())?;
     }
+
+    Ok(())
 }

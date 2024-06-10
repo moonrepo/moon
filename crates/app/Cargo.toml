@@ -46,6 +46,12 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
+# Visualizer
+open = "5.1.4"
+petgraph = { workspace = true }
+tera = { workspace = true }
+tiny_http = "0.12.0"
+
 # TODO remove
 moon_action_pipeline = { path = "../../legacy/core/action-pipeline" }
 moon_tool = { path = "../../legacy/core/tool" }

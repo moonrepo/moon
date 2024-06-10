@@ -1,15 +1,14 @@
+use crate::session::CliSession;
 use clap::Args;
 use miette::miette;
-use moon::build_project_graph;
 use moon_common::Id;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
-use moon_workspace::Workspace;
-use starbase::system;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 #[derive(Args, Clone, Debug)]
 pub struct RunScriptArgs {
@@ -20,8 +19,8 @@ pub struct RunScriptArgs {
     project: Option<Id>,
 }
 
-#[system]
-pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Workspace>) {
+#[instrument(skip_all)]
+pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
     let node = PlatformManager::read()
         .get(PlatformType::Node)?
         .get_tool()?
@@ -45,7 +44,7 @@ pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Wor
 
         // Otherwise try and find the project in the graph
     } else if let Some(project_id) = &args.project {
-        let mut project_graph = build_project_graph(workspace).await?;
+        let mut project_graph = session.build_project_graph().await?;
         project_graph.load(project_id).await?;
 
         command.cwd(&project_graph.build().await?.get(project_id)?.root);
@@ -59,4 +58,6 @@ pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Wor
     }
 
     command.create_async().exec_stream_output().await?;
+
+    Ok(())
 }

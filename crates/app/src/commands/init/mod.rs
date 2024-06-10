@@ -6,7 +6,7 @@ mod typescript;
 
 use crate::app_error::ExitCode;
 use crate::helpers::create_theme;
-use crate::CliSession;
+use crate::session::CliSession;
 use bun::init_bun;
 use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;

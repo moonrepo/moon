@@ -1,6 +1,6 @@
 use super::check_dirty_repo;
+use crate::session::CliSession;
 use clap::Args;
-use moon::generate_project_graph;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
@@ -10,12 +10,11 @@ use moon_config::{
 use moon_node_lang::package_json::DependenciesMap;
 use moon_node_lang::PackageJsonCache;
 use moon_node_platform::create_tasks_from_scripts;
-use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use starbase::system;
+use starbase::AppResult;
 use starbase_utils::yaml;
 use std::collections::BTreeMap;
-use tracing::info;
+use tracing::{info, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct FromPackageJsonArgs {
@@ -26,19 +25,16 @@ pub struct FromPackageJsonArgs {
     pub skip_touched_files_check: bool,
 }
 
-#[system]
-pub async fn from_package_json(
-    args: ArgsRef<FromPackageJsonArgs>,
-    workspace: ResourceMut<Workspace>,
-) -> AppResult {
+#[instrument(skip_all)]
+pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -> AppResult {
     if args.skip_touched_files_check {
         info!("Skipping touched files check.");
     } else {
-        check_dirty_repo(workspace).await?;
+        check_dirty_repo(&session).await?;
     };
 
     // Create a mapping of `package.json` names to project IDs
-    let project_graph = generate_project_graph(workspace).await?;
+    let project_graph = session.get_project_graph().await?;
     let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
     for project in project_graph.get_all_unexpanded() {
@@ -76,7 +72,7 @@ pub async fn from_package_json(
         for (task_id, task_config) in create_tasks_from_scripts(
             &project.id,
             package_json,
-            workspace
+            session
                 .toolchain_config
                 .node
                 .as_ref()
@@ -106,4 +102,6 @@ pub async fn from_package_json(
     })?;
 
     yaml::write_file_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
+
+    Ok(())
 }

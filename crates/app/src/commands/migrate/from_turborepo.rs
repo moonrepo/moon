@@ -1,11 +1,12 @@
-use starbase::system;
+use starbase::AppResult;
 use starbase_styles::color;
 use tracing::warn;
 
-#[system]
-pub async fn from_turborepo() {
+pub async fn from_turborepo() -> AppResult {
     warn!(
         "This command is deprecated. Use {} instead.",
         color::shell("moon ext migrate-turborepo")
     );
+
+    Ok(())
 }

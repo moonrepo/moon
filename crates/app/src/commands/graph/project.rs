@@ -1,11 +1,10 @@
-use std::sync::Arc;
-
 use super::utils::{project_graph_repr, respond_to_request, setup_server};
 use crate::session::CliSession;
 use clap::Args;
 use moon_common::Id;
 use starbase::AppResult;
 use starbase_styles::color;
+use std::sync::Arc;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]

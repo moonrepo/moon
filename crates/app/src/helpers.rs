@@ -1,6 +1,32 @@
 use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
+use indicatif::{ProgressBar, ProgressStyle};
 use starbase_styles::color::Color;
+use std::time::Duration;
+
+pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {
+    let pb = ProgressBar::new_spinner();
+    pb.set_message(start.as_ref().to_owned());
+    pb.enable_steady_tick(Duration::from_millis(50));
+
+    move |finish, passed| {
+        let theme = create_theme();
+
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{prefix} {msg}")
+                .unwrap(),
+        );
+
+        if passed {
+            pb.set_prefix(theme.success_prefix.to_string());
+        } else {
+            pb.set_prefix(theme.error_prefix.to_string());
+        }
+
+        pb.finish_with_message(finish.as_ref().to_owned());
+    }
+}
 
 pub fn create_theme() -> ColorfulTheme {
     ColorfulTheme {

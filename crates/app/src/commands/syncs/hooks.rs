@@ -1,9 +1,10 @@
 use crate::helpers::create_progress_bar;
+use crate::session::CliSession;
 use clap::Args;
 use moon_actions::{sync_vcs_hooks, unsync_vcs_hooks};
-use moon_workspace::Workspace;
-use starbase::system;
+use starbase::AppResult;
 use starbase_styles::color;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct SyncHooksArgs {
@@ -14,9 +15,9 @@ pub struct SyncHooksArgs {
     force: bool,
 }
 
-#[system]
-pub async fn sync(args: ArgsRef<SyncHooksArgs>, workspace: ResourceRef<Workspace>) {
-    if workspace.config.vcs.hooks.is_empty() {
+#[instrument(skip_all)]
+pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
+    if session.workspace_config.vcs.hooks.is_empty() {
         println!(
             "No hooks available to sync. Configure them with the {} setting.",
             color::property("vcs.hooks")
@@ -29,23 +30,29 @@ pub async fn sync(args: ArgsRef<SyncHooksArgs>, workspace: ResourceRef<Workspace
         return Ok(());
     }
 
-    let done = create_progress_bar(format!("Syncing {} hooks...", workspace.config.vcs.manager));
-    let hook_names = workspace
-        .config
+    let done = create_progress_bar(format!(
+        "Syncing {} hooks...",
+        session.workspace_config.vcs.manager
+    ));
+    let hook_names = session
+        .workspace_config
         .vcs
         .hooks
         .keys()
         .map(color::id)
         .collect::<Vec<_>>()
         .join(", ");
+    let workspace = session.get_workspace_legacy()?;
 
     if args.clean {
-        unsync_vcs_hooks(workspace).await?;
+        unsync_vcs_hooks(&workspace).await?;
 
         done(format!("Successfully removed {} hooks", hook_names), true);
     } else {
-        sync_vcs_hooks(workspace, args.force).await?;
+        sync_vcs_hooks(&workspace, args.force).await?;
 
         done(format!("Successfully created {} hooks", hook_names), true);
     }
+
+    Ok(())
 }

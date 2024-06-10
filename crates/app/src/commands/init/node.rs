@@ -1,6 +1,5 @@
-use super::prompts::prompt_version;
+use super::prompts::{fully_qualify_version, prompt_version};
 use super::InitOptions;
-use crate::helpers::fully_qualify_version;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;
@@ -13,6 +12,7 @@ use starbase_styles::color;
 use starbase_utils::fs;
 use std::path::Path;
 use tera::{Context, Tera};
+use tracing::instrument;
 
 pub fn render_template(context: Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_node_config_template(), &context, false).into_diagnostic()
@@ -107,6 +107,7 @@ fn detect_package_manager(
     Ok((pm_type, fully_qualify_version(&pm_version)))
 }
 
+#[instrument(skip_all)]
 pub async fn init_node(
     dest_dir: &Path,
     options: &InitOptions,
@@ -194,7 +195,7 @@ pub async fn init_node(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_test_utils::assert_snapshot;
+    use starbase_sandbox::assert_snapshot;
 
     fn create_context() -> Context {
         let mut context = Context::new();

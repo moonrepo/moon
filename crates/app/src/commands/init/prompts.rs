@@ -4,6 +4,21 @@ use dialoguer::{Confirm, Input};
 use miette::IntoDiagnostic;
 use starbase_styles::color;
 
+pub fn fully_qualify_version(version: &str) -> String {
+    if version.is_empty() {
+        return version.to_owned();
+    }
+
+    let mut parts = version.split('.');
+
+    [
+        parts.next().unwrap_or("0"),
+        parts.next().unwrap_or("0"),
+        parts.next().unwrap_or("0"),
+    ]
+    .join(".")
+}
+
 pub fn prompt_version(
     label: &str,
     options: &InitOptions,

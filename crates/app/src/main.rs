@@ -1,6 +1,7 @@
 mod app_error;
 mod commands;
 mod components;
+mod helpers;
 mod queries;
 mod session;
 mod systems;

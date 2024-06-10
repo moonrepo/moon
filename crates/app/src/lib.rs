@@ -2,6 +2,7 @@ mod app_error;
 pub mod commands;
 mod components;
 pub mod queries;
+mod helpers;
 mod session;
 pub mod systems;
 

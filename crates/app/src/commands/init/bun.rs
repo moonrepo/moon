@@ -9,11 +9,13 @@ use starbase::AppResult;
 use starbase_styles::color;
 use std::path::Path;
 use tera::{Context, Tera};
+use tracing::instrument;
 
 pub fn render_template(context: Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_bun_config_template(), &context, false).into_diagnostic()
 }
 
+#[instrument(skip_all)]
 pub async fn init_bun(
     _dest_dir: &Path,
     options: &InitOptions,
@@ -74,7 +76,7 @@ pub async fn init_bun(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_test_utils::assert_snapshot;
+    use starbase_sandbox::assert_snapshot;
 
     #[test]
     fn renders_default() {

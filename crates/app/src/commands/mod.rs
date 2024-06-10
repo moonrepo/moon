@@ -7,7 +7,7 @@ pub mod docker;
 // pub mod ext;
 // pub mod generate;
 pub mod graph;
-// pub mod init;
+pub mod init;
 // pub mod migrate;
 // pub mod node;
 // pub mod project;

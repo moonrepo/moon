@@ -6,25 +6,26 @@ mod typescript;
 
 use crate::app_error::ExitCode;
 use crate::helpers::create_theme;
+use crate::CliSession;
 use bun::init_bun;
 use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_app_components::{Console, MoonEnv};
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
-use moon_utils::path;
+use moon_console::Console;
 use moon_vcs::{Git, Vcs};
 use node::init_node;
 use rust::init_rust;
-use starbase::{system, AppResult};
+use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
+use tracing::instrument;
 use typescript::init_typescript;
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -176,12 +177,8 @@ pub async fn init_tool(
     Ok(())
 }
 
-#[system]
-pub async fn init(
-    args: ArgsRef<InitArgs>,
-    moon_env: StateRef<MoonEnv>,
-    console: ResourceRef<Console>,
-) {
+#[instrument(skip_all)]
+pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
     let options = InitOptions {
         force: args.force,
         minimal: args.minimal,
@@ -191,17 +188,16 @@ pub async fn init(
     let theme = create_theme();
     let dest_path = PathBuf::from(&args.dest);
     let dest_dir = if args.dest == "." {
-        moon_env.cwd.clone()
+        session.working_dir.clone()
     } else if dest_path.is_absolute() {
         dest_path
     } else {
-        moon_env.cwd.join(&args.dest)
+        session.working_dir.join(&args.dest)
     };
-    let dest_dir = path::normalize(&dest_dir);
 
     // Initialize a specific tool and exit early
     if let Some(tool) = &args.tool {
-        init_tool(&dest_dir, tool, &options, &theme, console).await?;
+        init_tool(&dest_dir, tool, &options, &theme, &session.console).await?;
 
         return Ok(());
     }
@@ -244,7 +240,7 @@ pub async fn init(
 "#,
     )?;
 
-    let stdout = console.stdout();
+    let stdout = session.console.stdout();
 
     stdout.write_newline()?;
 
@@ -268,12 +264,14 @@ pub async fn init(
     ))?;
 
     stdout.write_newline()?;
+
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_test_utils::assert_snapshot;
+    use starbase_sandbox::assert_snapshot;
 
     #[test]
     fn renders_default() {

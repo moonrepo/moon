@@ -1214,6 +1214,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ae2a35373c5c74340b79ae6780b498b2b183915ec5dacf263aac5a099bf485a"
 
 [[package]]
+name = "dialoguer"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "658bce805d770f407bc62102fca7c2c64ceef2fbcb2b8bd19d2765ce093980de"
+dependencies = [
+ "console",
+ "shell-words",
+ "thiserror",
+]
+
+[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3149,7 +3160,8 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap",
- "futures",
+ "console",
+ "dialoguer",
  "miette",
  "moon_action_graph",
  "moon_action_pipeline",
@@ -3165,6 +3177,7 @@ dependencies = [
  "moon_deno_tool",
  "moon_env",
  "moon_extension_plugin",
+ "moon_lang",
  "moon_node_lang",
  "moon_node_platform",
  "moon_node_tool",
@@ -3180,6 +3193,7 @@ dependencies = [
  "moon_system_platform",
  "moon_task",
  "moon_tool",
+ "moon_typescript_lang",
  "moon_vcs",
  "moon_workspace",
  "once_cell",
@@ -3194,6 +3208,7 @@ dependencies = [
  "serde",
  "starbase",
  "starbase_events",
+ "starbase_sandbox",
  "starbase_styles",
  "starbase_utils",
  "tera",

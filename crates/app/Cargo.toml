@@ -28,7 +28,6 @@ moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }
 clap = { workspace = true }
-futures = "0.3.30"
 miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }
@@ -53,7 +52,10 @@ tera = { workspace = true }
 tiny_http = "0.12.0"
 
 # TODO remove
+console = { workspace = true }
+dialoguer = { version = "0.11.0", default-features = false }
 moon_action_pipeline = { path = "../../legacy/core/action-pipeline" }
+moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }
 moon_bun_tool = { path = "../../legacy/bun/tool" }
@@ -67,6 +69,10 @@ moon_rust_lang = { path = "../../legacy/rust/lang" }
 moon_rust_tool = { path = "../../legacy/rust/tool" }
 moon_rust_platform = { path = "../../legacy/rust/platform" }
 moon_system_platform = { path = "../../legacy/system/platform" }
+moon_typescript_lang = { path = "../../legacy/typescript/lang" }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

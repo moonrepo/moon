@@ -134,9 +134,6 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: Arc<WorkspaceConfig>,
 
-    /// Local `.prototools` config.
-    pub proto_config: Arc<ProtoConfig>,
-
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
 
@@ -206,7 +203,6 @@ impl Workspace {
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),
             config: Arc::new(config),
-            proto_config: Arc::new(proto_config.to_owned()),
             root: root_dir,
             session: None,
             tasks_config: Arc::new(tasks_config),

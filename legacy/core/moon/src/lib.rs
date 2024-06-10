@@ -168,7 +168,7 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &workspace.tasks_config,
         toolchain_config: &workspace.toolchain_config,
-        vcs: Some(&workspace.vcs),
+        vcs: Some(workspace.vcs.clone()),
         working_dir: &workspace.working_dir,
         workspace_config: &workspace.config,
         workspace_root: &workspace.root,

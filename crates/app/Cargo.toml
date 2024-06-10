@@ -9,6 +9,7 @@ name = "moon"
 path = "src/main.rs"
 
 [dependencies]
+moon_action_graph = { path = "../action-graph" }
 moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
@@ -17,12 +18,14 @@ moon_console = { path = "../console" }
 moon_console_reporter = { path = "../console-reporter" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
+moon_platform_detector = { path = "../platform-detector" }
 moon_plugin = { path = "../plugin" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
 moon_task = { path = "../task" }
 moon_vcs = { path = "../vcs" }
+moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }
 clap = { workspace = true }
 futures = "0.3.30"
@@ -32,9 +35,11 @@ proto_core = { workspace = true }
 proto_installer = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
 semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
+starbase_events = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
@@ -42,10 +47,18 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 # TODO remove
+moon_action_pipeline = { path = "../../legacy/core/action-pipeline" }
+moon_tool = { path = "../../legacy/core/tool" }
 moon_platform = { path = "../../legacy/core/platform" }
+moon_bun_tool = { path = "../../legacy/bun/tool" }
 moon_bun_platform = { path = "../../legacy/bun/platform" }
+moon_deno_tool = { path = "../../legacy/deno/tool" }
 moon_deno_platform = { path = "../../legacy/deno/platform" }
+moon_node_lang = { path = "../../legacy/node/lang" }
+moon_node_tool = { path = "../../legacy/node/tool" }
 moon_node_platform = { path = "../../legacy/node/platform" }
+moon_rust_lang = { path = "../../legacy/rust/lang" }
+moon_rust_tool = { path = "../../legacy/rust/tool" }
 moon_rust_platform = { path = "../../legacy/rust/platform" }
 moon_system_platform = { path = "../../legacy/system/platform" }
 

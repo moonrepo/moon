@@ -1,7 +1,5 @@
-use super::MANIFEST_NAME;
-use crate::commands::docker::scaffold::DockerManifest;
-use miette::miette;
-use moon::generate_project_graph;
+use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
+use crate::session::CliSession;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
 use moon_deno_tool::DenoTool;
@@ -11,15 +9,13 @@ use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
 use moon_rust_tool::RustTool;
 use moon_tool::DependencyManager;
-use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::system;
 use starbase::AppResult;
-use starbase_styles::color;
 use starbase_utils::{fs, json};
 use std::path::Path;
-use tracing::debug;
+use tracing::{debug, instrument};
 
+#[instrument(skip_all)]
 pub async fn prune_bun(
     bun: &BunTool,
     workspace_root: &Path,
@@ -57,6 +53,7 @@ pub async fn prune_bun(
     Ok(())
 }
 
+#[instrument(skip_all)]
 pub async fn prune_deno(
     deno: &DenoTool,
     _workspace_root: &Path,
@@ -69,6 +66,7 @@ pub async fn prune_deno(
     Ok(())
 }
 
+#[instrument(skip_all)]
 pub async fn prune_node(
     node: &NodeTool,
     workspace_root: &Path,
@@ -108,6 +106,7 @@ pub async fn prune_node(
 }
 
 // This assumes that the project was built in --release mode. Is this correct?
+#[instrument(skip_all)]
 pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
     let target_dir = workspace_root.join("target");
     let lockfile_path = workspace_root.join("Cargo.lock");
@@ -125,19 +124,15 @@ pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
     Ok(())
 }
 
-#[system]
-pub async fn prune(workspace: ResourceMut<Workspace>) {
-    let manifest_path = workspace.root.join(MANIFEST_NAME);
+#[instrument(skip_all)]
+pub async fn prune(session: CliSession) -> AppResult {
+    let manifest_path = session.workspace_root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
-        return Err(miette!(
-            code = "moon::docker::prune",
-            "Unable to prune, docker manifest missing. Has it been scaffolded with {}?",
-            color::shell("moon docker scaffold")
-        ));
+        return Err(AppDockerError::MissingManifest.into());
     }
 
-    let project_graph = generate_project_graph(workspace).await?;
+    let project_graph = session.get_project_graph().await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let mut platforms = FxHashSet::<PlatformType>::default();
 
@@ -167,7 +162,7 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
                         .as_any()
                         .downcast_ref::<BunTool>()
                         .unwrap(),
-                    &workspace.root,
+                    &session.workspace_root,
                     &project_graph,
                     &manifest,
                 )
@@ -180,7 +175,7 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
                         .as_any()
                         .downcast_ref::<DenoTool>()
                         .unwrap(),
-                    &workspace.root,
+                    &session.workspace_root,
                     &project_graph,
                     &manifest,
                 )
@@ -193,7 +188,7 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
                         .as_any()
                         .downcast_ref::<NodeTool>()
                         .unwrap(),
-                    &workspace.root,
+                    &session.workspace_root,
                     &project_graph,
                     &manifest,
                 )
@@ -206,11 +201,13 @@ pub async fn prune(workspace: ResourceMut<Workspace>) {
                         .as_any()
                         .downcast_ref::<RustTool>()
                         .unwrap(),
-                    &workspace.root,
+                    &session.workspace_root,
                 )
                 .await?;
             }
             _ => {}
         }
     }
+
+    Ok(())
 }

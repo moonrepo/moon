@@ -1,6 +1,8 @@
 use crate::app_error::AppError;
+use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
+use moon_action_graph::ActionGraphBuilder;
 use moon_cache::CacheEngine;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
@@ -9,7 +11,10 @@ use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
 use moon_plugin::PluginRegistry;
 use moon_plugin::PluginType;
+use moon_project_graph::ProjectGraph;
+use moon_project_graph::ProjectGraphBuilder;
 use moon_vcs::{BoxedVcs, Git};
+use moon_workspace::Workspace;
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use starbase::{AppResult, AppSession};
@@ -31,7 +36,9 @@ pub struct CliSession {
     // Lazy components
     cache_engine: OnceCell<Arc<CacheEngine>>,
     extension_registry: OnceCell<Arc<ExtensionRegistry>>,
+    project_graph: OnceCell<Arc<ProjectGraph>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
+    workspace: OnceCell<Arc<Workspace>>,
     // graphs
     // registries
 
@@ -52,6 +59,7 @@ impl CliSession {
             console: Console::new(false),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
+            project_graph: OnceCell::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
@@ -59,7 +67,19 @@ impl CliSession {
             workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
             vcs_adapter: OnceCell::new(),
+            workspace: OnceCell::new(),
         }
+    }
+
+    pub async fn build_action_graph<'graph>(
+        &self,
+        project_graph: &'graph ProjectGraph,
+    ) -> AppResult<ActionGraphBuilder<'graph>> {
+        ActionGraphBuilder::new(project_graph)
+    }
+
+    pub async fn build_project_graph(&self) -> AppResult<ProjectGraphBuilder> {
+        ProjectGraphBuilder::new(create_project_graph_context(self).await?).await
     }
 
     pub fn get_cache_engine(&self) -> AppResult<Arc<CacheEngine>> {
@@ -68,6 +88,10 @@ impl CliSession {
             .get_or_try_init(|| CacheEngine::new(&self.workspace_root).map(Arc::new))?;
 
         Ok(Arc::clone(item))
+    }
+
+    pub fn get_console(&self) -> AppResult<Arc<Console>> {
+        Ok(Arc::new(self.console.clone()))
     }
 
     pub fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
@@ -82,6 +106,21 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
+    pub async fn get_project_graph(&self) -> AppResult<Arc<ProjectGraph>> {
+        if let Some(item) = self.project_graph.get() {
+            return Ok(Arc::clone(item));
+        }
+
+        let cache_engine = self.get_cache_engine()?;
+        let context = create_project_graph_context(self).await?;
+        let builder = ProjectGraphBuilder::generate(context, &cache_engine).await?;
+        let graph = Arc::new(builder.build().await?);
+
+        let _ = self.project_graph.set(Arc::clone(&graph));
+
+        Ok(graph)
+    }
+
     pub fn get_vcs_adapter(&self) -> AppResult<Arc<BoxedVcs>> {
         let item = self.vcs_adapter.get_or_try_init(|| {
             let config = &self.workspace_config.vcs;
@@ -92,6 +131,25 @@ impl CliSession {
             )?;
 
             Ok::<_, miette::Report>(Arc::new(Box::new(git)))
+        })?;
+
+        Ok(Arc::clone(item))
+    }
+
+    pub fn get_workspace_legacy(&self) -> AppResult<Arc<Workspace>> {
+        let item = self.workspace.get_or_try_init(|| {
+            let workspace = Workspace {
+                cache_engine: self.get_cache_engine()?,
+                config: self.workspace_config.clone(),
+                root: self.workspace_root.clone(),
+                session: None,
+                tasks_config: self.tasks_config.clone(),
+                toolchain_config: self.toolchain_config.clone(),
+                vcs: self.get_vcs_adapter()?,
+                working_dir: self.working_dir.clone(),
+            };
+
+            Ok::<_, miette::Report>(Arc::new(workspace))
         })?;
 
         Ok(Arc::clone(item))

@@ -173,6 +173,17 @@ impl AppSession for CliSession {
         Ok(())
     }
 
+    async fn execute(&mut self) -> AppResult {
+        // if ci, check, run, sync
+        if self.is_telemetry_enabled() {
+            let cache_engine = self.get_cache_engine()?;
+
+            execute::check_for_new_version(&self.console, &self.moon_env, &cache_engine).await?;
+        }
+
+        Ok(())
+    }
+
     async fn shutdown(&mut self) -> AppResult {
         self.console.close()?;
 

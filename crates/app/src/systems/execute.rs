@@ -1,22 +1,22 @@
 use moon_api::Launchpad;
-use moon_app_components::{Console, MoonEnv};
+use moon_cache::CacheEngine;
 use moon_common::{color, is_formatted_output, is_test_env};
-use moon_console::Checkpoint;
-use moon_workspace::Workspace;
-use starbase::system;
-use tracing::debug;
+use moon_console::{Checkpoint, Console};
+use moon_env::MoonEnvironment;
+use starbase::AppResult;
+use tracing::{debug, instrument};
 
-#[system]
+#[instrument(skip_all)]
 pub async fn check_for_new_version(
-    moon_env: StateRef<MoonEnv>,
-    workspace: ResourceRef<Workspace>,
-    console: ResourceRef<Console>,
-) {
-    if is_test_env() || is_formatted_output() || !moon::is_telemetry_enabled() {
+    console: &Console,
+    moon_env: &MoonEnvironment,
+    cache_engine: &CacheEngine,
+) -> AppResult {
+    if is_test_env() || is_formatted_output() {
         return Ok(());
     }
 
-    match Launchpad::check_version(&workspace.cache_engine, moon_env, false).await {
+    match Launchpad::check_version(cache_engine, moon_env, false).await {
         Ok(Some(result)) => {
             if !result.update_available {
                 return Ok(());
@@ -50,5 +50,7 @@ pub async fn check_for_new_version(
             debug!("Failed to check for current version: {}", error);
         }
         _ => {}
-    }
+    };
+
+    Ok(())
 }

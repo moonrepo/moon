@@ -9,6 +9,7 @@ name = "moon"
 path = "src/main.rs"
 
 [dependencies]
+moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
@@ -17,6 +18,10 @@ moon_console_reporter = { path = "../console-reporter" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_plugin = { path = "../plugin" }
+moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
+moon_query = { path = "../query" }
+moon_task = { path = "../task" }
 moon_vcs = { path = "../vcs" }
 async-trait = { workspace = true }
 clap = { workspace = true }
@@ -25,7 +30,10 @@ miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }
 proto_installer = { workspace = true }
+regex = { workspace = true }
+rustc-hash = { workspace = true }
 semver = { workspace = true }
+serde = { workspace = true }
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

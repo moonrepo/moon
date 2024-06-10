@@ -2,7 +2,7 @@ mod app_error;
 mod session;
 mod systems;
 
-use session::MoonSession;
+use session::CliSession;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_utils::string_vec;
@@ -20,7 +20,7 @@ async fn main() -> MainResult {
         ..TracingOptions::default()
     });
 
-    let mut session = MoonSession::new();
+    let mut session = CliSession::new();
 
     app.run(&mut session, |s| async move {
         dbg!(&s);

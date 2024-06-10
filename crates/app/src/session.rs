@@ -22,7 +22,7 @@ use tokio::try_join;
 pub type ExtensionRegistry = PluginRegistry<ExtensionPlugin>;
 
 #[derive(Clone)]
-pub struct MoonSession {
+pub struct CliSession {
     // Components
     pub console: Console,
     pub moon_env: Arc<MoonEnvironment>,
@@ -45,14 +45,14 @@ pub struct MoonSession {
     pub workspace_root: PathBuf,
 }
 
-impl MoonSession {
+impl CliSession {
     pub fn new() -> Self {
         Self {
             cache_engine: OnceCell::new(),
             console: Console::new(false),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
-            proto_env: Arc::new(ProtoEnvironment::new().unwrap()), // TODO
+            proto_env: Arc::new(ProtoEnvironment::default()),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
             working_dir: PathBuf::new(),
@@ -111,7 +111,7 @@ impl MoonSession {
 }
 
 #[async_trait]
-impl AppSession for MoonSession {
+impl AppSession for CliSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
         self.console.set_reporter(DefaultReporter::default());
@@ -145,10 +145,15 @@ impl AppSession for MoonSession {
         self.toolchain_config = toolchain_config;
         self.tasks_config = tasks_config;
 
+        // TODO moonbase
+
         Ok(())
     }
 
+    /// Analyze the current state and install/registery necessary functionality.
     async fn analyze(&mut self) -> AppResult {
+        analyze::prepate_repository(self.get_vcs_adapter()?).await?;
+
         if self.requires_workspace() {
             analyze::install_proto(&self.console, &self.proto_env, &self.toolchain_config).await?;
 
@@ -161,7 +166,7 @@ impl AppSession for MoonSession {
             .await?;
 
             if self.requires_toolchain() {
-                // analyze::load_toolchain().await?;
+                analyze::load_toolchain().await?;
             }
         }
 
@@ -175,13 +180,16 @@ impl AppSession for MoonSession {
     }
 }
 
-impl fmt::Debug for MoonSession {
+impl fmt::Debug for CliSession {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("MoonSession")
             .field("moon_env", &self.moon_env)
+            .field("proto_env", &self.proto_env)
             .field("tasks_config", &self.tasks_config)
             .field("toolchain_config", &self.toolchain_config)
+            .field("working_dir", &self.working_dir)
             .field("workspace_config", &self.workspace_config)
+            .field("workspace_root", &self.workspace_root)
             .finish()
     }
 }

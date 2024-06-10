@@ -7,6 +7,7 @@ use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
+use moon_vcs::BoxedVcs;
 use proto_core::{is_offline, ProtoEnvironment, ProtoError};
 use proto_installer::*;
 use starbase::AppResult;
@@ -14,6 +15,17 @@ use std::env;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
+
+#[instrument(skip_all)]
+pub async fn prepate_repository(vcs: Arc<BoxedVcs>) -> AppResult {
+    if !is_test_env() && vcs.is_enabled() {
+        if let Ok(slug) = vcs.get_repository_slug().await {
+            env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
+        }
+    }
+
+    Ok(())
+}
 
 #[instrument(skip_all)]
 pub async fn install_proto(
@@ -166,6 +178,15 @@ pub async fn register_platforms(
             Arc::clone(&console),
         )),
     );
+
+    Ok(())
+}
+
+#[instrument]
+pub async fn load_toolchain() -> AppResult {
+    for platform in PlatformManager::write().list_mut() {
+        platform.setup_toolchain().await?;
+    }
 
     Ok(())
 }

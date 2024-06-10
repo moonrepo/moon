@@ -2992,15 +2992,26 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap",
+ "futures",
  "miette",
+ "moon_bun_platform",
  "moon_cache",
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_console_reporter",
+ "moon_deno_platform",
  "moon_env",
+ "moon_extension_plugin",
+ "moon_node_platform",
+ "moon_platform",
+ "moon_plugin",
+ "moon_rust_platform",
+ "moon_system_platform",
  "moon_vcs",
  "once_cell",
  "proto_core",
+ "proto_installer",
  "semver",
  "starbase",
  "starbase_styles",
@@ -3008,21 +3019,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "moon_app_components"
-version = "0.0.1"
-dependencies = [
- "moon_config",
- "moon_console",
- "moon_env",
- "moon_extension_plugin",
- "moon_platform_plugin",
- "moon_plugin",
- "proto_core",
- "semver",
- "starbase",
 ]
 
 [[package]]
@@ -4743,6 +4739,23 @@ dependencies = [
  "uuid",
  "version_spec",
  "warpgate",
+]
+
+[[package]]
+name = "proto_installer"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85b16bb9da5068a9d87202a92f7155dd3ede8f2eee528aa586210ccb62952daa"
+dependencies = [
+ "futures",
+ "miette",
+ "reqwest 0.12.4",
+ "starbase_archive",
+ "starbase_styles",
+ "starbase_utils",
+ "system_env",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]

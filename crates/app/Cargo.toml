@@ -13,13 +13,18 @@ moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
+moon_console_reporter = { path = "../console-reporter" }
 moon_env = { path = "../env" }
+moon_extension_plugin = { path = "../extension-plugin" }
+moon_plugin = { path = "../plugin" }
 moon_vcs = { path = "../vcs" }
 async-trait = { workspace = true }
 clap = { workspace = true }
+futures = "0.3.30"
 miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }
+proto_installer = { workspace = true }
 semver = { workspace = true }
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
@@ -27,6 +32,14 @@ starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+# TODO remove
+moon_platform = { path = "../../legacy/core/platform" }
+moon_bun_platform = { path = "../../legacy/bun/platform" }
+moon_deno_platform = { path = "../../legacy/deno/platform" }
+moon_node_platform = { path = "../../legacy/node/platform" }
+moon_rust_platform = { path = "../../legacy/rust/platform" }
+moon_system_platform = { path = "../../legacy/system/platform" }
 
 [lints]
 workspace = true

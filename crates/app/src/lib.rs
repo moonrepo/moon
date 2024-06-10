@@ -1,4 +1,5 @@
 mod app_error;
+mod components;
 mod session;
 pub mod systems;
 

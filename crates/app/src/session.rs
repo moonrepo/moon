@@ -4,7 +4,11 @@ use async_trait::async_trait;
 use moon_cache::CacheEngine;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
+use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
+use moon_extension_plugin::ExtensionPlugin;
+use moon_plugin::PluginRegistry;
+use moon_plugin::PluginType;
 use moon_vcs::{BoxedVcs, Git};
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
@@ -13,19 +17,23 @@ use std::env;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::try_join;
+
+pub type ExtensionRegistry = PluginRegistry<ExtensionPlugin>;
 
 #[derive(Clone)]
 pub struct MoonSession {
     // Components
-    pub console: Arc<Console>,
+    pub console: Console,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
-    // graphs
-    // registries
 
     // Lazy components
     cache_engine: OnceCell<Arc<CacheEngine>>,
+    extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
+    // graphs
+    // registries
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -41,7 +49,8 @@ impl MoonSession {
     pub fn new() -> Self {
         Self {
             cache_engine: OnceCell::new(),
-            console: Arc::new(Console::new(false)),
+            console: Console::new(false),
+            extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
             proto_env: Arc::new(ProtoEnvironment::new().unwrap()), // TODO
             tasks_config: Arc::new(InheritedTasksManager::default()),
@@ -57,6 +66,18 @@ impl MoonSession {
         let item = self
             .cache_engine
             .get_or_try_init(|| CacheEngine::new(&self.workspace_root).map(Arc::new))?;
+
+        Ok(Arc::clone(item))
+    }
+
+    pub fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
+        let item = self.extension_registry.get_or_init(|| {
+            Arc::new(PluginRegistry::new(
+                PluginType::Extension,
+                Arc::clone(&self.moon_env),
+                Arc::clone(&self.proto_env),
+            ))
+        });
 
         Ok(Arc::clone(item))
     }
@@ -79,12 +100,24 @@ impl MoonSession {
     pub fn is_telemetry_enabled(&self) -> bool {
         self.workspace_config.telemetry
     }
+
+    pub fn requires_workspace(&self) -> bool {
+        true // TODO
+    }
+
+    pub fn requires_toolchain(&self) -> bool {
+        false // TODO
+    }
 }
 
 #[async_trait]
 impl AppSession for MoonSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
+        self.console.set_reporter(DefaultReporter::default());
+
+        // Determine paths
+
         self.working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;
 
         self.workspace_root = startup::find_workspace_root(&self.working_dir)?;
@@ -98,16 +131,45 @@ impl AppSession for MoonSession {
 
         // Load configs
 
-        self.workspace_config = startup::load_workspace_config(&self.workspace_root)?;
-
-        self.toolchain_config = startup::load_toolchain_config(
-            &self.workspace_root,
-            self.proto_env
-                .load_config_manager()?
-                .get_local_config(&self.working_dir)?,
+        let (workspace_config, tasks_config, toolchain_config) = try_join!(
+            startup::load_workspace_config(&self.workspace_root),
+            startup::load_tasks_configs(&self.workspace_root),
+            startup::load_toolchain_config(
+                &self.workspace_root,
+                &self.working_dir,
+                self.proto_env.clone(),
+            ),
         )?;
 
-        self.tasks_config = startup::load_tasks_configs(&self.workspace_root)?;
+        self.workspace_config = workspace_config;
+        self.toolchain_config = toolchain_config;
+        self.tasks_config = tasks_config;
+
+        Ok(())
+    }
+
+    async fn analyze(&mut self) -> AppResult {
+        if self.requires_workspace() {
+            analyze::install_proto(&self.console, &self.proto_env, &self.toolchain_config).await?;
+
+            analyze::register_platforms(
+                &self.console,
+                &self.proto_env,
+                &self.toolchain_config,
+                &self.workspace_root,
+            )
+            .await?;
+
+            if self.requires_toolchain() {
+                // analyze::load_toolchain().await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn shutdown(&mut self) -> AppResult {
+        self.console.close()?;
 
         Ok(())
     }

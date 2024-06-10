@@ -1,17 +1,31 @@
 // Systems are defined in the order they should be executed!
 
 use crate::app_error::AppError;
+use miette::IntoDiagnostic;
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
-use proto_core::{ProtoConfig, ProtoEnvironment};
+use proto_core::ProtoEnvironment;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tokio::spawn;
+use tokio::task::{block_in_place, JoinError};
 use tracing::{debug, instrument};
+
+// We need to load configuration in a blocking task, because config
+// loading is synchronous but uses `reqwest::blocking` under the hood,
+// which triggers a panic when used in an async context...
+async fn load_config_blocking<F, R>(func: F) -> Result<R, JoinError>
+where
+    F: FnOnce() -> R + Send + 'static,
+    R: Send + 'static,
+{
+    spawn(async { block_in_place(func) }).await
+}
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
@@ -88,7 +102,7 @@ pub fn detect_proto_environment(
 /// Load the workspace configuration file from the `.moon` directory in the workspace root.
 /// This file is required to exist, so error if not found.
 #[instrument]
-pub fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
+pub async fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,
@@ -105,16 +119,20 @@ pub fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceCo
         return Err(AppError::MissingConfigFile(config_name).into());
     }
 
-    let config = WorkspaceConfig::load(workspace_root, &config_file)?;
+    let root = workspace_root.to_owned();
+    let config = load_config_blocking(move || WorkspaceConfig::load(root, config_file))
+        .await
+        .into_diagnostic()??;
 
     Ok(Arc::new(config))
 }
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
-#[instrument]
-pub fn load_toolchain_config(
+#[instrument(skip(proto_env))]
+pub async fn load_toolchain_config(
     workspace_root: &Path,
-    proto_config: &ProtoConfig,
+    working_dir: &Path,
+    proto_env: Arc<ProtoEnvironment>,
 ) -> AppResult<Arc<ToolchainConfig>> {
     let config_name = format!(
         "{}/{}",
@@ -129,12 +147,23 @@ pub fn load_toolchain_config(
         color::file(config_name),
     );
 
-    let config = if config_file.exists() {
-        debug!("Config file does not exist, using defaults");
+    let config = if !config_file.exists() {
+        debug!("Toolchain config file does not exist, using defaults");
 
         ToolchainConfig::default()
     } else {
-        ToolchainConfig::load(workspace_root, &config_file, proto_config)?
+        let root = workspace_root.to_owned();
+        let cwd = working_dir.to_owned();
+
+        load_config_blocking(move || {
+            ToolchainConfig::load(
+                root,
+                config_file,
+                proto_env.load_config_manager()?.get_local_config(&cwd)?,
+            )
+        })
+        .await
+        .into_diagnostic()??
     };
 
     Ok(Arc::new(config))
@@ -143,7 +172,7 @@ pub fn load_toolchain_config(
 /// Load the tasks configuration file from the `.moon` directory if it exists.
 /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
 #[instrument]
-pub fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasksManager>> {
+pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasksManager>> {
     let config_name = format!(
         "{}/{}",
         consts::CONFIG_DIRNAME,
@@ -158,7 +187,10 @@ pub fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasks
         color::file(format!("{}/tasks/**/*.yml", consts::CONFIG_DIRNAME)),
     );
 
-    let manager = InheritedTasksManager::load_from(workspace_root)?;
+    let root = workspace_root.to_owned();
+    let manager = load_config_blocking(move || InheritedTasksManager::load_from(root))
+        .await
+        .into_diagnostic()??;
 
     debug!(
         scopes = ?manager.configs.keys(),

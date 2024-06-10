@@ -106,10 +106,6 @@ impl<T: Plugin> PluginRegistry<T> {
         Arc::clone(&self.plugins)
     }
 
-    pub fn get_loader(&mut self) -> &mut PluginLoader {
-        &mut self.loader
-    }
-
     pub fn get_virtual_paths(&self) -> &BTreeMap<PathBuf, PathBuf> {
         &self.virtual_paths
     }

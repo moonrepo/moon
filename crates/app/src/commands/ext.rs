@@ -1,10 +1,10 @@
+use crate::app_error::AppError;
+use crate::session::CliSession;
 use clap::Args;
-use miette::miette;
-use moon_app_components::ExtensionRegistry;
-use moon_common::{color, Id};
+use moon_common::Id;
 use moon_plugin::{serialize_config, PluginId};
-use moon_workspace::Workspace;
-use starbase::system;
+use starbase::AppResult;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ExtArgs {
@@ -16,23 +16,14 @@ pub struct ExtArgs {
     pub passthrough: Vec<String>,
 }
 
-#[system]
-pub async fn ext(
-    args: ArgsRef<ExtArgs>,
-    workspace: ResourceRef<Workspace>,
-    extensions: ResourceRef<ExtensionRegistry>,
-) {
-    let Some(config) = workspace.config.extensions.get(&args.id) else {
-        return Err(miette!(
-            code = "moon::ext",
-            "The extension {} does not exist. Configure the {} setting in {} and try again.",
-            color::id(&args.id),
-            color::property("extensions"),
-            color::file(".moon/workspace.yml"),
-        ));
+#[instrument(skip_all)]
+pub async fn ext(session: CliSession, args: ExtArgs) -> AppResult {
+    let Some(config) = session.workspace_config.extensions.get(&args.id) else {
+        return Err(AppError::UnknownExtension { id: args.id }.into());
     };
 
     let id = PluginId::raw(&args.id);
+    let extensions = session.get_extension_registry()?;
 
     // Load and configure the plugin
     extensions
@@ -50,4 +41,6 @@ pub async fn ext(
     extensions.perform_sync(&id, |plugin, context| {
         plugin.execute(args.passthrough.clone(), context)
     })?;
+
+    Ok(())
 }

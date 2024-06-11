@@ -782,6 +782,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "4.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2020fa13af48afc65a9a87335bda648309ab3d154cd03c7ff95b378c7ed39c4"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3173,6 +3182,7 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "clap",
+ "clap_complete",
  "console",
  "dialoguer",
  "indicatif",
@@ -3184,6 +3194,7 @@ dependencies = [
  "moon_bun_platform",
  "moon_bun_tool",
  "moon_cache",
+ "moon_codegen",
  "moon_common",
  "moon_config",
  "moon_console",

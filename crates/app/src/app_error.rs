@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use miette::Diagnostic;
-use moon_common::{consts, Style, Stylize};
+use moon_common::{consts, Id, Style, Stylize};
 use thiserror::Error;
 
 #[derive(Debug, Diagnostic, Error)]
@@ -51,4 +51,13 @@ pub enum AppError {
     #[diagnostic(code(app::missing_working_dir))]
     #[error("Unable to determine your current working directory.")]
     MissingWorkingDir,
+
+    #[diagnostic(code(app::extensions::unknown_id))]
+    #[error(
+        "The extension {} does not exist. Configure the {} setting in {} and try again.",
+        .id.style(Style::Id),
+        "extensions".style(Style::Property),
+        ".moon/workspace.yml".style(Style::File),
+    )]
+    UnknownExtension { id: Id },
 }

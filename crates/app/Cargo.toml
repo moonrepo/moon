@@ -12,6 +12,7 @@ path = "src/main.rs"
 moon_action_graph = { path = "../action-graph" }
 moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
+moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
@@ -28,6 +29,7 @@ moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }
 clap = { workspace = true }
+clap_complete = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }

@@ -1,31 +1,24 @@
 use crate::helpers::create_theme;
+use crate::session::CliSession;
 use dialoguer::{Confirm, Input, Select};
 use miette::IntoDiagnostic;
-use moon_app_components::{Console, MoonEnv};
 use moon_codegen::{gather_variables, CodeGenerator, FileState};
-use moon_workspace::Workspace;
-use starbase::system;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub use moon_codegen::GenerateArgs;
 
-#[system]
-pub async fn generate(
-    args: ArgsRef<GenerateArgs>,
-    workspace: ResourceRef<Workspace>,
-    console: ResourceRef<Console>,
-    moon_env: StateRef<MoonEnv>,
-) {
+#[instrument(skip_all)]
+pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
     let mut generator = CodeGenerator::new(
-        &workspace.root,
-        &workspace.config.generator,
-        Arc::clone(moon_env),
+        &session.workspace_root,
+        &session.workspace_config.generator,
+        Arc::clone(&session.moon_env),
     );
-    let base_console = console;
-    let console = console.stdout();
+    let console = session.console.stdout();
     let theme = create_theme();
 
     // This is a special case for creating a new template with the generator itself!
@@ -65,7 +58,7 @@ pub async fn generate(
     console.flush()?;
 
     // Gather variables
-    let mut context = gather_variables(args, &template, base_console)?;
+    let mut context = gather_variables(&args, &template, &session.console)?;
 
     // Determine the destination path
     let relative_dest = PathBuf::from(match &args.dest {
@@ -87,15 +80,15 @@ pub async fn generate(
         }
     });
     let relative_dest = template.interpolate_path(&relative_dest, &context)?;
-    let dest = relative_dest.to_logical_path(&workspace.working_dir);
+    let dest = relative_dest.to_logical_path(&session.working_dir);
 
     debug!(dest = ?dest, "Destination path set");
 
     // Inject built-in context variables
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
-    context.insert("working_dir", &workspace.working_dir);
-    context.insert("workspace_root", &workspace.root);
+    context.insert("working_dir", &session.working_dir);
+    context.insert("workspace_root", &session.workspace_root);
 
     // Load template files and determine when to overwrite
     template.load_files(&dest, &context)?;
@@ -176,7 +169,7 @@ pub async fn generate(
             },
             color::muted_light(
                 file.dest_path
-                    .strip_prefix(&workspace.working_dir)
+                    .strip_prefix(&session.working_dir)
                     .unwrap_or(&file.dest_path)
                     .to_string_lossy()
             )
@@ -185,4 +178,6 @@ pub async fn generate(
 
     console.write_newline()?;
     console.flush()?;
+
+    Ok(())
 }

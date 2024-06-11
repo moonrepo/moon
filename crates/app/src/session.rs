@@ -4,16 +4,16 @@ use crate::components::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::ActionGraphBuilder;
+use moon_api::Moonbase;
 use moon_cache::CacheEngine;
+use moon_common::{is_ci, is_test_env};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
 use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionPlugin;
-use moon_plugin::PluginRegistry;
-use moon_plugin::PluginType;
-use moon_project_graph::ProjectGraph;
-use moon_project_graph::ProjectGraphBuilder;
+use moon_plugin::{PluginRegistry, PluginType};
+use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::Workspace;
 use once_cell::sync::OnceCell;
@@ -36,6 +36,7 @@ pub struct CliSession {
 
     // Components
     pub console: Console,
+    pub moonbase: Option<Arc<Moonbase>>,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
 
@@ -62,10 +63,10 @@ impl CliSession {
 
         Self {
             cache_engine: OnceCell::new(),
-            cli,
             cli_version: Version::parse(&cli_version).unwrap(),
-            console: Console::new(false),
+            console: Console::new(cli.quiet),
             extension_registry: OnceCell::new(),
+            moonbase: None,
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceCell::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
@@ -76,6 +77,7 @@ impl CliSession {
             workspace_config: Arc::new(WorkspaceConfig::default()),
             vcs_adapter: OnceCell::new(),
             workspace: OnceCell::new(),
+            cli,
         }
     }
 
@@ -150,7 +152,7 @@ impl CliSession {
                 cache_engine: self.get_cache_engine()?,
                 config: self.workspace_config.clone(),
                 root: self.workspace_root.clone(),
-                session: None,
+                session: self.moonbase.clone(),
                 tasks_config: self.tasks_config.clone(),
                 toolchain_config: self.toolchain_config.clone(),
                 vcs: self.get_vcs_adapter()?,
@@ -167,14 +169,14 @@ impl CliSession {
         self.workspace_config.telemetry
     }
 
-    pub fn requires_workspace(&self) -> bool {
+    pub fn requires_workspace_setup(&self) -> bool {
         !matches!(
             self.cli.command,
             Commands::Completions(_) | Commands::Init(_) | Commands::Setup | Commands::Upgrade
         )
     }
 
-    pub fn requires_toolchain(&self) -> bool {
+    pub fn requires_toolchain_installed(&self) -> bool {
         matches!(
             self.cli.command,
             Commands::Bin(_) | Commands::Docker { .. } | Commands::Node { .. } | Commands::Teardown
@@ -192,7 +194,11 @@ impl AppSession for CliSession {
 
         self.working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;
 
-        self.workspace_root = startup::find_workspace_root(&self.working_dir)?;
+        self.workspace_root = if self.requires_workspace_setup() {
+            startup::find_workspace_root(&self.working_dir)?
+        } else {
+            self.working_dir.clone()
+        };
 
         // Load environments
 
@@ -203,30 +209,40 @@ impl AppSession for CliSession {
 
         // Load configs
 
-        let (workspace_config, tasks_config, toolchain_config) = try_join!(
-            startup::load_workspace_config(&self.workspace_root),
-            startup::load_tasks_configs(&self.workspace_root),
-            startup::load_toolchain_config(
-                &self.workspace_root,
-                &self.working_dir,
-                self.proto_env.clone(),
-            ),
-        )?;
+        if self.requires_workspace_setup() {
+            let (workspace_config, tasks_config, toolchain_config) = try_join!(
+                startup::load_workspace_config(&self.workspace_root),
+                startup::load_tasks_configs(&self.workspace_root),
+                startup::load_toolchain_config(
+                    &self.workspace_root,
+                    &self.working_dir,
+                    self.proto_env.clone(),
+                ),
+            )?;
 
-        self.workspace_config = workspace_config;
-        self.toolchain_config = toolchain_config;
-        self.tasks_config = tasks_config;
+            self.workspace_config = workspace_config;
+            self.toolchain_config = toolchain_config;
+            self.tasks_config = tasks_config;
+        }
 
-        // TODO moonbase
+        // Load components
+
+        if !is_test_env() && is_ci() {
+            let vcs = self.get_vcs_adapter()?;
+
+            self.moonbase = startup::signin_to_moonbase(&vcs).await?;
+        }
 
         Ok(())
     }
 
     /// Analyze the current state and install/registery necessary functionality.
     async fn analyze(&mut self) -> AppResult {
-        analyze::prepare_repository(self.get_vcs_adapter()?).await?;
+        if let Some(constraint) = &self.workspace_config.version_constraint {
+            analyze::validate_version_constraint(constraint, &self.cli_version)?;
+        }
 
-        if self.requires_workspace() {
+        if self.requires_workspace_setup() {
             analyze::install_proto(&self.console, &self.proto_env, &self.toolchain_config).await?;
 
             analyze::register_platforms(
@@ -237,7 +253,7 @@ impl AppSession for CliSession {
             )
             .await?;
 
-            if self.requires_toolchain() {
+            if self.requires_toolchain_installed() {
                 analyze::load_toolchain().await?;
             }
         }

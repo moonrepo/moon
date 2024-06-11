@@ -1,8 +1,10 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
+use moon_api::Moonbase;
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
+use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -197,4 +199,25 @@ pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<Inherite
     );
 
     Ok(Arc::new(manager))
+}
+
+#[instrument(skip_all)]
+pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> AppResult<Option<Arc<Moonbase>>> {
+    if vcs.is_enabled() {
+        if let Ok(slug) = vcs.get_repository_slug().await {
+            env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
+        }
+    }
+
+    let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
+        return Ok(None);
+    };
+
+    let Ok(repo_slug) = env::var("MOONBASE_REPO_SLUG") else {
+        Moonbase::no_vcs_root();
+
+        return Ok(None);
+    };
+
+    Ok(Moonbase::signin(secret_key, repo_slug).await.map(Arc::new))
 }

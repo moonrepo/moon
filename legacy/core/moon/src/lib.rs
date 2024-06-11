@@ -1,4 +1,3 @@
-use moon_action_graph::ActionGraphBuilder;
 use moon_bun_platform::BunPlatform;
 use moon_console::Console;
 use moon_deno_platform::DenoPlatform;
@@ -10,11 +9,9 @@ use moon_project_graph::{
 };
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use moon_utils::{is_ci, is_test_env};
 use moon_workspace::Workspace;
 use proto_core::ProtoEnvironment;
 use starbase_events::{Emitter, EventState};
-use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -50,7 +47,7 @@ pub async fn load_workspace_from(
     let result =
         block_in_place(move || Workspace::load_from(&proto_env_clone.cwd, &proto_env_clone));
 
-    let mut workspace = match result {
+    let workspace = match result {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
             workspace
@@ -127,18 +124,6 @@ pub async fn load_workspace_from(
         )),
     );
 
-    if !is_test_env() {
-        if workspace.vcs.is_enabled() {
-            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
-                env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
-            }
-        }
-
-        if is_ci() {
-            workspace.signin_to_moonbase().await?;
-        }
-    }
-
     Ok(workspace)
 }
 
@@ -148,18 +133,6 @@ pub async fn load_workspace_from_sandbox(sandbox: &Path) -> miette::Result<Works
         Arc::new(Console::new_testing()),
     )
     .await
-}
-
-pub async fn load_toolchain() -> miette::Result<()> {
-    for platform in PlatformManager::write().list_mut() {
-        platform.setup_toolchain().await?;
-    }
-
-    Ok(())
-}
-
-pub fn build_action_graph(project_graph: &ProjectGraph) -> miette::Result<ActionGraphBuilder> {
-    ActionGraphBuilder::new(project_graph)
 }
 
 pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraphBuilderContext {
@@ -213,10 +186,6 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
         .await;
 
     context
-}
-
-pub async fn build_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraphBuilder> {
-    ProjectGraphBuilder::new(create_project_graph_context(workspace).await).await
 }
 
 pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraph> {

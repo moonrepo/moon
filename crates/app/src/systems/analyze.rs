@@ -1,3 +1,4 @@
+use crate::app_error::AppError;
 use moon_bun_platform::BunPlatform;
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_config::{PlatformType, ToolchainConfig};
@@ -7,21 +8,23 @@ use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
-use moon_vcs::BoxedVcs;
 use proto_core::{is_offline, ProtoEnvironment, ProtoError};
 use proto_installer::*;
+use semver::{Version, VersionReq};
 use starbase::AppResult;
 use std::env;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-#[instrument(skip_all)]
-pub async fn prepare_repository(vcs: Arc<BoxedVcs>) -> AppResult {
-    if !is_test_env() && vcs.is_enabled() {
-        if let Ok(slug) = vcs.get_repository_slug().await {
-            env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
+#[instrument]
+pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -> AppResult {
+    if !constraint.matches(version) {
+        return Err(AppError::InvalidMoonVersion {
+            actual: version.to_string(),
+            expected: constraint.to_string(),
         }
+        .into());
     }
 
     Ok(())

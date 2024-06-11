@@ -68,4 +68,12 @@ pub enum AppError {
     #[diagnostic(code(app::id_required))]
     #[error("A project ID is required.")]
     ProjectIdRequired,
+
+    #[diagnostic(code(app::invalid_version))]
+    #[error(
+        "Invalid moon version, unable to proceed. Found {}, expected {}.",
+        .actual.style(Style::Hash),
+        .expected.style(Style::Hash)
+    )]
+    InvalidMoonVersion { actual: String, expected: String },
 }

@@ -1,11 +1,11 @@
+use crate::app_error::AppError;
+use crate::session::CliSession;
 use clap::Args;
-use miette::{miette, IntoDiagnostic};
-use moon::build_project_graph;
-use moon_app_components::Console;
-use moon_target::{Target, TargetScope};
-use moon_workspace::Workspace;
-use starbase::system;
+use moon_task::{Target, TargetScope};
+use starbase::AppResult;
 use starbase_styles::color;
+use starbase_utils::json;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct TaskArgs {
@@ -16,29 +16,26 @@ pub struct TaskArgs {
     json: bool,
 }
 
-#[system]
-pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
+#[instrument(skip_all)]
+pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
     let TargetScope::Project(project_locator) = &args.target.scope else {
-        return Err(miette!(code = "moon::task", "A project ID is required."));
+        return Err(AppError::ProjectIdRequired.into());
     };
 
-    let mut project_graph_builder =
-        { build_project_graph(resources.get_mut::<Workspace>()).await? };
+    let mut project_graph_builder = session.build_project_graph().await?;
     project_graph_builder.load(project_locator).await?;
 
     let project_graph = project_graph_builder.build().await?;
     let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 
-    let console = resources.get::<Console>().stdout();
+    let console = session.console.stdout();
 
     if args.json {
-        console.write_line(serde_json::to_string_pretty(&task).into_diagnostic()?)?;
+        console.write_line(json::format(&task, true)?)?;
 
         return Ok(());
     }
-
-    let workspace = resources.get::<Workspace>();
 
     console.print_header(&args.target.id)?;
 
@@ -90,7 +87,7 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
     console.print_entry(
         "Working directory",
         color::path(if task.options.run_from_workspace_root {
-            &workspace.root
+            &session.workspace_root
         } else {
             &project.root
         }),
@@ -171,4 +168,6 @@ pub async fn task(args: ArgsRef<TaskArgs>, resources: ResourcesMut) {
 
     console.write_newline()?;
     console.flush()?;
+
+    Ok(())
 }

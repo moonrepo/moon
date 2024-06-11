@@ -1,14 +1,10 @@
-use crate::helpers::map_list;
+use crate::session::CliSession;
 use clap::Args;
-use itertools::Itertools;
-use miette::IntoDiagnostic;
-use moon::build_project_graph;
-use moon_app_components::Console;
-use moon_common::Id;
-use moon_utils::is_test_env;
-use moon_workspace::Workspace;
-use starbase::system;
+use moon_common::{is_test_env, Id};
+use starbase::AppResult;
 use starbase_styles::color;
+use starbase_utils::json;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ProjectArgs {
@@ -19,20 +15,19 @@ pub struct ProjectArgs {
     json: bool,
 }
 
-#[system]
-pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
-    let mut project_graph_builder =
-        { build_project_graph(resources.get_mut::<Workspace>()).await? };
+#[instrument(skip_all)]
+pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
+    let mut project_graph_builder = session.build_project_graph().await?;
     project_graph_builder.load(&args.id).await?;
 
     let project_graph = project_graph_builder.build().await?;
     let project = project_graph.get(&args.id)?;
     let config = &project.config;
 
-    let console = resources.get::<Console>().stdout();
+    let console = session.console.stdout();
 
     if args.json {
-        console.write_line(serde_json::to_string_pretty(&project).into_diagnostic()?)?;
+        console.write_line(json::format(&project, true)?)?;
 
         return Ok(());
     }
@@ -92,7 +87,15 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     console.print_entry("Type", format!("{}", &project.type_of))?;
 
     if !config.tags.is_empty() {
-        console.print_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
+        console.print_entry(
+            "Tags",
+            config
+                .tags
+                .iter()
+                .map(|tag| color::id(tag))
+                .collect::<Vec<_>>()
+                .join(", "),
+        )?;
     }
 
     let mut deps = vec![];
@@ -128,7 +131,7 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     if !project.tasks.is_empty() {
         console.print_entry_header("Tasks")?;
 
-        for name in project.tasks.keys().sorted() {
+        for name in project.tasks.keys() {
             let task = project.tasks.get(name).unwrap();
 
             if task.is_internal() {
@@ -152,7 +155,7 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
     if !project.file_groups.is_empty() {
         console.print_entry_header("File groups")?;
 
-        for group_name in project.file_groups.keys().sorted() {
+        for group_name in project.file_groups.keys() {
             let mut files = vec![];
             let group = project.file_groups.get(group_name).unwrap();
 
@@ -170,4 +173,6 @@ pub async fn project(args: ArgsRef<ProjectArgs>, resources: ResourcesMut) {
 
     console.write_newline()?;
     console.flush()?;
+
+    Ok(())
 }

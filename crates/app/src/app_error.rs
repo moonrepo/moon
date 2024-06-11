@@ -64,4 +64,8 @@ pub enum AppError {
     #[diagnostic(code(app::upgrade::requires_internet))]
     #[error("Upgrading moon requires an internet connection!")]
     UpgradeRequiresInternet,
+
+    #[diagnostic(code(app::id_required))]
+    #[error("A project ID is required.")]
+    ProjectIdRequired,
 }

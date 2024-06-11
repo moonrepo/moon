@@ -2,7 +2,7 @@ pub mod bin;
 // pub mod check;
 // pub mod ci;
 pub mod clean;
-// pub mod completions;
+pub mod completions;
 pub mod docker;
 pub mod ext;
 pub mod generate;

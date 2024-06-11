@@ -1,3 +1,4 @@
+mod app;
 mod app_error;
 mod commands;
 mod components;
@@ -24,15 +25,15 @@ async fn main() -> MainResult {
         ..TracingOptions::default()
     });
 
-    let mut session = CliSession::new();
+    // let mut session = CliSession::new();
 
-    app.run(&mut session, |s| async move {
-        dbg!(&s);
-        println!("Hello");
+    // app.run(&mut session, |s| async move {
+    //     dbg!(&s);
+    //     println!("Hello");
 
-        Ok(())
-    })
-    .await?;
+    //     Ok(())
+    // })
+    // .await?;
 
     Ok(())
 }

@@ -1,3 +1,4 @@
+use crate::app::Cli;
 use crate::app_error::AppError;
 use crate::components::*;
 use crate::systems::*;
@@ -28,6 +29,8 @@ pub type ExtensionRegistry = PluginRegistry<ExtensionPlugin>;
 
 #[derive(Clone)]
 pub struct CliSession {
+    pub cli: Cli,
+
     // Components
     pub console: Console,
     pub moon_env: Arc<MoonEnvironment>,
@@ -53,9 +56,10 @@ pub struct CliSession {
 }
 
 impl CliSession {
-    pub fn new() -> Self {
+    pub fn new(cli: Cli) -> Self {
         Self {
             cache_engine: OnceCell::new(),
+            cli,
             console: Console::new(false),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),

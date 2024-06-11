@@ -1,132 +1,26 @@
-// https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
-
 use crate::commands::bin::BinArgs;
 use crate::commands::check::CheckArgs;
 use crate::commands::ci::CiArgs;
 use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
-use crate::commands::docker::DockerScaffoldArgs;
+use crate::commands::docker::DockerCommands;
 use crate::commands::ext::ExtArgs;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::action::ActionGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
 use crate::commands::init::InitArgs;
-use crate::commands::migrate::FromPackageJsonArgs;
-use crate::commands::node::RunScriptArgs;
+use crate::commands::migrate::MigrateCommands;
+use crate::commands::node::NodeCommands;
 use crate::commands::project::ProjectArgs;
-use crate::commands::query::{
-    QueryHashArgs, QueryHashDiffArgs, QueryProjectsArgs, QueryTasksArgs, QueryTouchedFilesArgs,
-};
+use crate::commands::query::QueryCommands;
 use crate::commands::run::RunArgs;
-use crate::commands::syncs::codeowners::SyncCodeownersArgs;
-use crate::commands::syncs::hooks::SyncHooksArgs;
+use crate::commands::sync::SyncCommands;
 use crate::commands::task::TaskArgs;
-use crate::enums::{CacheMode, LogLevel};
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_common::consts::BIN_NAME;
-use starbase::State;
 use starbase_styles::color::Color as ColorType;
 use std::path::PathBuf;
-
-#[derive(Clone, Debug, Subcommand)]
-pub enum DockerCommands {
-    #[command(
-        name = "prune",
-        about = "Remove extraneous files and folders within a Dockerfile."
-    )]
-    Prune,
-
-    #[command(
-        name = "scaffold",
-        about = "Scaffold a repository skeleton for use within Dockerfile(s)."
-    )]
-    Scaffold(DockerScaffoldArgs),
-
-    #[command(
-        name = "setup",
-        about = "Setup a Dockerfile by installing dependencies for necessary projects."
-    )]
-    Setup,
-}
-
-#[derive(Clone, Debug, Subcommand)]
-pub enum MigrateCommands {
-    #[command(
-        name = "from-package-json",
-        about = "Migrate `package.json` scripts and dependencies to `moon.yml`."
-    )]
-    FromPackageJson(FromPackageJsonArgs),
-
-    #[command(
-        name = "from-turborepo",
-        about = "Migrate `turbo.json` to moon configuration files."
-    )]
-    FromTurborepo,
-}
-
-#[derive(Clone, Debug, Subcommand)]
-pub enum NodeCommands {
-    #[command(
-        name = "run-script",
-        about = "Run a `package.json` script within a project."
-    )]
-    RunScript(RunScriptArgs),
-}
-
-#[derive(Clone, Debug, Subcommand)]
-pub enum QueryCommands {
-    #[command(
-        name = "hash",
-        about = "Inspect the contents of a generated hash.",
-        long_about = "Inspect the contents of a generated hash, and display all sources and inputs that were used to generate it."
-    )]
-    Hash(QueryHashArgs),
-
-    #[command(
-        name = "hash-diff",
-        about = "Query the difference between two hashes.",
-        long_about = "Query the difference between two hashes. The left differences will be printed in green, while the right in red, and equal lines in white."
-    )]
-    HashDiff(QueryHashDiffArgs),
-
-    #[command(
-        name = "projects",
-        about = "Query for projects within the project graph.",
-        long_about = "Query for projects within the project graph. All options support regex patterns."
-    )]
-    Projects(QueryProjectsArgs),
-
-    #[command(name = "tasks", about = "List all available projects & their tasks.")]
-    Tasks(QueryTasksArgs),
-
-    #[command(
-        name = "touched-files",
-        about = "Query for touched files between revisions."
-    )]
-    TouchedFiles(QueryTouchedFilesArgs),
-}
-
-#[derive(Clone, Debug, Subcommand)]
-pub enum SyncCommands {
-    #[command(
-        name = "codeowners",
-        about = "Aggregate and sync code owners to a `CODEOWNERS` file."
-    )]
-    Codeowners(SyncCodeownersArgs),
-
-    #[command(
-        name = "hooks",
-        about = "Generate and sync hook scripts for the workspace configured VCS."
-    )]
-    Hooks(SyncHooksArgs),
-
-    #[command(
-        name = "projects",
-        about = "Sync all projects and configs in the workspace."
-    )]
-    Projects,
-}
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum Commands {
@@ -345,7 +239,7 @@ fn create_styles() -> Styles {
         .valid(fg(ColorType::Green))
 }
 
-#[derive(Clone, Debug, Parser, State)]
+#[derive(Clone, Debug, Parser)]
 #[command(
     bin_name = BIN_NAME,
     name = "moon",
@@ -357,17 +251,16 @@ fn create_styles() -> Styles {
     rename_all = "camelCase",
     styles = create_styles()
 )]
-pub struct App {
-    #[arg(
-        value_enum,
-        long,
-        global = true,
-        env = "MOON_CACHE",
-        help = "Mode for cache operations",
-        default_value_t
-    )]
-    pub cache: CacheMode,
-
+pub struct Cli {
+    // #[arg(
+    //     value_enum,
+    //     long,
+    //     global = true,
+    //     env = "MOON_CACHE",
+    //     help = "Mode for cache operations",
+    //     default_value_t
+    // )]
+    // pub cache: CacheMode,
     #[arg(long, global = true, help = "Force colored output for moon")]
     pub color: bool,
 
@@ -380,16 +273,15 @@ pub struct App {
     )]
     pub concurrency: Option<usize>,
 
-    #[arg(
-        value_enum,
-        long,
-        global = true,
-        env = "MOON_LOG",
-        help = "Lowest log level to output",
-        default_value_t
-    )]
-    pub log: LogLevel,
-
+    // #[arg(
+    //     value_enum,
+    //     long,
+    //     global = true,
+    //     env = "MOON_LOG",
+    //     help = "Lowest log level to output",
+    //     default_value_t
+    // )]
+    // pub log: LogLevel,
     #[arg(
         long,
         global = true,
@@ -409,19 +301,4 @@ pub struct App {
 
     #[command(subcommand)]
     pub command: Commands,
-}
-
-impl App {
-    pub fn global_args(&self) -> GlobalArgs {
-        GlobalArgs {
-            concurrency: self.concurrency,
-            quiet: self.quiet,
-        }
-    }
-}
-
-#[derive(State)]
-pub struct GlobalArgs {
-    pub concurrency: Option<usize>,
-    pub quiet: bool,
 }

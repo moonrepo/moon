@@ -7,7 +7,7 @@ pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use crate::session::CliSession;
-use clap::Args;
+use clap::{Args, Subcommand};
 use moon_vcs::TouchedStatus;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::AppResult;
@@ -15,6 +15,39 @@ use starbase_styles::color;
 use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::instrument;
+
+#[derive(Clone, Debug, Subcommand)]
+pub enum QueryCommands {
+    #[command(
+        name = "hash",
+        about = "Inspect the contents of a generated hash.",
+        long_about = "Inspect the contents of a generated hash, and display all sources and inputs that were used to generate it."
+    )]
+    Hash(QueryHashArgs),
+
+    #[command(
+        name = "hash-diff",
+        about = "Query the difference between two hashes.",
+        long_about = "Query the difference between two hashes. The left differences will be printed in green, while the right in red, and equal lines in white."
+    )]
+    HashDiff(QueryHashDiffArgs),
+
+    #[command(
+        name = "projects",
+        about = "Query for projects within the project graph.",
+        long_about = "Query for projects within the project graph. All options support regex patterns."
+    )]
+    Projects(QueryProjectsArgs),
+
+    #[command(name = "tasks", about = "List all available projects & their tasks.")]
+    Tasks(QueryTasksArgs),
+
+    #[command(
+        name = "touched-files",
+        about = "Query for touched files between revisions."
+    )]
+    TouchedFiles(QueryTouchedFilesArgs),
+}
 
 #[derive(Args, Clone, Debug)]
 pub struct QueryHashArgs {

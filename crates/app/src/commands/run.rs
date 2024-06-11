@@ -1,24 +1,22 @@
 use crate::app::GlobalArgs;
-use crate::enums::TouchedStatus;
-use crate::helpers::map_list;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use crate::session::CliSession;
 use clap::Args;
-use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
-use moon_app_components::Console;
 use moon_cache::CacheMode;
-use moon_common::is_test_env;
+use moon_common::{is_ci, is_test_env};
 use moon_project_graph::ProjectGraph;
-use moon_target::TargetLocator;
-use moon_utils::is_ci;
+use moon_task::TargetLocator;
+use moon_vcs::TouchedStatus;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::{system, AppResult};
+use starbase::AppResult;
 use starbase_styles::color;
 use std::string::ToString;
 use std::sync::Arc;
+use tracing::instrument;
 
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_DEBUGGING: &str = "Debugging";
@@ -85,7 +83,6 @@ pub struct RunArgs {
     pub remote: bool,
 
     #[arg(
-        value_enum,
         long,
         help = "Filter affected files based on a touched status",
         help_heading = HEADING_AFFECTED,
@@ -110,25 +107,27 @@ pub fn is_local(args: &RunArgs) -> bool {
 }
 
 pub async fn run_target(
-    target_locators: &[TargetLocator],
+    session: &CliSession,
     args: &RunArgs,
-    concurrency: Option<usize>,
-    workspace: &Workspace,
-    console: &Console,
-    project_graph: ProjectGraph,
+    target_locators: &[TargetLocator],
 ) -> AppResult {
+    let console = &session.console;
+    let cache_engine = session.get_cache_engine()?;
+    let project_graph = session.get_project_graph().await?;
+    let vcs = session.get_vcs_adapter()?;
+
     // Force cache to update using write-only mode
     if args.update_cache {
-        workspace.cache_engine.force_mode(CacheMode::Write);
+        cache_engine.force_mode(CacheMode::Write);
     }
 
     let mut should_run_affected = !args.force && args.affected;
 
     // Always query for a touched files list as it'll be used by many actions
-    let touched_files = if workspace.vcs.is_enabled() {
+    let touched_files = if vcs.is_enabled() {
         let local = is_local(args);
         let result = query_touched_files(
-            workspace,
+            &vcs,
             &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,
@@ -148,7 +147,7 @@ pub async fn run_target(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut action_graph_builder = build_action_graph(&project_graph)?;
+    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
 
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;
@@ -214,12 +213,12 @@ pub async fn run_target(
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: args.profile.to_owned(),
         touched_files: touched_files.clone(),
-        workspace_root: workspace.root.clone(),
+        workspace_root: session.workspace_root.clone(),
         ..ActionContext::default()
     };
 
     let action_graph = action_graph_builder.build()?;
-    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
+    let mut pipeline = Pipeline::new(session.get_workspace_legacy()?, project_graph);
 
     if let Some(concurrency) = concurrency {
         pipeline.concurrency(concurrency);
@@ -229,27 +228,15 @@ pub async fn run_target(
         .bail_on_error()
         .summarize(args.summary)
         .generate_report("runReport.json")
-        .run(action_graph, Arc::new(console.to_owned()), Some(context))
+        .run(action_graph, session.get_console()?, Some(context))
         .await?;
 
     Ok(())
 }
 
-#[system]
-pub async fn run(
-    args: ArgsRef<RunArgs>,
-    global_args: StateRef<GlobalArgs>,
-    resources: ResourcesMut,
-) {
-    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
+#[instrument(skip_all)]
+pub async fn run(session: CliSession, args: RunArgs) -> AppResult {
+    run_target(&session, &args, &args.targets).await?;
 
-    run_target(
-        &args.targets,
-        args,
-        global_args.concurrency,
-        resources.get::<Workspace>(),
-        resources.get::<Console>(),
-        project_graph,
-    )
-    .await?;
+    Ok(())
 }

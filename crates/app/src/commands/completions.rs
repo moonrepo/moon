@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::Cli;
 use crate::session::CliSession;
 use clap::{Args, CommandFactory};
 use clap_complete::{generate, Shell};
@@ -23,7 +23,7 @@ pub async fn completions(session: CliSession, args: CompletionsArgs) -> AppResul
 
     session.console.quiet();
 
-    let mut app = App::command();
+    let mut app = Cli::command();
     let mut stdio = std::io::stdout();
 
     generate(shell, &mut app, "moon", &mut stdio);

@@ -45,8 +45,6 @@ pub struct CliSession {
     project_graph: OnceCell<Arc<ProjectGraph>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
     workspace: OnceCell<Arc<Workspace>>,
-    // graphs
-    // registries
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -272,7 +270,9 @@ impl AppSession for CliSession {
 
 impl fmt::Debug for CliSession {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MoonSession")
+        f.debug_struct("CliSession")
+            .field("cli", &self.cli)
+            .field("cli_version", &self.cli_version)
             .field("moon_env", &self.moon_env)
             .field("proto_env", &self.proto_env)
             .field("tasks_config", &self.tasks_config)

@@ -14,8 +14,6 @@ pub struct MoonEnvironment {
     pub home: PathBuf,       // ~
     pub store_root: PathBuf, // ~/.moon
     pub test_only: bool,
-    #[deprecated]
-    pub version: String,
     pub working_dir: PathBuf,
     pub workspace_root: PathBuf,
 }
@@ -51,7 +49,6 @@ impl MoonEnvironment {
             home: dirs::home_dir().unwrap(),
             store_root: store_root.to_owned(),
             test_only: false,
-            version: env::var("MOON_VERSION").unwrap_or_default(),
             working_dir: PathBuf::new(),
             workspace_root: PathBuf::new(),
         })

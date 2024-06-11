@@ -79,7 +79,7 @@ pub async fn upgrade(session: CliSession) -> AppResult {
     let done = create_progress_bar(format!("Upgrading moon to version {remote_version}..."));
 
     // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(&session.moon_env.version).join(BIN_NAME);
+    let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(BIN_NAME);
 
     fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
     fs::rename(&current_bin_path, versioned_bin_path)?;

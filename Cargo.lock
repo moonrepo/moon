@@ -6014,6 +6014,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-chrome",
+ "tracing-log",
  "tracing-subscriber",
 ]
 

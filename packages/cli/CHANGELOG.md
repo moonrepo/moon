@@ -16,6 +16,7 @@
 
 - Updated CLI command execution to be far more performant, and to reduce our usage of concurrent
   locks.
+  - Internal components are now lazy-loaded when required, instead of created upfront.
 
 ## 1.25.4
 

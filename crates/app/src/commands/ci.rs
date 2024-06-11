@@ -1,6 +1,6 @@
 use crate::app_error::{AppError, ExitCode};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
-use crate::CliSession;
+use crate::session::CliSession;
 use ci_env::CiOutput;
 use clap::Args;
 use moon_action_context::ActionContext;

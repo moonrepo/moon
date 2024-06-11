@@ -238,13 +238,13 @@ impl AppSession for CliSession {
 
     /// Analyze the current state and install/registery necessary functionality.
     async fn analyze(&mut self) -> AppResult {
-        self.get_cache_engine()?;
-
         if let Some(constraint) = &self.workspace_config.version_constraint {
             analyze::validate_version_constraint(constraint, &self.cli_version)?;
         }
 
         if self.requires_workspace_setup() {
+            self.get_cache_engine()?;
+
             analyze::install_proto(&self.console, &self.proto_env, &self.toolchain_config).await?;
 
             analyze::register_platforms(

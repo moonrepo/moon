@@ -1,6 +1,6 @@
 pub mod bin;
-// pub mod check;
-// pub mod ci;
+pub mod check;
+pub mod ci;
 pub mod clean;
 pub mod completions;
 pub mod docker;
@@ -12,7 +12,7 @@ pub mod migrate;
 pub mod node;
 pub mod project;
 pub mod query;
-// pub mod run;
+pub mod run;
 pub mod setup;
 pub mod sync;
 pub mod syncs;

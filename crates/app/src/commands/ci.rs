@@ -1,22 +1,19 @@
-use crate::app::GlobalArgs;
 use crate::app_error::{AppError, ExitCode};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use crate::CliSession;
 use ci_env::CiOutput;
 use clap::Args;
-use itertools::Itertools;
-use moon::{build_action_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_action_pipeline::Pipeline;
-use moon_app_components::Console;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_project_graph::ProjectGraph;
-use moon_target::Target;
-use moon_workspace::Workspace;
+use moon_console::Console;
+use moon_task::Target;
 use rustc_hash::FxHashSet;
-use starbase::{system, AppResult};
+use starbase::AppResult;
 use starbase_styles::color;
 use std::sync::Arc;
+use tracing::instrument;
 
 type TargetList = Vec<Target>;
 
@@ -40,13 +37,13 @@ pub struct CiArgs {
     job_total: Option<usize>,
 }
 
-struct CiConsole<'ci> {
-    inner: &'ci Console,
+struct CiConsole {
+    inner: Arc<Console>,
     output: CiOutput,
     last_title: String,
 }
 
-impl<'ci> CiConsole<'ci> {
+impl CiConsole {
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
         self.inner.out.write_line(data)
     }
@@ -78,6 +75,7 @@ impl<'ci> CiConsole<'ci> {
             targets_to_print
                 .iter()
                 .map(|t| format!("  {}", color::label(&t.id)))
+                .collect::<Vec<_>>()
                 .join("\n"),
         )
     }
@@ -85,8 +83,8 @@ impl<'ci> CiConsole<'ci> {
 
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
-    console: &mut CiConsole<'_>,
-    workspace: &Workspace,
+    console: &mut CiConsole,
+    session: &CliSession,
     args: &CiArgs,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     console.print_header("Gathering touched files")?;
@@ -110,8 +108,9 @@ async fn gather_touched_files(
         }
     }
 
+    let vcs = session.get_vcs_adapter()?;
     let result = query_touched_files(
-        workspace,
+        &vcs,
         &QueryTouchedFilesOptions {
             default_branch: true,
             base,
@@ -140,9 +139,9 @@ async fn gather_touched_files(
 }
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
-fn gather_runnable_targets(
-    console: &mut CiConsole<'_>,
-    project_graph: &ProjectGraph,
+async fn gather_runnable_targets(
+    console: &mut CiConsole,
+    session: &CliSession,
     args: &CiArgs,
 ) -> AppResult<TargetList> {
     console.print_header("Gathering potential targets")?;
@@ -150,7 +149,7 @@ fn gather_runnable_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    let projects = project_graph.get_all()?;
+    let projects = session.get_project_graph().await?.get_all()?;
 
     if args.targets.is_empty() {
         for project in projects {
@@ -170,7 +169,7 @@ fn gather_runnable_targets(
 
 /// Distribute targets across jobs if parallelism is enabled.
 fn distribute_targets_across_jobs(
-    console: &mut CiConsole<'_>,
+    console: &mut CiConsole,
     args: &CiArgs,
     targets: TargetList,
 ) -> AppResult<TargetList> {
@@ -205,15 +204,16 @@ fn distribute_targets_across_jobs(
 }
 
 /// Generate a dependency graph with the runnable targets.
-fn generate_action_graph(
-    console: &mut CiConsole<'_>,
-    project_graph: &ProjectGraph,
+async fn generate_action_graph(
+    console: &mut CiConsole,
+    session: &CliSession,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<ActionGraph> {
     console.print_header("Generating action graph")?;
 
-    let mut action_graph_builder = build_action_graph(project_graph)?;
+    let project_graph = session.get_project_graph().await?;
+    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
 
     // Run dependents to ensure consumers still work correctly
     let requirements = RunRequirements {
@@ -238,12 +238,10 @@ fn generate_action_graph(
     Ok(action_graph)
 }
 
-#[system]
-pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resources: ResourcesMut) {
-    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
-    let workspace = resources.get::<Workspace>();
+#[instrument(skip_all)]
+pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     let mut console = CiConsole {
-        inner: resources.get::<Console>(),
+        inner: session.get_console()?,
         output: ci_env::get_output().unwrap_or(CiOutput {
             close_log_group: "",
             open_log_group: "▪▪▪▪ {name}",
@@ -251,8 +249,8 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
         last_title: String::new(),
     };
 
-    let touched_files = gather_touched_files(&mut console, workspace, args).await?;
-    let targets = gather_runnable_targets(&mut console, &project_graph, args)?;
+    let touched_files = gather_touched_files(&mut console, &session, &args).await?;
+    let targets = gather_runnable_targets(&mut console, &session, &args).await?;
 
     if targets.is_empty() {
         console.write_line(color::invalid("No targets to run"))?;
@@ -260,9 +258,9 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&mut console, args, targets)?;
+    let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
     let action_graph =
-        generate_action_graph(&mut console, &project_graph, &targets, &touched_files)?;
+        generate_action_graph(&mut console, &session, &targets, &touched_files).await?;
 
     if action_graph.is_empty() {
         console.write_line(color::invalid("No targets to run based on touched files"))?;
@@ -276,24 +274,23 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     let context = ActionContext {
         primary_targets: FxHashSet::from_iter(targets),
         touched_files,
-        workspace_root: workspace.root.clone(),
+        workspace_root: session.workspace_root.clone(),
         ..ActionContext::default()
     };
 
-    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
+    let mut pipeline = Pipeline::new(
+        session.get_workspace_legacy()?,
+        session.get_project_graph().await?,
+    );
 
-    if let Some(concurrency) = &global_args.concurrency {
+    if let Some(concurrency) = &session.cli.concurrency {
         pipeline.concurrency(*concurrency);
     }
 
     let results = pipeline
         .summarize(true)
         .generate_report("ciReport.json")
-        .run(
-            action_graph,
-            Arc::new(resources.get::<Console>().to_owned()),
-            Some(context),
-        )
+        .run(action_graph, session.get_console()?, Some(context))
         .await?;
 
     console.print_footer()?;
@@ -309,4 +306,6 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>, resour
     if failed {
         return Err(ExitCode(1).into());
     }
+
+    Ok(())
 }

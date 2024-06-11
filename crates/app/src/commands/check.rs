@@ -1,15 +1,12 @@
-use crate::app::GlobalArgs;
 use crate::commands::run::{run_target, RunArgs};
+use crate::session::CliSession;
 use clap::Args;
-use moon::generate_project_graph;
-use moon_app_components::Console;
 use moon_common::Id;
 use moon_project::Project;
-use moon_target::TargetLocator;
-use moon_workspace::Workspace;
-use starbase::system;
+use moon_task::TargetLocator;
+use starbase::AppResult;
 use std::sync::Arc;
-use tracing::trace;
+use tracing::{instrument, trace};
 
 #[derive(Args, Clone, Debug)]
 pub struct CheckArgs {
@@ -36,13 +33,9 @@ pub struct CheckArgs {
     update_cache: bool,
 }
 
-#[system]
-pub async fn check(
-    args: ArgsRef<CheckArgs>,
-    global_args: StateRef<GlobalArgs>,
-    resources: ResourcesMut,
-) {
-    let project_graph = { generate_project_graph(resources.get_mut::<Workspace>()).await? };
+#[instrument(skip_all)]
+pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
+    let project_graph = session.get_project_graph().await?;
     let mut projects: Vec<Arc<Project>> = vec![];
 
     // Load projects
@@ -82,16 +75,15 @@ pub async fn check(
 
     // Run targets using our run command
     run_target(
-        &targets,
+        &session,
         &RunArgs {
             summary: args.summary,
             update_cache: args.update_cache,
             ..RunArgs::default()
         },
-        global_args.concurrency,
-        resources.get::<Workspace>(),
-        resources.get::<Console>(),
-        project_graph,
+        &targets,
     )
     .await?;
+
+    Ok(())
 }

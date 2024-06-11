@@ -1,4 +1,3 @@
-use crate::app::GlobalArgs;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::session::CliSession;
 use clap::Args;
@@ -7,15 +6,12 @@ use moon_action_graph::RunRequirements;
 use moon_action_pipeline::Pipeline;
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env};
-use moon_project_graph::ProjectGraph;
 use moon_task::TargetLocator;
 use moon_vcs::TouchedStatus;
-use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
 use std::string::ToString;
-use std::sync::Arc;
 use tracing::instrument;
 
 const HEADING_AFFECTED: &str = "Affected by changes";
@@ -178,13 +174,21 @@ pub async fn run_target(
     }
 
     if primary_targets.is_empty() {
-        let targets_list = map_list(target_locators, |id| color::label(id));
+        let targets_list = target_locators
+            .iter()
+            .map(|id| color::label(id))
+            .collect::<Vec<_>>()
+            .join(", ");
 
         if should_run_affected {
             let status_list = if args.status.is_empty() {
                 color::symbol(TouchedStatus::All.to_string())
             } else {
-                map_list(&args.status, |s| color::symbol(s.to_string()))
+                args.status
+                    .iter()
+                    .map(|s| color::symbol(s.to_string()))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             };
 
             console.out.write_line(
@@ -220,8 +224,8 @@ pub async fn run_target(
     let action_graph = action_graph_builder.build()?;
     let mut pipeline = Pipeline::new(session.get_workspace_legacy()?, project_graph);
 
-    if let Some(concurrency) = concurrency {
-        pipeline.concurrency(concurrency);
+    if let Some(concurrency) = &session.cli.concurrency {
+        pipeline.concurrency(*concurrency);
     }
 
     pipeline

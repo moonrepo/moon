@@ -30,6 +30,7 @@ moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }
 bytes = "1.6.0"
+ci_env = { workspace = true }
 clap = { workspace = true, features = [
 	"color",
 	"derive",

@@ -4,10 +4,11 @@ use tracing::warn;
 
 static mut LOGGED_WARNING: bool = false;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum CacheMode {
     Off,
     Read,
+    #[default]
     ReadWrite,
     Write,
 }

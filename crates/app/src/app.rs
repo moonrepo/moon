@@ -18,9 +18,11 @@ use crate::commands::sync::SyncCommands;
 use crate::commands::task::TaskArgs;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
+use moon_cache::CacheMode;
 use moon_common::consts::BIN_NAME;
 use starbase_styles::color::Color as ColorType;
 use std::path::PathBuf;
+use tracing::Level;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum Commands {
@@ -252,16 +254,16 @@ fn create_styles() -> Styles {
     styles = create_styles()
 )]
 pub struct Cli {
-    // #[arg(
-    //     value_enum,
-    //     long,
-    //     global = true,
-    //     env = "MOON_CACHE",
-    //     help = "Mode for cache operations",
-    //     default_value_t
-    // )]
-    // pub cache: CacheMode,
-    #[arg(long, global = true, help = "Force colored output for moon")]
+    #[arg(
+        long,
+        global = true,
+        env = "MOON_CACHE",
+        help = "Mode for cache operations",
+        default_value_t
+    )]
+    pub cache: CacheMode,
+
+    #[arg(long, global = true, help = "Force colored output")]
     pub color: bool,
 
     #[arg(
@@ -273,20 +275,19 @@ pub struct Cli {
     )]
     pub concurrency: Option<usize>,
 
-    // #[arg(
-    //     value_enum,
-    //     long,
-    //     global = true,
-    //     env = "MOON_LOG",
-    //     help = "Lowest log level to output",
-    //     default_value_t
-    // )]
-    // pub log: LogLevel,
+    #[arg(
+        long,
+        global = true,
+        env = "MOON_LOG",
+        help = "Lowest log level to output"
+    )]
+    pub log: Option<Level>,
+
     #[arg(
         long,
         global = true,
         env = "MOON_LOG_FILE",
-        help = "Path to a file to dump the moon logs"
+        help = "Path to a file to write logs to"
     )]
     pub log_file: Option<PathBuf>,
 
@@ -295,7 +296,7 @@ pub struct Cli {
         short = 'q',
         global = true,
         env = "MOON_QUIET",
-        help = "Hide all non-important moon specific terminal output"
+        help = "Hide all non-important terminal output"
     )]
     pub quiet: bool,
 

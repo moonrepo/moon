@@ -13,6 +13,7 @@ moon_app = { path = "../app" }
 moon_common = { path = "../common" }
 clap = { workspace = true }
 mimalloc = { version = "0.1.42", default-features = false }
+sigpipe = "0.1.3"
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

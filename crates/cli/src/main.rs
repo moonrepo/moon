@@ -61,6 +61,7 @@ fn exec_local_bin(mut command: Command) -> std::io::Result<()> {
 
 #[tokio::main]
 async fn main() -> MainResult {
+    sigpipe::reset();
     // console_subscriber::init();
 
     // Detect info about the current process
@@ -94,10 +95,9 @@ async fn main() -> MainResult {
     // Detect if we've been installed globally
     if let (Some(home_dir), Ok(current_dir)) = (dirs::home_dir(), env::current_dir()) {
         if is_globally_installed(&home_dir) {
-            debug!("Binary is running from a global path, attempting to find a local binary to use instead");
-
             if let Some(local_bin) = has_locally_installed(&home_dir, &current_dir) {
-                debug!(local_bin = ?local_bin, "Found a local binary, running it instead");
+                debug!("Binary is running from a global path, but we found a local binary to use instead");
+                debug!("Will now execute the local binary and replace this running process");
 
                 let start_index = if has_executable { 1 } else { 0 };
 
@@ -107,8 +107,6 @@ async fn main() -> MainResult {
 
                 return exec_local_bin(command).into_diagnostic();
             }
-
-            debug!("Did not find a local binary, continuing run");
         }
     }
 
@@ -191,9 +189,9 @@ async fn main() -> MainResult {
         // Rust crashes with a broken pipe error by default,
         // so we unfortunately need to work around it with this hack!
         // https://github.com/rust-lang/rust/issues/46016
-        if error.to_string().to_lowercase().contains("broken pipe") {
-            exit(0);
-        }
+        // if error.to_string().to_lowercase().contains("broken pipe") {
+        //     exit(0);
+        // }
 
         // If we received a custom exit code, use it
         if let Some(ExitCode(code)) = error.downcast_ref::<ExitCode>() {

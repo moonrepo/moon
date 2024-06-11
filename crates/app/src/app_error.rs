@@ -60,4 +60,8 @@ pub enum AppError {
         ".moon/workspace.yml".style(Style::File),
     )]
     UnknownExtension { id: Id },
+
+    #[diagnostic(code(app::upgrade::requires_internet))]
+    #[error("Upgrading moon requires an internet connection!")]
+    UpgradeRequiresInternet,
 }

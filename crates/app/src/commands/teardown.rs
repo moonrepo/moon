@@ -1,9 +1,10 @@
 use crate::helpers::create_progress_bar;
 use moon_platform::PlatformManager;
-use starbase::system;
+use starbase::AppResult;
+use tracing::instrument;
 
-#[system]
-pub async fn teardown() {
+#[instrument]
+pub async fn teardown() -> AppResult {
     let done = create_progress_bar("Tearing down toolchain and uninstalling tools...");
 
     for platform in PlatformManager::write().list_mut() {
@@ -11,4 +12,6 @@ pub async fn teardown() {
     }
 
     done("Teardown complete", true);
+
+    Ok(())
 }

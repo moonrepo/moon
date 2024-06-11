@@ -28,6 +28,7 @@ moon_task = { path = "../task" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }
+bytes = "1.6.0"
 clap = { workspace = true }
 clap_complete = { workspace = true }
 miette = { workspace = true }
@@ -35,6 +36,7 @@ once_cell = { workspace = true }
 proto_core = { workspace = true }
 proto_installer = { workspace = true }
 regex = { workspace = true }
+reqwest = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["config"] }
 semver = { workspace = true }

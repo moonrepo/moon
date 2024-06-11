@@ -3181,6 +3181,7 @@ name = "moon_app"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "bytes",
  "clap",
  "clap_complete",
  "console",
@@ -3228,6 +3229,7 @@ dependencies = [
  "proto_core",
  "proto_installer",
  "regex",
+ "reqwest 0.12.4",
  "rustc-hash",
  "schematic",
  "semver",

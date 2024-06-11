@@ -32,7 +32,6 @@ fn system_sandbox() -> Sandbox {
 #[cfg(not(windows))]
 mod unix {
     use super::*;
-    use itertools::Itertools;
     use std::fs;
 
     #[test]
@@ -344,9 +343,15 @@ mod unix {
                         .unwrap()
                         .to_owned()
                 })
-                .sorted();
+                .collect::<Vec<_>>();
+            files.sort();
 
-            let args = files.clone().map(|f| "./".to_owned() + &f).join(" ");
+            let args = files
+                .clone()
+                .into_iter()
+                .map(|f| "./".to_owned() + &f)
+                .collect::<Vec<_>>()
+                .join(" ");
             let envs = files.join(",");
 
             let output = assert.output();

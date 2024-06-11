@@ -205,9 +205,9 @@ pub async fn query_projects(
     debug!("Querying for projects");
 
     let mut projects = if let Some(query) = &options.query {
-        load_from_query(&project_graph, query, options)?
+        load_from_query(project_graph, query, options)?
     } else {
-        load_with_regex(&project_graph, options)?
+        load_with_regex(project_graph, options)?
     };
 
     // Is there a better way to do this?

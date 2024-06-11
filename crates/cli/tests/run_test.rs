@@ -3,7 +3,7 @@ use moon_config::{
     HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialRunnerConfig,
     PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
 };
-use moon_target::Target;
+use moon_task::Target;
 use moon_task_runner::TaskRunState;
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,

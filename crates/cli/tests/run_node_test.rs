@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use moon_common::Id;
 use moon_config::{
     NodePackageManager, NodeVersionFormat, NodeVersionManager, PartialNodeConfig,
@@ -8,9 +7,9 @@ use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
 };
-use moon_utils::string_vec;
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
+use starbase_utils::string_vec;
 use std::fs::{self, read_to_string};
 
 fn node_sandbox() -> Sandbox {
@@ -1267,9 +1266,15 @@ mod affected_files {
                     .unwrap()
                     .to_owned()
             })
-            .sorted();
+            .collect::<Vec<_>>();
+        files.sort();
 
-        let args = files.clone().map(|f| "./".to_owned() + &f).join(" ");
+        let args = files
+            .clone()
+            .into_iter()
+            .map(|f| "./".to_owned() + &f)
+            .collect::<Vec<_>>()
+            .join(" ");
         let envs = files.join(",");
 
         let output = assert.output();

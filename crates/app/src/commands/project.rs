@@ -92,7 +92,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
             config
                 .tags
                 .iter()
-                .map(|tag| color::id(tag))
+                .map(color::id)
                 .collect::<Vec<_>>()
                 .join(", "),
         )?;

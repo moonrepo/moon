@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use moon_config::PartialBunConfig;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_bun_fixture_configs, predicates::prelude::*,
@@ -383,9 +382,15 @@ mod bun {
                         .unwrap()
                         .to_owned()
                 })
-                .sorted();
+                .collect::<Vec<_>>();
+            files.sort();
 
-            let args = files.clone().map(|f| "./".to_owned() + &f).join(" ");
+            let args = files
+                .clone()
+                .into_iter()
+                .map(|f| "./".to_owned() + &f)
+                .collect::<Vec<_>>()
+                .join(" ");
             let envs = files.join(",");
 
             let output = assert.output();

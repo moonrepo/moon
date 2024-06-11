@@ -1,4 +1,4 @@
-use moon_cli::commands::docker::DockerManifest;
+use moon_app::commands::docker::DockerManifest;
 use moon_common::Id;
 use moon_config::{PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
@@ -6,15 +6,19 @@ use moon_test_utils::{
     get_node_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::json;
 use std::{fs, path::Path};
 
 fn write_manifest(path: &Path, id: &str) {
     fs::write(
         path.join("dockerManifest.json"),
-        serde_json::to_string(&DockerManifest {
-            focused_projects: FxHashSet::from_iter([Id::raw(id)]),
-            unfocused_projects: FxHashSet::default(),
-        })
+        json::format(
+            &DockerManifest {
+                focused_projects: FxHashSet::from_iter([Id::raw(id)]),
+                unfocused_projects: FxHashSet::default(),
+            },
+            false,
+        )
         .unwrap(),
     )
     .unwrap()

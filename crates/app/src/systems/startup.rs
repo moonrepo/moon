@@ -53,7 +53,7 @@ pub fn find_workspace_root(working_dir: &Path) -> AppResult<PathBuf> {
 
         root
     } else {
-        fs::find_upwards_root(consts::CONFIG_DIRNAME, &working_dir)
+        fs::find_upwards_root(consts::CONFIG_DIRNAME, working_dir)
             .ok_or(AppError::MissingConfigDir)?
     };
 

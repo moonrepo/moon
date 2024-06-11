@@ -44,7 +44,7 @@ pub fn is_globally_installed(home_dir: &Path) -> bool {
 
     // If our executable path starts with the global dir,
     // then we must have been installed globally!
-    get_global_lookups(&home_dir)
+    get_global_lookups(home_dir)
         .iter()
         .any(|lookup| exe_path.starts_with(lookup))
 }

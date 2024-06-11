@@ -1,11 +1,12 @@
-use moon_cli::enums::TouchedStatus;
-use moon_cli::queries::projects::{QueryProjectsResult, QueryTasksResult};
-use moon_cli::queries::touched_files::QueryTouchedFilesResult;
+use moon_app::queries::projects::{QueryProjectsResult, QueryTasksResult};
+use moon_app::queries::touched_files::QueryTouchedFilesResult;
+use moon_common::is_ci;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
     get_cases_fixture_configs, get_projects_fixture_configs, predicates::prelude::*, Sandbox,
 };
-use moon_utils::{is_ci, string_vec};
+use moon_vcs::TouchedStatus;
+use starbase_utils::{json, string_vec};
 
 fn change_branch(sandbox: &Sandbox) {
     sandbox.run_git(|cmd| {
@@ -265,7 +266,7 @@ mod projects {
             cmd.arg("query").arg("projects").arg("--json");
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         ids.sort();
@@ -308,7 +309,7 @@ mod projects {
                 .arg("--affected");
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "noConfig"]);
@@ -372,7 +373,7 @@ mod projects {
                 .arg("--dependents");
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "basic", "noConfig"]);
@@ -410,7 +411,7 @@ mod projects {
                 .write_stdin(get_assert_stdout_output(&query.inner));
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "noConfig"]);
@@ -435,7 +436,7 @@ mod projects {
                 .args(["--id", "ba(r|z)"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["bar", "baz"]);
@@ -460,7 +461,7 @@ mod projects {
                 .args(["--source", "config$"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["emptyConfig", "noConfig"]);
@@ -485,7 +486,7 @@ mod projects {
                 .args(["--tags", "react"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
@@ -499,7 +500,7 @@ mod projects {
                 .args(["--tags", "react|vue"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "basic", "foo"]);
@@ -524,7 +525,7 @@ mod projects {
                 .args(["--tasks", "lint"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["tasks"]);
@@ -549,7 +550,7 @@ mod projects {
                 .args(["--language", "java|bash"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["basic", "foo"]);
@@ -574,7 +575,7 @@ mod projects {
                 .args(["--type", "app"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
@@ -599,7 +600,7 @@ mod projects {
                 .args(["--stack", "frontend"]);
         });
 
-        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced"]);
@@ -627,7 +628,7 @@ mod projects {
                     .arg("--json");
             });
 
-            let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+            let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
             let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
             assert_eq!(ids, string_vec!["bar", "baz"]);
@@ -656,7 +657,7 @@ mod projects {
                     .arg("--affected");
             });
 
-            let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+            let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
             let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
             assert_eq!(ids, string_vec!["noConfig"]);
@@ -701,7 +702,7 @@ mod tasks {
             cmd.arg("query").arg("tasks").arg("--json");
         });
 
-        let json: QueryTasksResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryTasksResult = json::parse(assert.output()).unwrap();
         let tasks = json
             .tasks
             .get("tasks")
@@ -741,7 +742,7 @@ mod touched_files {
             ]);
         });
 
-        let json: QueryTouchedFilesResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryTouchedFilesResult = json::parse(assert.output()).unwrap();
 
         assert_eq!(json.options.base.unwrap(), "master".to_string());
         assert_eq!(json.options.head.unwrap(), "branch".to_string());
@@ -767,7 +768,7 @@ mod touched_files {
             ]);
         });
 
-        let json: QueryTouchedFilesResult = serde_json::from_str(&assert.output()).unwrap();
+        let json: QueryTouchedFilesResult = json::parse(assert.output()).unwrap();
 
         assert_eq!(
             json.options.status,

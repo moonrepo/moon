@@ -6,6 +6,7 @@ use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 
 fn create_out_files(project_root: &Path) {
     let out_dir = project_root.join("out");
@@ -30,7 +31,7 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
     )
 }
 
-async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, BoxedVcs) {
+async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, Arc<BoxedVcs>) {
     let mut graph_builder = ProjectGraphContainer::with_vcs(workspace_root);
     let context = graph_builder.create_context();
 

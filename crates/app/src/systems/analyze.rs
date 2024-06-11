@@ -128,7 +128,7 @@ pub async fn register_platforms(
                 bun_config,
                 &toolchain_config.typescript,
                 workspace_root,
-                Arc::clone(&proto_env),
+                Arc::clone(proto_env),
                 Arc::clone(&console),
             )),
         );
@@ -141,7 +141,7 @@ pub async fn register_platforms(
                 deno_config,
                 &toolchain_config.typescript,
                 workspace_root,
-                Arc::clone(&proto_env),
+                Arc::clone(proto_env),
                 Arc::clone(&console),
             )),
         );
@@ -154,7 +154,7 @@ pub async fn register_platforms(
                 node_config,
                 &toolchain_config.typescript,
                 workspace_root,
-                Arc::clone(&proto_env),
+                Arc::clone(proto_env),
                 Arc::clone(&console),
             )),
         );
@@ -166,7 +166,7 @@ pub async fn register_platforms(
             Box::new(RustPlatform::new(
                 rust_config,
                 workspace_root,
-                Arc::clone(&proto_env),
+                Arc::clone(proto_env),
                 Arc::clone(&console),
             )),
         );
@@ -177,7 +177,7 @@ pub async fn register_platforms(
         PlatformType::System,
         Box::new(SystemPlatform::new(
             workspace_root,
-            Arc::clone(&proto_env),
+            Arc::clone(proto_env),
             Arc::clone(&console),
         )),
     );

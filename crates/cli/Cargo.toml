@@ -21,10 +21,16 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_cache = { path = "../cache" }
+moon_config = { path = "../config" }
 moon_notifier = { path = "../../legacy/core/notifier" }
+moon_task = { path = "../task" }
 moon_task_runner = { path = "../task-runner" }
 moon_test_utils = { path = "../../legacy/core/test-utils" }
+moon_vcs = { path = "../vcs" }
 httpmock = "0.7.0"
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
 serial_test = { workspace = true }
 starbase_archive = { workspace = true }
 

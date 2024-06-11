@@ -262,16 +262,15 @@ impl AppSession for CliSession {
     }
 
     async fn execute(&mut self) -> AppResult {
-        if self.is_telemetry_enabled() {
-            if matches!(
+        if self.is_telemetry_enabled()
+            && matches!(
                 self.cli.command,
                 Commands::Ci(_) | Commands::Check(_) | Commands::Run(_) | Commands::Sync { .. }
-            ) {
-                let cache_engine = self.get_cache_engine()?;
+            )
+        {
+            let cache_engine = self.get_cache_engine()?;
 
-                execute::check_for_new_version(&self.console, &self.moon_env, &cache_engine)
-                    .await?;
-            }
+            execute::check_for_new_version(&self.console, &self.moon_env, &cache_engine).await?;
         }
 
         Ok(())

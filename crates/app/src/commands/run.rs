@@ -176,7 +176,7 @@ pub async fn run_target(
     if primary_targets.is_empty() {
         let targets_list = target_locators
             .iter()
-            .map(|id| color::label(id))
+            .map(color::label)
             .collect::<Vec<_>>()
             .join(", ");
 

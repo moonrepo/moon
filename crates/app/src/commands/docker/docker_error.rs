@@ -8,7 +8,7 @@ use thiserror::Error;
 pub enum AppDockerError {
     #[diagnostic(code(app::docker::missing_manifest))]
     #[error(
-        "Unable to setup, docker manifest missing. Has it been scaffolded with {}?",
+        "Unable to continue, docker manifest missing. Has it been scaffolded with {}?",
         "moon docker scaffold".style(Style::Shell)
     )]
     MissingManifest,

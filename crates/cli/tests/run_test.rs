@@ -337,11 +337,13 @@ mod logs {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        sandbox.run_moon(|cmd| {
-            cmd.arg("--logFile=nested/output.log")
-                .arg("run")
-                .arg("node:standard");
-        });
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("--logFile=nested/output.log")
+                    .arg("run")
+                    .arg("node:standard");
+            })
+            .debug();
 
         let output_path = sandbox.path().join("nested/output.log");
 

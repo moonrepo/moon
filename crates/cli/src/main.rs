@@ -77,6 +77,7 @@ async fn main() -> MainResult {
 
     let _guard = app.setup_tracing(TracingOptions {
         filter_modules: get_tracing_modules(),
+        log_env: "MOON_APP_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
         ..TracingOptions::default()
     });

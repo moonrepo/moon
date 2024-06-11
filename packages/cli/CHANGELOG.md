@@ -10,6 +10,13 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated CLI command execution to be far more performant, and to reduce our usage of concurrent
+  locks.
+
 ## 1.25.4
 
 #### 🚀 Updates

@@ -311,7 +311,7 @@ impl Cli {
     pub fn setup_env_vars(&self) {
         bootstrap::setup_colors(self.color);
 
-        env::set_var("STARBASE_LOG", self.log.to_string());
+        env::set_var("MOON_APP_LOG", self.log.to_string());
 
         if env::var("MOON_LOG").is_err() {
             env::set_var("MOON_LOG", self.log.to_string());

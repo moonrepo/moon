@@ -423,7 +423,7 @@ mod prune {
         });
 
         assert!(
-            predicate::str::contains("Unable to prune, docker manifest missing.")
+            predicate::str::contains("Unable to continue, docker manifest missing.")
                 .eval(&assert.output())
         );
     }
@@ -606,7 +606,7 @@ mod setup {
         });
 
         assert!(
-            predicate::str::contains("Unable to setup, docker manifest missing.")
+            predicate::str::contains("Unable to continue, docker manifest missing.")
                 .eval(&assert.output())
         );
     }

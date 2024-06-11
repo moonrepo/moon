@@ -9,47 +9,17 @@ use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::{commands, systems::bootstrap, Cli, CliSession, Commands, ExitCode};
+use starbase::diagnostics::IntoDiagnostic;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_styles::color;
 use starbase_utils::{dirs, string_vec};
 use std::env;
-use std::process::exit;
+use std::process::{exit, Command};
 use tracing::debug;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
-
-// async fn run_bin(bin_path: &Path, current_dir: &Path) -> miette::Result<()> {
-//     // Remove the binary path from the current args list
-//     let args = env::args()
-//         .enumerate()
-//         .filter(|(i, arg)| {
-//             if *i == 0 {
-//                 !is_arg_executable(arg)
-//             } else {
-//                 true
-//             }
-//         })
-//         .map(|(_, arg)| arg)
-//         .collect::<Vec<String>>();
-
-//     // Execute the found moon binary with the current filtered args
-//     let result = Command::new(bin_path)
-//         .args(args)
-//         .current_dir(current_dir)
-//         .spawn()
-//         .into_diagnostic()?
-//         .wait()
-//         .await
-//         .into_diagnostic()?;
-
-//     if !result.success() {
-//         exit(result.code().unwrap_or(1));
-//     }
-
-//     Ok(())
-// }
 
 fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
@@ -71,13 +41,31 @@ fn get_tracing_modules() -> Vec<String> {
     modules
 }
 
+#[cfg(unix)]
+fn exec_local_bin(mut command: Command) -> std::io::Result<()> {
+    use std::os::unix::process::CommandExt;
+
+    Err(command.exec())
+}
+
+#[cfg(windows)]
+fn exec_local_bin(mut command: Command) -> std::io::Result<()> {
+    let result = command.spawn()?.wait()?;
+
+    if !result.success() {
+        exit(result.code().unwrap_or(1));
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> MainResult {
     // console_subscriber::init();
 
     // Detect info about the current process
     let version = get_version();
-    let args = bootstrap::gather_args();
+    let (args, has_executable) = bootstrap::gather_args();
 
     let cli = Cli::parse_from(&args);
     cli.setup_env_vars();
@@ -108,14 +96,16 @@ async fn main() -> MainResult {
         if is_globally_installed(&home_dir) {
             debug!("Binary is running from a global path, attempting to find a local binary to use instead");
 
-            for lookup in get_local_lookups(&home_dir, &current_dir) {
-                if lookup.exists() {
-                    debug!(local_bin = ?lookup, "Found a local binary, running it instead");
+            if let Some(local_bin) = has_locally_installed(&home_dir, &current_dir) {
+                debug!(local_bin = ?local_bin, "Found a local binary, running it instead");
 
-                    // TODO
+                let start_index = if has_executable { 1 } else { 0 };
 
-                    return Ok(());
-                }
+                let mut command = Command::new(local_bin);
+                command.args(&args[start_index..]);
+                command.current_dir(current_dir);
+
+                return exec_local_bin(command).into_diagnostic();
             }
 
             debug!("Did not find a local binary, continuing run");
@@ -124,7 +114,7 @@ async fn main() -> MainResult {
 
     // Otherwise just run the CLI
     let result = app
-        .run(CliSession::new(cli), |session| async {
+        .run(CliSession::new(cli, version), |session| async {
             match session.cli.command.clone() {
                 Commands::ActionGraph(args) => {
                     commands::graph::action::action_graph(session, args).await

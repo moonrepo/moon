@@ -18,6 +18,7 @@ use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::Workspace;
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
+use semver::Version;
 use starbase::{AppResult, AppSession};
 use std::env;
 use std::fmt;
@@ -31,6 +32,7 @@ pub type ExtensionRegistry = PluginRegistry<ExtensionPlugin>;
 #[derive(Clone)]
 pub struct CliSession {
     pub cli: Cli,
+    pub cli_version: Version,
 
     // Components
     pub console: Console,
@@ -57,12 +59,13 @@ pub struct CliSession {
 }
 
 impl CliSession {
-    pub fn new(cli: Cli) -> Self {
+    pub fn new(cli: Cli, cli_version: String) -> Self {
         debug!("Creating new application session");
 
         Self {
             cache_engine: OnceCell::new(),
             cli,
+            cli_version: Version::parse(&cli_version).unwrap(),
             console: Console::new(false),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),

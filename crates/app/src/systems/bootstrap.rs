@@ -7,16 +7,18 @@ pub fn is_arg_executable(arg: &str) -> bool {
     arg.ends_with("moon") || arg.ends_with("moon.exe") || arg.ends_with("moon.js")
 }
 
-pub fn gather_args() -> Vec<OsString> {
+pub fn gather_args() -> (Vec<OsString>, bool) {
     let mut args: Vec<OsString> = vec![];
     let mut leading_args: Vec<OsString> = vec![];
     let mut check_for_target = true;
+    let mut has_executable = false;
 
     env::args_os().enumerate().for_each(|(index, arg)| {
         if let Some(a) = arg.to_str() {
             // Script being executed, so persist it
             if index == 0 && is_arg_executable(a) {
                 leading_args.push(arg);
+                has_executable = true;
                 return;
             }
 
@@ -38,7 +40,7 @@ pub fn gather_args() -> Vec<OsString> {
     // target cannot be placed before "run"
     leading_args.extend(args);
 
-    leading_args
+    (leading_args, has_executable)
 }
 
 pub fn setup_no_colors() {

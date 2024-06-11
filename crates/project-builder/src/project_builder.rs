@@ -305,8 +305,8 @@ impl<'app> ProjectBuilder<'app> {
         Ok(deps.into_values().collect::<Vec<_>>())
     }
 
-    fn build_file_groups(&self) -> miette::Result<FxHashMap<Id, FileGroup>> {
-        let mut file_inputs = FxHashMap::default();
+    fn build_file_groups(&self) -> miette::Result<BTreeMap<Id, FileGroup>> {
+        let mut file_inputs = BTreeMap::default();
         let project_source = &self.source;
 
         trace!(id = self.id.as_str(), "Building file groups");
@@ -338,7 +338,7 @@ impl<'app> ProjectBuilder<'app> {
         }
 
         // And finally convert to a file group instance
-        let mut file_groups = FxHashMap::default();
+        let mut file_groups = BTreeMap::default();
 
         for (id, inputs) in file_inputs {
             let mut group = FileGroup::new(id)?;

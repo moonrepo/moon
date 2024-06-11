@@ -16,8 +16,8 @@ echo "Old version: $oldVersion"
 echo "New version: $newVersion"
 
 if [[ "$oldVersion" != "$newVersion" ]]; then
-	toml=$(cat legacy/cli/Cargo.toml)
-	echo "${toml//$oldVersion/$newVersion}" > legacy/cli/Cargo.toml
+	toml=$(cat crates/cli/Cargo.toml)
+	echo "${toml//$oldVersion/$newVersion}" > crates/cli/Cargo.toml
 fi
 
 # Build the binary with the provided target

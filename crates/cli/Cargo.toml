@@ -1,0 +1,31 @@
+[package]
+name = "moon_cli"
+version = "1.25.4"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "moon"
+path = "src/main.rs"
+
+[dependencies]
+moon_app = { path = "../app" }
+moon_common = { path = "../common" }
+clap = { workspace = true }
+mimalloc = { version = "0.1.42", default-features = false }
+starbase = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_notifier = { path = "../../legacy/core/notifier" }
+moon_task_runner = { path = "../task-runner" }
+moon_test_utils = { path = "../../legacy/core/test-utils" }
+httpmock = "0.7.0"
+serial_test = { workspace = true }
+starbase_archive = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,5 +1,3 @@
-// Systems are defined in the order they should be executed!
-
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_common::consts;

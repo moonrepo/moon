@@ -17,7 +17,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
-pub async fn prepate_repository(vcs: Arc<BoxedVcs>) -> AppResult {
+pub async fn prepare_repository(vcs: Arc<BoxedVcs>) -> AppResult {
     if !is_test_env() && vcs.is_enabled() {
         if let Ok(slug) = vcs.get_repository_slug().await {
             env::set_var("MOONBASE_REPO_SLUG", slug.as_str());

@@ -16,13 +16,15 @@ use crate::commands::query::QueryCommands;
 use crate::commands::run::RunArgs;
 use crate::commands::sync::SyncCommands;
 use crate::commands::task::TaskArgs;
+use crate::systems::bootstrap;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
 use moon_common::consts::BIN_NAME;
+use starbase::tracing::LogLevel;
 use starbase_styles::color::Color as ColorType;
+use std::env;
 use std::path::PathBuf;
-use tracing::Level;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum Commands {
@@ -279,9 +281,10 @@ pub struct Cli {
         long,
         global = true,
         env = "MOON_LOG",
-        help = "Lowest log level to output"
+        help = "Lowest log level to output",
+        default_value_t
     )]
-    pub log: Option<Level>,
+    pub log: LogLevel,
 
     #[arg(
         long,
@@ -302,4 +305,33 @@ pub struct Cli {
 
     #[command(subcommand)]
     pub command: Commands,
+}
+
+impl Cli {
+    pub fn setup_env_vars(&self) {
+        bootstrap::setup_colors(self.color);
+
+        env::set_var("STARBASE_LOG", self.log.to_string());
+
+        if env::var("MOON_LOG").is_err() {
+            env::set_var("MOON_LOG", self.log.to_string());
+        }
+
+        if env::var("MOON_CACHE").is_err() {
+            env::set_var("MOON_CACHE", self.cache.to_string());
+        }
+
+        if matches!(self.cache, CacheMode::Off | CacheMode::Write) {
+            env::set_var("PROTO_CACHE", "off");
+        }
+
+        if env::var("MOON_DEBUG_WASM").is_ok() {
+            env::set_var("PROTO_WASM_LOG", "trace");
+            env::set_var("PROTO_DEBUG_WASM", "true");
+            env::set_var("EXTISM_DEBUG", "1");
+            env::set_var("EXTISM_ENABLE_WASI_OUTPUT", "1");
+            env::set_var("EXTISM_MEMDUMP", "wasm-plugin.mem");
+            env::set_var("EXTISM_COREDUMP", "wasm-plugin.core");
+        }
+    }
 }

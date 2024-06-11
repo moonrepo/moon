@@ -1,5 +1,6 @@
 use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
+use async_recursion::async_recursion;
 use clap::Args;
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME};
 use moon_common::{path, Id};
@@ -224,6 +225,7 @@ async fn scaffold_workspace(session: &CliSession, docker_root: &Path) -> AppResu
 }
 
 #[instrument(skip(session, manifest))]
+#[async_recursion]
 async fn scaffold_sources_project(
     session: &CliSession,
     docker_sources_root: &Path,

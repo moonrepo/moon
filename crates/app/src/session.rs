@@ -24,6 +24,7 @@ use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::try_join;
+use tracing::debug;
 
 pub type ExtensionRegistry = PluginRegistry<ExtensionPlugin>;
 
@@ -57,6 +58,8 @@ pub struct CliSession {
 
 impl CliSession {
     pub fn new(cli: Cli) -> Self {
+        debug!("Creating new application session");
+
         Self {
             cache_engine: OnceCell::new(),
             cli,
@@ -220,7 +223,7 @@ impl AppSession for CliSession {
 
     /// Analyze the current state and install/registery necessary functionality.
     async fn analyze(&mut self) -> AppResult {
-        analyze::prepate_repository(self.get_vcs_adapter()?).await?;
+        analyze::prepare_repository(self.get_vcs_adapter()?).await?;
 
         if self.requires_workspace() {
             analyze::install_proto(&self.console, &self.proto_env, &self.toolchain_config).await?;
@@ -242,11 +245,16 @@ impl AppSession for CliSession {
     }
 
     async fn execute(&mut self) -> AppResult {
-        // if ci, check, run, sync
         if self.is_telemetry_enabled() {
-            let cache_engine = self.get_cache_engine()?;
+            if matches!(
+                self.cli.command,
+                Commands::Ci(_) | Commands::Check(_) | Commands::Run(_) | Commands::Sync { .. }
+            ) {
+                let cache_engine = self.get_cache_engine()?;
 
-            execute::check_for_new_version(&self.console, &self.moon_env, &cache_engine).await?;
+                execute::check_for_new_version(&self.console, &self.moon_env, &cache_engine)
+                    .await?;
+            }
         }
 
         Ok(())

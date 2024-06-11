@@ -1,5 +1,5 @@
 ---
-source: crates/cli/src/commands/init/bun.rs
+source: crates/app/src/commands/init/bun.rs
 expression: render_template(context).unwrap()
 ---
 # Configures Bun within the toolchain.
@@ -15,4 +15,3 @@ bun:
 
   # Sync a project's dependencies as `dependencies` within the project's `package.json`.
   syncProjectWorkspaceDependencies: true
-

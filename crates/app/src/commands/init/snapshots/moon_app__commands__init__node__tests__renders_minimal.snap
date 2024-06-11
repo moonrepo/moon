@@ -1,6 +1,5 @@
 ---
-source: crates/cli/src/commands/init/node.rs
-assertion_line: 263
+source: crates/app/src/commands/init/node.rs
 expression: render_template(context).unwrap()
 ---
 node:
@@ -8,4 +7,3 @@ node:
   packageManager: 'npm'
   npm:
     version: '8.0.0'
-

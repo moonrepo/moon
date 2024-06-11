@@ -1,5 +1,5 @@
 ---
-source: crates/cli/src/commands/init/rust.rs
+source: crates/app/src/commands/init/rust.rs
 expression: render_template(context).unwrap()
 ---
 # Configures Rust within the toolchain.
@@ -18,4 +18,3 @@ rust:
 
   # List of rustup toolchain targets to install and make available.
   targets: []
-

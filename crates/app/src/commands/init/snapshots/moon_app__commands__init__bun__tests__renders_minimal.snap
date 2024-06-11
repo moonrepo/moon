@@ -1,7 +1,6 @@
 ---
-source: crates/cli/src/commands/init/bun.rs
+source: crates/app/src/commands/init/bun.rs
 expression: render_template(context).unwrap()
 ---
 bun:
   version: '1.0.0'
-

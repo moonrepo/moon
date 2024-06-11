@@ -1,5 +1,5 @@
 ---
-source: crates/cli/src/commands/init/mod.rs
+source: crates/app/src/commands/init/mod.rs
 expression: render_workspace_template(&context).unwrap()
 ---
 # https://moonrepo.dev/docs/config/workspace
@@ -18,6 +18,4 @@ $schema: 'https://moonrepo.dev/schemas/workspace.json'
 projects:
   - 'apps/*'
   - 'packages/*'
-
-
-
+  example: 'apps/example'

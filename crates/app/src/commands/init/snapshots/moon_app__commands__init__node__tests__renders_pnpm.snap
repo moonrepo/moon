@@ -1,5 +1,5 @@
 ---
-source: crates/cli/src/commands/init/node.rs
+source: crates/app/src/commands/init/node.rs
 expression: render_template(context).unwrap()
 ---
 # Configures Node.js within the toolchain.
@@ -10,11 +10,11 @@ node:
 
   # The package manager to use when managing dependencies.
   # Accepts "npm" (default), "pnpm", "yarn", or "bun".
-  packageManager: 'npm'
+  packageManager: 'pnpm'
 
   # The version of the package manager (above) to use.
-  npm:
-    version: '9.0.0'
+  pnpm:
+    version: '7.14.0'
 
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
@@ -38,4 +38,3 @@ node:
   # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
   # syncVersionManagerConfig: 'nvm'
-

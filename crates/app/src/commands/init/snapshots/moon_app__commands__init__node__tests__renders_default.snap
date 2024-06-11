@@ -1,6 +1,6 @@
 ---
-source: crates/cli/src/commands/init/node.rs
-expression: render_template(context).unwrap()
+source: crates/app/src/commands/init/node.rs
+expression: render_template(create_context()).unwrap()
 ---
 # Configures Node.js within the toolchain.
 node:
@@ -37,5 +37,4 @@ node:
 
   # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
-  syncVersionManagerConfig: 'nodenv'
-
+  # syncVersionManagerConfig: 'nvm'

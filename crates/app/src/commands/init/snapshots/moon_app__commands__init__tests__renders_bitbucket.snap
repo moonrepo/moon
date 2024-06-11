@@ -1,5 +1,5 @@
 ---
-source: crates/cli/src/commands/init/mod.rs
+source: crates/app/src/commands/init/mod.rs
 expression: render_workspace_template(&context).unwrap()
 ---
 # https://moonrepo.dev/docs/config/workspace
@@ -25,10 +25,12 @@ projects:
 vcs:
   # The client to use when managing the repository.
   # Accepts "git". Defaults to "git".
-  manager: 'svn'
+  manager: 'git'
+
+  # The provider in which the repository is hosted on.
+  provider: 'bitbucket'
 
   # The default branch (master/main/trunk) in the repository for comparing the
   # local branch against. For git, this is is typically "master" or "main",
   # and must include the remote prefix (before /).
-  defaultBranch: 'trunk'
-
+  defaultBranch: 'main'

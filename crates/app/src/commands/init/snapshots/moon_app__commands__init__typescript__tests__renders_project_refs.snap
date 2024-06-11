@@ -1,12 +1,12 @@
 ---
-source: crates/cli/src/commands/init/typescript.rs
+source: crates/app/src/commands/init/typescript.rs
 expression: render_template(context).unwrap()
 ---
 # Configures how moon integrates with TypeScript.
 typescript:
   # When `syncProjectReferences` is enabled and a dependent project reference
   # *does not* have a `tsconfig.json`, automatically create one.
-  createMissingConfig: false
+  createMissingConfig: true
 
   # Append the sources of each project reference to the `include` field
   # of each applicable project's `tsconfig.json`.
@@ -35,9 +35,8 @@ typescript:
 
   # Sync a project's dependencies as project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
-  syncProjectReferences: false
+  syncProjectReferences: true
 
   # Sync a project's project references as import aliases to the `paths`
   # compiler option in each applicable project.
   syncProjectReferencesToPaths: false
-

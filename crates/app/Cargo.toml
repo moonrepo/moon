@@ -31,6 +31,7 @@ async-trait = { workspace = true }
 bytes = "1.6.0"
 clap = { workspace = true }
 clap_complete = { workspace = true }
+diff = "0.1.13"
 miette = { workspace = true }
 once_cell = { workspace = true }
 proto_core = { workspace = true }

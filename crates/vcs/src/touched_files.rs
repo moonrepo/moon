@@ -2,6 +2,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct TouchedFiles {
@@ -58,5 +59,22 @@ impl fmt::Display for TouchedStatus {
         )?;
 
         Ok(())
+    }
+}
+
+impl FromStr for TouchedStatus {
+    type Err = miette::Report;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Ok(match value.to_lowercase().as_str() {
+            "added" => Self::Added,
+            "all" => Self::All,
+            "deleted" => Self::Deleted,
+            "modified" => Self::Modified,
+            "staged" => Self::Staged,
+            "unstaged" => Self::Unstaged,
+            "untracked" => Self::Untracked,
+            other => return Err(miette::miette!("Unknown touched status {}", other)),
+        })
     }
 }

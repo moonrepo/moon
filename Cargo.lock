@@ -3186,6 +3186,7 @@ dependencies = [
  "clap_complete",
  "console",
  "dialoguer",
+ "diff",
  "indicatif",
  "miette",
  "moon_action_graph",

@@ -1,4 +1,3 @@
-use crate::enums::TouchedStatus;
 pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::query_hash_diff;
 pub use crate::queries::projects::{
@@ -7,14 +6,15 @@ pub use crate::queries::projects::{
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
+use crate::session::CliSession;
 use clap::Args;
-use miette::IntoDiagnostic;
-use moon_app_components::Console;
-use moon_workspace::Workspace;
+use moon_vcs::TouchedStatus;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase::system;
+use starbase::AppResult;
 use starbase_styles::color;
+use starbase_utils::json;
 use std::collections::BTreeMap;
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct QueryHashArgs {
@@ -25,13 +25,11 @@ pub struct QueryHashArgs {
     json: bool,
 }
 
-#[system]
-pub async fn hash(
-    args: ArgsRef<QueryHashArgs>,
-    workspace: ResourceRef<Workspace>,
-    console: ResourceRef<Console>,
-) {
-    let result = query_hash(workspace, &args.hash).await?;
+#[instrument(skip_all)]
+pub async fn hash(session: CliSession, args: QueryHashArgs) -> AppResult {
+    let console = &session.console;
+    let cache_engine = session.get_cache_engine()?;
+    let result = query_hash(&cache_engine, &args.hash).await?;
 
     if !args.json {
         console
@@ -41,6 +39,8 @@ pub async fn hash(
     }
 
     console.out.write_line(result.1)?;
+
+    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -55,14 +55,11 @@ pub struct QueryHashDiffArgs {
     json: bool,
 }
 
-#[system]
-pub async fn hash_diff(
-    args: ArgsRef<QueryHashDiffArgs>,
-    workspace: ResourceRef<Workspace>,
-    console: ResourceRef<Console>,
-) {
-    let mut result = query_hash_diff(workspace, &args.left, &args.right).await?;
-    let is_tty = console.out.is_terminal();
+#[instrument(skip_all)]
+pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResult {
+    let console = &session.console;
+    let cache_engine = session.get_cache_engine()?;
+    let mut result = query_hash_diff(&cache_engine, &args.left, &args.right).await?;
 
     if args.json {
         for diff in diff::lines(&result.left, &result.right) {
@@ -73,9 +70,7 @@ pub async fn hash_diff(
             };
         }
 
-        console
-            .out
-            .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console.out.write_line(json::format(&result, true)?)?;
     } else {
         console
             .out
@@ -84,6 +79,8 @@ pub async fn hash_diff(
             .out
             .write_line(format!("Right: {}", color::hash(&result.right_hash)))?;
         console.out.write_newline()?;
+
+        let is_tty = console.out.is_terminal();
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {
@@ -111,6 +108,8 @@ pub async fn hash_diff(
             };
         }
     }
+
+    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -155,9 +154,12 @@ pub struct QueryProjectsArgs {
     type_of: Option<String>,
 }
 
-#[system]
-pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut) {
-    let args = args.to_owned();
+#[instrument(skip_all)]
+pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult {
+    let console = &session.console;
+    let vcs = session.get_vcs_adapter()?;
+    let project_graph = session.get_project_graph().await?;
+
     let options = QueryProjectsOptions {
         alias: args.alias,
         affected: args.affected,
@@ -171,26 +173,21 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
         tags: args.tags,
         tasks: args.tasks,
         touched_files: if args.affected {
-            load_touched_files(resources.get::<Workspace>()).await?
+            load_touched_files(&vcs).await?
         } else {
             FxHashSet::default()
         },
         type_of: args.type_of,
     };
 
-    let mut projects = { query_projects(resources.get_mut::<Workspace>(), &options).await? };
-
+    let mut projects = query_projects(&project_graph, &options).await?;
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
-    let console = resources.get::<Console>();
-
     if args.json {
         let result = QueryProjectsResult { projects, options };
 
-        console
-            .out
-            .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console.out.write_line(json::format(&result, true)?)?;
     } else if !projects.is_empty() {
         console.out.write_line(
             projects
@@ -205,6 +202,8 @@ pub async fn projects(args: ArgsRef<QueryProjectsArgs>, resources: ResourcesMut)
                 .join("\n"),
         )?;
     }
+
+    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -240,9 +239,12 @@ pub struct QueryTasksArgs {
     type_of: Option<String>,
 }
 
-#[system]
-pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
-    let args = args.to_owned();
+#[instrument(skip_all)]
+pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
+    let console = &session.console;
+    let vcs = session.get_vcs_adapter()?;
+    let project_graph = session.get_project_graph().await?;
+
     let options = QueryProjectsOptions {
         alias: args.alias,
         id: args.id,
@@ -255,9 +257,9 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
         ..QueryProjectsOptions::default()
     };
 
-    let projects = { query_projects(resources.get_mut::<Workspace>(), &options).await? };
+    let projects = query_projects(&project_graph, &options).await?;
     let touched_files = if args.affected {
-        load_touched_files(resources.get::<Workspace>()).await?
+        load_touched_files(&vcs).await?
     } else {
         FxHashSet::default()
     };
@@ -286,16 +288,14 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
     }
 
     // Write to stdout directly to avoid broken pipe panics
-    let console = resources.get::<Console>();
-
     if options.json {
-        console.out.write_line(
-            serde_json::to_string_pretty(&QueryTasksResult {
+        console.out.write_line(json::format(
+            &QueryTasksResult {
                 tasks: grouped_tasks,
                 options,
-            })
-            .into_diagnostic()?,
-        )?;
+            },
+            true,
+        )?)?;
     } else if !grouped_tasks.is_empty() {
         for (project_id, tasks) in grouped_tasks {
             console.out.write_line(project_id.as_str())?;
@@ -307,6 +307,8 @@ pub async fn tasks(args: ArgsRef<QueryTasksArgs>, resources: ResourcesMut) {
             }
         }
     }
+
+    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -329,17 +331,15 @@ pub struct QueryTouchedFilesArgs {
     #[arg(long, help = "Gather files from you local state instead of the remote")]
     local: bool,
 
-    #[arg(value_enum, long, help = "Filter files based on a touched status")]
+    #[arg(long, help = "Filter files based on a touched status")]
     status: Vec<TouchedStatus>,
 }
 
-#[system]
-pub async fn touched_files(
-    args: ArgsRef<QueryTouchedFilesArgs>,
-    workspace: ResourceRef<Workspace>,
-    console: ResourceRef<Console>,
-) {
-    let args = args.to_owned();
+#[instrument(skip_all)]
+pub async fn touched_files(session: CliSession, args: QueryTouchedFilesArgs) -> AppResult {
+    let console = &session.console;
+    let vcs = session.get_vcs_adapter()?;
+
     let options = QueryTouchedFilesOptions {
         base: args.base,
         default_branch: args.default_branch,
@@ -349,13 +349,11 @@ pub async fn touched_files(
         status: args.status,
     };
 
-    let result = query_touched_files(workspace, &options).await?;
+    let result = query_touched_files(&vcs, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     if args.json {
-        console
-            .out
-            .write_line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
+        console.out.write_line(json::format(&result, true)?)?;
     } else if !result.files.is_empty() {
         console.out.write_line(
             result
@@ -366,4 +364,6 @@ pub async fn touched_files(
                 .join("\n"),
         )?;
     }
+
+    Ok(())
 }

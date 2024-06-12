@@ -1150,8 +1150,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#unixShell" />
 
 Customize the shell to run with when on a Unix operating system. Accepts `bash`, `elvish`, `fish`,
-`sh`, or `zsh`. If not defined, will derive the shell from the `SHELL` environment variable, or
-defaults to `sh`.
+`ion`, `nu`, `pwsh`, `xonsh`, or `zsh`. If not defined, will derive the shell from the `SHELL`
+environment variable, or defaults to `sh`.
 
 ```yaml title="moon.yml" {5}
 tasks:
@@ -1166,7 +1166,7 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#windowsShell" />
 
 Customize the shell to run with when on a Windows operating system. Accepts `bash` (typically via
-Git) or `pwsh`. If not defined, defaults to `pwsh`.
+Git), `elvish`, `fish`, `nu`, `pwsh`, or `xonsh`. If not defined, defaults to `pwsh`.
 
 ```yaml title="moon.yml" {5}
 tasks:

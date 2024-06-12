@@ -38,6 +38,7 @@ clap = { workspace = true, features = [
 	"wrap_help",
 ] }
 clap_complete = { workspace = true }
+clap_complete_nushell = "4.5.2"
 diff = "0.1.13"
 miette = { workspace = true }
 once_cell = { workspace = true }
@@ -51,6 +52,7 @@ semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
 starbase_events = { workspace = true }
+starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

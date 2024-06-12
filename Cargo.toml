@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
 	"crates/*",
-	"legacy/cli",
 	"legacy/core/*",
 
 	# Languages
@@ -15,19 +14,20 @@ members = [
 	"legacy/typescript/*",
 ]
 exclude = ["tests/fixtures", "wasm/test-plugin"]
-default-members = ["legacy/cli"]
+default-members = ["crates/cli"]
 
 [workspace.dependencies]
+async-recursion = "1.1.1"
 async-trait = "0.1.80"
 cached = "0.51.3"
 chrono = { version = "0.4.38", features = ["serde"] }
 cd_env = "0.2.0"
 ci_env = "0.3.0"
-clap = { version = "4.5.4", default-features = false, features = [
+clap = { version = "4.5.7", default-features = false, features = [
 	"std",
 	"error-context",
 ] }
-clap_complete = "4.5.2"
+clap_complete = "4.5.5"
 console = "0.15.8"
 dirs = "5.0.1"
 miette = "7.2.0"
@@ -37,7 +37,7 @@ petgraph = { version = "0.6.5", default-features = false, features = [
 	"serde-1",
 ] }
 relative-path = { version = "1.9.3" }
-regex = { version = "1.10.4", default-features = false, features = [
+regex = { version = "1.10.5", default-features = false, features = [
 	"std",
 	"perf",
 ] }
@@ -48,23 +48,23 @@ reqwest = { version = "0.12.4", default-features = false, features = [
 ] }
 rustc-hash = "1.1.0"
 scc = "2.1.1"
-schematic = { version = "0.16.3", default-features = false, features = [
+schematic = { version = "0.16.4", default-features = false, features = [
 	"schema",
 ] }
 serial_test = "3.1.1"
 semver = "1.0.23"
-serde = { version = "1.0.202", features = ["derive"] }
+serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"
 serde_yaml = "0.9.34"
-starbase = "0.5.2" # TODO
-starbase_archive = { version = "0.7.1", default-features = false, features = [
+starbase = { version = "0.8.0" }
+starbase_archive = { version = "0.7.4", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.5.2" # TODO
-starbase_sandbox = "0.6.0"
+starbase_events = "0.6.1"
+starbase_sandbox = "0.6.2"
 starbase_styles = { version = "0.4.0", features = ["relative-path"] }
-starbase_utils = { version = "0.7.1", default-features = false, features = [
+starbase_utils = { version = "0.7.5", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -73,9 +73,9 @@ starbase_utils = { version = "0.7.1", default-features = false, features = [
 	"toml",
 	"yaml",
 ] }
-tera = { version = "1.19.1", features = ["preserve_order"] }
+tera = { version = "1.20.0", features = ["preserve_order"] }
 thiserror = "1.0.61"
-tokio = { version = "1.37.0", default-features = false, features = [
+tokio = { version = "1.38.0", default-features = false, features = [
 	"macros",
 	"process",
 	"rt-multi-thread",
@@ -86,13 +86,13 @@ tokio = { version = "1.37.0", default-features = false, features = [
 ] }
 tokio-util = "0.7.11"
 tracing = "0.1.40"
-url = "2.5.0"
+url = "2.5.1"
 uuid = { version = "1.8.0", features = ["v4"] }
 
 # proto/plugin related
 extism = "1.3.0"
 extism-pdk = "1.2.0"
-proto_core = "0.36.1"
+proto_core = "0.36.3"
 proto_installer = "0.5.0"
 system_env = "0.5.0"
 version_spec = "0.5.2"

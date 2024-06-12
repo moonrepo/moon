@@ -3,10 +3,8 @@ use moon_config::ToolConfig;
 use moon_plugin::{serialize_config, PluginId, PluginRegistry};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
-use starbase::Resource;
 use std::ops::Deref;
 
-#[derive(Resource)]
 pub struct PlatformRegistry {
     pub configs: FxHashMap<PluginId, ToolConfig>,
     pub registry: PluginRegistry<PlatformPlugin>,

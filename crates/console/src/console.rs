@@ -3,14 +3,12 @@ use crate::prompts::create_theme;
 use crate::reporter::*;
 use inquire::ui::RenderConfig;
 use moon_common::is_formatted_output;
-use starbase::Resource;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
 pub type ConsoleTheme = RenderConfig<'static>;
 
-#[derive(Resource)]
 pub struct Console {
     pub err: Arc<ConsoleBuffer>,
     err_handle: Option<JoinHandle<()>>,

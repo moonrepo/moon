@@ -7,8 +7,8 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
-use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 // We need some top-level struct to hold the data used for lifetime refs.
@@ -137,7 +137,7 @@ mod project_builder {
 
             assert_eq!(
                 project.file_groups,
-                FxHashMap::from_iter([
+                BTreeMap::from_iter([
                     (
                         "sources".try_into().unwrap(),
                         FileGroup::new_with_source(
@@ -173,7 +173,7 @@ mod project_builder {
 
             assert_eq!(
                 project.file_groups,
-                FxHashMap::from_iter([
+                BTreeMap::from_iter([
                     (
                         "sources".try_into().unwrap(),
                         FileGroup::new_with_source(

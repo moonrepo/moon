@@ -7,6 +7,7 @@ use moon_project::{FileGroup, Project};
 use moon_project_expander::ExpanderContext;
 use moon_task::{Target, Task};
 use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::path::Path;
 
 pub fn create_context<'g, 'q>(
@@ -40,7 +41,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
     let mut project = Project {
         id: Id::raw("project"),
         root: workspace_root.join(source.as_str()),
-        file_groups: FxHashMap::from_iter([
+        file_groups: BTreeMap::from_iter([
             (
                 Id::raw("all"),
                 FileGroup::new_with_source(

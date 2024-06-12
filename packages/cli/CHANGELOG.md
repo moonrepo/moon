@@ -14,6 +14,8 @@
 
 #### 🚀 Updates
 
+- Added a global `--dump` flag, that will dump a trace profile that can be inspected in
+  `chrome://tracing`.
 - Updated `moon completions` command to support Nushell.
 - Updated task option `unixShell` with new options: ion, nu (nushell), pwsh (powershell), xonsh.
 - Updated task option `windowsShell` with new options: elvish, fish, nu (nushell), xonsh.

@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where multiple Bun tools would try to install and collide.
+- Fixed an issue where the `package.json` `packageManager` field would be set with an invalid
+  version specifier.
+
 ## 1.25.4
 
 #### 🚀 Updates

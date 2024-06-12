@@ -6,6 +6,7 @@ pub use async_trait::async_trait;
 pub use errors::*;
 pub use manager::*;
 use rustc_hash::FxHashMap;
+use tokio::sync::{Mutex, RwLock};
 pub use tool::*;
 
 use moon_common::consts::PROTO_CLI_VERSION;
@@ -14,6 +15,7 @@ use proto_core::{
 };
 use std::env;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 use warpgate::{inject_default_manifest_config, Wasm};
 
 pub fn use_global_tool_on_path() -> bool {
@@ -95,4 +97,21 @@ pub async fn load_tool_plugin(
     inject_proto_manifest_config(id, proto, &mut manifest)?;
 
     ProtoTool::load_from_manifest(id, proto, manifest)
+}
+
+static LOCKS: OnceLock<RwLock<FxHashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
+
+pub async fn get_shared_lock(id: &str) -> Arc<Mutex<()>> {
+    let locks = LOCKS.get_or_init(|| RwLock::new(FxHashMap::default()));
+    let mut map = locks.write().await;
+
+    if let Some(lock) = map.get(id) {
+        return lock.clone();
+    }
+
+    let lock = Arc::new(Mutex::new(()));
+
+    map.insert(id.to_owned(), Arc::clone(&lock));
+
+    lock
 }

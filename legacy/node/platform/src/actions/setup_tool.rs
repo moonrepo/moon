@@ -2,6 +2,7 @@ use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_logger::debug;
 use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
+use proto_core::UnresolvedVersionSpec;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::path::Path;
@@ -10,34 +11,49 @@ const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 
 /// Add `packageManager` to `package.json`.
 fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJsonCache) -> bool {
-    let manager_version = match node_config.package_manager {
-        // Not supported by corepack, so remove field
-        NodePackageManager::Bun => Some(String::new()),
-        NodePackageManager::Npm => node_config.npm.version.as_ref().map(|v| format!("npm@{v}")),
-        NodePackageManager::Pnpm => node_config.pnpm.as_ref().map(|cfg| {
-            cfg.version
-                .as_ref()
-                .map(|v| format!("pnpm@{v}"))
-                .unwrap_or_default()
-        }),
-        NodePackageManager::Yarn => node_config.yarn.as_ref().map(|cfg| {
-            cfg.version
-                .as_ref()
-                .map(|v| format!("yarn@{v}"))
-                .unwrap_or_default()
-        }),
+    let format_version_value = |key: &str, config: Option<&UnresolvedVersionSpec>| -> String {
+        if let Some(spec) = config {
+            // Only full versions are allowed
+            if let UnresolvedVersionSpec::Version(version) = spec {
+                return format!("{key}@{version}");
+            }
+        }
+
+        String::new()
     };
 
-    if let Some(version) = manager_version {
-        if !version.is_empty() && package_json.set_package_manager(&version) {
+    let version = match node_config.package_manager {
+        // Not supported by corepack, so remove field
+        NodePackageManager::Bun => String::new(),
+        NodePackageManager::Npm => format_version_value("npm", node_config.npm.version.as_ref()),
+        NodePackageManager::Pnpm => node_config
+            .pnpm
+            .as_ref()
+            .map(|cfg| format_version_value("pnpm", cfg.version.as_ref()))
+            .unwrap_or_default(),
+        NodePackageManager::Yarn => node_config
+            .yarn
+            .as_ref()
+            .map(|cfg| format_version_value("yarn", cfg.version.as_ref()))
+            .unwrap_or_default(),
+    };
+
+    if package_json.set_package_manager(&version) {
+        if version.is_empty() {
+            debug!(
+                target: LOG_TARGET,
+                "Removing package manager version from {}",
+                color::file("package.json")
+            );
+        } else {
             debug!(
                 target: LOG_TARGET,
                 "Adding package manager version to {}",
                 color::file("package.json")
             );
-
-            return true;
         }
+
+        return true;
     }
 
     false

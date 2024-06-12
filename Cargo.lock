@@ -4252,6 +4252,7 @@ dependencies = [
  "rustc-hash",
  "starbase_styles 0.4.0",
  "thiserror",
+ "tokio",
  "warpgate",
 ]
 

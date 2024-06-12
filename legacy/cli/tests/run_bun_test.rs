@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use moon_config::PartialBunConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_bun_fixture_configs, predicates::prelude::*,
-    Sandbox,
+    assert_snapshot, create_sandbox, create_sandbox_with_config, get_bun_fixture_configs,
+    predicates::prelude::*, Sandbox,
 };
 use std::fs;
 
@@ -462,6 +462,21 @@ mod bun {
             });
 
             assert_snapshot!(assert.output());
+        }
+    }
+
+    mod interop {
+        use super::*;
+
+        #[test]
+        fn doesnt_collide_with_node_bun_pm() {
+            let sandbox = create_sandbox("bun-node-pm");
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg(":help");
+            });
+
+            assert.success();
         }
     }
 }

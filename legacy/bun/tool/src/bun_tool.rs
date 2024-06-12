@@ -5,8 +5,8 @@ use moon_logger::debug;
 use moon_platform_runtime::RuntimeReq;
 use moon_process::{output_to_string, Command};
 use moon_tool::{
-    async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
-    prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
+    async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, get_shared_lock,
+    load_tool_plugin, prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
 };
 use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
@@ -84,6 +84,10 @@ impl Tool for BunTool {
 
             return Ok(count);
         }
+
+        // Don't collide with the node bun package manager!
+        let mutex = get_shared_lock("bun_tool").await;
+        let _lock = mutex.lock();
 
         if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;

@@ -146,6 +146,12 @@ derive_enum!(
         Bash,
         Elvish,
         Fish,
+        Ion,
+        #[serde(alias = "nushell")]
+        Nu,
+        #[serde(alias = "powershell")]
+        Pwsh,
+        Xonsh,
         Zsh,
     }
 );
@@ -155,8 +161,13 @@ derive_enum!(
     #[derive(ConfigEnum, Copy)]
     pub enum TaskWindowsShell {
         Bash,
+        Elvish,
+        Fish,
+        #[serde(alias = "nushell")]
+        Nu,
         #[serde(alias = "powershell")]
         Pwsh,
+        Xonsh,
     }
 );
 

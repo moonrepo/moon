@@ -10,7 +10,7 @@ use regex::Regex;
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::env;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct ExpandedResult {
@@ -78,6 +78,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         value.contains('$') && patterns::TOKEN_VAR.is_match(value)
     }
 
+    #[instrument(skip_all)]
     pub fn expand_command(&mut self, task: &Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;
 
@@ -89,6 +90,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         self.replace_variables(task, &task.command)
     }
 
+    #[instrument(skip_all)]
     pub fn expand_args(&mut self, task: &Task) -> miette::Result<Vec<String>> {
         self.expand_args_with_task(task, &task.args)
     }
@@ -151,6 +153,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(args)
     }
 
+    #[instrument(skip_all)]
     pub fn expand_env(&mut self, task: &Task) -> miette::Result<FxHashMap<String, String>> {
         self.expand_env_with_task(task, &task.env)
     }
@@ -189,6 +192,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(env)
     }
 
+    #[instrument(skip_all)]
     pub fn expand_inputs(&mut self, task: &Task) -> miette::Result<ExpandedResult> {
         self.scope = TokenScope::Inputs;
 
@@ -260,6 +264,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(result)
     }
 
+    #[instrument(skip_all)]
     pub fn expand_outputs(&mut self, task: &Task) -> miette::Result<ExpandedResult> {
         self.scope = TokenScope::Outputs;
 
@@ -296,6 +301,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(result)
     }
 
+    #[instrument(skip(self, task))]
     pub fn replace_function(&self, task: &Task, value: &str) -> miette::Result<ExpandedResult> {
         let matches = patterns::TOKEN_FUNC.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
@@ -448,6 +454,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(value.to_string())
     }
 
+    #[instrument(skip(self, task))]
     pub fn replace_variable<'l>(
         &self,
         task: &Task,

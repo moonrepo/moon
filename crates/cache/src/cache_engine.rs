@@ -11,7 +11,7 @@ use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
@@ -76,6 +76,7 @@ impl CacheEngine {
         CacheItem::<T>::load(self.resolve_path(path))
     }
 
+    #[instrument(skip(self))]
     pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
         let duration = parse_duration(lifetime)
             .map_err(|error| miette::miette!("Invalid lifetime: {error}"))?;

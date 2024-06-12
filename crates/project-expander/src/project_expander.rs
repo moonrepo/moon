@@ -6,7 +6,7 @@ use moon_project::Project;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::mem;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub struct ProjectExpander<'graph, 'query> {
     context: ExpanderContext<'graph, 'query>,
@@ -17,6 +17,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
         Self { context }
     }
 
+    #[instrument(name = "expand_project", skip_all)]
     pub fn expand(&mut self) -> miette::Result<Project> {
         // Clone before expanding!
         let mut project = self.context.project.to_owned();
@@ -33,6 +34,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
         Ok(project)
     }
 
+    #[instrument(skip_all)]
     pub fn expand_deps(&mut self, project: &mut Project) -> miette::Result<()> {
         let mut depends_on = FxHashMap::default();
 
@@ -59,6 +61,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn expand_tasks(&mut self, project: &mut Project) -> miette::Result<()> {
         let mut tasks = BTreeMap::new();
         let mut expander = TasksExpander::new(&self.context);

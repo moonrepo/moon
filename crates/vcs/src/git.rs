@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::{cmp, env};
 use thiserror::Error;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub static STATUS_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^(M|T|A|D|R|C|U|\?|!| )(M|T|A|D|R|C|U|\?|!| ) ").unwrap());
@@ -324,6 +324,7 @@ impl Vcs for Git {
             .await
     }
 
+    #[instrument(skip_all)]
     async fn get_file_hashes(
         &self,
         files: &[String], // Workspace relative
@@ -392,6 +393,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
+    #[instrument(skip(self))]
     async fn get_file_tree(&self, dir: &str) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
@@ -474,6 +476,7 @@ impl Vcs for Git {
     }
 
     // https://git-scm.com/docs/git-status#_short_format
+    #[instrument(skip(self))]
     async fn get_touched_files(&self) -> miette::Result<TouchedFiles> {
         let output = self
             .process

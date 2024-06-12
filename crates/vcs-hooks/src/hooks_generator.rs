@@ -4,7 +4,7 @@ use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub enum ShellType {
     Bash,
@@ -45,6 +45,7 @@ impl<'app> HooksGenerator<'app> {
         }
     }
 
+    #[instrument(skip_all)]
     pub async fn cleanup(&self) -> miette::Result<()> {
         debug!("Cleaning up {} hooks", self.config.manager);
 
@@ -67,6 +68,7 @@ impl<'app> HooksGenerator<'app> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub async fn generate(&self) -> miette::Result<()> {
         // When in Docker, we should avoid creating the hooks as they are:
         // - Not particularly useful in this context.

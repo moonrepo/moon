@@ -13,7 +13,7 @@ use moon_query::{build_query, Criteria};
 use moon_task::{parse_task_args, Target, TargetError, TargetLocator, TargetScope, Task};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
@@ -99,6 +99,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
     // ACTIONS
 
+    #[instrument(skip_all)]
     pub fn install_deps(
         &mut self,
         project: &Project,
@@ -175,6 +176,7 @@ impl<'app> ActionGraphBuilder<'app> {
         self.run_task_with_config(project, task, reqs, None)
     }
 
+    #[instrument(skip_all)]
     pub fn run_task_with_config(
         &mut self,
         project: &Project,
@@ -258,6 +260,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
     // We don't pass touched files to dependencies, because if the parent
     // task is affected/going to run, then so should all of these!
+    #[instrument(skip_all)]
     pub fn run_task_dependencies(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
         let reqs = RunRequirements::default();
@@ -290,6 +293,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     // This is costly, is there a better way to do this?
+    #[instrument(skip_all)]
     pub fn run_task_dependents(
         &mut self,
         task: &Task,
@@ -459,6 +463,7 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok((inserted_targets, inserted_indices))
     }
 
+    #[instrument(skip_all)]
     pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
         let node = ActionNode::setup_tool(SetupToolNode {
             runtime: runtime.to_owned(),
@@ -476,6 +481,7 @@ impl<'app> ActionGraphBuilder<'app> {
         index
     }
 
+    #[instrument(skip_all)]
     pub fn sync_project(&mut self, project: &Project) -> miette::Result<NodeIndex> {
         self.internal_sync_project(project, &mut FxHashSet::default())
     }

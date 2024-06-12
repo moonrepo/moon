@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::sleep;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 fn is_ci_env() -> bool {
     is_ci() && !is_test_env()
@@ -74,6 +74,7 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
+    #[instrument(skip(self, context))]
     pub async fn execute(
         mut self,
         context: &ActionContext,

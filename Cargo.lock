@@ -3688,6 +3688,7 @@ dependencies = [
  "miette",
  "moon_pdk_api",
  "moon_plugin",
+ "tracing",
 ]
 
 [[package]]
@@ -4111,6 +4112,7 @@ dependencies = [
  "pest_derive",
  "starbase_utils",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -4210,6 +4212,7 @@ dependencies = [
  "schematic",
  "serde",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

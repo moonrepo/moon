@@ -7,7 +7,7 @@ use scc::HashMap;
 use starbase_utils::fs;
 use std::fmt::Debug;
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
-use tracing::debug;
+use tracing::{debug, instrument};
 use warpgate::{
     host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
     PluginLoader, PluginLocator, PluginManifest, Wasm,
@@ -202,12 +202,13 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn load<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
-        I: AsRef<Id>,
+        I: AsRef<Id> + Debug,
         L: AsRef<PluginLocator> + Debug,
     {
         self.load_with_config(id, locator, |_| Ok(())).await
     }
 
+    #[instrument(skip(self, op))]
     pub async fn load_with_config<I, L, F>(
         &self,
         id: I,
@@ -215,7 +216,7 @@ impl<T: Plugin> PluginRegistry<T> {
         mut op: F,
     ) -> miette::Result<()>
     where
-        I: AsRef<Id>,
+        I: AsRef<Id> + Debug,
         L: AsRef<PluginLocator> + Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {

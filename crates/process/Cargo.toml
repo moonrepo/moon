@@ -16,6 +16,7 @@ cached = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_shell = { workspace = true }
 system_env = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

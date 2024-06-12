@@ -1,7 +1,9 @@
 use cached::proc_macro::cached;
-use std::env::{self, consts};
+use std::env::consts;
 use std::ffi::OsStr;
 use std::path::PathBuf;
+
+pub use starbase_shell::{ShellCommand, ShellType};
 
 #[cached]
 #[inline]
@@ -21,54 +23,31 @@ pub fn is_windows_script<T: AsRef<OsStr>>(bin: T) -> bool {
         || bin.ends_with(".PS1")
 }
 
-#[derive(Debug)]
 pub struct Shell {
     pub bin: PathBuf,
-    pub args: Vec<String>,
-    pub pass_args_stdin: bool,
+    pub command: ShellCommand,
 }
 
 impl Shell {
-    pub fn new(shell: &str) -> Self {
-        match shell {
-            "pwsh" | "powershell" => {
-                Self {
-                    bin: find_command_on_path("pwsh".into())
-                        .or_else(|| find_command_on_path("powershell".into()))
-                        .unwrap_or_else(|| "powershell.exe".into()),
-                    args: vec![
-                        "-NoLogo".into(),
-                        "-Command".into(),
-                        // We'll pass the command args via stdin, so that paths with special
-                        // characters and spaces resolve correctly.
-                        // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
-                        "-".into(),
-                    ],
-                    pass_args_stdin: true,
-                }
-            }
-            "bash" | "elvish" | "fish" | "sh" | "zsh" => Self {
-                bin: find_command_on_path(shell.into()).unwrap_or_else(|| shell.into()),
-                args: vec!["-c".into()],
-                pass_args_stdin: false,
-            },
-            _ => unimplemented!(),
+    pub fn new(type_of: ShellType) -> Self {
+        let bin_name = type_of.to_string();
+        let command = type_of.build().get_exec_command();
+
+        Self {
+            bin: find_command_on_path(bin_name.clone()).unwrap_or_else(|| bin_name.into()),
+            command,
         }
     }
 }
 
 impl Default for Shell {
     fn default() -> Self {
-        if consts::OS == "windows" {
-            Self::new("pwsh")
-        } else if let Ok(shell_bin) = env::var("SHELL") {
-            Self {
-                bin: shell_bin.into(),
-                args: vec!["-c".into()],
-                pass_args_stdin: false,
+        Self::new(ShellType::detect().unwrap_or_else(|| {
+            if consts::OS == "windows" {
+                ShellType::Pwsh
+            } else {
+                ShellType::Bash
             }
-        } else {
-            Self::new("sh")
-        }
+        }))
     }
 }

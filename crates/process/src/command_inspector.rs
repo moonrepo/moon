@@ -41,11 +41,17 @@ impl<'l> CommandLine<'l> {
         // must be placed at the start of the line.
         if let Some(shell) = &command.shell {
             command_line.push(Cow::Borrowed(shell.bin.as_os_str()));
-            command_line.extend(shell.args.iter().map(|arg| Cow::Borrowed(OsStr::new(arg))));
+            command_line.extend(
+                shell
+                    .command
+                    .shell_args
+                    .iter()
+                    .map(|arg| Cow::Borrowed(arg.as_os_str())),
+            );
 
             // If the main command should be passed via stdin,
             // then append the input line instead of the command line.
-            if shell.pass_args_stdin {
+            if shell.command.pass_args_stdin {
                 // join_input = true;
                 push_to_line(&mut input_line);
 
@@ -166,7 +172,7 @@ impl<'cmd> CommandInspector<'cmd> {
         self.command
             .shell
             .as_ref()
-            .map(|s| s.pass_args_stdin)
+            .map(|s| s.command.pass_args_stdin)
             .unwrap_or(false)
     }
 

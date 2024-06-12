@@ -3,7 +3,7 @@ use moon_action_context::ActionContext;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_config::TaskOptionAffectedFiles;
 use moon_platform::PlatformManager;
-use moon_process::{Command, Shell};
+use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
 use moon_workspace::Workspace;
@@ -167,10 +167,10 @@ impl<'task> CommandBuilder<'task> {
                 use moon_config::TaskUnixShell;
 
                 self.command.with_shell(match shell {
-                    TaskUnixShell::Bash => Shell::new("bash"),
-                    TaskUnixShell::Elvish => Shell::new("elvish"),
-                    TaskUnixShell::Fish => Shell::new("fish"),
-                    TaskUnixShell::Zsh => Shell::new("zsh"),
+                    TaskUnixShell::Bash => Shell::new(ShellType::Bash),
+                    TaskUnixShell::Elvish => Shell::new(ShellType::Elvish),
+                    TaskUnixShell::Fish => Shell::new(ShellType::Fish),
+                    TaskUnixShell::Zsh => Shell::new(ShellType::Zsh),
                 });
             }
 
@@ -179,8 +179,8 @@ impl<'task> CommandBuilder<'task> {
                 use moon_config::TaskWindowsShell;
 
                 self.command.with_shell(match shell {
-                    TaskWindowsShell::Bash => Shell::new("bash"),
-                    TaskWindowsShell::Pwsh => Shell::new("pwsh"),
+                    TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
+                    TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
                 });
             }
         } else {

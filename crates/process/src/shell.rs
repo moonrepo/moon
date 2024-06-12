@@ -6,9 +6,19 @@ use std::path::PathBuf;
 pub use starbase_shell::{ShellCommand, ShellType};
 
 #[cached]
-#[inline]
 fn find_command_on_path(name: String) -> Option<PathBuf> {
     system_env::find_command_on_path(name)
+}
+
+#[cached]
+fn get_default_shell() -> ShellType {
+    ShellType::detect().unwrap_or_else(|| {
+        if consts::OS == "windows" {
+            ShellType::Pwsh
+        } else {
+            ShellType::Bash
+        }
+    })
 }
 
 #[inline]
@@ -42,12 +52,6 @@ impl Shell {
 
 impl Default for Shell {
     fn default() -> Self {
-        Self::new(ShellType::detect().unwrap_or_else(|| {
-            if consts::OS == "windows" {
-                ShellType::Pwsh
-            } else {
-                ShellType::Bash
-            }
-        }))
+        Self::new(get_default_shell())
     }
 }

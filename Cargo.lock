@@ -848,6 +848,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete_nushell"
+version = "4.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1accf1b463dee0d3ab2be72591dccdab8bef314958340447c882c4c72acfe2a3"
+dependencies = [
+ "clap",
+ "clap_complete",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3274,6 +3284,7 @@ dependencies = [
  "ci_env",
  "clap",
  "clap_complete",
+ "clap_complete_nushell",
  "console",
  "dialoguer",
  "diff",
@@ -3330,6 +3341,7 @@ dependencies = [
  "starbase",
  "starbase_events",
  "starbase_sandbox",
+ "starbase_shell",
  "starbase_styles",
  "starbase_utils",
  "tera",

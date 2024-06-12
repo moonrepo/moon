@@ -3,6 +3,7 @@ use crate::infer_tasks_from_scripts;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::Id;
+use moon_config::BunConfig;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig, PlatformType,
     ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig, TasksConfigsMap,
@@ -40,6 +41,8 @@ pub struct NodePlatform {
 
     console: Arc<Console>,
 
+    has_matching_bun_platform: bool,
+
     package_names: FxHashMap<String, Id>,
 
     packages_root: PathBuf,
@@ -56,18 +59,26 @@ pub struct NodePlatform {
 impl NodePlatform {
     pub fn new(
         config: &NodeConfig,
-        typescript_config: &Option<TypeScriptConfig>,
+        typescript_config: Option<&TypeScriptConfig>,
+        bun_config: Option<&BunConfig>,
         workspace_root: &Path,
         proto_env: Arc<ProtoEnvironment>,
         console: Arc<Console>,
     ) -> Self {
+        let mut has_matching_bun_platform = false;
+
+        if let (Some(bun_config), Some(bunpm_config)) = (bun_config, &config.bun) {
+            has_matching_bun_platform = bun_config.version == bunpm_config.version;
+        }
+
         NodePlatform {
             packages_root: path::normalize(workspace_root.join(&config.packages_root)),
             config: config.to_owned(),
+            has_matching_bun_platform,
             package_names: FxHashMap::default(),
             proto_env,
             toolchain: ToolManager::new(Runtime::new(PlatformType::Node, RuntimeReq::Global)),
-            typescript_config: typescript_config.to_owned(),
+            typescript_config: typescript_config.map(|cfg| cfg.to_owned()),
             workspace_root: workspace_root.to_path_buf(),
             console,
         }
@@ -280,16 +291,17 @@ impl Platform for NodePlatform {
         let mut last_versions = FxHashMap::default();
 
         if !self.toolchain.has(&req) {
-            self.toolchain.register(
+            let mut tool = NodeTool::new(
+                Arc::clone(&self.proto_env),
+                Arc::clone(&self.console),
+                &self.config,
                 &req,
-                NodeTool::new(
-                    Arc::clone(&self.proto_env),
-                    Arc::clone(&self.console),
-                    &self.config,
-                    &req,
-                )
-                .await?,
-            );
+            )
+            .await?;
+
+            tool.has_bun_platform = self.has_matching_bun_platform;
+
+            self.toolchain.register(&req, tool);
         }
 
         self.toolchain.setup(&req, &mut last_versions).await?;
@@ -314,16 +326,17 @@ impl Platform for NodePlatform {
         let req = &runtime.requirement;
 
         if !self.toolchain.has(req) {
-            self.toolchain.register(
+            let mut tool = NodeTool::new(
+                Arc::clone(&self.proto_env),
+                Arc::clone(&self.console),
+                &self.config,
                 req,
-                NodeTool::new(
-                    Arc::clone(&self.proto_env),
-                    Arc::clone(&self.console),
-                    &self.config,
-                    req,
-                )
-                .await?,
-            );
+            )
+            .await?;
+
+            tool.has_bun_platform = self.has_matching_bun_platform;
+
+            self.toolchain.register(req, tool);
         }
 
         let installed = self.toolchain.setup(req, last_versions).await?;

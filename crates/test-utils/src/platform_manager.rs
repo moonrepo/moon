@@ -47,7 +47,8 @@ pub async fn generate_platform_manager_from_sandbox(root: &Path) -> PlatformMana
             PlatformType::Node,
             Box::new(NodePlatform::new(
                 node_config,
-                &None,
+                None,
+                config.bun.as_ref(),
                 root,
                 proto.clone(),
                 console.clone(),

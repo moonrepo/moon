@@ -97,8 +97,7 @@ pub async fn load_workspace_from(
             PlatformType::Node,
             Box::new(NodePlatform::new(
                 node_config,
-                workspace.toolchain_config.typescript.as_ref(),
-                workspace.toolchain_config.bun.as_ref(),
+                &workspace.toolchain_config.typescript,
                 &workspace.root,
                 Arc::clone(&proto_env),
                 Arc::clone(&console),

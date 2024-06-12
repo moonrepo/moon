@@ -34,8 +34,6 @@ pub struct NodeTool {
 
     pub global: bool,
 
-    pub has_bun_platform: bool,
-
     pub tool: ProtoTool,
 
     console: Arc<Console>,
@@ -60,7 +58,6 @@ impl NodeTool {
     ) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
-            has_bun_platform: false,
             config: config.to_owned(),
             tool: load_tool_plugin(
                 &Id::raw("node"),
@@ -274,12 +271,8 @@ impl Tool for NodeTool {
             installed += npm.setup(last_versions).await?;
         }
 
-        // If the bun platform is enabled with a matching version,
-        // rely on that to install the tool instead of here
-        if !self.has_bun_platform {
-            if let Some(bun) = &mut self.bun {
-                installed += bun.setup(last_versions).await?;
-            }
+        if let Some(bun) = &mut self.bun {
+            installed += bun.setup(last_versions).await?;
         }
 
         if let Some(pnpm) = &mut self.pnpm {

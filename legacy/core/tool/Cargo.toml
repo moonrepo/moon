@@ -15,6 +15,7 @@ proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 warpgate = { workspace = true }
 
 [lints]

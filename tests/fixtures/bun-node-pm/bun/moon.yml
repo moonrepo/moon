@@ -1,0 +1,5 @@
+platform: bun
+
+tasks:
+  help:
+    command: bun --help

@@ -14,6 +14,7 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where multiple Bun tools would try to install and collide.
 - Fixed an issue where the `package.json` `packageManager` field would be set with an invalid
   version specifier.
 

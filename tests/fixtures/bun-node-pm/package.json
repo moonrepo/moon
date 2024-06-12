@@ -1,0 +1,8 @@
+{
+  "name": "test-bun-node-pm",
+  "private": true,
+  "workspaces": [
+    "bun",
+    "node"
+  ]
+}

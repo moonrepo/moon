@@ -1,0 +1,8 @@
+bun:
+  version: latest
+
+node:
+  packageManager: bun
+  version: '20.0.0'
+  bun:
+    version: latest

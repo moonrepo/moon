@@ -14,6 +14,8 @@
 
 #### 🚀 Updates
 
+- Updated task option `unixShell` with new options: ion, nu (nushell), pwsh (powershell), xonsh.
+- Updated task option `windowsShell` with new options: elvish, fish, nu (nushell), xonsh.
 - Updated CLI command execution to be far more performant, and to reduce our usage of concurrent
   locks.
   - Internal components are now lazy-loaded when required, instead of created upfront.

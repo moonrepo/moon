@@ -170,6 +170,10 @@ impl<'task> CommandBuilder<'task> {
                     TaskUnixShell::Bash => Shell::new(ShellType::Bash),
                     TaskUnixShell::Elvish => Shell::new(ShellType::Elvish),
                     TaskUnixShell::Fish => Shell::new(ShellType::Fish),
+                    TaskUnixShell::Ion => Shell::new(ShellType::Ion),
+                    TaskUnixShell::Nu => Shell::new(ShellType::Nu),
+                    TaskUnixShell::Pwsh => Shell::new(ShellType::Pwsh),
+                    TaskUnixShell::Xonsh => Shell::new(ShellType::Xonsh),
                     TaskUnixShell::Zsh => Shell::new(ShellType::Zsh),
                 });
             }
@@ -180,7 +184,11 @@ impl<'task> CommandBuilder<'task> {
 
                 self.command.with_shell(match shell {
                     TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
+                    TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
+                    TaskWindowsShell::Fish => Shell::new(ShellType::Fish),
+                    TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
                     TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
+                    TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
                 });
             }
         } else {

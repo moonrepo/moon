@@ -1,0 +1,6 @@
+---
+source: crates/app/src/commands/init/typescript.rs
+expression: render_template(context).unwrap()
+---
+typescript:
+  syncProjectReferences: false

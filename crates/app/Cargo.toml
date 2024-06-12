@@ -4,29 +4,90 @@ version = "0.0.1"
 edition = "2021"
 publish = false
 
-[[bin]]
-name = "moon_app"
-path = "src/main.rs"
-
-[lib]
-name = "moon_app"
-path = "src/lib.rs"
-crate-type = ["rlib"]
-
 [dependencies]
-moon_app_components = { path = "../app-components" }
+moon_action_context = { path = "../action-context" }
+moon_action_graph = { path = "../action-graph" }
+moon_api = { path = "../api" }
+moon_cache = { path = "../cache" }
+moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_console = { path = "../console" }
+moon_console_reporter = { path = "../console-reporter" }
+moon_env = { path = "../env" }
+moon_extension_plugin = { path = "../extension-plugin" }
+moon_platform_detector = { path = "../platform-detector" }
+moon_plugin = { path = "../plugin" }
+moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
+moon_query = { path = "../query" }
+moon_task = { path = "../task" }
+moon_vcs = { path = "../vcs" }
+moon_workspace = { path = "../workspace" }
+async-recursion = { workspace = true }
+async-trait = { workspace = true }
+bytes = "1.6.0"
+ci_env = { workspace = true }
+clap = { workspace = true, features = [
+	"color",
+	"derive",
+	"env",
+	"help",
+	"suggestions",
+	"usage",
+	"wrap_help",
+] }
+clap_complete = { workspace = true }
+diff = "0.1.13"
 miette = { workspace = true }
-mimalloc = { version = "0.1.42", default-features = false }
+once_cell = { workspace = true }
 proto_core = { workspace = true }
+proto_installer = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true }
+rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["config"] }
 semver = { workspace = true }
+serde = { workspace = true }
 starbase = { workspace = true }
+starbase_events = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+# Visualizer
+open = "5.1.4"
+petgraph = { workspace = true }
+tera = { workspace = true }
+tiny_http = "0.12.0"
+
+# TODO remove
+console = { workspace = true }
+dialoguer = { version = "0.11.0", default-features = false }
+indicatif = "0.17.8"
+moon_actions = { path = "../../legacy/core/actions" }
+moon_action_pipeline = { path = "../../legacy/core/action-pipeline" }
+moon_lang = { path = "../../legacy/core/lang" }
+moon_tool = { path = "../../legacy/core/tool" }
+moon_platform = { path = "../../legacy/core/platform" }
+moon_bun_tool = { path = "../../legacy/bun/tool" }
+moon_bun_platform = { path = "../../legacy/bun/platform" }
+moon_deno_tool = { path = "../../legacy/deno/tool" }
+moon_deno_platform = { path = "../../legacy/deno/platform" }
+moon_node_lang = { path = "../../legacy/node/lang" }
+moon_node_tool = { path = "../../legacy/node/tool" }
+moon_node_platform = { path = "../../legacy/node/platform" }
+moon_rust_lang = { path = "../../legacy/rust/lang" }
+moon_rust_tool = { path = "../../legacy/rust/tool" }
+moon_rust_platform = { path = "../../legacy/rust/platform" }
+moon_system_platform = { path = "../../legacy/system/platform" }
+moon_typescript_lang = { path = "../../legacy/typescript/lang" }
+
+[dev-dependencies]
+serial_test = { workspace = true }
+starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

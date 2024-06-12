@@ -95,8 +95,10 @@ impl Launchpad {
             return Ok(None);
         }
 
+        let version = env::var("MOON_VERSION").unwrap_or_default();
+
         debug!(
-            current_version = &moon_env.version,
+            current_version = &version,
             "Checking for a new version of moon"
         );
 
@@ -104,7 +106,7 @@ impl Launchpad {
             .get(CURRENT_VERSION_URL)
             .header("X-Moon-OS", consts::OS.to_owned())
             .header("X-Moon-Arch", consts::ARCH.to_owned())
-            .header("X-Moon-Version", &moon_env.version)
+            .header("X-Moon-Version", &version)
             .header("X-Moon-CI", ci_env::is_ci().to_string())
             .header(
                 "X-Moon-CI-Provider",
@@ -139,7 +141,7 @@ impl Launchpad {
         };
 
         let data: CurrentVersion = json::parse(text)?;
-        let local_version = Version::parse(&moon_env.version).into_diagnostic()?;
+        let local_version = Version::parse(&version).into_diagnostic()?;
         let remote_version = Version::parse(&data.current_version).into_diagnostic()?;
         let update_available = remote_version > local_version;
 

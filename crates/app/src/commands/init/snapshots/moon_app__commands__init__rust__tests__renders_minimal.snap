@@ -1,0 +1,6 @@
+---
+source: crates/app/src/commands/init/rust.rs
+expression: render_template(context).unwrap()
+---
+rust:
+  version: '1.70.0'

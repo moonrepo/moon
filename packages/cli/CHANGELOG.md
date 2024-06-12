@@ -10,6 +10,14 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated CLI command execution to be far more performant, and to reduce our usage of concurrent
+  locks.
+  - Internal components are now lazy-loaded when required, instead of created upfront.
+
 ## 1.25.6
 
 #### 🐞 Fixes

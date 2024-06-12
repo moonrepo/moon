@@ -33,7 +33,7 @@ pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
-    pub vcs: Option<&'app BoxedVcs>,
+    pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
     pub workspace_config: &'app WorkspaceConfig,
     pub workspace_root: &'app Path,
@@ -483,7 +483,12 @@ impl<'app> ProjectGraphBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            locate_projects_with_globs(context.workspace_root, &globs, &mut sources, context.vcs)?;
+            locate_projects_with_globs(
+                context.workspace_root,
+                &globs,
+                &mut sources,
+                context.vcs.as_deref(),
+            )?;
         }
 
         // Extend graph from subscribers

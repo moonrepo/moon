@@ -12,6 +12,7 @@ use starbase_events::Emitter;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 pub use moon_project_graph::ProjectGraph;
 
@@ -21,7 +22,7 @@ pub struct ProjectGraphContainer {
     pub toolchain_config: ToolchainConfig,
     pub workspace_config: WorkspaceConfig,
     pub workspace_root: PathBuf,
-    pub vcs: Option<BoxedVcs>,
+    pub vcs: Option<Arc<BoxedVcs>>,
 }
 
 impl ProjectGraphContainer {
@@ -77,7 +78,7 @@ impl ProjectGraphContainer {
 
     pub fn with_vcs(root: &Path) -> Self {
         let mut container = Self::new(root);
-        container.vcs = Some(Box::new(Git::load(root, "master", &[]).unwrap()));
+        container.vcs = Some(Arc::new(Box::new(Git::load(root, "master", &[]).unwrap())));
         container
     }
 
@@ -87,7 +88,7 @@ impl ProjectGraphContainer {
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
-            vcs: self.vcs.as_ref(),
+            vcs: self.vcs.clone(),
             working_dir: &self.workspace_root,
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,

@@ -7,7 +7,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
 use moon_task::Task;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -25,7 +25,7 @@ cacheable!(
         pub dependencies: Vec<DependencyConfig>,
 
         /// File groups specific to the project. Inherits all file groups from the global config.
-        pub file_groups: FxHashMap<Id, FileGroup>,
+        pub file_groups: BTreeMap<Id, FileGroup>,
 
         /// Unique ID for the project. Is the LHS of the `projects` setting.
         pub id: Id,

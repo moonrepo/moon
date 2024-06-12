@@ -46,17 +46,17 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(workspace: Workspace, project_graph: ProjectGraph) -> Self {
+    pub fn new(workspace: Arc<Workspace>, project_graph: Arc<ProjectGraph>) -> Self {
         Pipeline {
             aborted: false,
             bail: false,
             concurrency: None,
             duration: None,
-            project_graph: Arc::new(project_graph),
+            project_graph,
             report_name: None,
             results: vec![],
             summarize: false,
-            workspace: Arc::new(workspace),
+            workspace,
         }
     }
 

@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use starbase_utils::json;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct ContentHasher {
     content_cache: Option<String>,
@@ -26,6 +26,7 @@ impl ContentHasher {
         }
     }
 
+    #[instrument(skip_all)]
     pub fn generate_hash(&mut self) -> miette::Result<String> {
         if let Some(hash) = &self.hash_cache {
             debug!(

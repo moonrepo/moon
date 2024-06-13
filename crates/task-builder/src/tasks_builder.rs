@@ -14,13 +14,14 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use tracing::trace;
+use tracing::{instrument, trace};
 
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
     inherited: bool,
 }
 
+#[instrument(skip(local_tasks, global_tasks))]
 fn extract_config<'builder, 'proj>(
     task_id: &'builder Id,
     local_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
@@ -106,6 +107,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
     }
 
+    #[instrument(skip_all)]
     pub fn inherit_global_tasks(
         &mut self,
         global_config: &'proj InheritedTasksConfig,
@@ -199,6 +201,7 @@ impl<'proj> TasksBuilder<'proj> {
         self
     }
 
+    #[instrument(skip_all)]
     pub fn load_local_tasks(&mut self, local_config: &'proj ProjectConfig) -> &mut Self {
         for (key, value) in &local_config.env {
             self.project_env.insert(key, value);
@@ -219,7 +222,7 @@ impl<'proj> TasksBuilder<'proj> {
         self
     }
 
-    #[tracing::instrument(name = "task", skip_all)]
+    #[instrument(name = "build_tasks", skip_all)]
     pub async fn build(self) -> miette::Result<BTreeMap<Id, Task>> {
         let mut tasks = BTreeMap::new();
 
@@ -230,6 +233,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(tasks)
     }
 
+    #[instrument(skip(self))]
     async fn build_task(&self, id: &Id) -> miette::Result<Task> {
         let target = Target::new(self.project_id, id)?;
 
@@ -444,6 +448,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(task)
     }
 
+    #[instrument(skip(self))]
     fn build_task_options(&self, id: &Id, is_local: bool) -> miette::Result<TaskOptions> {
         let mut options = TaskOptions {
             cache: !is_local,

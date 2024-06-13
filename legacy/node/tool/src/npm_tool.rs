@@ -16,6 +16,7 @@ use starbase_utils::fs;
 use std::env;
 use std::path::Path;
 use std::sync::Arc;
+use tracing::instrument;
 
 pub struct NpmTool {
     pub config: NpmConfig,
@@ -52,6 +53,7 @@ impl Tool for NpmTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
@@ -140,6 +142,7 @@ impl DependencyManager<NodeTool> for NpmTool {
         Ok(cmd)
     }
 
+    #[instrument(skip_all)]
     async fn dedupe_dependencies(
         &self,
         node: &NodeTool,
@@ -165,6 +168,7 @@ impl DependencyManager<NodeTool> for NpmTool {
         String::from("package.json")
     }
 
+    #[instrument(skip_all)]
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
@@ -178,6 +182,7 @@ impl DependencyManager<NodeTool> for NpmTool {
         Ok(npm::load_lockfile_dependencies(lockfile_path)?)
     }
 
+    #[instrument(skip_all)]
     async fn install_dependencies(
         &self,
         node: &NodeTool,
@@ -214,6 +219,7 @@ impl DependencyManager<NodeTool> for NpmTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn install_focused_dependencies(
         &self,
         node: &NodeTool,

@@ -4,7 +4,7 @@ use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use moon_vcs::BoxedVcs;
 use starbase_utils::{fs, glob};
 use std::path::Path;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
@@ -30,6 +30,7 @@ pub fn infer_project_id_and_source(
 
 /// For each pattern in the globs list, glob the file system
 /// for potential projects, and infer their name and source.
+#[instrument(skip_all)]
 pub fn locate_projects_with_globs<'glob, I, V>(
     workspace_root: &Path,
     globs: I,

@@ -10,6 +10,7 @@ use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::sync::Arc;
+use tracing::instrument;
 
 cache_item!(
     pub struct ToolState {
@@ -20,6 +21,7 @@ cache_item!(
 
 const LOG_TARGET: &str = "moon:action:setup-tool";
 
+#[instrument(skip_all)]
 pub async fn setup_tool(
     _action: &mut Action,
     context: Arc<ActionContext>,

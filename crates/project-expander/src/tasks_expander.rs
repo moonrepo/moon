@@ -6,7 +6,7 @@ use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{parse_task_args, Target, TargetScope, Task};
 use rustc_hash::FxHashMap;
-use tracing::{trace, warn};
+use tracing::{instrument, trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
     pub context: &'graph ExpanderContext<'graph, 'query>,
@@ -21,6 +21,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         }
     }
 
+    #[instrument(skip_all)]
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
             target = task.target.as_str(),
@@ -39,6 +40,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn expand_args(&mut self, task: &mut Task) -> miette::Result<()> {
         if task.args.is_empty() {
             return Ok(());
@@ -55,6 +57,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn expand_deps(&mut self, task: &mut Task) -> miette::Result<()> {
         if task.deps.is_empty() {
             return Ok(());
@@ -216,6 +219,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
             target = task.target.as_str(),
@@ -283,6 +287,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn expand_inputs(&mut self, task: &mut Task) -> miette::Result<()> {
         if task.inputs.is_empty() {
             return Ok(());
@@ -304,6 +309,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn expand_outputs(&mut self, task: &mut Task) -> miette::Result<()> {
         if task.outputs.is_empty() {
             return Ok(());

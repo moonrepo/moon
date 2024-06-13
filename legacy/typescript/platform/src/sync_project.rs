@@ -17,7 +17,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub struct TypeScriptSyncer<'app> {
     project: &'app Project,
@@ -89,6 +89,7 @@ impl<'app> TypeScriptSyncer<'app> {
     }
 
     // Automatically create a missing `tsconfig.json` when we are syncing project references.
+    #[instrument(skip_all)]
     pub fn create_missing_tsconfig(&self) -> miette::Result<bool> {
         let tsconfig_path = self
             .project
@@ -116,6 +117,7 @@ impl<'app> TypeScriptSyncer<'app> {
     }
 
     // Sync project as a reference to the root `tsconfig.json`.
+    #[instrument(skip_all)]
     pub fn sync_as_root_project_reference(&self) -> miette::Result<bool> {
         let tsconfig_root_name = &self.typescript_config.root_config_file_name;
         let tsconfig_project_name = &self.typescript_config.project_config_file_name;
@@ -143,6 +145,7 @@ impl<'app> TypeScriptSyncer<'app> {
     }
 
     // Sync a project's `tsconfig.json`.
+    #[instrument(skip_all)]
     pub fn sync_project_tsconfig(
         &self,
         tsconfig_project_refs: FxHashSet<PathBuf>,
@@ -278,6 +281,7 @@ impl<'app> TypeScriptSyncer<'app> {
         )
     }
 
+    #[instrument(skip_all)]
     pub fn sync(&self, dependencies: &FxHashMap<Id, Arc<Project>>) -> miette::Result<bool> {
         let mut mutated = false;
 

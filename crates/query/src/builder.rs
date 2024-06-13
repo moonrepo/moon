@@ -5,6 +5,7 @@ use starbase_utils::glob::GlobSet;
 use std::borrow::Cow;
 use std::cmp::PartialEq;
 use std::str::FromStr;
+use tracing::instrument;
 
 pub type FieldValue<'l> = Cow<'l, str>;
 pub type FieldValues<'l> = Vec<FieldValue<'l>>;
@@ -166,6 +167,7 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
     })
 }
 
+#[instrument]
 pub fn build_query(input: &str) -> miette::Result<Criteria<'_>> {
     if input.is_empty() {
         return Err(QueryError::EmptyInput.into());

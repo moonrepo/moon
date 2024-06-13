@@ -26,7 +26,7 @@ use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
@@ -95,6 +95,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
     /// Create a project graph with all projects inserted as nodes,
     /// and read from the file system cache when applicable.
+    #[instrument(name = "generate_project_graph", skip_all)]
     pub async fn generate(
         context: ProjectGraphBuilderContext<'app>,
         cache_engine: &CacheEngine,
@@ -163,6 +164,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     /// Build the project graph and return a new structure.
+    #[instrument(name = "build_project_graph", skip_all)]
     pub async fn build(mut self) -> miette::Result<ProjectGraph> {
         self.enforce_constraints()?;
 
@@ -219,6 +221,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(())
     }
 
+    #[instrument(name = "load", skip(self, cycle))]
     async fn internal_load(
         &mut self,
         project_locator: &str,
@@ -296,6 +299,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     /// Create and build the project with the provided ID and source.
+    #[instrument(skip(self))]
     async fn build_project(
         &mut self,
         id: Id,
@@ -358,6 +362,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.
+    #[instrument(skip_all)]
     fn enforce_constraints(&self) -> miette::Result<()> {
         debug!("Enforcing project constraints");
 

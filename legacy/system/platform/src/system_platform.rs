@@ -13,6 +13,7 @@ use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tracing::instrument;
 
 pub struct SystemPlatform {
     console: Arc<Console>,
@@ -77,6 +78,7 @@ impl Platform for SystemPlatform {
 
     // ACTIONS
 
+    #[instrument(skip_all)]
     async fn hash_run_target(
         &self,
         _project: &Project,
@@ -89,6 +91,7 @@ impl Platform for SystemPlatform {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn create_run_target_command(
         &self,
         _context: &ActionContext,

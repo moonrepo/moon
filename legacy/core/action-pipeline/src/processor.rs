@@ -12,6 +12,7 @@ use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::sync::Arc;
+use tracing::instrument;
 
 fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
     match result {
@@ -20,6 +21,7 @@ fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
     }
 }
 
+#[instrument(skip_all)]
 pub async fn process_action(
     mut action: Action,
     context: Arc<ActionContext>,

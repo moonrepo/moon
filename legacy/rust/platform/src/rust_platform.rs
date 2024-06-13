@@ -32,6 +32,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:rust-platform";
 
@@ -140,6 +141,7 @@ impl Platform for RustPlatform {
         Ok(false)
     }
 
+    #[instrument(skip_all)]
     fn load_project_graph_aliases(
         &mut self,
         projects_list: &ProjectsSourcesList,
@@ -224,6 +226,7 @@ impl Platform for RustPlatform {
 
     // ACTIONS
 
+    #[instrument(skip_all)]
     async fn setup_tool(
         &mut self,
         _context: &ActionContext,
@@ -248,6 +251,7 @@ impl Platform for RustPlatform {
         Ok(self.toolchain.setup(req, last_versions).await?)
     }
 
+    #[instrument(skip_all)]
     async fn install_deps(
         &self,
         _context: &ActionContext,
@@ -371,6 +375,7 @@ impl Platform for RustPlatform {
         Ok(operations)
     }
 
+    #[instrument(skip_all)]
     async fn sync_project(
         &self,
         _context: &ActionContext,
@@ -454,6 +459,7 @@ impl Platform for RustPlatform {
         Ok(mutated_files)
     }
 
+    #[instrument(skip_all)]
     async fn hash_manifest_deps(
         &self,
         _manifest_path: &Path,
@@ -520,6 +526,7 @@ impl Platform for RustPlatform {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn hash_run_target(
         &self,
         project: &Project,
@@ -545,6 +552,7 @@ impl Platform for RustPlatform {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn create_run_target_command(
         &self,
         _context: &ActionContext,

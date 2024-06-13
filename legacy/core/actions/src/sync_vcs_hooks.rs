@@ -1,6 +1,8 @@
 use moon_vcs_hooks::{HooksGenerator, HooksHash};
 use moon_workspace::Workspace;
+use tracing::instrument;
 
+#[instrument(skip_all)]
 pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<bool> {
     let vcs_config = &workspace.config.vcs;
     let generator = HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config);
@@ -28,6 +30,7 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
         .await
 }
 
+#[instrument(skip_all)]
 pub async fn unsync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
     HooksGenerator::new(&workspace.root, &workspace.vcs, &workspace.config.vcs)
         .cleanup()

@@ -14,7 +14,7 @@ use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub fn get_deno_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
@@ -78,6 +78,7 @@ impl Tool for DenoTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
@@ -181,6 +182,7 @@ impl DependencyManager<()> for DenoTool {
         String::from("deno.json")
     }
 
+    #[instrument(skip_all)]
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
@@ -194,6 +196,7 @@ impl DependencyManager<()> for DenoTool {
         Ok(load_lockfile_dependencies(lockfile_path)?)
     }
 
+    #[instrument(skip_all)]
     async fn install_dependencies(
         &self,
         parent: &(),
@@ -223,6 +226,7 @@ impl DependencyManager<()> for DenoTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn install_focused_dependencies(
         &self,
         _parent: &(),

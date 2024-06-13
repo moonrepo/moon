@@ -18,7 +18,7 @@ use moon_workspace::Workspace;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
 pub struct TaskRunResult {
@@ -129,6 +129,7 @@ impl<'task> TaskRunner<'task> {
         Ok(None)
     }
 
+    #[instrument(skip(self, context))]
     pub async fn run(
         &mut self,
         context: &ActionContext,
@@ -171,6 +172,7 @@ impl<'task> TaskRunner<'task> {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
         let cache_engine = &self.workspace.cache_engine;
 
@@ -259,6 +261,7 @@ impl<'task> TaskRunner<'task> {
         self.task.options.cache && self.workspace.vcs.is_enabled()
     }
 
+    #[instrument(skip_all)]
     pub fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
         if self.task.deps.is_empty() {
             return Ok(true);
@@ -289,6 +292,7 @@ impl<'task> TaskRunner<'task> {
         Ok(true)
     }
 
+    #[instrument(skip_all)]
     pub async fn generate_hash(
         &mut self,
         context: &ActionContext,
@@ -377,6 +381,7 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
+    #[instrument(skip(self, context, node))]
     pub async fn execute(
         &mut self,
         context: &ActionContext,
@@ -474,6 +479,7 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
         debug!(task = self.task.target.as_str(), "Skipping task");
 
@@ -487,6 +493,7 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
+    #[instrument(skip(self, context))]
     pub fn skip_no_op(
         &mut self,
         context: &ActionContext,
@@ -507,6 +514,7 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::archive_creation();
 
@@ -541,6 +549,7 @@ impl<'task> TaskRunner<'task> {
         Ok(archived)
     }
 
+    #[instrument(skip(self, context))]
     pub async fn hydrate(&mut self, context: &ActionContext, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::output_hydration();
 

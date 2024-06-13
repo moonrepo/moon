@@ -5,7 +5,7 @@ use starbase_archive::tar::TarUnpacker;
 use starbase_archive::Archiver;
 use starbase_utils::fs;
 use std::path::Path;
-use tracing::{debug, warn};
+use tracing::{debug, instrument, warn};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HydrateFrom {
@@ -20,6 +20,7 @@ pub struct OutputHydrater<'task> {
 }
 
 impl<'task> OutputHydrater<'task> {
+    #[instrument(skip(self))]
     pub async fn hydrate(&self, hash: &str, from: HydrateFrom) -> miette::Result<bool> {
         // Only hydrate when the hash is different from the previous build,
         // as we can assume the outputs from the previous build still exist?
@@ -57,6 +58,7 @@ impl<'task> OutputHydrater<'task> {
         Ok(false)
     }
 
+    #[instrument(skip(self))]
     pub fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
         debug!(
             task = self.task.target.as_str(),
@@ -94,6 +96,7 @@ impl<'task> OutputHydrater<'task> {
         Ok(true)
     }
 
+    #[instrument(skip(self))]
     pub async fn download_from_remote_storage(
         &self,
         hash: &str,

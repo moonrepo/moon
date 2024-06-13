@@ -12,6 +12,7 @@ publish = false
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 miette = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

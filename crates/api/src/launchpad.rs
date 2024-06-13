@@ -9,7 +9,7 @@ use starbase_utils::{fs, json};
 use std::env::{self, consts};
 use std::path::Path;
 use std::time::{Duration, SystemTime};
-use tracing::debug;
+use tracing::{debug, instrument};
 use uuid::Uuid;
 
 const CURRENT_VERSION_URL: &str = "https://launch.moonrepo.app/versions/cli/current";
@@ -61,6 +61,7 @@ pub struct VersionCheck {
 pub struct Launchpad;
 
 impl Launchpad {
+    #[instrument(skip_all)]
     pub async fn check_version(
         cache_engine: &CacheEngine,
         moon_env: &MoonEnvironment,

@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::mem;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
-use tracing::debug;
+use tracing::{debug, instrument};
 
 static PATH_VAR: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)(?:\s*\|\s*([^\]]+))?\]").unwrap());
@@ -62,6 +62,7 @@ impl Template {
     /// Extend another template and include its files when generating.
     /// Furthermore, we'll also merge variables so that they can be handled
     /// in the command correctly.
+    #[instrument(skip_all)]
     pub fn extend_template(&mut self, mut template: Template) {
         for (key, config) in mem::take(&mut template.config.variables) {
             self.config.variables.entry(key).or_insert(config);
@@ -72,6 +73,7 @@ impl Template {
 
     /// Once files have been loaded by all templates in the extends chain,
     /// we must flatten all nested files map into a single top-level map.
+    #[instrument(skip_all)]
     pub fn load_extended_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
         if self.templates.is_empty() {
             return Ok(());
@@ -100,6 +102,7 @@ impl Template {
 
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
+    #[instrument(skip_all)]
     pub fn load_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
         self.load_extended_files(dest, context)?;
 

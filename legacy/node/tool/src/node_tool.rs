@@ -15,6 +15,7 @@ use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tracing::instrument;
 
 pub fn get_node_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
@@ -108,6 +109,7 @@ impl NodeTool {
         Ok(node)
     }
 
+    #[instrument(skip(self))]
     pub async fn exec_package(
         &self,
         package: &str,
@@ -223,6 +225,7 @@ impl Tool for NodeTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,

@@ -8,7 +8,7 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_workspace::Workspace;
 use std::path::Path;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
     node: &'task ActionNode,
@@ -50,6 +50,7 @@ impl<'task> CommandBuilder<'task> {
         self.platform_manager = manager;
     }
 
+    #[instrument(name = "build_command", skip_all)]
     pub async fn build(mut self, context: &ActionContext) -> miette::Result<Command> {
         self.command = self
             .platform_manager
@@ -85,6 +86,7 @@ impl<'task> CommandBuilder<'task> {
         Ok(self.command)
     }
 
+    #[instrument(skip_all)]
     fn inject_args(&mut self, context: &ActionContext) {
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node {
@@ -110,6 +112,7 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
+    #[instrument(skip_all)]
     fn inject_env(&mut self) {
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node {
@@ -158,6 +161,7 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
+    #[instrument(skip_all)]
     fn inject_shell(&mut self) {
         if self.task.options.shell == Some(true) {
             // Process command set's a shell by default!
@@ -196,6 +200,7 @@ impl<'task> CommandBuilder<'task> {
         }
     }
 
+    #[instrument(skip_all)]
     fn inherit_affected(&mut self, context: &ActionContext) -> miette::Result<()> {
         let Some(check_affected) = &self.task.options.affected_files else {
             return Ok(());

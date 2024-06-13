@@ -13,6 +13,7 @@ use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
+use tracing::instrument;
 
 pub fn get_rust_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
@@ -72,6 +73,7 @@ impl RustTool {
         Ok(rust)
     }
 
+    #[instrument(skip_all)]
     pub async fn exec_cargo<I, S>(&self, args: I, working_dir: &Path) -> miette::Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -92,6 +94,7 @@ impl RustTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub async fn exec_rustup<I, S>(&self, args: I, working_dir: &Path) -> miette::Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -119,6 +122,7 @@ impl Tool for RustTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,

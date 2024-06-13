@@ -14,7 +14,7 @@ use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub root_project_id: Option<&'app Id>,
@@ -66,6 +66,7 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     /// Inherit tasks, file groups, and more from global `.moon/tasks` configs.
+    #[instrument(skip_all)]
     pub fn inherit_global_config(
         &mut self,
         tasks_manager: &InheritedTasksManager,
@@ -95,6 +96,7 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     /// Inherit the local config and then detect applicable language and platform fields.
+    #[instrument(skip_all)]
     pub async fn inherit_local_config(&mut self, config: ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
@@ -154,6 +156,7 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     /// Load a `moon.yml` config file from the root of the project (derived from source).
+    #[instrument(skip_all)]
     pub async fn load_local_config(&mut self) -> miette::Result<()> {
         let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
         let config_path = config_name.to_path(self.context.workspace_root);
@@ -207,7 +210,7 @@ impl<'app> ProjectBuilder<'app> {
         self
     }
 
-    #[tracing::instrument(name = "project", skip_all)]
+    #[instrument(name = "build_project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
         let tasks = self.build_tasks().await?;
 
@@ -235,6 +238,7 @@ impl<'app> ProjectBuilder<'app> {
         Ok(project)
     }
 
+    #[instrument(skip_all)]
     fn build_dependencies(
         &self,
         tasks: &BTreeMap<Id, Task>,
@@ -305,6 +309,7 @@ impl<'app> ProjectBuilder<'app> {
         Ok(deps.into_values().collect::<Vec<_>>())
     }
 
+    #[instrument(skip_all)]
     fn build_file_groups(&self) -> miette::Result<BTreeMap<Id, FileGroup>> {
         let mut file_inputs = BTreeMap::default();
         let project_source = &self.source;
@@ -350,6 +355,7 @@ impl<'app> ProjectBuilder<'app> {
         Ok(file_groups)
     }
 
+    #[instrument(skip_all)]
     async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
         trace!(id = self.id.as_str(), "Building tasks");
 

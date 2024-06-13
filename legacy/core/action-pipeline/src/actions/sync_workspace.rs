@@ -10,9 +10,11 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
+use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:action:sync-workspace";
 
+#[instrument(skip_all)]
 pub async fn sync_workspace(
     action: &mut Action,
     _context: Arc<ActionContext>,

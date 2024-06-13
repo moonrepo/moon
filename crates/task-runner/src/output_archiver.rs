@@ -7,7 +7,7 @@ use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
-use tracing::{debug, warn};
+use tracing::{debug, instrument, warn};
 
 /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
 /// so that subsequent builds are faster, and any local outputs
@@ -19,6 +19,7 @@ pub struct OutputArchiver<'task> {
 }
 
 impl<'task> OutputArchiver<'task> {
+    #[instrument(skip(self))]
     pub async fn archive(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
         if !self.is_archivable()? {
             return Ok(None);
@@ -96,6 +97,7 @@ impl<'task> OutputArchiver<'task> {
         Ok(false)
     }
 
+    #[instrument(skip(self))]
     pub fn has_outputs_been_created(&self, bypass_globs: bool) -> miette::Result<bool> {
         let has_globs = !self.task.output_globs.is_empty();
         let all_negated_globs = self
@@ -129,6 +131,7 @@ impl<'task> OutputArchiver<'task> {
         Ok(true)
     }
 
+    #[instrument(skip(self))]
     pub fn create_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
             task = self.task.target.as_str(),
@@ -172,6 +175,7 @@ impl<'task> OutputArchiver<'task> {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub async fn upload_to_remote_storage(
         &self,
         hash: &str,

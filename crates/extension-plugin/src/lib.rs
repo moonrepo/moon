@@ -1,5 +1,6 @@
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use tracing::instrument;
 
 pub struct ExtensionPlugin {
     pub id: PluginId,
@@ -7,6 +8,7 @@ pub struct ExtensionPlugin {
 }
 
 impl ExtensionPlugin {
+    #[instrument(skip(self, context))]
     pub fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
         self.plugin.call_func_without_output(
             "execute_extension",

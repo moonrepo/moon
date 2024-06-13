@@ -5,6 +5,7 @@ use pest::{
 };
 use pest_derive::Parser;
 use std::borrow::Cow;
+use tracing::instrument;
 
 #[derive(Parser)]
 #[grammar = "mql.pest"]
@@ -98,6 +99,7 @@ fn parse_ast(pairs: Pairs<'_, Rule>) -> Result<Vec<AstNode<'_>>, Box<Error<Rule>
     Ok(ast)
 }
 
+#[instrument]
 pub fn parse_query(input: &str) -> Result<Vec<AstNode<'_>>, Box<Error<Rule>>> {
     parse_ast(MqlParser::parse(Rule::query, input)?)
 }

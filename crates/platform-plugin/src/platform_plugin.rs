@@ -4,7 +4,7 @@ use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginT
 use proto_core::Tool;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub struct PlatformPlugin {
     pub id: PluginId,
@@ -16,6 +16,7 @@ pub struct PlatformPlugin {
 }
 
 impl PlatformPlugin {
+    #[instrument(skip_all)]
     pub fn sync_workspace(&self, context: MoonContext) -> miette::Result<()> {
         if !self.plugin.has_func("sync_workspace") {
             return Ok(());
@@ -29,6 +30,7 @@ impl PlatformPlugin {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     pub fn sync_project(
         &self,
         project: SyncProjectRecord,

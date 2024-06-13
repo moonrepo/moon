@@ -15,6 +15,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio_util::codec::{BytesCodec, FramedRead};
+use tracing::instrument;
 use tracing::{debug, info, warn};
 
 #[derive(Clone, Debug)]
@@ -47,6 +48,7 @@ impl Moonbase {
         );
     }
 
+    #[instrument(skip_all)]
     pub async fn signin(secret_key: String, slug: String) -> Option<Moonbase> {
         info!(
             "API keys detected, attempting to sign in to moonbase for repository {}",
@@ -105,6 +107,7 @@ impl Moonbase {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn read_artifact(
         &self,
         hash: &str,
@@ -137,6 +140,7 @@ impl Moonbase {
         }
     }
 
+    #[instrument(skip(self, input))]
     pub async fn write_artifact(
         &self,
         hash: &str,
@@ -158,6 +162,7 @@ impl Moonbase {
         }
     }
 
+    #[instrument(skip(self))]
     pub async fn download_artifact_from_remote_storage(
         &self,
         hash: &str,
@@ -187,6 +192,7 @@ impl Moonbase {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub async fn download_artifact(
         &self,
         hash: &str,
@@ -224,6 +230,7 @@ impl Moonbase {
         .into())
     }
 
+    #[instrument(skip(self))]
     pub async fn upload_artifact_to_remote_storage(
         &self,
         hash: &str,
@@ -287,6 +294,7 @@ impl Moonbase {
         Ok(())
     }
 
+    #[instrument(skip(self, job_id))]
     pub async fn upload_artifact(
         &self,
         hash: &str,

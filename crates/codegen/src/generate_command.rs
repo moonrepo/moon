@@ -13,7 +13,7 @@ use moon_console::Console;
 use rustc_hash::FxHashMap;
 use std::io::{stdout, IsTerminal};
 use tera::Context as TemplateContext;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct GenerateArgs {
@@ -46,6 +46,7 @@ pub struct GenerateArgs {
     pub vars: Vec<String>,
 }
 
+#[instrument(skip_all)]
 pub fn parse_args_into_variables(
     args: &[String],
     config: &FxHashMap<String, TemplateVariable>,
@@ -214,6 +215,7 @@ pub fn parse_args_into_variables(
     Ok(vars)
 }
 
+#[instrument(skip_all)]
 pub fn gather_variables(
     args: &GenerateArgs,
     template: &Template,

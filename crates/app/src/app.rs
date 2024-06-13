@@ -280,6 +280,14 @@ pub struct Cli {
     #[arg(
         long,
         global = true,
+        env = "MOON_DUMP",
+        help = "Dump a trace profile to the working directory"
+    )]
+    pub dump: bool,
+
+    #[arg(
+        long,
+        global = true,
         env = "MOON_LOG",
         help = "Lowest log level to output",
         default_value_t

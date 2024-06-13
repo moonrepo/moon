@@ -32,6 +32,7 @@ use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{collections::BTreeMap, path::Path};
+use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:node-platform";
 
@@ -139,6 +140,7 @@ impl Platform for NodePlatform {
         Ok(in_workspace)
     }
 
+    #[instrument(skip_all)]
     fn load_project_graph_aliases(
         &mut self,
         projects_list: &ProjectsSourcesList,
@@ -166,6 +168,7 @@ impl Platform for NodePlatform {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     fn load_project_implicit_dependencies(
         &self,
         project_id: &str,
@@ -212,6 +215,7 @@ impl Platform for NodePlatform {
         Ok(implicit_deps)
     }
 
+    #[instrument(skip(self))]
     fn load_project_tasks(
         &self,
         project_id: &str,
@@ -305,6 +309,7 @@ impl Platform for NodePlatform {
 
     // ACTIONS
 
+    #[instrument(skip_all)]
     async fn setup_tool(
         &mut self,
         _context: &ActionContext,
@@ -333,6 +338,7 @@ impl Platform for NodePlatform {
         Ok(installed)
     }
 
+    #[instrument(skip_all)]
     async fn install_deps(
         &self,
         _context: &ActionContext,
@@ -347,6 +353,7 @@ impl Platform for NodePlatform {
         .await
     }
 
+    #[instrument(skip_all)]
     async fn sync_project(
         &self,
         _context: &ActionContext,
@@ -365,6 +372,7 @@ impl Platform for NodePlatform {
         Ok(modified)
     }
 
+    #[instrument(skip_all)]
     async fn hash_manifest_deps(
         &self,
         manifest_path: &Path,
@@ -393,6 +401,7 @@ impl Platform for NodePlatform {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn hash_run_target(
         &self,
         project: &Project,
@@ -423,6 +432,7 @@ impl Platform for NodePlatform {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn create_run_target_command(
         &self,
         context: &ActionContext,

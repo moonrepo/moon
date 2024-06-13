@@ -3,7 +3,9 @@ use moon_config::CodeownersOrderBy;
 use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
 use std::path::PathBuf;
+use tracing::instrument;
 
+#[instrument(skip_all)]
 pub async fn sync_codeowners(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
@@ -61,6 +63,7 @@ pub async fn sync_codeowners(
     Ok(None)
 }
 
+#[instrument(skip_all)]
 pub async fn unsync_codeowners(workspace: &Workspace) -> miette::Result<PathBuf> {
     let codeowners = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
     let file_path = codeowners.file_path.clone();

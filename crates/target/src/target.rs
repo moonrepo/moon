@@ -9,6 +9,7 @@ use std::{
     cmp::Ordering,
     fmt::{self, Display},
 };
+use tracing::instrument;
 
 // The @ is to support npm package scopes!
 pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
@@ -67,6 +68,7 @@ impl Target {
         format!("{}:{}", scope.as_ref(), task.as_ref())
     }
 
+    #[instrument(name = "parse_target")]
     pub fn parse(target_id: &str) -> miette::Result<Target> {
         if target_id == ":" {
             return Err(TargetError::TooWild.into());

@@ -14,7 +14,7 @@ use starbase_utils::{fs, net};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct CodeGenerator<'app> {
@@ -46,6 +46,7 @@ impl<'app> CodeGenerator<'app> {
         }
     }
 
+    #[instrument(skip_all)]
     pub async fn load_templates(&mut self) -> miette::Result<()> {
         self.resolve_template_locations().await?;
 
@@ -83,6 +84,7 @@ impl<'app> CodeGenerator<'app> {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub fn create_template(&self, id: &str) -> miette::Result<Template> {
         let id = Id::clean(id)?;
 
@@ -117,6 +119,7 @@ impl<'app> CodeGenerator<'app> {
         Template::new(id, template_root)
     }
 
+    #[instrument(skip(self))]
     pub fn get_template(&self, id: &str) -> miette::Result<Template> {
         let id = Id::clean(id)?;
 
@@ -151,6 +154,7 @@ impl<'app> CodeGenerator<'app> {
         Ok(template)
     }
 
+    #[instrument(skip_all)]
     pub fn generate(&self, template: &Template) -> miette::Result<()> {
         debug!(template = template.id.as_str(), "Generating template files");
 
@@ -169,6 +173,7 @@ impl<'app> CodeGenerator<'app> {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
         let mut futures = vec![];
@@ -236,6 +241,7 @@ impl<'app> CodeGenerator<'app> {
     }
 }
 
+#[instrument]
 async fn clone_and_checkout_git_repository(
     url: String,
     revision: String,
@@ -302,6 +308,7 @@ async fn clone_and_checkout_git_repository(
     Ok(())
 }
 
+#[instrument]
 async fn download_and_unpack_npm_archive(
     package: String,
     version: String,

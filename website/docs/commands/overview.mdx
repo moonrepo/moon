@@ -2,11 +2,14 @@
 title: Overview
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The following options are available for _all_ moon commands.
 
 - `--cache <mode>` - The mode for [cache operations](#caching).
 - `--color` - Force [colored output](#colors) for moon (not tasks).
 - `--concurrency`, `-c` - Maximum number of threads to utilize.
+- `--dump` - Dump a [trace profile](#profiling) to the working directory.
 - `--help` - Display the help menu for the current command.
 - `--log <level>` - The lowest [log level to output](#logging).
 - `--logFile <file>` - Write logs to the defined file.
@@ -126,3 +129,12 @@ $ moon run app:build --logFile=output.log
 # Or
 $ MOON_LOG_FILE=output.log moon run app:build
 ```
+
+## Profiling<VersionLabel version="1.26.0" />
+
+When the `--dump` option or `MOON_DUMP` environment variable is set, moon will generate a trace
+profile and dump it to the current working directory. This profile can be opened with Chrome (via
+`chrome://tracing`) or [Perfetto](https://ui.perfetto.dev/).
+
+This profile will display many of the operations within moon as a flame chart, allowing you to
+inspect and debug slow operations.

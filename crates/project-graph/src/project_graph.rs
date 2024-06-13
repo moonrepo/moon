@@ -15,7 +15,7 @@ use serde::Serialize;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use tracing::debug;
+use tracing::{debug, instrument};
 
 pub type GraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
@@ -120,6 +120,7 @@ impl ProjectGraph {
 
     /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
+    #[instrument(name = "get_project", skip(self))]
     pub fn get(&self, project_locator: &str) -> miette::Result<Arc<Project>> {
         self.internal_get(project_locator)
     }
@@ -137,6 +138,7 @@ impl ProjectGraph {
     }
 
     /// Return all projects from the graph.
+    #[instrument(name = "get_all_projects", skip(self))]
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
         let mut all = vec![];
 
@@ -158,6 +160,7 @@ impl ProjectGraph {
 
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
+    #[instrument(name = "get_project_from_path", skip(self))]
     pub fn get_from_path(&self, starting_file: Option<&Path>) -> miette::Result<Arc<Project>> {
         let current_file = starting_file.unwrap_or(&self.working_dir);
 
@@ -189,6 +192,7 @@ impl ProjectGraph {
     }
 
     /// Return all expanded projects that match the query criteria.
+    #[instrument(name = "query_project", skip_all)]
     pub fn query<'input, Q: AsRef<Criteria<'input>>>(
         &self,
         query: Q,

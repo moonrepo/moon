@@ -3,7 +3,6 @@
 use cached::proc_macro::cached;
 use moon_lang::config_cache_model;
 use starbase_utils::json::{self, read_file as read_json, JsonValue};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub use nodejs_package_json::*;
@@ -163,10 +162,7 @@ impl PackageJsonCache {
             return None;
         }
 
-        let mut dependencies = match deps_map {
-            Some(deps) => deps,
-            None => BTreeMap::new(),
-        };
+        let mut dependencies = deps_map.unwrap_or_default();
 
         // Only add if the dependency doesnt already exist
         if if_missing && dependencies.contains_key(name) {

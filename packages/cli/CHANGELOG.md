@@ -23,6 +23,10 @@
   - Internal components (like cache engine, or project graph) are now lazy-loaded when required,
     instead of created upfront.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.79.
+
 ## 1.25.6
 
 #### 🐞 Fixes

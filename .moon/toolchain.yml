@@ -1,7 +1,7 @@
 $schema: '../website/static/schemas/toolchain.json'
 
 rust:
-  version: '1.78.0'
+  version: '1.79.0'
   bins:
     - 'cargo-nextest'
   syncToolchainConfig: true

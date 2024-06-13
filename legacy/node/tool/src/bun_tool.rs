@@ -16,6 +16,7 @@ use starbase_utils::fs;
 use std::env;
 use std::path::Path;
 use std::sync::Arc;
+use tracing::instrument;
 
 pub struct BunTool {
     pub config: BunpmConfig,
@@ -73,6 +74,7 @@ impl Tool for BunTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
@@ -182,6 +184,7 @@ impl DependencyManager<NodeTool> for BunTool {
         String::from("package.json")
     }
 
+    #[instrument(skip_all)]
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
@@ -205,6 +208,7 @@ impl DependencyManager<NodeTool> for BunTool {
         ))?)
     }
 
+    #[instrument(skip_all)]
     async fn install_dependencies(
         &self,
         node: &NodeTool,
@@ -229,6 +233,7 @@ impl DependencyManager<NodeTool> for BunTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn install_focused_dependencies(
         &self,
         node: &NodeTool,

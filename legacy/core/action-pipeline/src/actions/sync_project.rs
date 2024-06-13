@@ -11,9 +11,11 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
+use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:action:sync-project";
 
+#[instrument(skip_all)]
 pub async fn sync_project(
     _action: &mut Action,
     context: Arc<ActionContext>,

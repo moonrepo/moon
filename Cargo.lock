@@ -3230,6 +3230,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util",
+ "tracing",
 ]
 
 [[package]]
@@ -3407,6 +3408,7 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -3425,6 +3427,7 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "starbase_utils",
+ "tracing",
 ]
 
 [[package]]
@@ -3632,6 +3635,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -3825,6 +3829,7 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -3844,6 +3849,7 @@ dependencies = [
  "rustc-hash",
  "starbase_styles",
  "starbase_utils",
+ "tracing",
 ]
 
 [[package]]
@@ -4163,6 +4169,7 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -4179,6 +4186,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash",
+ "tracing",
 ]
 
 [[package]]
@@ -4199,6 +4207,7 @@ dependencies = [
  "proto_core",
  "serde",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]

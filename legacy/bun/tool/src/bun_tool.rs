@@ -15,6 +15,7 @@ use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tracing::instrument;
 
 pub fn get_bun_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
@@ -68,6 +69,7 @@ impl Tool for BunTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
@@ -175,6 +177,7 @@ impl DependencyManager<()> for BunTool {
         String::from("package.json")
     }
 
+    #[instrument(skip_all)]
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
@@ -198,6 +201,7 @@ impl DependencyManager<()> for BunTool {
         ))?)
     }
 
+    #[instrument(skip_all)]
     async fn install_dependencies(
         &self,
         parent: &(),
@@ -222,6 +226,7 @@ impl DependencyManager<()> for BunTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn install_focused_dependencies(
         &self,
         parent: &(),

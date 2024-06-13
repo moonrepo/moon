@@ -17,6 +17,7 @@ use starbase_utils::fs;
 use std::env;
 use std::path::Path;
 use std::sync::Arc;
+use tracing::instrument;
 
 pub struct YarnTool {
     pub config: YarnConfig,
@@ -60,6 +61,7 @@ impl YarnTool {
         self.check_version(4)
     }
 
+    #[instrument(skip_all)]
     pub async fn set_version(&mut self, node: &NodeTool) -> miette::Result<()> {
         if !self.is_berry() {
             return Ok(());
@@ -122,6 +124,7 @@ impl Tool for YarnTool {
         self
     }
 
+    #[instrument(skip_all)]
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, UnresolvedVersionSpec>,
@@ -210,6 +213,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         Ok(cmd)
     }
 
+    #[instrument(skip_all)]
     async fn dedupe_dependencies(
         &self,
         node: &NodeTool,
@@ -253,6 +257,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         String::from("package.json")
     }
 
+    #[instrument(skip_all)]
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
@@ -266,6 +271,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
     }
 
+    #[instrument(skip_all)]
     async fn install_dependencies(
         &self,
         node: &NodeTool,
@@ -290,6 +296,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         Ok(())
     }
 
+    #[instrument(skip_all)]
     async fn install_focused_dependencies(
         &self,
         node: &NodeTool,

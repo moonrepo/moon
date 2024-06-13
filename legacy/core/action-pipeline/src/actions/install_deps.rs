@@ -10,6 +10,7 @@ use moon_utils::time;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use starbase_utils::fs;
+use tracing::instrument;
 use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -37,6 +38,7 @@ fn get_installation_key(runtime: &Runtime, project: Option<&Project>) -> String 
     )
 }
 
+#[instrument(skip_all)]
 pub async fn install_deps(
     action: &mut Action,
     context: Arc<ActionContext>,

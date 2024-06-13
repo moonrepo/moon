@@ -11,10 +11,12 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
+use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:action:run-task";
 
 #[allow(clippy::too_many_arguments)]
+#[instrument(skip_all)]
 pub async fn run_task(
     action: &mut Action,
     context: Arc<ActionContext>,

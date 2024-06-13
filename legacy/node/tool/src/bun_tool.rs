@@ -92,7 +92,7 @@ impl Tool for BunTool {
 
         // Don't collide with the bun platform!
         let mutex = get_shared_lock("bun_tool").await;
-        let _lock = mutex.lock();
+        let _lock = mutex.lock().await;
 
         if self.tool.is_setup(version).await? {
             self.tool.locate_globals_dir().await?;

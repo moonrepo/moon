@@ -10,6 +10,16 @@
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout.
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a potential deadlock when installing tools.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.36.2 (from v0.36.0).
+
 ## 1.25.5
 
 #### 🐞 Fixes

@@ -46,7 +46,7 @@ impl<'app> CodeGenerator<'app> {
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn load_templates(&mut self) -> miette::Result<()> {
         self.resolve_template_locations().await?;
 
@@ -173,7 +173,7 @@ impl<'app> CodeGenerator<'app> {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
         let mut futures = vec![];
@@ -241,7 +241,7 @@ impl<'app> CodeGenerator<'app> {
     }
 }
 
-#[instrument(skip(template_location))]
+#[instrument]
 async fn clone_and_checkout_git_repository(
     url: String,
     revision: String,
@@ -308,7 +308,7 @@ async fn clone_and_checkout_git_repository(
     Ok(())
 }
 
-#[instrument(skip(template_location, temp_file))]
+#[instrument]
 async fn download_and_unpack_npm_archive(
     package: String,
     version: String,

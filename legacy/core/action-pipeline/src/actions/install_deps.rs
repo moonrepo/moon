@@ -10,10 +10,10 @@ use moon_utils::time;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use starbase_utils::fs;
-use tracing::instrument;
 use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tracing::instrument;
 
 cache_item!(
     pub struct DependenciesState {

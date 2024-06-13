@@ -162,7 +162,7 @@ impl Moonbase {
         }
     }
 
-    #[instrument(skip(self, dest_path))]
+    #[instrument(skip(self))]
     pub async fn download_artifact_from_remote_storage(
         &self,
         hash: &str,
@@ -192,7 +192,7 @@ impl Moonbase {
         Ok(())
     }
 
-    #[instrument(skip(self, dest_path))]
+    #[instrument(skip(self))]
     pub async fn download_artifact(
         &self,
         hash: &str,
@@ -230,7 +230,7 @@ impl Moonbase {
         .into())
     }
 
-    #[instrument(skip(self, src_path))]
+    #[instrument(skip(self))]
     pub async fn upload_artifact_to_remote_storage(
         &self,
         hash: &str,
@@ -294,7 +294,7 @@ impl Moonbase {
         Ok(())
     }
 
-    #[instrument(skip(self, src_path, job_id))]
+    #[instrument(skip(self, job_id))]
     pub async fn upload_artifact(
         &self,
         hash: &str,

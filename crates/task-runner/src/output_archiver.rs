@@ -131,7 +131,7 @@ impl<'task> OutputArchiver<'task> {
         Ok(true)
     }
 
-    #[instrument(skip(self,))]
+    #[instrument(skip(self))]
     pub fn create_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
             task = self.task.target.as_str(),

@@ -4,12 +4,11 @@ use moon_project_graph::ProjectGraph;
 use moon_test_utils2::{
     generate_platform_manager_from_sandbox, generate_project_graph_from_sandbox,
 };
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub struct ActionGraphContainer {
     pub platform_manager: PlatformManager,
     pub project_graph: ProjectGraph,
-    pub workspace_root: PathBuf,
 }
 
 impl ActionGraphContainer {
@@ -17,7 +16,6 @@ impl ActionGraphContainer {
         Self {
             platform_manager: generate_platform_manager_from_sandbox(root).await,
             project_graph: generate_project_graph_from_sandbox(root).await,
-            workspace_root: root.to_path_buf(),
         }
     }
 

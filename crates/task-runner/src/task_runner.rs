@@ -261,7 +261,7 @@ impl<'task> TaskRunner<'task> {
         self.task.options.cache && self.workspace.vcs.is_enabled()
     }
 
-    #[instrument(skip(self, context))]
+    #[instrument(skip_all)]
     pub fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
         if self.task.deps.is_empty() {
             return Ok(true);
@@ -292,7 +292,7 @@ impl<'task> TaskRunner<'task> {
         Ok(true)
     }
 
-    #[instrument(skip(self, context))]
+    #[instrument(skip_all)]
     pub async fn generate_hash(
         &mut self,
         context: &ActionContext,
@@ -381,7 +381,7 @@ impl<'task> TaskRunner<'task> {
         Ok(hash)
     }
 
-    #[instrument(skip(self, context))]
+    #[instrument(skip(self, context, node))]
     pub async fn execute(
         &mut self,
         context: &ActionContext,
@@ -479,7 +479,7 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    #[instrument(skip(self, context))]
+    #[instrument(skip_all)]
     pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
         debug!(task = self.task.target.as_str(), "Skipping task");
 
@@ -514,7 +514,7 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    #[instrument(skip(self,))]
+    #[instrument(skip(self))]
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::archive_creation();
 

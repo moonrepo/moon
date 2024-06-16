@@ -1,0 +1,31 @@
+---
+title: diagnose
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.37.0" header />
+
+The `proto diagnose` command will diagnose your proto installation for any potential issues. Issues
+are categorized into errors and warnings, with the former being a must fix, and the latter being a
+maybe fix (depending on your usage of proto).
+
+```
+$ proto diagnose
+
+Shell: zsh
+Shell profile: ~/.zshrc
+
+Errors
+  Issue: Bin directory (~/.proto/bin) was found BEFORE the shims directory (~/.proto/shims) on PATH
+  Resolution: Ensure the shims path comes before the bin path in your shell
+
+Warnings
+  Issue: Missing PROTO_HOME environment variable (Will default to ~/.proto if not defined)
+  Resolution: Export PROTO_HOME="$HOME/.proto" from your shell
+```
+
+### Options
+
+- `--shell` - The shell to diagnose (will detect automatically).
+- `--json` - Print the diagnosis in JSON format.

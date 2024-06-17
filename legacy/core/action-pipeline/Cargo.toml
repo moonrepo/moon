@@ -41,7 +41,6 @@ tokio-util = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon = { path = "../moon" }
 moon_test_utils = { path = "../test-utils" }
 
 [lints]

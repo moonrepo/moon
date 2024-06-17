@@ -1,9 +1,9 @@
-use moon::{generate_project_graph, load_workspace_from_sandbox};
 use moon_common::Id;
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs, Sandbox,
 };
+use moon_test_utils2::generate_project_graph_from_sandbox;
 use rustc_hash::FxHashMap;
 
 async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
@@ -17,8 +17,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
         Some(tasks_config),
     );
 
-    let mut workspace = load_workspace_from_sandbox(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).await.unwrap();
+    let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
 
     (graph, sandbox)
 }

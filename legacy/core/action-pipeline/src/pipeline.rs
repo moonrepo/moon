@@ -193,16 +193,6 @@ impl Pipeline {
 
         // }
 
-<<<<<<< HEAD
-            let context_clone = Arc::clone(&context);
-            let emitter_clone = Arc::clone(&emitter);
-            let project_graph_clone = Arc::clone(&project_graph);
-            let app_context_clone = Arc::clone(&app_context);
-            let cancel_token_clone = cancel_token.clone();
-            let sender = action_graph_iter.sender.clone();
-            let mut action = Action::new(node.to_owned());
-            action.node_index = node_index.index();
-=======
         // if !persistent_nodes.is_empty() {
         //     trace!(
         //         target: LOG_TARGET,
@@ -210,7 +200,6 @@ impl Pipeline {
         //         persistent_nodes.len(),
         //     );
         // }
->>>>>>> f735045267 (Start on pipeline.)
 
         // for node_index in persistent_nodes {
         //     let Some(node) = action_graph.get_node_from_index(&node_index) else {
@@ -223,19 +212,6 @@ impl Pipeline {
         //         continue;
         //     };
 
-<<<<<<< HEAD
-                    _ = cancel_token_clone.cancelled(), if !interactive => {
-                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-                    }
-                    res = process_action(
-                        action,
-                        context_clone,
-                        app_context_clone,
-                        emitter_clone,
-                        project_graph_clone,
-                    ) => res
-                };
-=======
         //     let context_clone = Arc::clone(&context);
         //     let emitter_clone = Arc::clone(&emitter);
         //     let workspace_clone = Arc::clone(&workspace);
@@ -245,7 +221,6 @@ impl Pipeline {
         //     let sender = action_graph_iter.sender.clone();
         //     let mut action = Action::new(node.to_owned());
         //     action.node_index = node_index.index();
->>>>>>> f735045267 (Start on pipeline.)
 
         //     action_handles.push(tokio::spawn(async move {
         //         let interactive = action.node.is_interactive();
@@ -269,71 +244,9 @@ impl Pipeline {
         //             let _ = sender.send(action.node_index);
         //         }
 
-<<<<<<< HEAD
-            // Run this in isolation by exhausting the current list of handles
-            if node.is_interactive() || semaphore.available_permits() == 0 {
-                self.run_handles(mem::take(&mut action_handles), &emitter)
-                    .await?;
-            }
-        }
-
-        if !persistent_nodes.is_empty() {
-            trace!(
-                target: LOG_TARGET,
-                "Running {} persistent actions",
-                persistent_nodes.len(),
-            );
-        }
-
-        for node_index in persistent_nodes {
-            let Some(node) = action_graph.get_node_from_index(&node_index) else {
-                warn!(
-                    target: LOG_TARGET,
-                    "Received a graph index {} with no associated node, unable to process",
-                    node_index.index()
-                );
-
-                continue;
-            };
-
-            let context_clone = Arc::clone(&context);
-            let emitter_clone = Arc::clone(&emitter);
-            let project_graph_clone = Arc::clone(&project_graph);
-            let app_context_clone = Arc::clone(&app_context);
-            let cancel_token_clone = cancel_token.clone();
-            let sender = action_graph_iter.sender.clone();
-            let mut action = Action::new(node.to_owned());
-            action.node_index = node_index.index();
-
-            action_handles.push(tokio::spawn(async move {
-                let interactive = action.node.is_interactive();
-                let result = tokio::select! {
-                    biased;
-
-                    _ = cancel_token_clone.cancelled(), if !interactive => {
-                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-                    }
-                    res = process_action(
-                        action,
-                        context_clone,
-                        app_context_clone,
-                        emitter_clone,
-                        project_graph_clone,
-                    ) => res
-                };
-
-                if let Ok(action) = &result {
-                    let _ = sender.send(action.node_index);
-                }
-
-                result
-            }));
-        }
-=======
         //         result
         //     }));
         // }
->>>>>>> f735045267 (Start on pipeline.)
 
         // Run any remaining actions
         self.run_handles(action_handles, &emitter).await?;

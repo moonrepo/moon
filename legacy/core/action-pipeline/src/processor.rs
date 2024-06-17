@@ -5,7 +5,7 @@ use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_console::Console;
+use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
 use moon_project_graph::ProjectGraph;
@@ -24,11 +24,11 @@ fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
 #[instrument(skip_all)]
 pub async fn process_action(
     mut action: Action,
-    context: Arc<ActionContext>,
+    action_context: Arc<ActionContext>,
+    app_context: Arc<AppContext>,
     emitter: Arc<Emitter>,
     workspace: Arc<Workspace>,
     project_graph: Arc<ProjectGraph>,
-    console: Arc<Console>,
 ) -> miette::Result<Action> {
     action.start();
 
@@ -44,7 +44,7 @@ pub async fn process_action(
         })
         .await?;
 
-    console.reporter.on_action_started(&action)?;
+    app_context.console.reporter.on_action_started(&action)?;
 
     let result = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
@@ -57,7 +57,8 @@ pub async fn process_action(
                 })
                 .await?;
 
-            let setup_result = setup_tool(&mut action, context, workspace, &inner.runtime).await;
+            let setup_result =
+                setup_tool(&mut action, action_context, workspace, &inner.runtime).await;
 
             emitter
                 .emit(Event::ToolInstalled {
@@ -79,7 +80,7 @@ pub async fn process_action(
                 .await?;
 
             let install_result =
-                install_deps(&mut action, context, workspace, &inner.runtime, None).await;
+                install_deps(&mut action, action_context, workspace, &inner.runtime, None).await;
 
             emitter
                 .emit(Event::DependenciesInstalled {
@@ -105,7 +106,7 @@ pub async fn process_action(
 
             let install_result = install_deps(
                 &mut action,
-                context,
+                action_context,
                 workspace,
                 &inner.runtime,
                 Some(&project),
@@ -136,7 +137,7 @@ pub async fn process_action(
 
             let sync_result = sync_project(
                 &mut action,
-                context,
+                action_context,
                 workspace,
                 project_graph,
                 &project,
@@ -159,7 +160,8 @@ pub async fn process_action(
         ActionNode::SyncWorkspace => {
             emitter.emit(Event::WorkspaceSyncing).await?;
 
-            let sync_result = sync_workspace(&mut action, context, workspace, project_graph).await;
+            let sync_result =
+                sync_workspace(&mut action, action_context, workspace, project_graph).await;
 
             emitter
                 .emit(Event::WorkspaceSynced {
@@ -183,10 +185,8 @@ pub async fn process_action(
 
             let run_result = run_task(
                 &mut action,
-                context,
-                Arc::clone(&emitter),
-                workspace,
-                Arc::clone(&console),
+                action_context,
+                Arc::clone(&app_context),
                 &project,
                 &inner.target,
                 &inner.runtime,
@@ -211,12 +211,16 @@ pub async fn process_action(
         Ok(status) => {
             action.finish(status);
 
-            console.reporter.on_action_completed(&action, None)?;
+            app_context
+                .console
+                .reporter
+                .on_action_completed(&action, None)?;
         }
         Err(error) => {
             action.finish(ActionStatus::Failed);
 
-            console
+            app_context
+                .console
                 .reporter
                 .on_action_completed(&action, Some(&error))?;
 

@@ -473,7 +473,10 @@ mod task_runner {
                     .sandbox
                     .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
-                container.workspace.cache_engine.force_mode(CacheMode::Off);
+                container
+                    .app_context
+                    .cache_engine
+                    .force_mode(CacheMode::Off);
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
@@ -490,7 +493,7 @@ mod task_runner {
                     .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
                 container
-                    .workspace
+                    .app_context
                     .cache_engine
                     .force_mode(CacheMode::Write);
 
@@ -954,7 +957,7 @@ mod task_runner {
             let mut container = TaskRunnerContainer::new("runner").await;
             container.sandbox.enable_git();
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets

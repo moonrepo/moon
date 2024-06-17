@@ -22,7 +22,7 @@ pub async fn sync(session: CliSession) -> AppResult {
     let mut pipeline = Pipeline::new(session.get_workspace_legacy()?, project_graph);
 
     pipeline
-        .run(action_graph, session.get_console()?, None)
+        .run(action_graph, session.create_context()?, None)
         .await?;
 
     done(

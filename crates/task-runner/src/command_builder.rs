@@ -1,21 +1,21 @@
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
+use moon_app_context::AppContext;
 use moon_common::consts::PROTO_CLI_VERSION;
 use moon_config::TaskOptionAffectedFiles;
 use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
 use moon_project::Project;
 use moon_task::Task;
-use moon_workspace::Workspace;
 use std::path::Path;
 use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
+    app: &'task AppContext,
     node: &'task ActionNode,
     project: &'task Project,
     task: &'task Task,
     working_dir: &'task Path,
-    workspace: &'task Workspace,
     platform_manager: &'task PlatformManager,
 
     // To be built
@@ -24,23 +24,23 @@ pub struct CommandBuilder<'task> {
 
 impl<'task> CommandBuilder<'task> {
     pub fn new(
-        workspace: &'task Workspace,
+        app: &'task AppContext,
         project: &'task Project,
         task: &'task Task,
         node: &'task ActionNode,
     ) -> Self {
         let working_dir = if task.options.run_from_workspace_root {
-            &workspace.root
+            &app.workspace_root
         } else {
             &project.root
         };
 
         Self {
+            app,
             node,
             project,
             task,
             working_dir,
-            workspace,
             platform_manager: PlatformManager::read(),
             command: Command::new("noop"),
         }
@@ -131,7 +131,7 @@ impl<'task> CommandBuilder<'task> {
 
         // moon
         self.command
-            .env("MOON_CACHE_DIR", &self.workspace.cache_engine.cache_dir);
+            .env("MOON_CACHE_DIR", &self.app.cache_engine.cache_dir);
         self.command
             .env("MOON_PROJECT_ID", self.project.id.as_str());
         self.command.env("MOON_PROJECT_ROOT", &self.project.root);
@@ -139,12 +139,11 @@ impl<'task> CommandBuilder<'task> {
             .env("MOON_PROJECT_SOURCE", self.project.source.as_str());
         self.command.env("MOON_TARGET", &self.task.target.id);
         self.command
-            .env("MOON_WORKSPACE_ROOT", &self.workspace.root);
-        self.command
-            .env("MOON_WORKING_DIR", &self.workspace.working_dir);
+            .env("MOON_WORKSPACE_ROOT", &self.app.workspace_root);
+        self.command.env("MOON_WORKING_DIR", &self.app.working_dir);
         self.command.env(
             "MOON_PROJECT_SNAPSHOT",
-            self.workspace
+            self.app
                 .cache_engine
                 .state
                 .get_project_snapshot_path(&self.project.id),
@@ -155,7 +154,7 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("PROTO_NO_PROGRESS", "true");
         self.command.env("PROTO_VERSION", PROTO_CLI_VERSION);
 
-        for (key, value) in self.workspace.toolchain_config.get_version_env_vars() {
+        for (key, value) in self.app.toolchain_config.get_version_env_vars() {
             // Don't overwrite proto version variables inherited from platforms
             self.command.env_if_missing(key, value);
         }
@@ -218,7 +217,7 @@ impl<'task> CommandBuilder<'task> {
         if files.is_empty() && self.task.options.affected_pass_inputs {
             files = self
                 .task
-                .get_input_files(&self.workspace.root)?
+                .get_input_files(&self.app.workspace_root)?
                 .into_iter()
                 .filter_map(|file| {
                     file.strip_prefix(&self.project.source)
@@ -268,7 +267,12 @@ impl<'task> CommandBuilder<'task> {
 
     fn inherit_config(&mut self) {
         // Terminal colors
-        if self.workspace.config.runner.inherit_colors_for_piped_tasks {
+        if self
+            .app
+            .workspace_config
+            .runner
+            .inherit_colors_for_piped_tasks
+        {
             self.command.inherit_colors();
         }
     }

@@ -69,7 +69,10 @@ mod output_archiver {
 
             let archiver = container.create_archiver("file-outputs");
 
-            container.workspace.cache_engine.force_mode(CacheMode::Off);
+            container
+                .app_context
+                .cache_engine
+                .force_mode(CacheMode::Off);
 
             assert!(archiver.archive("hash123").await.unwrap().is_none());
 
@@ -83,7 +86,10 @@ mod output_archiver {
 
             let archiver = container.create_archiver("file-outputs");
 
-            container.workspace.cache_engine.force_mode(CacheMode::Read);
+            container
+                .app_context
+                .cache_engine
+                .force_mode(CacheMode::Read);
 
             assert!(archiver.archive("hash123").await.unwrap().is_none());
 
@@ -323,7 +329,7 @@ mod output_archiver {
             let mut container = TaskRunnerContainer::new("archive").await;
 
             // Project scope
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -340,7 +346,7 @@ mod output_archiver {
             let mut container = TaskRunnerContainer::new("archive").await;
 
             // All scope
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -356,7 +362,7 @@ mod output_archiver {
         async fn matches_all_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -372,7 +378,7 @@ mod output_archiver {
         async fn doesnt_match_all_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -388,7 +394,7 @@ mod output_archiver {
         async fn matches_project_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -404,7 +410,7 @@ mod output_archiver {
         async fn doesnt_match_project_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -420,7 +426,7 @@ mod output_archiver {
         async fn matches_tag_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -436,7 +442,7 @@ mod output_archiver {
         async fn doesnt_match_tag_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -453,7 +459,7 @@ mod output_archiver {
         async fn errors_for_deps_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets
@@ -470,7 +476,7 @@ mod output_archiver {
         async fn errors_for_self_config() {
             let mut container = TaskRunnerContainer::new("archive").await;
 
-            if let Some(config) = Arc::get_mut(&mut container.workspace.config) {
+            if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
                 config
                     .runner
                     .archivable_targets

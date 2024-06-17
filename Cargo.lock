@@ -3117,30 +3117,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon"
-version = "0.0.1"
-dependencies = [
- "miette",
- "moon_action_graph",
- "moon_actions",
- "moon_bun_platform",
- "moon_config",
- "moon_console",
- "moon_deno_platform",
- "moon_node_platform",
- "moon_platform",
- "moon_project_graph",
- "moon_rust_platform",
- "moon_system_platform",
- "moon_utils",
- "moon_workspace",
- "proto_core",
- "rustc-hash",
- "starbase_events",
- "tokio",
-]
-
-[[package]]
 name = "moon_action"
 version = "0.0.1"
 dependencies = [
@@ -3198,12 +3174,12 @@ dependencies = [
  "ci_env",
  "console",
  "miette",
- "moon",
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
  "moon_actions",
  "moon_api",
+ "moon_app_context",
  "moon_cache_item",
  "moon_common",
  "moon_console",
@@ -3296,6 +3272,7 @@ dependencies = [
  "moon_action_pipeline",
  "moon_actions",
  "moon_api",
+ "moon_app_context",
  "moon_bun_platform",
  "moon_bun_tool",
  "moon_cache",
@@ -3353,6 +3330,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_app_context"
+version = "0.0.1"
+dependencies = [
+ "moon_cache",
+ "moon_config",
+ "moon_console",
+ "moon_vcs",
+]
+
+[[package]]
 name = "moon_args"
 version = "0.0.1"
 dependencies = [
@@ -3378,7 +3365,6 @@ name = "moon_bun_platform"
 version = "0.0.1"
 dependencies = [
  "miette",
- "moon",
  "moon_action",
  "moon_action_context",
  "moon_bun_lang",
@@ -3796,7 +3782,6 @@ name = "moon_node_platform"
 version = "0.0.1"
 dependencies = [
  "miette",
- "moon",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -3816,6 +3801,7 @@ dependencies = [
  "moon_target",
  "moon_task",
  "moon_test_utils",
+ "moon_test_utils2",
  "moon_tool",
  "moon_typescript_lang",
  "moon_typescript_platform",
@@ -4143,7 +4129,6 @@ name = "moon_rust_platform"
 version = "0.0.1"
 dependencies = [
  "miette",
- "moon",
  "moon_action",
  "moon_action_context",
  "moon_common",
@@ -4286,6 +4271,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_api",
+ "moon_app_context",
  "moon_cache",
  "moon_cache_item",
  "moon_common",
@@ -4299,7 +4285,6 @@ dependencies = [
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
- "moon_workspace",
  "proto_core",
  "serde",
  "starbase_archive",
@@ -4333,7 +4318,9 @@ name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_app_context",
  "moon_bun_platform",
+ "moon_cache",
  "moon_config",
  "moon_console",
  "moon_deno_platform",
@@ -4484,19 +4471,11 @@ dependencies = [
 name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
- "miette",
  "moon_api",
  "moon_cache",
  "moon_common",
  "moon_config",
  "moon_vcs",
- "proto_core",
- "starbase",
- "starbase_sandbox",
- "starbase_styles",
- "starbase_utils",
- "thiserror",
- "tracing",
 ]
 
 [[package]]

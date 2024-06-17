@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_api = { path = "../api" }
+moon_app_context = { path = "../app-context" }
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
@@ -25,7 +26,6 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }
 moon_time = { path = "../time" }
-moon_workspace = { path = "../workspace" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }

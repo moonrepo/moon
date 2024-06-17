@@ -2,7 +2,7 @@
 
 use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
-use moon_console::Console;
+use moon_app_context::AppContext;
 use moon_platform::{PlatformManager, Runtime};
 use moon_process::Command;
 use moon_project::Project;
@@ -13,19 +13,14 @@ use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
 use moon_task_runner::TaskRunner;
 use moon_test_utils2::{
-    generate_platform_manager_from_sandbox, generate_project_graph_from_sandbox, ProjectGraph,
+    generate_app_context_from_sandbox, generate_platform_manager_from_sandbox,
+    generate_project_graph_from_sandbox, ProjectGraph,
 };
-use moon_workspace::Workspace;
-use proto_core::ProtoEnvironment;
 use starbase_archive::Archiver;
 use starbase_sandbox::{create_sandbox, Sandbox};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
-
-pub fn create_workspace(root: &Path) -> Workspace {
-    Workspace::load_from(root, ProtoEnvironment::new_testing(root)).unwrap()
-}
 
 pub fn create_node(task: &Task) -> ActionNode {
     ActionNode::RunTask(Box::new(RunTaskNode::new(
@@ -36,30 +31,28 @@ pub fn create_node(task: &Task) -> ActionNode {
 
 pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
-    pub console: Arc<Console>,
+    pub app_context: AppContext,
     pub platform_manager: PlatformManager,
     pub project_graph: ProjectGraph,
     pub project: Arc<Project>,
     pub project_id: String,
-    pub workspace: Workspace,
 }
 
 impl TaskRunnerContainer {
     pub async fn new_for_project(fixture: &str, project_id: &str) -> Self {
         let sandbox = create_sandbox(fixture);
-        let workspace = create_workspace(sandbox.path());
+        let app_context = generate_app_context_from_sandbox(sandbox.path());
         let project_graph = generate_project_graph_from_sandbox(sandbox.path()).await;
         let project = project_graph.get(project_id).unwrap();
         let platform_manager = generate_platform_manager_from_sandbox(sandbox.path()).await;
 
         Self {
             sandbox,
-            console: Arc::new(Console::new_testing()),
+            app_context,
             platform_manager,
             project_graph,
             project,
             project_id: project_id.to_owned(),
-            workspace,
         }
     }
 
@@ -75,9 +68,9 @@ impl TaskRunnerContainer {
         let task = self.project.get_task(task_id).unwrap();
 
         OutputArchiver {
+            app: &self.app_context,
             project_config: &self.project.config,
             task,
-            workspace: &self.workspace,
         }
     }
 
@@ -85,8 +78,8 @@ impl TaskRunnerContainer {
         let task = self.project.get_task(task_id).unwrap();
 
         OutputHydrater {
+            app: &self.app_context,
             task,
-            workspace: &self.workspace,
         }
     }
 
@@ -116,11 +109,10 @@ impl TaskRunnerContainer {
         let node = create_node(task);
 
         CommandExecutor::new(
-            &self.workspace,
+            &self.app_context,
             &self.project,
             task,
             &node,
-            self.console.clone(),
             self.internal_create_command(context, task, &node).await,
         )
     }
@@ -128,8 +120,7 @@ impl TaskRunnerContainer {
     pub fn create_runner(&self, task_id: &str) -> TaskRunner {
         let task = self.project.get_task(task_id).unwrap();
 
-        let mut runner =
-            TaskRunner::new(&self.workspace, &self.project, task, self.console.clone()).unwrap();
+        let mut runner = TaskRunner::new(&self.app_context, &self.project, task).unwrap();
         runner.set_platform_manager(&self.platform_manager);
         runner
     }
@@ -180,7 +171,7 @@ impl TaskRunnerContainer {
         task: &Task,
         node: &ActionNode,
     ) -> Command {
-        let mut builder = CommandBuilder::new(&self.workspace, &self.project, task, node);
+        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
         builder.set_platform_manager(&self.platform_manager);
         builder.build(context).await.unwrap()
     }

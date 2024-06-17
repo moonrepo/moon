@@ -6,18 +6,18 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
+use moon_api::Moonbase;
+use moon_app_context::AppContext;
 use moon_cache::CacheItem;
-use moon_console::{Console, TaskReportItem};
+use moon_console::TaskReportItem;
 use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
 use moon_time::now_millis;
-use moon_workspace::Workspace;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
@@ -27,13 +27,12 @@ pub struct TaskRunResult {
 }
 
 pub struct TaskRunner<'task> {
+    app: &'task AppContext,
     project: &'task Project,
     pub task: &'task Task,
-    workspace: &'task Workspace,
     platform_manager: &'task PlatformManager,
 
     archiver: OutputArchiver<'task>,
-    console: Arc<Console>,
     hydrater: OutputHydrater<'task>,
 
     // Public for testing
@@ -43,17 +42,16 @@ pub struct TaskRunner<'task> {
 
 impl<'task> TaskRunner<'task> {
     pub fn new(
-        workspace: &'task Workspace,
+        app: &'task AppContext,
         project: &'task Project,
         task: &'task Task,
-        console: Arc<Console>,
     ) -> miette::Result<Self> {
         debug!(
             task = task.target.as_str(),
             "Creating a task runner for target"
         );
 
-        let mut cache = workspace
+        let mut cache = app
             .cache_engine
             .state
             .load_target_state::<TaskRunState>(&task.target)?;
@@ -64,17 +62,16 @@ impl<'task> TaskRunner<'task> {
 
         Ok(Self {
             cache,
-            console,
             archiver: OutputArchiver {
+                app,
                 project_config: &project.config,
                 task,
-                workspace,
             },
-            hydrater: OutputHydrater { task, workspace },
+            hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,
             task,
-            workspace,
+            app,
             operations: OperationList::default(),
         })
     }
@@ -147,7 +144,7 @@ impl<'task> TaskRunner<'task> {
             Ok(maybe_hash) => {
                 item.hash = maybe_hash.clone();
 
-                self.console.reporter.on_task_completed(
+                self.app.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &item,
@@ -160,7 +157,7 @@ impl<'task> TaskRunner<'task> {
                 })
             }
             Err(error) => {
-                self.console.reporter.on_task_completed(
+                self.app.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.operations,
                     &item,
@@ -174,7 +171,7 @@ impl<'task> TaskRunner<'task> {
 
     #[instrument(skip(self))]
     pub async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
-        let cache_engine = &self.workspace.cache_engine;
+        let cache_engine = &self.app.cache_engine;
 
         debug!(
             task = self.task.target.as_str(),
@@ -234,7 +231,7 @@ impl<'task> TaskRunner<'task> {
 
         // Check if archive exists in moonbase (remote storage) by querying the artifacts
         // endpoint. This only checks that the database record exists!
-        if let Some(moonbase) = &self.workspace.session {
+        if let Some(moonbase) = Moonbase::session() {
             if let Some((artifact, _)) = moonbase.read_artifact(hash).await? {
                 debug!(
                     task = self.task.target.as_str(),
@@ -258,7 +255,7 @@ impl<'task> TaskRunner<'task> {
     pub fn is_cache_enabled(&self) -> bool {
         // If the VCS root does not exist (like in a Docker container),
         // we should avoid failing and simply disable caching
-        self.task.options.cache && self.workspace.vcs.is_enabled()
+        self.task.options.cache && self.app.vcs.is_enabled()
     }
 
     #[instrument(skip_all)]
@@ -304,7 +301,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         let mut operation = Operation::hash_generation();
-        let mut hasher = self.workspace.cache_engine.hash.create_hasher(node.label());
+        let mut hasher = self.app.cache_engine.hash.create_hasher(node.label());
 
         // Hash common fields
         trace!(
@@ -315,9 +312,9 @@ impl<'task> TaskRunner<'task> {
         let mut task_hasher = TaskHasher::new(
             self.project,
             self.task,
-            &self.workspace.vcs,
-            &self.workspace.root,
-            &self.workspace.config.hasher,
+            &self.app.vcs,
+            &self.app.workspace_root,
+            &self.app.workspace_config.hasher,
         );
 
         if context.should_inherit_args(&self.task.target) {
@@ -361,11 +358,11 @@ impl<'task> TaskRunner<'task> {
                 self.project,
                 node.get_runtime(),
                 &mut hasher,
-                &self.workspace.config.hasher,
+                &self.app.workspace_config.hasher,
             )
             .await?;
 
-        let hash = self.workspace.cache_engine.hash.save_manifest(hasher)?;
+        let hash = self.app.cache_engine.hash.save_manifest(hasher)?;
 
         operation.meta.set_hash(&hash);
         operation.finish(ActionStatus::Passed);
@@ -401,20 +398,13 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Build the command from the current task
-        let mut builder = CommandBuilder::new(self.workspace, self.project, self.task, node);
+        let mut builder = CommandBuilder::new(self.app, self.project, self.task, node);
         builder.set_platform_manager(self.platform_manager);
 
         let command = builder.build(context).await?;
 
         // Execute the command and gather all attempts made
-        let executor = CommandExecutor::new(
-            self.workspace,
-            self.project,
-            self.task,
-            node,
-            self.console.clone(),
-            command,
-        );
+        let executor = CommandExecutor::new(self.app, self.project, self.task, node, command);
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::mutex_acquisition();
@@ -603,7 +593,7 @@ impl<'task> TaskRunner<'task> {
     fn load_logs(&self, operation: &mut Operation) -> miette::Result<()> {
         if let Some(output) = operation.get_output_mut() {
             let state_dir = self
-                .workspace
+                .app
                 .cache_engine
                 .state
                 .get_target_dir(&self.task.target);
@@ -626,7 +616,7 @@ impl<'task> TaskRunner<'task> {
 
     fn save_logs(&mut self, operation: &Operation) -> miette::Result<()> {
         let state_dir = self
-            .workspace
+            .app
             .cache_engine
             .state
             .get_target_dir(&self.task.target);

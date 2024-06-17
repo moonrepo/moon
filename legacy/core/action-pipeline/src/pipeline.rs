@@ -7,7 +7,8 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
-use moon_console::{Console, PipelineReportItem};
+use moon_app_context::AppContext;
+use moon_console::PipelineReportItem;
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
@@ -83,11 +84,11 @@ impl Pipeline {
     pub async fn run(
         &mut self,
         action_graph: ActionGraph,
-        console: Arc<Console>,
+        app_context: AppContext,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
         let result = self
-            .run_internal(action_graph, console.clone(), context)
+            .run_internal(action_graph, app_context.clone(), context)
             .await;
 
         let actions = mem::take(&mut self.results);
@@ -99,7 +100,8 @@ impl Pipeline {
 
         match result {
             Ok(_) => {
-                console
+                app_context
+                    .console
                     .reporter
                     .on_pipeline_completed(&actions, &item, None)?;
 
@@ -107,13 +109,17 @@ impl Pipeline {
             }
             Err(error) => {
                 if self.aborted {
-                    console
-                        .reporter
-                        .on_pipeline_aborted(&actions, &item, Some(&error))?;
+                    app_context.console.reporter.on_pipeline_aborted(
+                        &actions,
+                        &item,
+                        Some(&error),
+                    )?;
                 } else {
-                    console
-                        .reporter
-                        .on_pipeline_completed(&actions, &item, Some(&error))?;
+                    app_context.console.reporter.on_pipeline_completed(
+                        &actions,
+                        &item,
+                        Some(&error),
+                    )?;
                 }
 
                 Err(error)
@@ -124,11 +130,12 @@ impl Pipeline {
     pub async fn run_internal(
         &mut self,
         action_graph: ActionGraph,
-        console: Arc<Console>,
+        app_context: AppContext,
         context: Option<ActionContext>,
     ) -> miette::Result<()> {
         let start = Instant::now();
         let context = Arc::new(context.unwrap_or_default());
+        let app_context = Arc::new(app_context);
         let emitter = Arc::new(create_emitter(Arc::clone(&self.workspace)).await);
         let workspace = Arc::clone(&self.workspace);
         let project_graph = Arc::clone(&self.project_graph);
@@ -148,7 +155,8 @@ impl Pipeline {
             })
             .await?;
 
-        console
+        app_context
+            .console
             .reporter
             .on_pipeline_started(&action_graph.get_nodes())?;
 
@@ -214,7 +222,7 @@ impl Pipeline {
             let emitter_clone = Arc::clone(&emitter);
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
-            let console_clone = Arc::clone(&console);
+            let app_context_clone = Arc::clone(&app_context);
             let cancel_token_clone = cancel_token.clone();
             let sender = action_graph_iter.sender.clone();
             let mut action = Action::new(node.to_owned());
@@ -235,10 +243,10 @@ impl Pipeline {
                     res = process_action(
                         action,
                         context_clone,
+                        app_context_clone,
                         emitter_clone,
                         workspace_clone,
                         project_graph_clone,
-                        console_clone,
                     ) => res
                 };
 
@@ -281,7 +289,7 @@ impl Pipeline {
             let emitter_clone = Arc::clone(&emitter);
             let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
-            let console_clone = Arc::clone(&console);
+            let app_context_clone = Arc::clone(&app_context);
             let cancel_token_clone = cancel_token.clone();
             let sender = action_graph_iter.sender.clone();
             let mut action = Action::new(node.to_owned());
@@ -298,10 +306,10 @@ impl Pipeline {
                     res = process_action(
                         action,
                         context_clone,
+                        app_context_clone,
                         emitter_clone,
                         workspace_clone,
                         project_graph_clone,
-                        console_clone,
                     ) => res
                 };
 

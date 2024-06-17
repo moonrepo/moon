@@ -1,13 +1,11 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::{ActionContext, TargetState};
-use moon_console::Console;
-use moon_emitter::Emitter;
+use moon_app_context::AppContext;
 use moon_logger::warn;
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_target::Target;
 use moon_task_runner::TaskRunner;
-use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
@@ -20,9 +18,7 @@ const LOG_TARGET: &str = "moon:action:run-task";
 pub async fn run_task(
     action: &mut Action,
     context: Arc<ActionContext>,
-    _emitter: Arc<Emitter>,
-    workspace: Arc<Workspace>,
-    console: Arc<Console>,
+    app_context: Arc<AppContext>,
     project: &Project,
     target: &Target,
     _runtime: &Runtime,
@@ -41,7 +37,7 @@ pub async fn run_task(
         context.set_target_state(&task.target, TargetState::Passthrough);
     }
 
-    let operations = TaskRunner::new(&workspace, project, task, console)?
+    let operations = TaskRunner::new(&app_context, project, task)?
         .run(&context, &action.node)
         .await?
         .operations;

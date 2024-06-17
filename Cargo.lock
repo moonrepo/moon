@@ -3179,6 +3179,7 @@ dependencies = [
  "moon_action_graph",
  "moon_actions",
  "moon_api",
+ "moon_app_context",
  "moon_cache_item",
  "moon_common",
  "moon_console",
@@ -3271,6 +3272,7 @@ dependencies = [
  "moon_action_pipeline",
  "moon_actions",
  "moon_api",
+ "moon_app_context",
  "moon_bun_platform",
  "moon_bun_tool",
  "moon_cache",
@@ -3325,6 +3327,16 @@ dependencies = [
  "tiny_http",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "moon_app_context"
+version = "0.0.1"
+dependencies = [
+ "moon_cache",
+ "moon_config",
+ "moon_console",
+ "moon_vcs",
 ]
 
 [[package]]
@@ -4259,6 +4271,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_api",
+ "moon_app_context",
  "moon_cache",
  "moon_cache_item",
  "moon_common",

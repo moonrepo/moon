@@ -10,6 +10,7 @@ moon_action_context = { path = "../../../crates/action-context" }
 moon_action_graph = { path = "../../../crates/action-graph" }
 moon_actions = { path = "../actions" }
 moon_api = { path = "../../../crates/api" }
+moon_app_context = { path = "../../../crates/app-context" }
 moon_common = { path = "../../../crates/common" }
 moon_console = { path = "../../../crates/console" }
 moon_cache_item = { path = "../../../crates/cache-item" }

@@ -219,5 +219,5 @@ pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> AppResult<Option<Arc<Moonbase
         return Ok(None);
     };
 
-    Ok(Moonbase::signin(secret_key, repo_slug).await.map(Arc::new))
+    Ok(Moonbase::signin(secret_key, repo_slug).await)
 }

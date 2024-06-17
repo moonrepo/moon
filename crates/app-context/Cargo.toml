@@ -5,7 +5,6 @@ edition = "2021"
 publish = false
 
 [dependencies]
-# moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }

@@ -3209,6 +3209,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_action_pipeline2"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette",
+ "moon_action",
+ "moon_action_context",
+ "moon_action_graph",
+ "moon_app_context",
+ "moon_project_graph",
+ "num_cpus",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "moon_actions"
 version = "0.0.1"
 dependencies = [

@@ -216,7 +216,7 @@ impl DefaultReporter {
                 ActionStatus::Passed => {
                     passed_count += 1;
                 }
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
+                ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut => {
                     failed_count += 1;
                 }
                 ActionStatus::Invalid => {
@@ -225,7 +225,7 @@ impl DefaultReporter {
                 ActionStatus::Skipped => {
                     skipped_count += 1;
                 }
-                ActionStatus::Running => {}
+                _ => {}
             };
         }
 
@@ -278,7 +278,9 @@ impl DefaultReporter {
             let status = match action.status {
                 ActionStatus::Passed => color::success("pass"),
                 ActionStatus::Cached | ActionStatus::CachedFromRemote => color::label("pass"),
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
+                ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut => {
+                    color::failure("fail")
+                }
                 ActionStatus::Invalid => color::invalid("warn"),
                 ActionStatus::Skipped => color::muted_light("skip"),
                 ActionStatus::Running => color::muted_light("oops"),

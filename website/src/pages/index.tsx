@@ -91,34 +91,6 @@ export default function Home() {
 				<ProductSection
 					reversed
 					stretched
-					id="moonbase"
-					color="text-teal-700"
-					suptitle="A service to expand to the cloud"
-					title="Accelerate your pipelines"
-					logo={<img src="/brand/moonbase/icon.svg" height={75} className="block" />}
-					description={
-						<>
-							With our hosted service{' '}
-							<Link href="/moon" size="lg">
-								moonbase
-							</Link>
-							, easily cache build artifacts to reduce CI times, gain insight into your CI
-							pipelines, track the health of your repositories, and overall cut costs.
-						</>
-					}
-					cta={{
-						children: 'Learn more about moonbase',
-						color: 'bg-teal-600',
-						href: '/moonbase',
-					}}
-				>
-					<div className="relative sm:pb-8 h-full">
-						<MoonbaseScreenshots />
-					</div>
-				</ProductSection>
-
-				<ProductSection
-					stretched
 					id="proto"
 					color="text-pink-600"
 					suptitle="A toolchain for the modern era"
@@ -162,6 +134,34 @@ export default function Home() {
 						},
 					]}
 				/>
+
+				<ProductSection
+					stretched
+					id="moonbase"
+					color="text-teal-700"
+					suptitle="A service to expand to the cloud"
+					title="Accelerate your pipelines"
+					logo={<img src="/brand/moonbase/icon.svg" height={75} className="block" />}
+					description={
+						<>
+							With our hosted service{' '}
+							<Link href="/moon" size="lg">
+								moonbase
+							</Link>
+							, easily cache build artifacts to reduce CI times, gain insight into your CI
+							pipelines, track the health of your repositories, and overall cut costs.
+						</>
+					}
+					cta={{
+						children: 'Learn more about moonbase',
+						color: 'bg-teal-600',
+						href: '/moonbase',
+					}}
+				>
+					<div className="relative sm:pb-8 h-full">
+						<MoonbaseScreenshots />
+					</div>
+				</ProductSection>
 			</main>
 
 			<UsedBy />

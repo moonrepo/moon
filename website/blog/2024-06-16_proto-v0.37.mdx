@@ -1,0 +1,67 @@
+---
+slug: proto-v0.37
+title: proto v0.37 - Calver support and self diagnosis
+authors: [milesj]
+tags: [calver, calendar, version, diagnose, doctor]
+# image: ./img/proto/v0.37.png
+---
+
+This is a small release, but includes 2 very important features.
+
+<!--truncate-->
+
+## Calender versioning support
+
+For the most part, tools use [semver](http://semver.org/) (semantic versions) for their releases,
+but every so often you run into a tool that uses another format, [calver](https://calver.org/)
+(calendar versions). Some examples of calver are `2024-02`, `2024-10-23`, and `2024-12-9.123`.
+
+Calendar based versions were not supported previously as the syntax between semver and calver are
+different enough that they could not be parsed successfully. Well no longer, as we spent the time
+writing our own custom parser to differentiate between the 2 formats. This process is quite
+complicated, and has many restrictions and caveats, so we took the time to document it under the
+name [version specification](/docs/proto/version-spec).
+
+The biggest difference between semver and calver syntax, is that semver is dot-separated, while
+calver is dash-separated. The day part (patch) is also optional in calver.
+
+:::caution
+
+We wrote a ton of tests to cover all the formats and edge cases we could think of, but if you run
+into a tool that fails to parse versions correctly, please report an issue immediately! All of our
+built-in tools have been tested against.
+
+:::
+
+## New `proto diagnose` command
+
+A common issue within the community that we've seen is commands not being available after installing
+a tool. Most of the time, this is caused by certain proto paths not existing within `PATH`. To help
+remedy these issues moving forward, we're introducing a new command,
+[`proto diagnose`](/docs/proto/commands/diagnose) (or `doctor`) that will attempt to find all issues
+with your proto installation.
+
+```
+$ proto diagnose
+
+Shell: zsh
+Shell profile: ~/.zshrc
+
+Errors
+  Issue: Bin directory (~/.proto/bin) was found BEFORE the shims directory (~/.proto/shims) on PATH
+  Resolution: Ensure the shims path comes before the bin path in your shell
+
+Warnings
+  Issue: Missing PROTO_HOME environment variable (Will default to ~/.proto if not defined)
+  Resolution: Export PROTO_HOME="$HOME/.proto" from your shell
+```
+
+In the future, we'll expand on this command by also bubbling up issues from your installed tools.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.37.0) for a full list
+of changes.
+
+- Improved command execution. May see some slight performance gains.
+- Updated wasmtime to v21 (from v17).

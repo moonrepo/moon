@@ -3,10 +3,7 @@ title: Configuration
 toc_max_heading_level: 6
 ---
 
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
-<HeaderLabel text="1 min" />
 
 We support configuration at both the project-level and user-level using a
 [TOML](https://toml.io/en/) based `.prototools` file. This file can be used to pin versions of
@@ -182,7 +179,8 @@ allow-invalid-certs = true
 
 #### `proxies`
 
-A list of proxy URLs to use for requests.
+A list of proxy URLs to use for requests. As an alternative, the `HTTPS_PROXY` environment variable
+can be set.
 
 ```toml title=".prototools"
 [settings.http]

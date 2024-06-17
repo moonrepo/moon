@@ -268,6 +268,7 @@ const sidebars: SidebarsConfig = {
 	proto: [
 		'proto/index',
 		'proto/install',
+		'proto/version-spec',
 		'proto/detection',
 		'proto/config',
 		'proto/tools',
@@ -297,6 +298,7 @@ const sidebars: SidebarsConfig = {
 						keywords: ['cli', 'commands', 'debug'],
 					},
 				},
+				'proto/commands/diagnose',
 				'proto/commands/install',
 				'proto/commands/list',
 				'proto/commands/list-remote',

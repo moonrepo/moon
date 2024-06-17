@@ -10,6 +10,7 @@ moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../action-graph" }
 moon_app_context = { path = "../app-context" }
+moon_common = { path = "../common" }
 moon_project_graph = { path = "../project-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }

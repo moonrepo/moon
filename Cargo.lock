@@ -3218,6 +3218,7 @@ dependencies = [
  "moon_action_context",
  "moon_action_graph",
  "moon_app_context",
+ "moon_common",
  "moon_project_graph",
  "num_cpus",
  "tokio",

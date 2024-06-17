@@ -1,3 +1,4 @@
+use crate::action_dispatcher::dispatch;
 use crate::job_context::JobContext;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
@@ -32,7 +33,7 @@ impl Job {
 
         debug!(index = self.index, "Dispatching {} job", action.label);
 
-        let status = tokio::select! {
+        tokio::select! {
             // Run conditions in order!
             biased;
 
@@ -43,7 +44,7 @@ impl Job {
                     "Job aborted",
                 );
 
-                ActionStatus::Aborted
+                action.status = ActionStatus::Aborted;
             }
 
             // Cancel if we receive a shutdown signal
@@ -53,7 +54,7 @@ impl Job {
                     "Job cancelled (via signal)",
                 );
 
-                ActionStatus::Invalid
+                action.status =ActionStatus::Invalid;
             }
 
             // Cancel if we have timed out
@@ -63,34 +64,42 @@ impl Job {
                     "Job timed out",
                 );
 
-                ActionStatus::TimedOut
+               action.status = ActionStatus::TimedOut;
             }
 
             // Or run the job to completion
-            // res = action_fn.run() => match res {
-            //     Ok(res) => {
+            result = dispatch(
+                &mut action,
+                self.action_context,
+                self.app_context,
+                self.context.project_graph.clone(),
+            ) => match result {
+                Ok(_) => {
+                    trace!(
+                        index = self.index,
+                        "Job passed",
+                    );
 
-            //         trace!(
-            //             index = self.index,
-            //             "Job passed",
-            //         );
+                    if matches!(action.status, ActionStatus::Running) {
+                        action.status = ActionStatus::Passed;
+                    }
+                },
+                Err(error) => {
+                    trace!(
+                        index = self.index,
+                        "Job failed",
+                    );
 
-            //         ActionStatus::Passed
-            //     },
-            //     Err(error) => {
-            //         trace!(
-            //             index = self.index,
-            //             "Job failed",
-            //         );
-
-            //         ActionStatus::Failed
-            //     },
-            // },
+                    if matches!(action.status, ActionStatus::Running) {
+                        action.status = ActionStatus::Failed;
+                    }
+                },
+            },
         };
 
         debug!(
             index = self.index,
-            status = ?status,
+            status = ?action.status,
             "Dispatched {} job", action.label
         );
 
@@ -98,6 +107,7 @@ impl Job {
         timeout_handle.abort();
 
         // Send the result back to the pipeline
+        let status = action.status;
         let _ = self.context.result_sender.send(action).await;
 
         status

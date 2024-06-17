@@ -150,6 +150,11 @@ impl Pipeline {
             })
             .await?;
 
+        app_context
+            .console
+            .reporter
+            .on_pipeline_started(&action_graph.get_nodes())?;
+
         // Launch a separate thread to listen for ctrl+c
         let cancel_token = CancellationToken::new();
         let ctrl_c_token = cancel_token.clone();

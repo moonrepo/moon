@@ -57,8 +57,9 @@ impl ActionPipeline {
         let job_context = Arc::new(JobContext {
             abort_token: CancellationToken::new(),
             cancel_token: CancellationToken::new(),
-            semaphore: Arc::new(Semaphore::new(concurrency)),
+            project_graph: Arc::clone(&self.project_graph),
             result_sender: sender.clone(),
+            semaphore: Arc::new(Semaphore::new(concurrency)),
         });
 
         // Monitor signals and ctrl+c

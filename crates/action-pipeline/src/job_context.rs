@@ -1,20 +1,24 @@
 use moon_action::Action;
+use moon_project_graph::ProjectGraph;
 use std::sync::Arc;
 use tokio::sync::{mpsc::Sender, Semaphore};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]
 pub struct JobContext {
-    /// Force aborts running sibling jobs.
+    /// Force aborts running sibling jobs
     pub abort_token: CancellationToken,
 
-    /// Receives cancel/shutdown signals.
+    /// Receives cancel/shutdown signals
     pub cancel_token: CancellationToken,
 
-    /// Sends results to the parent pipeline.
+    /// The project graph, for use within actions
+    pub project_graph: Arc<ProjectGraph>,
+
+    /// Sends results to the parent pipeline
     pub result_sender: Sender<Action>,
 
-    /// Acquires a permit for concurrency.
+    /// Acquires a permit for concurrency
     pub semaphore: Arc<Semaphore>,
 }
 

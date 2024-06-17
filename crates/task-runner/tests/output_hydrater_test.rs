@@ -39,7 +39,10 @@ mod output_hydrater {
 
             let hydrater = container.create_hydrator("file-outputs");
 
-            container.workspace.cache_engine.force_mode(CacheMode::Off);
+            container
+                .app_context
+                .cache_engine
+                .force_mode(CacheMode::Off);
 
             assert!(!hydrater
                 .hydrate("hash123", HydrateFrom::LocalCache)
@@ -59,7 +62,7 @@ mod output_hydrater {
             let hydrater = container.create_hydrator("file-outputs");
 
             container
-                .workspace
+                .app_context
                 .cache_engine
                 .force_mode(CacheMode::Write);
 

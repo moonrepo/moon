@@ -26,7 +26,6 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }
 moon_time = { path = "../time" }
-moon_workspace = { path = "../workspace" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }

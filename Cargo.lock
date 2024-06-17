@@ -4285,7 +4285,6 @@ dependencies = [
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
- "moon_workspace",
  "proto_core",
  "serde",
  "starbase_archive",
@@ -4319,6 +4318,7 @@ name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_app_context",
  "moon_bun_platform",
  "moon_cache",
  "moon_config",
@@ -4330,7 +4330,6 @@ dependencies = [
  "moon_rust_platform",
  "moon_system_platform",
  "moon_vcs",
- "moon_workspace",
  "proto_core",
  "starbase_events",
  "starbase_sandbox",

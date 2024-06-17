@@ -1,8 +1,9 @@
 use crate::task_runner_error::TaskRunnerError;
+use moon_api::Moonbase;
+use moon_app_context::AppContext;
 use moon_common::color;
 use moon_config::ProjectConfig;
 use moon_task::{TargetError, TargetScope, Task};
-use moon_workspace::Workspace;
 use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
 use starbase_utils::glob;
@@ -13,9 +14,9 @@ use tracing::{debug, instrument, warn};
 /// so that subsequent builds are faster, and any local outputs
 /// can be hydrated easily.
 pub struct OutputArchiver<'task> {
+    pub app: &'task AppContext,
     pub project_config: &'task ProjectConfig,
     pub task: &'task Task,
-    pub workspace: &'task Workspace,
 }
 
 impl<'task> OutputArchiver<'task> {
@@ -34,10 +35,10 @@ impl<'task> OutputArchiver<'task> {
         }
 
         // If so, create and pack the archive!
-        let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
+        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
 
         if !archive_file.exists() {
-            if !self.workspace.cache_engine.is_writable() {
+            if !self.app.cache_engine.is_writable() {
                 debug!(
                     task = self.task.target.as_str(),
                     hash, "Cache is not writable, skipping output archiving"
@@ -68,7 +69,7 @@ impl<'task> OutputArchiver<'task> {
             return Ok(true);
         }
 
-        for target in &self.workspace.config.runner.archivable_targets {
+        for target in &self.app.workspace_config.runner.archivable_targets {
             let is_matching_task = task.target.task_id == target.task_id;
 
             match &target.scope {
@@ -114,7 +115,7 @@ impl<'task> OutputArchiver<'task> {
 
         // Check paths first since they are literal
         for output in &self.task.output_files {
-            if !output.to_path(&self.workspace.root).exists() {
+            if !output.to_path(&self.app.workspace_root).exists() {
                 return Ok(false);
             }
         }
@@ -123,7 +124,7 @@ impl<'task> OutputArchiver<'task> {
         // If all globs are negated, then the empty check will always
         // fail, resulting in archives not being created
         if has_globs && !all_negated_globs {
-            let outputs = glob::walk_files(&self.workspace.root, &self.task.output_globs)?;
+            let outputs = glob::walk_files(&self.app.workspace_root, &self.task.output_globs)?;
 
             return Ok(!outputs.is_empty());
         }
@@ -140,7 +141,7 @@ impl<'task> OutputArchiver<'task> {
         );
 
         // Create the archiver instance based on task outputs
-        let mut archive = Archiver::new(&self.workspace.root, archive_file);
+        let mut archive = Archiver::new(&self.app.workspace_root, archive_file);
 
         for output_file in &self.task.output_files {
             archive.add_source_file(output_file.as_str(), None);
@@ -152,7 +153,7 @@ impl<'task> OutputArchiver<'task> {
 
         // Also include stdout/stderr logs in the tarball
         let state_dir = self
-            .workspace
+            .app
             .cache_engine
             .state
             .get_target_dir(&self.task.target);
@@ -181,7 +182,7 @@ impl<'task> OutputArchiver<'task> {
         hash: &str,
         archive_file: &Path,
     ) -> miette::Result<()> {
-        if let Some(moonbase) = &self.workspace.session {
+        if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)
                 .await?;

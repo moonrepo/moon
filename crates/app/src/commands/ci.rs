@@ -290,7 +290,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     let results = pipeline
         .summarize(true)
         .generate_report("ciReport.json")
-        .run(action_graph, session.get_console()?, Some(context))
+        .run(action_graph, session.create_context()?, Some(context))
         .await?;
 
     console.print_footer()?;

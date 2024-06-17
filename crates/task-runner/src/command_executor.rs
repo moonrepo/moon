@@ -1,14 +1,13 @@
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList};
 use moon_action_context::{ActionContext, TargetState};
+use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
-use moon_console::{Console, TaskReportItem};
+use moon_console::TaskReportItem;
 use moon_process::args::join_args;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_workspace::Workspace;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::sleep;
@@ -29,12 +28,11 @@ pub struct CommandExecuteResult {
 /// Run the command as a child process and capture its output. If the process fails
 /// and `retry_count` is greater than 0, attempt the process again in case it passes.
 pub struct CommandExecutor<'task> {
+    app: &'task AppContext,
     task: &'task Task,
     project: &'task Project,
-    workspace: &'task Workspace,
 
     command: Command,
-    console: Arc<Console>,
     handle: Option<JoinHandle<()>>,
 
     attempts: OperationList,
@@ -49,14 +47,13 @@ pub struct CommandExecutor<'task> {
 
 impl<'task> CommandExecutor<'task> {
     pub fn new(
-        workspace: &'task Workspace,
+        app: &'task AppContext,
         project: &'task Project,
         task: &'task Task,
         node: &ActionNode,
-        console: Arc<Console>,
         mut command: Command,
     ) -> Self {
-        command.with_console(console.clone());
+        command.with_console(app.console.clone());
 
         Self {
             attempts: OperationList::default(),
@@ -66,11 +63,10 @@ impl<'task> CommandExecutor<'task> {
             persistent: node.is_persistent() || task.is_persistent(),
             stream: false,
             handle: None,
-            workspace,
+            app,
             project,
             task,
             command,
-            console,
         }
     }
 
@@ -105,7 +101,8 @@ impl<'task> CommandExecutor<'task> {
                 self.attempt_total
             );
 
-            self.console
+            self.app
+                .console
                 .reporter
                 .on_task_started(&self.task.target, &attempt, &report_item)?;
 
@@ -135,7 +132,7 @@ impl<'task> CommandExecutor<'task> {
 
                     attempt.finish_from_output(output);
 
-                    self.console.reporter.on_task_finished(
+                    self.app.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
                         &report_item,
@@ -185,7 +182,7 @@ impl<'task> CommandExecutor<'task> {
 
                     attempt.finish(ActionStatus::Failed);
 
-                    self.console.reporter.on_task_finished(
+                    self.app.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
                         &report_item,
@@ -214,7 +211,7 @@ impl<'task> CommandExecutor<'task> {
             return;
         }
 
-        let console = self.console.clone();
+        let console = self.app.console.clone();
         let target = self.task.target.clone();
 
         self.handle = Some(task::spawn(async move {
@@ -285,21 +282,21 @@ impl<'task> CommandExecutor<'task> {
     }
 
     fn print_command_line(&self, command_line: &str) -> miette::Result<()> {
-        if !self.workspace.config.runner.log_running_command {
+        if !self.app.workspace_config.runner.log_running_command {
             return Ok(());
         }
 
         let message = color::muted_light(self.command.inspect().format_command(
             command_line,
-            &self.workspace.root,
+            &self.app.workspace_root,
             Some(if self.task.options.run_from_workspace_root {
-                &self.workspace.root
+                &self.app.workspace_root
             } else {
                 &self.project.root
             }),
         ));
 
-        self.console.out.write_line(message)?;
+        self.app.console.out.write_line(message)?;
 
         Ok(())
     }

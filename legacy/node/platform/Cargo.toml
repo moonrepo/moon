@@ -39,9 +39,9 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon = { path = "../../core/moon" }
 moon_project_graph = { path = "../../../crates/project-graph" }
 moon_test_utils = { path = "../../core/test-utils" }
+moon_test_utils2 = { path = "../../../crates/test-utils" }
 
 [lints]
 workspace = true

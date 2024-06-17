@@ -12,11 +12,14 @@ use starbase_utils::fs;
 use std::io;
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::OnceLock;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio_util::codec::{BytesCodec, FramedRead};
 use tracing::instrument;
 use tracing::{debug, info, warn};
+
+static INSTANCE: OnceLock<Arc<Moonbase>> = OnceLock::new();
 
 #[derive(Clone, Debug)]
 pub struct Moonbase {
@@ -48,8 +51,16 @@ impl Moonbase {
         );
     }
 
+    pub fn session() -> Option<Arc<Moonbase>> {
+        INSTANCE.get().cloned()
+    }
+
     #[instrument(skip_all)]
-    pub async fn signin(secret_key: String, slug: String) -> Option<Moonbase> {
+    pub async fn signin(secret_key: String, slug: String) -> Option<Arc<Moonbase>> {
+        if let Some(instance) = Self::session() {
+            return Some(instance);
+        }
+
         info!(
             "API keys detected, attempting to sign in to moonbase for repository {}",
             color::id(&slug),
@@ -75,7 +86,7 @@ impl Moonbase {
             })) => {
                 debug!("Sign in successful!");
 
-                Some(Moonbase {
+                let instance = Arc::new(Moonbase {
                     auth_token: token,
                     ci_insights_enabled: ci_insights,
                     job_id: None,
@@ -85,7 +96,11 @@ impl Moonbase {
                     download_urls: Arc::new(RwLock::new(FxHashMap::default())),
                     upload_requests: Arc::new(RwLock::new(vec![])),
                     job_ids: Arc::new(RwLock::new(FxHashMap::default())),
-                })
+                });
+
+                let _ = INSTANCE.set(Arc::clone(&instance));
+
+                Some(instance)
             }
             Ok(Response::Failure { message, status }) => {
                 warn!(

@@ -1,6 +1,7 @@
+use moon_api::Moonbase;
+use moon_app_context::AppContext;
 use moon_common::color;
 use moon_task::Task;
-use moon_workspace::Workspace;
 use starbase_archive::tar::TarUnpacker;
 use starbase_archive::Archiver;
 use starbase_utils::fs;
@@ -15,8 +16,8 @@ pub enum HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
+    pub app: &'task AppContext,
     pub task: &'task Task,
-    pub workspace: &'task Workspace,
 }
 
 impl<'task> OutputHydrater<'task> {
@@ -28,9 +29,9 @@ impl<'task> OutputHydrater<'task> {
             return Ok(true);
         }
 
-        let archive_file = self.workspace.cache_engine.hash.get_archive_path(hash);
+        let archive_file = self.app.cache_engine.hash.get_archive_path(hash);
 
-        if self.workspace.cache_engine.is_readable() {
+        if self.app.cache_engine.is_readable() {
             debug!(
                 task = self.task.target.as_str(),
                 hash, "Hydrating cached outputs into project"
@@ -67,7 +68,7 @@ impl<'task> OutputHydrater<'task> {
         );
 
         // Create the archiver instance based on task outputs
-        let mut archive = Archiver::new(&self.workspace.root, archive_file);
+        let mut archive = Archiver::new(&self.app.workspace_root, archive_file);
 
         for output_file in &self.task.output_files {
             archive.add_source_file(output_file.as_str(), None);
@@ -89,7 +90,7 @@ impl<'task> OutputHydrater<'task> {
 
             // Delete target outputs to ensure a clean slate
             for output in &self.task.output_files {
-                fs::remove_file(output.to_logical_path(&self.workspace.root))?;
+                fs::remove_file(output.to_logical_path(&self.app.workspace_root))?;
             }
         }
 
@@ -102,7 +103,7 @@ impl<'task> OutputHydrater<'task> {
         hash: &str,
         archive_file: &Path,
     ) -> miette::Result<()> {
-        if let Some(moonbase) = &self.workspace.session {
+        if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .download_artifact_from_remote_storage(hash, archive_file)
                 .await?;

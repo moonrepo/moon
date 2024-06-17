@@ -232,7 +232,7 @@ pub async fn run_target(
         .bail_on_error()
         .summarize(args.summary)
         .generate_report("runReport.json")
-        .run(action_graph, session.get_console()?, Some(context))
+        .run(action_graph, session.create_context()?, Some(context))
         .await?;
 
     Ok(())

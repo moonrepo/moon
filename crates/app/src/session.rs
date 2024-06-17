@@ -5,6 +5,7 @@ use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::ActionGraphBuilder;
 use moon_api::Moonbase;
+use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_test_env};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
@@ -90,6 +91,18 @@ impl CliSession {
 
     pub async fn build_project_graph(&self) -> AppResult<ProjectGraphBuilder> {
         ProjectGraphBuilder::new(create_project_graph_context(self).await?).await
+    }
+
+    pub fn create_context(&self) -> AppResult<AppContext> {
+        Ok(AppContext {
+            cache_engine: self.get_cache_engine()?,
+            console: Arc::new(self.console.clone()),
+            vcs: self.get_vcs_adapter()?,
+            toolchain_config: Arc::clone(&self.toolchain_config),
+            workspace_config: Arc::clone(&self.workspace_config),
+            working_dir: self.working_dir.clone(),
+            workspace_root: self.workspace_root.clone(),
+        })
     }
 
     pub fn get_cache_engine(&self) -> AppResult<Arc<CacheEngine>> {

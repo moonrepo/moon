@@ -9,6 +9,8 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_app_context = { path = "../app-context" }
+moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_project_graph = { path = "../project-graph" }

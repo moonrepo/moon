@@ -23,8 +23,8 @@ impl ActionGraph {
         ActionGraph { graph }
     }
 
-    pub fn try_iter(&self) -> miette::Result<ActionGraphIter> {
-        ActionGraphIter::new(&self.graph)
+    pub fn creater_iter(&self, indices: Vec<NodeIndex>) -> ActionGraphIter {
+        ActionGraphIter::new(&self.graph, indices)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -45,6 +45,55 @@ impl ActionGraph {
 
     pub fn labeled_graph(&self) -> DiGraph<String, String> {
         self.graph.map(|_, n| n.label(), |_, _| String::new())
+    }
+
+    pub fn sort_topological(&self) -> miette::Result<Vec<NodeIndex>> {
+        // Detect any cycles first
+        let mut cycle: Vec<NodeIndex> = vec![];
+
+        self.graph.visit_cycles(|_, c| {
+            cycle.extend(c);
+            std::ops::ControlFlow::Break(())
+        });
+
+        if !cycle.is_empty() {
+            return Err(ActionGraphError::CycleDetected(
+                cycle
+                    .into_iter()
+                    .map(|index| {
+                        self.graph
+                            .node_weight(index)
+                            .map(|n| n.label())
+                            .unwrap_or_else(|| "(unknown)".into())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" → "),
+            )
+            .into());
+        }
+
+        // Then sort topologically
+        match petgraph::algo::toposort(&self.graph, None) {
+            Ok(mut indices) => {
+                indices.reverse();
+
+                debug!(
+                    order = ?indices.iter().map(|i| i.index()).collect::<Vec<_>>(),
+                    "Sorting action graph topologically",
+                );
+
+                Ok(indices)
+            }
+            // For some reason the topo sort can detect a cycle,
+            // that wasn't previously detected, so error...
+            Err(cycle) => Err(ActionGraphError::CycleDetected(
+                self.graph
+                    .node_weight(cycle.node_id())
+                    .map(|n| n.label())
+                    .unwrap_or_else(|| "(unknown)".into()),
+            )
+            .into()),
+        }
     }
 
     pub fn to_dot(&self) -> String {
@@ -97,62 +146,17 @@ pub struct ActionGraphIter<'graph> {
 }
 
 impl<'graph> ActionGraphIter<'graph> {
-    pub fn new(graph: &'graph GraphType) -> miette::Result<Self> {
-        // Detect any cycles first
-        let mut cycle: Vec<NodeIndex> = vec![];
+    pub fn new(graph: &'graph GraphType, indices: Vec<NodeIndex>) -> Self {
+        let (sender, receiver) = mpsc::channel();
 
-        graph.visit_cycles(|_, c| {
-            cycle.extend(c);
-            std::ops::ControlFlow::Break(())
-        });
-
-        if !cycle.is_empty() {
-            return Err(ActionGraphError::CycleDetected(
-                cycle
-                    .into_iter()
-                    .map(|index| {
-                        graph
-                            .node_weight(index)
-                            .map(|n| n.label())
-                            .unwrap_or_else(|| "(unknown)".into())
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" → "),
-            )
-            .into());
-        }
-
-        // Then sort topologically
-        match petgraph::algo::toposort(graph, None) {
-            Ok(mut indices) => {
-                indices.reverse();
-
-                debug!(
-                    order = ?indices.iter().map(|i| i.index()).collect::<Vec<_>>(),
-                    "Iterating action graph topologically",
-                );
-
-                let (sender, receiver) = mpsc::channel();
-
-                Ok(Self {
-                    completed: Arc::new(RwLock::new(FxHashSet::default())),
-                    graph,
-                    indices,
-                    receiver: Some(receiver),
-                    running: Arc::new(RwLock::new(FxHashMap::default())),
-                    sender,
-                    visited: FxHashSet::default(),
-                })
-            }
-            // For some reason the topo sort can detect a cycle,
-            // that wasn't previously detected, so error...
-            Err(cycle) => Err(ActionGraphError::CycleDetected(
-                graph
-                    .node_weight(cycle.node_id())
-                    .map(|n| n.label())
-                    .unwrap_or_else(|| "(unknown)".into()),
-            )
-            .into()),
+        Self {
+            completed: Arc::new(RwLock::new(FxHashSet::default())),
+            graph,
+            indices,
+            receiver: Some(receiver),
+            running: Arc::new(RwLock::new(FxHashMap::default())),
+            sender,
+            visited: FxHashSet::default(),
         }
     }
 

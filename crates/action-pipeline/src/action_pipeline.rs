@@ -1,6 +1,6 @@
 use crate::job::Job;
 use crate::job_context::JobContext;
-use moon_action::{Action, ActionNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
@@ -30,7 +30,7 @@ impl ActionPipeline {
         }
     }
 
-    pub async fn run(&self, action_graph: ActionGraph) -> miette::Result<()> {
+    pub async fn run(&self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
         self.run_with_context(action_graph, ActionContext::default())
             .await
     }
@@ -39,8 +39,9 @@ impl ActionPipeline {
         &self,
         action_graph: ActionGraph,
         action_context: ActionContext,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<Vec<Action>> {
         let concurrency = self.concurrency.unwrap_or_else(num_cpus::get);
+        let total_actions = action_graph.get_node_count();
 
         // TODO pipeline started event
 
@@ -50,111 +51,123 @@ impl ActionPipeline {
             .on_pipeline_started(&action_graph.get_nodes())?;
 
         // This aggregates results from ran jobs
-        let (sender, mut receiver) = mpsc::channel::<Action>(action_graph.get_node_count());
+        let (sender, mut receiver) = mpsc::channel::<Action>(total_actions);
 
         // Create job context
-        let job_context = JobContext {
+        let job_context = Arc::new(JobContext {
             abort_token: CancellationToken::new(),
             cancel_token: CancellationToken::new(),
             semaphore: Arc::new(Semaphore::new(concurrency)),
             result_sender: sender.clone(),
-        };
+        });
 
         // Monitor signals and ctrl+c
         let signal_handle = self.monitor_signals(job_context.cancel_token.clone());
 
-        // Generate jobs to process actions
-        self.generate_jobs(action_graph, action_context, job_context)
-            .await?;
+        // Enqueue jobs from the graph to dispatch actions
+        let queue_handle = self.enqueue_jobs(
+            action_graph,
+            Arc::new(action_context),
+            Arc::clone(&job_context),
+        )?;
 
-        // Clean up any open handles
-        signal_handle.abort();
+        // Wait and receive all results coming through
+        let mut actions = vec![];
+        let mut ran_actions = 0;
 
-        Ok(())
-    }
+        while let Some(action) = receiver.recv().await {
+            ran_actions += 1;
+            actions.push(action);
 
-    async fn generate_jobs(
-        &self,
-        action_graph: ActionGraph,
-        action_context: ActionContext,
-        job_context: JobContext,
-    ) -> miette::Result<()> {
-        let action_context = Arc::new(action_context);
-        let mut nodes = action_graph.try_iter()?;
-        let mut persistent_indexes = vec![];
-        let mut jobs = vec![];
-
-        nodes.monitor_completed();
-
-        let create_job = |node: &ActionNode, permit: OwnedSemaphorePermit| Job {
-            node: node.to_owned(),
-            context: job_context.clone(),
-            app_context: Arc::clone(&self.app_context),
-            action_context: Arc::clone(&action_context),
-            permit,
-            timeout: None,
-        };
-
-        while nodes.has_pending() {
-            if job_context.is_aborted_or_cancelled() {
+            if ran_actions == total_actions || job_context.is_aborted_or_cancelled() {
                 break;
-            }
-
-            // Nothing new to run since they're waiting on currently
-            // running actions, so exhaust the current list
-            let Some(node_index) = nodes.next() else {
-                self.dispatch_jobs(mem::take(&mut jobs)).await?;
-
-                continue;
-            };
-
-            // Node does not exist for some reason, this shouldn't happen!
-            let Some(node) = action_graph.get_node_from_index(&node_index) else {
-                warn!(
-                    "Received action {} with no associated node, unable to dispatch",
-                    node_index.index()
-                );
-
-                continue;
-            };
-
-            // Run persistent later in parallel
-            if node.is_persistent() {
-                trace!(
-                    "Marking action {} as persistent, will defer dispatch",
-                    node_index.index()
-                );
-
-                // Must mark as completed otherwise the loop hangs
-                nodes.mark_completed(node_index);
-                persistent_indexes.push(node_index);
-
-                continue;
-            }
-
-            // Otherwise run it topologically
-            jobs.push(create_job(
-                node,
-                job_context
-                    .semaphore
-                    .clone()
-                    .acquire_owned()
-                    .await
-                    .expect("Failed to spawn job!"),
-            ));
-
-            // Run this in isolation by exhausting the current list of handles
-            if node.is_interactive() || job_context.semaphore.available_permits() == 0 {
-                self.dispatch_jobs(mem::take(&mut jobs)).await?;
             }
         }
 
-        // TODO persistent
+        drop(sender);
+        drop(receiver);
 
-        Ok(())
+        // Clean up any open handles
+        queue_handle.abort();
+        signal_handle.abort();
+
+        Ok(actions)
     }
 
-    async fn dispatch_jobs(&self, jobs: Vec<Job>) -> miette::Result<()> {
+    fn enqueue_jobs(
+        &self,
+        action_graph: ActionGraph,
+        action_context: Arc<ActionContext>,
+        job_context: Arc<JobContext>,
+    ) -> miette::Result<JoinHandle<()>> {
+        let node_indices = action_graph.sort_topological()?;
+        let app_context = Arc::clone(&self.app_context);
+
+        Ok(tokio::spawn(async move {
+            let mut nodes = action_graph.creater_iter(node_indices);
+            let mut persistent_indices = vec![];
+            let mut job_handles = vec![];
+
+            nodes.monitor_completed();
+
+            while nodes.has_pending() {
+                if job_context.is_aborted_or_cancelled() {
+                    break;
+                }
+
+                // Nothing new to run since they're waiting on currently
+                // running actions, so just keep looping
+                let Some(node_index) = nodes.next() else {
+                    continue;
+                };
+
+                // Node does not exist for some reason, this shouldn't happen!
+                let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                    warn!(
+                        "Received action {} with no associated node, unable to dispatch",
+                        node_index.index()
+                    );
+
+                    continue;
+                };
+
+                // Run persistent later in parallel
+                if node.is_persistent() {
+                    trace!(
+                        "Marking action {} as persistent, will defer dispatch",
+                        node_index.index()
+                    );
+
+                    // Must mark as completed otherwise the loop hangs
+                    nodes.mark_completed(node_index);
+                    persistent_indices.push(node_index);
+
+                    continue;
+                }
+
+                // Otherwise run it topologically
+                job_handles.push(dispatch_job(
+                    node.to_owned(),
+                    node_index.index(),
+                    Arc::clone(&job_context),
+                    Arc::clone(&app_context),
+                    Arc::clone(&action_context),
+                ));
+
+                // Run this in isolation by exhausting the current list of handles
+                if node.is_interactive() {
+                    for handle in mem::take(&mut job_handles) {
+                        handle.await;
+                    }
+                }
+            }
+
+            // TODO persistent
+        }))
+    }
+
+    async fn handle_jobs(&self, jobs: Vec<JoinHandle<()>>) -> miette::Result<()> {
+        // TODO exhaust them
         Ok(())
     }
 
@@ -169,4 +182,34 @@ impl ActionPipeline {
             }
         })
     }
+}
+
+async fn dispatch_job(
+    node: ActionNode,
+    index: usize,
+    job_context: Arc<JobContext>,
+    app_context: Arc<AppContext>,
+    action_context: Arc<ActionContext>,
+) -> JoinHandle<ActionStatus> {
+    let permit = job_context
+        .semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .expect("Failed to dispatch job!");
+
+    let job = Job {
+        node,
+        index,
+        context: job_context,
+        app_context,
+        action_context,
+        timeout: None, // TODO
+    };
+
+    tokio::spawn(async move {
+        let status = job.dispatch().await;
+        drop(permit);
+        status
+    })
 }

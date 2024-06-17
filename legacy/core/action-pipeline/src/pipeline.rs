@@ -143,110 +143,173 @@ impl Pipeline {
             "Running {} actions", total_actions_count
         );
 
+        emitter
+            .emit(Event::PipelineStarted {
+                actions_count: total_actions_count,
+                context: &context,
+            })
+            .await?;
+
+        // Launch a separate thread to listen for ctrl+c
+        let cancel_token = CancellationToken::new();
+        let ctrl_c_token = cancel_token.clone();
+
+        tokio::spawn(async move {
+            if tokio::signal::ctrl_c().await.is_ok() {
+                ctrl_c_token.cancel();
+            }
+        });
+
+        // This limits how many tasks can run in parallel
+        let semaphore = Arc::new(Semaphore::new(
+            self.concurrency.unwrap_or_else(num_cpus::get),
+        ));
+
         let mut action_handles = vec![];
-        // let mut persistent_nodes = vec![];
-        let mut action_graph_iter = action_graph.try_iter()?;
+        let mut persistent_nodes = vec![];
+        let mut action_graph_iter = action_graph.creater_iter(action_graph.sort_topological()?);
 
         action_graph_iter.monitor_completed();
 
-        // while action_graph_iter.has_pending() {
-        //     let context_clone = Arc::clone(&context);
-        //     let emitter_clone = Arc::clone(&emitter);
-        //     let workspace_clone = Arc::clone(&workspace);
-        //     let project_graph_clone = Arc::clone(&project_graph);
-        //     let app_context_clone = Arc::clone(&app_context);
-        //     let cancel_token_clone = cancel_token.clone();
-        //     let sender = action_graph_iter.sender.clone();
-        //     let mut action = Action::new(node.to_owned());
-        //     action.node_index = node_index.index();
+        while action_graph_iter.has_pending() {
+            let Some(node_index) = action_graph_iter.next() else {
+                // Nothing new to run since they're waiting on currently
+                // running actions, so exhaust the current list
+                self.run_handles(mem::take(&mut action_handles), &emitter)
+                    .await?;
 
-        //     let Ok(permit) = semaphore.clone().acquire_owned().await else {
-        //         continue; // Should error?
-        //     };
+                continue;
+            };
 
-        //     action_handles.push(tokio::spawn(async move {
-        //         let interactive = action.node.is_interactive();
-        //         let result = tokio::select! {
-        //             biased;
+            let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                warn!(
+                    target: LOG_TARGET,
+                    "Received a graph index {} with no associated node, unable to process",
+                    node_index.index()
+                );
 
-        //             _ = cancel_token_clone.cancelled(), if !interactive => {
-        //                 Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-        //             }
-        //             res = process_action(
-        //                 action,
-        //                 context_clone,
-        //                 app_context_clone,
-        //                 emitter_clone,
-        //                 workspace_clone,
-        //                 project_graph_clone,
-        //             ) => res
-        //         };
+                continue;
+            };
 
-        //         if let Ok(action) = &result {
-        //             let _ = sender.send(action.node_index);
-        //         }
+            // Run these later as a parallel batch
+            if node.is_persistent() {
+                trace!(
+                    target: LOG_TARGET,
+                    // index = node_index.index(),
+                    "Marking action {} as persistent, will defer run",
+                    node_index.index()
+                );
 
-        //         drop(permit);
+                // Must mark as completed otherwise the loop hangs
+                action_graph_iter.mark_completed(node_index);
 
-        //         result
-        //     }));
+                persistent_nodes.push(node_index);
 
-        // }
+                continue;
+            }
 
-        // if !persistent_nodes.is_empty() {
-        //     trace!(
-        //         target: LOG_TARGET,
-        //         "Running {} persistent actions",
-        //         persistent_nodes.len(),
-        //     );
-        // }
+            let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
+            let app_context_clone = Arc::clone(&app_context);
+            let cancel_token_clone = cancel_token.clone();
+            let sender = action_graph_iter.sender.clone();
+            let mut action = Action::new(node.to_owned());
+            action.node_index = node_index.index();
 
-        // for node_index in persistent_nodes {
-        //     let Some(node) = action_graph.get_node_from_index(&node_index) else {
-        //         warn!(
-        //             target: LOG_TARGET,
-        //             "Received a graph index {} with no associated node, unable to process",
-        //             node_index.index()
-        //         );
+            let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                continue; // Should error?
+            };
 
-        //         continue;
-        //     };
+            action_handles.push(tokio::spawn(async move {
+                let interactive = action.node.is_interactive();
+                let result = tokio::select! {
+                    biased;
 
-        //     let context_clone = Arc::clone(&context);
-        //     let emitter_clone = Arc::clone(&emitter);
-        //     let workspace_clone = Arc::clone(&workspace);
-        //     let project_graph_clone = Arc::clone(&project_graph);
-        //     let app_context_clone = Arc::clone(&app_context);
-        //     let cancel_token_clone = cancel_token.clone();
-        //     let sender = action_graph_iter.sender.clone();
-        //     let mut action = Action::new(node.to_owned());
-        //     action.node_index = node_index.index();
+                    _ = cancel_token_clone.cancelled(), if !interactive => {
+                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+                    }
+                    res = process_action(
+                        action,
+                        context_clone,
+                        app_context_clone,
+                        emitter_clone,
+                        workspace_clone,
+                        project_graph_clone,
+                    ) => res
+                };
 
-        //     action_handles.push(tokio::spawn(async move {
-        //         let interactive = action.node.is_interactive();
-        //         let result = tokio::select! {
-        //             biased;
+                if let Ok(action) = &result {
+                    let _ = sender.send(action.node_index);
+                }
 
-        //             _ = cancel_token_clone.cancelled(), if !interactive => {
-        //                 Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
-        //             }
-        //             res = process_action(
-        //                 action,
-        //                 context_clone,
-        //                 app_context_clone,
-        //                 emitter_clone,
-        //                 workspace_clone,
-        //                 project_graph_clone,
-        //             ) => res
-        //         };
+                drop(permit);
 
-        //         if let Ok(action) = &result {
-        //             let _ = sender.send(action.node_index);
-        //         }
+                result
+            }));
 
-        //         result
-        //     }));
-        // }
+            // Run this in isolation by exhausting the current list of handles
+            if node.is_interactive() || semaphore.available_permits() == 0 {
+                self.run_handles(mem::take(&mut action_handles), &emitter)
+                    .await?;
+            }
+        }
+
+        if !persistent_nodes.is_empty() {
+            trace!(
+                target: LOG_TARGET,
+                "Running {} persistent actions",
+                persistent_nodes.len(),
+            );
+        }
+
+        for node_index in persistent_nodes {
+            let Some(node) = action_graph.get_node_from_index(&node_index) else {
+                warn!(
+                    target: LOG_TARGET,
+                    "Received a graph index {} with no associated node, unable to process",
+                    node_index.index()
+                );
+
+                continue;
+            };
+
+            let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
+            let app_context_clone = Arc::clone(&app_context);
+            let cancel_token_clone = cancel_token.clone();
+            let sender = action_graph_iter.sender.clone();
+            let mut action = Action::new(node.to_owned());
+            action.node_index = node_index.index();
+
+            action_handles.push(tokio::spawn(async move {
+                let interactive = action.node.is_interactive();
+                let result = tokio::select! {
+                    biased;
+
+                    _ = cancel_token_clone.cancelled(), if !interactive => {
+                        Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
+                    }
+                    res = process_action(
+                        action,
+                        context_clone,
+                        app_context_clone,
+                        emitter_clone,
+                        workspace_clone,
+                        project_graph_clone,
+                    ) => res
+                };
+
+                if let Ok(action) = &result {
+                    let _ = sender.send(action.node_index);
+                }
+
+                result
+            }));
+        }
 
         // Run any remaining actions
         self.run_handles(action_handles, &emitter).await?;

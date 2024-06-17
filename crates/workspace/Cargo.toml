@@ -8,18 +8,8 @@ publish = false
 moon_api = { path = "../api" }
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
-moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
+moon_config = { path = "../config" }
 moon_vcs = { path = "../vcs" }
-miette = { workspace = true }
-proto_core = { workspace = true }
-starbase = { workspace = true }
-starbase_styles = { workspace = true }
-starbase_utils = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-
-[dev-dependencies]
-starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

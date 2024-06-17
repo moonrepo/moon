@@ -13,10 +13,10 @@ use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
 use moon_task_runner::TaskRunner;
 use moon_test_utils2::{
-    generate_platform_manager_from_sandbox, generate_project_graph_from_sandbox, ProjectGraph,
+    generate_platform_manager_from_sandbox, generate_project_graph_from_sandbox,
+    generate_workspace_from_sandbox, ProjectGraph,
 };
 use moon_workspace::Workspace;
-use proto_core::ProtoEnvironment;
 use starbase_archive::Archiver;
 use starbase_sandbox::{create_sandbox, Sandbox};
 use std::fs;
@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub fn create_workspace(root: &Path) -> Workspace {
-    Workspace::load_from(root, ProtoEnvironment::new_testing(root)).unwrap()
+    generate_workspace_from_sandbox(root)
 }
 
 pub fn create_node(task: &Task) -> ActionNode {

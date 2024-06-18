@@ -215,7 +215,6 @@ impl Pipeline {
 
             let context_clone = Arc::clone(&context);
             let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let app_context_clone = Arc::clone(&app_context);
             let cancel_token_clone = cancel_token.clone();
@@ -240,7 +239,6 @@ impl Pipeline {
                         context_clone,
                         app_context_clone,
                         emitter_clone,
-                        workspace_clone,
                         project_graph_clone,
                     ) => res
                 };
@@ -282,7 +280,6 @@ impl Pipeline {
 
             let context_clone = Arc::clone(&context);
             let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let app_context_clone = Arc::clone(&app_context);
             let cancel_token_clone = cancel_token.clone();
@@ -303,7 +300,6 @@ impl Pipeline {
                         context_clone,
                         app_context_clone,
                         emitter_clone,
-                        workspace_clone,
                         project_graph_clone,
                     ) => res
                 };

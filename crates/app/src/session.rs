@@ -16,7 +16,6 @@ use moon_extension_plugin::ExtensionPlugin;
 use moon_plugin::{PluginRegistry, PluginType};
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_vcs::{BoxedVcs, Git};
-use moon_workspace::Workspace;
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use semver::Version;
@@ -46,7 +45,6 @@ pub struct CliSession {
     extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     project_graph: OnceCell<Arc<ProjectGraph>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
-    workspace: OnceCell<Arc<Workspace>>,
 
     // Configs
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -77,7 +75,6 @@ impl CliSession {
             workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
             vcs_adapter: OnceCell::new(),
-            workspace: OnceCell::new(),
             cli,
         }
     }
@@ -154,25 +151,6 @@ impl CliSession {
             )?;
 
             Ok::<_, miette::Report>(Arc::new(Box::new(git)))
-        })?;
-
-        Ok(Arc::clone(item))
-    }
-
-    pub fn get_workspace_legacy(&self) -> AppResult<Arc<Workspace>> {
-        let item = self.workspace.get_or_try_init(|| {
-            let workspace = Workspace {
-                cache_engine: self.get_cache_engine()?,
-                config: self.workspace_config.clone(),
-                root: self.workspace_root.clone(),
-                session: self.moonbase.clone(),
-                tasks_config: self.tasks_config.clone(),
-                toolchain_config: self.toolchain_config.clone(),
-                vcs: self.get_vcs_adapter()?,
-                working_dir: self.working_dir.clone(),
-            };
-
-            Ok::<_, miette::Report>(Arc::new(workspace))
         })?;
 
         Ok(Arc::clone(item))

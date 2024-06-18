@@ -3302,7 +3302,6 @@ dependencies = [
  "moon_tool",
  "moon_typescript_lang",
  "moon_vcs",
- "moon_workspace",
  "once_cell",
  "open",
  "petgraph",
@@ -4464,17 +4463,6 @@ dependencies = [
  "system_env",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "moon_workspace"
-version = "0.0.1"
-dependencies = [
- "moon_api",
- "moon_cache",
- "moon_common",
- "moon_config",
- "moon_vcs",
 ]
 
 [[package]]

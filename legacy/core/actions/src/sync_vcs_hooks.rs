@@ -1,11 +1,11 @@
+use moon_app_context::AppContext;
 use moon_vcs_hooks::{HooksGenerator, HooksHash};
-use moon_workspace::Workspace;
 use tracing::instrument;
 
 #[instrument(skip_all)]
-pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<bool> {
-    let vcs_config = &workspace.config.vcs;
-    let generator = HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config);
+pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Result<bool> {
+    let vcs_config = &app_context.workspace_config.vcs;
+    let generator = HooksGenerator::new(&app_context.workspace_root, &app_context.vcs, vcs_config);
 
     // Force run the generator and bypass cache
     if force {
@@ -22,7 +22,7 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
     }
 
     // Only generate if the hash has changed
-    workspace
+    app_context
         .cache_engine
         .execute_if_changed("vcsHooks.json", hooks_hash, || async {
             generator.generate().await
@@ -31,10 +31,14 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
 }
 
 #[instrument(skip_all)]
-pub async fn unsync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
-    HooksGenerator::new(&workspace.root, &workspace.vcs, &workspace.config.vcs)
-        .cleanup()
-        .await?;
+pub async fn unsync_vcs_hooks(app_context: &AppContext) -> miette::Result<()> {
+    HooksGenerator::new(
+        &app_context.workspace_root,
+        &app_context.vcs,
+        &app_context.workspace_config.vcs,
+    )
+    .cleanup()
+    .await?;
 
     Ok(())
 }

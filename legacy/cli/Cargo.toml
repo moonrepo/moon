@@ -51,7 +51,6 @@ moon_tool = { path = "../core/tool" }
 moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../../crates/vcs" }
-moon_workspace = { path = "../../crates/workspace" }
 bytes = "1.6.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [

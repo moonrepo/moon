@@ -1,12 +1,12 @@
 use super::should_skip_action_matching;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_app_context::AppContext;
 use moon_logger::debug;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
-use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::env;
@@ -19,7 +19,7 @@ const LOG_TARGET: &str = "moon:action:sync-project";
 pub async fn sync_project(
     _action: &mut Action,
     context: Arc<ActionContext>,
-    workspace: Arc<Workspace>,
+    app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
     project: &Project,
     runtime: &Runtime,
@@ -42,7 +42,7 @@ pub async fn sync_project(
     }
 
     // Create a snapshot for tasks to reference
-    workspace
+    app_context
         .cache_engine
         .state
         .save_project_snapshot(&project.id, project)?;

@@ -7,12 +7,12 @@ publish = false
 [dependencies]
 moon_action = { path = "../../../crates/action" }
 moon_action_context = { path = "../../../crates/action-context" }
+moon_app_context = { path = "../../../crates/app-context" }
 moon_platform_runtime = { path = "../../../crates/platform-runtime" }
 moon_project = { path = "../../../crates/project" }
 moon_target = { path = "../../../crates/target" }
 moon_task = { path = "../../../crates/task" }
 moon_utils = { path = "../utils" }
-moon_workspace = { path = "../../../crates/workspace" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }

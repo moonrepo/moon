@@ -1,6 +1,6 @@
+use moon_app_context::AppContext;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_utils::async_trait;
-use moon_workspace::Workspace;
 
 pub struct LocalCacheSubscriber {}
 
@@ -15,14 +15,15 @@ impl Subscriber for LocalCacheSubscriber {
     async fn on_emit<'e>(
         &mut self,
         event: &Event<'e>,
-        workspace: &Workspace,
+        app_context: &AppContext,
     ) -> miette::Result<EventFlow> {
         // After the run has finished, clean any stale archives.
         if let Event::PipelineFinished { .. } = event {
-            if workspace.config.runner.auto_clean_cache {
-                workspace
-                    .cache_engine
-                    .clean_stale_cache(&workspace.config.runner.cache_lifetime, false)?;
+            if app_context.workspace_config.runner.auto_clean_cache {
+                app_context.cache_engine.clean_stale_cache(
+                    &app_context.workspace_config.runner.cache_lifetime,
+                    false,
+                )?;
             }
         }
 

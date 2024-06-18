@@ -1,11 +1,11 @@
 use super::should_skip_action_matching;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_logger::debug;
 use moon_platform::{PlatformManager, Runtime};
 use moon_utils::time;
-use moon_workspace::Workspace;
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -25,7 +25,7 @@ const LOG_TARGET: &str = "moon:action:setup-tool";
 pub async fn setup_tool(
     _action: &mut Action,
     context: Arc<ActionContext>,
-    workspace: Arc<Workspace>,
+    app_context: Arc<AppContext>,
     runtime: &Runtime,
 ) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "setup-tool");
@@ -52,7 +52,7 @@ pub async fn setup_tool(
         return Ok(ActionStatus::Skipped);
     }
 
-    let mut state = workspace
+    let mut state = app_context
         .cache_engine
         .state
         .load_state::<ToolState>(format!("tool{}-{}.json", runtime, runtime.requirement))?;

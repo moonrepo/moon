@@ -3196,7 +3196,6 @@ dependencies = [
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
- "moon_workspace",
  "num_cpus",
  "proto_core",
  "rustc-hash",
@@ -3214,13 +3213,13 @@ name = "moon_actions"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_app_context",
  "moon_cache_item",
  "moon_codeowners",
  "moon_common",
  "moon_config",
  "moon_project_graph",
  "moon_vcs_hooks",
- "moon_workspace",
  "proto_core",
  "tracing",
 ]
@@ -3303,7 +3302,6 @@ dependencies = [
  "moon_tool",
  "moon_typescript_lang",
  "moon_vcs",
- "moon_workspace",
  "once_cell",
  "open",
  "petgraph",
@@ -3650,13 +3648,13 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
+ "moon_app_context",
  "moon_platform_runtime",
  "moon_project",
  "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_utils",
- "moon_workspace",
  "serde",
  "tokio",
 ]
@@ -3845,10 +3843,10 @@ dependencies = [
  "async-trait",
  "ci_env",
  "miette",
+ "moon_app_context",
  "moon_emitter",
  "moon_logger",
  "moon_utils",
- "moon_workspace",
  "reqwest 0.12.4",
  "serde",
  "serde_json",
@@ -4465,17 +4463,6 @@ dependencies = [
  "system_env",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "moon_workspace"
-version = "0.0.1"
-dependencies = [
- "moon_api",
- "moon_cache",
- "moon_common",
- "moon_config",
- "moon_vcs",
 ]
 
 [[package]]

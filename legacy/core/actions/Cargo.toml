@@ -5,12 +5,12 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_app_context = { path = "../../../crates/app-context" }
 moon_cache_item = { path = "../../../crates/cache-item" }
 moon_codeowners = { path = "../../../crates/codeowners" }
 moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
 moon_project_graph = { path = "../../../crates/project-graph" }
-moon_workspace = { path = "../../../crates/workspace" }
 moon_vcs_hooks = { path = "../../../crates/vcs-hooks" }
 miette = { workspace = true }
 proto_core = { workspace = true }

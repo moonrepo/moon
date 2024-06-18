@@ -3196,7 +3196,6 @@ dependencies = [
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
- "moon_workspace",
  "num_cpus",
  "proto_core",
  "rustc-hash",
@@ -3214,13 +3213,13 @@ name = "moon_actions"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_app_context",
  "moon_cache_item",
  "moon_codeowners",
  "moon_common",
  "moon_config",
  "moon_project_graph",
  "moon_vcs_hooks",
- "moon_workspace",
  "proto_core",
  "tracing",
 ]

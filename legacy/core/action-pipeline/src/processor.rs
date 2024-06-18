@@ -9,7 +9,6 @@ use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
 use moon_project_graph::ProjectGraph;
-use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::sync::Arc;
 use tracing::instrument;
@@ -27,12 +26,12 @@ pub async fn process_action(
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     emitter: Arc<Emitter>,
-    workspace: Arc<Workspace>,
     project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<Action> {
     action.start();
 
     let node = Arc::clone(&action.node);
+    let app_ctx = Arc::clone(&app_context);
     let log_action_label = color::muted_light(&action.label);
 
     trace!("Processing action {}", log_action_label);
@@ -44,7 +43,7 @@ pub async fn process_action(
         })
         .await?;
 
-    app_context.console.reporter.on_action_started(&action)?;
+    app_ctx.console.reporter.on_action_started(&action)?;
 
     let result = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
@@ -58,7 +57,7 @@ pub async fn process_action(
                 .await?;
 
             let setup_result =
-                setup_tool(&mut action, action_context, workspace, &inner.runtime).await;
+                setup_tool(&mut action, action_context, app_context, &inner.runtime).await;
 
             emitter
                 .emit(Event::ToolInstalled {
@@ -79,8 +78,14 @@ pub async fn process_action(
                 })
                 .await?;
 
-            let install_result =
-                install_deps(&mut action, action_context, workspace, &inner.runtime, None).await;
+            let install_result = install_deps(
+                &mut action,
+                action_context,
+                app_context,
+                &inner.runtime,
+                None,
+            )
+            .await;
 
             emitter
                 .emit(Event::DependenciesInstalled {
@@ -107,7 +112,7 @@ pub async fn process_action(
             let install_result = install_deps(
                 &mut action,
                 action_context,
-                workspace,
+                app_context,
                 &inner.runtime,
                 Some(&project),
             )
@@ -138,7 +143,7 @@ pub async fn process_action(
             let sync_result = sync_project(
                 &mut action,
                 action_context,
-                workspace,
+                app_context,
                 project_graph,
                 &project,
                 &inner.runtime,
@@ -161,7 +166,7 @@ pub async fn process_action(
             emitter.emit(Event::WorkspaceSyncing).await?;
 
             let sync_result =
-                sync_workspace(&mut action, action_context, workspace, project_graph).await;
+                sync_workspace(&mut action, action_context, app_context, project_graph).await;
 
             emitter
                 .emit(Event::WorkspaceSynced {
@@ -211,7 +216,7 @@ pub async fn process_action(
         Ok(status) => {
             action.finish(status);
 
-            app_context
+            app_ctx
                 .console
                 .reporter
                 .on_action_completed(&action, None)?;
@@ -219,7 +224,7 @@ pub async fn process_action(
         Err(error) => {
             action.finish(ActionStatus::Failed);
 
-            app_context
+            app_ctx
                 .console
                 .reporter
                 .on_action_completed(&action, Some(&error))?;

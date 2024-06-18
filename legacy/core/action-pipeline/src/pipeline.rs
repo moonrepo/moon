@@ -245,7 +245,6 @@ impl Pipeline {
                         context_clone,
                         app_context_clone,
                         emitter_clone,
-                        workspace_clone,
                         project_graph_clone,
                     ) => res
                 };
@@ -308,7 +307,6 @@ impl Pipeline {
                         context_clone,
                         app_context_clone,
                         emitter_clone,
-                        workspace_clone,
                         project_graph_clone,
                     ) => res
                 };

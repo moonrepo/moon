@@ -2,12 +2,12 @@ use super::should_skip_action_matching;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
+use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_logger::{debug, warn};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_utils::time;
-use moon_workspace::Workspace;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::env;
@@ -42,7 +42,7 @@ fn get_installation_key(runtime: &Runtime, project: Option<&Project>) -> String 
 pub async fn install_deps(
     action: &mut Action,
     context: Arc<ActionContext>,
-    workspace: Arc<Workspace>,
+    app_context: Arc<AppContext>,
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> miette::Result<ActionStatus> {
@@ -83,7 +83,7 @@ pub async fn install_deps(
     }
 
     // When cache is write only, avoid install as user is typically force updating cache
-    if workspace.cache_engine.is_write_only() {
+    if app_context.cache_engine.is_write_only() {
         debug!(target: LOG_TARGET, "Force updating cache, skipping install");
 
         return Ok(ActionStatus::Skipped);
@@ -114,10 +114,12 @@ pub async fn install_deps(
     // Determine the working directory and whether lockfiles and manifests have been modified
     let mut operation = Operation::hash_generation();
 
-    let working_dir = project.map(|p| &p.root).unwrap_or_else(|| &workspace.root);
+    let working_dir = project
+        .map(|p| &p.root)
+        .unwrap_or_else(|| &app_context.workspace_root);
     let manifest_path = working_dir.join(&manifest);
     let lockfile_path = working_dir.join(&lockfile);
-    let mut hasher = workspace
+    let mut hasher = app_context
         .cache_engine
         .hash
         .create_hasher(format!("Install {} deps", runtime.label()));
@@ -125,7 +127,11 @@ pub async fn install_deps(
 
     if manifest_path.exists() {
         platform
-            .hash_manifest_deps(&manifest_path, &mut hasher, &workspace.config.hasher)
+            .hash_manifest_deps(
+                &manifest_path,
+                &mut hasher,
+                &app_context.workspace_config.hasher,
+            )
             .await?;
     }
 
@@ -142,7 +148,7 @@ pub async fn install_deps(
                     .hash_manifest_deps(
                         &touched_file.to_path(""),
                         &mut hasher,
-                        &workspace.config.hasher,
+                        &app_context.workspace_config.hasher,
                     )
                     .await?;
             }
@@ -150,7 +156,7 @@ pub async fn install_deps(
     }
 
     // Install dependencies in the working directory
-    let hash = workspace.cache_engine.hash.save_manifest(hasher)?;
+    let hash = app_context.cache_engine.hash.save_manifest(hasher)?;
 
     operation.meta.set_hash(&hash);
     operation.finish(ActionStatus::Passed);
@@ -158,11 +164,11 @@ pub async fn install_deps(
     action.operations.push(operation);
 
     let state_path = format!("deps{runtime}.json");
-    let mut state = workspace
+    let mut state = app_context
         .cache_engine
         .state
         .load_state::<DependenciesState>(if let Some(project) = &project {
-            workspace
+            app_context
                 .cache_engine
                 .state
                 .get_project_dir(&project.id)

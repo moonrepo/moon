@@ -26,7 +26,6 @@ moon_target = { path = "../../../crates/target" }
 moon_task_runner = { path = "../../../crates/task-runner" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
-moon_workspace = { path = "../../../crates/workspace" }
 ci_env = { workspace = true }
 console = { workspace = true }
 miette = { workspace = true }

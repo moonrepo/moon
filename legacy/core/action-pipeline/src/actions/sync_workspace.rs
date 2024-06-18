@@ -2,11 +2,11 @@ use super::should_skip_action;
 use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
+use moon_app_context::AppContext;
 use moon_common::is_docker_container;
 use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_test_env;
-use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
@@ -18,7 +18,7 @@ const LOG_TARGET: &str = "moon:action:sync-workspace";
 pub async fn sync_workspace(
     action: &mut Action,
     _context: Arc<ActionContext>,
-    workspace: Arc<Workspace>,
+    app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<ActionStatus> {
     // This causes a lot of churn in tests, revisit
@@ -42,7 +42,7 @@ pub async fn sync_workspace(
         return Ok(ActionStatus::Passed);
     }
 
-    if workspace.config.codeowners.sync_on_run {
+    if app_context.workspace_config.codeowners.sync_on_run {
         debug!(
             target: LOG_TARGET,
             "Syncing code owners ({} enabled)",
@@ -52,24 +52,24 @@ pub async fn sync_workspace(
         action.operations.push(
             Operation::sync_operation("Codeowners")
                 .track_async_with_check(
-                    || sync_codeowners(&workspace, &project_graph, false),
+                    || sync_codeowners(&app_context, &project_graph, false),
                     |result| result.is_some(),
                 )
                 .await?,
         );
     }
 
-    if workspace.config.vcs.sync_hooks {
+    if app_context.workspace_config.vcs.sync_hooks {
         debug!(
             target: LOG_TARGET,
             "Syncing {} hooks ({} enabled)",
-            workspace.config.vcs.manager,
+            app_context.workspace_config.vcs.manager,
             color::property("vcs.syncHooks"),
         );
 
         action.operations.push(
             Operation::sync_operation("VCS hooks")
-                .track_async_with_check(|| sync_vcs_hooks(&workspace, false), |result| result)
+                .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
                 .await?,
         );
     }

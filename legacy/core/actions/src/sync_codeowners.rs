@@ -1,21 +1,24 @@
+use moon_app_context::AppContext;
 use moon_codeowners::{CodeownersGenerator, CodeownersHash};
 use moon_config::CodeownersOrderBy;
 use moon_project_graph::ProjectGraph;
-use moon_workspace::Workspace;
 use std::path::PathBuf;
 use tracing::instrument;
 
 #[instrument(skip_all)]
 pub async fn sync_codeowners(
-    workspace: &Workspace,
+    app_context: &AppContext,
     project_graph: &ProjectGraph,
     force: bool,
 ) -> miette::Result<Option<PathBuf>> {
-    let mut generator = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
+    let mut generator = CodeownersGenerator::new(
+        &app_context.workspace_root,
+        app_context.workspace_config.vcs.provider,
+    )?;
 
     // Sort the projects based on config
     let mut projects = project_graph.get_all_unexpanded();
-    let order_by = workspace.config.codeowners.order_by;
+    let order_by = app_context.workspace_config.codeowners.order_by;
 
     projects.sort_by(|a, d| match order_by {
         CodeownersOrderBy::FileSource => a.source.cmp(&d.source),
@@ -23,10 +26,15 @@ pub async fn sync_codeowners(
     });
 
     // Generate a hash for the codeowners file
-    let mut codeowners_hash = CodeownersHash::new(&workspace.config.codeowners);
+    let mut codeowners_hash = CodeownersHash::new(&app_context.workspace_config.codeowners);
 
-    if !workspace.config.codeowners.global_paths.is_empty() {
-        generator.add_workspace_entries(&workspace.config.codeowners)?;
+    if !app_context
+        .workspace_config
+        .codeowners
+        .global_paths
+        .is_empty()
+    {
+        generator.add_workspace_entries(&app_context.workspace_config.codeowners)?;
     }
 
     for project in projects {
@@ -50,7 +58,7 @@ pub async fn sync_codeowners(
         return Ok(Some(file_path));
     }
     // Only generate if the hash has changed
-    else if workspace
+    else if app_context
         .cache_engine
         .execute_if_changed("codeowners.json", codeowners_hash, || async {
             generator.generate()
@@ -64,8 +72,12 @@ pub async fn sync_codeowners(
 }
 
 #[instrument(skip_all)]
-pub async fn unsync_codeowners(workspace: &Workspace) -> miette::Result<PathBuf> {
-    let codeowners = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
+pub async fn unsync_codeowners(app_context: &AppContext) -> miette::Result<PathBuf> {
+    let codeowners = CodeownersGenerator::new(
+        &app_context.workspace_root,
+        app_context.workspace_config.vcs.provider,
+    )?;
+
     let file_path = codeowners.file_path.clone();
 
     codeowners.cleanup()?;

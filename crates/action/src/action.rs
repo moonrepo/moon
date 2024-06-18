@@ -107,6 +107,12 @@ impl Action {
         )
     }
 
+    pub fn get_duration(&self) -> &Duration {
+        self.duration
+            .as_ref()
+            .expect("Cannot get action duration, has it finished?")
+    }
+
     pub fn get_error(&mut self) -> miette::Report {
         if let Some(report) = self.error_report.take() {
             return report;

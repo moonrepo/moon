@@ -234,7 +234,7 @@ impl<'graph> Iterator for ActionGraphIter<'graph> {
                     trace!(
                         index = idx.index(),
                         deps = ?deps,
-                        "Running action {}",
+                        "Enqueuing action {}",
                         color::muted_light(&label),
                     );
 
@@ -243,7 +243,7 @@ impl<'graph> Iterator for ActionGraphIter<'graph> {
                     trace!(
                         index = idx.index(),
                         deps = ?deps,
-                        "Running action",
+                        "Enqueuing action",
                     );
                 }
 

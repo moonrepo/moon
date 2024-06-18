@@ -221,7 +221,7 @@ pub async fn run_target(
         ..ActionContext::default()
     };
 
-    run_action_pipeline(&session, action_graph_builder.build()?, Some(context)).await?;
+    run_action_pipeline(session, action_graph_builder.build()?, Some(context)).await?;
 
     Ok(())
 }

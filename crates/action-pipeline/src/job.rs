@@ -1,4 +1,4 @@
-use crate::action_runner::run_action;
+use crate::action::run_action;
 use crate::job_context::JobContext;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
@@ -8,14 +8,14 @@ use std::time::Duration;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, trace};
+use tracing::trace;
 
 pub struct Job {
     pub node: ActionNode,
     pub node_index: usize,
 
     /// Contexts of all the things
-    pub context: Arc<JobContext>,
+    pub context: JobContext,
     pub app_context: Arc<AppContext>,
     pub action_context: Arc<ActionContext>,
 
@@ -24,14 +24,14 @@ pub struct Job {
 }
 
 impl Job {
-    pub async fn dispatch(self) -> ActionStatus {
+    pub async fn dispatch(self) {
         let timeout_token = CancellationToken::new();
         let timeout_handle = self.track_timeout(self.timeout, timeout_token.clone());
 
         let mut action = Action::new(self.node);
         action.node_index = self.node_index;
 
-        debug!(index = self.node_index, "Dispatching {} job", action.label);
+        trace!(index = self.node_index, "Dispatching job");
 
         tokio::select! {
             // Run conditions in order!
@@ -44,7 +44,7 @@ impl Job {
                     "Job aborted",
                 );
 
-                action.status = ActionStatus::Aborted;
+                action.finish(ActionStatus::Aborted);
             }
 
             // Cancel if we receive a shutdown signal
@@ -54,7 +54,7 @@ impl Job {
                     "Job cancelled (via signal)",
                 );
 
-                action.status = ActionStatus::Invalid;
+                action.finish(ActionStatus::Invalid);
             }
 
             // Cancel if we have timed out
@@ -64,62 +64,40 @@ impl Job {
                     "Job timed out",
                 );
 
-               action.status = ActionStatus::TimedOut;
+                action.finish(ActionStatus::TimedOut);
             }
 
             // Or run the job to completion
-            result = run_action(
+            _ = run_action(
                 &mut action,
                 self.action_context,
                 self.app_context,
                 self.context.project_graph.clone(),
-            ) => match result {
-                Ok(_) => {
-                    trace!(
-                        index = self.node_index,
-                        "Job passed",
-                    );
-
-                    if matches!(action.status, ActionStatus::Running) {
-                        action.status = ActionStatus::Passed;
-                    }
-                },
-                Err(error) => {
-                    trace!(
-                        index = self.node_index,
-                        "Job failed",
-                    );
-
-                    if matches!(action.status, ActionStatus::Running) {
-                        action.status = ActionStatus::Failed;
-                    }
-                },
-            },
+            ) => {},
         };
 
-        debug!(
+        trace!(
             index = self.node_index,
             status = ?action.status,
-            "Dispatched {} job", action.label
+            "Dispatched job"
         );
 
         // Cleanup before sending the result
-        timeout_handle.abort();
+        if let Some(handle) = timeout_handle {
+            handle.abort();
+        }
 
         // Send the result back to the pipeline
-        let status = action.status;
-        let _ = self.context.result_sender.send(action).await;
-
-        status
+        self.context.mark_completed(action).await;
     }
 
     fn track_timeout(
         &self,
         duration: Option<u64>,
         timeout_token: CancellationToken,
-    ) -> JoinHandle<()> {
-        tokio::spawn(async move {
-            if let Some(duration) = duration {
+    ) -> Option<JoinHandle<()>> {
+        duration.map(|duration| {
+            tokio::spawn(async move {
                 if timeout(
                     Duration::from_secs(duration),
                     sleep(Duration::from_secs(86400)), // 1 day
@@ -129,7 +107,7 @@ impl Job {
                 {
                     timeout_token.cancel();
                 }
-            }
+            })
         })
     }
 }

@@ -1,11 +1,11 @@
 use crate::job::Job;
 use crate::job_context::JobContext;
-use moon_action::{Action, ActionNode, ActionStatus};
+use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_project_graph::ProjectGraph;
-use std::mem;
+use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Semaphore};
 use tokio::task::JoinHandle;
@@ -23,6 +23,8 @@ pub struct ActionPipeline {
 
 impl ActionPipeline {
     pub fn new(app_context: Arc<AppContext>, project_graph: Arc<ProjectGraph>) -> Self {
+        debug!("Creating pipeline to run actions");
+
         Self {
             app_context,
             project_graph,
@@ -45,6 +47,8 @@ impl ActionPipeline {
         let concurrency = self.concurrency.unwrap_or_else(num_cpus::get);
         let total_actions = action_graph.get_node_count();
 
+        debug!(total_actions, concurrency, "Starting pipeline");
+
         // TODO pipeline started event
 
         self.app_context
@@ -56,38 +60,51 @@ impl ActionPipeline {
         let (sender, mut receiver) = mpsc::channel::<Action>(total_actions);
 
         // Create job context
-        let job_context = Arc::new(JobContext {
-            abort_token: CancellationToken::new(),
-            cancel_token: CancellationToken::new(),
+        let abort_token = CancellationToken::new();
+        let cancel_token = CancellationToken::new();
+
+        let job_context = JobContext {
+            abort_token: abort_token.clone(),
+            cancel_token: cancel_token.clone(),
             project_graph: Arc::clone(&self.project_graph),
-            result_sender: sender.clone(),
+            result_sender: sender,
+            complete_sender: None,
             semaphore: Arc::new(Semaphore::new(concurrency)),
-        });
+        };
 
         // Monitor signals and ctrl+c
-        let signal_handle = self.monitor_signals(job_context.cancel_token.clone());
+        let signal_handle = self.monitor_signals(cancel_token.clone());
 
-        // Enqueue jobs from the graph to dispatch actions
-        let queue_handle = self.enqueue_jobs(
-            action_graph,
-            Arc::new(action_context),
-            Arc::clone(&job_context),
-        )?;
+        // Dispatch jobs from the graph to run actions
+        let queue_handle = self.dispatch_jobs(action_graph, action_context, job_context)?;
 
         // Wait and receive all results coming through
+        debug!("Waiting for jobs to return results");
+
         let mut actions = vec![];
         let mut ran_actions = 0;
 
         while let Some(action) = receiver.recv().await {
             ran_actions += 1;
+
+            if self.bail && action.should_bail() || action.should_abort() {
+                abort_token.cancel();
+            }
+
             actions.push(action);
 
-            if ran_actions == total_actions || job_context.is_aborted_or_cancelled() {
+            if ran_actions == total_actions {
+                debug!("Finished pipeline, received all results");
+                break;
+            } else if abort_token.is_cancelled() {
+                debug!("Aborting pipeline");
+                break;
+            } else if cancel_token.is_cancelled() {
+                debug!("Cancelling pipeline (via signal)");
                 break;
             }
         }
 
-        drop(sender);
         drop(receiver);
 
         // Clean up any open handles
@@ -97,48 +114,75 @@ impl ActionPipeline {
         Ok(actions)
     }
 
-    fn enqueue_jobs(
+    fn dispatch_jobs(
         &self,
         action_graph: ActionGraph,
-        action_context: Arc<ActionContext>,
-        job_context: Arc<JobContext>,
+        action_context: ActionContext,
+        mut job_context: JobContext,
     ) -> miette::Result<JoinHandle<()>> {
         let node_indices = action_graph.sort_topological()?;
         let app_context = Arc::clone(&self.app_context);
+        let action_context = Arc::new(action_context);
+
+        debug!(
+            total_jobs = node_indices.len(),
+            "Dispatching jobs in the pipeline"
+        );
 
         Ok(tokio::spawn(async move {
             let mut nodes = action_graph.creater_iter(node_indices);
             let mut persistent_indices = vec![];
-            let mut job_handles = vec![];
+            let mut job_handles = VecDeque::<JoinHandle<()>>::new();
 
+            // Monitor completed of each job
             nodes.monitor_completed();
+            job_context.complete_sender = Some(nodes.sender.clone());
 
             while nodes.has_pending() {
+                // If the pipeline was aborted or cancelled (signal),
+                // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    break;
+                    for handle in job_handles {
+                        if !handle.is_finished() {
+                            handle.abort();
+                        }
+                    }
+
+                    // Return instead of break, so that we avoid
+                    // running persistent tasks below
+                    return;
                 }
 
-                // Nothing new to run since they're waiting on currently
-                // running actions, so just keep looping
+                // If none is returned, then we are waiting on other currently running
+                // nodes to complete, but sometimes they cannot advance without
+                // awaiting the current job handles. So to move this forward, only
+                // advance 1 handle at a time!
                 let Some(node_index) = nodes.next() else {
+                    if let Some(handle) = job_handles.pop_front() {
+                        let _ = handle.await;
+                    }
+
                     continue;
                 };
 
                 // Node does not exist for some reason, this shouldn't happen!
                 let Some(node) = action_graph.get_node_from_index(&node_index) else {
                     warn!(
-                        "Received action {} with no associated node, unable to dispatch",
-                        node_index.index()
+                        index = node_index.index(),
+                        "Received action with no associated node, unable to dispatch job",
                     );
+
+                    // Must mark as completed otherwise the loop hangs
+                    nodes.mark_completed(node_index);
 
                     continue;
                 };
 
-                // Run persistent later in parallel
+                // Run persistent actions later in parallel, so only grab the index for now
                 if node.is_persistent() {
                     trace!(
-                        "Marking action {} as persistent, will defer dispatch",
-                        node_index.index()
+                        index = node_index.index(),
+                        "Marking action as persistent, will defer dispatch",
                     );
 
                     // Must mark as completed otherwise the loop hangs
@@ -148,30 +192,51 @@ impl ActionPipeline {
                     continue;
                 }
 
-                // Otherwise run it topologically
-                job_handles.push(dispatch_job(
-                    node.to_owned(),
-                    node_index.index(),
-                    Arc::clone(&job_context),
-                    Arc::clone(&app_context),
-                    Arc::clone(&action_context),
-                ));
+                // Otherwise run the action topologically
+                job_handles.push_back(
+                    dispatch_job(
+                        node.to_owned(),
+                        node_index.index(),
+                        job_context.clone(),
+                        Arc::clone(&app_context),
+                        Arc::clone(&action_context),
+                    )
+                    .await,
+                );
 
                 // Run this in isolation by exhausting the current list of handles
                 if node.is_interactive() {
-                    for handle in mem::take(&mut job_handles) {
-                        handle.await;
+                    for handle in job_handles.drain(0..) {
+                        let _ = handle.await;
                     }
                 }
             }
 
-            // TODO persistent
-        }))
-    }
+            if !persistent_indices.is_empty() {
+                debug!("Running {} persistent actions", persistent_indices.len());
 
-    async fn handle_jobs(&self, jobs: Vec<JoinHandle<()>>) -> miette::Result<()> {
-        // TODO exhaust them
-        Ok(())
+                for node_index in persistent_indices {
+                    job_handles.push_back(
+                        dispatch_job(
+                            action_graph
+                                .get_node_from_index(&node_index)
+                                .unwrap()
+                                .to_owned(),
+                            node_index.index(),
+                            job_context.clone(),
+                            Arc::clone(&app_context),
+                            Arc::clone(&action_context),
+                        )
+                        .await,
+                    );
+                }
+            }
+
+            // Run any remaining actions
+            for handle in job_handles {
+                let _ = handle.await;
+            }
+        }))
     }
 
     fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<()> {
@@ -190,10 +255,10 @@ impl ActionPipeline {
 async fn dispatch_job(
     node: ActionNode,
     node_index: usize,
-    job_context: Arc<JobContext>,
+    job_context: JobContext,
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
-) -> JoinHandle<ActionStatus> {
+) -> JoinHandle<()> {
     let permit = job_context
         .semaphore
         .clone()
@@ -211,8 +276,7 @@ async fn dispatch_job(
     };
 
     tokio::spawn(async move {
-        let status = job.dispatch().await;
+        job.dispatch().await;
         drop(permit);
-        status
     })
 }

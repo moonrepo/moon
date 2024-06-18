@@ -8,22 +8,20 @@ use tracing::trace;
 
 pub async fn run_action(
     action: &mut Action,
-    action_context: Arc<ActionContext>,
+    _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    project_graph: Arc<ProjectGraph>,
+    _project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<()> {
     action.start();
 
     let node = Arc::clone(&action.node);
     let log_label = color::muted_light(&action.label);
 
-    trace!("Running action {}", log_label);
+    trace!(index = action.node_index, "Running action {}", log_label);
 
     // TODO emit started event
 
-    app_context.console.reporter.on_action_started(&action)?;
-
-    dbg!(&action.label);
+    app_context.console.reporter.on_action_started(action)?;
 
     let result: miette::Result<ActionStatus> = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
@@ -43,7 +41,7 @@ pub async fn run_action(
             app_context
                 .console
                 .reporter
-                .on_action_completed(&action, None)?;
+                .on_action_completed(action, None)?;
         }
         Err(error) => {
             action.finish(ActionStatus::Failed);
@@ -51,7 +49,7 @@ pub async fn run_action(
             app_context
                 .console
                 .reporter
-                .on_action_completed(&action, Some(&error))?;
+                .on_action_completed(action, Some(&error))?;
 
             action.fail(error);
         }
@@ -61,9 +59,10 @@ pub async fn run_action(
 
     if action.has_failed() {
         trace!(
+            index = action.node_index,
             "Failed to run action {} in {:?}",
             log_label,
-            action.duration.unwrap()
+            action.get_duration()
         );
 
         // If these actions failed, we should abort instead of trying to continue
@@ -74,7 +73,12 @@ pub async fn run_action(
             action.abort();
         }
     } else {
-        trace!("Ran action {} in {:?}", log_label, action.duration.unwrap());
+        trace!(
+            index = action.node_index,
+            "Ran action {} in {:?}",
+            log_label,
+            action.get_duration()
+        );
     }
 
     Ok(())

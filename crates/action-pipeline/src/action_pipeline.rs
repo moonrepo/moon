@@ -7,17 +7,18 @@ use moon_app_context::AppContext;
 use moon_project_graph::ProjectGraph;
 use std::mem;
 use std::sync::Arc;
-use tokio::sync::{mpsc, OwnedSemaphorePermit, Semaphore};
+use tokio::sync::{mpsc, Semaphore};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, trace, warn};
 
 pub struct ActionPipeline {
+    pub bail: bool,
+    pub concurrency: Option<usize>,
+    pub summarize: bool,
+
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
-
-    bail: bool,
-    concurrency: Option<usize>,
 }
 
 impl ActionPipeline {
@@ -27,6 +28,7 @@ impl ActionPipeline {
             project_graph,
             bail: false,
             concurrency: None,
+            summarize: false,
         }
     }
 
@@ -187,7 +189,7 @@ impl ActionPipeline {
 
 async fn dispatch_job(
     node: ActionNode,
-    index: usize,
+    node_index: usize,
     job_context: Arc<JobContext>,
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
@@ -201,7 +203,7 @@ async fn dispatch_job(
 
     let job = Job {
         node,
-        index,
+        node_index,
         context: job_context,
         app_context,
         action_context,

@@ -1,6 +1,6 @@
+use crate::experiments::run_action_pipeline;
 use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
-use moon_action_pipeline::Pipeline;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -17,11 +17,7 @@ pub async fn sync(session: CliSession) -> AppResult {
         project_count += 1;
     }
 
-    let action_graph = action_graph_builder.build()?;
-
-    let mut pipeline = Pipeline::new(session.get_app_context()?, project_graph);
-
-    pipeline.run(action_graph, None).await?;
+    run_action_pipeline(&session, action_graph_builder.build()?, None).await?;
 
     done(
         format!("Successfully synced {project_count} projects"),

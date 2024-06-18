@@ -1,6 +1,6 @@
 use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
+use crate::experiments::run_action_pipeline;
 use crate::session::CliSession;
-use moon_action_pipeline::Pipeline;
 use starbase::AppResult;
 use starbase_utils::json;
 use tracing::{debug, instrument};
@@ -28,11 +28,7 @@ pub async fn setup(session: CliSession) -> AppResult {
         action_graph_builder.install_deps(&project, None)?;
     }
 
-    let action_graph = action_graph_builder.build()?;
-
-    Pipeline::new(session.get_app_context()?, project_graph)
-        .run(action_graph, None)
-        .await?;
+    run_action_pipeline(&session, action_graph_builder.build()?, None).await?;
 
     Ok(())
 }

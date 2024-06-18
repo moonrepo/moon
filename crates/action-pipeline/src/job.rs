@@ -1,4 +1,4 @@
-use crate::action_dispatcher::dispatch;
+use crate::action_runner::run_action;
 use crate::job_context::JobContext;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
@@ -12,7 +12,7 @@ use tracing::{debug, trace};
 
 pub struct Job {
     pub node: ActionNode,
-    pub index: usize,
+    pub node_index: usize,
 
     /// Contexts of all the things
     pub context: Arc<JobContext>,
@@ -29,9 +29,9 @@ impl Job {
         let timeout_handle = self.track_timeout(self.timeout, timeout_token.clone());
 
         let mut action = Action::new(self.node);
-        action.node_index = self.index;
+        action.node_index = self.node_index;
 
-        debug!(index = self.index, "Dispatching {} job", action.label);
+        debug!(index = self.node_index, "Dispatching {} job", action.label);
 
         tokio::select! {
             // Run conditions in order!
@@ -40,7 +40,7 @@ impl Job {
             // Abort if a sibling job has failed
             _ = self.context.abort_token.cancelled() => {
                 trace!(
-                    index = self.index,
+                    index = self.node_index,
                     "Job aborted",
                 );
 
@@ -50,17 +50,17 @@ impl Job {
             // Cancel if we receive a shutdown signal
             _ = self.context.cancel_token.cancelled() => {
                 trace!(
-                    index = self.index,
+                    index = self.node_index,
                     "Job cancelled (via signal)",
                 );
 
-                action.status =ActionStatus::Invalid;
+                action.status = ActionStatus::Invalid;
             }
 
             // Cancel if we have timed out
             _ = timeout_token.cancelled() => {
                 trace!(
-                    index = self.index,
+                    index = self.node_index,
                     "Job timed out",
                 );
 
@@ -68,7 +68,7 @@ impl Job {
             }
 
             // Or run the job to completion
-            result = dispatch(
+            result = run_action(
                 &mut action,
                 self.action_context,
                 self.app_context,
@@ -76,7 +76,7 @@ impl Job {
             ) => match result {
                 Ok(_) => {
                     trace!(
-                        index = self.index,
+                        index = self.node_index,
                         "Job passed",
                     );
 
@@ -86,7 +86,7 @@ impl Job {
                 },
                 Err(error) => {
                     trace!(
-                        index = self.index,
+                        index = self.node_index,
                         "Job failed",
                     );
 
@@ -98,7 +98,7 @@ impl Job {
         };
 
         debug!(
-            index = self.index,
+            index = self.node_index,
             status = ?action.status,
             "Dispatched {} job", action.label
         );

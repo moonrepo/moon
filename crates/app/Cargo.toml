@@ -5,8 +5,10 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../action-graph" }
+moon_action_pipeline2 = { path = "../action-pipeline" }
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_cache = { path = "../cache" }

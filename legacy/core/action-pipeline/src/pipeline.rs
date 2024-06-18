@@ -7,6 +7,7 @@ use crate::subscribers::moonbase::MoonbaseSubscriber;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
+use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_console::PipelineReportItem;
 use moon_emitter::{Emitter, Event};
@@ -14,7 +15,6 @@ use moon_logger::{debug, error, trace, warn};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
 use moon_utils::{is_ci, is_test_env};
-use moon_workspace::Workspace;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -43,11 +43,11 @@ pub struct Pipeline {
 
     summarize: bool,
 
-    workspace: Arc<Workspace>,
+    app_context: Arc<AppContext>,
 }
 
 impl Pipeline {
-    pub fn new(workspace: Arc<Workspace>, project_graph: Arc<ProjectGraph>) -> Self {
+    pub fn new(app_context: Arc<AppContext>, project_graph: Arc<ProjectGraph>) -> Self {
         Pipeline {
             aborted: false,
             bail: false,
@@ -57,7 +57,7 @@ impl Pipeline {
             report_name: None,
             results: vec![],
             summarize: false,
-            workspace,
+            app_context,
         }
     }
 
@@ -84,12 +84,9 @@ impl Pipeline {
     pub async fn run(
         &mut self,
         action_graph: ActionGraph,
-        app_context: AppContext,
         context: Option<ActionContext>,
     ) -> miette::Result<ActionResults> {
-        let result = self
-            .run_internal(action_graph, app_context.clone(), context)
-            .await;
+        let result = self.run_internal(action_graph, context).await;
 
         let actions = mem::take(&mut self.results);
 
@@ -100,7 +97,7 @@ impl Pipeline {
 
         match result {
             Ok(_) => {
-                app_context
+                self.app_context
                     .console
                     .reporter
                     .on_pipeline_completed(&actions, &item, None)?;
@@ -109,13 +106,13 @@ impl Pipeline {
             }
             Err(error) => {
                 if self.aborted {
-                    app_context.console.reporter.on_pipeline_aborted(
+                    self.app_context.console.reporter.on_pipeline_aborted(
                         &actions,
                         &item,
                         Some(&error),
                     )?;
                 } else {
-                    app_context.console.reporter.on_pipeline_completed(
+                    self.app_context.console.reporter.on_pipeline_completed(
                         &actions,
                         &item,
                         Some(&error),
@@ -130,14 +127,12 @@ impl Pipeline {
     pub async fn run_internal(
         &mut self,
         action_graph: ActionGraph,
-        app_context: AppContext,
         context: Option<ActionContext>,
     ) -> miette::Result<()> {
         let start = Instant::now();
         let context = Arc::new(context.unwrap_or_default());
-        let app_context = Arc::new(app_context);
-        let emitter = Arc::new(create_emitter(Arc::clone(&self.workspace)).await);
-        let workspace = Arc::clone(&self.workspace);
+        let app_context = Arc::clone(&self.app_context);
+        let emitter = Arc::new(create_emitter(Arc::clone(&self.app_context)).await);
         let project_graph = Arc::clone(&self.project_graph);
 
         // Queue actions in topological order that need to be processed
@@ -220,7 +215,6 @@ impl Pipeline {
 
             let context_clone = Arc::clone(&context);
             let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let app_context_clone = Arc::clone(&app_context);
             let cancel_token_clone = cancel_token.clone();
@@ -286,7 +280,6 @@ impl Pipeline {
 
             let context_clone = Arc::clone(&context);
             let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&workspace);
             let project_graph_clone = Arc::clone(&project_graph);
             let app_context_clone = Arc::clone(&app_context);
             let cancel_token_clone = cancel_token.clone();
@@ -425,7 +418,7 @@ impl Pipeline {
         if let Some(name) = &self.report_name {
             let duration = self.duration.unwrap();
 
-            self.workspace
+            self.app_context
                 .cache_engine
                 .write(name, &RunReport::new(actions, context, duration, estimate))?;
         }
@@ -434,19 +427,19 @@ impl Pipeline {
     }
 }
 
-async fn create_emitter(workspace: Arc<Workspace>) -> Emitter {
-    let emitter = Emitter::new(Arc::clone(&workspace));
+async fn create_emitter(app_context: Arc<AppContext>) -> Emitter {
+    let emitter = Emitter::new(Arc::clone(&app_context));
 
     // For security and privacy purposes, only send webhooks from a CI environment
     if is_ci() || is_test_env() {
-        if let Some(webhook_url) = &workspace.config.notifier.webhook_url {
+        if let Some(webhook_url) = &app_context.workspace_config.notifier.webhook_url {
             emitter
                 .subscribe(WebhooksSubscriber::new(webhook_url.to_owned()))
                 .await;
         }
     }
 
-    if workspace.session.is_some() {
+    if Moonbase::session().is_some() {
         emitter.subscribe(MoonbaseSubscriber::new()).await;
     }
 

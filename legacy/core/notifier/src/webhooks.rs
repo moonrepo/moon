@@ -1,8 +1,8 @@
 use ci_env::{get_environment, CiEnvironment};
+use moon_app_context::AppContext;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_logger::{error, trace};
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
-use moon_workspace::Workspace;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use tokio::task::JoinHandle;
@@ -71,7 +71,7 @@ impl Subscriber for WebhooksSubscriber {
     async fn on_emit<'a>(
         &mut self,
         event: &Event<'a>,
-        _workspace: &Workspace,
+        _ctx: &AppContext,
     ) -> miette::Result<EventFlow> {
         if !self.enabled {
             return Ok(EventFlow::Continue);

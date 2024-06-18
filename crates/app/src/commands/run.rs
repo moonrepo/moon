@@ -222,7 +222,7 @@ pub async fn run_target(
     };
 
     let action_graph = action_graph_builder.build()?;
-    let mut pipeline = Pipeline::new(session.get_workspace_legacy()?, project_graph);
+    let mut pipeline = Pipeline::new(session.get_app_context()?, project_graph);
 
     if let Some(concurrency) = &session.cli.concurrency {
         pipeline.concurrency(*concurrency);
@@ -232,7 +232,7 @@ pub async fn run_target(
         .bail_on_error()
         .summarize(args.summary)
         .generate_report("runReport.json")
-        .run(action_graph, session.create_context()?, Some(context))
+        .run(action_graph, Some(context))
         .await?;
 
     Ok(())

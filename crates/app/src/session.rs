@@ -93,8 +93,8 @@ impl CliSession {
         ProjectGraphBuilder::new(create_project_graph_context(self).await?).await
     }
 
-    pub fn create_context(&self) -> AppResult<AppContext> {
-        Ok(AppContext {
+    pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {
+        Ok(Arc::new(AppContext {
             cache_engine: self.get_cache_engine()?,
             console: Arc::new(self.console.clone()),
             vcs: self.get_vcs_adapter()?,
@@ -102,7 +102,7 @@ impl CliSession {
             workspace_config: Arc::clone(&self.workspace_config),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
-        })
+        }))
     }
 
     pub fn get_cache_engine(&self) -> AppResult<Arc<CacheEngine>> {

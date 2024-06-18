@@ -42,14 +42,14 @@ pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
         .map(color::id)
         .collect::<Vec<_>>()
         .join(", ");
-    let workspace = session.get_workspace_legacy()?;
+    let context = session.get_app_context()?;
 
     if args.clean {
-        unsync_vcs_hooks(&workspace).await?;
+        unsync_vcs_hooks(&context).await?;
 
         done(format!("Successfully removed {} hooks", hook_names), true);
     } else {
-        sync_vcs_hooks(&workspace, args.force).await?;
+        sync_vcs_hooks(&context, args.force).await?;
 
         done(format!("Successfully created {} hooks", hook_names), true);
     }

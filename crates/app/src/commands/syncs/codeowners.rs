@@ -18,10 +18,10 @@ pub struct SyncCodeownersArgs {
 #[instrument(skip_all)]
 pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
     let done = create_progress_bar("Syncing code owners...");
-    let workspace = session.get_workspace_legacy()?;
+    let context = session.get_app_context()?;
 
     if args.clean {
-        let codeowners_path = unsync_codeowners(&workspace).await?;
+        let codeowners_path = unsync_codeowners(&context).await?;
 
         done(
             format!(
@@ -36,13 +36,13 @@ pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
         );
     } else {
         let project_graph = session.get_project_graph().await?;
-        let codeowners_path = sync_codeowners(&workspace, &project_graph, args.force).await?;
+        let codeowners_path = sync_codeowners(&context, &project_graph, args.force).await?;
 
         done(
             format!(
                 "Successfully created {}",
                 if let Some(path) = codeowners_path {
-                    color::path(path.strip_prefix(&workspace.root).unwrap())
+                    color::path(path.strip_prefix(&session.workspace_root).unwrap())
                 } else {
                     "code owners".into()
                 }

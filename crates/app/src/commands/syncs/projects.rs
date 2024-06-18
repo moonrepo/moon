@@ -19,11 +19,9 @@ pub async fn sync(session: CliSession) -> AppResult {
 
     let action_graph = action_graph_builder.build()?;
 
-    let mut pipeline = Pipeline::new(session.get_workspace_legacy()?, project_graph);
+    let mut pipeline = Pipeline::new(session.get_app_context()?, project_graph);
 
-    pipeline
-        .run(action_graph, session.create_context()?, None)
-        .await?;
+    pipeline.run(action_graph, None).await?;
 
     done(
         format!("Successfully synced {project_count} projects"),

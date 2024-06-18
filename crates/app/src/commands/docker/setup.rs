@@ -30,8 +30,8 @@ pub async fn setup(session: CliSession) -> AppResult {
 
     let action_graph = action_graph_builder.build()?;
 
-    Pipeline::new(session.get_workspace_legacy()?, project_graph)
-        .run(action_graph, session.create_context()?, None)
+    Pipeline::new(session.get_app_context()?, project_graph)
+        .run(action_graph, None)
         .await?;
 
     Ok(())

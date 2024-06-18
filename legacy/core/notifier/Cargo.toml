@@ -5,10 +5,10 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_app_context = { path = "../../../crates/app-context" }
 moon_emitter = { path = "../emitter" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-moon_workspace = { path = "../../../crates/workspace" }
 async-trait = { workspace = true }
 ci_env = { workspace = true }
 miette = { workspace = true }

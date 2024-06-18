@@ -279,7 +279,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     };
 
     let mut pipeline = Pipeline::new(
-        session.get_workspace_legacy()?,
+        session.get_app_context()?,
         session.get_project_graph().await?,
     );
 
@@ -290,7 +290,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     let results = pipeline
         .summarize(true)
         .generate_report("ciReport.json")
-        .run(action_graph, session.create_context()?, Some(context))
+        .run(action_graph, Some(context))
         .await?;
 
     console.print_footer()?;

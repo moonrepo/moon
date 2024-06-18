@@ -4,11 +4,12 @@ use moon_api::graphql::{
     self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun, GraphQLQuery,
     UpdateJob, UpdateRun,
 };
+use moon_api::Moonbase;
+use moon_app_context::AppContext;
 use moon_common::is_ci;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_logger::{debug, error, map_list, warn};
 use moon_utils::async_trait;
-use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use std::env;
@@ -84,9 +85,9 @@ impl Subscriber for MoonbaseSubscriber {
     async fn on_emit<'a>(
         &mut self,
         event: &Event<'a>,
-        workspace: &Workspace,
+        app_context: &AppContext,
     ) -> miette::Result<EventFlow> {
-        let Some(moonbase) = &workspace.session else {
+        let Some(moonbase) = Moonbase::session() else {
             return Ok(EventFlow::Continue);
         };
 
@@ -132,11 +133,11 @@ impl Subscriber for MoonbaseSubscriber {
                     }
 
                     if branch.is_empty() {
-                        branch = (*workspace.vcs.get_local_branch().await?).clone();
+                        branch = (*app_context.vcs.get_local_branch().await?).clone();
                     }
 
                     if revision.is_empty() {
-                        revision = (*workspace.vcs.get_local_branch_revision().await?).clone();
+                        revision = (*app_context.vcs.get_local_branch_revision().await?).clone();
                     }
 
                     let affected_targets = context

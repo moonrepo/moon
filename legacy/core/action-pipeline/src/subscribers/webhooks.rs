@@ -20,10 +20,10 @@ impl Subscriber for WebhooksSubscriber {
         event: &Event<'e>,
         _app_context: &AppContext,
     ) -> miette::Result<EventFlow> {
+        self.notifier.notify(event.get_type(), event).await?;
+
         if event.is_end() {
             self.notifier.wait_for_requests().await;
-        } else {
-            self.notifier.notify(event.get_type(), event).await?;
         }
 
         Ok(EventFlow::Continue)

@@ -25,6 +25,9 @@ pub enum TaskRunnerError {
     MissingDependencyHash { dep_target: String, target: String },
 
     #[diagnostic(code(task_runner::missing_outputs))]
-    #[error("Task {} defines outputs, but either none, or not all of them exist after being ran.", .target.style(Style::Label))]
+    #[error(
+        "Task {} defines outputs but after being ran, either none or not all of them exist.\nIf you require optional outputs, try using glob patterns instead.",
+        .target.style(Style::Label)
+    )]
     MissingOutputs { target: String },
 }

@@ -26,13 +26,12 @@ pub async fn run_action(
 
     let result: miette::Result<ActionStatus> = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
-        // ActionNode::InstallDeps(_) => todo!(),
-        // ActionNode::InstallProjectDeps(_) => todo!(),
-        // ActionNode::RunTask(_) => todo!(),
-        // ActionNode::SetupTool(_) => todo!(),
-        // ActionNode::SyncProject(_) => todo!(),
-        // ActionNode::SyncWorkspace => todo!(),
-        _ => Ok(ActionStatus::Passed),
+        ActionNode::InstallDeps(_) => Ok(ActionStatus::Passed),
+        ActionNode::InstallProjectDeps(_) => Ok(ActionStatus::Passed),
+        ActionNode::RunTask(_) => Ok(ActionStatus::Passed),
+        ActionNode::SetupTool(_) => Ok(ActionStatus::Passed),
+        ActionNode::SyncProject(_) => Ok(ActionStatus::Passed),
+        ActionNode::SyncWorkspace => Ok(ActionStatus::Passed),
     };
 
     match result {
@@ -56,15 +55,12 @@ pub async fn run_action(
         }
     };
 
-    // TODO emit finished event
-
     if action.has_failed() {
         trace!(
             index = action.node_index,
             status = ?action.status,
-            "Failed to run action {} in {:?}",
+            "Failed to run action {}",
             log_label,
-            action.get_duration()
         );
 
         // If these actions failed, we should abort instead of trying to continue
@@ -83,6 +79,8 @@ pub async fn run_action(
             action.get_duration()
         );
     }
+
+    // TODO emit finished event
 
     Ok(())
 }

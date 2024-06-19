@@ -41,7 +41,7 @@ impl ActionPipeline {
             .await
     }
 
-    #[instrument(skip_all)]
+    #[instrument(name = "run_pipeline", skip_all)]
     pub async fn run_with_context(
         &self,
         action_graph: ActionGraph,
@@ -59,7 +59,7 @@ impl ActionPipeline {
             .reporter
             .on_pipeline_started(&action_graph.get_nodes())?;
 
-        // This aggregates results from ran jobs
+        // This aggregates results from jobs
         let (sender, mut receiver) = mpsc::channel::<Action>(total_actions);
 
         // Create job context
@@ -101,7 +101,7 @@ impl ActionPipeline {
                 debug!("Finished pipeline, received all results");
                 break;
             } else if abort_token.is_cancelled() {
-                debug!("Aborting pipeline");
+                debug!("Aborting pipeline (because something failed)");
                 break;
             } else if cancel_token.is_cancelled() {
                 debug!("Cancelling pipeline (via signal)");
@@ -140,7 +140,7 @@ impl ActionPipeline {
             let mut persistent_indices = vec![];
             let mut job_handles = VecDeque::<JoinHandle<()>>::new();
 
-            while dispatcher.has_pending().await {
+            while dispatcher.has_queued_jobs() {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {

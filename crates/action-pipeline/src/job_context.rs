@@ -9,7 +9,7 @@ use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]
 pub struct JobContext {
-    /// Force aborts running sibling jobs
+    /// Force aborts running jobs
     pub abort_token: CancellationToken,
 
     /// Receives cancel/shutdown signals

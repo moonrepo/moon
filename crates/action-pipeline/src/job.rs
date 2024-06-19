@@ -27,7 +27,7 @@ impl Job {
     #[instrument(skip_all)]
     pub async fn dispatch(self) {
         let timeout_token = CancellationToken::new();
-        let timeout_handle = self.track_timeout(self.timeout, timeout_token.clone());
+        let timeout_handle = self.monitor_timeout(self.timeout, timeout_token.clone());
 
         let mut action = Action::new(self.node);
         action.node_index = self.node_index;
@@ -60,6 +60,7 @@ impl Job {
             _ = timeout_token.cancelled() => {
                 trace!(
                     index = self.node_index,
+                    timeout = self.timeout,
                     "Job timed out",
                 );
 
@@ -84,7 +85,7 @@ impl Job {
         self.context.send_result(action).await;
     }
 
-    fn track_timeout(
+    fn monitor_timeout(
         &self,
         duration: Option<u64>,
         timeout_token: CancellationToken,

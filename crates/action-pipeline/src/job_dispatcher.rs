@@ -25,8 +25,8 @@ impl<'graph> JobDispatcher<'graph> {
         }
     }
 
-    pub async fn has_pending(&self) -> bool {
-        self.context.completed_jobs.read().await.len() < self.graph.node_count()
+    pub fn has_queued_jobs(&self) -> bool {
+        self.visited.len() < self.graph.node_count()
     }
 }
 

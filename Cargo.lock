@@ -3209,6 +3209,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_action_pipeline2"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette",
+ "moon_action",
+ "moon_action_context",
+ "moon_action_graph",
+ "moon_app_context",
+ "moon_common",
+ "moon_project_graph",
+ "num_cpus",
+ "petgraph",
+ "rustc-hash",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
 name = "moon_actions"
 version = "0.0.1"
 dependencies = [
@@ -3266,9 +3286,11 @@ dependencies = [
  "diff",
  "indicatif",
  "miette",
+ "moon_action",
  "moon_action_context",
  "moon_action_graph",
  "moon_action_pipeline",
+ "moon_action_pipeline2",
  "moon_actions",
  "moon_api",
  "moon_app_context",
@@ -3840,18 +3862,15 @@ dependencies = [
 name = "moon_notifier"
 version = "0.0.1"
 dependencies = [
- "async-trait",
  "ci_env",
  "miette",
- "moon_app_context",
- "moon_emitter",
- "moon_logger",
- "moon_utils",
+ "moon_common",
+ "moon_time",
  "reqwest 0.12.4",
  "serde",
- "serde_json",
- "starbase_styles",
+ "starbase_utils",
  "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -3886,23 +3905,6 @@ dependencies = [
  "serde",
  "serde_json",
  "warpgate",
-]
-
-[[package]]
-name = "moon_pipeline"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "chrono",
- "miette",
- "num_cpus",
- "rand",
- "serde",
- "starbase_events",
- "thiserror",
- "tokio",
- "tokio-util",
- "tracing",
 ]
 
 [[package]]

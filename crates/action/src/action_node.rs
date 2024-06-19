@@ -30,6 +30,8 @@ pub struct RunTaskNode {
     pub persistent: bool,  // Never terminates
     pub runtime: Runtime,
     pub target: Target,
+    pub timeout: Option<u64>,
+    pub id: Option<u32>, // For action graph states
 }
 
 impl RunTaskNode {
@@ -41,7 +43,27 @@ impl RunTaskNode {
             persistent: false,
             runtime,
             target,
+            timeout: None,
+            id: None,
         }
+    }
+
+    fn calculate_id(&mut self) {
+        let mut id = 0;
+
+        for ch in self.target.as_str().chars() {
+            if let Some(num) = ch.to_digit(10) {
+                id += num;
+            }
+        }
+
+        if self.persistent {
+            id += 100;
+        } else if self.interactive {
+            id += 50;
+        }
+
+        self.id = Some(id);
     }
 }
 
@@ -79,7 +101,9 @@ impl ActionNode {
         Self::InstallProjectDeps(Box::new(node))
     }
 
-    pub fn run_task(node: RunTaskNode) -> Self {
+    pub fn run_task(mut node: RunTaskNode) -> Self {
+        node.calculate_id();
+
         Self::RunTask(Box::new(node))
     }
 
@@ -93,6 +117,13 @@ impl ActionNode {
 
     pub fn sync_workspace() -> Self {
         Self::SyncWorkspace
+    }
+
+    pub fn get_id(&self) -> u32 {
+        match self {
+            Self::RunTask(inner) => inner.id.unwrap_or_default(),
+            _ => 0,
+        }
     }
 
     pub fn get_runtime(&self) -> &Runtime {

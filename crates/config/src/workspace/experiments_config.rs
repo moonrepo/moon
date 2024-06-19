@@ -5,6 +5,8 @@ cacheable!(
     /// Configures experiments across the entire moon workspace.
     #[derive(Clone, Config, Debug)]
     pub struct ExperimentsConfig {
+        pub action_pipeline_v2: bool,
+
         #[deprecated]
         #[setting(default = true)]
         pub interweaved_task_inheritance: bool,

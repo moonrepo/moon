@@ -1,14 +1,16 @@
 import type { Duration, Runtime } from './common';
 
 export type ActionStatus =
+	| 'aborted'
 	| 'cached-from-remote'
 	| 'cached'
-	| 'failed-and-abort'
+	| 'failed-and-abort' // Legacy
 	| 'failed'
 	| 'invalid'
 	| 'passed'
 	| 'running'
-	| 'skipped';
+	| 'skipped'
+	| 'timed-out';
 
 /** @deprecated */
 export interface Attempt {

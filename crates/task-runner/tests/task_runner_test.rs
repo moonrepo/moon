@@ -237,7 +237,7 @@ mod task_runner {
             }
 
             #[tokio::test]
-            #[should_panic(expected = "defines outputs, but none exist")]
+            #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing() {
                 let container = TaskRunnerContainer::new_os("runner").await;
                 container.sandbox.enable_git();
@@ -250,7 +250,7 @@ mod task_runner {
             }
 
             #[tokio::test]
-            #[should_panic(expected = "defines outputs, but none exist")]
+            #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing_via_glob() {
                 let container = TaskRunnerContainer::new_os("runner").await;
                 container.sandbox.enable_git();

@@ -12,12 +12,15 @@ pub enum ActionStatus {
     Cached,
     CachedFromRemote,
     Failed,
-    FailedAndAbort,
     Invalid,
     Passed,
     #[default]
     Running,
     Skipped, // When nothing happened
+
+    // Pipeline
+    TimedOut,
+    Aborted,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -75,7 +78,7 @@ impl Action {
     }
 
     pub fn abort(&mut self) {
-        self.status = ActionStatus::FailedAndAbort;
+        self.status = ActionStatus::Aborted;
     }
 
     pub fn start(&mut self) {
@@ -100,8 +103,14 @@ impl Action {
     pub fn has_failed(&self) -> bool {
         matches!(
             &self.status,
-            ActionStatus::Failed | ActionStatus::FailedAndAbort
+            ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut
         )
+    }
+
+    pub fn get_duration(&self) -> &Duration {
+        self.duration
+            .as_ref()
+            .expect("Cannot get action duration, has it finished?")
     }
 
     pub fn get_error(&mut self) -> miette::Report {
@@ -117,7 +126,7 @@ impl Action {
     }
 
     pub fn should_abort(&self) -> bool {
-        matches!(self.status, ActionStatus::FailedAndAbort)
+        matches!(self.status, ActionStatus::Aborted)
     }
 
     pub fn should_bail(&self) -> bool {

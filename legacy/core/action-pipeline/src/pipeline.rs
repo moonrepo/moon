@@ -4,6 +4,7 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
+use crate::subscribers::webhooks::WebhooksSubscriber;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
@@ -12,7 +13,7 @@ use moon_app_context::AppContext;
 use moon_console::PipelineReportItem;
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace, warn};
-use moon_notifier::WebhooksSubscriber;
+use moon_notifier::WebhooksNotifier;
 use moon_project_graph::ProjectGraph;
 use moon_utils::{is_ci, is_test_env};
 use std::mem;
@@ -172,7 +173,7 @@ impl Pipeline {
 
         let mut action_handles = vec![];
         let mut persistent_nodes = vec![];
-        let mut action_graph_iter = action_graph.try_iter()?;
+        let mut action_graph_iter = action_graph.creater_iter(action_graph.sort_topological()?);
 
         action_graph_iter.monitor_completed();
 
@@ -434,7 +435,9 @@ async fn create_emitter(app_context: Arc<AppContext>) -> Emitter {
     if is_ci() || is_test_env() {
         if let Some(webhook_url) = &app_context.workspace_config.notifier.webhook_url {
             emitter
-                .subscribe(WebhooksSubscriber::new(webhook_url.to_owned()))
+                .subscribe(WebhooksSubscriber::new(WebhooksNotifier::new(
+                    webhook_url.to_owned(),
+                )))
                 .await;
         }
     }

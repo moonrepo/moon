@@ -408,7 +408,9 @@ impl Subscriber for MoonbaseSubscriber {
 fn map_status(status: &ActionStatus) -> update_job::JobStatus {
     match status {
         ActionStatus::Cached | ActionStatus::CachedFromRemote => update_job::JobStatus::CACHED,
-        ActionStatus::Failed | ActionStatus::FailedAndAbort => update_job::JobStatus::FAILED,
+        ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut => {
+            update_job::JobStatus::FAILED
+        }
         ActionStatus::Invalid | ActionStatus::Passed => update_job::JobStatus::PASSED,
         ActionStatus::Running => update_job::JobStatus::RUNNING,
         ActionStatus::Skipped => update_job::JobStatus::SKIPPED,

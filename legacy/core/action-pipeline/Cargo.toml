@@ -17,7 +17,7 @@ moon_cache_item = { path = "../../../crates/cache-item" }
 moon_emitter = { path = "../emitter" }
 moon_hash = { path = "../../../crates/hash" }
 moon_logger = { path = "../logger" }
-moon_notifier = { path = "../notifier" }
+moon_notifier = { path = "../../../crates/notifier" }
 moon_platform = { path = "../platform" }
 moon_process = { path = "../../../crates/process" }
 moon_project = { path = "../../../crates/project" }

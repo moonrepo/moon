@@ -163,9 +163,9 @@ impl DependencyManager<NodeTool> for PnpmTool {
 
         if working_dir.join(self.get_lock_filename()).exists() {
             let version = match version_spec {
-                UnresolvedVersionSpec::Version(v) => v.to_owned(),
+                UnresolvedVersionSpec::Semantic(v) => v.to_owned(),
                 _ => match self.tool.get_resolved_version() {
-                    VersionSpec::Version(v) => v,
+                    VersionSpec::Semantic(v) => v,
                     _ => return Ok(()),
                 },
             };

@@ -1,4 +1,4 @@
-pub use moon_config::{PlatformType, UnresolvedVersionSpec, Version};
+pub use moon_config::{PlatformType, SemVer, UnresolvedVersionSpec, Version};
 use serde::Serialize;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -14,7 +14,7 @@ pub enum RuntimeReq {
 
 impl RuntimeReq {
     pub fn with_version(version: Version) -> Self {
-        Self::Toolchain(UnresolvedVersionSpec::Version(version))
+        Self::Toolchain(UnresolvedVersionSpec::Semantic(SemVer(version)))
     }
 
     pub fn is_global(&self) -> bool {
@@ -51,7 +51,8 @@ impl Hash for RuntimeReq {
                         req.hash(state);
                     }
                 }
-                UnresolvedVersionSpec::Version(version) => version.hash(state),
+                UnresolvedVersionSpec::Calendar(version) => version.hash(state),
+                UnresolvedVersionSpec::Semantic(version) => version.hash(state),
             },
         };
     }

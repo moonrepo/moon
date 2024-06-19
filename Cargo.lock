@@ -3862,25 +3862,6 @@ dependencies = [
 name = "moon_notifier"
 version = "0.0.1"
 dependencies = [
- "async-trait",
- "ci_env",
- "miette",
- "moon_app_context",
- "moon_emitter",
- "moon_logger",
- "moon_utils",
- "reqwest 0.12.4",
- "serde",
- "serde_json",
- "starbase_styles",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "moon_notifier2"
-version = "0.0.1"
-dependencies = [
  "ci_env",
  "miette",
  "moon_common",

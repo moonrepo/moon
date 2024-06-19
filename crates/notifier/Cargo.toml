@@ -1,5 +1,5 @@
 [package]
-name = "moon_notifier2"
+name = "moon_notifier"
 version = "0.0.1"
 edition = "2021"
 publish = false

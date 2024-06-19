@@ -254,7 +254,6 @@ impl ActionPipeline {
     }
 }
 
-#[instrument(skip(job_context, app_context, action_context))]
 async fn dispatch_job(
     node: ActionNode,
     node_index: usize,

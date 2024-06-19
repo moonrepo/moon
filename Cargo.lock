@@ -3878,6 +3878,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_notifier2"
+version = "0.0.1"
+dependencies = [
+ "ci_env",
+ "miette",
+ "moon_common",
+ "moon_time",
+ "reqwest 0.12.4",
+ "serde",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "moon_pdk"
 version = "0.0.7"
 dependencies = [

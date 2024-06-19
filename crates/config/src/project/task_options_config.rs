@@ -247,6 +247,9 @@ cacheable!(
         /// directly while relying on `PATH` resolution.
         pub shell: Option<bool>,
 
+        /// The maximum time in seconds that a task can run before being cancelled.
+        pub timeout: Option<u64>,
+
         /// The shell to run the task in when on a Unix-based machine.
         pub unix_shell: Option<TaskUnixShell>,
 

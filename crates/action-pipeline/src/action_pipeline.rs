@@ -267,12 +267,15 @@ async fn dispatch_job(
         .expect("Failed to dispatch job!");
 
     let job = Job {
+        timeout: match &node {
+            ActionNode::RunTask(inner) => inner.timeout,
+            _ => None,
+        },
         node,
         node_index,
         context: job_context,
         app_context,
         action_context,
-        timeout: None, // TODO
     };
 
     tokio::spawn(async move {

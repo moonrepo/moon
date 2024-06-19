@@ -213,6 +213,7 @@ impl<'app> ActionGraphBuilder<'app> {
             persistent: task.is_persistent(),
             runtime: self.get_runtime(project, task.platform, true),
             target: task.target.to_owned(),
+            timeout: task.options.timeout,
         });
 
         if let Some(index) = self.get_index_from_node(&node) {

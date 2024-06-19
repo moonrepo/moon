@@ -30,7 +30,7 @@ pub use template_config::*;
 pub use toolchain::*;
 pub use toolchain_config::*;
 pub use types::*;
-pub use version_spec::{UnresolvedVersionSpec, VersionSpec};
+pub use version_spec::{CalVer, SemVer, UnresolvedVersionSpec, VersionSpec};
 pub use workspace::*;
 pub use workspace_config::*;
 

@@ -106,12 +106,11 @@ impl YarnTool {
             .version
             .as_ref()
             .map(|v| match v {
-                UnresolvedVersionSpec::Canary => false,
                 UnresolvedVersionSpec::Alias(alias) => alias == "berry",
                 UnresolvedVersionSpec::Req(req) => {
                     req.comparators.iter().any(|c| c.major >= min_major)
                 }
-                UnresolvedVersionSpec::Version(version) => version.major >= min_major,
+                UnresolvedVersionSpec::Semantic(version) => version.major >= min_major,
                 _ => false,
             })
             .unwrap_or(false)

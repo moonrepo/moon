@@ -118,10 +118,11 @@ mod ext_migrate_nx {
         let sandbox = create_sandbox_with_config("base", None, None, None);
         sandbox.create_file("nx.json", "{}");
 
-        sandbox
-            .run_moon(|cmd| {
-                cmd.arg("ext").arg("migrate-nx");
-            })
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("ext").arg("migrate-nx");
+        });
+
+        assert
             .success()
             .stdout(predicates::str::contains("Successfully migrated from Nx"));
 
@@ -137,14 +138,13 @@ mod ext_migrate_turborepo {
         let sandbox = create_sandbox_with_config("base", None, None, None);
         sandbox.create_file("turbo.json", "{}");
 
-        sandbox
-            .run_moon(|cmd| {
-                cmd.arg("ext").arg("migrate-turborepo");
-            })
-            .success()
-            .stdout(predicates::str::contains(
-                "Successfully migrated from Turborepo",
-            ));
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("ext").arg("migrate-turborepo");
+        });
+
+        assert.success().stdout(predicates::str::contains(
+            "Successfully migrated from Turborepo",
+        ));
 
         assert!(!sandbox.path().join("turbo.json").exists());
     }

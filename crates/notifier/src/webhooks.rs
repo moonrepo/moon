@@ -5,7 +5,7 @@ use moon_time::now_timestamp;
 use serde::Serialize;
 use starbase_utils::json;
 use tokio::task::JoinHandle;
-use tracing::{trace, warn};
+use tracing::{debug, trace, warn};
 use uuid::Uuid;
 
 #[derive(Serialize)]
@@ -44,10 +44,13 @@ pub struct WebhooksNotifier {
     requests: Vec<JoinHandle<()>>,
     url: String,
     uuid: String,
+    verified: bool,
 }
 
 impl WebhooksNotifier {
     pub fn new(url: String) -> Self {
+        debug!("Creating webhooks notifier for {}", color::url(&url));
+
         WebhooksNotifier {
             enabled: true,
             environment: get_environment(),
@@ -58,6 +61,7 @@ impl WebhooksNotifier {
                 Uuid::new_v4().to_string()
             },
             url,
+            verified: false,
         }
     }
 
@@ -66,7 +70,7 @@ impl WebhooksNotifier {
             return Ok(());
         }
 
-        trace!("Posting event {} to webhook endpoint", color::id(name),);
+        trace!("Posting webhook event {} to endpoint", color::id(name));
 
         let payload = WebhookPayload {
             created_at: now_timestamp(),
@@ -76,27 +80,25 @@ impl WebhooksNotifier {
             uuid: &self.uuid,
         };
         let body = json::format(&payload, false)?;
+        let url = self.url.to_owned();
 
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
         // we will disable subsequent requests from being called.
-        if self.requests.is_empty() {
-            let response = notify_webhook(self.url.to_owned(), body).await;
+        if !self.verified {
+            let response = notify_webhook(url, body).await;
 
             if response.is_err() || !response.unwrap().status().is_success() {
                 self.enabled = false;
 
-                warn!(
-                    "Failed to send webhook event to {}. Subsequent webhook requests will be disabled.",
-                    color::url(&self.url),
-                );
+                warn!("Failed to send webhook event, subsequent webhook requests will be disabled");
             }
+
+            self.verified = true;
         }
         // For every other event, we will make the request and ignore the result.
         // We will also avoid awaiting the request to not slow down the overall runner.
         else {
-            let url = self.url.to_owned();
-
             self.requests.push(tokio::spawn(async {
                 let _ = notify_webhook(url, body).await;
             }));
@@ -106,6 +108,8 @@ impl WebhooksNotifier {
     }
 
     pub async fn wait_for_requests(&mut self) {
+        trace!("Waiting for webhook requests to finish");
+
         for future in self.requests.drain(0..) {
             let _ = future.await;
         }

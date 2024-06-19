@@ -49,12 +49,8 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
         projects.push(project_graph.get_from_path(None)?);
     } else {
         trace!(
-            "Running for specific projects: {}",
-            args.ids
-                .iter()
-                .map(|p| p.to_string())
-                .collect::<Vec<_>>()
-                .join(", ")
+            ids = ?args.ids,
+            "Running for specific projects",
         );
 
         for id in &args.ids {

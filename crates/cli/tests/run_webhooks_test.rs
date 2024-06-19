@@ -97,9 +97,13 @@ async fn all_webhooks_have_same_uuid() {
 
     let sandbox = sandbox(server.url(""));
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("node:cjs");
-    });
+    sandbox
+        .run_moon(|cmd| {
+            cmd.arg("run").arg("node:cjs");
+        })
+        .debug();
+
+    dbg!(&mock.hits());
 
     mock.assert_hits(22);
 }

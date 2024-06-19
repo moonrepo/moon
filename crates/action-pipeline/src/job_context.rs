@@ -25,7 +25,7 @@ pub struct JobContext {
     pub result_sender: Sender<Action>,
 
     /// Currently running jobs (used by the dispatcher)
-    pub running_jobs: Arc<RwLock<FxHashMap<NodeIndex, String>>>,
+    pub running_jobs: Arc<RwLock<FxHashMap<NodeIndex, u32>>>,
 
     /// Acquires a permit for concurrency
     pub semaphore: Arc<Semaphore>,

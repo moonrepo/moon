@@ -35,8 +35,8 @@ impl<'graph> JobDispatcher<'graph> {
     pub async fn next(&mut self) -> Option<NodeIndex> {
         let completed = self.context.completed_jobs.read().await;
 
-        for idx in &self.indices {
-            if self.visited.contains(idx) || completed.contains(idx) {
+        for index in &self.indices {
+            if self.visited.contains(index) || completed.contains(index) {
                 continue;
             }
 
@@ -45,14 +45,14 @@ impl<'graph> JobDispatcher<'graph> {
 
             if self
                 .graph
-                .neighbors_directed(*idx, Direction::Outgoing)
+                .neighbors_directed(*index, Direction::Outgoing)
                 .all(|dep| {
                     deps.push(dep.index());
                     completed.contains(&dep)
                 })
             {
-                if let Some(node) = self.graph.node_weight(*idx) {
-                    let label = node.label();
+                if let Some(node) = self.graph.node_weight(*index) {
+                    let id = node.get_id();
 
                     // If the same exact action is currently running,
                     // avoid running another in parallel to avoid weird
@@ -60,31 +60,38 @@ impl<'graph> JobDispatcher<'graph> {
                     // where different args/env vars run the same task,
                     // but with slightly different variance.
                     {
-                        if node.is_standard()
-                            && self
+                        if node.is_standard() {
+                            if let Some(running_index) = self
                                 .context
                                 .running_jobs
                                 .read()
                                 .await
-                                .values()
-                                .any(|running_label| running_label == &label)
-                        {
-                            continue;
+                                .iter()
+                                .find(|(_, running_id)| *running_id == &id)
+                            {
+                                trace!(
+                                    index = index.index(),
+                                    running_index = running_index.0.index(),
+                                    "Another job of a similar type is currently running, deferring dispatch",
+                                );
+
+                                continue;
+                            }
                         }
                     }
 
-                    self.context.running_jobs.write().await.insert(*idx, label);
+                    self.context.running_jobs.write().await.insert(*index, id);
                 }
 
                 trace!(
-                    index = idx.index(),
+                    index = index.index(),
                     deps = ?deps,
                     "Dispatching job",
                 );
 
-                self.visited.insert(*idx);
+                self.visited.insert(*index);
 
-                return Some(*idx);
+                return Some(*index);
             }
         }
 

@@ -22,6 +22,10 @@ pub async fn run_action_pipeline(
         }
 
         match &session.cli.command {
+            Commands::Check(cmd) => {
+                pipeline.summarize = cmd.summary;
+                pipeline.bail = true;
+            }
             Commands::Ci(_) => {
                 pipeline.summarize = true;
             }
@@ -52,6 +56,12 @@ pub async fn run_action_pipeline(
         }
 
         match &session.cli.command {
+            Commands::Check(cmd) => {
+                pipeline
+                    .summarize(cmd.summary)
+                    .generate_report("runReport.json")
+                    .bail_on_error();
+            }
             Commands::Ci(_) => {
                 pipeline.summarize(true).generate_report("ciReport.json");
             }

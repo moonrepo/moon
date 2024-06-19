@@ -553,6 +553,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.shell = Some(*shell);
             }
 
+            if let Some(timeout) = &config.timeout {
+                options.timeout = Some(*timeout);
+            }
+
             if let Some(unix_shell) = &config.unix_shell {
                 options.unix_shell = Some(*unix_shell);
             }

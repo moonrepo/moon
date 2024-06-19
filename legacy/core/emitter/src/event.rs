@@ -92,8 +92,8 @@ pub enum Event<'e> {
 }
 
 impl<'e> Event<'e> {
-    pub fn get_type(&self) -> String {
-        let key = match self {
+    pub fn get_type(&self) -> &str {
+        match self {
             Event::ActionStarted { .. } => "action.started",
             Event::ActionFinished { .. } => "action.finished",
             Event::DependenciesInstalling { .. } => "dependencies.installing",
@@ -109,9 +109,7 @@ impl<'e> Event<'e> {
             Event::ToolInstalled { .. } => "tool.installed",
             Event::WorkspaceSyncing => "workspace.syncing",
             Event::WorkspaceSynced { .. } => "workspace.synced",
-        };
-
-        key.to_owned()
+        }
     }
 
     pub fn is_end(&self) -> bool {

@@ -5,19 +5,17 @@ edition = "2021"
 publish = false
 
 [dependencies]
-moon_app_context = { path = "../../../crates/app-context" }
-moon_emitter = { path = "../emitter" }
-moon_logger = { path = "../logger" }
-moon_utils = { path = "../utils" }
-async-trait = { workspace = true }
+moon_common = { path = "../common" }
+moon_time = { path = "../time" }
 ci_env = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
-starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
 tokio = { workspace = true }
+tracing = { workspace = true }
 uuid = { workspace = true }
+
 
 [lints]
 workspace = true

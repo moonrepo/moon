@@ -1,0 +1,25 @@
+[package]
+name = "moon_action_pipeline2"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+moon_action = { path = "../action" }
+moon_action_context = { path = "../action-context" }
+moon_action_graph = { path = "../action-graph" }
+moon_app_context = { path = "../app-context" }
+moon_common = { path = "../common" }
+moon_project_graph = { path = "../project-graph" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+num_cpus = "1.16.0"
+petgraph = { workspace = true }
+rustc-hash = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

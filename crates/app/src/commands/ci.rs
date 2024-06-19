@@ -1,11 +1,11 @@
 use crate::app_error::{AppError, ExitCode};
+use crate::experiments::run_action_pipeline;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::session::CliSession;
 use ci_env::CiOutput;
 use clap::Args;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
-use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
 use moon_task::Target;
@@ -278,20 +278,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
         ..ActionContext::default()
     };
 
-    let mut pipeline = Pipeline::new(
-        session.get_app_context()?,
-        session.get_project_graph().await?,
-    );
-
-    if let Some(concurrency) = &session.cli.concurrency {
-        pipeline.concurrency(*concurrency);
-    }
-
-    let results = pipeline
-        .summarize(true)
-        .generate_report("ciReport.json")
-        .run(action_graph, Some(context))
-        .await?;
+    let results = run_action_pipeline(&session, action_graph, Some(context)).await?;
 
     console.print_footer()?;
 

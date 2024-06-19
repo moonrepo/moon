@@ -1,9 +1,9 @@
+use crate::experiments::run_action_pipeline;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::session::CliSession;
 use clap::Args;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
-use moon_action_pipeline::Pipeline;
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env};
 use moon_task::TargetLocator;
@@ -221,19 +221,7 @@ pub async fn run_target(
         ..ActionContext::default()
     };
 
-    let action_graph = action_graph_builder.build()?;
-    let mut pipeline = Pipeline::new(session.get_app_context()?, project_graph);
-
-    if let Some(concurrency) = &session.cli.concurrency {
-        pipeline.concurrency(*concurrency);
-    }
-
-    pipeline
-        .bail_on_error()
-        .summarize(args.summary)
-        .generate_report("runReport.json")
-        .run(action_graph, Some(context))
-        .await?;
+    run_action_pipeline(session, action_graph_builder.build()?, Some(context)).await?;
 
     Ok(())
 }

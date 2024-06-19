@@ -50,7 +50,7 @@ fn create_rust_runtime() -> Runtime {
 
 fn topo(graph: ActionGraph) -> Vec<ActionNode> {
     let mut nodes = vec![];
-    let mut iter = graph.try_iter().unwrap();
+    let mut iter = graph.creater_iter(graph.sort_topological().unwrap());
 
     while iter.has_pending() {
         if let Some(index) = iter.next() {
@@ -89,7 +89,7 @@ mod action_graph {
             )
             .unwrap();
 
-        builder.build().unwrap().try_iter().unwrap();
+        builder.build().unwrap().sort_topological().unwrap();
     }
 
     mod install_deps {

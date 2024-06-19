@@ -23,9 +23,7 @@ mod output_archiver {
         }
 
         #[tokio::test]
-        #[should_panic(
-            expected = "Task project:file-outputs defines outputs, but none exist after being ran."
-        )]
+        #[should_panic(expected = "Task project:file-outputs defines outputs but after being ran")]
         async fn errors_if_outputs_not_created() {
             let container = TaskRunnerContainer::new("archive").await;
             let archiver = container.create_archiver("file-outputs");

@@ -110,7 +110,7 @@ impl Operation {
     pub fn has_failed(&self) -> bool {
         matches!(
             &self.status,
-            ActionStatus::Failed | ActionStatus::FailedAndAbort
+            ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut
         )
     }
 

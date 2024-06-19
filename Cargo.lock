@@ -3221,6 +3221,8 @@ dependencies = [
  "moon_common",
  "moon_project_graph",
  "num_cpus",
+ "petgraph",
+ "rustc-hash",
  "tokio",
  "tokio-util",
  "tracing",

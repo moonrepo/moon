@@ -4,8 +4,9 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project_graph::ProjectGraph;
 use std::sync::Arc;
-use tracing::trace;
+use tracing::{instrument, trace};
 
+#[instrument(skip_all)]
 pub async fn run_action(
     action: &mut Action,
     _action_context: Arc<ActionContext>,
@@ -60,6 +61,7 @@ pub async fn run_action(
     if action.has_failed() {
         trace!(
             index = action.node_index,
+            status = ?action.status,
             "Failed to run action {} in {:?}",
             log_label,
             action.get_duration()
@@ -75,6 +77,7 @@ pub async fn run_action(
     } else {
         trace!(
             index = action.node_index,
+            status = ?action.status,
             "Ran action {} in {:?}",
             log_label,
             action.get_duration()

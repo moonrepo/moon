@@ -8,7 +8,7 @@ use std::time::Duration;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
-use tracing::trace;
+use tracing::{instrument, trace};
 
 pub struct Job {
     pub node: ActionNode,
@@ -24,14 +24,13 @@ pub struct Job {
 }
 
 impl Job {
+    #[instrument(skip_all)]
     pub async fn dispatch(self) {
         let timeout_token = CancellationToken::new();
         let timeout_handle = self.track_timeout(self.timeout, timeout_token.clone());
 
         let mut action = Action::new(self.node);
         action.node_index = self.node_index;
-
-        trace!(index = self.node_index, "Dispatching job");
 
         tokio::select! {
             // Run conditions in order!
@@ -76,19 +75,13 @@ impl Job {
             ) => {},
         };
 
-        trace!(
-            index = self.node_index,
-            status = ?action.status,
-            "Dispatched job"
-        );
-
         // Cleanup before sending the result
         if let Some(handle) = timeout_handle {
             handle.abort();
         }
 
         // Send the result back to the pipeline
-        self.context.mark_completed(action).await;
+        self.context.send_result(action).await;
     }
 
     fn track_timeout(

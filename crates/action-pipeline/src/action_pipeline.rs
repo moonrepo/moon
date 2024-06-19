@@ -1,16 +1,18 @@
 use crate::job::Job;
 use crate::job_context::JobContext;
+use crate::job_dispatcher::JobDispatcher;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_project_graph::ProjectGraph;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::VecDeque;
 use std::sync::Arc;
-use tokio::sync::{mpsc, Semaphore};
+use tokio::sync::{mpsc, RwLock, Semaphore};
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, trace, warn};
+use tracing::{debug, instrument, trace, warn};
 
 pub struct ActionPipeline {
     pub bail: bool,
@@ -39,6 +41,7 @@ impl ActionPipeline {
             .await
     }
 
+    #[instrument(skip_all)]
     pub async fn run_with_context(
         &self,
         action_graph: ActionGraph,
@@ -66,10 +69,11 @@ impl ActionPipeline {
         let job_context = JobContext {
             abort_token: abort_token.clone(),
             cancel_token: cancel_token.clone(),
+            completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
             project_graph: Arc::clone(&self.project_graph),
             result_sender: sender,
-            complete_sender: None,
             semaphore: Arc::new(Semaphore::new(concurrency)),
+            running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
         };
 
         // Monitor signals and ctrl+c
@@ -114,11 +118,12 @@ impl ActionPipeline {
         Ok(actions)
     }
 
+    #[instrument(skip_all)]
     fn dispatch_jobs(
         &self,
         action_graph: ActionGraph,
         action_context: ActionContext,
-        mut job_context: JobContext,
+        job_context: JobContext,
     ) -> miette::Result<JoinHandle<()>> {
         let node_indices = action_graph.sort_topological()?;
         let app_context = Arc::clone(&self.app_context);
@@ -130,15 +135,12 @@ impl ActionPipeline {
         );
 
         Ok(tokio::spawn(async move {
-            let mut nodes = action_graph.creater_iter(node_indices);
+            let mut dispatcher =
+                JobDispatcher::new(&action_graph, job_context.clone(), node_indices);
             let mut persistent_indices = vec![];
             let mut job_handles = VecDeque::<JoinHandle<()>>::new();
 
-            // Monitor completed of each job
-            nodes.monitor_completed();
-            job_context.complete_sender = Some(nodes.sender.clone());
-
-            while nodes.has_pending() {
+            while dispatcher.has_pending().await {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
@@ -157,7 +159,7 @@ impl ActionPipeline {
                 // nodes to complete, but sometimes they cannot advance without
                 // awaiting the current job handles. So to move this forward, only
                 // advance 1 handle at a time!
-                let Some(node_index) = nodes.next() else {
+                let Some(node_index) = dispatcher.next().await else {
                     if let Some(handle) = job_handles.pop_front() {
                         let _ = handle.await;
                     }
@@ -173,7 +175,7 @@ impl ActionPipeline {
                     );
 
                     // Must mark as completed otherwise the loop hangs
-                    nodes.mark_completed(node_index);
+                    job_context.mark_completed(node_index).await;
 
                     continue;
                 };
@@ -186,7 +188,7 @@ impl ActionPipeline {
                     );
 
                     // Must mark as completed otherwise the loop hangs
-                    nodes.mark_completed(node_index);
+                    job_context.mark_completed(node_index).await;
                     persistent_indices.push(node_index);
 
                     continue;
@@ -252,6 +254,7 @@ impl ActionPipeline {
     }
 }
 
+#[instrument(skip(job_context, app_context, action_context))]
 async fn dispatch_job(
     node: ActionNode,
     node_index: usize,

@@ -31,6 +31,10 @@ impl ActionGraph {
         self.get_node_count() == 0
     }
 
+    pub fn get_inner_graph(&self) -> &GraphType {
+        &self.graph
+    }
+
     pub fn get_nodes(&self) -> Vec<&ActionNode> {
         self.graph.node_weights().collect()
     }

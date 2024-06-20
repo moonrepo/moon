@@ -37,8 +37,21 @@ pub async fn run_action(
         ActionNode::SetupToolchain(inner) => {
             setup_toolchain(action, action_context, app_context, inner).await
         }
-        ActionNode::InstallWorkspaceDeps(_) => Ok(ActionStatus::Passed),
-        ActionNode::InstallProjectDeps(_) => Ok(ActionStatus::Passed),
+        ActionNode::InstallWorkspaceDeps(inner) => {
+            install_deps(action, action_context, app_context, &inner.runtime, None).await
+        }
+        ActionNode::InstallProjectDeps(inner) => {
+            let project = project_graph.get(&inner.project)?;
+
+            install_deps(
+                action,
+                action_context,
+                app_context,
+                &inner.runtime,
+                Some(&project),
+            )
+            .await
+        }
         ActionNode::RunTask(inner) => {
             run_task(action, action_context, app_context, project_graph, inner).await
         }

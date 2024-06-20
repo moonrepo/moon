@@ -1,7 +1,8 @@
-use crate::actions::install_deps::install_deps;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_actions::actions::{run_task, setup_toolchain, sync_project, sync_workspace};
+use moon_actions::actions::{
+    install_deps, run_task, setup_toolchain, sync_project, sync_workspace,
+};
 use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;

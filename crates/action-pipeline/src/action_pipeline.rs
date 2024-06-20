@@ -114,6 +114,8 @@ impl ActionPipeline {
         queue_handle.abort();
         signal_handle.abort();
 
+        // TODO finished event
+
         Ok(actions)
     }
 

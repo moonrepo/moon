@@ -3248,8 +3248,10 @@ dependencies = [
  "moon_task_runner",
  "moon_time",
  "moon_vcs_hooks",
+ "proto_core",
  "rustc-hash",
  "serde",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

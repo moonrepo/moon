@@ -18,8 +18,10 @@ moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
 moon_vcs_hooks = { path = "../vcs-hooks" }
 miette = { workspace = true }
+proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+starbase_utils = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 

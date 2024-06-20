@@ -140,7 +140,7 @@ impl CacheEngine {
         let path = self.resolve_path(path);
         let name = fs::file_name(&path);
 
-        let mut state = self.state.load_state::<CommonState>(&name)?;
+        let mut state = self.state.load_state::<CommonCacheState>(&name)?;
         let hash = self.hash.save_manifest_without_hasher(&name, data)?;
 
         if hash != state.data.last_hash {

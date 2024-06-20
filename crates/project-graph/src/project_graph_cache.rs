@@ -4,7 +4,7 @@ use moon_common::Id;
 use rustc_hash::FxHashMap;
 
 cache_item!(
-    pub struct ProjectsState {
+    pub struct ProjectsCacheState {
         pub last_hash: String,
         pub projects: FxHashMap<Id, WorkspaceRelativePathBuf>,
     }

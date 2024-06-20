@@ -16,7 +16,7 @@ use std::sync::Arc;
 use tracing::instrument;
 
 cache_item!(
-    pub struct DependenciesState {
+    pub struct DependenciesCacheState {
         pub last_hash: String,
         pub last_install_time: u128,
     }
@@ -167,7 +167,7 @@ pub async fn install_deps(
     let mut state = app_context
         .cache_engine
         .state
-        .load_state::<DependenciesState>(if let Some(project) = &project {
+        .load_state::<DependenciesCacheState>(if let Some(project) = &project {
             app_context
                 .cache_engine
                 .state

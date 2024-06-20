@@ -9,7 +9,7 @@ use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
-#[instrument(skip_all)]
+#[instrument(skip(_action, action_context, app_context, project_graph))]
 pub async fn sync_project(
     _action: &mut Action,
     action_context: Arc<ActionContext>,

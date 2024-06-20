@@ -1,31 +1,26 @@
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionStatus, RunTaskNode};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
-use moon_logger::warn;
-use moon_platform::Runtime;
-use moon_project::Project;
-use moon_target::Target;
+use moon_common::color;
+use moon_project_graph::ProjectGraph;
 use moon_task_runner::TaskRunner;
-use starbase_styles::color;
-use std::env;
 use std::sync::Arc;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
-const LOG_TARGET: &str = "moon:action:run-task";
-
-#[allow(clippy::too_many_arguments)]
-#[instrument(skip_all)]
+#[instrument(skip(action, action_context, app_context, project_graph))]
 pub async fn run_task(
     action: &mut Action,
-    context: Arc<ActionContext>,
+    action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    project: &Project,
-    target: &Target,
-    _runtime: &Runtime,
+    project_graph: Arc<ProjectGraph>,
+    node: &RunTaskNode,
 ) -> miette::Result<ActionStatus> {
-    env::set_var("MOON_RUNNING_ACTION", "run-task");
-
-    let task = project.get_task(&target.task_id)?;
+    let project_id = node
+        .target
+        .get_project_id()
+        .expect("Project required for running tasks!");
+    let project = project_graph.get(project_id)?;
+    let task = project.get_task(&node.target.task_id)?;
 
     // Must be set before running the task in case it fails and
     // and error is bubbled up the stack
@@ -34,11 +29,11 @@ pub async fn run_task(
     // If the task is persistent, set the status early since it "never finshes",
     // and the runner will error about a missing hash if it's a dependency
     if task.is_persistent() {
-        context.set_target_state(&task.target, TargetState::Passthrough);
+        action_context.set_target_state(&task.target, TargetState::Passthrough);
     }
 
-    let operations = TaskRunner::new(&app_context, project, task)?
-        .run(&context, &action.node)
+    let operations = TaskRunner::new(&app_context, &project, task)?
+        .run(&action_context, &action.node)
         .await?
         .operations;
 
@@ -48,7 +43,6 @@ pub async fn run_task(
 
     if action.has_failed() && action.allow_failure {
         warn!(
-            target: LOG_TARGET,
             "Task {} has failed, but is marked to allow failures, continuing pipeline",
             color::label(&task.target),
         );

@@ -26,7 +26,7 @@ pub async fn run_action(
 
     console.reporter.on_action_started(action)?;
 
-    let result: miette::Result<ActionStatus> = match &*node {
+    let result = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
         ActionNode::SyncWorkspace => {
             sync_workspace(action, action_context, app_context, project_graph).await
@@ -39,7 +39,9 @@ pub async fn run_action(
         }
         ActionNode::InstallDeps(_) => Ok(ActionStatus::Passed),
         ActionNode::InstallProjectDeps(_) => Ok(ActionStatus::Passed),
-        ActionNode::RunTask(_) => Ok(ActionStatus::Passed),
+        ActionNode::RunTask(inner) => {
+            run_task(action, action_context, app_context, project_graph, inner).await
+        }
     };
 
     match result {

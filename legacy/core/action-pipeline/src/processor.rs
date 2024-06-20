@@ -1,8 +1,7 @@
 use crate::actions::install_deps::install_deps;
-use crate::actions::run_task::run_task;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_actions::actions::{setup_toolchain, sync_project, sync_workspace};
+use moon_actions::actions::{run_task, setup_toolchain, sync_project, sync_workspace};
 use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
@@ -55,7 +54,7 @@ pub async fn process_action(
                 .await?;
 
             let setup_result =
-                setup_toolchain(&mut action, action_context, app_context, &inner).await;
+                setup_toolchain(&mut action, action_context, app_context, inner).await;
 
             emitter
                 .emit(Event::ToolInstalled {
@@ -176,8 +175,6 @@ pub async fn process_action(
 
         // Run a task within a project
         ActionNode::RunTask(inner) => {
-            let project = project_graph.get(inner.target.get_project_id().unwrap())?;
-
             emitter
                 .emit(Event::TargetRunning {
                     action: &action,
@@ -188,10 +185,9 @@ pub async fn process_action(
             let run_result = run_task(
                 &mut action,
                 action_context,
-                Arc::clone(&app_context),
-                &project,
-                &inner.target,
-                &inner.runtime,
+                app_context,
+                project_graph,
+                inner,
             )
             .await;
 

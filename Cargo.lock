@@ -3245,6 +3245,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
+ "moon_task_runner",
  "moon_time",
  "moon_vcs_hooks",
  "rustc-hash",

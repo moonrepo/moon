@@ -18,7 +18,7 @@ cache_item!(
     }
 );
 
-#[instrument(skip_all)]
+#[instrument(skip(_action, action_context, app_context))]
 pub async fn setup_toolchain(
     _action: &mut Action,
     action_context: Arc<ActionContext>,

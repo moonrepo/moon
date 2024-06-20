@@ -17,7 +17,7 @@ pub async fn sync_workspace(
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<ActionStatus> {
-    if should_skip_action("MOON_SKIP_SYNC_WORKSPACE") {
+    if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
         debug!(
             "Skipping workspace sync because {} is set",
             color::symbol("MOON_SKIP_SYNC_WORKSPACE")
@@ -67,10 +67,7 @@ pub async fn sync_workspace(
 
         futures.push(task::spawn(async move {
             Operation::sync_operation("VCS hooks")
-                .track_async_with_check(
-                    || sync_vcs_hooks(&app_context, false),
-                    |result| result == true,
-                )
+                .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
                 .await
         }));
     }

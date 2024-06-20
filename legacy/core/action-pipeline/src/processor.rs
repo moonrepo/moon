@@ -1,10 +1,9 @@
 use crate::actions::install_deps::install_deps;
 use crate::actions::run_task::run_task;
 use crate::actions::setup_tool::setup_tool;
-use crate::actions::sync_project::sync_project;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_actions::actions::sync_workspace;
+use moon_actions::actions::{sync_project, sync_workspace};
 use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
@@ -145,8 +144,7 @@ pub async fn process_action(
                 action_context,
                 app_context,
                 project_graph,
-                &project,
-                &inner.runtime,
+                inner,
             )
             .await;
 

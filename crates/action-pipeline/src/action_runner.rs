@@ -31,11 +31,13 @@ pub async fn run_action(
         ActionNode::SyncWorkspace => {
             sync_workspace(action, action_context, app_context, project_graph).await
         }
+        ActionNode::SyncProject(inner) => {
+            sync_project(action, action_context, app_context, project_graph, inner).await
+        }
         ActionNode::InstallDeps(_) => Ok(ActionStatus::Passed),
         ActionNode::InstallProjectDeps(_) => Ok(ActionStatus::Passed),
         ActionNode::RunTask(_) => Ok(ActionStatus::Passed),
         ActionNode::SetupTool(_) => Ok(ActionStatus::Passed),
-        ActionNode::SyncProject(_) => Ok(ActionStatus::Passed),
     };
 
     match result {

@@ -3,7 +3,6 @@ use std::env;
 pub mod install_deps;
 pub mod run_task;
 pub mod setup_tool;
-pub mod sync_project;
 
 pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> bool {
     env::var(key).is_ok_and(|v| matches_pattern(&v, pattern.as_ref()))

@@ -1,51 +1,42 @@
-use super::should_skip_action_matching;
-use moon_action::{Action, ActionStatus};
+use crate::utils::should_skip_action_matching;
+use moon_action::{Action, ActionStatus, SyncProjectNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
-use moon_logger::debug;
-use moon_platform::{PlatformManager, Runtime};
-use moon_project::Project;
+use moon_common::{color, is_ci};
+use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
-use moon_utils::is_ci;
 use rustc_hash::FxHashMap;
-use starbase_styles::color;
-use std::env;
 use std::sync::Arc;
-use tracing::instrument;
-
-const LOG_TARGET: &str = "moon:action:sync-project";
+use tracing::{debug, instrument, warn};
 
 #[instrument(skip_all)]
 pub async fn sync_project(
     _action: &mut Action,
-    context: Arc<ActionContext>,
+    action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
-    project: &Project,
-    runtime: &Runtime,
+    node: &SyncProjectNode,
 ) -> miette::Result<ActionStatus> {
-    env::set_var("MOON_RUNNING_ACTION", "sync-project");
+    let project = project_graph.get(&node.project)?;
 
-    debug!(
-        target: LOG_TARGET,
-        "Syncing project {}",
-        color::id(&project.id)
-    );
-
-    if should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", &project.id) {
+    if let Some(value) = should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", &project.id) {
         debug!(
-            target: LOG_TARGET,
-            "Skipping sync project action because MOON_SKIP_SYNC_PROJECT is set",
+            env = value,
+            "Skipping project {} sync because {} is set",
+            color::id(&project.id),
+            color::symbol("MOON_SKIP_SYNC_PROJECT")
         );
 
         return Ok(ActionStatus::Skipped);
     }
 
+    debug!("Syncing project {}", color::id(&project.id));
+
     // Create a snapshot for tasks to reference
     app_context
         .cache_engine
         .state
-        .save_project_snapshot(&project.id, project)?;
+        .save_project_snapshot(&project.id, &project)?;
 
     // Collect all project dependencies so we can pass them along.
     // We can't pass the graph itself because of circuler references between crates!
@@ -57,13 +48,18 @@ pub async fn sync_project(
 
     // Sync the projects and return true if any files have been mutated
     let mutated_files = PlatformManager::read()
-        .get(runtime)?
-        .sync_project(&context, project, &dependencies)
+        .get(&node.runtime)?
+        .sync_project(&action_context, &project, &dependencies)
         .await?;
 
     // If files have been modified in CI, we should update the status to warning,
     // as these modifications should be committed to the repo!
     if mutated_files && is_ci() {
+        warn!(
+            project_id = project.id.as_str(),
+            "Files were modified during project sync that should be committed to the repository"
+        );
+
         return Ok(ActionStatus::Invalid);
     }
 

@@ -4,7 +4,7 @@ use moon_target::{Target, TargetLocator};
 use rustc_hash::FxHashSet;
 use scc::HashMap;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]

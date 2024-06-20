@@ -1,11 +1,17 @@
 use std::env;
 
-pub fn should_skip_action(key: &str) -> bool {
+pub fn should_skip_action(key: &str) -> Option<String> {
     should_skip_action_matching(key, "")
 }
 
-pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> bool {
-    env::var(key).is_ok_and(|v| matches_pattern(&v, pattern.as_ref()))
+pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> Option<String> {
+    if let Ok(value) = env::var(key) {
+        if matches_pattern(&value, pattern.as_ref()) {
+            return Some(value);
+        }
+    }
+
+    None
 }
 
 fn matches_pattern(value: &str, pattern: &str) -> bool {

@@ -3241,8 +3241,11 @@ dependencies = [
  "moon_codeowners",
  "moon_common",
  "moon_config",
+ "moon_platform",
+ "moon_project",
  "moon_project_graph",
  "moon_vcs_hooks",
+ "rustc-hash",
  "tokio",
  "tracing",
 ]

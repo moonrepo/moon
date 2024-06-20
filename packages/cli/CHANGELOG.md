@@ -10,6 +10,7 @@
   - Better concurrency handling and scheduling.
   - More accurately monitors signals (ctrl+c) and shutdowns.
   - Tasks can now be configured with a timeout (`options.timeout` setting).
+  - Some operations within actions are now ran in parallel.
 - Added a global `--dump` flag, that will dump a trace profile that can be inspected in
   `chrome://tracing`.
 - Updated `moon completions` command to support Nushell.

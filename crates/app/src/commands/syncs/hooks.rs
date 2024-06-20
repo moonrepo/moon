@@ -1,7 +1,7 @@
 use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
 use clap::Args;
-use moon_actions_legacy::{sync_vcs_hooks, unsync_vcs_hooks};
+use moon_actions::operations::{sync_vcs_hooks, unsync_vcs_hooks};
 use starbase::AppResult;
 use starbase_styles::color;
 use tracing::instrument;

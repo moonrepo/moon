@@ -1,5 +1,6 @@
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_actions::actions::*;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project_graph::ProjectGraph;
@@ -9,47 +10,44 @@ use tracing::{instrument, trace};
 #[instrument(skip_all)]
 pub async fn run_action(
     action: &mut Action,
-    _action_context: Arc<ActionContext>,
+    action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    _project_graph: Arc<ProjectGraph>,
+    project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<()> {
     action.start();
 
     let node = Arc::clone(&action.node);
+    let console = Arc::clone(&app_context.console);
     let log_label = color::muted_light(&action.label);
 
     trace!(index = action.node_index, "Running action {}", log_label);
 
     // TODO emit started event
 
-    app_context.console.reporter.on_action_started(action)?;
+    console.reporter.on_action_started(action)?;
 
     let result: miette::Result<ActionStatus> = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
+        ActionNode::SyncWorkspace => {
+            sync_workspace(action, action_context, app_context, project_graph).await
+        }
         ActionNode::InstallDeps(_) => Ok(ActionStatus::Passed),
         ActionNode::InstallProjectDeps(_) => Ok(ActionStatus::Passed),
         ActionNode::RunTask(_) => Ok(ActionStatus::Passed),
         ActionNode::SetupTool(_) => Ok(ActionStatus::Passed),
         ActionNode::SyncProject(_) => Ok(ActionStatus::Passed),
-        ActionNode::SyncWorkspace => Ok(ActionStatus::Passed),
     };
 
     match result {
         Ok(status) => {
             action.finish(status);
 
-            app_context
-                .console
-                .reporter
-                .on_action_completed(action, None)?;
+            console.reporter.on_action_completed(action, None)?;
         }
         Err(error) => {
             action.finish(ActionStatus::Failed);
 
-            app_context
-                .console
-                .reporter
-                .on_action_completed(action, Some(&error))?;
+            console.reporter.on_action_completed(action, Some(&error))?;
 
             action.fail(error);
         }

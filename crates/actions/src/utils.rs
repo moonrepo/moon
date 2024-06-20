@@ -21,7 +21,13 @@ fn matches_pattern(value: &str, pattern: &str) -> bool {
 
     let pattern = pattern.to_lowercase();
 
-    if value == "*" || value == "*:*" || value == "true" || value == pattern || pattern.is_empty() {
+    if value == "*"
+        || value == "*:*"
+        || value == "1"
+        || value == "true"
+        || value == pattern
+        || pattern.is_empty()
+    {
         return true;
     }
 

@@ -28,14 +28,14 @@ pub async fn setup_toolchain(
     let log_label = node.runtime.label();
 
     if let Some(value) = should_skip_action_matching(
-        "MOON_SKIP_SETUP_TOOL",
+        "MOON_SKIP_SETUP_TOOLCHAIN",
         format!("{}:{}", &node.runtime, &node.runtime.requirement),
     ) {
         debug!(
             env = value,
             "Skipping {} toolchain setup because {} is set",
             log_label,
-            color::symbol("MOON_SKIP_SETUP_TOOL")
+            color::symbol("MOON_SKIP_SETUP_TOOLCHAIN")
         );
 
         return Ok(ActionStatus::Skipped);

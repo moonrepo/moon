@@ -11,36 +11,36 @@ export default function ActionGraph() {
 					{
 						data: {
 							source: 'sync-workspace',
-							target: 'node-tool',
+							target: 'node-toolchain',
 						},
 					},
 					{
 						data: {
 							source: 'sync-workspace',
-							target: 'system-tool',
+							target: 'system-toolchain',
 						},
 					},
 					{
 						data: {
-							source: 'node-tool',
+							source: 'node-toolchain',
 							target: 'node-deps',
 						},
 					},
 					{
 						data: {
-							source: 'system-tool',
+							source: 'system-toolchain',
 							target: 'system-deps',
 						},
 					},
 					{
 						data: {
-							source: 'node-tool',
+							source: 'node-toolchain',
 							target: 'node-sync',
 						},
 					},
 					{
 						data: {
-							source: 'system-tool',
+							source: 'system-toolchain',
 							target: 'system-sync',
 						},
 					},
@@ -91,15 +91,15 @@ export default function ActionGraph() {
 					// Toolchain
 					{
 						data: {
-							id: 'node-tool',
-							label: 'SetupNodeTool(18.0.0)',
+							id: 'node-toolchain',
+							label: 'SetupNodeToolchain(18.0.0)',
 							type: 'xl',
 						},
 					},
 					{
 						data: {
-							id: 'system-tool',
-							label: 'SetupSystemTool',
+							id: 'system-toolchain',
+							label: 'SetupSystemToolchain',
 							type: 'xl',
 						},
 					},

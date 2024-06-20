@@ -21,27 +21,6 @@ pub async fn sync_workspace(
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<ActionStatus> {
-    // This causes a lot of churn in tests, revisit
-    if !is_test_env() {
-        env::set_var("MOON_RUNNING_ACTION", "sync-workspace");
-    }
-
-    debug!(target: LOG_TARGET, "Syncing workspace");
-
-    if should_skip_action("MOON_SKIP_SYNC_WORKSPACE") {
-        debug!(
-            target: LOG_TARGET,
-            "Skipping sync workspace action because MOON_SKIP_SYNC_WORKSPACE is set",
-        );
-
-        return Ok(ActionStatus::Skipped);
-    }
-
-    // Avoid the following features when in Docker
-    if is_docker_container() {
-        return Ok(ActionStatus::Passed);
-    }
-
     if app_context.workspace_config.codeowners.sync_on_run {
         debug!(
             target: LOG_TARGET,

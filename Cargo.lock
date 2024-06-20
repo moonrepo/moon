@@ -3230,6 +3230,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_actions"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_action",
+ "moon_action_context",
+ "moon_app_context",
+ "moon_common",
+ "moon_project_graph",
+ "tracing",
+]
+
+[[package]]
 name = "moon_actions_legacy"
 version = "0.0.1"
 dependencies = [

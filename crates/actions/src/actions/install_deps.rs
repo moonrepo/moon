@@ -54,7 +54,7 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    if env::var("MOON_INSTALLING_DEPS").is_ok_and(|other_pid| other_pid != pid) {
+    if env::var("INTERNAL_MOON_INSTALLING_DEPS").is_ok_and(|other_pid| other_pid != pid) {
         debug!("Detected another dependency install running, skipping install");
 
         return Ok(ActionStatus::Skipped);
@@ -113,7 +113,7 @@ pub async fn install_deps(
         // variable with the current process ID and compare against it. If the IDs are
         // the same then multiple installs are happening in parallel in the same
         // process (via the pipeline), otherwise it's a child process.
-        env::set_var("MOON_INSTALLING_DEPS", pid);
+        env::set_var("INTERNAL_MOON_INSTALLING_DEPS", pid);
 
         debug!(
             "Installing {} dependencies in {}",

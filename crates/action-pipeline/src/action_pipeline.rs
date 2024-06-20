@@ -7,10 +7,9 @@ use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_project_graph::ProjectGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock, Semaphore};
-use tokio::task::JoinHandle;
+use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, trace, warn};
 
@@ -138,17 +137,13 @@ impl ActionPipeline {
             let mut dispatcher =
                 JobDispatcher::new(&action_graph, job_context.clone(), node_indices);
             let mut persistent_indices = vec![];
-            let mut job_handles = VecDeque::<JoinHandle<()>>::new();
+            let mut job_handles = JoinSet::new();
 
             while dispatcher.has_queued_jobs() {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    for handle in job_handles {
-                        if !handle.is_finished() {
-                            handle.abort();
-                        }
-                    }
+                    abort_handles(&mut job_handles).await;
 
                     // Return instead of break, so that we avoid
                     // running persistent tasks below
@@ -160,9 +155,7 @@ impl ActionPipeline {
                 // awaiting the current job handles. So to move this forward, only
                 // advance 1 handle at a time!
                 let Some(node_index) = dispatcher.next().await else {
-                    if let Some(handle) = job_handles.pop_front() {
-                        let _ = handle.await;
-                    }
+                    job_handles.join_next().await;
 
                     continue;
                 };
@@ -180,7 +173,7 @@ impl ActionPipeline {
                     continue;
                 };
 
-                // Run persistent actions later in parallel, so only grab the index for now
+                // Run persistent actions later, so only grab the index for now
                 if node.is_persistent() {
                     trace!(
                         index = node_index.index(),
@@ -195,48 +188,45 @@ impl ActionPipeline {
                 }
 
                 // Otherwise run the action topologically
-                job_handles.push_back(
-                    dispatch_job(
-                        node.to_owned(),
+                job_handles.spawn(dispatch_job(
+                    node.to_owned(),
+                    node_index.index(),
+                    job_context.clone(),
+                    Arc::clone(&app_context),
+                    Arc::clone(&action_context),
+                ));
+
+                // Run this in isolation by exhausting the current list of handles
+                if node.is_interactive() {
+                    exhaust_handles(&mut job_handles).await;
+                }
+            }
+
+            // Ensure all non-persistent actions have finished
+            exhaust_handles(&mut job_handles).await;
+
+            // Then run all persistent actions in parallel
+            if !persistent_indices.is_empty() {
+                debug!(
+                    indices = ?persistent_indices,
+                    "Running {} persistent actions",
+                    persistent_indices.len()
+                );
+
+                for node_index in persistent_indices {
+                    job_handles.spawn(dispatch_job(
+                        action_graph
+                            .get_node_from_index(&node_index)
+                            .unwrap()
+                            .to_owned(),
                         node_index.index(),
                         job_context.clone(),
                         Arc::clone(&app_context),
                         Arc::clone(&action_context),
-                    )
-                    .await,
-                );
-
-                // Run this in isolation by exhausting the current list of handles
-                if node.is_interactive() {
-                    for handle in job_handles.drain(0..) {
-                        let _ = handle.await;
-                    }
+                    ));
                 }
-            }
 
-            if !persistent_indices.is_empty() {
-                debug!("Running {} persistent actions", persistent_indices.len());
-
-                for node_index in persistent_indices {
-                    job_handles.push_back(
-                        dispatch_job(
-                            action_graph
-                                .get_node_from_index(&node_index)
-                                .unwrap()
-                                .to_owned(),
-                            node_index.index(),
-                            job_context.clone(),
-                            Arc::clone(&app_context),
-                            Arc::clone(&action_context),
-                        )
-                        .await,
-                    );
-                }
-            }
-
-            // Run any remaining actions
-            for handle in job_handles {
-                let _ = handle.await;
+                exhaust_handles(&mut job_handles).await;
             }
         }))
     }
@@ -254,13 +244,14 @@ impl ActionPipeline {
     }
 }
 
+#[instrument(skip(job_context, app_context, action_context))]
 async fn dispatch_job(
     node: ActionNode,
     node_index: usize,
     job_context: JobContext,
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
-) -> JoinHandle<()> {
+) {
     let permit = job_context
         .semaphore
         .clone()
@@ -280,8 +271,21 @@ async fn dispatch_job(
         action_context,
     };
 
-    tokio::spawn(async move {
-        job.dispatch().await;
-        drop(permit);
-    })
+    job.dispatch().await;
+
+    drop(permit);
+}
+
+async fn wait_for_handles<T: 'static>(set: &mut JoinSet<T>) {
+    while let Some(_) = set.join_next().await {}
+}
+
+async fn exhaust_handles<T: 'static>(set: &mut JoinSet<T>) {
+    wait_for_handles(set).await;
+    set.detach_all();
+}
+
+async fn abort_handles<T: 'static>(set: &mut JoinSet<T>) {
+    set.abort_all();
+    exhaust_handles(set).await;
 }

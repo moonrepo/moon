@@ -1,7 +1,7 @@
 use super::should_skip_action;
 use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
-use moon_actions::{sync_codeowners, sync_vcs_hooks};
+use moon_actions_legacy::{sync_codeowners, sync_vcs_hooks};
 use moon_app_context::AppContext;
 use moon_common::is_docker_container;
 use moon_logger::debug;

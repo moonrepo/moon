@@ -3178,7 +3178,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
- "moon_actions",
+ "moon_actions_legacy",
  "moon_api",
  "moon_app_context",
  "moon_cache_item",
@@ -3230,7 +3230,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_actions"
+name = "moon_actions_legacy"
 version = "0.0.1"
 dependencies = [
  "miette",
@@ -3292,7 +3292,7 @@ dependencies = [
  "moon_action_graph",
  "moon_action_pipeline",
  "moon_action_pipeline2",
- "moon_actions",
+ "moon_actions_legacy",
  "moon_api",
  "moon_app_context",
  "moon_bun_platform",

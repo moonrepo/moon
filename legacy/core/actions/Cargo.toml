@@ -1,5 +1,5 @@
 [package]
-name = "moon_actions"
+name = "moon_actions_legacy"
 version = "0.0.1"
 edition = "2021"
 publish = false

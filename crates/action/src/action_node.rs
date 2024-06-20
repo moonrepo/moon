@@ -11,7 +11,7 @@ pub struct RuntimeNode {
 }
 
 pub type InstallDepsNode = RuntimeNode;
-pub type SetupToolNode = RuntimeNode;
+pub type SetupToolchainNode = RuntimeNode;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ScopedRuntimeNode {
@@ -82,8 +82,8 @@ pub enum ActionNode {
     /// Run a project's task.
     RunTask(Box<RunTaskNode>),
 
-    /// Setup a tool + version for the provided platform.
-    SetupTool(Box<SetupToolNode>),
+    /// Setup a tool + version for the provided toolchain.
+    SetupToolchain(Box<SetupToolchainNode>),
 
     /// Sync a project with language specific semantics.
     SyncProject(Box<SyncProjectNode>),
@@ -107,8 +107,8 @@ impl ActionNode {
         Self::RunTask(Box::new(node))
     }
 
-    pub fn setup_tool(node: SetupToolNode) -> Self {
-        Self::SetupTool(Box::new(node))
+    pub fn setup_toolchain(node: SetupToolchainNode) -> Self {
+        Self::SetupToolchain(Box::new(node))
     }
 
     pub fn sync_project(node: SyncProjectNode) -> Self {
@@ -131,7 +131,7 @@ impl ActionNode {
             Self::InstallDeps(inner) => &inner.runtime,
             Self::InstallProjectDeps(inner) => &inner.runtime,
             Self::RunTask(inner) => &inner.runtime,
-            Self::SetupTool(inner) => &inner.runtime,
+            Self::SetupToolchain(inner) => &inner.runtime,
             Self::SyncProject(inner) => &inner.runtime,
             _ => unreachable!(),
         }
@@ -185,11 +185,14 @@ impl ActionNode {
                     inner.target
                 )
             }
-            Self::SetupTool(inner) => {
+            Self::SetupToolchain(inner) => {
                 if inner.runtime.platform.is_system() {
-                    "SetupSystemTool".into()
+                    "SetupSystemToolchain".into()
                 } else {
-                    format!("Setup{}Tool({})", inner.runtime, inner.runtime.requirement)
+                    format!(
+                        "Setup{}Toolchain({})",
+                        inner.runtime, inner.runtime.requirement
+                    )
                 }
             }
             Self::SyncProject(inner) => {

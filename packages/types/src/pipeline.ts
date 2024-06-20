@@ -143,7 +143,7 @@ export type ActionNode =
 	| ActionNodeInstallDeps
 	| ActionNodeInstallProjectDeps
 	| ActionNodeRunTask
-	| ActionNodeSetupTool
+	| ActionNodeSetupToolchain
 	| ActionNodeSyncProject
 	| ActionNodeSyncWorkspace;
 
@@ -174,8 +174,8 @@ export interface ActionNodeRunTask {
 	};
 }
 
-export interface ActionNodeSetupTool {
-	action: 'setup-tool';
+export interface ActionNodeSetupToolchain {
+	action: 'setup-toolchain';
 	params: {
 		runtime: Runtime;
 	};

@@ -34,8 +34,8 @@ pub async fn run_action(
         ActionNode::SyncProject(inner) => {
             sync_project(action, action_context, app_context, project_graph, inner).await
         }
-        ActionNode::SetupTool(inner) => {
-            setup_tool(action, action_context, app_context, inner).await
+        ActionNode::SetupToolchain(inner) => {
+            setup_toolchain(action, action_context, app_context, inner).await
         }
         ActionNode::InstallDeps(_) => Ok(ActionStatus::Passed),
         ActionNode::InstallProjectDeps(_) => Ok(ActionStatus::Passed),
@@ -68,7 +68,7 @@ pub async fn run_action(
         // If these actions failed, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupTool { .. } | ActionNode::InstallDeps { .. }
+            ActionNode::SetupToolchain { .. } | ActionNode::InstallDeps { .. }
         ) {
             action.abort();
         }

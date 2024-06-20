@@ -83,7 +83,7 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 				},
 			},
 			{
-				selector: 'node[type="setup-tool"], node[type="xl"]',
+				selector: 'node[type="setup-toolchain"], node[type="xl"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',

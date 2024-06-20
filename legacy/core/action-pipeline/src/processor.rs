@@ -2,7 +2,7 @@ use crate::actions::install_deps::install_deps;
 use crate::actions::run_task::run_task;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_actions::actions::{setup_tool, sync_project, sync_workspace};
+use moon_actions::actions::{setup_toolchain, sync_project, sync_workspace};
 use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
@@ -47,14 +47,15 @@ pub async fn process_action(
         ActionNode::None => Ok(ActionStatus::Skipped),
 
         // Setup and install the specific tool
-        ActionNode::SetupTool(inner) => {
+        ActionNode::SetupToolchain(inner) => {
             emitter
                 .emit(Event::ToolInstalling {
                     runtime: &inner.runtime,
                 })
                 .await?;
 
-            let setup_result = setup_tool(&mut action, action_context, app_context, &inner).await;
+            let setup_result =
+                setup_toolchain(&mut action, action_context, app_context, &inner).await;
 
             emitter
                 .emit(Event::ToolInstalled {
@@ -233,7 +234,7 @@ pub async fn process_action(
         // If these fail, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupTool { .. } | ActionNode::InstallDeps { .. }
+            ActionNode::SetupToolchain { .. } | ActionNode::InstallDeps { .. }
         ) {
             action.abort();
         }

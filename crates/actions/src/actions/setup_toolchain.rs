@@ -1,5 +1,5 @@
 use crate::utils::should_skip_action_matching;
-use moon_action::{Action, ActionStatus, SetupToolNode};
+use moon_action::{Action, ActionStatus, SetupToolchainNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
@@ -19,11 +19,11 @@ cache_item!(
 );
 
 #[instrument(skip_all)]
-pub async fn setup_tool(
+pub async fn setup_toolchain(
     _action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    node: &SetupToolNode,
+    node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
     let log_label = node.runtime.label();
 

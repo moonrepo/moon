@@ -60,7 +60,7 @@ impl<'graph> JobDispatcher<'graph> {
                     // where different args/env vars run the same task,
                     // but with slightly different variance.
                     {
-                        if node.is_standard() && id > 0 {
+                        if id > 0 && node.is_standard() {
                             if let Some(running_index) = self
                                 .context
                                 .running_jobs

@@ -4,12 +4,12 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupSystemTool" ]
-    2 [ label="SyncSystemProject(deps)" ]
+    1 [ label="SetupToolchain(system)" ]
+    2 [ label="SyncProject(system, deps)" ]
     3 [ label="RunTask(deps:base)" ]
     4 [ label="RunTask(deps:parent1)" ]
     5 [ label="RunTask(deps:parent2)" ]
-    6 [ label="SyncSystemProject(deps-external)" ]
+    6 [ label="SyncProject(system, deps-external)" ]
     7 [ label="RunTask(deps-external:external)" ]
     1 -> 0 [ ]
     2 -> 1 [ ]
@@ -23,4 +23,3 @@ digraph {
     7 -> 6 [ ]
     7 -> 3 [ ]
 }
-

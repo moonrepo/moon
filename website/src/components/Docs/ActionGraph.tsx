@@ -92,14 +92,14 @@ export default function ActionGraph() {
 					{
 						data: {
 							id: 'node-toolchain',
-							label: 'SetupNodeToolchain(18.0.0)',
+							label: 'SetupToolchain(node:18.0.0)',
 							type: 'xl',
 						},
 					},
 					{
 						data: {
 							id: 'system-toolchain',
-							label: 'SetupSystemToolchain',
+							label: 'SetupToolchain(system)',
 							type: 'xl',
 						},
 					},
@@ -107,14 +107,14 @@ export default function ActionGraph() {
 					{
 						data: {
 							id: 'node-deps',
-							label: 'InstallNodeDeps(18.0.0)',
+							label: 'InstallWorkspaceDeps(node:18.0.0)',
 							type: 'lg',
 						},
 					},
 					{
 						data: {
 							id: 'system-deps',
-							label: 'InstallSystemDepsInProject(example)',
+							label: 'InstallProjectDeps(node:18.0.0, example)',
 							type: 'lg',
 						},
 					},
@@ -122,14 +122,14 @@ export default function ActionGraph() {
 					{
 						data: {
 							id: 'node-sync',
-							label: 'SyncNodeProject(example)',
+							label: 'SyncProject(node, example)',
 							type: 'md',
 						},
 					},
 					{
 						data: {
 							id: 'system-sync',
-							label: 'SyncSystemProject(example)',
+							label: 'SyncProject(system, example)',
 							type: 'md',
 						},
 					},

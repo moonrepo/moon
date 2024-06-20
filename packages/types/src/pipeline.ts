@@ -140,15 +140,15 @@ export interface RunReport {
 // NODES
 
 export type ActionNode =
-	| ActionNodeInstallDeps
 	| ActionNodeInstallProjectDeps
+	| ActionNodeInstallWorkspaceDeps
 	| ActionNodeRunTask
 	| ActionNodeSetupToolchain
 	| ActionNodeSyncProject
 	| ActionNodeSyncWorkspace;
 
-export interface ActionNodeInstallDeps {
-	action: 'install-deps';
+export interface ActionNodeInstallWorkspaceDeps {
+	action: 'install-workspace-deps';
 	params: {
 		runtime: Runtime;
 	};

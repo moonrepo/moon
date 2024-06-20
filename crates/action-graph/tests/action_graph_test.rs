@@ -114,7 +114,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -141,7 +141,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -170,7 +170,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_project_deps(InstallProjectDepsNode {
@@ -209,7 +209,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -231,7 +231,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -267,7 +267,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -309,7 +309,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -562,7 +562,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -629,7 +629,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -687,7 +687,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -754,7 +754,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -821,7 +821,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -902,7 +902,7 @@ mod action_graph {
                     ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {

@@ -67,7 +67,7 @@ pub async fn process_action(
         }
 
         // Install dependencies in the workspace root
-        ActionNode::InstallDeps(inner) => {
+        ActionNode::InstallWorkspaceDeps(inner) => {
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
@@ -230,7 +230,7 @@ pub async fn process_action(
         // If these fail, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupToolchain { .. } | ActionNode::InstallDeps { .. }
+            ActionNode::SetupToolchain { .. } | ActionNode::InstallWorkspaceDeps { .. }
         ) {
             action.abort();
         }

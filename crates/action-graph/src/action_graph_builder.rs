@@ -1,6 +1,6 @@
 use crate::action_graph::ActionGraph;
 use moon_action::{
-    ActionNode, InstallDepsNode, InstallProjectDepsNode, RunTaskNode, SetupToolchainNode,
+    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
     SyncProjectNode,
 };
 use moon_common::Id;
@@ -145,7 +145,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 runtime: self.get_runtime(project, platform_type, true),
             })
         } else {
-            ActionNode::install_deps(InstallDepsNode {
+            ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                 runtime: self.get_runtime(project, platform_type, false),
             })
         };

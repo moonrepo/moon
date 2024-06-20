@@ -143,7 +143,7 @@ impl ActionPipeline {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    abort_handles(&mut job_handles).await;
+                    job_handles.shutdown().await;
 
                     // Return instead of break, so that we avoid
                     // running persistent tasks below
@@ -198,12 +198,12 @@ impl ActionPipeline {
 
                 // Run this in isolation by exhausting the current list of handles
                 if node.is_interactive() {
-                    exhaust_handles(&mut job_handles).await;
+                    exhaust_job_handles(&mut job_handles).await;
                 }
             }
 
             // Ensure all non-persistent actions have finished
-            exhaust_handles(&mut job_handles).await;
+            exhaust_job_handles(&mut job_handles).await;
 
             // Then run all persistent actions in parallel
             if !persistent_indices.is_empty() {
@@ -226,7 +226,7 @@ impl ActionPipeline {
                     ));
                 }
 
-                exhaust_handles(&mut job_handles).await;
+                exhaust_job_handles(&mut job_handles).await;
             }
         }))
     }
@@ -276,16 +276,8 @@ async fn dispatch_job(
     drop(permit);
 }
 
-async fn wait_for_handles<T: 'static>(set: &mut JoinSet<T>) {
-    while let Some(_) = set.join_next().await {}
-}
-
-async fn exhaust_handles<T: 'static>(set: &mut JoinSet<T>) {
-    wait_for_handles(set).await;
+#[instrument(skip_all)]
+async fn exhaust_job_handles<T: 'static>(set: &mut JoinSet<T>) {
+    while set.join_next().await.is_some() {}
     set.detach_all();
-}
-
-async fn abort_handles<T: 'static>(set: &mut JoinSet<T>) {
-    set.abort_all();
-    exhaust_handles(set).await;
 }

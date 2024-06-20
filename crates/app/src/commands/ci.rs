@@ -274,7 +274,6 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     let context = ActionContext {
         primary_targets: FxHashSet::from_iter(targets),
         touched_files,
-        workspace_root: session.workspace_root.clone(),
         ..ActionContext::default()
     };
 

@@ -65,9 +65,6 @@ pub struct ActionContext {
 
     /// Files that have currently been touched.
     pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
-
-    /// The workspace root.
-    pub workspace_root: PathBuf,
 }
 
 impl ActionContext {

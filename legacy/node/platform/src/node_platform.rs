@@ -439,14 +439,14 @@ impl Platform for NodePlatform {
         project: &Project,
         task: &Task,
         runtime: &Runtime,
-        working_dir: &Path,
+        _working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = actions::create_target_command_without_tool(
             &self.config,
             context,
             project,
             task,
-            working_dir,
+            &self.workspace_root,
         )?;
 
         if let Ok(node) = self.toolchain.get_for_version(&runtime.requirement) {

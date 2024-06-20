@@ -217,7 +217,6 @@ pub async fn run_target(
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: args.profile.to_owned(),
         touched_files: touched_files.clone(),
-        workspace_root: session.workspace_root.clone(),
         ..ActionContext::default()
     };
 

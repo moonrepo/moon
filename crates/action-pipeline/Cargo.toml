@@ -11,6 +11,7 @@ moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../action-graph" }
 moon_actions = { path = "../actions" }
 moon_app_context = { path = "../app-context" }
+moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_console = { path = "../console" }
 moon_notifier = { path = "../notifier" }

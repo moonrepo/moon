@@ -1,6 +1,7 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
 use moon_notifier::WebhooksNotifier;
+use tracing::debug;
 
 pub struct WebhooksSubscriber {
     notifier: WebhooksNotifier,
@@ -20,6 +21,8 @@ impl Subscriber for WebhooksSubscriber {
         self.notifier.notify(event.get_type(), event).await?;
 
         if matches!(event, Event::PipelineCompleted { .. }) {
+            debug!("Waiting for webhook requests to finish");
+
             self.notifier.wait_for_requests().await;
         }
 

@@ -2,13 +2,15 @@ use crate::event_emitter::{Event, EventEmitter};
 use crate::job::Job;
 use crate::job_context::JobContext;
 use crate::job_dispatcher::JobDispatcher;
+use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
+use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
-use moon_common::{is_ci, is_test_env};
+use moon_common::{color, is_ci, is_test_env};
 use moon_project_graph::ProjectGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -31,6 +33,7 @@ pub struct ActionPipeline {
 
     // Data
     app_context: Arc<AppContext>,
+    action_context: Arc<ActionContext>,
     emitter: Arc<EventEmitter>,
     project_graph: Arc<ProjectGraph>,
 }
@@ -42,6 +45,7 @@ impl ActionPipeline {
         Self {
             aborted: false,
             actions: vec![],
+            action_context: Arc::new(ActionContext::default()),
             app_context,
             bail: false,
             concurrency: num_cpus::get(),
@@ -63,18 +67,19 @@ impl ActionPipeline {
         action_graph: ActionGraph,
         action_context: ActionContext,
     ) -> miette::Result<Vec<Action>> {
+        self.action_context = Arc::new(action_context);
         self.setup_subscribers().await;
 
         self.emitter
             .emit(Event::PipelineStarted {
                 actions_count: action_graph.get_node_count(),
                 action_nodes: action_graph.get_nodes(),
-                context: &action_context,
+                context: &self.action_context,
             })
             .await?;
 
         // Run the pipeline based on the graph
-        let result = self.internal_run(action_graph, action_context).await;
+        let result = self.internal_run(action_graph).await;
         let actions = mem::take(&mut self.actions);
 
         // Handle the result of the pipeline
@@ -84,6 +89,7 @@ impl ActionPipeline {
                     .emit(Event::PipelineCompleted {
                         actions: &actions,
                         aborted: self.aborted,
+                        context: &self.action_context,
                         duration: self.duration.unwrap(),
                         error: None,
                         error_report: None,
@@ -97,6 +103,7 @@ impl ActionPipeline {
                     .emit(Event::PipelineCompleted {
                         actions: &actions,
                         aborted: self.aborted,
+                        context: &self.action_context,
                         duration: self.duration.unwrap(),
                         error: Some(error.to_string()),
                         error_report: Some(&error),
@@ -108,11 +115,7 @@ impl ActionPipeline {
         }
     }
 
-    pub async fn internal_run(
-        &mut self,
-        action_graph: ActionGraph,
-        action_context: ActionContext,
-    ) -> miette::Result<()> {
+    pub async fn internal_run(&mut self, action_graph: ActionGraph) -> miette::Result<()> {
         let total_actions = action_graph.get_node_count();
         let start = Instant::now();
 
@@ -144,7 +147,7 @@ impl ActionPipeline {
         let signal_handle = self.monitor_signals(cancel_token.clone());
 
         // Dispatch jobs from the graph to run actions
-        let queue_handle = self.dispatch_jobs(action_graph, action_context, job_context)?;
+        let queue_handle = self.dispatch_jobs(action_graph, job_context)?;
 
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
@@ -190,12 +193,11 @@ impl ActionPipeline {
     fn dispatch_jobs(
         &self,
         action_graph: ActionGraph,
-        action_context: ActionContext,
         job_context: JobContext,
     ) -> miette::Result<JoinHandle<()>> {
         let node_indices = action_graph.sort_topological()?;
         let app_context = Arc::clone(&self.app_context);
-        let action_context = Arc::new(action_context);
+        let action_context = Arc::clone(&self.action_context);
 
         debug!(
             total_jobs = node_indices.len(),
@@ -313,6 +315,8 @@ impl ActionPipeline {
     }
 
     async fn setup_subscribers(&mut self) {
+        debug!("Registering event subscribers");
+
         self.emitter
             .subscribe(ConsoleSubscriber::new(
                 Arc::clone(&self.app_context.console),
@@ -320,13 +324,45 @@ impl ActionPipeline {
             ))
             .await;
 
+        debug!("Subscribing run reports and estimates");
+
+        self.emitter
+            .subscribe(ReportsSubscriber::new(
+                Arc::clone(&self.app_context.cache_engine),
+                Arc::clone(&self.action_context),
+            ))
+            .await;
+
         // For security and privacy purposes, only send webhooks from a CI environment
         if is_ci() || is_test_env() {
             if let Some(webhook_url) = &self.app_context.workspace_config.notifier.webhook_url {
+                debug!(
+                    url = webhook_url,
+                    "Subscribing webhook events ({} enabled)",
+                    color::property("notifier.webhookUrl"),
+                );
+
                 self.emitter
                     .subscribe(WebhooksSubscriber::new(webhook_url))
                     .await;
             }
+        }
+
+        if self.app_context.workspace_config.runner.auto_clean_cache {
+            let lifetime = &self.app_context.workspace_config.runner.cache_lifetime;
+
+            debug!(
+                lifetime = lifetime,
+                "Subscribing cache cleanup ({} enabled)",
+                color::property("runner.autoCleanCache"),
+            );
+
+            self.emitter
+                .subscribe(CleanupSubscriber::new(
+                    Arc::clone(&self.app_context.cache_engine),
+                    lifetime,
+                ))
+                .await;
         }
     }
 }

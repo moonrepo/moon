@@ -8,6 +8,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
+use tracing::instrument;
 
 #[derive(Serialize)]
 #[serde(untagged, rename_all = "camelCase")]
@@ -46,6 +47,7 @@ pub enum Event<'data> {
     PipelineCompleted {
         actions: &'data [Action],
         aborted: bool,
+        context: &'data ActionContext,
         duration: Duration,
         error: Option<String>,
         #[serde(skip)]
@@ -126,6 +128,7 @@ impl EventEmitter {
         self.subscribers.lock().await.push(Box::new(subscriber));
     }
 
+    #[instrument(skip_all)]
     pub async fn emit<'data>(&self, event: Event<'data>) -> miette::Result<()> {
         let mut subscribers = self.subscribers.lock().await;
 

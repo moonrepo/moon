@@ -73,9 +73,9 @@ fn create_node_options(
 
 fn prepare_target_command(
     command: &mut Command,
-    context: &ActionContext,
     task: &Task,
     node_config: &NodeConfig,
+    workspace_root: &Path,
 ) -> miette::Result<()> {
     command.args(&task.args).envs(&task.env);
 
@@ -84,8 +84,7 @@ fn prepare_target_command(
         command.env(
             "NODE_PATH",
             node::extend_node_path(path::to_string(
-                context
-                    .workspace_root
+                workspace_root
                     .join(&node_config.packages_root)
                     .join("node_modules")
                     .join(".pnpm")
@@ -102,7 +101,7 @@ pub fn create_target_command_without_tool(
     context: &ActionContext,
     _project: &Project,
     task: &Task,
-    _working_dir: &Path,
+    workspace_root: &Path,
 ) -> miette::Result<Command> {
     let mut command = Command::new("node");
 
@@ -118,7 +117,7 @@ pub fn create_target_command_without_tool(
         }
     };
 
-    prepare_target_command(&mut command, context, task, node_config)?;
+    prepare_target_command(&mut command, task, node_config, workspace_root)?;
 
     Ok(command)
 }

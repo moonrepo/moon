@@ -14,7 +14,7 @@ macro_rules! cache_item {
 }
 
 cache_item!(
-    pub struct CommonState {
+    pub struct CommonCacheState {
         pub last_hash: String,
     }
 );

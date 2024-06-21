@@ -27,6 +27,12 @@ The following actions compose our action graph:
 This is a common action that always runs and give's moon a chance to perform operations and health
 checks across the entire workspace.
 
+:::info
+
+This action can be skipped by setting the `MOON_SKIP_SYNC_WORKSPACE=true` environment variable.
+
+:::
+
 ### Setup toolchain
 
 The most important action in the graph is the setup toolchain action, which downloads and installs a
@@ -34,9 +40,17 @@ tier 3 language into the toolchain. For other tiers, this is basically a no-oper
 
 - When the tool has already been installed, this action will be skipped.
 - Actions will be scoped by language and version, also known as a runtime. For example,
-  `SetupNodeTool(18.1.0)` or `SetupDenoTool(1.31.0)`.
+  `SetupToolchain(node:18.1.0)` or `SetupToolchain(deno:1.31.0)`.
 - Tools that require a global binary (found on `PATH`) will display the version as "global". For
-  example, `SetupNodeTool(global)`.
+  example, `SetupToolchain(node:global)`.
+
+:::info
+
+This action can be skipped by setting the `MOON_SKIP_SETUP_TOOLCHAIN=true` environment variable. The
+skip can be scoped per tool by setting the value to the tool name (`node`), and also by version
+(`node:20.0.0`). Supports a comma-separated list.
+
+:::
 
 ### Install dependencies
 
@@ -47,18 +61,26 @@ dependency versions.
 
 - When dependencies do _not_ need to be installed, this action will be skipped.
 - Depending on the language and configuration, we may install dependencies in a project
-  (`InstallDepsInProject`), or in the workspace root for all projects (`InstallDeps`).
+  (`InstallProjectDeps`), or in the workspace root for all projects (`InstallWorkspaceDeps`).
 - Actions will be scoped by language and version, also known as a runtime. For example,
-  `InstallNodeDeps(18.1.0)` or `InstallNodeDepsInProject(18.1.0, example)`.
+  `InstallWorkspaceDeps(node:18.1.0)` or `InstallProjectDeps(node:18.1.0, example)`.
 
 > This action depends on the setup toolchain action, because we utilize the binaries in the
 > toolchain to install dependencies.
+
+:::info
+
+This action can be skipped by setting the `MOON_SKIP_INSTALL_DEPS=true` environment variable. The
+skip can be scoped per tool by setting the value to the tool name (`node`), and also by project
+(`node:app`). Supports a comma-separated list.
+
+:::
 
 ### Sync project
 
 To ensure a consistently healthy project and repository, we run a process known as syncing
 _everytime_ a task is ran. Actions will be scoped by language, for example,
-`SyncNodeProject(example)`.
+`SyncProject(node, example)`.
 
 What is synced or considered healthcare is dependent on the language and its ecosystem.
 
@@ -72,6 +94,14 @@ What is synced or considered healthcare is dependent on the language and its eco
 
 > This action depends on the setup toolchain action, in case it requires binaries or functionality
 > that the toolchain provides.
+
+:::info
+
+This action can be skipped by setting the `MOON_SKIP_SYNC_PROJECT=true` environment variable. The
+skip can be scoped per project by setting the value to the project ID (`app`). Supports a
+comma-separated list.
+
+:::
 
 ### Run task
 

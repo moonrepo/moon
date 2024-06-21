@@ -24,7 +24,7 @@ function getActionType(label: string) {
 	}
 
 	if (label.startsWith('Setup') && label.includes('Tool')) {
-		return 'setup-tool';
+		return 'setup-toolchain';
 	}
 
 	return 'unknown';
@@ -132,7 +132,7 @@ export function render(element: HTMLElement, data: GraphInfo, layout: string) {
 				},
 			},
 			{
-				selector: 'node[type="setup-tool"]',
+				selector: 'node[type="setup-toolchain"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',

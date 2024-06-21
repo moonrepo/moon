@@ -1,6 +1,6 @@
 use crate::project_events::{ExtendProjectEvent, ExtendProjectGraphEvent};
 use crate::project_graph::{GraphType, ProjectGraph, ProjectNode};
-use crate::project_graph_cache::ProjectsState;
+use crate::project_graph_cache::ProjectsCacheState;
 use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
@@ -129,7 +129,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Check the current state and cache
         let mut state = cache_engine
             .state
-            .load_state::<ProjectsState>("projects.json")?;
+            .load_state::<ProjectsCacheState>("projects.json")?;
         let cache_path = cache_engine.state.resolve_path("partialProjectGraph.json");
 
         if hash == state.data.last_hash && cache_path.exists() {

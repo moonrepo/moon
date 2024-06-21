@@ -3,12 +3,13 @@ use moon_cache::{cache_item, CacheEngine};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::is_test_env;
 use moon_env::MoonEnvironment;
+use moon_time::now_millis;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
 use std::env::{self, consts};
 use std::path::Path;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
@@ -23,8 +24,8 @@ pub struct CurrentVersion {
 }
 
 cache_item!(
-    pub struct CurrentVersionState {
-        pub last_check: Option<SystemTime>,
+    pub struct CurrentVersionCacheState {
+        pub last_check_time: Option<u128>,
         pub local_version: Option<Version>,
         pub remote_version: Option<Version>,
     }
@@ -69,16 +70,17 @@ impl Launchpad {
     ) -> miette::Result<Option<VersionCheck>> {
         let mut state = cache_engine
             .state
-            .load_state::<CurrentVersionState>("moonVersion.json")?;
+            .load_state::<CurrentVersionCacheState>("moonVersionCheck.json")?;
+        let now = now_millis();
 
-        if let Some(last_check) = state.data.last_check {
-            if (last_check + ALERT_PAUSE_DURATION) > SystemTime::now() && !bypass_cache {
+        if let Some(last_check) = state.data.last_check_time {
+            if (last_check + ALERT_PAUSE_DURATION.as_millis()) > now && !bypass_cache {
                 return Ok(None);
             }
         }
 
         if let Some(result) = Self::check_version_without_cache(moon_env).await? {
-            state.data.last_check = Some(SystemTime::now());
+            state.data.last_check_time = Some(now);
             state.data.local_version = Some(result.local_version.clone());
             state.data.remote_version = Some(result.remote_version.clone());
             state.save()?;

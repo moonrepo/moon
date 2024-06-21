@@ -10,8 +10,8 @@ pub struct RuntimeNode {
     pub runtime: Runtime,
 }
 
-pub type InstallDepsNode = RuntimeNode;
-pub type SetupToolNode = RuntimeNode;
+pub type InstallWorkspaceDepsNode = RuntimeNode;
+pub type SetupToolchainNode = RuntimeNode;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ScopedRuntimeNode {
@@ -73,17 +73,17 @@ pub enum ActionNode {
     #[default]
     None,
 
-    /// Install tool dependencies in the workspace root.
-    InstallDeps(Box<InstallDepsNode>),
-
     /// Install tool dependencies in the project root.
     InstallProjectDeps(Box<InstallProjectDepsNode>),
+
+    /// Install tool dependencies in the workspace root.
+    InstallWorkspaceDeps(Box<InstallWorkspaceDepsNode>),
 
     /// Run a project's task.
     RunTask(Box<RunTaskNode>),
 
-    /// Setup a tool + version for the provided platform.
-    SetupTool(Box<SetupToolNode>),
+    /// Setup a tool + version for the provided toolchain.
+    SetupToolchain(Box<SetupToolchainNode>),
 
     /// Sync a project with language specific semantics.
     SyncProject(Box<SyncProjectNode>),
@@ -93,12 +93,12 @@ pub enum ActionNode {
 }
 
 impl ActionNode {
-    pub fn install_deps(node: InstallDepsNode) -> Self {
-        Self::InstallDeps(Box::new(node))
-    }
-
     pub fn install_project_deps(node: InstallProjectDepsNode) -> Self {
         Self::InstallProjectDeps(Box::new(node))
+    }
+
+    pub fn install_workspace_deps(node: InstallWorkspaceDepsNode) -> Self {
+        Self::InstallWorkspaceDeps(Box::new(node))
     }
 
     pub fn run_task(mut node: RunTaskNode) -> Self {
@@ -107,8 +107,8 @@ impl ActionNode {
         Self::RunTask(Box::new(node))
     }
 
-    pub fn setup_tool(node: SetupToolNode) -> Self {
-        Self::SetupTool(Box::new(node))
+    pub fn setup_toolchain(node: SetupToolchainNode) -> Self {
+        Self::SetupToolchain(Box::new(node))
     }
 
     pub fn sync_project(node: SyncProjectNode) -> Self {
@@ -128,10 +128,10 @@ impl ActionNode {
 
     pub fn get_runtime(&self) -> &Runtime {
         match self {
-            Self::InstallDeps(inner) => &inner.runtime,
+            Self::InstallWorkspaceDeps(inner) => &inner.runtime,
             Self::InstallProjectDeps(inner) => &inner.runtime,
             Self::RunTask(inner) => &inner.runtime,
-            Self::SetupTool(inner) => &inner.runtime,
+            Self::SetupToolchain(inner) => &inner.runtime,
             Self::SyncProject(inner) => &inner.runtime,
             _ => unreachable!(),
         }
@@ -160,16 +160,14 @@ impl ActionNode {
 
     pub fn label(&self) -> String {
         match self {
-            Self::InstallDeps(inner) => {
-                format!(
-                    "Install{}Deps({})",
-                    inner.runtime, inner.runtime.requirement
-                )
+            Self::InstallWorkspaceDeps(inner) => {
+                format!("InstallWorkspaceDeps({})", inner.runtime.key())
             }
             Self::InstallProjectDeps(inner) => {
                 format!(
-                    "Install{}DepsInProject({}, {})",
-                    inner.runtime, inner.runtime.requirement, inner.project
+                    "InstallProjectDeps({}, {})",
+                    inner.runtime.key(),
+                    inner.project
                 )
             }
             Self::RunTask(inner) => {
@@ -185,15 +183,15 @@ impl ActionNode {
                     inner.target
                 )
             }
-            Self::SetupTool(inner) => {
+            Self::SetupToolchain(inner) => {
                 if inner.runtime.platform.is_system() {
-                    "SetupSystemTool".into()
+                    "SetupToolchain(system)".into()
                 } else {
-                    format!("Setup{}Tool({})", inner.runtime, inner.runtime.requirement)
+                    format!("SetupToolchain({})", inner.runtime.key())
                 }
             }
             Self::SyncProject(inner) => {
-                format!("Sync{}Project({})", inner.runtime, inner.project)
+                format!("SyncProject({}, {})", inner.runtime.id(), inner.project)
             }
             Self::SyncWorkspace => "SyncWorkspace".into(),
             Self::None => "None".into(),

@@ -163,7 +163,7 @@ Triggered when an action within the pipeline has started to run.
         "nanos": 3591693
       },
       "error": null,
-      "label": "InstallNodeDeps(18.0.0)",
+      "label": "InstallWorkspaceDeps(node:18.0.0)",
       "nodeIndex": 5,
       "status": "passed"
     },
@@ -202,7 +202,7 @@ If the action failed, the `error` field will be set with the error message.
         "nanos": 3591693
       },
       "error": null,
-      "label": "InstallNodeDeps(18.0.0)",
+      "label": "InstallWorkspaceDeps(node:18.0.0)",
       "nodeIndex": 5,
       "status": "passed"
     },
@@ -362,7 +362,7 @@ Triggered when a tool within the toolchain has finished installing. If the insta
 `error` field will be set with the error message.
 
 For more information about the action, refer to the [`action.finished`](#actionfinished) event.
-Tools can be scoped with the `SetupTool(...)` labels.
+Tools can be scoped with the `SetupToolchain(...)` labels.
 
 ```json
 {

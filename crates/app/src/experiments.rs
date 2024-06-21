@@ -18,7 +18,7 @@ pub async fn run_action_pipeline(
         );
 
         if let Some(concurrency) = &session.cli.concurrency {
-            pipeline.concurrency = Some(*concurrency);
+            pipeline.concurrency = *concurrency;
         }
 
         match &session.cli.command {

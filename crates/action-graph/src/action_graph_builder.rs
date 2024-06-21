@@ -1,6 +1,6 @@
 use crate::action_graph::ActionGraph;
 use moon_action::{
-    ActionNode, InstallDepsNode, InstallProjectDepsNode, RunTaskNode, SetupToolNode,
+    ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
     SyncProjectNode,
 };
 use moon_common::Id;
@@ -145,7 +145,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 runtime: self.get_runtime(project, platform_type, true),
             })
         } else {
-            ActionNode::install_deps(InstallDepsNode {
+            ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                 runtime: self.get_runtime(project, platform_type, false),
             })
         };
@@ -159,7 +159,7 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Before we install deps, we must ensure the language has been installed
-        let setup_tool_index = self.setup_tool(node.get_runtime());
+        let setup_tool_index = self.setup_toolchain(node.get_runtime());
         let index = self.insert_node(node);
 
         self.link_requirements(index, vec![setup_tool_index]);
@@ -466,8 +466,8 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
-        let node = ActionNode::setup_tool(SetupToolNode {
+    pub fn setup_toolchain(&mut self, runtime: &Runtime) -> NodeIndex {
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
             runtime: runtime.to_owned(),
         });
 
@@ -505,7 +505,7 @@ impl<'app> ActionGraphBuilder<'app> {
         cycle.insert(project.id.clone());
 
         // Syncing requires the language's tool to be installed
-        let setup_tool_index = self.setup_tool(node.get_runtime());
+        let setup_tool_index = self.setup_toolchain(node.get_runtime());
         let index = self.insert_node(node);
         let mut edges = vec![setup_tool_index];
 

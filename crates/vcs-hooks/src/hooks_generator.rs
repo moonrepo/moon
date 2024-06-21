@@ -36,7 +36,7 @@ pub struct HooksGenerator<'app> {
 }
 
 impl<'app> HooksGenerator<'app> {
-    pub fn new(workspace_root: &Path, vcs: &'app BoxedVcs, config: &'app VcsConfig) -> Self {
+    pub fn new(vcs: &'app BoxedVcs, config: &'app VcsConfig, workspace_root: &Path) -> Self {
         Self {
             config,
             output_dir: workspace_root.join(consts::CONFIG_DIRNAME).join("hooks"),
@@ -46,7 +46,7 @@ impl<'app> HooksGenerator<'app> {
     }
 
     #[instrument(skip_all)]
-    pub async fn cleanup(&self) -> miette::Result<()> {
+    pub async fn cleanup(self) -> miette::Result<()> {
         debug!("Cleaning up {} hooks", self.config.manager);
 
         let hooks_dir = self.vcs.get_hooks_dir().await?;
@@ -69,7 +69,7 @@ impl<'app> HooksGenerator<'app> {
     }
 
     #[instrument(skip_all)]
-    pub async fn generate(&self) -> miette::Result<()> {
+    pub async fn generate(self) -> miette::Result<()> {
         // When in Docker, we should avoid creating the hooks as they are:
         // - Not particularly useful in this context.
         // - It creates a `.git` folder, which in turn enables moon caching,

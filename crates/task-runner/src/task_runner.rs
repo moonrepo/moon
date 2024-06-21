@@ -2,7 +2,7 @@ use crate::command_builder::CommandBuilder;
 use crate::command_executor::CommandExecutor;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
-use crate::run_state::TaskRunState;
+use crate::run_state::TaskRunCacheState;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
@@ -36,7 +36,7 @@ pub struct TaskRunner<'task> {
     hydrater: OutputHydrater<'task>,
 
     // Public for testing
-    pub cache: CacheItem<TaskRunState>,
+    pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
 }
 
@@ -54,7 +54,7 @@ impl<'task> TaskRunner<'task> {
         let mut cache = app
             .cache_engine
             .state
-            .load_target_state::<TaskRunState>(&task.target)?;
+            .load_target_state::<TaskRunCacheState>(&task.target)?;
 
         if cache.data.target.is_empty() {
             cache.data.target = task.target.to_string();

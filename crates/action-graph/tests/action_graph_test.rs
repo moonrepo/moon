@@ -111,10 +111,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -138,10 +138,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -167,10 +167,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::install_project_deps(InstallProjectDepsNode {
@@ -206,10 +206,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -228,10 +228,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     })
                 ]
@@ -264,10 +264,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -306,10 +306,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -406,14 +406,14 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_rust_runtime()
                     }),
                     ActionNode::install_project_deps(InstallProjectDepsNode {
                         project: Id::raw("bar"),
                         runtime: create_rust_runtime()
                     }),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -559,10 +559,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -626,10 +626,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -684,10 +684,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -751,10 +751,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -818,10 +818,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -899,10 +899,10 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::install_deps(InstallDepsNode {
+                    ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -1515,7 +1515,7 @@ mod action_graph {
         }
     }
 
-    mod setup_tool {
+    mod setup_toolchain {
         use super::*;
 
         #[tokio::test]
@@ -1528,8 +1528,8 @@ mod action_graph {
                 RuntimeReq::with_version(Version::new(1, 2, 3)),
             );
 
-            builder.setup_tool(&system);
-            builder.setup_tool(&node);
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&node);
 
             let graph = builder.build().unwrap();
 
@@ -1538,8 +1538,8 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode { runtime: system }),
-                    ActionNode::setup_tool(SetupToolNode { runtime: node }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node }),
                 ]
             );
         }
@@ -1559,9 +1559,9 @@ mod action_graph {
             );
             let node3 = Runtime::new(PlatformType::Node, RuntimeReq::Global);
 
-            builder.setup_tool(&node1);
-            builder.setup_tool(&node2);
-            builder.setup_tool(&node3);
+            builder.setup_toolchain(&node1);
+            builder.setup_toolchain(&node2);
+            builder.setup_toolchain(&node3);
 
             let graph = builder.build().unwrap();
 
@@ -1570,9 +1570,9 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode { runtime: node1 }),
-                    ActionNode::setup_tool(SetupToolNode { runtime: node2 }),
-                    ActionNode::setup_tool(SetupToolNode { runtime: node3 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node1 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node2 }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: node3 }),
                 ]
             );
         }
@@ -1583,8 +1583,8 @@ mod action_graph {
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
             let system = Runtime::system();
 
-            builder.setup_tool(&system);
-            builder.setup_tool(&system);
+            builder.setup_toolchain(&system);
+            builder.setup_toolchain(&system);
 
             let graph = builder.build().unwrap();
 
@@ -1592,7 +1592,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode { runtime: system }),
+                    ActionNode::setup_toolchain(SetupToolchainNode { runtime: system }),
                 ]
             );
         }
@@ -1616,7 +1616,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -1642,7 +1642,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -1678,7 +1678,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -1714,7 +1714,7 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -1748,14 +1748,14 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_rust_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
@@ -1785,14 +1785,14 @@ mod action_graph {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: create_node_runtime()
                     }),
                     ActionNode::sync_project(SyncProjectNode {
                         project: Id::raw("bar"),
                         runtime: create_node_runtime()
                     }),
-                    ActionNode::setup_tool(SetupToolNode {
+                    ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::new_override(
                             PlatformType::Node,
                             RuntimeReq::with_version(Version::new(18, 0, 0))

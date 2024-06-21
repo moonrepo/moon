@@ -5,9 +5,12 @@ use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
+use moon_console::PipelineReportItem;
 use moon_project_graph::ProjectGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::mem;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tokio::sync::{mpsc, RwLock, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
@@ -15,9 +18,15 @@ use tracing::{debug, instrument, trace, warn};
 
 pub struct ActionPipeline {
     pub bail: bool,
-    pub concurrency: Option<usize>,
+    pub concurrency: usize,
     pub summarize: bool,
 
+    // State
+    aborted: bool,
+    actions: Vec<Action>,
+    duration: Option<Duration>,
+
+    // Data
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
 }
@@ -27,36 +36,88 @@ impl ActionPipeline {
         debug!("Creating pipeline to run actions");
 
         Self {
+            aborted: false,
+            actions: vec![],
             app_context,
-            project_graph,
             bail: false,
-            concurrency: None,
+            concurrency: num_cpus::get(),
+            duration: None,
+            project_graph,
             summarize: false,
         }
     }
 
-    pub async fn run(&self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
+    pub async fn run(self, action_graph: ActionGraph) -> miette::Result<Vec<Action>> {
         self.run_with_context(action_graph, ActionContext::default())
             .await
     }
 
     #[instrument(name = "run_pipeline", skip_all)]
     pub async fn run_with_context(
-        &self,
+        mut self,
         action_graph: ActionGraph,
         action_context: ActionContext,
     ) -> miette::Result<Vec<Action>> {
-        let concurrency = self.concurrency.unwrap_or_else(num_cpus::get);
-        let total_actions = action_graph.get_node_count();
+        let console = Arc::clone(&self.app_context.console);
 
-        debug!(total_actions, concurrency, "Starting pipeline");
-
-        // TODO pipeline started event
-
-        self.app_context
-            .console
+        console
             .reporter
             .on_pipeline_started(&action_graph.get_nodes())?;
+
+        // Run the pipeline based on the graph
+        let result = self.internal_run(action_graph, action_context).await;
+
+        // Handle the result of the pipeline
+        let actions = mem::take(&mut self.actions);
+
+        let item = PipelineReportItem {
+            duration: self.duration,
+            summarize: self.summarize,
+        };
+
+        match result {
+            Ok(_) => {
+                if self.aborted {
+                    console
+                        .reporter
+                        .on_pipeline_aborted(&actions, &item, None)?;
+                } else {
+                    console
+                        .reporter
+                        .on_pipeline_completed(&actions, &item, None)?;
+                }
+
+                Ok(actions)
+            }
+            Err(error) => {
+                if self.aborted {
+                    console
+                        .reporter
+                        .on_pipeline_aborted(&actions, &item, Some(&error))?;
+                } else {
+                    console
+                        .reporter
+                        .on_pipeline_completed(&actions, &item, Some(&error))?;
+                }
+
+                Err(error)
+            }
+        }
+    }
+
+    pub async fn internal_run(
+        &mut self,
+        action_graph: ActionGraph,
+        action_context: ActionContext,
+    ) -> miette::Result<()> {
+        let total_actions = action_graph.get_node_count();
+        let start = Instant::now();
+
+        debug!(
+            total_actions,
+            concurrency = self.concurrency,
+            "Starting pipeline"
+        );
 
         // This aggregates results from jobs
         let (sender, mut receiver) = mpsc::channel::<Action>(total_actions);
@@ -71,7 +132,7 @@ impl ActionPipeline {
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
             project_graph: Arc::clone(&self.project_graph),
             result_sender: sender,
-            semaphore: Arc::new(Semaphore::new(concurrency)),
+            semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
         };
 
@@ -114,9 +175,13 @@ impl ActionPipeline {
         queue_handle.abort();
         signal_handle.abort();
 
+        self.aborted = abort_token.is_cancelled();
+        self.actions = actions;
+        self.duration = Some(start.elapsed());
+
         // TODO finished event
 
-        Ok(actions)
+        Ok(())
     }
 
     #[instrument(skip_all)]

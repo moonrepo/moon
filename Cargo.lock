@@ -3221,6 +3221,7 @@ dependencies = [
  "moon_actions",
  "moon_app_context",
  "moon_common",
+ "moon_console",
  "moon_project_graph",
  "num_cpus",
  "petgraph",

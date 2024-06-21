@@ -121,16 +121,18 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_tool(SetupToolNode {
+                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system(),
                     })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::install_deps(InstallDepsNode {
-                        runtime: Runtime::system(),
-                    })),
+                    node: Arc::new(ActionNode::install_workspace_deps(
+                        InstallWorkspaceDepsNode {
+                            runtime: Runtime::system(),
+                        },
+                    )),
                     ..Action::default()
                 },
                 Action {
@@ -193,16 +195,18 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_tool(SetupToolNode {
+                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system(),
                     })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::install_deps(InstallDepsNode {
-                        runtime: Runtime::system(),
-                    })),
+                    node: Arc::new(ActionNode::install_workspace_deps(
+                        InstallWorkspaceDepsNode {
+                            runtime: Runtime::system(),
+                        },
+                    )),
                     ..Action::default()
                 },
                 Action {
@@ -266,16 +270,18 @@ mod estimator {
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
-                    node: Arc::new(ActionNode::setup_tool(SetupToolNode {
+                    node: Arc::new(ActionNode::setup_toolchain(SetupToolchainNode {
                         runtime: Runtime::system(),
                     })),
                     ..Action::default()
                 },
                 Action {
                     duration: Some(Duration::new(25, 0)),
-                    node: Arc::new(ActionNode::install_deps(InstallDepsNode {
-                        runtime: Runtime::system(),
-                    })),
+                    node: Arc::new(ActionNode::install_workspace_deps(
+                        InstallWorkspaceDepsNode {
+                            runtime: Runtime::system(),
+                        },
+                    )),
                     ..Action::default()
                 },
                 Action {

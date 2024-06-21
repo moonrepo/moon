@@ -24,14 +24,14 @@ fn create_config() -> VcsConfig {
 }
 
 async fn run_generator(root: &Path) {
-    HooksGenerator::new(root, &load_git(root), &create_config())
+    HooksGenerator::new(&load_git(root), &create_config(), root)
         .generate()
         .await
         .unwrap();
 }
 
 async fn clean_generator(root: &Path) {
-    HooksGenerator::new(root, &load_git(root), &create_config())
+    HooksGenerator::new(&load_git(root), &create_config(), root)
         .cleanup()
         .await
         .unwrap();
@@ -43,9 +43,9 @@ async fn doesnt_generate_when_no_hooks() {
     sandbox.enable_git();
 
     HooksGenerator::new(
-        sandbox.path(),
         &load_git(sandbox.path()),
         &VcsConfig::default(),
+        sandbox.path(),
     )
     .generate()
     .await
@@ -60,7 +60,6 @@ async fn doesnt_generate_when_no_commands() {
     sandbox.enable_git();
 
     HooksGenerator::new(
-        sandbox.path(),
         &load_git(sandbox.path()),
         &VcsConfig {
             hooks: FxHashMap::from_iter([
@@ -69,6 +68,7 @@ async fn doesnt_generate_when_no_commands() {
             ]),
             ..VcsConfig::default()
         },
+        sandbox.path(),
     )
     .generate()
     .await

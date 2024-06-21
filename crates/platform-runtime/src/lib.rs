@@ -102,6 +102,28 @@ impl Runtime {
             platform => format!("{:?} {}", platform, self.requirement),
         }
     }
+
+    pub fn id(&self) -> String {
+        self.platform.to_string().to_lowercase()
+    }
+
+    pub fn key(&self) -> String {
+        let mut key = self.id();
+
+        match &self.requirement {
+            RuntimeReq::Global => {
+                key.push_str(":global");
+            }
+            RuntimeReq::Toolchain(spec) => {
+                let version = spec.to_string().replace(' ', "");
+
+                key.push(':');
+                key.push_str(&version);
+            }
+        };
+
+        key
+    }
 }
 
 impl fmt::Display for Runtime {

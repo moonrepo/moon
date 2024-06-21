@@ -1,17 +1,17 @@
 use std::env;
 
-pub mod install_deps;
-pub mod run_task;
-pub mod setup_tool;
-pub mod sync_project;
-pub mod sync_workspace;
-
-pub fn should_skip_action(key: &str) -> bool {
-    env::var(key).is_ok_and(|v| matches_pattern(&v, ""))
+pub fn should_skip_action(key: &str) -> Option<String> {
+    should_skip_action_matching(key, "")
 }
 
-pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> bool {
-    env::var(key).is_ok_and(|v| matches_pattern(&v, pattern.as_ref()))
+pub fn should_skip_action_matching<V: AsRef<str>>(key: &str, pattern: V) -> Option<String> {
+    if let Ok(value) = env::var(key) {
+        if matches_pattern(&value, pattern.as_ref()) {
+            return Some(value);
+        }
+    }
+
+    None
 }
 
 fn matches_pattern(value: &str, pattern: &str) -> bool {
@@ -21,7 +21,13 @@ fn matches_pattern(value: &str, pattern: &str) -> bool {
 
     let pattern = pattern.to_lowercase();
 
-    if value == "*" || value == "*:*" || value == "true" || value == pattern {
+    if value == "*"
+        || value == "*:*"
+        || value == "1"
+        || value == "true"
+        || value == pattern
+        || pattern.is_empty()
+    {
         return true;
     }
 

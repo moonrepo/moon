@@ -5,7 +5,7 @@ use tracing::instrument;
 #[instrument(skip_all)]
 pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Result<bool> {
     let vcs_config = &app_context.workspace_config.vcs;
-    let generator = HooksGenerator::new(&app_context.workspace_root, &app_context.vcs, vcs_config);
+    let generator = HooksGenerator::new(&app_context.vcs, vcs_config, &app_context.workspace_root);
 
     // Force run the generator and bypass cache
     if force {
@@ -33,9 +33,9 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
 #[instrument(skip_all)]
 pub async fn unsync_vcs_hooks(app_context: &AppContext) -> miette::Result<()> {
     HooksGenerator::new(
-        &app_context.workspace_root,
         &app_context.vcs,
         &app_context.workspace_config.vcs,
+        &app_context.workspace_root,
     )
     .cleanup()
     .await?;

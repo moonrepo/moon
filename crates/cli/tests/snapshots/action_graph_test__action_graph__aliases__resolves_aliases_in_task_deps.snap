@@ -4,11 +4,11 @@ expression: assert.output()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupNodeTool(18.0.0)" ]
-    2 [ label="InstallNodeDeps(18.0.0)" ]
-    3 [ label="SyncNodeProject(node)" ]
-    4 [ label="SyncNodeProject(nodeNameScope)" ]
-    5 [ label="SyncNodeProject(nodeNameOnly)" ]
+    1 [ label="SetupToolchain(node:18.0.0)" ]
+    2 [ label="InstallWorkspaceDeps(node:18.0.0)" ]
+    3 [ label="SyncProject(node, node)" ]
+    4 [ label="SyncProject(node, nodeNameScope)" ]
+    5 [ label="SyncProject(node, nodeNameOnly)" ]
     6 [ label="RunTask(node:aliasDeps)" ]
     7 [ label="RunTask(nodeNameScope:standard)" ]
     8 [ label="RunTask(nodeNameOnly:standard)" ]
@@ -26,6 +26,3 @@ digraph {
     6 -> 7 [ ]
     6 -> 8 [ ]
 }
-
-
-

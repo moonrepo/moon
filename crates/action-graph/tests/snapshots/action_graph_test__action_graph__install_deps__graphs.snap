@@ -4,9 +4,8 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupNodeTool(20.0.0)" ]
-    2 [ label="InstallNodeDeps(20.0.0)" ]
+    1 [ label="SetupToolchain(node:20.0.0)" ]
+    2 [ label="InstallWorkspaceDeps(node:20.0.0)" ]
     1 -> 0 [ ]
     2 -> 1 [ ]
 }
-

@@ -4,10 +4,10 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupSystemTool" ]
-    2 [ label="SyncSystemProject(misc)" ]
-    3 [ label="SyncSystemProject(common)" ]
-    4 [ label="SyncSystemProject(base)" ]
+    1 [ label="SetupToolchain(system)" ]
+    2 [ label="SyncProject(system, misc)" ]
+    3 [ label="SyncProject(system, common)" ]
+    4 [ label="SyncProject(system, base)" ]
     5 [ label="RunTask(misc:requiresInternal)" ]
     6 [ label="RunTask(common:internal)" ]
     1 -> 0 [ ]

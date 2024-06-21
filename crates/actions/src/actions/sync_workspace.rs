@@ -1,77 +1,79 @@
-use super::should_skip_action;
+use crate::operations::{sync_codeowners, sync_vcs_hooks};
+use crate::utils::should_skip_action;
+use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
-use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_app_context::AppContext;
-use moon_common::is_docker_container;
-use moon_logger::debug;
+use moon_common::{color, is_docker_container};
 use moon_project_graph::ProjectGraph;
-use moon_utils::is_test_env;
-use starbase_styles::color;
-use std::env;
 use std::sync::Arc;
-use tracing::instrument;
-
-const LOG_TARGET: &str = "moon:action:sync-workspace";
+use tokio::task;
+use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn sync_workspace(
     action: &mut Action,
-    _context: Arc<ActionContext>,
+    _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
 ) -> miette::Result<ActionStatus> {
-    // This causes a lot of churn in tests, revisit
-    if !is_test_env() {
-        env::set_var("MOON_RUNNING_ACTION", "sync-workspace");
-    }
-
-    debug!(target: LOG_TARGET, "Syncing workspace");
-
-    if should_skip_action("MOON_SKIP_SYNC_WORKSPACE") {
+    if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
         debug!(
-            target: LOG_TARGET,
-            "Skipping sync workspace action because MOON_SKIP_SYNC_WORKSPACE is set",
+            "Skipping workspace sync because {} is set",
+            color::symbol("MOON_SKIP_SYNC_WORKSPACE")
         );
 
         return Ok(ActionStatus::Skipped);
     }
 
-    // Avoid the following features when in Docker
     if is_docker_container() {
-        return Ok(ActionStatus::Passed);
+        debug!("Skipping workspace sync because we're in a Docker container or image");
+
+        return Ok(ActionStatus::Skipped);
     }
+
+    debug!("Syncing workspace");
+
+    // Run operations in parallel
+    let mut futures = vec![];
 
     if app_context.workspace_config.codeowners.sync_on_run {
         debug!(
-            target: LOG_TARGET,
             "Syncing code owners ({} enabled)",
             color::property("codeowners.syncOnRun"),
         );
 
-        action.operations.push(
+        let app_context = Arc::clone(&app_context);
+        let project_graph = Arc::clone(&project_graph);
+
+        futures.push(task::spawn(async move {
             Operation::sync_operation("Codeowners")
                 .track_async_with_check(
                     || sync_codeowners(&app_context, &project_graph, false),
                     |result| result.is_some(),
                 )
-                .await?,
-        );
+                .await
+        }));
     }
 
     if app_context.workspace_config.vcs.sync_hooks {
         debug!(
-            target: LOG_TARGET,
             "Syncing {} hooks ({} enabled)",
             app_context.workspace_config.vcs.manager,
             color::property("vcs.syncHooks"),
         );
 
-        action.operations.push(
+        let app_context = Arc::clone(&app_context);
+
+        futures.push(task::spawn(async move {
             Operation::sync_operation("VCS hooks")
                 .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
-                .await?,
-        );
+                .await
+        }));
+    }
+
+    for future in futures {
+        action.operations.push(future.await.into_diagnostic()??);
     }
 
     Ok(ActionStatus::Passed)

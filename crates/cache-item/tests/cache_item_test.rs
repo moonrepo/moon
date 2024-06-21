@@ -25,11 +25,11 @@ where
     result
 }
 
-fn load_item(sandbox: &Path) -> CacheItem<CommonState> {
-    CacheItem::<CommonState>::load(sandbox.join("data.json")).unwrap()
+fn load_item(sandbox: &Path) -> CacheItem<CommonCacheState> {
+    CacheItem::<CommonCacheState>::load(sandbox.join("data.json")).unwrap()
 }
 
-fn load_item_with_mode(mode: CacheMode, sandbox: &Path) -> CacheItem<CommonState> {
+fn load_item_with_mode(mode: CacheMode, sandbox: &Path) -> CacheItem<CommonCacheState> {
     run_with_mode(mode, || load_item(sandbox))
 }
 
@@ -39,7 +39,7 @@ mod cache_item {
     #[serial]
     fn can_omit_file_extension() {
         let sandbox = create_sandbox("item");
-        let item = CacheItem::<CommonState>::load(sandbox.path().join("data")).unwrap();
+        let item = CacheItem::<CommonCacheState>::load(sandbox.path().join("data")).unwrap();
 
         assert_eq!(item.data.last_hash, "abc123");
         assert!(!sandbox.path().join("data").exists());
@@ -48,7 +48,7 @@ mod cache_item {
     #[serial]
     fn will_change_file_extension() {
         let sandbox = create_sandbox("item");
-        let item = CacheItem::<CommonState>::load(sandbox.path().join("data.yml")).unwrap();
+        let item = CacheItem::<CommonCacheState>::load(sandbox.path().join("data.yml")).unwrap();
 
         assert_eq!(item.data.last_hash, "abc123");
         assert!(!sandbox.path().join("data.yml").exists());

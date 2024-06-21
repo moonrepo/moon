@@ -11,36 +11,36 @@ export default function ActionGraph() {
 					{
 						data: {
 							source: 'sync-workspace',
-							target: 'node-tool',
+							target: 'node-toolchain',
 						},
 					},
 					{
 						data: {
 							source: 'sync-workspace',
-							target: 'system-tool',
+							target: 'system-toolchain',
 						},
 					},
 					{
 						data: {
-							source: 'node-tool',
+							source: 'node-toolchain',
 							target: 'node-deps',
 						},
 					},
 					{
 						data: {
-							source: 'system-tool',
+							source: 'system-toolchain',
 							target: 'system-deps',
 						},
 					},
 					{
 						data: {
-							source: 'node-tool',
+							source: 'node-toolchain',
 							target: 'node-sync',
 						},
 					},
 					{
 						data: {
-							source: 'system-tool',
+							source: 'system-toolchain',
 							target: 'system-sync',
 						},
 					},
@@ -91,15 +91,15 @@ export default function ActionGraph() {
 					// Toolchain
 					{
 						data: {
-							id: 'node-tool',
-							label: 'SetupNodeTool(18.0.0)',
+							id: 'node-toolchain',
+							label: 'SetupToolchain(node:18.0.0)',
 							type: 'xl',
 						},
 					},
 					{
 						data: {
-							id: 'system-tool',
-							label: 'SetupSystemTool',
+							id: 'system-toolchain',
+							label: 'SetupToolchain(system)',
 							type: 'xl',
 						},
 					},
@@ -107,14 +107,14 @@ export default function ActionGraph() {
 					{
 						data: {
 							id: 'node-deps',
-							label: 'InstallNodeDeps(18.0.0)',
+							label: 'InstallWorkspaceDeps(node:18.0.0)',
 							type: 'lg',
 						},
 					},
 					{
 						data: {
 							id: 'system-deps',
-							label: 'InstallSystemDepsInProject(example)',
+							label: 'InstallProjectDeps(node:18.0.0, example)',
 							type: 'lg',
 						},
 					},
@@ -122,14 +122,14 @@ export default function ActionGraph() {
 					{
 						data: {
 							id: 'node-sync',
-							label: 'SyncNodeProject(example)',
+							label: 'SyncProject(node, example)',
 							type: 'md',
 						},
 					},
 					{
 						data: {
 							id: 'system-sync',
-							label: 'SyncSystemProject(example)',
+							label: 'SyncProject(system, example)',
 							type: 'md',
 						},
 					},

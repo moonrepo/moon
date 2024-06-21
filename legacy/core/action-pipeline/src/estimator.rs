@@ -63,8 +63,8 @@ impl Estimator {
             }
 
             match &*result.node {
-                ActionNode::SetupTool(_)
-                | ActionNode::InstallDeps(_)
+                ActionNode::SetupToolchain(_)
+                | ActionNode::InstallWorkspaceDeps(_)
                 | ActionNode::InstallProjectDeps(_) => {
                     install_duration += task_duration;
                 }

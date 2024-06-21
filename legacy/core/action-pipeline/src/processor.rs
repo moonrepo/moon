@@ -1,10 +1,8 @@
-use crate::actions::install_deps::install_deps;
-use crate::actions::run_task::run_task;
-use crate::actions::setup_tool::setup_tool;
-use crate::actions::sync_project::sync_project;
-use crate::actions::sync_workspace::sync_workspace;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_actions::actions::{
+    install_deps, run_task, setup_toolchain, sync_project, sync_workspace,
+};
 use moon_app_context::AppContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
@@ -49,7 +47,7 @@ pub async fn process_action(
         ActionNode::None => Ok(ActionStatus::Skipped),
 
         // Setup and install the specific tool
-        ActionNode::SetupTool(inner) => {
+        ActionNode::SetupToolchain(inner) => {
             emitter
                 .emit(Event::ToolInstalling {
                     runtime: &inner.runtime,
@@ -57,7 +55,7 @@ pub async fn process_action(
                 .await?;
 
             let setup_result =
-                setup_tool(&mut action, action_context, app_context, &inner.runtime).await;
+                setup_toolchain(&mut action, action_context, app_context, inner).await;
 
             emitter
                 .emit(Event::ToolInstalled {
@@ -70,7 +68,7 @@ pub async fn process_action(
         }
 
         // Install dependencies in the workspace root
-        ActionNode::InstallDeps(inner) => {
+        ActionNode::InstallWorkspaceDeps(inner) => {
             emitter
                 .emit(Event::DependenciesInstalling {
                     project: None,
@@ -145,8 +143,7 @@ pub async fn process_action(
                 action_context,
                 app_context,
                 project_graph,
-                &project,
-                &inner.runtime,
+                inner,
             )
             .await;
 
@@ -179,8 +176,6 @@ pub async fn process_action(
 
         // Run a task within a project
         ActionNode::RunTask(inner) => {
-            let project = project_graph.get(inner.target.get_project_id().unwrap())?;
-
             emitter
                 .emit(Event::TargetRunning {
                     action: &action,
@@ -191,10 +186,9 @@ pub async fn process_action(
             let run_result = run_task(
                 &mut action,
                 action_context,
-                Arc::clone(&app_context),
-                &project,
-                &inner.target,
-                &inner.runtime,
+                app_context,
+                project_graph,
+                inner,
             )
             .await;
 
@@ -237,7 +231,7 @@ pub async fn process_action(
         // If these fail, we should abort instead of trying to continue
         if matches!(
             *node,
-            ActionNode::SetupTool { .. } | ActionNode::InstallDeps { .. }
+            ActionNode::SetupToolchain { .. } | ActionNode::InstallWorkspaceDeps { .. }
         ) {
             action.abort();
         }

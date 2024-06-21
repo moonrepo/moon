@@ -57,8 +57,9 @@ pub async fn sync_codeowners(
 
         return Ok(Some(file_path));
     }
+
     // Only generate if the hash has changed
-    else if app_context
+    if app_context
         .cache_engine
         .execute_if_changed("codeowners.json", codeowners_hash, || async {
             generator.generate()

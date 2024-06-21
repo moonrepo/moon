@@ -4,10 +4,10 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="SetupRustTool(1.70.0)" ]
-    2 [ label="InstallRustDepsInProject(1.70.0, bar)" ]
-    3 [ label="SetupNodeTool(20.0.0)" ]
-    4 [ label="SyncNodeProject(bar)" ]
+    1 [ label="SetupToolchain(rust:1.70.0)" ]
+    2 [ label="InstallProjectDeps(rust:1.70.0, bar)" ]
+    3 [ label="SetupToolchain(node:20.0.0)" ]
+    4 [ label="SyncProject(node, bar)" ]
     5 [ label="RunTask(bar:build)" ]
     1 -> 0 [ ]
     2 -> 1 [ ]
@@ -16,4 +16,3 @@ digraph {
     5 -> 2 [ ]
     5 -> 4 [ ]
 }
-

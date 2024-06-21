@@ -244,7 +244,7 @@ mod project_graph {
     mod cache {
         use super::*;
         use moon_cache::CacheEngine;
-        use moon_project_graph::ProjectsState;
+        use moon_project_graph::ProjectsCacheState;
 
         const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
         const STATE_PATH: &str = ".moon/cache/states/projects.json";
@@ -311,7 +311,8 @@ mod project_graph {
             })
             .await;
 
-            let state: ProjectsState = json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
+            let state: ProjectsCacheState =
+                json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
             assert_eq!(
                 state.projects,
@@ -339,13 +340,13 @@ mod project_graph {
                 })
                 .await;
 
-                let state1: ProjectsState =
+                let state1: ProjectsCacheState =
                     json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 func(&sandbox);
                 do_generate(sandbox.path()).await;
 
-                let state2: ProjectsState =
+                let state2: ProjectsCacheState =
                     json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 assert_ne!(state1.last_hash, state2.last_hash);

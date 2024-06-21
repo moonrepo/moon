@@ -9,6 +9,7 @@ moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline2 = { path = "../action-pipeline" }
+moon_actions = { path = "../actions" }
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_cache = { path = "../cache" }
@@ -71,7 +72,6 @@ tiny_http = "0.12.0"
 console = { workspace = true }
 dialoguer = { version = "0.11.0", default-features = false }
 indicatif = "0.17.8"
-moon_actions = { path = "../../legacy/core/actions" }
 moon_action_pipeline = { path = "../../legacy/core/action-pipeline" }
 moon_lang = { path = "../../legacy/core/lang" }
 moon_tool = { path = "../../legacy/core/tool" }

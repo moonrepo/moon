@@ -20,10 +20,10 @@ mod cache_engine {
         let engine = CacheEngine::new(sandbox.path()).unwrap();
         let item = engine
             .state
-            .load_state::<CommonState>("state.json")
+            .load_state::<CommonCacheState>("state.json")
             .unwrap();
 
-        assert_eq!(item.data, CommonState::default());
+        assert_eq!(item.data, CommonCacheState::default());
     }
 
     #[test]
@@ -37,12 +37,12 @@ mod cache_engine {
         let engine = CacheEngine::new(sandbox.path()).unwrap();
         let item = engine
             .state
-            .load_state::<CommonState>("state.json")
+            .load_state::<CommonCacheState>("state.json")
             .unwrap();
 
         assert_eq!(
             item.data,
-            CommonState {
+            CommonCacheState {
                 last_hash: "abc123".into()
             }
         );
@@ -58,7 +58,7 @@ mod cache_engine {
         engine
             .write(
                 "test.json",
-                &CommonState {
+                &CommonCacheState {
                     last_hash: "abc123".into(),
                 },
             )
@@ -79,7 +79,7 @@ mod cache_engine {
         engine
             .write(
                 engine.state.resolve_path("test.json"),
-                &CommonState {
+                &CommonCacheState {
                     last_hash: "abc123".into(),
                 },
             )

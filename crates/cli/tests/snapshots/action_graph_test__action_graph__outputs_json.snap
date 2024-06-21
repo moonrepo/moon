@@ -2,6 +2,4 @@
 source: crates/cli/tests/action_graph_test.rs
 expression: assert.output()
 ---
-{"nodes":[{"id":0,"label":"SyncWorkspace"},{"id":2,"label":"InstallNodeDeps(18.0.0)"},{"id":4,"label":"RunTask(basic:lint)"},{"id":1,"label":"SetupNodeTool(18.0.0)"},{"id":3,"label":"SyncNodeProject(basic)"}],"edges":[{"id":"1 -> 0","label":"","source":1,"target":0},{"id":"2 -> 1","label":"","source":2,"target":1},{"id":"3 -> 1","label":"","source":3,"target":1},{"id":"4 -> 2","label":"","source":4,"target":2},{"id":"4 -> 3","label":"","source":4,"target":3}]}
-
-
+{"nodes":[{"id":0,"label":"SyncWorkspace"},{"id":2,"label":"InstallWorkspaceDeps(node:18.0.0)"},{"id":4,"label":"RunTask(basic:lint)"},{"id":1,"label":"SetupToolchain(node:18.0.0)"},{"id":3,"label":"SyncProject(node, basic)"}],"edges":[{"id":"1 -> 0","label":"","source":1,"target":0},{"id":"2 -> 1","label":"","source":2,"target":1},{"id":"3 -> 1","label":"","source":3,"target":1},{"id":"4 -> 2","label":"","source":4,"target":2},{"id":"4 -> 3","label":"","source":4,"target":3}]}

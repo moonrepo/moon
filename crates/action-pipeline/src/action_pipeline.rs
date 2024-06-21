@@ -1,11 +1,14 @@
+use crate::event_emitter::{Event, EventEmitter};
 use crate::job::Job;
 use crate::job_context::JobContext;
 use crate::job_dispatcher::JobDispatcher;
+use crate::subscribers::console_subscriber::ConsoleSubscriber;
+use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
-use moon_console::PipelineReportItem;
+use moon_common::{is_ci, is_test_env};
 use moon_project_graph::ProjectGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -28,6 +31,7 @@ pub struct ActionPipeline {
 
     // Data
     app_context: Arc<AppContext>,
+    emitter: Arc<EventEmitter>,
     project_graph: Arc<ProjectGraph>,
 }
 
@@ -42,6 +46,7 @@ impl ActionPipeline {
             bail: false,
             concurrency: num_cpus::get(),
             duration: None,
+            emitter: Arc::new(EventEmitter::default()),
             project_graph,
             summarize: false,
         }
@@ -58,47 +63,45 @@ impl ActionPipeline {
         action_graph: ActionGraph,
         action_context: ActionContext,
     ) -> miette::Result<Vec<Action>> {
-        let console = Arc::clone(&self.app_context.console);
+        self.setup_subscribers().await;
 
-        console
-            .reporter
-            .on_pipeline_started(&action_graph.get_nodes())?;
+        self.emitter
+            .emit(Event::PipelineStarted {
+                actions_count: action_graph.get_node_count(),
+                action_nodes: action_graph.get_nodes(),
+                context: &action_context,
+            })
+            .await?;
 
         // Run the pipeline based on the graph
         let result = self.internal_run(action_graph, action_context).await;
-
-        // Handle the result of the pipeline
         let actions = mem::take(&mut self.actions);
 
-        let item = PipelineReportItem {
-            duration: self.duration,
-            summarize: self.summarize,
-        };
-
+        // Handle the result of the pipeline
         match result {
             Ok(_) => {
-                if self.aborted {
-                    console
-                        .reporter
-                        .on_pipeline_aborted(&actions, &item, None)?;
-                } else {
-                    console
-                        .reporter
-                        .on_pipeline_completed(&actions, &item, None)?;
-                }
+                self.emitter
+                    .emit(Event::PipelineCompleted {
+                        actions: &actions,
+                        aborted: self.aborted,
+                        duration: self.duration.unwrap(),
+                        error: None,
+                        error_report: None,
+                    })
+                    .await?;
 
                 Ok(actions)
             }
             Err(error) => {
-                if self.aborted {
-                    console
-                        .reporter
-                        .on_pipeline_aborted(&actions, &item, Some(&error))?;
-                } else {
-                    console
-                        .reporter
-                        .on_pipeline_completed(&actions, &item, Some(&error))?;
-                }
+                self.emitter
+                    .emit(Event::PipelineCompleted {
+                        actions: &actions,
+                        aborted: self.aborted,
+                        duration: self.duration.unwrap(),
+                        error: Some(error.to_string()),
+                        error_report: Some(&error),
+                    })
+                    .await?;
 
                 Err(error)
             }
@@ -130,6 +133,7 @@ impl ActionPipeline {
             abort_token: abort_token.clone(),
             cancel_token: cancel_token.clone(),
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
+            emitter: Arc::clone(&self.emitter),
             project_graph: Arc::clone(&self.project_graph),
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
@@ -178,8 +182,6 @@ impl ActionPipeline {
         self.aborted = abort_token.is_cancelled();
         self.actions = actions;
         self.duration = Some(start.elapsed());
-
-        // TODO finished event
 
         Ok(())
     }
@@ -308,6 +310,24 @@ impl ActionPipeline {
                 cancel_token.cancel();
             }
         })
+    }
+
+    async fn setup_subscribers(&mut self) {
+        self.emitter
+            .subscribe(ConsoleSubscriber::new(
+                Arc::clone(&self.app_context.console),
+                self.summarize,
+            ))
+            .await;
+
+        // For security and privacy purposes, only send webhooks from a CI environment
+        if is_ci() || is_test_env() {
+            if let Some(webhook_url) = &self.app_context.workspace_config.notifier.webhook_url {
+                self.emitter
+                    .subscribe(WebhooksSubscriber::new(webhook_url))
+                    .await;
+            }
+        }
     }
 }
 

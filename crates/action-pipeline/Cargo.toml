@@ -13,12 +13,17 @@ moon_actions = { path = "../actions" }
 moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
 moon_console = { path = "../console" }
+moon_notifier = { path = "../notifier" }
+moon_platform_runtime = { path = "../platform-runtime" }
+moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
+moon_task = { path = "../task" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 num_cpus = "1.16.0"
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }
 tracing = { workspace = true }

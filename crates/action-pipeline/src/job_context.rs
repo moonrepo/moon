@@ -1,3 +1,4 @@
+use crate::event_emitter::EventEmitter;
 use moon_action::Action;
 use moon_project_graph::ProjectGraph;
 use petgraph::graph::NodeIndex;
@@ -17,6 +18,9 @@ pub struct JobContext {
 
     /// Completed jobs (used by the dispatcher)
     pub completed_jobs: Arc<RwLock<FxHashSet<NodeIndex>>>,
+
+    /// Internal pipeline event emitter
+    pub emitter: Arc<EventEmitter>,
 
     /// The project graph, for use within actions
     pub project_graph: Arc<ProjectGraph>,

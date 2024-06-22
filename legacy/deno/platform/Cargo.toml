@@ -19,16 +19,12 @@ moon_process = { path = "../../../crates/process" }
 moon_project = { path = "../../../crates/project" }
 moon_task = { path = "../../../crates/task" }
 moon_tool = { path = "../../core/tool" }
-moon_typescript_lang = { path = "../../typescript/lang" }
 moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
-tokio = { workspace = true }
-tracing = { workspace = true }
 
 [lints]
 workspace = true

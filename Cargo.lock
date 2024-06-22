@@ -682,9 +682,9 @@ dependencies = [
 
 [[package]]
 name = "cargo_toml"
-version = "0.20.2"
+version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8cb1d556b8b8f36e5ca74938008be3ac102f5dcb5b68a0477e4249ae2291cd3"
+checksum = "4895c018bb228aa6b3ba1a0285543fcb4b704734c3fb1f72afaa75aa769500c1"
 dependencies = [
  "serde",
  "toml 0.8.14",
@@ -819,9 +819,9 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.5.5"
+version = "4.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2020fa13af48afc65a9a87335bda648309ab3d154cd03c7ff95b378c7ed39c4"
+checksum = "fbca90c87c2a04da41e95d1856e8bcd22f159bdbfa147314d2ce5218057b0e58"
 dependencies = [
  "clap",
 ]
@@ -2328,18 +2328,19 @@ dependencies = [
 
 [[package]]
 name = "hyper-rustls"
-version = "0.26.0"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0bea761b46ae2b24eb4aef630d8d1c398157b6fc29e6350ecf090a0b70c952c"
+checksum = "5ee4be2c948921a1a5320b629c4193916ed787a7f7f293fd3f7f5a6c9de74155"
 dependencies = [
  "futures-util",
  "http 1.1.0",
  "hyper 1.2.0",
  "hyper-util",
- "rustls 0.22.3",
+ "rustls 0.23.10",
+ "rustls-native-certs",
  "rustls-pki-types",
  "tokio",
- "tokio-rustls 0.25.0",
+ "tokio-rustls 0.26.0",
  "tower-service",
 ]
 
@@ -3137,7 +3138,6 @@ dependencies = [
  "clap",
  "moon_common",
  "moon_target",
- "relative-path",
  "rustc-hash",
  "scc",
  "serde",
@@ -3161,7 +3161,6 @@ dependencies = [
  "moon_test_utils2",
  "petgraph",
  "rustc-hash",
- "serde",
  "starbase_sandbox",
  "thiserror",
  "tokio",
@@ -3173,7 +3172,6 @@ name = "moon_action_pipeline"
 version = "0.0.1"
 dependencies = [
  "ci_env",
- "console",
  "miette",
  "moon_action",
  "moon_action_context",
@@ -3181,28 +3179,17 @@ dependencies = [
  "moon_actions",
  "moon_api",
  "moon_app_context",
- "moon_cache_item",
  "moon_common",
  "moon_console",
  "moon_emitter",
- "moon_hash",
  "moon_logger",
  "moon_notifier",
- "moon_platform",
- "moon_process",
- "moon_project",
  "moon_project_graph",
- "moon_target",
- "moon_task_runner",
- "moon_test_utils",
- "moon_tool",
  "moon_utils",
  "num_cpus",
- "proto_core",
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils",
  "thiserror",
  "tokio",
  "tokio-util",
@@ -3277,7 +3264,7 @@ dependencies = [
  "moon_env",
  "moon_time",
  "proto_core",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "rustc-hash",
  "semver",
  "serde",
@@ -3349,7 +3336,7 @@ dependencies = [
  "proto_core",
  "proto_installer",
  "regex",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "rustc-hash",
  "schematic",
  "semver",
@@ -3385,7 +3372,6 @@ dependencies = [
  "miette",
  "shell-words",
  "thiserror",
- "winsplit",
 ]
 
 [[package]]
@@ -3406,7 +3392,6 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
- "moon_bun_lang",
  "moon_bun_tool",
  "moon_common",
  "moon_config",
@@ -3419,9 +3404,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
  "moon_task",
- "moon_test_utils",
  "moon_tool",
  "moon_typescript_platform",
  "moon_utils",
@@ -3429,10 +3412,8 @@ dependencies = [
  "rustc-hash",
  "schematic",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
- "tokio",
  "tracing",
 ]
 
@@ -3494,7 +3475,6 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
- "moon_notifier",
  "moon_task",
  "moon_task_runner",
  "moon_test_utils",
@@ -3599,7 +3579,6 @@ dependencies = [
  "moon_config",
  "moon_target",
  "parking_lot",
- "starbase",
  "starbase_styles",
 ]
 
@@ -3625,10 +3604,8 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_typescript_lang",
- "moon_utils",
  "rustc-hash",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
 ]
@@ -3652,15 +3629,11 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
- "moon_typescript_lang",
  "moon_typescript_platform",
  "moon_utils",
  "proto_core",
  "rustc-hash",
  "serde",
- "serde_json",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -3693,9 +3666,6 @@ dependencies = [
  "moon_platform_runtime",
  "moon_project",
  "moon_target",
- "moon_task",
- "moon_test_utils",
- "moon_utils",
  "serde",
  "tokio",
 ]
@@ -3729,12 +3699,10 @@ dependencies = [
  "moon_common",
  "moon_config",
  "once_cell",
- "relative-path",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror",
- "tracing",
 ]
 
 [[package]]
@@ -3742,13 +3710,9 @@ name = "moon_hash"
 version = "0.0.1"
 dependencies = [
  "miette",
- "moon_config",
  "serde",
- "serde_json",
  "sha2",
- "starbase_sandbox",
  "starbase_utils",
- "thiserror",
  "tracing",
 ]
 
@@ -3760,7 +3724,6 @@ dependencies = [
  "moon_args",
  "moon_common",
  "moon_config",
- "moon_hash",
  "moon_node_lang",
  "moon_platform_detector",
  "moon_project",
@@ -3768,9 +3731,7 @@ dependencies = [
  "moon_utils",
  "once_cell",
  "rustc-hash",
- "serde",
  "starbase_styles",
- "starbase_utils",
  "tracing",
 ]
 
@@ -3788,7 +3749,6 @@ version = "0.0.1"
 dependencies = [
  "console",
  "log",
- "starbase_styles",
 ]
 
 [[package]]
@@ -3803,16 +3763,14 @@ dependencies = [
  "moon_test_utils",
  "moon_utils",
  "nodejs_package_json",
- "once_cell",
  "package-lock-json-parser",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "rustc-hash",
  "serde",
  "serde_json",
  "serde_yaml",
  "starbase_styles",
  "starbase_utils",
- "thiserror",
  "yarn-lock-parser",
 ]
 
@@ -3833,27 +3791,18 @@ dependencies = [
  "moon_node_lang",
  "moon_node_tool",
  "moon_platform",
- "moon_platform_detector",
  "moon_process",
  "moon_project",
- "moon_project_graph",
- "moon_target",
  "moon_task",
- "moon_test_utils",
- "moon_test_utils2",
  "moon_tool",
- "moon_typescript_lang",
  "moon_typescript_platform",
  "moon_utils",
- "once_cell",
  "proto_core",
  "rustc-hash",
  "schematic",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
- "tokio",
  "tracing",
 ]
 
@@ -3885,7 +3834,7 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_time",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "serde",
  "starbase_utils",
  "tokio",
@@ -3943,7 +3892,6 @@ dependencies = [
  "moon_task",
  "moon_tool",
  "rustc-hash",
- "serde",
 ]
 
 [[package]]
@@ -3966,7 +3914,6 @@ dependencies = [
  "moon_plugin",
  "proto_core",
  "rustc-hash",
- "starbase",
  "tracing",
 ]
 
@@ -3987,7 +3934,6 @@ dependencies = [
  "moon_env",
  "moon_pdk_api",
  "proto_core",
- "rustc-hash",
  "scc",
  "serde_json",
  "starbase_sandbox",
@@ -4070,14 +4016,12 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_project",
- "moon_query",
  "moon_task",
  "moon_time",
  "pathdiff",
  "regex",
  "rustc-hash",
  "starbase_sandbox",
- "starbase_utils",
  "thiserror",
  "tracing",
 ]
@@ -4097,7 +4041,6 @@ dependencies = [
  "moon_project_expander",
  "moon_query",
  "moon_task",
- "moon_task_builder",
  "moon_test_utils2",
  "moon_vcs",
  "petgraph",
@@ -4154,12 +4097,10 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_hash",
- "moon_lang",
  "moon_logger",
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_task",
@@ -4169,7 +4110,6 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
  "tokio",
@@ -4187,7 +4127,6 @@ dependencies = [
  "moon_platform_runtime",
  "moon_process",
  "moon_tool",
- "moon_utils",
  "proto_core",
  "rustc-hash",
  "tracing",
@@ -4210,7 +4149,6 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "serde",
- "serde_json",
  "tracing",
 ]
 
@@ -4297,14 +4235,12 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_platform",
- "moon_platform_runtime",
  "moon_process",
  "moon_project",
  "moon_task",
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
- "proto_core",
  "serde",
  "starbase_archive",
  "starbase_sandbox",
@@ -4329,14 +4265,12 @@ dependencies = [
  "rustc-hash",
  "serde_yaml",
  "starbase_utils",
- "tokio",
 ]
 
 [[package]]
 name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
- "miette",
  "moon_app_context",
  "moon_bun_platform",
  "moon_cache",
@@ -4360,7 +4294,6 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "humantime",
- "miette",
 ]
 
 [[package]]
@@ -4391,7 +4324,6 @@ dependencies = [
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
- "serde",
  "serde_json",
  "starbase_styles",
  "starbase_utils",
@@ -4413,7 +4345,6 @@ dependencies = [
  "moon_utils",
  "rustc-hash",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
  "tracing",
@@ -4432,18 +4363,12 @@ dependencies = [
  "md5",
  "miette",
  "moon_common",
- "moon_logger",
- "moon_test_utils",
  "once_cell",
  "pathdiff",
  "regex",
  "relative-path",
- "rustc-hash",
  "semver",
- "serde",
- "starbase_styles",
  "starbase_utils",
- "tokio",
 ]
 
 [[package]]
@@ -5133,7 +5058,7 @@ dependencies = [
  "proto_pdk_api",
  "proto_shim",
  "regex",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "rustc-hash",
  "schematic",
  "semver",
@@ -5161,7 +5086,7 @@ checksum = "a9d87c40975b75b6dec9a19efdd7cc06c938d956d9ef4a406d6d0b70380b5a49"
 dependencies = [
  "futures",
  "miette",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "starbase_archive",
  "starbase_styles",
  "starbase_utils",
@@ -5203,6 +5128,53 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5787f7cda34e3033a72192c018bc5883100330f362ef279a8cbccfce8bb4e874"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "quinn"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4ceeeeabace7857413798eb1ffa1e9c905a9946a57d81fb69b4b71c4d8eb3ad"
+dependencies = [
+ "bytes",
+ "pin-project-lite",
+ "quinn-proto",
+ "quinn-udp",
+ "rustc-hash",
+ "rustls 0.23.10",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "quinn-proto"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddf517c03a109db8100448a4be38d498df8a210a99fe0e1b9eaf39e78c640efe"
+dependencies = [
+ "bytes",
+ "rand",
+ "ring",
+ "rustc-hash",
+ "rustls 0.23.10",
+ "slab",
+ "thiserror",
+ "tinyvec",
+ "tracing",
+]
+
+[[package]]
+name = "quinn-udp"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9096629c45860fc7fb143e125eb826b5e721e10be3263160c7d60ca832cf8c46"
+dependencies = [
+ "libc",
+ "once_cell",
+ "socket2 0.5.5",
+ "tracing",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5384,7 +5356,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
- "sync_wrapper",
+ "sync_wrapper 0.1.2",
  "system-configuration",
  "tokio",
  "tokio-rustls 0.24.1",
@@ -5399,9 +5371,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.4"
+version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "566cafdd92868e0939d3fb961bd0dc25fcfaaed179291093b3d43e6b3150ea10"
+checksum = "c7d6d2a27d57148378eb5e111173f4276ad26340ecc5c49a4a2152167a2d6a37"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -5414,7 +5386,7 @@ dependencies = [
  "http-body 1.0.0",
  "http-body-util",
  "hyper 1.2.0",
- "hyper-rustls 0.26.0",
+ "hyper-rustls 0.27.2",
  "hyper-tls",
  "hyper-util",
  "ipnet",
@@ -5426,18 +5398,19 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
- "rustls 0.22.3",
+ "quinn",
+ "rustls 0.23.10",
  "rustls-native-certs",
  "rustls-pemfile 2.1.2",
  "rustls-pki-types",
  "serde",
  "serde_json",
  "serde_urlencoded",
- "sync_wrapper",
+ "sync_wrapper 1.0.1",
  "system-configuration",
  "tokio",
  "tokio-native-tls",
- "tokio-rustls 0.25.0",
+ "tokio-rustls 0.26.0",
  "tokio-util",
  "tower-service",
  "url",
@@ -5539,14 +5512,14 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.22.3"
+version = "0.23.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99008d7ad0bbbea527ec27bddbc0e432c5b87d8175178cee68d2eec9c4a1813c"
+checksum = "05cff451f60db80f490f3c182b77c35260baace73209e9cdbbe526bfe3a4d402"
 dependencies = [
- "log",
+ "once_cell",
  "ring",
  "rustls-pki-types",
- "rustls-webpki 0.102.2",
+ "rustls-webpki 0.102.4",
  "subtle",
  "zeroize",
 ]
@@ -5585,9 +5558,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.4.1"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecd36cc4259e3e4514335c4a138c6b43171a8d61d8f5c9348f9fc7529416f247"
+checksum = "976295e77ce332211c0d24d92c0e83e50f5c5f046d11082cea19f3df13a3562d"
 
 [[package]]
 name = "rustls-webpki"
@@ -5601,9 +5574,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.102.2"
+version = "0.102.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faaa0a62740bedb9b2ef5afa303da42764c012f743917351dc9a237ea1663610"
+checksum = "ff448f7e92e913c4b7d4c6d8e4540a1724b319b4152b8aef6d4cf8339712b33e"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -5671,7 +5644,7 @@ dependencies = [
  "indexmap 2.2.6",
  "markdown",
  "miette",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "schemars",
  "schematic_macros",
  "schematic_types",
@@ -6160,7 +6133,7 @@ dependencies = [
  "once_cell",
  "regex",
  "relative-path",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -6271,6 +6244,12 @@ name = "sync_wrapper"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2047c6ded9c721764247e62cd3b03c09ffc529b2ba5b10ec482ae507a4a70160"
+
+[[package]]
+name = "sync_wrapper"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7065abeca94b6a8a577f9bd45aa0867a2238b74e8eb67cf10d492bc39351394"
 
 [[package]]
 name = "synstructure"
@@ -6488,6 +6467,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tinyvec"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87cc5ceb3875bb20c2890005a4e226a4651264a5c75edb2421b52861a0a0cb50"
+dependencies = [
+ "tinyvec_macros",
+]
+
+[[package]]
+name = "tinyvec_macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
 name = "tokio"
 version = "1.38.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6498,7 +6492,6 @@ dependencies = [
  "libc",
  "mio",
  "num_cpus",
- "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2 0.5.5",
@@ -6540,11 +6533,11 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.25.0"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "775e0c0f0adb3a2f22a00c4745d728b479985fc15ee7ca6a2608388c5569860f"
+checksum = "0c7bc40d0e5a97695bb96e27995cd3a08538541b0a846f65bba7a359f36700d4"
 dependencies = [
- "rustls 0.22.3",
+ "rustls 0.23.10",
  "rustls-pki-types",
  "tokio",
 ]
@@ -7043,7 +7036,7 @@ dependencies = [
  "once_cell",
  "once_map",
  "regex",
- "reqwest 0.12.4",
+ "reqwest 0.12.5",
  "schematic",
  "serde",
  "serde_json",
@@ -7828,12 +7821,6 @@ dependencies = [
  "cfg-if",
  "windows-sys 0.48.0",
 ]
-
-[[package]]
-name = "winsplit"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab703352da6a72f35c39a533526393725640575bb211f61987a2748323ad956"
 
 [[package]]
 name = "winx"

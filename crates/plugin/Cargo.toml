@@ -14,7 +14,6 @@ moon_pdk_api = { version = "0.0.7", path = "../pdk-api" }
 convert_case = "0.6.0"
 miette = { workspace = true }
 proto_core = { workspace = true }
-rustc-hash = { workspace = true }
 scc = { workspace = true }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }

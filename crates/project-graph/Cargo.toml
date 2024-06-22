@@ -19,7 +19,6 @@ moon_project_constraints = { path = "../project-constraints" }
 moon_project_expander = { path = "../project-expander" }
 moon_query = { path = "../query" }
 moon_task = { path = "../task" }
-moon_task_builder = { path = "../task-builder" }
 moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 petgraph = { workspace = true }

@@ -9,7 +9,7 @@ moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 cached = { workspace = true }
 cargo-lock = "9.0.0"
-cargo_toml = "0.20.2"
+cargo_toml = "0.20.3"
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

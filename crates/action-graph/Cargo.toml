@@ -22,7 +22,6 @@ graph-cycles = "0.1.0"
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
-serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

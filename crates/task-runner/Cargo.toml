@@ -20,7 +20,6 @@ moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 # TODO remove
 moon_platform = { path = "../../legacy/core/platform" }
-moon_platform_runtime = { path = "../platform-runtime" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
@@ -36,7 +35,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils2 = { path = "../test-utils" }
-proto_core = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

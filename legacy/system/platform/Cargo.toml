@@ -18,7 +18,6 @@ moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

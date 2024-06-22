@@ -16,7 +16,6 @@ moon_target = { path = "../target" }
 inquire = "0.7.5"
 miette = { workspace = true }
 parking_lot = "0.12.3"
-starbase = { workspace = true }
 starbase_styles = { workspace = true }
 
 [lints]

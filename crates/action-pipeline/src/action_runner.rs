@@ -1,3 +1,4 @@
+use crate::event_emitter::{Event, EventEmitter};
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::actions::*;
@@ -13,47 +14,153 @@ pub async fn run_action(
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
+    emitter: Arc<EventEmitter>,
 ) -> miette::Result<()> {
     action.start();
 
     let node = Arc::clone(&action.node);
-    let console = Arc::clone(&app_context.console);
     let log_label = color::muted_light(&action.label);
 
     trace!(index = action.node_index, "Running action {}", log_label);
 
-    // TODO emit started event
-
-    console.reporter.on_action_started(action)?;
+    emitter
+        .emit(Event::ActionStarted {
+            action,
+            node: &node,
+        })
+        .await?;
 
     let result = match &*node {
         ActionNode::None => Ok(ActionStatus::Skipped),
+
         ActionNode::SyncWorkspace => {
-            sync_workspace(action, action_context, app_context, project_graph).await
+            emitter.emit(Event::WorkspaceSyncing).await?;
+
+            let result = sync_workspace(action, action_context, app_context, project_graph).await;
+
+            emitter
+                .emit(Event::WorkspaceSynced {
+                    error: extract_error(&result),
+                })
+                .await?;
+
+            result
         }
+
         ActionNode::SyncProject(inner) => {
-            sync_project(action, action_context, app_context, project_graph, inner).await
+            let project = project_graph.get(&inner.project)?;
+
+            emitter
+                .emit(Event::ProjectSyncing {
+                    project: &project,
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            let result =
+                sync_project(action, action_context, app_context, project_graph, inner).await;
+
+            emitter
+                .emit(Event::ProjectSynced {
+                    error: extract_error(&result),
+                    project: &project,
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            result
         }
+
         ActionNode::SetupToolchain(inner) => {
-            setup_toolchain(action, action_context, app_context, inner).await
+            emitter
+                .emit(Event::ToolInstalling {
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            let result = setup_toolchain(action, action_context, app_context, inner).await;
+
+            emitter
+                .emit(Event::ToolInstalled {
+                    error: extract_error(&result),
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            result
         }
+
         ActionNode::InstallWorkspaceDeps(inner) => {
-            install_deps(action, action_context, app_context, &inner.runtime, None).await
+            emitter
+                .emit(Event::DependenciesInstalling {
+                    project: None,
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            let result =
+                install_deps(action, action_context, app_context, &inner.runtime, None).await;
+
+            emitter
+                .emit(Event::DependenciesInstalled {
+                    error: extract_error(&result),
+                    project: None,
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            result
         }
+
         ActionNode::InstallProjectDeps(inner) => {
             let project = project_graph.get(&inner.project)?;
 
-            install_deps(
+            emitter
+                .emit(Event::DependenciesInstalling {
+                    project: Some(&project),
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            let result = install_deps(
                 action,
                 action_context,
                 app_context,
                 &inner.runtime,
                 Some(&project),
             )
-            .await
+            .await;
+
+            emitter
+                .emit(Event::DependenciesInstalled {
+                    error: extract_error(&result),
+                    project: Some(&project),
+                    runtime: &inner.runtime,
+                })
+                .await?;
+
+            result
         }
+
         ActionNode::RunTask(inner) => {
-            run_task(action, action_context, app_context, project_graph, inner).await
+            emitter
+                .emit(Event::TaskRunning {
+                    node: inner,
+                    target: &inner.target,
+                })
+                .await?;
+
+            let result = run_task(action, action_context, app_context, project_graph, inner).await;
+
+            emitter
+                .emit(Event::TaskRan {
+                    error: extract_error(&result),
+                    node: inner,
+                    target: &inner.target,
+                })
+                .await?;
+
+            result
         }
     };
 
@@ -61,14 +168,27 @@ pub async fn run_action(
         Ok(status) => {
             action.finish(status);
 
-            console.reporter.on_action_completed(action, None)?;
+            emitter
+                .emit(Event::ActionCompleted {
+                    action,
+                    error: None,
+                    error_report: None,
+                    node: &node,
+                })
+                .await?;
         }
         Err(error) => {
             action.finish(ActionStatus::Failed);
-
-            console.reporter.on_action_completed(action, Some(&error))?;
-
             action.fail(error);
+
+            emitter
+                .emit(Event::ActionCompleted {
+                    action,
+                    error: action.error.clone(),
+                    error_report: action.error_report.as_ref(),
+                    node: &node,
+                })
+                .await?;
         }
     };
 
@@ -97,7 +217,12 @@ pub async fn run_action(
         );
     }
 
-    // TODO emit finished event
-
     Ok(())
+}
+
+fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
+    match result {
+        Ok(_) => None,
+        Err(error) => Some(error.to_string()),
+    }
 }

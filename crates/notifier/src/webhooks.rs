@@ -108,8 +108,6 @@ impl WebhooksNotifier {
     }
 
     pub async fn wait_for_requests(&mut self) {
-        trace!("Waiting for webhook requests to finish");
-
         for future in self.requests.drain(0..) {
             let _ = future.await;
         }

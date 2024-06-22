@@ -1,6 +1,6 @@
 use moon_action::*;
-use moon_action_pipeline::estimator::{Estimator, TaskEstimate};
-use moon_platform::Runtime;
+use moon_action_pipeline2::reports::estimate::{Estimate, TaskEstimate};
+use moon_platform_runtime::Runtime;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -15,16 +15,16 @@ fn create_run_task_action(runtime: Runtime, target: &str) -> Arc<ActionNode> {
     )))
 }
 
-mod estimator {
+mod estimate {
     use super::*;
 
     #[test]
     fn returns_loss_state() {
-        let est = Estimator::calculate(&[], Duration::new(5, 0));
+        let est = Estimate::calculate(&[], &Duration::new(5, 0));
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(0, 0),
                 loss: Some(Duration::new(5, 0)),
                 tasks: FxHashMap::default(),
@@ -36,18 +36,18 @@ mod estimator {
 
     #[test]
     fn returns_gain_state() {
-        let est = Estimator::calculate(
+        let est = Estimate::calculate(
             &[Action {
                 duration: Some(Duration::new(10, 0)),
                 node: create_run_task_action(Runtime::system(), "proj:task"),
                 ..Action::default()
             }],
-            Duration::new(5, 0),
+            &Duration::new(5, 0),
         );
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(8, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([(
@@ -62,7 +62,7 @@ mod estimator {
 
     #[test]
     fn buckets_and_aggregates_tasks() {
-        let est = Estimator::calculate(
+        let est = Estimate::calculate(
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
@@ -90,12 +90,12 @@ mod estimator {
                     ..Action::default()
                 },
             ],
-            Duration::new(10, 0),
+            &Duration::new(10, 0),
         );
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(42, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([
@@ -117,7 +117,7 @@ mod estimator {
 
     #[test]
     fn includes_setup_install() {
-        let est = Estimator::calculate(
+        let est = Estimate::calculate(
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
@@ -141,12 +141,12 @@ mod estimator {
                     ..Action::default()
                 },
             ],
-            Duration::new(5, 0),
+            &Duration::new(5, 0),
         );
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(43, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([
@@ -164,19 +164,19 @@ mod estimator {
 
     #[test]
     fn multiplies_cached() {
-        let est = Estimator::calculate(
+        let est = Estimate::calculate(
             &[Action {
                 duration: Some(Duration::new(3, 0)),
                 node: create_run_task_action(Runtime::system(), "proj:task"),
                 status: ActionStatus::Cached,
                 ..Action::default()
             }],
-            Duration::new(5, 0),
+            &Duration::new(5, 0),
         );
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(25, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([(
@@ -191,7 +191,7 @@ mod estimator {
 
     #[test]
     fn calculates_gain() {
-        let est = Estimator::calculate(
+        let est = Estimate::calculate(
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
@@ -235,12 +235,12 @@ mod estimator {
                     ..Action::default()
                 },
             ],
-            Duration::new(25, 0),
+            &Duration::new(25, 0),
         );
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(77, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([
@@ -266,7 +266,7 @@ mod estimator {
 
     #[test]
     fn calculates_loss() {
-        let est = Estimator::calculate(
+        let est = Estimate::calculate(
             &[
                 Action {
                     duration: Some(Duration::new(10, 0)),
@@ -310,12 +310,12 @@ mod estimator {
                     ..Action::default()
                 },
             ],
-            Duration::new(85, 0),
+            &Duration::new(85, 0),
         );
 
         assert_eq!(
             est,
-            Estimator {
+            Estimate {
                 duration: Duration::new(77, HALF_SECOND),
                 loss: Some(Duration::new(7, HALF_SECOND)),
                 tasks: FxHashMap::from_iter([

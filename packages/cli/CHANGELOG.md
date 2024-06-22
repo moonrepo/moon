@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Reworked webhooks to more closely align with our current data structures.
+  - Renamed `target.*` events to `task.*`, and `*.finished` to `*.completed`.
+  - Removed the `pipeline.aborted` event. Instead, an `aborted` field is now passed to
+    `pipeline.completed`.
+  - Replaced the `action` field with a new `node` field within `task.*` events.
+  - Reworked `pipeline.completed` entirely. Instead of calculating values for you, we now pass all
+    results allowing you to calculate them yourself.
+
 #### 🚀 Updates
 
 - Rewrote the actions/tasks pipeline from the ground-up. Is currently experimental and must be

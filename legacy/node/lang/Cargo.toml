@@ -12,7 +12,6 @@ moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
 miette = { workspace = true }
 nodejs_package_json = "0.2.0"
-once_cell = { workspace = true }
 package-lock-json-parser = "0.4.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
@@ -20,7 +19,6 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 serde_yaml = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
-thiserror = { workspace = true }
 yarn-lock-parser = "0.7.0"
 
 [dev-dependencies]

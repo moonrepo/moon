@@ -87,7 +87,6 @@ tokio = { version = "1.38.0", default-features = false, features = [
 ] }
 tokio-util = "0.7.11"
 tracing = "0.1.40"
-url = "2.5.2"
 uuid = { version = "1.8.0", features = ["v4"] }
 
 # proto/plugin related
@@ -112,3 +111,6 @@ warpgate_pdk = "0.6.0"
 [workspace.lints.clippy]
 # Very noisy, lots of false positives!
 assigning_clones = "allow"
+
+[workspace.metadata.cargo-shear]
+ignored = ["serde"]

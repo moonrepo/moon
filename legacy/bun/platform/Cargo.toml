@@ -7,7 +7,6 @@ publish = false
 [dependencies]
 moon_action = { path = "../../../crates/action" }
 moon_action_context = { path = "../../../crates/action-context" }
-moon_bun_lang = { path = "../lang" }
 moon_bun_tool = { path = "../tool" }
 moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
@@ -29,15 +28,11 @@ proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["config"] }
 serde = { workspace = true }
-serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
-tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon_project_graph = { path = "../../../crates/project-graph" }
-moon_test_utils = { path = "../../core/test-utils" }
 
 [lints]
 workspace = true

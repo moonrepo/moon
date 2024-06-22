@@ -18,7 +18,6 @@ moon_tool = { path = "../tool" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-serde = { workspace = true }
 
 [lints]
 workspace = true

@@ -3138,7 +3138,6 @@ dependencies = [
  "clap",
  "moon_common",
  "moon_target",
- "relative-path",
  "rustc-hash",
  "scc",
  "serde",
@@ -3162,7 +3161,6 @@ dependencies = [
  "moon_test_utils2",
  "petgraph",
  "rustc-hash",
- "serde",
  "starbase_sandbox",
  "thiserror",
  "tokio",
@@ -3174,7 +3172,6 @@ name = "moon_action_pipeline"
 version = "0.0.1"
 dependencies = [
  "ci_env",
- "console",
  "miette",
  "moon_action",
  "moon_action_context",
@@ -3182,28 +3179,17 @@ dependencies = [
  "moon_actions",
  "moon_api",
  "moon_app_context",
- "moon_cache_item",
  "moon_common",
  "moon_console",
  "moon_emitter",
- "moon_hash",
  "moon_logger",
  "moon_notifier",
- "moon_platform",
- "moon_process",
- "moon_project",
  "moon_project_graph",
- "moon_target",
- "moon_task_runner",
- "moon_test_utils",
- "moon_tool",
  "moon_utils",
  "num_cpus",
- "proto_core",
  "rustc-hash",
  "serde",
  "starbase_styles",
- "starbase_utils",
  "thiserror",
  "tokio",
  "tokio-util",
@@ -3386,7 +3372,6 @@ dependencies = [
  "miette",
  "shell-words",
  "thiserror",
- "winsplit",
 ]
 
 [[package]]
@@ -3407,7 +3392,6 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
- "moon_bun_lang",
  "moon_bun_tool",
  "moon_common",
  "moon_config",
@@ -3420,9 +3404,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
  "moon_task",
- "moon_test_utils",
  "moon_tool",
  "moon_typescript_platform",
  "moon_utils",
@@ -3430,10 +3412,8 @@ dependencies = [
  "rustc-hash",
  "schematic",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
- "tokio",
  "tracing",
 ]
 
@@ -3495,7 +3475,6 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
- "moon_notifier",
  "moon_task",
  "moon_task_runner",
  "moon_test_utils",
@@ -3600,7 +3579,6 @@ dependencies = [
  "moon_config",
  "moon_target",
  "parking_lot",
- "starbase",
  "starbase_styles",
 ]
 
@@ -3626,10 +3604,8 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_typescript_lang",
- "moon_utils",
  "rustc-hash",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
 ]
@@ -3653,15 +3629,11 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
- "moon_typescript_lang",
  "moon_typescript_platform",
  "moon_utils",
  "proto_core",
  "rustc-hash",
  "serde",
- "serde_json",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -3694,9 +3666,6 @@ dependencies = [
  "moon_platform_runtime",
  "moon_project",
  "moon_target",
- "moon_task",
- "moon_test_utils",
- "moon_utils",
  "serde",
  "tokio",
 ]
@@ -3730,12 +3699,10 @@ dependencies = [
  "moon_common",
  "moon_config",
  "once_cell",
- "relative-path",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror",
- "tracing",
 ]
 
 [[package]]
@@ -3743,13 +3710,9 @@ name = "moon_hash"
 version = "0.0.1"
 dependencies = [
  "miette",
- "moon_config",
  "serde",
- "serde_json",
  "sha2",
- "starbase_sandbox",
  "starbase_utils",
- "thiserror",
  "tracing",
 ]
 
@@ -3761,7 +3724,6 @@ dependencies = [
  "moon_args",
  "moon_common",
  "moon_config",
- "moon_hash",
  "moon_node_lang",
  "moon_platform_detector",
  "moon_project",
@@ -3769,9 +3731,7 @@ dependencies = [
  "moon_utils",
  "once_cell",
  "rustc-hash",
- "serde",
  "starbase_styles",
- "starbase_utils",
  "tracing",
 ]
 
@@ -3789,7 +3749,6 @@ version = "0.0.1"
 dependencies = [
  "console",
  "log",
- "starbase_styles",
 ]
 
 [[package]]
@@ -3804,7 +3763,6 @@ dependencies = [
  "moon_test_utils",
  "moon_utils",
  "nodejs_package_json",
- "once_cell",
  "package-lock-json-parser",
  "reqwest 0.12.5",
  "rustc-hash",
@@ -3813,7 +3771,6 @@ dependencies = [
  "serde_yaml",
  "starbase_styles",
  "starbase_utils",
- "thiserror",
  "yarn-lock-parser",
 ]
 
@@ -3834,27 +3791,18 @@ dependencies = [
  "moon_node_lang",
  "moon_node_tool",
  "moon_platform",
- "moon_platform_detector",
  "moon_process",
  "moon_project",
- "moon_project_graph",
- "moon_target",
  "moon_task",
- "moon_test_utils",
- "moon_test_utils2",
  "moon_tool",
- "moon_typescript_lang",
  "moon_typescript_platform",
  "moon_utils",
- "once_cell",
  "proto_core",
  "rustc-hash",
  "schematic",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
- "tokio",
  "tracing",
 ]
 
@@ -3944,7 +3892,6 @@ dependencies = [
  "moon_task",
  "moon_tool",
  "rustc-hash",
- "serde",
 ]
 
 [[package]]
@@ -3967,7 +3914,6 @@ dependencies = [
  "moon_plugin",
  "proto_core",
  "rustc-hash",
- "starbase",
  "tracing",
 ]
 
@@ -3988,7 +3934,6 @@ dependencies = [
  "moon_env",
  "moon_pdk_api",
  "proto_core",
- "rustc-hash",
  "scc",
  "serde_json",
  "starbase_sandbox",
@@ -4071,14 +4016,12 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_project",
- "moon_query",
  "moon_task",
  "moon_time",
  "pathdiff",
  "regex",
  "rustc-hash",
  "starbase_sandbox",
- "starbase_utils",
  "thiserror",
  "tracing",
 ]
@@ -4098,7 +4041,6 @@ dependencies = [
  "moon_project_expander",
  "moon_query",
  "moon_task",
- "moon_task_builder",
  "moon_test_utils2",
  "moon_vcs",
  "petgraph",
@@ -4155,12 +4097,10 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_hash",
- "moon_lang",
  "moon_logger",
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_task",
@@ -4170,7 +4110,6 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
  "tokio",
@@ -4188,7 +4127,6 @@ dependencies = [
  "moon_platform_runtime",
  "moon_process",
  "moon_tool",
- "moon_utils",
  "proto_core",
  "rustc-hash",
  "tracing",
@@ -4211,7 +4149,6 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "serde",
- "serde_json",
  "tracing",
 ]
 
@@ -4298,14 +4235,12 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_platform",
- "moon_platform_runtime",
  "moon_process",
  "moon_project",
  "moon_task",
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
- "proto_core",
  "serde",
  "starbase_archive",
  "starbase_sandbox",
@@ -4330,14 +4265,12 @@ dependencies = [
  "rustc-hash",
  "serde_yaml",
  "starbase_utils",
- "tokio",
 ]
 
 [[package]]
 name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [
- "miette",
  "moon_app_context",
  "moon_bun_platform",
  "moon_cache",
@@ -4361,7 +4294,6 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "humantime",
- "miette",
 ]
 
 [[package]]
@@ -4392,7 +4324,6 @@ dependencies = [
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
- "serde",
  "serde_json",
  "starbase_styles",
  "starbase_utils",
@@ -4414,7 +4345,6 @@ dependencies = [
  "moon_utils",
  "rustc-hash",
  "serde",
- "serde_json",
  "starbase_styles",
  "starbase_utils",
  "tracing",
@@ -4433,18 +4363,12 @@ dependencies = [
  "md5",
  "miette",
  "moon_common",
- "moon_logger",
- "moon_test_utils",
  "once_cell",
  "pathdiff",
  "regex",
  "relative-path",
- "rustc-hash",
  "semver",
- "serde",
- "starbase_styles",
  "starbase_utils",
- "tokio",
 ]
 
 [[package]]
@@ -6568,7 +6492,6 @@ dependencies = [
  "libc",
  "mio",
  "num_cpus",
- "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2 0.5.5",
@@ -7898,12 +7821,6 @@ dependencies = [
  "cfg-if",
  "windows-sys 0.48.0",
 ]
-
-[[package]]
-name = "winsplit"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab703352da6a72f35c39a533526393725640575bb211f61987a2748323ad956"
 
 [[package]]
 name = "winx"

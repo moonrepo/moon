@@ -14,10 +14,10 @@
     "write-translations": "docusaurus write-translations"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.3.2",
-    "@docusaurus/plugin-client-redirects": "^3.3.2",
-    "@docusaurus/preset-classic": "^3.3.2",
-    "@docusaurus/theme-common": "^3.3.2",
+    "@docusaurus/core": "^3.4.0",
+    "@docusaurus/plugin-client-redirects": "^3.4.0",
+    "@docusaurus/preset-classic": "^3.4.0",
+    "@docusaurus/theme-common": "^3.4.0",
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
     "@fortawesome/pro-duotone-svg-icons": "^6.5.2",
@@ -25,7 +25,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.1",
-    "cytoscape": "^3.29.0",
+    "cytoscape": "^3.29.2",
     "cytoscape-dagre": "^2.5.0",
     "docusaurus-plugin-typedoc-api": "^4.2.0",
     "prism-react-renderer": "^2.3.1",
@@ -33,13 +33,13 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.3.2",
-    "@docusaurus/tsconfig": "^3.3.2",
+    "@docusaurus/module-type-aliases": "^3.4.0",
+    "@docusaurus/tsconfig": "^3.4.0",
     "@moonrepo/runtime": "workspace:^",
     "@moonrepo/types": "workspace:^",
-    "@types/cytoscape": "^3.21.0",
+    "@types/cytoscape": "^3.21.4",
     "@types/cytoscape-dagre": "^2.3.3",
-    "tailwindcss": "^3.4.3"
+    "tailwindcss": "^3.4.4"
   },
   "browserslist": {
     "production": [

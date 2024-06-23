@@ -1206,6 +1206,18 @@
           ],
           "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution."
         },
+        "timeout": {
+          "title": "timeout",
+          "description": "The maximum time in seconds that a task can run before being cancelled.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "unixShell": {
           "title": "unixShell",
           "description": "The shell to run the task in when on a Unix-based machine.",
@@ -1261,6 +1273,10 @@
         "bash",
         "elvish",
         "fish",
+        "ion",
+        "nu",
+        "pwsh",
+        "xonsh",
         "zsh"
       ]
     },
@@ -1269,11 +1285,17 @@
       "type": "string",
       "enum": [
         "bash",
-        "pwsh"
+        "elvish",
+        "fish",
+        "nu",
+        "pwsh",
+        "xonsh"
       ]
     },
     "UnresolvedVersionSpec": {
-      "type": "string"
+      "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",
+      "type": "string",
+      "markdownDescription": "Represents an unresolved version or alias that must be resolved to a fully-qualified version."
     }
   }
 }

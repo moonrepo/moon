@@ -1,6 +1,5 @@
 // .moon/workspace.yml
 
-use crate::config_cache::ConfigCache;
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
@@ -177,6 +176,7 @@ impl WorkspaceConfig {
         workspace_root: R,
         path: P,
     ) -> miette::Result<WorkspaceConfig> {
+        use crate::config_cache::ConfigCache;
         use crate::validate::check_yml_extension;
         use moon_common::color;
         use schematic::ConfigLoader;

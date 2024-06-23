@@ -1,10 +1,12 @@
 import type { Duration, Runtime } from './common';
-import type { Action, ActionContext, ActionNode } from './pipeline';
+import type { Action, ActionContext, ActionNode, ActionNodeRunTask } from './pipeline';
 import type { Project } from './project';
 
 export interface ProviderEnvironment {
 	baseBranch: string | null;
+	baseRevision: string | null;
 	branch: string;
+	headRevision: string | null;
 	id: string;
 	provider: string;
 	requestId: string | null;
@@ -22,21 +24,27 @@ export interface WebhookPayload<T extends EventType, E> {
 }
 
 export type EventType =
-	| 'action.finished'
+	// eslint-disable-next-line @typescript-eslint/sort-type-constituents
+	| 'action.completed'
 	| 'action.started'
 	| 'dependencies.installed'
 	| 'dependencies.installing'
-	| 'pipeline.aborted'
-	| 'pipeline.finished'
+	| 'pipeline.completed'
 	| 'pipeline.started'
 	| 'project.synced'
 	| 'project.syncing'
-	| 'target.ran'
-	| 'target.running'
+	| 'task.ran'
+	| 'task.running'
 	| 'tool.installed'
 	| 'tool.installing'
 	| 'workspace.synced'
-	| 'workspace.syncing';
+	| 'workspace.syncing'
+	// Legacy < 1.26
+	| 'action.finished'
+	| 'pipeline.finished'
+	| 'pipeline.aborted'
+	| 'target.ran'
+	| 'target.running';
 
 export interface EventActionStarted {
 	action: Action;
@@ -45,13 +53,13 @@ export interface EventActionStarted {
 
 export type PayloadActionStarted = WebhookPayload<'action.started', EventActionStarted>;
 
-export interface EventActionFinished {
+export interface EventActionCompleted {
 	action: Action;
 	error: string | null;
 	node: ActionNode;
 }
 
-export type PayloadActionFinished = WebhookPayload<'action.finished', EventActionFinished>;
+export type PayloadActionCompleted = WebhookPayload<'action.completed', EventActionCompleted>;
 
 export interface EventDependenciesInstalling {
 	project: Project | null;
@@ -89,43 +97,38 @@ export interface EventProjectSynced {
 
 export type PayloadProjectSynced = WebhookPayload<'project.synced', EventProjectSynced>;
 
-export interface EventPipelineAborted {
-	error: string;
-}
-
-export type PayloadPipelineAborted = WebhookPayload<'pipeline.aborted', EventPipelineAborted>;
-
 export interface EventPipelineStarted {
 	actionsCount: number;
+	actionNodes: ActionNode[];
 	context: ActionContext;
 }
 
 export type PayloadPipelineStarted = WebhookPayload<'pipeline.started', EventPipelineStarted>;
 
-export interface EventPipelineFinished {
-	baselineDuration: Duration;
-	cachedCount: number;
+export interface EventPipelineCompleted {
+	actions: Action[];
+	aborted: boolean;
 	context: ActionContext;
 	duration: Duration;
-	estimatedSavings: Duration | null;
-	failedCount: number;
-	passedCount: number;
-}
-
-export type PayloadPipelineFinished = WebhookPayload<'pipeline.finished', EventPipelineFinished>;
-
-export interface EventTargetRunning {
-	target: string;
-}
-
-export type PayloadTargetRunning = WebhookPayload<'target.running', EventTargetRunning>;
-
-export interface EventTargetRan {
 	error: string | null;
+}
+
+export type PayloadPipelineCompleted = WebhookPayload<'pipeline.completed', EventPipelineCompleted>;
+
+export interface EventTaskRunning {
+	node: ActionNodeRunTask['params'];
 	target: string;
 }
 
-export type PayloadTargetRan = WebhookPayload<'target.ran', EventTargetRan>;
+export type PayloadTaskRunning = WebhookPayload<'task.running', EventTaskRunning>;
+
+export interface EventTaskRan {
+	error: string | null;
+	node: ActionNodeRunTask['params'];
+	target: string;
+}
+
+export type PayloadTaskRan = WebhookPayload<'task.ran', EventTaskRan>;
 
 export interface EventToolInstalling {
 	runtime: Runtime;
@@ -147,3 +150,54 @@ export interface EventWorkspaceSynced {
 }
 
 export type PayloadWorkspaceSynced = WebhookPayload<'workspace.synced', EventWorkspaceSynced>;
+
+// DEPRECATED
+
+/** @deprecated */
+export interface EventActionFinished {
+	action: Action;
+	error: string | null;
+	node: ActionNode;
+}
+
+/** @deprecated */
+export type PayloadActionFinished = WebhookPayload<'action.finished', EventActionFinished>;
+
+/** @deprecated */
+export interface EventPipelineAborted {
+	error: string;
+}
+
+/** @deprecated */
+export type PayloadPipelineAborted = WebhookPayload<'pipeline.aborted', EventPipelineAborted>;
+
+/** @deprecated */
+export interface EventPipelineFinished {
+	baselineDuration: Duration;
+	cachedCount: number;
+	context: ActionContext;
+	duration: Duration;
+	estimatedSavings: Duration | null;
+	failedCount: number;
+	passedCount: number;
+}
+
+/** @deprecated */
+export type PayloadPipelineFinished = WebhookPayload<'pipeline.finished', EventPipelineFinished>;
+
+/** @deprecated */
+export interface EventTargetRunning {
+	target: string;
+}
+
+/** @deprecated */
+export type PayloadTargetRunning = WebhookPayload<'target.running', EventTargetRunning>;
+
+/** @deprecated */
+export interface EventTargetRan {
+	error: string | null;
+	target: string;
+}
+
+/** @deprecated */
+export type PayloadTargetRan = WebhookPayload<'target.ran', EventTargetRan>;

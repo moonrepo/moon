@@ -112,7 +112,6 @@ export interface ActionContext {
 	profile: 'cpu' | 'heap' | null;
 	targetStates: Record<string, TargetState>;
 	touchedFiles: string[];
-	workspaceRoot: string;
 }
 
 export interface RunReport {
@@ -132,9 +131,6 @@ export interface RunReport {
 			}
 		>;
 	};
-	// Deprecated
-	estimatedSavings?: Duration | null;
-	projectedDuration?: Duration;
 }
 
 // NODES
@@ -171,6 +167,8 @@ export interface ActionNodeRunTask {
 		persistent: boolean;
 		runtime: Runtime;
 		target: string;
+		timeout: number | null;
+		id: number | null;
 	};
 }
 

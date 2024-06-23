@@ -93,7 +93,6 @@ function mockReport(): RunReport {
 			profile: null,
 			targetStates: {},
 			touchedFiles: [],
-			workspaceRoot: '',
 		},
 		duration: {
 			secs: 0,

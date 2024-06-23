@@ -51,7 +51,9 @@ function findExecutorImplPath(
 	pkgName: string,
 	executorEntry: ExecutorsJsonEntry,
 ): [Path, string] {
-	const [implFile, exportName = 'default'] = executorEntry.implementation.split('#');
+	const entry =
+		typeof executorEntry === 'string' ? { implementation: executorEntry } : executorEntry;
+	const [implFile, exportName = 'default'] = entry.implementation.split('#');
 	const exts = ['', '.js', '.mjs', '.cjs'];
 	const lookups = [
 		implFile,

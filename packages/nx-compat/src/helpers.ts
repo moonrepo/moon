@@ -13,6 +13,7 @@ declare module '@boost/common' {
 
 export function env(name: string): string {
 	if (process.env[name]) {
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 		return process.env[name]!;
 	}
 

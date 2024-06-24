@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Re-released because of an npm version mismatch issue.
+
 ## 1.26.0
 
 #### 💥 Breaking

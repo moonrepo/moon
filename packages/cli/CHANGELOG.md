@@ -4,6 +4,7 @@
 
 #### 🐞 Fixes
 
+- Fixed the `ciReport.json` file not being created with the experimental pipeline.
 - Fixed the wrong version being displayed in `--version` and in logs.
 
 ## 1.26.1

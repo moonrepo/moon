@@ -23,15 +23,16 @@ pub async fn run_action_pipeline(
 
         match &session.cli.command {
             Commands::Check(cmd) => {
-                pipeline.summarize = cmd.summary;
                 pipeline.bail = true;
+                pipeline.summarize = cmd.summary;
             }
             Commands::Ci(_) => {
+                pipeline.report_name = "ciReport.json".into();
                 pipeline.summarize = true;
             }
             Commands::Run(cmd) => {
-                pipeline.summarize = cmd.summary;
                 pipeline.bail = true;
+                pipeline.summarize = cmd.summary;
             }
             _ => {}
         };

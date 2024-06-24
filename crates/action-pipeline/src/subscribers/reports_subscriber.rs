@@ -27,13 +27,19 @@ pub struct RunReport<'data> {
 pub struct ReportsSubscriber {
     cache_engine: Arc<CacheEngine>,
     action_context: Arc<ActionContext>,
+    report_name: String,
 }
 
 impl ReportsSubscriber {
-    pub fn new(cache_engine: Arc<CacheEngine>, action_context: Arc<ActionContext>) -> Self {
+    pub fn new(
+        cache_engine: Arc<CacheEngine>,
+        action_context: Arc<ActionContext>,
+        report_name: &str,
+    ) -> Self {
         ReportsSubscriber {
             cache_engine,
             action_context,
+            report_name: report_name.to_owned(),
         }
     }
 }
@@ -56,7 +62,7 @@ impl Subscriber for ReportsSubscriber {
                 comparison_estimate: estimate,
             };
 
-            self.cache_engine.write("runReport.json", &report)?;
+            self.cache_engine.write(&self.report_name, &report)?;
         }
 
         Ok(())

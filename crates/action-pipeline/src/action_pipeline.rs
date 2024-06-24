@@ -24,6 +24,7 @@ use tracing::{debug, instrument, trace, warn};
 pub struct ActionPipeline {
     pub bail: bool,
     pub concurrency: usize,
+    pub report_name: String,
     pub summarize: bool,
 
     // State
@@ -52,6 +53,7 @@ impl ActionPipeline {
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             project_graph,
+            report_name: "runReport.json".into(),
             summarize: false,
         }
     }
@@ -333,6 +335,7 @@ impl ActionPipeline {
             .subscribe(ReportsSubscriber::new(
                 Arc::clone(&self.app_context.cache_engine),
                 Arc::clone(&self.action_context),
+                &self.report_name,
             ))
             .await;
 

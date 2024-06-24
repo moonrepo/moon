@@ -7,8 +7,8 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     vec![
         "/usr/local/bin".into(),
         home_dir.join(".moon"),
+        home_dir.join(".proto"),
         // Node
-        home_dir.join(".proto/tools"),
         home_dir.join(".nvm/versions/node"),
         home_dir.join(".nodenv/versions"),
         home_dir.join(".fnm/node-versions"),
@@ -22,8 +22,8 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     vec![
         home_dir.join(".moon"),
+        home_dir.join(".proto"),
         // Node
-        home_dir.join(".proto\\tools"),
         home_dir.join(".nvm\\versions\\node"),
         home_dir.join(".nodenv\\versions"),
         home_dir.join(".fnm\\node-versions"),

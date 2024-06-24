@@ -248,7 +248,7 @@ fn create_styles() -> Styles {
     bin_name = BIN_NAME,
     name = "moon",
     about = "Take your repo to the moon!",
-    version,
+    version = env::var("MOON_VERSION").unwrap_or_default(),
     disable_help_subcommand = true,
     next_line_help = false,
     propagate_version = true,

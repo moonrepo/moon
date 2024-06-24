@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed the wrong version being displayed in `--version` and in logs.
+
 ## 1.26.1
 
 #### 🐞 Fixes

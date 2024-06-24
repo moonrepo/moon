@@ -1,4 +1,3 @@
-use crate::config_cache::ConfigCache;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
@@ -91,6 +90,7 @@ impl InheritedTasksConfig {
         workspace_root: T,
         path: F,
     ) -> miette::Result<PartialInheritedTasksConfig> {
+        use crate::config_cache::ConfigCache;
         use crate::validate::check_yml_extension;
         use moon_common::color;
         use schematic::ConfigLoader;

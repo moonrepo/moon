@@ -153,18 +153,17 @@ impl ActionPipeline {
         debug!("Waiting for jobs to return results");
 
         let mut actions = vec![];
-        let mut ran_actions = 0;
+        let mut error = None;
 
-        while let Some(action) = receiver.recv().await {
-            ran_actions += 1;
-
+        while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
                 abort_token.cancel();
+                error = Some(action.get_error());
             }
 
             actions.push(action);
 
-            if ran_actions == total_actions {
+            if actions.len() == total_actions {
                 debug!("Finished pipeline, received all results");
                 break;
             } else if abort_token.is_cancelled() {
@@ -185,6 +184,10 @@ impl ActionPipeline {
         self.aborted = abort_token.is_cancelled();
         self.actions = actions;
         self.duration = Some(start.elapsed());
+
+        if let Some(error) = error {
+            return Err(error);
+        }
 
         Ok(())
     }

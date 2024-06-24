@@ -47,7 +47,7 @@ export interface BunConfig {
 	 *
 	 * @default true
 	 */
-	syncProjectWorkspaceDependencies: boolean;
+	syncProjectWorkspaceDependencies?: boolean;
 	/**
 	 * The version of Bun to download, install, and run `bun` tasks with.
 	 *
@@ -82,7 +82,7 @@ export interface DenoConfig {
 	 *
 	 * @default 'deps.ts'
 	 */
-	depsFile: string;
+	depsFile?: string;
 	/** Requires and forces the use of `deno.lock` files. */
 	lockfile: boolean;
 	/** Location of the WASM plugin to use for Deno support. */
@@ -112,7 +112,7 @@ export interface BunpmConfig {
 /** Options for npm, when used as a package manager. */
 export interface NpmConfig {
 	/** List of arguments to append to `npm install` commands. */
-	installArgs: string[];
+	installArgs?: string[];
 	/** Location of the WASM plugin to use for npm support. */
 	plugin: PluginLocator | null;
 	/**
@@ -170,7 +170,7 @@ export interface NodeConfig {
 	 *
 	 * @default true
 	 */
-	addEnginesConstraint: boolean;
+	addEnginesConstraint?: boolean;
 	/**
 	 * Arguments to automatically pass to all tasks that execute the
 	 * `node` binary.
@@ -183,7 +183,7 @@ export interface NodeConfig {
 	 *
 	 * @default true
 	 */
-	dedupeOnLockfileChange: boolean;
+	dedupeOnLockfileChange?: boolean;
 	/**
 	 * The dependency version format to use when syncing projects
 	 * as dependencies.
@@ -216,7 +216,7 @@ export interface NodeConfig {
 	 *
 	 * @default true
 	 */
-	syncProjectWorkspaceDependencies: boolean;
+	syncProjectWorkspaceDependencies?: boolean;
 	/**
 	 * When `version` is defined, syncs the version to the chosen config.
 	 *
@@ -267,7 +267,7 @@ export interface TypeScriptConfig {
 	 *
 	 * @default true
 	 */
-	createMissingConfig: boolean;
+	createMissingConfig?: boolean;
 	/**
 	 * Appends sources of project reference to `include` in `tsconfig.json`,
 	 * for each project.
@@ -280,27 +280,27 @@ export interface TypeScriptConfig {
 	 *
 	 * @default 'tsconfig.json'
 	 */
-	projectConfigFileName: string;
+	projectConfigFileName?: string;
 	/**
 	 * The relative root to the TypeScript root. Primarily used for
 	 * resolving project references.
 	 *
 	 * @default '.'
 	 */
-	root: string;
+	root?: string;
 	/**
 	 * Name of the `tsconfig.json` file at the workspace root.
 	 *
 	 * @default 'tsconfig.json'
 	 */
-	rootConfigFileName: string;
+	rootConfigFileName?: string;
 	/**
 	 * Name of the shared compiler options `tsconfig.json` file
 	 * at the workspace root.
 	 *
 	 * @default 'tsconfig.options.json'
 	 */
-	rootOptionsConfigFileName: string;
+	rootOptionsConfigFileName?: string;
 	/**
 	 * Updates and routes `outDir` in `tsconfig.json` to moon's cache,
 	 * for each project.
@@ -312,7 +312,7 @@ export interface TypeScriptConfig {
 	 *
 	 * @default true
 	 */
-	syncProjectReferences: boolean;
+	syncProjectReferences?: boolean;
 	/**
 	 * Syncs all project dependencies as `paths` in `tsconfig.json`,
 	 * for each project.
@@ -326,7 +326,7 @@ export interface TypeScriptConfig {
  */
 export interface ToolchainConfig {
 	/** @default 'https://moonrepo.dev/schemas/toolchain.json' */
-	$schema: string;
+	$schema?: string;
 	/** Configures and enables the Bun platform. */
 	bun: BunConfig | null;
 	/** Configures and enables the Deno platform. */

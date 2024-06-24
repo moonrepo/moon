@@ -523,6 +523,7 @@
       "additionalProperties": false
     },
     "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
       "type": "string"
     },
     "PnpmConfig": {
@@ -702,7 +703,9 @@
       "additionalProperties": false
     },
     "UnresolvedVersionSpec": {
-      "type": "string"
+      "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",
+      "type": "string",
+      "markdownDescription": "Represents an unresolved version or alias that must be resolved to a fully-qualified version."
     },
     "YarnConfig": {
       "description": "Options for Yarn, when used as a package manager.",

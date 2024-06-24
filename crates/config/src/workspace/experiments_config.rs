@@ -5,6 +5,7 @@ cacheable!(
     /// Configures experiments across the entire moon workspace.
     #[derive(Clone, Config, Debug)]
     pub struct ExperimentsConfig {
+        /// Enables the new & modern action pipeline.
         pub action_pipeline_v2: bool,
 
         #[deprecated]

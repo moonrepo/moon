@@ -35,7 +35,7 @@ export interface ConstraintsConfig {
 	 *
 	 * @default true
 	 */
-	enforceProjectTypeRelationships: boolean;
+	enforceProjectTypeRelationships?: boolean;
 	/**
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
@@ -45,23 +45,25 @@ export interface ConstraintsConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
+	/** Enables the new & modern action pipeline. */
+	actionPipelineV2: boolean;
 	/**
 	 * @default true
 	 * @deprecated
 	 */
-	interweavedTaskInheritance: boolean;
+	interweavedTaskInheritance?: boolean;
 	/**
 	 * Ensure that the a project alias is only used once. Duplicate
 	 * aliases will trigger a hard failure.
 	 *
 	 * @default true
 	 */
-	strictProjectAliases: boolean;
+	strictProjectAliases?: boolean;
 	/**
 	 * @default true
 	 * @deprecated
 	 */
-	taskOutputBoundaries: boolean;
+	taskOutputBoundaries?: boolean;
 }
 
 /** Configures an individual extension. */
@@ -78,7 +80,7 @@ export interface GeneratorConfig {
 	 * The list of file paths, relative from the workspace root,
 	 * in which to locate templates.
 	 */
-	templates: string[];
+	templates?: string[];
 }
 
 /** The optimization to use when hashing. */
@@ -94,7 +96,7 @@ export interface HasherConfig {
 	 *
 	 * @default 2500
 	 */
-	batchSize: number;
+	batchSize?: number;
 	/**
 	 * When `warnOnMissingInputs` is enabled, filters missing file
 	 * paths from logging a warning.
@@ -124,7 +126,7 @@ export interface HasherConfig {
 	 *
 	 * @default true
 	 */
-	warnOnMissingInputs: boolean;
+	warnOnMissingInputs?: boolean;
 }
 
 /** Configures how and where notifications are sent. */
@@ -158,19 +160,19 @@ export interface RunnerConfig {
 	 *
 	 * @default true
 	 */
-	autoCleanCache: boolean;
+	autoCleanCache?: boolean;
 	/**
 	 * The lifetime in which task outputs will be cached.
 	 *
 	 * @default '7 days'
 	 */
-	cacheLifetime: string;
+	cacheLifetime?: string;
 	/**
 	 * Automatically inherit color settings for all tasks being ran.
 	 *
 	 * @default true
 	 */
-	inheritColorsForPipedTasks: boolean;
+	inheritColorsForPipedTasks?: boolean;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand: boolean;
 }
@@ -191,7 +193,7 @@ export interface VcsConfig {
 	 *
 	 * @default 'master'
 	 */
-	defaultBranch: string;
+	defaultBranch?: string;
 	/** A mapping of hooks to commands to run when the hook is triggered. */
 	hooks: Record<string, string[]>;
 	/**
@@ -208,7 +210,7 @@ export interface VcsConfig {
 	 */
 	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */
-	remoteCandidates: string[];
+	remoteCandidates?: string[];
 	/** Generates hooks and scripts based on the `hooks` setting. */
 	syncHooks: boolean;
 }
@@ -219,7 +221,7 @@ export interface VcsConfig {
  */
 export interface WorkspaceConfig {
 	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
-	$schema: string;
+	$schema?: string;
 	/** Configures code ownership rules for generating a `CODEOWNERS` file. */
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
@@ -252,7 +254,7 @@ export interface WorkspaceConfig {
 	 *
 	 * @default true
 	 */
-	telemetry: boolean;
+	telemetry?: boolean;
 	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
@@ -297,6 +299,8 @@ export interface PartialConstraintsConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
+	/** Enables the new & modern action pipeline. */
+	actionPipelineV2?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

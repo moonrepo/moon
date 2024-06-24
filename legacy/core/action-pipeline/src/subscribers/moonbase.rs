@@ -411,8 +411,8 @@ fn map_status(status: &ActionStatus) -> update_job::JobStatus {
         ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut => {
             update_job::JobStatus::FAILED
         }
-        ActionStatus::Invalid | ActionStatus::Passed => update_job::JobStatus::PASSED,
+        ActionStatus::Passed => update_job::JobStatus::PASSED,
         ActionStatus::Running => update_job::JobStatus::RUNNING,
-        ActionStatus::Skipped => update_job::JobStatus::SKIPPED,
+        ActionStatus::Invalid | ActionStatus::Skipped => update_job::JobStatus::SKIPPED,
     }
 }

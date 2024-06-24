@@ -53,7 +53,7 @@ impl Job {
                     "Job cancelled (via signal)",
                 );
 
-                action.finish(ActionStatus::Invalid);
+                action.finish(ActionStatus::Skipped);
             }
 
             // Cancel if we have timed out

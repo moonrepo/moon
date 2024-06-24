@@ -1,0 +1,75 @@
+---
+slug: moon-v1.26
+title: moon v1.26 - New experimental pipeline, trace profiles, and more
+authors: [milesj]
+tags: [action, pipeline, trace, profile, shell]
+image: ./img/moon/v1.26.png
+---
+
+In this release, we focused primarily on a next-generation actions pipeline.
+
+<!--truncate-->
+
+## New experimental pipeline
+
+The [action pipeline](/docs/how-it-works/action-graph) or just "pipeline", is the system in which we
+actually run tasks in topological order when [`moon run`](/docs/commands/run),
+[`moon check`](/docs/commands/check), or [`moon ci`](/docs/commands/ci) is executed. The pipeline is
+powered by the [action graph](/docs/how-it-works/action-graph) (also known as a task graph or
+dependency graph) and is quite complex, as we need to efficiently run tasks on our thread pool,
+ensure dependency tasks are ran before running dependent tasks, handle signals (ctrl + c), and much
+more.
+
+Our current implementation "works" but could be much better, as it still has some problematic edge
+cases, [doesn't always shutdown correctly](https://github.com/moonrepo/moon/issues/902), and is
+pretty much tech debt at this point. To remedy this, we spent the last month working on a new action
+pipeline that aims to solve all of these problems, with a more modern implementation. Some such
+improvements are:
+
+- Increased performance with better concurrency handling and scheduling. Threads in the pool should
+  now be constantly utilized.
+- More accurately monitors signals (ctrl+c) and shutdowns. We now use Rust channels internally to
+  manage this state.
+- The CLI will now wait for aborted/cancelled task handles to exit before the entire CLI exits. This
+  should alleviate zombie processes.
+
+With all that said, unlike previous releases that replaced the old feature with a new feature, we
+chose to gate this new pipeline behind an experimental flag. We want to ensure this works correctly
+in all cases, before enabling it by default. So please test it and report back any issues! We've
+successfully been using it on moon's repository without issue.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  actionPipelineV2: true
+```
+
+## Generate trace profiles
+
+A major goal of moon is to be extremely efficient and to optimize as much as possible. To help
+accomplish this goal, we're introducing the global CLI `--dump` flag, which will generate a trace
+profile that can be loaded and reviewed in `chrome://tracing`.
+
+This will display a flame graph with labeled operations, their timing information, and any
+associated data. This is the first step in capturing this kind of information, and it will only get
+better moving forward.
+
+## Additional shell support
+
+Based on the work in [proto](/proto), we now have built-in support for additional command line
+shells. To start, we've updated the [`unixShell`](/docs/config/project#unixshell) and
+[`windowsShell`](/docs/config/project#windowsshell) task options to support the following new
+shells:
+
+- Unix: `ion`, `nu` (nushell), `pwsh` (powershell), `xonsh`.
+- Windows: `elvish`, `fish`, `nu` (nushell), `xonsh`
+
+And furthermore, we've added Nushell completion support to the
+[`moon completions`](/docs/commands/completions) command!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.26.0) for a full list
+of changes.
+
+- Updated CLI command execution to be more performant, and to reduce our usage of concurrent locks.
+- Updated proto to v0.37.1 (from v0.36.2).

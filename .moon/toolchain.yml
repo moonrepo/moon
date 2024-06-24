@@ -7,10 +7,10 @@ rust:
   syncToolchainConfig: true
 
 node:
-  version: '20.13.1'
+  version: '20.15.0'
   packageManager: 'yarn'
   yarn:
-    version: '4.2.2'
+    version: '4.3.1'
   addEnginesConstraint: false
   inferTasksFromScripts: false
 

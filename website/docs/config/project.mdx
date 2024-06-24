@@ -1145,6 +1145,21 @@ tasks:
       shell: false
 ```
 
+#### `timeout`<VersionLabel version="1.26.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#timeout" />
+
+The maximum time in seconds that the task is allowed to run, before it is force cancelled. If not
+defined, will run indefinitely.
+
+```yaml title="moon.yml" {5}
+tasks:
+  build:
+    # ...
+    options:
+      timeout: 120
+```
+
 #### `unixShell`<VersionLabel version="1.21.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#unixShell" />

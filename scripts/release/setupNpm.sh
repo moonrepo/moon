@@ -22,8 +22,12 @@ if [[ "$NPM_CHANNEL" == "canary" || "$NPM_CHANNEL" == "nightly" ]]; then
 
 		# For the cli package, replace itself and all dep versions
 		if [[ "$package" == *"cli"* ]]; then
+			# Extract the new version, since it was changed via `yarn version apply`
+			baseVersion=$(jq -r ".version" package.json)
+			version="$baseVersion$CLI_VERSION_BUILD"
+
 			pkg=$(cat package.json)
-			echo "${pkg//$CLI_VERSION_BASE/$CLI_VERSION}" > package.json
+			echo "${pkg//$baseVersion/$version}" > package.json
 
 		# For core packages, append the preid to the version
 		else

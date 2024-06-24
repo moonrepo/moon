@@ -200,7 +200,7 @@ export type TemplateVariable =
  */
 export interface TemplateConfig {
 	/** @default 'https://moonrepo.dev/schemas/template.json' */
-	$schema: string;
+	$schema?: string;
 	/** A description on what the template scaffolds. */
 	description: string;
 	/**
@@ -224,7 +224,7 @@ export interface TemplateConfig {
 /** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
 export interface TemplateFrontmatterConfig {
 	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
-	$schema: string;
+	$schema?: string;
 	force: boolean;
 	skip: boolean;
 	to: string | null;

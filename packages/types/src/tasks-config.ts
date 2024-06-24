@@ -29,10 +29,10 @@ export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
 /** A list of available shells on Unix. */
-export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'zsh';
+export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'ion' | 'nu' | 'pwsh' | 'xonsh' | 'zsh';
 
 /** A list of available shells on Windows. */
-export type TaskWindowsShell = 'bash' | 'pwsh';
+export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'nu' | 'pwsh' | 'xonsh';
 
 /** Options to control task inheritance and execution. */
 export interface TaskOptionsConfig {
@@ -129,6 +129,8 @@ export interface TaskOptionsConfig {
 	 * directly while relying on `PATH` resolution.
 	 */
 	shell: boolean | null;
+	/** The maximum time in seconds that a task can run before being cancelled. */
+	timeout: number | null;
 	/** The shell to run the task in when on a Unix-based machine. */
 	unixShell: TaskUnixShell | null;
 	/** The shell to run the task in when on a Windows machine. */
@@ -212,7 +214,7 @@ export interface TaskConfig {
  */
 export interface InheritedTasksConfig {
 	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
-	$schema: string;
+	$schema?: string;
 	/**
 	 * Extends another tasks configuration file. Supports a relative
 	 * file path or a secure URL.
@@ -350,6 +352,8 @@ export interface PartialTaskOptionsConfig {
 	 * directly while relying on `PATH` resolution.
 	 */
 	shell?: boolean | null;
+	/** The maximum time in seconds that a task can run before being cancelled. */
+	timeout?: number | null;
 	/** The shell to run the task in when on a Unix-based machine. */
 	unixShell?: TaskUnixShell | null;
 	/** The shell to run the task in when on a Windows machine. */

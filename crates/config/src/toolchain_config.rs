@@ -1,6 +1,5 @@
 // .moon/toolchain.yml
 
-use crate::config_cache::ConfigCache;
 use crate::language_platform::*;
 use crate::toolchain::*;
 use rustc_hash::FxHashMap;
@@ -215,6 +214,7 @@ impl ToolchainConfig {
         path: P,
         proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
+        use crate::config_cache::ConfigCache;
         use crate::validate::check_yml_extension;
         use moon_common::color;
         use schematic::ConfigLoader;

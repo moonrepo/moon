@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type { UnresolvedVersionSpec } from './toolchain-config';
+import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -79,7 +79,7 @@ export interface OwnersConfig {
 	 *
 	 * @default 1
 	 */
-	requiredApprovals: number;
+	requiredApprovals?: number;
 }
 
 /** Expanded information about the project. */
@@ -177,7 +177,7 @@ export interface ProjectWorkspaceConfig {
  */
 export interface ProjectConfig {
 	/** @default 'https://moonrepo.dev/schemas/project.json' */
-	$schema: string;
+	$schema?: string;
 	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
 	/**

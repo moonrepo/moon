@@ -215,6 +215,11 @@
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
       "properties": {
+        "actionPipelineV2": {
+          "title": "actionPipelineV2",
+          "description": "Enables the new & modern action pipeline.",
+          "type": "boolean"
+        },
         "interweavedTaskInheritance": {
           "title": "interweavedTaskInheritance",
           "default": true,
@@ -381,6 +386,7 @@
       "additionalProperties": false
     },
     "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
       "type": "string"
     },
     "RunnerConfig": {

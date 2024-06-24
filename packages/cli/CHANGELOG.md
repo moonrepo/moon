@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.26.0
 
 #### 💥 Breaking
 

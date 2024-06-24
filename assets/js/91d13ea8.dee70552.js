@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[68452],{32553:s=>{s.exports=JSON.parse('{"tag":{"label":"vcs","permalink":"/docs/tags/vcs","allTagsPath":"/docs/tags","count":1,"items":[{"id":"guides/vcs-hooks","title":"VCS hooks","description":"VCS hooks (most popular with Git) are a","permalink":"/docs/guides/vcs-hooks"}],"unlisted":false}}')}}]);

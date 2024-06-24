@@ -2,11 +2,79 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2024-06-16T00:00:00.000Z</updated>
+    <updated>2024-06-24T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.26 - New experimental pipeline, trace profiles, and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.26</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.26"/>
+        <updated>2024-06-24T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we focused primarily on a next-generation actions pipeline.]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we focused primarily on a next-generation actions pipeline.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-experimental-pipeline">New experimental pipeline<a class="hash-link" aria-label="Direct link to New experimental pipeline" title="Direct link to New experimental pipeline" href="https://moonrepo.dev/blog/moon-v1.26#new-experimental-pipeline">​</a></h2>
+<p>The <a href="https://moonrepo.dev/docs/how-it-works/action-graph">action pipeline</a> or just "pipeline", is the system in which we
+actually run tasks in topological order when <a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>,
+<a href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a>, or <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> is executed. The pipeline is
+powered by the <a href="https://moonrepo.dev/docs/how-it-works/action-graph">action graph</a> (also known as a task graph or
+dependency graph) and is quite complex, as we need to efficiently run tasks on our thread pool,
+ensure dependency tasks are ran before running dependent tasks, handle signals (ctrl + c), and much
+more.</p>
+<p>Our current implementation "works" but could be much better, as it still has some problematic edge
+cases, <a href="https://github.com/moonrepo/moon/issues/902" target="_blank" rel="noopener noreferrer">doesn't always shutdown correctly</a>, and is
+pretty much tech debt at this point. To remedy this, we spent the last month working on a new action
+pipeline that aims to solve all of these problems, with a more modern implementation. Some such
+improvements are:</p>
+<ul>
+<li>Increased performance with better concurrency handling and scheduling. Threads in the pool should
+now be constantly utilized.</li>
+<li>More accurately monitors signals (ctrl+c) and shutdowns. We now use Rust channels internally to
+manage this state.</li>
+<li>The CLI will now wait for aborted/cancelled task handles to exit before the entire CLI exits. This
+should alleviate zombie processes.</li>
+</ul>
+<p>With all that said, unlike previous releases that replaced the old feature with a new feature, we
+chose to gate this new pipeline behind an experimental flag. We want to ensure this works correctly
+in all cases, before enabling it by default. So please test it and report back any issues! We've
+successfully been using it on moon's repository without issue.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.moon/workspace.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">actionPipelineV2</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="generate-trace-profiles">Generate trace profiles<a class="hash-link" aria-label="Direct link to Generate trace profiles" title="Direct link to Generate trace profiles" href="https://moonrepo.dev/blog/moon-v1.26#generate-trace-profiles">​</a></h2>
+<p>A major goal of moon is to be extremely efficient and to optimize as much as possible. To help
+accomplish this goal, we're introducing the global CLI <code>--dump</code> flag, which will generate a trace
+profile that can be loaded and reviewed in <code>chrome://tracing</code>.</p>
+<p>This will display a flame graph with labeled operations, their timing information, and any
+associated data. This is the first step in capturing this kind of information, and it will only get
+better moving forward.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="additional-shell-support">Additional shell support<a class="hash-link" aria-label="Direct link to Additional shell support" title="Direct link to Additional shell support" href="https://moonrepo.dev/blog/moon-v1.26#additional-shell-support">​</a></h2>
+<p>Based on the work in <a href="https://moonrepo.dev/proto">proto</a>, we now have built-in support for additional command line
+shells. To start, we've updated the <a href="https://moonrepo.dev/docs/config/project#unixshell"><code>unixShell</code></a> and
+<a href="https://moonrepo.dev/docs/config/project#windowsshell"><code>windowsShell</code></a> task options to support the following new
+shells:</p>
+<ul>
+<li>Unix: <code>ion</code>, <code>nu</code> (nushell), <code>pwsh</code> (powershell), <code>xonsh</code>.</li>
+<li>Windows: <code>elvish</code>, <code>fish</code>, <code>nu</code> (nushell), <code>xonsh</code></li>
+</ul>
+<p>And furthermore, we've added Nushell completion support to the
+<a href="https://moonrepo.dev/docs/commands/completions"><code>moon completions</code></a> command!</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.26#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.26.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Updated CLI command execution to be more performant, and to reduce our usage of concurrent locks.</li>
+<li>Updated proto to v0.37.1 (from v0.36.2).</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="action" term="action"/>
+        <category label="pipeline" term="pipeline"/>
+        <category label="trace" term="trace"/>
+        <category label="profile" term="profile"/>
+        <category label="shell" term="shell"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.37 - Calver support and self diagnosis]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.37</id>
@@ -14,7 +82,7 @@
         <updated>2024-06-16T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[This is a small release, but includes 2 very important features.]]></summary>
         <content type="html"><![CDATA[<p>This is a small release, but includes 2 very important features.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="calender-versioning-support">Calender versioning support<a href="https://moonrepo.dev/blog/proto-v0.37#calender-versioning-support" class="hash-link" aria-label="Direct link to Calender versioning support" title="Direct link to Calender versioning support">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="calender-versioning-support">Calender versioning support<a class="hash-link" aria-label="Direct link to Calender versioning support" title="Direct link to Calender versioning support" href="https://moonrepo.dev/blog/proto-v0.37#calender-versioning-support">​</a></h2>
 <p>For the most part, tools use <a href="http://semver.org/" target="_blank" rel="noopener noreferrer">semver</a> (semantic versions) for their releases,
 but every so often you run into a tool that uses another format, <a href="https://calver.org/" target="_blank" rel="noopener noreferrer">calver</a>
 (calendar versions). Some examples of calver are <code>2024-02</code>, <code>2024-10-23</code>, and <code>2024-12-9.123</code>.</p>
@@ -28,7 +96,7 @@ calver is dash-separated. The day part (patch) is also optional in calver.</p>
 <div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>We wrote a ton of tests to cover all the formats and edge cases we could think of, but if you run
 into a tool that fails to parse versions correctly, please report an issue immediately! All of our
 built-in tools have been tested against.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-diagnose-command">New <code>proto diagnose</code> command<a href="https://moonrepo.dev/blog/proto-v0.37#new-proto-diagnose-command" class="hash-link" aria-label="Direct link to new-proto-diagnose-command" title="Direct link to new-proto-diagnose-command">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-diagnose-command">New <code>proto diagnose</code> command<a class="hash-link" aria-label="Direct link to new-proto-diagnose-command" title="Direct link to new-proto-diagnose-command" href="https://moonrepo.dev/blog/proto-v0.37#new-proto-diagnose-command">​</a></h2>
 <p>A common issue within the community that we've seen is commands not being available after installing
 a tool. Most of the time, this is caused by certain proto paths not existing within <code>PATH</code>. To help
 remedy these issues moving forward, we're introducing a new command,
@@ -36,7 +104,7 @@ remedy these issues moving forward, we're introducing a new command,
 with your proto installation.</p>
 <div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto diagnose</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Shell: zsh</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Shell profile: ~/.zshrc</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Errors</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Issue: Bin directory (~/.proto/bin) was found BEFORE the shims directory (~/.proto/shims) on PATH</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Resolution: Ensure the shims path comes before the bin path in your shell</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Warnings</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Issue: Missing PROTO_HOME environment variable (Will default to ~/.proto if not defined)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Resolution: Export PROTO_HOME="$HOME/.proto" from your shell</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>In the future, we'll expand on this command by also bubbling up issues from your installed tools.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.37#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.37#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.37.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -60,7 +128,7 @@ of changes.</p>
         <updated>2024-06-03T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this release, we're taking the first step in supporting a plugin registry.]]></summary>
         <content type="html"><![CDATA[<p>In this release, we're taking the first step in supporting a plugin registry.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-static-registry">New static registry<a href="https://moonrepo.dev/blog/proto-v0.36#new-static-registry" class="hash-link" aria-label="Direct link to New static registry" title="Direct link to New static registry">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-static-registry">New static registry<a class="hash-link" aria-label="Direct link to New static registry" title="Direct link to New static registry" href="https://moonrepo.dev/blog/proto-v0.36#new-static-registry">​</a></h2>
 <p>Our long-term plan for proto is to provide a server-based registry in which users could publish and
 manage plugins, and immediately make them available to the community. However, this is quite a
 mountain of work, and will take some time, but making plugins available <em>now</em> is a priority.</p>
@@ -68,17 +136,17 @@ mountain of work, and will take some time, but making plugins available <em>now<
 in static JSON files, located in the official
 <a href="https://github.com/moonrepo/proto/tree/master/registry" target="_blank" rel="noopener noreferrer">moonrepo/proto</a> repository. This will help
 unblock new features moving forward.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-plugin-search-command">New <code>proto plugin search</code> command<a href="https://moonrepo.dev/blog/proto-v0.36#new-proto-plugin-search-command" class="hash-link" aria-label="Direct link to new-proto-plugin-search-command" title="Direct link to new-proto-plugin-search-command">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-plugin-search-command">New <code>proto plugin search</code> command<a class="hash-link" aria-label="Direct link to new-proto-plugin-search-command" title="Direct link to new-proto-plugin-search-command" href="https://moonrepo.dev/blog/proto-v0.36#new-proto-plugin-search-command">​</a></h2>
 <p>Because of the static registry work above, we're now able to introduce a new command,
 <a href="https://moonrepo.dev/docs/proto/commands/plugin/search"><code>proto plugin search</code></a>, that can be used to search for plugins
 provided by the community. No longer will you need to browse the documentation, or search Google for
 available plugins.</p>
 <div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto plugin search moon</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Plugins</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Available for query: moon</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"> Plugin  Author    Format  Description                                                          Locator</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"> moon    moonrepo  TOML    moon is a multi-language build system and codebase management tool.  https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-unpin-command">New <code>proto unpin</code> command<a href="https://moonrepo.dev/blog/proto-v0.36#new-proto-unpin-command" class="hash-link" aria-label="Direct link to new-proto-unpin-command" title="Direct link to new-proto-unpin-command">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-unpin-command">New <code>proto unpin</code> command<a class="hash-link" aria-label="Direct link to new-proto-unpin-command" title="Direct link to new-proto-unpin-command" href="https://moonrepo.dev/blog/proto-v0.36#new-proto-unpin-command">​</a></h2>
 <p>Additionally, a command that probably should have existed from the start, but did not, is now
 available. The <a href="https://moonrepo.dev/docs/proto/commands/unpin"><code>proto unpin</code></a> command does exactly as its name says, it
 unpins (removes) a version from a <code>.prototools</code> file.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-locator-syntax-changes">Plugin locator syntax changes<a href="https://moonrepo.dev/blog/proto-v0.36#plugin-locator-syntax-changes" class="hash-link" aria-label="Direct link to Plugin locator syntax changes" title="Direct link to Plugin locator syntax changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-locator-syntax-changes">Plugin locator syntax changes<a class="hash-link" aria-label="Direct link to Plugin locator syntax changes" title="Direct link to Plugin locator syntax changes" href="https://moonrepo.dev/blog/proto-v0.36#plugin-locator-syntax-changes">​</a></h2>
 <p>We've decided to slightly change the syntax of plugin locator strings by embracing the common
 protocol syntax. Instead of <code>source:</code> and <code>github:</code>, we now use <code>file://</code>, <code>https://</code>, and
 <code>github://</code>. The former syntax will continue to work for the time being, but will be removed
@@ -92,7 +160,7 @@ entirely in the future.</p>
 <p>If a <code>proto</code> command modifies a <code>.prototools</code> file, the file will be saved with the new syntax.
 Don't be surprised when this happens!</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.36#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.36#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.36.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -120,7 +188,7 @@ trying to write to the same location.</li>
         <updated>2024-05-27T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this release, we focused primarily on rewriting our task runner, and improving our console.]]></summary>
         <content type="html"><![CDATA[<p>In this release, we focused primarily on rewriting our task runner, and improving our console.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-task-runner-implementation">New task runner implementation<a href="https://moonrepo.dev/blog/moon-v1.25#new-task-runner-implementation" class="hash-link" aria-label="Direct link to New task runner implementation" title="Direct link to New task runner implementation">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-task-runner-implementation">New task runner implementation<a class="hash-link" aria-label="Direct link to New task runner implementation" title="Direct link to New task runner implementation" href="https://moonrepo.dev/blog/moon-v1.25#new-task-runner-implementation">​</a></h2>
 <p>It's been over a month since our last release, but we've been really busy rewriting our task runner
 from the ground up! In other build systems, a task runner is typically the orchestator that runs
 multiple tasks and manages their state. In moon this is known as the action pipeline (or just
@@ -143,7 +211,7 @@ verifying edge cases.</p>
 <a href="https://github.com/moonrepo/moon/tree/master/crates/task-runner" target="_blank" rel="noopener noreferrer">Rust crate</a>, and the
 <a href="https://github.com/moonrepo/moon/pull/1463" target="_blank" rel="noopener noreferrer">pull request</a> itself.</p>
 </blockquote>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="fine-grained-operations">Fine-grained operations<a href="https://moonrepo.dev/blog/moon-v1.25#fine-grained-operations" class="hash-link" aria-label="Direct link to Fine-grained operations" title="Direct link to Fine-grained operations">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="fine-grained-operations">Fine-grained operations<a class="hash-link" aria-label="Direct link to Fine-grained operations" title="Direct link to Fine-grained operations" href="https://moonrepo.dev/blog/moon-v1.25#fine-grained-operations">​</a></h3>
 <p>A major goal of moon is bubbling up information to the user that is applicable to the current
 workflow, but what about when that workflow must be debugged or optimized? At that point, it was
 almost impossible without digging into the source code.</p>
@@ -163,7 +231,7 @@ the <code>build</code> task for our website.</p>
 taking 17 seconds, which is 2 seconds longer than the build itself! Without this information, we
 would have never known that the archive was taking this long, but now we do, and we can optimize it
 in a future release!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="run-summaries">Run summaries<a href="https://moonrepo.dev/blog/moon-v1.25#run-summaries" class="hash-link" aria-label="Direct link to Run summaries" title="Direct link to Run summaries">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="run-summaries">Run summaries<a class="hash-link" aria-label="Direct link to Run summaries" title="Direct link to Run summaries" href="https://moonrepo.dev/blog/moon-v1.25#run-summaries">​</a></h3>
 <p>Because of the new task runner and the new console (<a href="https://moonrepo.dev/blog/moon-v1.25#new-console-reporting-layer">below</a>), we have
 the ability to bubble up more information than before. Based on requests from the community, we've
 taken the output from <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> and applied it to both
@@ -173,7 +241,7 @@ flag.</p>
 task related ones), and include failed tasks for review. For example, here's the output of
 <code>moon check website --summary</code> on moon's repository.</p>
 <div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check website --summary</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ types:build (cached, 1ms, 21bd9add)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ runtime:build (cached, e8363e65)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ website:typecheck (cached, 0ab91eaa)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ website:format (cached, 07ae2388)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ website:test (cached, 11d33e2e)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ website:lint (cached, 2197fbb1)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ website:build (10606e37)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">▪▪▪▪ website:build (15s 789ms, 10606e37)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">SUMMARY</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass SyncWorkspace</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">skip SetupNodeTool(20.13.1) (skipped, 250ms)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">skip InstallNodeDeps(20.13.1) (skipped, 13ms, f341872f)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass SyncNodeProject(types) (1ms)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass SyncNodeProject(runtime) (1ms)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(types:build) (cached, 140ms, 21bd9add)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass SyncNodeProject(website) (1ms)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(runtime:build) (cached, 32ms, e8363e65)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(website:build) (33s 614ms, 10606e37)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(website:format) (cached, 59ms, 07ae2388)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(website:lint) (cached, 101ms, 2197fbb1)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(website:test) (cached, 64ms, 11d33e2e)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">pass RunTask(website:typecheck) (cached, 59ms, 0ab91eaa)</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">STATS</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Actions: 11 completed (6 cached), 2 skipped</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">   Time: 34s 52ms</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-console-reporting-layer">New console reporting layer<a href="https://moonrepo.dev/blog/moon-v1.25#new-console-reporting-layer" class="hash-link" aria-label="Direct link to New console reporting layer" title="Direct link to New console reporting layer">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-console-reporting-layer">New console reporting layer<a class="hash-link" aria-label="Direct link to New console reporting layer" title="Direct link to New console reporting layer" href="https://moonrepo.dev/blog/moon-v1.25#new-console-reporting-layer">​</a></h2>
 <p>For the most part, when something in moon needed to be printed to the console, we would simply print
 it directly at that point in time, anywhere within the codebase. While this worked, it made it
 difficult to orchestrate output from different parts of the codebase, and in the context of Rust,
@@ -189,7 +257,7 @@ the action pipeline (and the new task runner).</p>
 <p>This reporter layer enables new console UI implementations in the future based on your preferences.
 For example, an <a href="https://ratatui.rs/" target="_blank" rel="noopener noreferrer">interactive UI</a> composed of tables, tabs, and more,
 representing the current state of the pipeline.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.25#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.25#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.25.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -216,7 +284,7 @@ performance improvements.</li>
         <updated>2024-05-05T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[This is a light release that adds support for more terminal shells.]]></summary>
         <content type="html"><![CDATA[<p>This is a light release that adds support for more terminal shells.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="experimental-support-for-new-shells">Experimental support for new shells<a href="https://moonrepo.dev/blog/proto-v0.35#experimental-support-for-new-shells" class="hash-link" aria-label="Direct link to Experimental support for new shells" title="Direct link to Experimental support for new shells">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="experimental-support-for-new-shells">Experimental support for new shells<a class="hash-link" aria-label="Direct link to Experimental support for new shells" title="Direct link to Experimental support for new shells" href="https://moonrepo.dev/blog/proto-v0.35#experimental-support-for-new-shells">​</a></h2>
 <p>proto has always supported the primary and common shells like Bash, Zsh, Fish, PowerShell, and more.
 In recent years, there has been an influx of new and modern shells, built with technologies such as
 Rust. We felt it was time to start supporting some of these new shells, and have added
@@ -228,7 +296,7 @@ Rust. We felt it was time to start supporting some of these new shells, and have
 </ul>
 <p>Furthermore, the <a href="https://moonrepo.dev/docs/proto/commands/setup"><code>proto setup</code></a> command (which is ran when installing
 proto) will now prompt the user to select a shell if one could not be detected.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="generate-trace-profiles">Generate trace profiles<a href="https://moonrepo.dev/blog/proto-v0.35#generate-trace-profiles" class="hash-link" aria-label="Direct link to Generate trace profiles" title="Direct link to Generate trace profiles">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="generate-trace-profiles">Generate trace profiles<a class="hash-link" aria-label="Direct link to Generate trace profiles" title="Direct link to Generate trace profiles" href="https://moonrepo.dev/blog/proto-v0.35#generate-trace-profiles">​</a></h2>
 <p>A major goal of proto is to be extremely efficient and to optimize as much as possible. To help
 accomplish this goal, we're introducing the global CLI <code>--dump</code> flag, which will generate a trace
 profile that can be loaded and reviewed in <code>chrome://tracing</code>.</p>
@@ -238,7 +306,7 @@ better moving forward.</p>
 <div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>Generating a profile for running a tool, either with <code>proto run node</code> or <code>node</code> itself, will not
 work. This is because the tool process <em>replaces</em> the current proto process entirely, causing the
 profile to be interrupted and abort.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.35#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.35#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.35.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>]]></content>
         <author>
@@ -257,7 +325,7 @@ of changes.</p>]]></content>
         <updated>2024-04-17T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[This is a light release that focused solely on requests and improvements from the community.]]></summary>
         <content type="html"><![CDATA[<p>This is a light release that focused solely on requests and improvements from the community.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="exclusive-resources-with-task-mutexes">Exclusive resources with task mutexes<a href="https://moonrepo.dev/blog/moon-v1.24#exclusive-resources-with-task-mutexes" class="hash-link" aria-label="Direct link to Exclusive resources with task mutexes" title="Direct link to Exclusive resources with task mutexes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="exclusive-resources-with-task-mutexes">Exclusive resources with task mutexes<a class="hash-link" aria-label="Direct link to Exclusive resources with task mutexes" title="Direct link to Exclusive resources with task mutexes" href="https://moonrepo.dev/blog/moon-v1.24#exclusive-resources-with-task-mutexes">​</a></h2>
 <p>Some tasks may require exclusive access to a resource, like a database, file, or network connection,
 but other parallel running tasks may also require access to the same resource. When both of these
 tasks run, they may conflict with each other, causing one or both to fail. This wasn't an easy
@@ -274,7 +342,7 @@ task is running, the <code>client</code> task will wait until the <code>server</
 both tasks don't conflict with each other.</p>
 <p>This could technically be solved through task <code>deps</code>, but with a mutex, it allows you to decouple
 project and task dependencies, and instead focus on a virtual resource that is being locked.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="auto-detect-basehead-for-moon-ci">Auto-detect base/head for <code>moon ci</code><a href="https://moonrepo.dev/blog/moon-v1.24#auto-detect-basehead-for-moon-ci" class="hash-link" aria-label="Direct link to auto-detect-basehead-for-moon-ci" title="Direct link to auto-detect-basehead-for-moon-ci">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="auto-detect-basehead-for-moon-ci">Auto-detect base/head for <code>moon ci</code><a class="hash-link" aria-label="Direct link to auto-detect-basehead-for-moon-ci" title="Direct link to auto-detect-basehead-for-moon-ci" href="https://moonrepo.dev/blog/moon-v1.24#auto-detect-basehead-for-moon-ci">​</a></h2>
 <p>We've updated <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a> to try and detect the base and head revisions
 automatically when running in a popular CI provider, like GitLab and Jenkins. For the base revision,
 we'll use the base/target commit SHA or target branch, while the head revision will use the source
@@ -292,7 +360,7 @@ arguments. Below is the order of precedence:</p>
 crate. Please refer to that crate for supported providers, and which of them support revision
 detection (primarily the <code>base_revision</code> and <code>head_revision</code> fields).</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="include-dependents-for-focused-project-graph">Include dependents for focused project graph<a href="https://moonrepo.dev/blog/moon-v1.24#include-dependents-for-focused-project-graph" class="hash-link" aria-label="Direct link to Include dependents for focused project graph" title="Direct link to Include dependents for focused project graph">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="include-dependents-for-focused-project-graph">Include dependents for focused project graph<a class="hash-link" aria-label="Direct link to Include dependents for focused project graph" title="Direct link to Include dependents for focused project graph" href="https://moonrepo.dev/blog/moon-v1.24#include-dependents-for-focused-project-graph">​</a></h2>
 <p>When running <a href="https://moonrepo.dev/docs/commands/project-graph"><code>moon project-graph &lt;id&gt;</code></a>, we visualize a graph of the
 focused project and all of its dependencies (other projects it depends on). However, if you wanted
 to also visualize dependents (other projects that depend on the focused project), this was currently
@@ -303,7 +371,7 @@ flattenDiagnosticMessageText, which will include direct dependents in the graph.
 <p>We also felt dependent information can be useful when querying projects, so have also added support
 for the <code>--dependents</code> flag to the <a href="https://moonrepo.dev/docs/commands/query/projects"><code>moon query projects</code></a> command.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon query projects </span><span class="token parameter variable" style="color:#fef9c3">--affected</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--dependents</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.24#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.24#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.24.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -335,7 +403,7 @@ mechanism to be controlled.</li>
         <updated>2024-04-07T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this release, we've focused on the developer experience for common workflows.]]></summary>
         <content type="html"><![CDATA[<p>In this release, we've focused on the developer experience for common workflows.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-only-prototools-detection-strategy">New <code>only-prototools</code> detection strategy<a href="https://moonrepo.dev/blog/proto-v0.34#new-only-prototools-detection-strategy" class="hash-link" aria-label="Direct link to new-only-prototools-detection-strategy" title="Direct link to new-only-prototools-detection-strategy">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-only-prototools-detection-strategy">New <code>only-prototools</code> detection strategy<a class="hash-link" aria-label="Direct link to new-only-prototools-detection-strategy" title="Direct link to new-only-prototools-detection-strategy" href="https://moonrepo.dev/blog/proto-v0.34#new-only-prototools-detection-strategy">​</a></h2>
 <p>proto currently detects versions at runtime using
 <a href="https://moonrepo.dev/docs/proto/config#detect-strategy">1 of 2 strategies</a>, <code>first-available</code> which checks
 <code>.prototools</code> files and tool-specific files (like <code>package.json</code> engines), whichever is first, or
@@ -348,7 +416,7 @@ versions, and to avoid unexpected versions from random configs/directories.</p>
 <blockquote>
 <p>For the v1 release, we plan to make this strategy the new default.</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-status-command">New <code>proto status</code> command<a href="https://moonrepo.dev/blog/proto-v0.34#new-proto-status-command" class="hash-link" aria-label="Direct link to new-proto-status-command" title="Direct link to new-proto-status-command">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-proto-status-command">New <code>proto status</code> command<a class="hash-link" aria-label="Direct link to new-proto-status-command" title="Direct link to new-proto-status-command" href="https://moonrepo.dev/blog/proto-v0.34#new-proto-status-command">​</a></h2>
 <p>Sometimes you simply want to know what tools are currently active for a target directory, what
 versions those tools are resolved to, and the configuration file in which they are defined. To
 satisfy this requirement, we've added a new <a href="https://moonrepo.dev/docs/proto/commands/status"><code>proto status</code></a> command,
@@ -356,7 +424,7 @@ which outputs something like the following:</p>
 <div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto status</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Tool  Configured  Resolved  Installed                   Config</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">deno  1.40.0      1.40.0    ~/.proto/tools/deno/1.40.0  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">node  20.8.0      20.8.0    ~/.proto/tools/node/20.8.0  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">npm   10.1.0      10.1.0    ~/.proto/tools/npm/10.1.0   ~/.prototools</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>By default this includes tools from all <code>.prototools</code> files up the hierarchy, excluding
 <code>~/.proto/.prototools</code>. To include global tools as well, pass <code>--include-global</code>.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-proto-outdated-experience">Improved <code>proto outdated</code> experience<a href="https://moonrepo.dev/blog/proto-v0.34#improved-proto-outdated-experience" class="hash-link" aria-label="Direct link to improved-proto-outdated-experience" title="Direct link to improved-proto-outdated-experience">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-proto-outdated-experience">Improved <code>proto outdated</code> experience<a class="hash-link" aria-label="Direct link to improved-proto-outdated-experience" title="Direct link to improved-proto-outdated-experience" href="https://moonrepo.dev/blog/proto-v0.34#improved-proto-outdated-experience">​</a></h2>
 <p>The <a href="https://moonrepo.dev/docs/proto/commands/outdated"><code>proto outdated</code></a> command has worked "alright" but its developer
 experience wasn't the best. The terminal output was rudimentary, and writing updated versions to
 <code>.prototools</code> would save to the current directory, instead of the directory they are configured in.</p>
@@ -370,12 +438,12 @@ experience wasn't the best. The terminal output was rudimentary, and writing upd
 <li>Updated the <code>--latest</code> flag to use the latest version when updating, instead of newest.</li>
 </ul>
 <div class="codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto outdated</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Tool  Current  Newest   Latest  Config</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">deno  1.40.0   1.42.4   1.42.4  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">node  20.8.0   20.12.2  21.7.3  ~/.prototools</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">npm   10.1.0   10.5.2   10.5.2  ~/.prototools</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-about-v032-and-v033">What about v0.32 and v0.33?<a href="https://moonrepo.dev/blog/proto-v0.34#what-about-v032-and-v033" class="hash-link" aria-label="Direct link to What about v0.32 and v0.33?" title="Direct link to What about v0.32 and v0.33?">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-about-v032-and-v033">What about v0.32 and v0.33?<a class="hash-link" aria-label="Direct link to What about v0.32 and v0.33?" title="Direct link to What about v0.32 and v0.33?" href="https://moonrepo.dev/blog/proto-v0.34#what-about-v032-and-v033">​</a></h2>
 <p>You may have noticed that we don't have blog posts for either of these versions. The v0.32 release
 was a relatively light release with no meaningful changes, so we opted to not write a blog post for
 it. As for v0.33, we ran into build issues while releasing it, so we decided to skip it and move on
 to v0.34.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.34#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.34#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.34.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -400,10 +468,10 @@ environment variable on Windows. To disable this functionality, pass <code>--no-
         <summary type="html"><![CDATA[It's been a month since our last release, and we're excited to land major codegen and task]]></summary>
         <content type="html"><![CDATA[<p>It's been a month since our last release, and we're excited to land major codegen and task
 improvements.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="template--generator-improvements">Template &amp; generator improvements<a href="https://moonrepo.dev/blog/moon-v1.23#template--generator-improvements" class="hash-link" aria-label="Direct link to Template &amp; generator improvements" title="Direct link to Template &amp; generator improvements">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="template--generator-improvements">Template &amp; generator improvements<a class="hash-link" aria-label="Direct link to Template &amp; generator improvements" title="Direct link to Template &amp; generator improvements" href="https://moonrepo.dev/blog/moon-v1.23#template--generator-improvements">​</a></h2>
 <p>Based on feedback and requests from community, we've made quite a few improvements to our code
 generation workflow!</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="git-and-npm-template-locators">Git and npm template locators<a href="https://moonrepo.dev/blog/moon-v1.23#git-and-npm-template-locators" class="hash-link" aria-label="Direct link to Git and npm template locators" title="Direct link to Git and npm template locators">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="git-and-npm-template-locators">Git and npm template locators<a class="hash-link" aria-label="Direct link to Git and npm template locators" title="Direct link to Git and npm template locators" href="https://moonrepo.dev/blog/moon-v1.23#git-and-npm-template-locators">​</a></h3>
 <p>Our <a href="https://moonrepo.dev/docs/config/workspace#templates"><code>generator.templates</code></a> setting has only supported file system
 paths, relative from the workspace root. This has made it quite difficult to share templates across
 repositories, but no longer!</p>
@@ -416,7 +484,7 @@ example:</p>
 <p>Learn more about this in the official
 <a href="https://moonrepo.dev/docs/guides/codegen#configuring-template-locations">code generation guide</a>!</p>
 </blockquote>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="custom-template-names">Custom template names<a href="https://moonrepo.dev/blog/moon-v1.23#custom-template-names" class="hash-link" aria-label="Direct link to Custom template names" title="Direct link to Custom template names">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="custom-template-names">Custom template names<a class="hash-link" aria-label="Direct link to Custom template names" title="Direct link to Custom template names" href="https://moonrepo.dev/blog/moon-v1.23#custom-template-names">​</a></h3>
 <p>Historically, a template's name was derived from the directory the
 <a href="https://moonrepo.dev/docs/config/template"><code>template.yml</code></a> file was located in. While this works great for small repos,
 it falls apart for large monorepos when there's multiple teams defining templates, as the chance of
@@ -425,7 +493,7 @@ name collisions arise.</p>
 templates, which allows you to customize the exact name of the template. This setting is optional,
 and if not provided, the name will be derived from the directory as before.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'my-template'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-variable-settings">New variable settings<a href="https://moonrepo.dev/blog/moon-v1.23#new-variable-settings" class="hash-link" aria-label="Direct link to New variable settings" title="Direct link to New variable settings">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="new-variable-settings">New variable settings<a class="hash-link" aria-label="Direct link to New variable settings" title="Direct link to New variable settings" href="https://moonrepo.dev/blog/moon-v1.23#new-variable-settings">​</a></h3>
 <p>And lastly, we're introducing some additions and improvements to template
 <a href="https://moonrepo.dev/docs/config/template#variables"><code>variables</code></a>.</p>
 <ul>
@@ -434,7 +502,7 @@ and if not provided, the name will be derived from the directory as before.</p>
 <li>Enum <code>default</code> values now support a list of values (cannot be provided by the CLI yet).</li>
 <li>Enum <code>prompt</code>s are now optional, and will fallback to the default value if not provided.</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="stack-based-task-inheritance">Stack-based task inheritance<a href="https://moonrepo.dev/blog/moon-v1.23#stack-based-task-inheritance" class="hash-link" aria-label="Direct link to Stack-based task inheritance" title="Direct link to Stack-based task inheritance">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="stack-based-task-inheritance">Stack-based task inheritance<a class="hash-link" aria-label="Direct link to Stack-based task inheritance" title="Direct link to Stack-based task inheritance" href="https://moonrepo.dev/blog/moon-v1.23#stack-based-task-inheritance">​</a></h2>
 <p>Last month in <a href="https://moonrepo.dev/blog/moon-v1.22">moon v1.22</a>, we introduced the <a href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a>
 setting for organizing projects into what tech stack they belong to. This is primarily for
 organizational purposes, and improving our project constaints implementation.</p>
@@ -448,14 +516,14 @@ platform, and type. For example:</p>
 <li><code>.moon/tasks/frontend-library.yml</code></li>
 <li><code>.moon/tasks/bun-frontend-application.yml</code></li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="internal-tasks">Internal tasks<a href="https://moonrepo.dev/blog/moon-v1.23#internal-tasks" class="hash-link" aria-label="Direct link to Internal tasks" title="Direct link to Internal tasks">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="internal-tasks">Internal tasks<a class="hash-link" aria-label="Direct link to Internal tasks" title="Direct link to Internal tasks" href="https://moonrepo.dev/blog/moon-v1.23#internal-tasks">​</a></h2>
 <p>We're introducing a new <a href="https://moonrepo.dev/docs/concepts/task#modes">task mode</a> called internal, which can be enabled
 with the <a href="https://moonrepo.dev/docs/config/project#internal"><code>internal</code></a> task option. Internal tasks are tasks that are
 not meant to be ran explicitly by the user (via <a href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a> or
 <a href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>), but are used internally as dependencies of other tasks.</p>
 <p>This functionality provides another way to organize your tasks.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">prepare</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'intermediate-step'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">internal</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.23#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.23#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.23.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -481,7 +549,7 @@ of changes.</p>
         <summary type="html"><![CDATA[In preparation for an official v1 release, we've improved stability, the overall developer]]></summary>
         <content type="html"><![CDATA[<p>In preparation for an official v1 release, we've improved stability, the overall developer
 experience, we're renaming some commands, and removing the "global packages" functionality.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-version-pinning">Improved version pinning<a href="https://moonrepo.dev/blog/proto-v0.31#improved-version-pinning" class="hash-link" aria-label="Direct link to Improved version pinning" title="Direct link to Improved version pinning">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-version-pinning">Improved version pinning<a class="hash-link" aria-label="Direct link to Improved version pinning" title="Direct link to Improved version pinning" href="https://moonrepo.dev/blog/proto-v0.31#improved-version-pinning">​</a></h2>
 <p>Based on feedback from the community, we've made some slight changes to pinning to reduce confusion.
 The biggest points of contention were, "Why does <code>proto install --pin</code> pin globally?", and "Why
 doesn't <code>proto pin</code> resolve the version like <code>proto install --pin</code> does?".</p>
@@ -493,7 +561,7 @@ otherwise it will pin to <code>~/.proto/.prototools</code>.</p>
 version to a fully qualified semantic version (or fail). This isn't the default functionality, as to
 not break existing workflows, and because you may want to actually pin "1" instead of "1.2.3".</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto pin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token number" style="color:#94dded">1</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># 1</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto pin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token number" style="color:#94dded">1</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--resolve</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># 1.2.3</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="removed-global-package-management-breaking">Removed global package management (breaking)<a href="https://moonrepo.dev/blog/proto-v0.31#removed-global-package-management-breaking" class="hash-link" aria-label="Direct link to Removed global package management (breaking)" title="Direct link to Removed global package management (breaking)">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="removed-global-package-management-breaking">Removed global package management (breaking)<a class="hash-link" aria-label="Direct link to Removed global package management (breaking)" title="Direct link to Removed global package management (breaking)" href="https://moonrepo.dev/blog/proto-v0.31#removed-global-package-management-breaking">​</a></h2>
 <p>A while back we introduced the <code>proto install-global</code> and <code>proto uninstall-global</code> commands as a
 means for managing global packages. This was added to solve issues with the Node.js ecosystem,
 primarily around standardizing where global packages would be installed across all package managers.
@@ -510,7 +578,7 @@ includes:</p>
 <li><code>intercept-globals</code> setting for node/npm/pnpm/yarn</li>
 <li><code>globals</code> setting for TOML plugins</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-npmpnpmyarn-shared-globals-dir-setting">New npm/pnpm/yarn <code>shared-globals-dir</code> setting<a href="https://moonrepo.dev/blog/proto-v0.31#new-npmpnpmyarn-shared-globals-dir-setting" class="hash-link" aria-label="Direct link to new-npmpnpmyarn-shared-globals-dir-setting" title="Direct link to new-npmpnpmyarn-shared-globals-dir-setting">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-npmpnpmyarn-shared-globals-dir-setting">New npm/pnpm/yarn <code>shared-globals-dir</code> setting<a class="hash-link" aria-label="Direct link to new-npmpnpmyarn-shared-globals-dir-setting" title="Direct link to new-npmpnpmyarn-shared-globals-dir-setting" href="https://moonrepo.dev/blog/proto-v0.31#new-npmpnpmyarn-shared-globals-dir-setting">​</a></h2>
 <p>Since we removed our global packages support (above), we had to also remove the <code>intercept-globals</code>
 setting from our Node.js related WASM plugins. However, we still believed in the benefit it
 provided, primarily around standardizing where global packages would be installed across all package
@@ -522,7 +590,7 @@ arguments or environment variables. This should be entirely transparent to you!<
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.npm</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">shared-globals-dir</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>An example of how this now works:</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># &lt; v0.31</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">proto install-global </span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> typescript</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># &gt;= v0.31</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--global</span><span class="token plain"> typescript</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Under the hood becomes...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token assign-left variable" style="color:#fef9c3">PREFIX</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">/.proto/tools/node/globals </span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--global</span><span class="token plain"> typescript</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="renamed-commands-breaking">Renamed commands (breaking)<a href="https://moonrepo.dev/blog/proto-v0.31#renamed-commands-breaking" class="hash-link" aria-label="Direct link to Renamed commands (breaking)" title="Direct link to Renamed commands (breaking)">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="renamed-commands-breaking">Renamed commands (breaking)<a class="hash-link" aria-label="Direct link to Renamed commands (breaking)" title="Direct link to Renamed commands (breaking)" href="https://moonrepo.dev/blog/proto-v0.31#renamed-commands-breaking">​</a></h2>
 <p>We're still not happy with some of the current command names, especially around tools and plugins,
 so we've renamed a few of them. They are:</p>
 <ul>
@@ -532,7 +600,7 @@ so we've renamed a few of them. They are:</p>
 </ul>
 <p>As for the <code>proto plugin list</code> command, we've removed the versions and aliases from the output by
 default, and wrapped them in new <code>--versions</code> and <code>--aliases</code> options.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.31#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.31#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.31.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -556,7 +624,7 @@ of changes.</p>
         <summary type="html"><![CDATA[This release introduces new organizational settings for projects, a migrate from Nx extension, and]]></summary>
         <content type="html"><![CDATA[<p>This release introduces new organizational settings for projects, a migrate from Nx extension, and
 more.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="more-organizational-settings">More organizational settings<a href="https://moonrepo.dev/blog/moon-v1.22#more-organizational-settings" class="hash-link" aria-label="Direct link to More organizational settings" title="Direct link to More organizational settings">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="more-organizational-settings">More organizational settings<a class="hash-link" aria-label="Direct link to More organizational settings" title="Direct link to More organizational settings" href="https://moonrepo.dev/blog/moon-v1.22#more-organizational-settings">​</a></h2>
 <p>One aspect of moon that sets us apart from other build systems and tools, is that we have built-in
 support for human-readable project and task metadata. This is extremely useful in organizing and
 managing large repositories, especially when ownership comes into play. This information is also
@@ -581,7 +649,7 @@ human-readable information.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">description</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Builds the project using Vite'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 </li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-wildcard-environment-variable-inputs">New wildcard environment variable inputs<a href="https://moonrepo.dev/blog/moon-v1.22#new-wildcard-environment-variable-inputs" class="hash-link" aria-label="Direct link to New wildcard environment variable inputs" title="Direct link to New wildcard environment variable inputs">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-wildcard-environment-variable-inputs">New wildcard environment variable inputs<a class="hash-link" aria-label="Direct link to New wildcard environment variable inputs" title="Direct link to New wildcard environment variable inputs" href="https://moonrepo.dev/blog/moon-v1.22#new-wildcard-environment-variable-inputs">​</a></h2>
 <p>Task inputs have supported environment variables for quite a while now, but they are explicit, which
 can be tedious too manage when you have many environment variables. To make this easier, we've added
 support for wildcard environment variables, denoted by a <code>*</code>, which will match any environment
@@ -592,7 +660,7 @@ and <code>VITE_</code> respectively, we can simply do:</p>
 <blockquote>
 <p>Do note that this <em>isn't</em> a glob, and the <code>*</code> is merely a substitution for any character!</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-migrate-nx-extension">New <code>migrate-nx</code> extension<a href="https://moonrepo.dev/blog/moon-v1.22#new-migrate-nx-extension" class="hash-link" aria-label="Direct link to new-migrate-nx-extension" title="Direct link to new-migrate-nx-extension">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-migrate-nx-extension">New <code>migrate-nx</code> extension<a class="hash-link" aria-label="Direct link to new-migrate-nx-extension" title="Direct link to new-migrate-nx-extension" href="https://moonrepo.dev/blog/moon-v1.22#new-migrate-nx-extension">​</a></h2>
 <p>In our previous release, we added support for <a href="https://moonrepo.dev/blog/moon-v1.21">migrating from Turborepo</a>, but what
 about Nx? Nx is a very popular build system with many users. A lot of our current moon users were
 former Nx users, but unfortunately, they had to go through the tedious process of migrating
@@ -614,7 +682,7 @@ requirement of Nx itself. This will allow for a seamless transition from Nx to m
 need to change any of your existing Nx executors/plugins till later.</p><p>This functionality will be provided by our new
 <a href="https://github.com/moonrepo/moon/tree/master/packages/nx-compat" target="_blank" rel="noopener noreferrer"><code>@moonrepo/nx-compat</code> package</a>,
 which we hope to finish in the coming weeks.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.22#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.22#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.22.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -639,7 +707,7 @@ args used when installing dependencies.</li>
         <summary type="html"><![CDATA[With this release, get ready for Deno tier 3 support, file group and task improvements, a new]]></summary>
         <content type="html"><![CDATA[<p>With this release, get ready for Deno tier 3 support, file group and task improvements, a new
 extension, and more.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="deno-tier-3-support">Deno tier 3 support<a href="https://moonrepo.dev/blog/moon-v1.21#deno-tier-3-support" class="hash-link" aria-label="Direct link to Deno tier 3 support" title="Direct link to Deno tier 3 support">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="deno-tier-3-support">Deno tier 3 support<a class="hash-link" aria-label="Direct link to Deno tier 3 support" title="Direct link to Deno tier 3 support" href="https://moonrepo.dev/blog/moon-v1.21#deno-tier-3-support">​</a></h2>
 <p>We've supported Deno tier 1 and 2 for almost a year now, but were hesitant to support tier 3 until
 <a href="https://moonrepo.dev/proto">proto</a> stabilizes further. Now that proto is <em>almost</em> at an official v1 release, and other
 tools in the toolchain (like Node.js, Bun, and Rust) are powered by proto, we're confident in
@@ -650,7 +718,7 @@ supporting Deno tier 3. To make use of this, simply set the
 <p>When enabled, moon will download and install that version of Deno in the background, and run all
 subsequent tasks with it. This is great for ensuring that your project is always using the same
 version of Deno, across all machines.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="file-groups-now-support-environment-variables">File groups now support environment variables<a href="https://moonrepo.dev/blog/moon-v1.21#file-groups-now-support-environment-variables" class="hash-link" aria-label="Direct link to File groups now support environment variables" title="Direct link to File groups now support environment variables">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="file-groups-now-support-environment-variables">File groups now support environment variables<a class="hash-link" aria-label="Direct link to File groups now support environment variables" title="Direct link to File groups now support environment variables" href="https://moonrepo.dev/blog/moon-v1.21#file-groups-now-support-environment-variables">​</a></h2>
 <p>Task <a href="https://moonrepo.dev/docs/config/project#inputs"><code>inputs</code></a> have supported environment variables for a while now,
 but file groups have not. The main reason for this is that file groups were implemented far before
 environment variables in task inputs! To bridge this gap, we've added support for environment
@@ -661,7 +729,7 @@ variables in file groups.</p>
 <a href="https://moonrepo.dev/docs/concepts/token#envs"><code>@envs</code> token function</a>. The latter is only supported for <code>inputs</code> and
 will error for other locations, while the former is supported in <code>args</code>, <code>inputs</code>, and <code>outputs</code>,
 but will filter out environment variables when they are not supported.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-unixshell-and-windowsshell-task-options">New <code>unixShell</code> and <code>windowsShell</code> task options<a href="https://moonrepo.dev/blog/moon-v1.21#new-unixshell-and-windowsshell-task-options" class="hash-link" aria-label="Direct link to new-unixshell-and-windowsshell-task-options" title="Direct link to new-unixshell-and-windowsshell-task-options">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-unixshell-and-windowsshell-task-options">New <code>unixShell</code> and <code>windowsShell</code> task options<a class="hash-link" aria-label="Direct link to new-unixshell-and-windowsshell-task-options" title="Direct link to new-unixshell-and-windowsshell-task-options" href="https://moonrepo.dev/blog/moon-v1.21#new-unixshell-and-windowsshell-task-options">​</a></h2>
 <p>When the <a href="https://moonrepo.dev/docs/config/project#shell"><code>shell</code></a> task option is enabled, we run the task within a
 shell. However, the chosen shell was hard-coded to <code>$SHELL</code> on Unix machines and PowerShell on
 Windows, but what if you wanted to run it with a different shell? Or the same shell across all
@@ -670,7 +738,7 @@ operating systems? Well, you couldn't.</p>
 and <a href="https://moonrepo.dev/docs/config/project#windowsshell"><code>windowsShell</code></a> task options. When paired with <code>shell</code>, the
 task will run in a shell of your choice. For example, why not Bash everywhere?</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'vite build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">shell</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">unixShell</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'bash'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">windowsShell</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'bash'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-migrate-turborepo-extension">New <code>migrate-turborepo</code> extension<a href="https://moonrepo.dev/blog/moon-v1.21#new-migrate-turborepo-extension" class="hash-link" aria-label="Direct link to new-migrate-turborepo-extension" title="Direct link to new-migrate-turborepo-extension">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-migrate-turborepo-extension">New <code>migrate-turborepo</code> extension<a class="hash-link" aria-label="Direct link to new-migrate-turborepo-extension" title="Direct link to new-migrate-turborepo-extension" href="https://moonrepo.dev/blog/moon-v1.21#new-migrate-turborepo-extension">​</a></h2>
 <p>In our previous release, we added support for <a href="https://moonrepo.dev/blog/moon-v1.20">extensions, a new kind of WASM plugin</a>.
 Since this is a new experimental feature, we really wanted to show off what it can do, and stress
 test its boundaries. To do that, we chose to migrate the old <code>moon migrate from-turborepo</code> command
@@ -699,7 +767,7 @@ warning.</li>
 </ul>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Based on the success of this extension, we plan to support a <code>migrate-nx</code> extension in the future!
 If you'd like to help in this endeavor, let us know!</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.21#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.21#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.21.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -728,7 +796,7 @@ expansion works correctly.</li>
         <updated>2024-01-26T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this release, we're excited to introduce extensions, our first type of plugin!]]></summary>
         <content type="html"><![CDATA[<p>In this release, we're excited to introduce extensions, our first type of plugin!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-extension-plugins">New extension plugins<a href="https://moonrepo.dev/blog/moon-v1.20#new-extension-plugins" class="hash-link" aria-label="Direct link to New extension plugins" title="Direct link to New extension plugins">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-extension-plugins">New extension plugins<a class="hash-link" aria-label="Direct link to New extension plugins" title="Direct link to New extension plugins" href="https://moonrepo.dev/blog/moon-v1.20#new-extension-plugins">​</a></h2>
 <p>In our <a href="https://moonrepo.dev/blog/2024-roadmap">2024 roadmap blog post</a>, we talked heavily about plugins, as we believe
 they're the future of moon and its ecosystem. What we didn't talk about is that we plan to have
 <em>many types of plugins</em>, and not just language/platform specific ones. And with that, we're excited
@@ -747,7 +815,7 @@ downloads a file from a URL into the current moon workspace.</p>
 <li>A <a href="https://moonrepo.dev/docs/commands/ext"><code>moon ext</code></a> command for executing a configured extension.</li>
 <li>The required infrastructure for plugins!</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-default-options-for-tasks">Configure default options for tasks<a href="https://moonrepo.dev/blog/moon-v1.20#configure-default-options-for-tasks" class="hash-link" aria-label="Direct link to Configure default options for tasks" title="Direct link to Configure default options for tasks">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-default-options-for-tasks">Configure default options for tasks<a class="hash-link" aria-label="Direct link to Configure default options for tasks" title="Direct link to Configure default options for tasks" href="https://moonrepo.dev/blog/moon-v1.20#configure-default-options-for-tasks">​</a></h2>
 <p><a href="https://moonrepo.dev/docs/config/project#options">Task options</a> provide a way to apply granular changes to a task's
 behavior when running in the pipeline. However, they can become tedious when you need to apply them
 to many tasks, especially when inheritance is involved. To help with this, you can now configure the
@@ -761,7 +829,7 @@ tasks.</p>
 <p>Because these options are defined at the workspace-level, they adhere to the same merge and
 inheritance rules as other settings. Just be aware that these options are inherited first in the
 chain, and can be overwritten by other layers, or by project-level tasks.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="optional-task-dependencies">Optional task dependencies<a href="https://moonrepo.dev/blog/moon-v1.20#optional-task-dependencies" class="hash-link" aria-label="Direct link to Optional task dependencies" title="Direct link to Optional task dependencies">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="optional-task-dependencies">Optional task dependencies<a class="hash-link" aria-label="Direct link to Optional task dependencies" title="Direct link to Optional task dependencies" href="https://moonrepo.dev/blog/moon-v1.20#optional-task-dependencies">​</a></h2>
 <p>By default, all task <a href="https://moonrepo.dev/docs/config/project#tasks-1"><code>deps</code></a> are required to exist when tasks are
 being built and expanded, but this isn't always true when dealing with composition and inheritance.
 For example, say you're using
@@ -775,7 +843,7 @@ will omit the dependency.</p>
 <blockquote>
 <p>Thanks to <a href="https://github.com/maastrich" target="_blank" rel="noopener noreferrer">@maastrich</a> for this contribution!</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.20#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.20#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.20.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -800,7 +868,7 @@ of changes.</p>
         <updated>2024-01-23T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this release, we focused heavily on environment interoperability.]]></summary>
         <content type="html"><![CDATA[<p>In this release, we focused heavily on environment interoperability.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-environment-aware-configuration">New environment aware configuration<a href="https://moonrepo.dev/blog/proto-v0.29#new-environment-aware-configuration" class="hash-link" aria-label="Direct link to New environment aware configuration" title="Direct link to New environment aware configuration">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-environment-aware-configuration">New environment aware configuration<a class="hash-link" aria-label="Direct link to New environment aware configuration" title="Direct link to New environment aware configuration" href="https://moonrepo.dev/blog/proto-v0.29#new-environment-aware-configuration">​</a></h2>
 <p>We've made a small but useful improvement to <code>.prototools</code>, environment aware files! When the
 <code>PROTO_ENV</code> environment variable is set, proto will look for an additional <code>.prototools.{env}</code> file
 and merge it with the base configuration.</p>
@@ -808,7 +876,7 @@ and merge it with the base configuration.</p>
 variables, or settings!</p>
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"21.0.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools.production</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"20.0.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-env-and-toolsenv-settings">New <code>[env]</code> and <code>[tools.*.env]</code> settings<a href="https://moonrepo.dev/blog/proto-v0.29#new-env-and-toolsenv-settings" class="hash-link" aria-label="Direct link to new-env-and-toolsenv-settings" title="Direct link to new-env-and-toolsenv-settings">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-env-and-toolsenv-settings">New <code>[env]</code> and <code>[tools.*.env]</code> settings<a class="hash-link" aria-label="Direct link to new-env-and-toolsenv-settings" title="Direct link to new-env-and-toolsenv-settings" href="https://moonrepo.dev/blog/proto-v0.29#new-env-and-toolsenv-settings">​</a></h2>
 <p>We're also introducing 2 new settings to the <code>.prototools</code> file, <a href="https://moonrepo.dev/docs/proto/config#env"><code>[env]</code></a>
 and <a href="https://moonrepo.dev/docs/proto/config#toolsenv"><code>[tools.*.env]</code></a>, both of which configure environment variables
 that'll be applied when the tool is executed. This is useful for defining directory-level and
@@ -817,7 +885,7 @@ tool-specific variables.</p>
 <blockquote>
 <p>View the <a href="https://moonrepo.dev/docs/proto/config">configuration documentation</a> for more information on how these work!</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.29#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.29#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.29.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -839,7 +907,7 @@ namespace).</li>
         <updated>2024-01-17T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[This is a small release that primarily upgrades our WASM runtime.]]></summary>
         <content type="html"><![CDATA[<p>This is a small release that primarily upgrades our WASM runtime.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="upgraded-wasm-runtime">Upgraded WASM runtime<a href="https://moonrepo.dev/blog/proto-v0.28#upgraded-wasm-runtime" class="hash-link" aria-label="Direct link to Upgraded WASM runtime" title="Direct link to Upgraded WASM runtime">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="upgraded-wasm-runtime">Upgraded WASM runtime<a class="hash-link" aria-label="Direct link to Upgraded WASM runtime" title="Direct link to Upgraded WASM runtime" href="https://moonrepo.dev/blog/proto-v0.28#upgraded-wasm-runtime">​</a></h2>
 <p>proto utilizes <a href="https://extism.org/" target="_blank" rel="noopener noreferrer">Extism</a> for our WASM plugin architecture, which internally uses
 <a href="https://wasmtime.dev/" target="_blank" rel="noopener noreferrer">wasmtime</a> as our execution runtime. Up until this point, we've been using a
 beta release of Extism, v0.5, which has worked quite nicely. We've also been working closely with
@@ -849,7 +917,7 @@ was the massive performance gains in <a href="https://moonrepo.dev/blog/proto-v0
 Because this was a major release, it did include breaking changes around the WASM runtime, and as
 such, proto WASM plugins before v0.28 are <em>no longer compatible</em>, and will need to be recompiled
 with the latest PDKs. Our proto TOML plugins are not affected.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.28#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.28#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.28.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -874,7 +942,7 @@ of changes.</p>
         <summary type="html"><![CDATA[Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long]]></summary>
         <content type="html"><![CDATA[<p>Happy new year! Let's start 2024 by reflecting on last year and diving into our tentative year long
 roadmap.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="year-2023-in-review">Year 2023 in review<a href="https://moonrepo.dev/blog/2024-roadmap#year-2023-in-review" class="hash-link" aria-label="Direct link to Year 2023 in review" title="Direct link to Year 2023 in review">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="year-2023-in-review">Year 2023 in review<a class="hash-link" aria-label="Direct link to Year 2023 in review" title="Direct link to Year 2023 in review" href="https://moonrepo.dev/blog/2024-roadmap#year-2023-in-review">​</a></h2>
 <p>Last year was an extremely exciting year for us! To start, we were accepted into the
 <a href="https://www.ycombinator.com/companies/moonrepo" target="_blank" rel="noopener noreferrer">Y Combinator 2023 winter batch</a>, which was
 extremely unexpected, but very much welcome. The 3 months we spent in YC was quite eye opening, as
@@ -882,7 +950,7 @@ we learned so much about the industry, and how to move forward. We spent those 3
 diving into what we want to build and deliver, and after much trial and error, and many failed
 prototypes, we chose to move forward with launching <a href="https://moonrepo.dev/proto">proto</a> as its own tool, improving
 <a href="https://moonrepo.dev/moon">moon</a>, and slowing down development of <a href="https://moonrepo.dev/moonbase">moonbase</a> (outside of remote caching).</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moon">moon<a href="https://moonrepo.dev/blog/2024-roadmap#moon" class="hash-link" aria-label="Direct link to moon" title="Direct link to moon">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moon">moon<a class="hash-link" aria-label="Direct link to moon" title="Direct link to moon" href="https://moonrepo.dev/blog/2024-roadmap#moon">​</a></h3>
 <p>For <a href="https://moonrepo.dev/moon">moon</a>, we officially launched v1 back in March, and celebrated its 2 year birthday in
 October. Over the course of 2023, we released 23 minor versions, jam packed with new features such
 as:</p>
@@ -915,7 +983,7 @@ as:</p>
 deliver on. The biggest are additional languages, better tier support, and release workflows. We
 ultimately didn't land these features as we plan to move to a plugin based architecture, and didn't
 want to invest too much time into the current implementation.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moonbase">moonbase<a href="https://moonrepo.dev/blog/2024-roadmap#moonbase" class="hash-link" aria-label="Direct link to moonbase" title="Direct link to moonbase">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="moonbase">moonbase<a class="hash-link" aria-label="Direct link to moonbase" title="Direct link to moonbase" href="https://moonrepo.dev/blog/2024-roadmap#moonbase">​</a></h3>
 <p>During YC, we officially launched <a href="https://moonrepo.dev/moonbase">moonbase</a>, our cloud service that offers remote caching
 to all moon users (and also includes a free tier). Over the next few months, we continued to improve
 the service, by adding basic insights into CI runs (powered by <a href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a>), and
@@ -924,7 +992,7 @@ overall stability.</p>
 were unsure of the value that they would provide to end-users compared to the cost it would take to
 build &amp; maintain. Some such features include code and project ownership, project registry, and
 repository health scores. We may revisit this in the future.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="proto">proto<a href="https://moonrepo.dev/blog/2024-roadmap#proto" class="hash-link" aria-label="Direct link to proto" title="Direct link to proto">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="proto">proto<a class="hash-link" aria-label="Direct link to proto" title="Direct link to proto" href="https://moonrepo.dev/blog/2024-roadmap#proto">​</a></h3>
 <p>As for <a href="https://moonrepo.dev/proto">proto</a>, it's been an exciting year. For context, proto's implementation was
 originally built into moon directly, and powered
 <a href="https://moonrepo.dev/docs/concepts/toolchain">moon's integrated toolchain</a>. We strongly felt this functionality can be
@@ -945,7 +1013,7 @@ released 27 minor versions with:</p>
 <li>WASM and TOML based plugins</li>
 <li>... and more to come!</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-moon-v2">Launching moon v2<a href="https://moonrepo.dev/blog/2024-roadmap#launching-moon-v2" class="hash-link" aria-label="Direct link to Launching moon v2" title="Direct link to Launching moon v2">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-moon-v2">Launching moon v2<a class="hash-link" aria-label="Direct link to Launching moon v2" title="Direct link to Launching moon v2" href="https://moonrepo.dev/blog/2024-roadmap#launching-moon-v2">​</a></h2>
 <p>It's been almost a year since we launched v1, and we believe we're ready to start planning out and
 working on v2. Our goal for major releases is to introduce breaking changes in the most seamless way
 possible, and to do so, we plan to incrementally land internal changes in v1 in preparation for v2,
@@ -958,7 +1026,7 @@ that will <a href="https://moonrepo.dev/blog/2024-roadmap#post-launch-features">
 <li>Removed deprecated features</li>
 </ul>
 <p>It's a short list but also a ton of work. We have no ETA on when this will land exactly.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-based-architecture">Plugin based architecture<a href="https://moonrepo.dev/blog/2024-roadmap#plugin-based-architecture" class="hash-link" aria-label="Direct link to Plugin based architecture" title="Direct link to Plugin based architecture">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="plugin-based-architecture">Plugin based architecture<a class="hash-link" aria-label="Direct link to Plugin based architecture" title="Direct link to Plugin based architecture" href="https://moonrepo.dev/blog/2024-roadmap#plugin-based-architecture">​</a></h3>
 <p>The biggest change and primary focus for v2 is to move to a WASM plugin based architecture (for
 language integration). Based on our work with <a href="https://moonrepo.dev/docs/proto/plugins">proto's plugins</a>, we have a very
 good idea of how we would model this for moon, and a new love for WASM based plugins (powered by
@@ -974,7 +1042,7 @@ ditch most of this, and in the grand scheme of things, plugin integration is sim
 <li>Reduces moon's compilation times, as plugins live in their own repositories.</li>
 <li>Easier to contribute to, as moon's codebase is quite complex.</li>
 </ul>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="post-launch-features">Post-launch features<a href="https://moonrepo.dev/blog/2024-roadmap#post-launch-features" class="hash-link" aria-label="Direct link to Post-launch features" title="Direct link to Post-launch features">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="post-launch-features">Post-launch features<a class="hash-link" aria-label="Direct link to Post-launch features" title="Direct link to Post-launch features" href="https://moonrepo.dev/blog/2024-roadmap#post-launch-features">​</a></h3>
 <p>Curious what kind of features we have planned for after v2? Of course you are! This isn't an
 exhaustive or detailed list, but is top of mind:</p>
 <ul>
@@ -985,7 +1053,7 @@ exhaustive or detailed list, but is top of mind:</p>
 <li>Repository and project health scores</li>
 <li>Improved action graph and pipeline</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-proto-v1">Launching proto v1<a href="https://moonrepo.dev/blog/2024-roadmap#launching-proto-v1" class="hash-link" aria-label="Direct link to Launching proto v1" title="Direct link to Launching proto v1">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-proto-v1">Launching proto v1<a class="hash-link" aria-label="Direct link to Launching proto v1" title="Direct link to Launching proto v1" href="https://moonrepo.dev/blog/2024-roadmap#launching-proto-v1">​</a></h2>
 <p>We're extremely close to a v1 release, most definitely in Q1. For the most part, we believe we're
 passed the point of introducing breaking changes, and so the remainder of the time will be spent on
 polish, improvements, and documentation. There are a few big features we want to land relatively
@@ -996,7 +1064,7 @@ soon though (but maybe after v1), and they are:</p>
 <li>Directory and tool level environment variables (think <a href="https://direnv.net/" target="_blank" rel="noopener noreferrer">direnv</a> kind of
 functionality)</li>
 </ul>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="expanding-language-support">Expanding language support<a href="https://moonrepo.dev/blog/2024-roadmap#expanding-language-support" class="hash-link" aria-label="Direct link to Expanding language support" title="Direct link to Expanding language support">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="expanding-language-support">Expanding language support<a class="hash-link" aria-label="Direct link to Expanding language support" title="Direct link to Expanding language support" href="https://moonrepo.dev/blog/2024-roadmap#expanding-language-support">​</a></h3>
 <p>While not part of v1, we definitely want to support more official languages in proto. We've been
 pushing back on new languages until after v1 and the plugin APIs have stabilized, but since that's
 relatively close to being done, expect more in the future! Our top of mind languages at the moment
@@ -1004,7 +1072,7 @@ are: Ruby (and Crystal), PHP, and Java.</p>
 <p>Don't forget that the community can also build and share their own plugins! For example, the
 <a href="https://github.com/konomae/zig-plugin" target="_blank" rel="noopener noreferrer">Zig programming language</a> already exists, and is provided by
 <a href="https://github.com/konomae" target="_blank" rel="noopener noreferrer">konomae</a>! Thanks for the amazing work.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="self-hosting-moonbase">Self-hosting moonbase<a href="https://moonrepo.dev/blog/2024-roadmap#self-hosting-moonbase" class="hash-link" aria-label="Direct link to Self-hosting moonbase" title="Direct link to Self-hosting moonbase">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="self-hosting-moonbase">Self-hosting moonbase<a class="hash-link" aria-label="Direct link to Self-hosting moonbase" title="Direct link to Self-hosting moonbase" href="https://moonrepo.dev/blog/2024-roadmap#self-hosting-moonbase">​</a></h2>
 <p>And last but not least, let's talk about moonbase. Although we've paused development on new
 features, we consistently get requests for self-hosting moonbase (primarily for remote caching), as
 companies don't want to store their proprietary builds, even though they are compiled and minified,
@@ -1016,7 +1084,7 @@ credentials, error handling, auth, so on and so forth.</p>
 <p>We'd say we're about 50% done with this effort, and we aim to have it ready by the end of Q1. With
 that said, the self-hosted version of moonbase will <em>not</em> be free, and will use a license based
 model. We're still working out the details, but we'll have more information soon.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="looking-for-contributors">Looking for contributors<a href="https://moonrepo.dev/blog/2024-roadmap#looking-for-contributors" class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="looking-for-contributors">Looking for contributors<a class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors" href="https://moonrepo.dev/blog/2024-roadmap#looking-for-contributors">​</a></h2>
 <p>Thanks for reading this far, but we do have one last thing to talk about. The moonrepo ecosystem and
 all its products are quite large, with a lot of complexity. However, we're a small team, with most
 of the public-facing work being done by me (Miles), but there's only so much we can do in a given
@@ -1040,7 +1108,7 @@ Discord!</p>]]></content>
         <updated>2024-01-04T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[This is a small release that improves the overall developer experience.]]></summary>
         <content type="html"><![CDATA[<p>This is a small release that improves the overall developer experience.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="powershell-profile-support">PowerShell profile support<a href="https://moonrepo.dev/blog/proto-v0.27#powershell-profile-support" class="hash-link" aria-label="Direct link to PowerShell profile support" title="Direct link to PowerShell profile support">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="powershell-profile-support">PowerShell profile support<a class="hash-link" aria-label="Direct link to PowerShell profile support" title="Direct link to PowerShell profile support" href="https://moonrepo.dev/blog/proto-v0.27#powershell-profile-support">​</a></h2>
 <p>When proto was first launched, we didn't support PowerShell profiles, but did support Windows by
 running <code>setx</code> commands to inject the <code>PROTO_HOME</code> environment variable, and update <code>PATH</code>. While
 this worked, it was not ideal, and unexpected for users. This is our fault and our lack of Windows
@@ -1061,7 +1129,7 @@ Instead we write the environment variable changes to one of these files, dependi
 </ul>
 </li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="regenerate-shims--bins">Regenerate shims &amp; bins<a href="https://moonrepo.dev/blog/proto-v0.27#regenerate-shims--bins" class="hash-link" aria-label="Direct link to Regenerate shims &amp; bins" title="Direct link to Regenerate shims &amp; bins">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="regenerate-shims--bins">Regenerate shims &amp; bins<a class="hash-link" aria-label="Direct link to Regenerate shims &amp; bins" title="Direct link to Regenerate shims &amp; bins" href="https://moonrepo.dev/blog/proto-v0.27#regenerate-shims--bins">​</a></h2>
 <p>proto has gone through some growing pains, we won't deny that. With the handful of breaking changes,
 the configuration refactor, and the ground-up rework of how shims/bins are handled, we've hit a few
 snags. Most of those snags have been around tool execution.</p>
@@ -1070,7 +1138,7 @@ command. This command will clean the shims (<code>~/.proto/shims</code>) and opt
 directory, regenerate shims, and relink bins based on globally pinned versions.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto regen</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Include bins</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto regen </span><span class="token parameter variable" style="color:#fef9c3">--bin</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>This is extremely useful in resetting to a clean state.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="better-version-parsing-for-toml-plugins">Better version parsing for TOML plugins<a href="https://moonrepo.dev/blog/proto-v0.27#better-version-parsing-for-toml-plugins" class="hash-link" aria-label="Direct link to Better version parsing for TOML plugins" title="Direct link to Better version parsing for TOML plugins">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="better-version-parsing-for-toml-plugins">Better version parsing for TOML plugins<a class="hash-link" aria-label="Direct link to Better version parsing for TOML plugins" title="Direct link to Better version parsing for TOML plugins" href="https://moonrepo.dev/blog/proto-v0.27#better-version-parsing-for-toml-plugins">​</a></h2>
 <p>When our <a href="https://moonrepo.dev/docs/proto/toml-plugin">TOML plugin</a> receives a version, we attempt to parse it into a
 valid semantic version. However, not all tools follow semver, as they may release without patch or
 minor versions, or use a different pre/build pattern.</p>
@@ -1083,7 +1151,7 @@ used for manifest parsing. The old name is still supported for the time being.</
 <p>Jump to the <a href="https://moonrepo.dev/docs/proto/toml-plugin#version-patterns">official documentation</a> for more
 information!</p>
 </blockquote>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.27#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.27#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.27.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>]]></content>
         <author>
@@ -1104,7 +1172,7 @@ of changes.</p>]]></content>
         <updated>2024-01-01T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[In this release, we're introducing some long-awaited and requested improvements.]]></summary>
         <content type="html"><![CDATA[<p>In this release, we're introducing some long-awaited and requested improvements.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-args-and-env-vars-for-task-dependencies">Configure args and env vars for task dependencies<a href="https://moonrepo.dev/blog/moon-v1.19#configure-args-and-env-vars-for-task-dependencies" class="hash-link" aria-label="Direct link to Configure args and env vars for task dependencies" title="Direct link to Configure args and env vars for task dependencies">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="configure-args-and-env-vars-for-task-dependencies">Configure args and env vars for task dependencies<a class="hash-link" aria-label="Direct link to Configure args and env vars for task dependencies" title="Direct link to Configure args and env vars for task dependencies" href="https://moonrepo.dev/blog/moon-v1.19#configure-args-and-env-vars-for-task-dependencies">​</a></h2>
 <p>This has been a long standing request from the community, and we're happy to finally deliver it.
 Starting with v1.19, you can now configure optional command line arguments and environment variables
 for each task <a href="https://moonrepo.dev/docs/config/project#deps"><code>deps</code></a> entry. These values will be passed to the task
@@ -1125,10 +1193,10 @@ collisions and corrupting outputs.</li>
 <li>If dependencies all write to the same output, cleaning the output is your responsibility, not
 moon's.</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="codegen-improvements">Codegen improvements<a href="https://moonrepo.dev/blog/moon-v1.19#codegen-improvements" class="hash-link" aria-label="Direct link to Codegen improvements" title="Direct link to Codegen improvements">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="codegen-improvements">Codegen improvements<a class="hash-link" aria-label="Direct link to Codegen improvements" title="Direct link to Codegen improvements" href="https://moonrepo.dev/blog/moon-v1.19#codegen-improvements">​</a></h2>
 <p>Code generation is one of moon's oldest features, and hasn't been improved in quite a while. We felt
 the time was right to give it a little love.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="extend-other-templates">Extend other templates<a href="https://moonrepo.dev/blog/moon-v1.19#extend-other-templates" class="hash-link" aria-label="Direct link to Extend other templates" title="Direct link to Extend other templates">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="extend-other-templates">Extend other templates<a class="hash-link" aria-label="Direct link to Extend other templates" title="Direct link to Extend other templates" href="https://moonrepo.dev/blog/moon-v1.19#extend-other-templates">​</a></h3>
 <p>This has been a <a href="https://github.com/moonrepo/moon/issues/434" target="_blank" rel="noopener noreferrer">request for over a year</a>, and we
 finally found the time to put it on the roadmap. Starting with this release, you can now extend
 other templates using the <a href="https://moonrepo.dev/docs/config/template#extends"><code>extends</code></a> setting in
@@ -1136,7 +1204,7 @@ other templates using the <a href="https://moonrepo.dev/docs/config/template#ext
 <p>Templates will be recursively extended from top to bottom, and all files and variables will be
 inherited and merged at the top-level.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">template.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">title</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'npm package'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">extends</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'node-common'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="configure-a-default-destination">Configure a default destination<a href="https://moonrepo.dev/blog/moon-v1.19#configure-a-default-destination" class="hash-link" aria-label="Direct link to Configure a default destination" title="Direct link to Configure a default destination">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="configure-a-default-destination">Configure a default destination<a class="hash-link" aria-label="Direct link to Configure a default destination" title="Direct link to Configure a default destination" href="https://moonrepo.dev/blog/moon-v1.19#configure-a-default-destination">​</a></h3>
 <p>When you call <a href="https://moonrepo.dev/docs/commands/generate"><code>moon generate</code></a> you must provide a destination directory
 for the generated files, or we'll prompt you to provide one. But what if you wanted to standardize
 the destination? For example, a package scaffolding template should go to <code>packages/</code>. This is now
@@ -1147,7 +1215,7 @@ possible with the optional <a href="https://moonrepo.dev/docs/config/template#de
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>For better interoperability, this setting can also reference variables using <code>[var]</code> syntax, and can
 also use Tera filters. Learn more about this in the
 <a href="https://moonrepo.dev/docs/guides/codegen#interpolation">code generation documentation</a>.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="resolved-long-standing-experiments">Resolved long-standing experiments<a href="https://moonrepo.dev/blog/moon-v1.19#resolved-long-standing-experiments" class="hash-link" aria-label="Direct link to Resolved long-standing experiments" title="Direct link to Resolved long-standing experiments">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="resolved-long-standing-experiments">Resolved long-standing experiments<a class="hash-link" aria-label="Direct link to Resolved long-standing experiments" title="Direct link to Resolved long-standing experiments" href="https://moonrepo.dev/blog/moon-v1.19#resolved-long-standing-experiments">​</a></h2>
 <p>moon has a concept of <a href="https://moonrepo.dev/docs/config/workspace#experiments">experiments</a>, where certain features are
 gated behind a flag. This allows us to support new and old functionality in parallel, and also allow
 users to gradually upgrade when encountering a breaking change. For many months now, we've had 2
@@ -1167,7 +1235,7 @@ introduced a steeper learning curve then expected. It also caused problems with
 <a href="https://moonrepo.dev/docs/config/project#extends">tasks that extend</a> from another, resulting in the same outputs being
 used. Because of this, we've decided <em>to <strong>not</strong> move forward</em> with this experiment, and allow
 whatever task outputs you wish (we trust you're smart enough to not shoot yourself in the foot).</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.19#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.19#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.19.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -1193,7 +1261,7 @@ of changes.</p>
         <updated>2023-12-21T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[After many release candidates, and a ton of testing, proto v0.26 is finally here!]]></summary>
         <content type="html"><![CDATA[<p>After many release candidates, and a ton of testing, proto v0.26 is finally here!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="rethinking-shims">Rethinking shims<a href="https://moonrepo.dev/blog/proto-v0.26#rethinking-shims" class="hash-link" aria-label="Direct link to Rethinking shims" title="Direct link to Rethinking shims">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="rethinking-shims">Rethinking shims<a class="hash-link" aria-label="Direct link to Rethinking shims" title="Direct link to Rethinking shims" href="https://moonrepo.dev/blog/proto-v0.26#rethinking-shims">​</a></h2>
 <p>proto at its core is a version manager, which means like most version managers, it relies on a
 concept known as shims. Shims are lightweight executable scripts that act like a proxy to the
 underlying binary, and are useful for proto to intercept executions and inject custom functionality,
@@ -1218,7 +1286,7 @@ and is published alongside the <code>proto</code> binary.</p>
 <li>Native performance</li>
 <li>Doesn't require special privileges (no symlinks)</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="upgrade-troubleshooting">Upgrade troubleshooting<a href="https://moonrepo.dev/blog/proto-v0.26#upgrade-troubleshooting" class="hash-link" aria-label="Direct link to Upgrade troubleshooting" title="Direct link to Upgrade troubleshooting">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="upgrade-troubleshooting">Upgrade troubleshooting<a class="hash-link" aria-label="Direct link to Upgrade troubleshooting" title="Direct link to Upgrade troubleshooting" href="https://moonrepo.dev/blog/proto-v0.26#upgrade-troubleshooting">​</a></h2>
 <p>Because this release adds a new executable (<code>proto-shim</code>), you'll most likely run into issues when
 upgrading via <code>proto upgrade</code>. The root issue is that the upgrade process was only aware of the
 single <code>proto</code> file, and not the new <code>proto-shim</code> file, so it will not copy the shim into the
@@ -1229,7 +1297,7 @@ from v0.24, or an even earlier version.</p>
 <p>The best way to remedy this situation is to simply
 <a href="https://moonrepo.dev/docs/proto/install">re-install proto as a whole</a>. Once you're on v0.26, this will be a non-issue.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Unix</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">-fsSL</span><span class="token plain"> https://moonrepo.dev/install/proto.sh </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">bash</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Windows</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">irm https://moonrepo.dev/install/proto.ps1 </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> iex</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.26#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.26#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.26.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -1259,7 +1327,7 @@ like our dynamic version detection.</p>
 Windows, we relied on PowerShell scripts (<code>.ps1</code>), batch/cmd scripts (<code>.cmd</code>), and Bash scripts, all
 with differing levels of functionality, and each serving a separate purpose. Windows support <em>did
 not</em> work well.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-didnt-work">What didn't work?<a href="https://moonrepo.dev/blog/proto-v0.26-rc#what-didnt-work" class="hash-link" aria-label="Direct link to What didn't work?" title="Direct link to What didn't work?">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-didnt-work">What didn't work?<a class="hash-link" aria-label="Direct link to What didn't work?" title="Direct link to What didn't work?" href="https://moonrepo.dev/blog/proto-v0.26-rc#what-didnt-work">​</a></h2>
 <p>When using shims, you must ensure that all the following scenarios work well: piping data/commands,
 redirection, stdin prompts, interactivity, signal handling, exit code bubbling, so on and so forth.
 Bash solves a lot of this for us, but Windows does not have a native Bash shell, and thus we had to
@@ -1271,7 +1339,7 @@ dealing with nested shim exections, for example, <code>npm</code> calls <code>no
 may be executed with <code>.ps1</code> but the child may be <code>.cmd</code>, and these do not play well together.</p>
 <p>The other problem on Windows is that scripts are not true executables, and are not easily located on
 <code>PATH</code> (excluding <code>.cmd</code> files).</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-new">What's new?<a href="https://moonrepo.dev/blog/proto-v0.26-rc#whats-new" class="hash-link" aria-label="Direct link to What's new?" title="Direct link to What's new?">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-new">What's new?<a class="hash-link" aria-label="Direct link to What's new?" title="Direct link to What's new?" href="https://moonrepo.dev/blog/proto-v0.26-rc#whats-new">​</a></h2>
 <p>To combat all of these problems, we needed a truly native solution, and that's exactly what we did.
 We wrote our own Rust based executable, that will replace all of the custom shim scripts, and can
 properly handle all of the required scenarios. This new executable is named <code>proto-shim</code>
@@ -1288,7 +1356,7 @@ properly handle all of the required scenarios. This new executable is named <cod
 <li>Native performance</li>
 <li>Doesn't require special privileges (no symlinks)</li>
 </ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="how-to-test">How to test?<a href="https://moonrepo.dev/blog/proto-v0.26-rc#how-to-test" class="hash-link" aria-label="Direct link to How to test?" title="Direct link to How to test?">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="how-to-test">How to test?<a class="hash-link" aria-label="Direct link to How to test?" title="Direct link to How to test?" href="https://moonrepo.dev/blog/proto-v0.26-rc#how-to-test">​</a></h2>
 <p>If you're interested in testing this new implementation (we'd appreciate it), you can do so by
 downloading the latest release candidate from GitHub: <a href="https://github.com/moonrepo/proto/releases" target="_blank" rel="noopener noreferrer">https://github.com/moonrepo/proto/releases</a></p>
 <p>Once downloaded, unpack the archive, and move the <code>proto</code> and <code>proto-shim</code> binaries to the
@@ -1298,7 +1366,7 @@ here, you can execute <code>proto</code> or your tool binaries as normal.</p>
 problems still persist, please report an issue or reach out to us on Discord!</p></div></div>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>On macOS, you may need to add the binary to the trusted list, in your Priacy &amp; Security settings.
 This can also be achieved on the command line with <code>xattr -c ~/.proto/bin/*</code>.</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-to-test">What to test?<a href="https://moonrepo.dev/blog/proto-v0.26-rc#what-to-test" class="hash-link" aria-label="Direct link to What to test?" title="Direct link to What to test?">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-to-test">What to test?<a class="hash-link" aria-label="Direct link to What to test?" title="Direct link to What to test?" href="https://moonrepo.dev/blog/proto-v0.26-rc#what-to-test">​</a></h2>
 <p>Basically everything. We want to ensure that all of the functionality in <a href="https://moonrepo.dev/blog/proto-v0.26-rc#whats-new">What's new?</a>
 works as expected, so simply go about your day to day development and let us know if you run into
 any issues!</p>]]></content>
@@ -1317,7 +1385,7 @@ any issues!</p>]]></content>
         <summary type="html"><![CDATA[With this release, we've focused heavily on 2 important aspects: task execution, and our onboarding]]></summary>
         <content type="html"><![CDATA[<p>With this release, we've focused heavily on 2 important aspects: task execution, and our onboarding
 flow.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-path-based-task-execution">New path based task execution<a href="https://moonrepo.dev/blog/moon-v1.18#new-path-based-task-execution" class="hash-link" aria-label="Direct link to New path based task execution" title="Direct link to New path based task execution">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-path-based-task-execution">New path based task execution<a class="hash-link" aria-label="Direct link to New path based task execution" title="Direct link to New path based task execution" href="https://moonrepo.dev/blog/moon-v1.18#new-path-based-task-execution">​</a></h2>
 <p>Since moon's inception, before we would execute a task's command, we would locate its executable on
 the file system and execute it directly. We went with this approach as we wanted to avoid all of the
 baggage and "unknown behavior" that came with executing through a shell, and to ensure a more
@@ -1329,7 +1397,7 @@ locating the executables ourselves, and instead are prepending <code>PATH</code>
 know these executables should exist. We're also loosening the restriction on the
 <a href="https://moonrepo.dev/docs/config/project#shell"><code>shell</code> task option</a>, which can now be enabled for <em>all</em> tasks, not
 just system tasks.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="dependency-executables">Dependency executables<a href="https://moonrepo.dev/blog/moon-v1.18#dependency-executables" class="hash-link" aria-label="Direct link to Dependency executables" title="Direct link to Dependency executables">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="dependency-executables">Dependency executables<a class="hash-link" aria-label="Direct link to Dependency executables" title="Direct link to Dependency executables" href="https://moonrepo.dev/blog/moon-v1.18#dependency-executables">​</a></h3>
 <p>For the 1st scenario, let's talk about Node.js modules. When we encountered an unknown task command,
 like <code>eslint</code> or <code>prettier</code>, we'd attempt to locate its executable by traversing <code>node_modules/.bin</code>
 directories, parsing Bash/PowerShell scripts, resolving the source <code>.js</code> files, and finally
@@ -1343,7 +1411,7 @@ out all the bugs, and we're pretty sure there are still edge cases unaccounted f
 mentioned above, we now prepend <code>PATH</code>, resulting in the following command:</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token assign-left variable environment constant" style="color:#ff94ff;font-weight:bold">PATH</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token string" style="color:#c9e166">"/path/to/node_modules/.bin:/path/to/proto/tools:</span><span class="token string environment constant" style="color:#ff94ff;font-weight:bold">$PATH</span><span class="token string" style="color:#c9e166">"</span><span class="token plain"> prettier </span><span class="token parameter variable" style="color:#fef9c3">--write</span><span class="token plain"> </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">.</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>This is a much cleaner approach and is far easier to understand as a user.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="multi-command-tasks">Multi-command tasks<a href="https://moonrepo.dev/blog/moon-v1.18#multi-command-tasks" class="hash-link" aria-label="Direct link to Multi-command tasks" title="Direct link to Multi-command tasks">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="multi-command-tasks">Multi-command tasks<a class="hash-link" aria-label="Direct link to Multi-command tasks" title="Direct link to Multi-command tasks" href="https://moonrepo.dev/blog/moon-v1.18#multi-command-tasks">​</a></h3>
 <p>While not officially supported in moon, it's been possible to run multiple commands in a single task
 using <code>&amp;&amp;</code> syntax. However, this approach did not work correctly with our integrated toolchain, as
 only the 1st command in the list would have its binary be located and executed correctly.</p>
@@ -1351,10 +1419,10 @@ only the 1st command in the list would have its binary be located and executed c
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'rm -rf dist &amp;&amp; vite build &amp;&amp; tsc --build'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <p>With this new <code>PATH</code> based approach, this will now work correctly. And furthermore, this also
 enables executables within Bash and PowerShell scripts to be located and executed correctly as well.</p>
-<h3 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.18#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h3>
+<h3 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?" href="https://moonrepo.dev/blog/moon-v1.18#whats-next">​</a></h3>
 <p>In the future, we'll continue to expand on this functionality, and our ultimate goal is to remove
 the concept of <code>platform</code> from tasks, which has been a bit confusing for new users.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-the-project-name-in-moonyml">Customize the project name in <code>moon.yml</code><a href="https://moonrepo.dev/blog/moon-v1.18#customize-the-project-name-in-moonyml" class="hash-link" aria-label="Direct link to customize-the-project-name-in-moonyml" title="Direct link to customize-the-project-name-in-moonyml">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-the-project-name-in-moonyml">Customize the project name in <code>moon.yml</code><a class="hash-link" aria-label="Direct link to customize-the-project-name-in-moonyml" title="Direct link to customize-the-project-name-in-moonyml" href="https://moonrepo.dev/blog/moon-v1.18#customize-the-project-name-in-moonyml">​</a></h2>
 <p>This has been a long requested feature, but thanks to the project graph rework and improvements over
 the last few releases, this is now possible. In <a href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a>, you can now
 configure the <a href="https://moonrepo.dev/docs/config/project#id"><code>id</code></a> setting to override the project name (identifier)
@@ -1368,7 +1436,7 @@ projects? It becomes difficult to manage and organize. But now, simply configure
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">&lt;project&gt;/moon.yml</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">id</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'custom-project-name'</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Be sure that all targets, project dependencies, task dependencies, and other references are using
 the new identifier, otherwise an error will be triggered!</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-onboarding-flow">Improved onboarding flow<a href="https://moonrepo.dev/blog/moon-v1.18#improved-onboarding-flow" class="hash-link" aria-label="Direct link to Improved onboarding flow" title="Direct link to Improved onboarding flow">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-onboarding-flow">Improved onboarding flow<a class="hash-link" aria-label="Direct link to Improved onboarding flow" title="Direct link to Improved onboarding flow" href="https://moonrepo.dev/blog/moon-v1.18#improved-onboarding-flow">​</a></h2>
 <p>While this doesn't affect current users, we still want to announce that we've made some slight
 changes to our onboarding process and the <a href="https://moonrepo.dev/docs/commands/init"><code>moon init</code></a> command. The previous
 command prompted far too many questions, as we would attempt to detect what languages are currently
@@ -1381,7 +1449,7 @@ a supported moon tool as an argument.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">moon init </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># bun, rust, etc</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
 <div class="theme-admonition theme-admonition-success admonition_WCGJ alert alert--success"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 12 16"><path fill-rule="evenodd" d="M6.5 0C3.48 0 1 2.19 1 5c0 .92.55 2.25 1 3 1.34 2.25 1.78 2.78 2 4v1h5v-1c.22-1.22.66-1.75 2-4 .45-.75 1-2.08 1-3 0-2.81-2.48-5-5.5-5zm3.64 7.48c-.25.44-.47.8-.67 1.11-.86 1.41-1.25 2.06-1.45 3.23-.02.05-.02.11-.02.17H5c0-.06 0-.13-.02-.17-.2-1.17-.59-1.83-1.45-3.23-.2-.31-.42-.67-.67-1.11C2.44 6.78 2 5.65 2 5c0-2.2 2.02-4 4.5-4 1.22 0 2.36.42 3.22 1.19C10.55 2.94 11 3.94 11 5c0 .66-.44 1.78-.86 2.48zM4 14h5c-.23 1.14-1.3 2-2.5 2s-2.27-.86-2.5-2z"></path></svg></span>success</div><div class="admonitionContent_pbrs"><p>We've also rewritten a good portion of the "<a href="https://moonrepo.dev/docs/setup-workspace">Getting started</a>" documentation
 to reflect these changes!</p></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.18#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/moon-v1.18#other-changes">​</a></h2>
 <p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.18.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
 of changes.</p>
 <ul>
@@ -1400,37 +1468,5 @@ of changes.</p>
         <category label="project" term="project"/>
         <category label="init" term="init"/>
         <category label="onboarding" term="onboarding"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.25 - Linux arm64 gnu and musl support]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.25</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.25"/>
-        <updated>2023-12-11T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This is a very small release that primarily adds support for Linux arm64 targets.]]></summary>
-        <content type="html"><![CDATA[<p>This is a very small release that primarily adds support for Linux arm64 targets.</p>
-<p>Thanks to <a href="https://github.com/axodotdev/cargo-dist" target="_blank" rel="noopener noreferrer">cargo-dist</a>, we can now build and distribute
-arm64 binaries with relative ease. When building the binary, libraries are statically linked to
-ensure that the binary can run on any Linux distribution.</p>
-<p>You can download the binary from the official
-<a href="https://github.com/moonrepo/proto/releases/tag/v0.21.0" target="_blank" rel="noopener noreferrer">GitHub release</a> or by running the
-<a href="https://moonrepo.dev/docs/proto/install#linux-macos-wsl">Bash installation script</a>.</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.25#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.25.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added a <a href="https://moonrepo.dev/docs/proto/commands/debug/config"><code>proto debug config</code></a> command, to debug all loaded
-configs and the final merged config.</li>
-<li>Added a <code>PROTO_BYPASS_VERSION_CHECK</code> environment variable, to bypass loading and checking of
-versions.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="proto" term="proto"/>
-        <category label="linux" term="linux"/>
-        <category label="musl" term="musl"/>
-        <category label="gnu" term="gnu"/>
-        <category label="arm64" term="arm64"/>
     </entry>
 </feed>

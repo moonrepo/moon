@@ -6,6 +6,7 @@ license = "MIT"
 description = "A plugin development kit for creating moon WASM plugins."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = true
 
 [dependencies]
 moon_pdk_api = { version = "0.0.7", path = "../pdk-api" }

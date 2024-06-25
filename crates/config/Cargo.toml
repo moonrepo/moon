@@ -6,6 +6,7 @@ license = "MIT"
 description = "Core workspace, project, and moon configuration."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = true
 
 [package.metadata.docs.rs]
 features = ["loader"]

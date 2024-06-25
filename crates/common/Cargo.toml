@@ -6,6 +6,7 @@ license = "MIT"
 description = "Common utilities."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
+publish = true
 
 [dependencies]
 miette = { workspace = true }

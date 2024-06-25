@@ -1,5 +1,5 @@
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{is_docker_container, Id};
+use moon_common::{is_docker, Id};
 use moon_hash::hash_content;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -33,7 +33,7 @@ impl<'cfg> ProjectGraphHash<'cfg> {
             aliases: BTreeMap::default(),
             sources: BTreeMap::default(),
             configs: BTreeMap::default(),
-            in_container: is_docker_container(),
+            in_container: is_docker(),
             version: env::var("MOON_VERSION").unwrap_or_default(),
         }
     }

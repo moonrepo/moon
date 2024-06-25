@@ -1,4 +1,4 @@
-use moon_common::{color, consts, is_docker_container};
+use moon_common::{color, consts, is_docker};
 use moon_config::VcsConfig;
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
@@ -74,7 +74,7 @@ impl<'app> HooksGenerator<'app> {
         // - Not particularly useful in this context.
         // - It creates a `.git` folder, which in turn enables moon caching,
         //   which we typically don't want in Docker.
-        if is_docker_container() || !self.vcs.is_enabled() {
+        if is_docker() || !self.vcs.is_enabled() {
             debug!(
                 "In a Docker container/image, not generating {} hooks",
                 self.config.manager

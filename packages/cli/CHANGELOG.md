@@ -7,6 +7,10 @@
 - Fixed the `ciReport.json` file not being created with the experimental pipeline.
 - Fixed the wrong version being displayed in `--version` and in logs.
 
+#### ⚙️ Internal
+
+- Downgraded WASM runtime to fix potential issues.
+
 ## 1.26.1
 
 #### 🐞 Fixes

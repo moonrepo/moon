@@ -8,7 +8,7 @@ pub type ProjectRelativePathBuf = RelativePathBuf;
 pub type WorkspaceRelativePath = RelativePath;
 pub type WorkspaceRelativePathBuf = RelativePathBuf;
 
-#[cfg(not(windows))]
+#[cfg(unix)]
 #[inline]
 pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
     path.as_ref().replace('\\', "/")

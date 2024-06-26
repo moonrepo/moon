@@ -50,11 +50,10 @@ jobs:
         with:
           cache-base: '^(master|develop-)'
       - run: cargo build --workspace
-      - run: ls -Ra ./target
       # Non-staged
       - run: cargo run -- docker scaffold website --include '*.config.js' --log debug
         env:
-          MOON_SKIP_SETUP_TOOLCHAIN: true
-      - run: docker build -f ./tests/docker/Dockerfile .
+          MOON_SKIP_SETUP_TOOLCHAIN: '*'
+      - run: docker buildx build -f ./tests/docker/Dockerfile .
       # Staged
-      - run: docker build -f ./tests/docker/Dockerfile.staged .
+      - run: docker buildx build -f ./tests/docker/Dockerfile.staged .

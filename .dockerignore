@@ -8,7 +8,8 @@
 /target
 
 # Node.js
-node_modules/
+node_modules
+website/node_modules
 
 # Build folders
 coverage/
@@ -25,6 +26,7 @@ umd/
 *.map
 *.min.js
 *.tsbuildinfo
+.docusaurus
 
 # Moon
 .moon/cache
@@ -32,6 +34,8 @@ packages/*/moon
 packages/*/moon.exe
 /moon
 /moon.exe
+.prototools
+.moon/docker/workspace/.prototools
 
 # Moon tests/fixtures
 tests/fixtures/*/.moon/cache
@@ -40,6 +44,3 @@ tests/fixtures/*/.yarn
 # Docker
 .dockerignore
 Dockerfile
-
-# Website
-/website

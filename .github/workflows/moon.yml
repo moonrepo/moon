@@ -41,3 +41,15 @@ jobs:
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           matrix: ${{ toJSON(matrix) }}
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: moonrepo/setup-rust@v1
+        with:
+          cache-base: '^(master|develop-)'
+      - run: cargo build --workspace
+      # Isolated
+      - run: cargo run -- docker scaffold website --include '*.config.js'
+      - run: docker build -f ./tests/docker/Dockerfile .

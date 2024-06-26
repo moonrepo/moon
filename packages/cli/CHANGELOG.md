@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Reverted the default shell back to `sh` instead of `bash` when one could not be detected.
+
 ## 1.26.2
 
 #### 🐞 Fixes

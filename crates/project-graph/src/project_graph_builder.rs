@@ -632,6 +632,8 @@ impl<'app> ProjectGraphBuilder<'app> {
             configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
         }
 
+        debug!("Loaded {} project configs", configs.len());
+
         self.configs.extend(configs);
         self.renamed_ids.extend(renamed_ids);
 

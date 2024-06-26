@@ -16,7 +16,7 @@ fn get_default_shell() -> ShellType {
         if consts::OS == "windows" {
             ShellType::Pwsh
         } else {
-            ShellType::Bash
+            ShellType::Sh
         }
     })
 }

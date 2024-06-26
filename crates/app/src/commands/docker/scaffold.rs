@@ -343,10 +343,14 @@ pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 
         // Check lines so we can match exactly and avoid comments or nested paths
         for line in ignore.lines() {
-            if line.trim() == ".moon/cache" {
-                is_ignored = true;
-                break;
-            }
+            match line.trim() {
+                // Better way?
+                ".moon/cache" | ".moon/cache/" | "./.moon/cache" | "./.moon/cache/" => {
+                    is_ignored = true;
+                    break;
+                }
+                _ => {}
+            };
         }
     }
 

@@ -6,6 +6,7 @@ use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLA
 use moon_common::{path, Id};
 use moon_config::LanguageType;
 use moon_platform_detector::detect_language_files;
+use moon_project_graph::ProjectGraph;
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use rustc_hash::FxHashSet;
 use schematic::ConfigEnum;
@@ -62,10 +63,14 @@ fn create_files<T: AsRef<str>>(list: &[T], dest: &Path) -> AppResult {
     Ok(())
 }
 
-#[instrument(skip(session))]
-async fn scaffold_workspace(session: &CliSession, docker_root: &Path) -> AppResult {
+#[instrument(skip(session, project_graph))]
+async fn scaffold_workspace(
+    session: &CliSession,
+    project_graph: &ProjectGraph,
+    docker_root: &Path,
+) -> AppResult {
     let docker_workspace_root = docker_root.join("workspace");
-    let projects = session.get_project_graph().await?.get_all()?;
+    let projects = project_graph.get_all()?;
 
     debug!(
         scaffold_dir = ?docker_workspace_root,
@@ -224,15 +229,16 @@ async fn scaffold_workspace(session: &CliSession, docker_root: &Path) -> AppResu
     Ok(())
 }
 
-#[instrument(skip(session, manifest))]
+#[instrument(skip(session, project_graph, manifest))]
 #[async_recursion]
 async fn scaffold_sources_project(
     session: &CliSession,
+    project_graph: &ProjectGraph,
     docker_sources_root: &Path,
     project_id: &Id,
     manifest: &mut DockerManifest,
 ) -> AppResult {
-    let project = session.get_project_graph().await?.get(project_id)?;
+    let project = project_graph.get(project_id)?;
 
     debug!(
         id = project_id.as_str(),
@@ -263,16 +269,24 @@ async fn scaffold_sources_project(
                 "Including dependency project"
             );
 
-            scaffold_sources_project(session, docker_sources_root, &dep_cfg.id, manifest).await?;
+            scaffold_sources_project(
+                session,
+                project_graph,
+                docker_sources_root,
+                &dep_cfg.id,
+                manifest,
+            )
+            .await?;
         }
     }
 
     Ok(())
 }
 
-#[instrument(skip(session))]
+#[instrument(skip(session, project_graph))]
 async fn scaffold_sources(
     session: &CliSession,
+    project_graph: &ProjectGraph,
     docker_root: &Path,
     project_ids: &[Id],
     include: &[String],
@@ -292,11 +306,18 @@ async fn scaffold_sources(
 
     // Copy all projects
     for project_id in project_ids {
-        scaffold_sources_project(session, &docker_sources_root, project_id, &mut manifest).await?;
+        scaffold_sources_project(
+            session,
+            project_graph,
+            &docker_sources_root,
+            project_id,
+            &mut manifest,
+        )
+        .await?;
     }
 
     // Include non-focused projects in the manifest
-    for project_id in session.get_project_graph().await?.ids() {
+    for project_id in project_graph.ids() {
         if !manifest.focused_projects.contains(project_id) {
             manifest.unfocused_projects.insert(project_id.to_owned());
         }
@@ -387,8 +408,18 @@ pub async fn scaffold(session: CliSession, args: DockerScaffoldArgs) -> AppResul
     fs::create_dir_all(&docker_root)?;
 
     // Create the workspace skeleton
-    scaffold_workspace(&session, &docker_root).await?;
-    scaffold_sources(&session, &docker_root, &args.ids, &args.include).await?;
+    let project_graph = session.get_project_graph().await?;
+
+    scaffold_workspace(&session, &project_graph, &docker_root).await?;
+
+    scaffold_sources(
+        &session,
+        &project_graph,
+        &docker_root,
+        &args.ids,
+        &args.include,
+    )
+    .await?;
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.26.4
 
 #### 🐞 Fixes
 

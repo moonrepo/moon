@@ -8,6 +8,7 @@ use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
+use moon_project_graph::ProjectGraph;
 use moon_task::Target;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
@@ -141,7 +142,7 @@ async fn gather_touched_files(
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 async fn gather_runnable_targets(
     console: &mut CiConsole,
-    session: &CliSession,
+    project_graph: &ProjectGraph,
     args: &CiArgs,
 ) -> AppResult<TargetList> {
     console.print_header("Gathering potential targets")?;
@@ -149,7 +150,7 @@ async fn gather_runnable_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    let projects = session.get_project_graph().await?.get_all()?;
+    let projects = project_graph.get_all()?;
 
     if args.targets.is_empty() {
         for project in projects {
@@ -207,13 +208,13 @@ fn distribute_targets_across_jobs(
 async fn generate_action_graph(
     console: &mut CiConsole,
     session: &CliSession,
+    project_graph: &ProjectGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<ActionGraph> {
     console.print_header("Generating action graph")?;
 
-    let project_graph = session.get_project_graph().await?;
-    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
+    let mut action_graph_builder = session.build_action_graph(project_graph).await?;
 
     // Run dependents to ensure consumers still work correctly
     let requirements = RunRequirements {
@@ -249,8 +250,9 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
         last_title: String::new(),
     };
 
+    let project_graph = session.get_project_graph().await?;
     let touched_files = gather_touched_files(&mut console, &session, &args).await?;
-    let targets = gather_runnable_targets(&mut console, &session, &args).await?;
+    let targets = gather_runnable_targets(&mut console, &project_graph, &args).await?;
 
     if targets.is_empty() {
         console.write_line(color::invalid("No targets to run"))?;
@@ -259,8 +261,14 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     }
 
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
-    let action_graph =
-        generate_action_graph(&mut console, &session, &targets, &touched_files).await?;
+    let action_graph = generate_action_graph(
+        &mut console,
+        &session,
+        &project_graph,
+        &targets,
+        &touched_files,
+    )
+    .await?;
 
     if action_graph.is_empty() {
         console.write_line(color::invalid("No targets to run based on touched files"))?;

@@ -10,12 +10,11 @@ pub async fn run_action_pipeline(
     action_graph: ActionGraph,
     action_context: Option<ActionContext>,
 ) -> miette::Result<Vec<Action>> {
+    let project_graph = session.get_project_graph().await?;
+
     // v2
     if session.workspace_config.experiments.action_pipeline_v2 {
-        let mut pipeline = ExpActionPipeline::new(
-            session.get_app_context()?,
-            session.get_project_graph().await?,
-        );
+        let mut pipeline = ExpActionPipeline::new(session.get_app_context()?, project_graph);
 
         if let Some(concurrency) = &session.cli.concurrency {
             pipeline.concurrency = *concurrency;
@@ -47,10 +46,7 @@ pub async fn run_action_pipeline(
 
     // v1
     {
-        let mut pipeline = ActionPipeline::new(
-            session.get_app_context()?,
-            session.get_project_graph().await?,
-        );
+        let mut pipeline = ActionPipeline::new(session.get_app_context()?, project_graph);
 
         if let Some(concurrency) = &session.cli.concurrency {
             pipeline.concurrency(*concurrency);

@@ -20,6 +20,3 @@ digraph {
     6 -> 0 [ label="development" arrowhead=box, arrowtail=box]
     6 -> 2 [ label="production" arrowhead=box, arrowtail=box]
 }
-
-
-

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Potential fix for a deadlock that occurs when running `moon docker scaffold`.
+- Reverted the default shell back to `sh` instead of `bash` when one could not be detected.
+
 ## 1.26.2
 
 #### 🐞 Fixes

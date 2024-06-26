@@ -1,5 +1,4 @@
 use cached::proc_macro::cached;
-use std::env::consts;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
@@ -12,13 +11,7 @@ fn find_command_on_path(name: String) -> Option<PathBuf> {
 
 #[cached]
 fn get_default_shell() -> ShellType {
-    ShellType::detect().unwrap_or_else(|| {
-        if consts::OS == "windows" {
-            ShellType::Pwsh
-        } else {
-            ShellType::Sh
-        }
-    })
+    ShellType::detect_with_fallback()
 }
 
 #[inline]

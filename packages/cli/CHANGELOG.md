@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the shell could not be detected, and would potentially hang.
+
 ## 1.26.3
 
 #### 🐞 Fixes

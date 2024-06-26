@@ -255,7 +255,11 @@ impl DefaultReporter {
             counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
         }
 
-        let counts_message = counts_message.join(&color::muted(", "));
+        let counts_message = if counts_message.is_empty() {
+            color::muted("0 tasks ran")
+        } else {
+            counts_message.join(&color::muted(", "))
+        };
         let mut elapsed_time = time::elapsed(item.duration.unwrap_or_default());
 
         if passed_count == cached_count && failed_count == 0 {
@@ -263,11 +267,11 @@ impl DefaultReporter {
         }
 
         if item.summarize {
-            self.out.print_entry("Actions", &counts_message)?;
-            self.out.print_entry("   Time", &elapsed_time)?;
+            self.out.print_entry("Actions", counts_message)?;
+            self.out.print_entry("   Time", elapsed_time)?;
         } else {
-            self.out.print_entry("Tasks", &counts_message)?;
-            self.out.print_entry(" Time", &elapsed_time)?;
+            self.out.print_entry("Tasks", counts_message)?;
+            self.out.print_entry(" Time", elapsed_time)?;
         }
 
         Ok(())

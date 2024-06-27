@@ -54,8 +54,9 @@ jobs:
         with:
           cache-base: '^(master|develop-)'
       - run: cargo build --workspace
+      - run: ./target/debug/moon --version
       # Non-staged
-      - run: cargo run -- docker scaffold website --include '*.config.js' --log debug
+      - run: ./target/debug/moon docker scaffold website --include '*.config.js' --log debug
         env:
           MOON_SKIP_SETUP_TOOLCHAIN: '*'
       - uses: depot/build-push-action@v1

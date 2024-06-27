@@ -1,4 +1,5 @@
 use crate::app_error::AppError;
+use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_config::{PlatformType, ToolchainConfig};
@@ -187,6 +188,11 @@ pub async fn register_platforms(
 
 #[instrument]
 pub async fn load_toolchain() -> AppResult {
+    // This isn't an action but we should also support skipping here!
+    if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
+        return Ok(());
+    }
+
     for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;
     }

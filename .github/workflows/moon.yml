@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: depot/setup-action@v1
       - uses: moonrepo/setup-rust@v1
         with:
           cache-base: '^(master|develop-)'
@@ -54,6 +55,12 @@ jobs:
       - run: cargo run -- docker scaffold website --include '*.config.js' --log debug
         env:
           MOON_SKIP_SETUP_TOOLCHAIN: '*'
-      - run: docker buildx build -f ./tests/docker/Dockerfile .
+      - uses: depot/build-push-action@v1
+        with:
+          context: .
+          file: ./tests/docker/Dockerfile
       # Staged
-      - run: docker buildx build -f ./tests/docker/Dockerfile.staged .
+      - uses: depot/build-push-action@v1
+        with:
+          context: .
+          file: ./tests/docker/Dockerfile.staged

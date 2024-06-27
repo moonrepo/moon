@@ -18,6 +18,7 @@ on:
   # Uncomment to test in PRs (its safe)
   # pull_request:
 
+# Required for depot!
 permissions:
   contents: write
   id-token: write

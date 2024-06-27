@@ -1,0 +1,48 @@
+#### BASE
+FROM node:latest AS base
+WORKDIR /app
+
+# Install moon binary
+# RUN npm install -g @moonrepo/cli
+COPY ./target/debug/moon /usr/bin
+
+#### WORKSPACE
+FROM base AS workspace
+WORKDIR /app
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold website --include '*.config.js' --log debug
+
+#### BUILD
+FROM base AS build
+WORKDIR /app
+
+# Copy toolchain
+COPY --from=workspace /root/.proto /root/.proto
+COPY --from=workspace /root/.rustup /root/.rustup
+
+# Copy workspace skeleton
+COPY --from=workspace /app/.moon/docker/workspace .
+
+# Manually copy these since they aren't moon projects
+COPY ./packages/cli ./packages/cli
+COPY ./packages/core-linux-arm64-gnu ./packages/core-linux-arm64-gnu
+COPY ./packages/core-linux-arm64-musl ./packages/core-linux-arm64-musl
+COPY ./packages/core-linux-x64-gnu ./packages/core-linux-x64-gnu
+COPY ./packages/core-linux-x64-musl ./packages/core-linux-x64-musl
+COPY ./packages/core-macos-arm64 ./packages/core-macos-arm64
+COPY ./packages/core-macos-x64 ./packages/core-macos-x64
+COPY ./packages/core-windows-x64-msvc ./packages/core-windows-x64-msvc
+
+# Install toolchain and dependencies
+RUN moon docker setup --log debug
+
+# Copy source files
+COPY --from=workspace /app/.moon/docker/sources .
+
+# Run something
+RUN moon run website:build --log debug
+
+# Prune workspace
+RUN moon docker prune --log debug

@@ -166,6 +166,9 @@ RUN moon docker scaffold <project>
 FROM base AS build
 WORKDIR /app
 
+# Copy toolchain
+COPY --from=workspace /root/.proto /root/.proto
+
 # Copy workspace skeleton
 COPY --from=workspace /app/.moon/docker/workspace .
 

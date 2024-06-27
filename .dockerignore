@@ -6,6 +6,7 @@
 
 # Rust
 /target
+!/target/debug/moon
 
 # Node.js
 node_modules

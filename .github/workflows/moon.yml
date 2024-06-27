@@ -15,11 +15,6 @@ on:
       - package.json
       - yarn.lock
 
-# Required for depot!
-permissions:
-  contents: write
-  id-token: write
-
 jobs:
   ci:
     name: CI
@@ -49,6 +44,9 @@ jobs:
   docker:
     name: Docker
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: depot/setup-action@v1
@@ -63,9 +61,11 @@ jobs:
       - uses: depot/build-push-action@v1
         with:
           context: .
+          push: false
           file: ./tests/docker/Dockerfile
       # Staged
       - uses: depot/build-push-action@v1
         with:
           context: .
+          push: false
           file: ./tests/docker/Dockerfile.staged

@@ -208,6 +208,12 @@ export interface TaskConfig {
 	 */
 	platform: PlatformType;
 	/**
+	 * A script to run within a shell. A script is anything from a single command,
+	 * to multiple commands (&&, etc), or shell specific syntax. Does not support
+	 * arguments, merging, or inheritance.
+	 */
+	script: string | null;
+	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.
 	 *
@@ -424,6 +430,12 @@ export interface PartialTaskConfig {
 	 * @default 'unknown'
 	 */
 	platform?: PlatformType | null;
+	/**
+	 * A script to run within a shell. A script is anything from a single command,
+	 * to multiple commands (&&, etc), or shell specific syntax. Does not support
+	 * arguments, merging, or inheritance.
+	 */
+	script?: string | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined.

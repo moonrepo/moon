@@ -927,6 +927,18 @@
             }
           ]
         },
+        "script": {
+          "title": "script",
+          "description": "A script to run within a shell. A script is anything from a single command, to multiple commands (&&, etc), or shell specific syntax. Does not support arguments, merging, or inheritance.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "type": {
           "title": "type",
           "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",

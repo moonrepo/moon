@@ -1030,4 +1030,95 @@ mod token_expander {
             );
         }
     }
+
+    mod script {
+        use super::*;
+
+        #[test]
+        fn passes_through() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("bin --foo -az bar".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(expander.expand_script(&task).unwrap(), "bin --foo -az bar");
+        }
+
+        #[test]
+        fn replaces_one_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("$project/bin --foo -az bar".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_script(&task).unwrap(),
+                "project/bin --foo -az bar"
+            );
+        }
+
+        #[test]
+        fn replaces_two_vars() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("$project/bin/$task --foo -az bar".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_script(&task).unwrap(),
+                "project/bin/task --foo -az bar"
+            );
+        }
+
+        #[test]
+        fn supports_outputs() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("bin --foo -az @out(0)".into());
+            task.outputs = vec![OutputPath::ProjectGlob("**/*.json".into())];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_script(&task).unwrap(),
+                "bin --foo -az project/source/**/*.json"
+            );
+        }
+
+        #[test]
+        fn supports_inputs() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.script = Some("bin --foo -az @in(0) @in(1)".into());
+            task.inputs = vec![
+                InputPath::ProjectFile("docs.md".into()),
+                InputPath::ProjectFile("other/file.json".into()),
+            ];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_script(&task).unwrap(),
+                "bin --foo -az project/source/docs.md project/source/other/file.json"
+            );
+        }
+    }
 }

@@ -2,12 +2,12 @@ use moon_common::get_env_home;
 use moon_config::RustConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
-use moon_platform_runtime::RuntimeReq;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
     Tool,
 };
+use moon_toolchain::RuntimeReq;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;

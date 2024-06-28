@@ -444,7 +444,8 @@ mod install_deps {
 
         assert!(sandbox
             .path()
-            .join(".moon/cache/states/toolNode-18.0.0.json")
+            // 18.0.0
+            .join(".moon/cache/states/toolchain-node-8325753450937010491.json")
             .exists());
     }
 

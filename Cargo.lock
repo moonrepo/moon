@@ -3769,29 +3769,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_platform_detector"
-version = "0.0.1"
-dependencies = [
- "moon_config",
- "once_cell",
- "regex",
-]
-
-[[package]]
-name = "moon_platform_plugin"
-version = "0.0.1"
-dependencies = [
- "miette",
- "moon_common",
- "moon_config",
- "moon_pdk_api",
- "moon_plugin",
- "proto_core",
- "rustc-hash 1.1.0",
- "tracing",
-]
-
-[[package]]
 name = "moon_plugin"
 version = "0.0.1"
 dependencies = [
@@ -4187,6 +4164,20 @@ dependencies = [
  "moon_config",
  "regex",
  "serde",
+]
+
+[[package]]
+name = "moon_toolchain_plugin"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_pdk_api",
+ "moon_plugin",
+ "proto_core",
+ "rustc-hash 1.1.0",
+ "tracing",
 ]
 
 [[package]]

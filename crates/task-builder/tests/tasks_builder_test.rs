@@ -1523,4 +1523,92 @@ mod tasks_builder {
             )
         }
     }
+
+    mod scripts {
+        use super::*;
+
+        #[tokio::test]
+        async fn single_command() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("single-command").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.script.as_ref().unwrap(), "foo --bar baz");
+        }
+
+        #[tokio::test]
+        async fn multi_command() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("multi-command").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.script.as_ref().unwrap(), "foo --bar baz && qux -abc");
+
+            let task = tasks.get("multi-command-semi").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(
+                task.script.as_ref().unwrap(),
+                "foo --bar baz; qux -abc; what"
+            );
+        }
+
+        #[tokio::test]
+        async fn pipe_redirect() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("pipe").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.script.as_ref().unwrap(), "foo | bar | baz");
+
+            let task = tasks.get("redirect").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.script.as_ref().unwrap(), "foo > bar.txt");
+        }
+
+        #[tokio::test]
+        async fn replaces_other_command() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("with-command").unwrap();
+
+            assert_ne!(task.command, "qux");
+        }
+
+        #[tokio::test]
+        async fn removes_all_arguments() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("with-args").unwrap();
+
+            assert_eq!(task.args, Vec::<String>::new());
+        }
+
+        #[tokio::test]
+        async fn cannot_disable_shell() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("no-shell").unwrap();
+
+            assert_ne!(task.options.shell, Some(true));
+        }
+
+        #[tokio::test]
+        async fn cannot_change_platform() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "scripts/moon.yml").await;
+            let task = tasks.get("custom-platform").unwrap();
+
+            assert_eq!(task.platform, PlatformType::System);
+        }
+    }
 }

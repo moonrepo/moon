@@ -3,7 +3,7 @@ use moon_common::path::hash_component;
 use rustc_hash::FxHashMap;
 use schematic::{Cacher, ConfigError};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 pub struct ConfigCache {

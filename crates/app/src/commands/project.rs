@@ -143,7 +143,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
             console.write_line(format!(
                 "  {} {}",
                 color::muted("›"),
-                color::shell(format!("{} {}", task.command, task.args.join(" "))),
+                color::shell(task.get_command_line()),
             ))?;
 
             if let Some(description) = &task.description {

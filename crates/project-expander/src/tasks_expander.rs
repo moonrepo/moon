@@ -41,6 +41,25 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
     }
 
     #[instrument(skip_all)]
+    pub fn expand_script(&mut self, task: &mut Task) -> miette::Result<()> {
+        trace!(
+            target = task.target.as_str(),
+            script = task.script.as_ref(),
+            "Expanding tokens and variables in script"
+        );
+
+        // Token variables
+        let script = self.token.expand_script(task)?;
+
+        // Environment variables
+        let script = substitute_env_var("", &script, &task.env);
+
+        task.script = Some(script);
+
+        Ok(())
+    }
+
+    #[instrument(skip_all)]
     pub fn expand_args(&mut self, task: &mut Task) -> miette::Result<()> {
         if task.args.is_empty() {
             return Ok(());

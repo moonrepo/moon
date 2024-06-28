@@ -3409,9 +3409,9 @@ name = "moon_common"
 version = "0.0.7"
 dependencies = [
  "miette",
- "once_cell",
  "regex",
  "relative-path",
+ "rustc-hash 1.1.0",
  "schematic",
  "serde",
  "starbase_styles",

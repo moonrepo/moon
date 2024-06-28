@@ -4,6 +4,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::color;
+use moon_common::path::{encode_component, hash_component};
 use moon_config::UnresolvedVersionSpec;
 use moon_platform::PlatformManager;
 use moon_time::now_millis;
@@ -46,8 +47,8 @@ pub async fn setup_toolchain(
 
     let mut state = cache_engine.state.load_state::<ToolCacheState>(format!(
         "toolchain-{}-{}.json",
-        node.runtime.id(),
-        cache_engine.hash_string(node.runtime.requirement.to_string()),
+        encode_component(node.runtime.id()),
+        hash_component(node.runtime.requirement.to_string()),
     ))?;
 
     // Install and setup the specific tool + version in the toolchain!

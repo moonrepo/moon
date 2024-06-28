@@ -10,9 +10,9 @@ publish = true
 
 [dependencies]
 miette = { workspace = true }
-once_cell = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 regex = { workspace = true }
+rustc-hash = { workspace = true }
 schematic = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

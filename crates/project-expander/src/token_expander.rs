@@ -22,6 +22,7 @@ pub struct ExpandedResult {
 #[derive(PartialEq)]
 pub enum TokenScope {
     Command,
+    Script,
     Args,
     Env,
     Inputs,
@@ -32,6 +33,7 @@ impl TokenScope {
     pub fn label(&self) -> String {
         match self {
             TokenScope::Command => "commands",
+            TokenScope::Script => "scripts",
             TokenScope::Args => "args",
             TokenScope::Env => "env",
             TokenScope::Inputs => "inputs",
@@ -88,6 +90,20 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         }
 
         self.replace_variables(task, &task.command)
+    }
+
+    #[instrument(skip_all)]
+    pub fn expand_script(&mut self, task: &Task) -> miette::Result<String> {
+        self.scope = TokenScope::Script;
+
+        let script = task.script.as_ref().expect("Script not defined!");
+
+        if self.has_token_function(script) {
+            // Trigger the scope error
+            self.replace_function(task, script)?;
+        }
+
+        self.replace_variables(task, script)
     }
 
     #[instrument(skip_all)]

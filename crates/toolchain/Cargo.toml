@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_config = { path = "../config" }
+regex = { workspace = true }
 serde = { workspace = true }
 
 [lints]

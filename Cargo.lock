@@ -3319,7 +3319,6 @@ dependencies = [
  "moon_hash",
  "moon_target",
  "moon_time",
- "rustc-hash 1.1.0",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

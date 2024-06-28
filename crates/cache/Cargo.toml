@@ -15,7 +15,6 @@ moon_hash = { path = "../hash" }
 moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
-rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
 tracing = { workspace = true }

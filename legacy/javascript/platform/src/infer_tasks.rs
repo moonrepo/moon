@@ -6,7 +6,7 @@ use moon_config::{
 };
 use moon_node_lang::package_json::{PackageJsonCache, ScriptsMap};
 use moon_target::Target;
-use moon_toolchain::detect::detect_task_platform;
+use moon_toolchain::detect::is_system_command;
 use moon_utils::regex::ID_CLEAN;
 use moon_utils::{regex, string_vec};
 use once_cell::sync::Lazy;
@@ -204,7 +204,11 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.platform = Some(detect_task_platform(&args[0], &[platform]));
+        task_config.platform = Some(if is_system_command(&args[0]) {
+            PlatformType::System
+        } else {
+            platform
+        });
         task_config.command = Some(if args.len() == 1 {
             PartialTaskArgs::String(args.remove(0))
         } else {

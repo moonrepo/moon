@@ -15,10 +15,10 @@ moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_console = { path = "../console" }
 moon_notifier = { path = "../notifier" }
-moon_toolchain = { path = "../toolchain" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
+moon_toolchain = { path = "../toolchain" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 num_cpus = "1.16.0"

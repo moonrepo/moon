@@ -9,9 +9,9 @@ moon_bun_lang = { path = "../lang" }
 moon_config = { path = "../../../crates/config" }
 moon_console = { path = "../../../crates/console" }
 moon_logger = { path = "../../core/logger" }
-moon_toolchain = { path = "../../../crates/toolchain" }
 moon_process = { path = "../../../crates/process" }
 moon_tool = { path = "../../core/tool" }
+moon_toolchain = { path = "../../../crates/toolchain" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_core = { workspace = true }

@@ -24,6 +24,22 @@ fn use_platform_if_enabled(
     PlatformType::System
 }
 
+pub fn is_system_command(command: &str) -> bool {
+    let unix = UNIX_SYSTEM_COMMANDS.get_or_init(|| {
+        Regex::new(
+            "^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$",
+        )
+        .unwrap()
+    });
+
+    let windows = WINDOWS_SYSTEM_COMMANDS.get_or_init(|| Regex::new(
+        "^(cd|cmd|cmd.exe|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy|pwsh|pwsh.exe|powershell|powershell.exe)$",
+    )
+    .unwrap());
+
+    unix.is_match(command) || windows.is_match(command)
+}
+
 pub fn detect_task_platform(command: &str, enabled_platforms: &[PlatformType]) -> PlatformType {
     if BUN_COMMANDS
         .get_or_init(|| Regex::new("^(bun|bunx)$").unwrap())
@@ -55,19 +71,7 @@ pub fn detect_task_platform(command: &str, enabled_platforms: &[PlatformType]) -
         return use_platform_if_enabled(PlatformType::Node, enabled_platforms);
     }
 
-    if UNIX_SYSTEM_COMMANDS
-        .get_or_init(|| {
-            Regex::new(
-                "^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$",
-            )
-            .unwrap()
-        })
-        .is_match(command)
-        || WINDOWS_SYSTEM_COMMANDS.get_or_init(|| Regex::new(
-            "^(cd|cmd|cmd.exe|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy|pwsh|pwsh.exe|powershell|powershell.exe)$",
-        )
-        .unwrap()).is_match(command)
-    {
+    if is_system_command(command) {
         return PlatformType::System;
     }
 

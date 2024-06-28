@@ -10,11 +10,11 @@ moon_action_context = { path = "../../../crates/action-context" }
 moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
 moon_hash = { path = "../../../crates/hash" }
-moon_toolchain = { path = "../../../crates/toolchain" }
 moon_process = { path = "../../../crates/process" }
 moon_project = { path = "../../../crates/project" }
 moon_task = { path = "../../../crates/task" }
 moon_tool = { path = "../tool" }
+moon_toolchain = { path = "../../../crates/toolchain" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }

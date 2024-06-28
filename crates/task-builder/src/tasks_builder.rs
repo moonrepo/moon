@@ -388,14 +388,15 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        // If a script, wipe out the inherited arguments, and extract the first command
+        // If a script, wipe out inherited arguments, and extract the first command
         if let Some(script) = &task.script {
             task.args.clear();
+            task.platform = PlatformType::System;
 
             if let Some(i) = script.find(' ') {
                 task.command = script[0..i].to_owned();
             } else {
-                task.command.clear();
+                task.command = script.to_owned();
             }
         }
 

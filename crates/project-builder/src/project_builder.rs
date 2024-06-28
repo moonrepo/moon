@@ -6,10 +6,10 @@ use moon_config::{
     ToolchainConfig,
 };
 use moon_file_group::FileGroup;
-use moon_platform_detector::{detect_project_language, detect_project_platform};
 use moon_project::Project;
 use moon_task::{TargetScope, Task};
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
+use moon_toolchain::detect::{detect_project_language, detect_project_platform};
 use rustc_hash::FxHashMap;
 use std::borrow::Cow;
 use std::collections::BTreeMap;

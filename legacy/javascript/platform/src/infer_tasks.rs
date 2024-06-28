@@ -5,8 +5,8 @@ use moon_config::{
     PlatformType,
 };
 use moon_node_lang::package_json::{PackageJsonCache, ScriptsMap};
-use moon_platform_detector::{UNIX_SYSTEM_COMMANDS, WINDOWS_SYSTEM_COMMANDS};
 use moon_target::Target;
+use moon_toolchain::detect::detect_task_platform;
 use moon_utils::regex::ID_CLEAN;
 use moon_utils::{regex, string_vec};
 use once_cell::sync::Lazy;
@@ -124,17 +124,6 @@ fn clean_script_name(name: &str) -> String {
     ID_CLEAN.replace_all(name, "-").to_string()
 }
 
-fn detect_platform_type(command: &str, fallback: PlatformType) -> PlatformType {
-    if UNIX_SYSTEM_COMMANDS.is_match(command)
-        || WINDOWS_SYSTEM_COMMANDS.is_match(command)
-        || command == "noop"
-    {
-        return PlatformType::System;
-    }
-
-    fallback
-}
-
 pub enum TaskContext {
     ConvertToTask,
     WrapRunScript,
@@ -215,7 +204,7 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.platform = Some(detect_platform_type(&args[0], platform));
+        task_config.platform = Some(detect_task_platform(&args[0], &[platform]));
         task_config.command = Some(if args.len() == 1 {
             PartialTaskArgs::String(args.remove(0))
         } else {

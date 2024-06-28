@@ -1,0 +1,26 @@
+tasks:
+  single-command:
+    script: 'foo --bar baz'
+  multi-command:
+    script: 'foo --bar baz && qux -abc'
+  multi-command-semi:
+    script: 'foo --bar baz; qux -abc; what'
+
+  pipe:
+    script: 'foo | bar | baz'
+  redirect:
+    script: 'foo > bar.txt'
+
+  no-shell:
+    script: 'foo'
+    options:
+      shell: false
+  custom-platform:
+    script: 'foo'
+    platform: 'node'
+  with-command:
+    script: 'bin --foo bar'
+    command: 'qux'
+  with-args:
+    script: 'bin --foo bar'
+    args: ['--foo', 'bar']

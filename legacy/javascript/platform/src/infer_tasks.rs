@@ -204,7 +204,7 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.platform = Some(if is_system_command(&args[0]) {
+        task_config.platform = Some(if is_system_command(&args[0]) || &args[0] == "noop" {
             PlatformType::System
         } else {
             platform

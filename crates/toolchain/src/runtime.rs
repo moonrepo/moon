@@ -103,7 +103,7 @@ impl Runtime {
         self.platform.to_string().to_lowercase()
     }
 
-    pub fn key(&self) -> String {
+    pub fn target(&self) -> String {
         let mut key = self.id();
 
         match &self.requirement {

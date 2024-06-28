@@ -2,6 +2,7 @@ use crate::{merge_clean_results, resolve_path, HashEngine, StateEngine};
 use moon_cache_item::*;
 use moon_common::consts;
 use moon_time::parse_duration;
+use rustc_hash::FxHasher;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_utils::fs::RemoveDirContentsResult;
@@ -9,6 +10,7 @@ use starbase_utils::{fs, json};
 use std::env;
 use std::ffi::OsStr;
 use std::future::Future;
+use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use tracing::{debug, instrument};
@@ -157,6 +159,14 @@ impl CacheEngine {
 
     pub fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
         resolve_path(&self.cache_dir, path)
+    }
+
+    /// Hash a value that may contain special characters into a valid file name.
+    pub fn hash_string(&self, value: impl AsRef<str>) -> String {
+        let mut hasher = FxHasher::default();
+        hasher.write(value.as_ref().as_bytes());
+
+        format!("{}", hasher.finish())
     }
 
     pub fn is_readable(&self) -> bool {

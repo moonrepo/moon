@@ -15,6 +15,7 @@ cache_item!(
     pub struct ToolCacheState {
         pub last_versions: FxHashMap<String, UnresolvedVersionSpec>,
         pub last_version_check_time: u128,
+        pub requirement: Option<UnresolvedVersionSpec>,
     }
 );
 
@@ -26,9 +27,10 @@ pub async fn setup_toolchain(
     node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
     let log_label = node.runtime.label();
+    let cache_engine = &app_context.cache_engine;
 
     if let Some(value) =
-        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.runtime.key())
+        should_skip_action_matching("MOON_SKIP_SETUP_TOOLCHAIN", node.runtime.target())
     {
         debug!(
             env = value,
@@ -42,13 +44,11 @@ pub async fn setup_toolchain(
 
     debug!("Setting up {} toolchain", log_label);
 
-    let mut state = app_context
-        .cache_engine
-        .state
-        .load_state::<ToolCacheState>(format!(
-            "tool{}-{}.json",
-            &node.runtime, &node.runtime.requirement
-        ))?;
+    let mut state = cache_engine.state.load_state::<ToolCacheState>(format!(
+        "toolchain-{}-{}.json",
+        node.runtime.id(),
+        cache_engine.hash_string(node.runtime.requirement.to_string()),
+    ))?;
 
     // Install and setup the specific tool + version in the toolchain!
     let installed_count = PlatformManager::write()
@@ -62,6 +62,7 @@ pub async fn setup_toolchain(
 
     // Update the cache with the timestamp
     state.data.last_version_check_time = now_millis();
+    state.data.requirement = node.runtime.requirement.to_spec();
     state.save()?;
 
     Ok(if installed_count > 0 {

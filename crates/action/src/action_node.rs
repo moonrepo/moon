@@ -1,6 +1,6 @@
 use moon_common::Id;
-use moon_toolchain::Runtime;
 use moon_target::Target;
+use moon_toolchain::Runtime;
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -161,12 +161,12 @@ impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             Self::InstallWorkspaceDeps(inner) => {
-                format!("InstallWorkspaceDeps({})", inner.runtime.key())
+                format!("InstallWorkspaceDeps({})", inner.runtime.target())
             }
             Self::InstallProjectDeps(inner) => {
                 format!(
                     "InstallProjectDeps({}, {})",
-                    inner.runtime.key(),
+                    inner.runtime.target(),
                     inner.project
                 )
             }
@@ -187,7 +187,7 @@ impl ActionNode {
                 if inner.runtime.platform.is_system() {
                     "SetupToolchain(system)".into()
                 } else {
-                    format!("SetupToolchain({})", inner.runtime.key())
+                    format!("SetupToolchain({})", inner.runtime.target())
                 }
             }
             Self::SyncProject(inner) => {

@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-pub struct PlatformPlugin {
+pub struct ToolchainPlugin {
     pub id: PluginId,
 
     plugin: Arc<PluginContainer>,
@@ -15,14 +15,14 @@ pub struct PlatformPlugin {
     tool: Option<Tool>,
 }
 
-impl PlatformPlugin {
+impl ToolchainPlugin {
     #[instrument(skip_all)]
     pub fn sync_workspace(&self, context: MoonContext) -> miette::Result<()> {
         if !self.plugin.has_func("sync_workspace") {
             return Ok(());
         }
 
-        debug!(platform = self.id.as_str(), "Syncing workspace");
+        debug!(toolchain = self.id.as_str(), "Syncing workspace");
 
         self.plugin
             .call_func_without_output("sync_workspace", SyncWorkspaceInput { context })?;
@@ -41,7 +41,7 @@ impl PlatformPlugin {
             return Ok(());
         }
 
-        debug!(platform = self.id.as_str(), "Syncing project");
+        debug!(toolchain = self.id.as_str(), "Syncing project");
 
         self.plugin.call_func_without_output(
             "sync_project",
@@ -56,7 +56,7 @@ impl PlatformPlugin {
     }
 }
 
-impl Plugin for PlatformPlugin {
+impl Plugin for ToolchainPlugin {
     fn new(registration: PluginRegistration) -> miette::Result<Self> {
         let plugin = Arc::new(registration.container);
 
@@ -78,6 +78,6 @@ impl Plugin for PlatformPlugin {
     }
 
     fn get_type(&self) -> PluginType {
-        PluginType::Platform
+        PluginType::Toolchain
     }
 }

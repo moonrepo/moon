@@ -20,12 +20,12 @@ moon_console = { path = "../console" }
 moon_console_reporter = { path = "../console-reporter" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
-moon_platform_detector = { path = "../platform-detector" }
 moon_plugin = { path = "../plugin" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
 moon_task = { path = "../task" }
+moon_toolchain = { path = "../toolchain" }
 moon_vcs = { path = "../vcs" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }

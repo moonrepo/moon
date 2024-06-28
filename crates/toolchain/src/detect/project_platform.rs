@@ -1,5 +1,5 @@
-use crate::languages::DENO;
-use crate::project_language::has_language_files;
+use super::languages::DENO;
+use super::project_language::has_language_files;
 use moon_config::{LanguageType, PlatformType};
 use std::path::Path;
 

@@ -35,6 +35,9 @@ hash_content!(
         // `moon.yml` `dependsOn`
         pub project_deps: Vec<&'task Id>,
 
+        // Task `script`
+        pub script: Option<&'task str>,
+
         // Task `target`
         pub target: &'task Target,
 
@@ -59,6 +62,7 @@ impl<'task> TaskHash<'task> {
             outputs: task.outputs.iter().collect(),
             platform: &task.platform,
             project_deps: project.get_dependency_ids(),
+            script: task.script.as_deref(),
             target: &task.target,
             // 1 - Original implementation
             // 2 - New task runner crate, tarball structure changed

@@ -1,4 +1,4 @@
-use crate::languages::*;
+use super::languages::*;
 use moon_config::LanguageType;
 
 pub fn detect_language_files(language: &LanguageType) -> Vec<String> {

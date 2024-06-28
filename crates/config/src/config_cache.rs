@@ -1,8 +1,8 @@
 use moon_common::consts::CONFIG_DIRNAME;
-use rustc_hash::{FxHashMap, FxHasher};
+use moon_common::path::hash_component;
+use rustc_hash::FxHashMap;
 use schematic::{Cacher, ConfigError};
 use std::fs;
-use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
@@ -21,14 +21,11 @@ impl ConfigCache {
     }
 
     pub fn get_temp_path(&self, url: &str) -> PathBuf {
-        let mut hasher = FxHasher::default();
-        hasher.write(url.as_bytes());
-
         self.workspace_root
             .join(CONFIG_DIRNAME)
             .join("cache")
             .join("temp")
-            .join(format!("{}.yml", hasher.finish()))
+            .join(format!("{}.yml", hash_component(url)))
     }
 }
 

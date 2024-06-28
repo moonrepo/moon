@@ -7,9 +7,9 @@ use moon_config::{
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
 };
-use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
 use moon_task::{parse_task_args, Task, TaskOptions};
+use moon_toolchain::detect::detect_task_platform;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;

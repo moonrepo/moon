@@ -1,20 +1,15 @@
 use miette::Diagnostic;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
+use std::sync::OnceLock;
 use std::{borrow::Borrow, fmt, ops::Deref, str::FromStr};
 use thiserror::Error;
 
 pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
-
-// The @ is to support npm package scopes!
-pub static ID_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(format!("^([A-Za-z@_]{{1}}{})$", ID_CHARS).as_str()).unwrap());
-
-// This is to clean and ID and remove unwanted characters
-pub static ID_CLEAN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^0-9A-Za-z/\._-]+").unwrap());
+pub static ID_PATTERN: OnceLock<Regex> = OnceLock::new();
+pub static ID_CLEAN: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Error, Debug, Diagnostic)]
 #[diagnostic(code(id::invalid_format))]
@@ -28,7 +23,12 @@ impl Id {
     pub fn new<S: AsRef<str>>(id: S) -> Result<Id, IdError> {
         let id = id.as_ref();
 
-        if !ID_PATTERN.is_match(id) {
+        // The @ is to support npm package scopes!
+        let pattern = ID_PATTERN.get_or_init(|| {
+            Regex::new(format!("^([A-Za-z@_]{{1}}{})$", ID_CHARS).as_str()).unwrap()
+        });
+
+        if !pattern.is_match(id) {
             return Err(IdError(id.to_owned()));
         }
 
@@ -40,7 +40,10 @@ impl Id {
         // with a leading -, causing pattern failures
         let id = id.as_ref().replace('@', "");
 
-        Id::new(ID_CLEAN.replace_all(&id, "-"))
+        // This is to clean and ID and remove unwanted characters
+        let pattern = ID_CLEAN.get_or_init(|| Regex::new(r"[^0-9A-Za-z/\._-]+").unwrap());
+
+        Id::new(pattern.replace_all(&id, "-"))
     }
 
     pub fn raw<S: AsRef<str>>(id: S) -> Id {

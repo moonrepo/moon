@@ -1,11 +1,11 @@
 mod args;
 mod extension;
-mod platform;
+mod toolchain;
 
 pub use args::*;
 pub use extension::*;
 pub use moon_pdk_api::*;
-pub use platform::*;
+pub use toolchain::*;
 pub use warpgate_pdk::*;
 
 /// Map a `miette` (or similar error) to an `extism` Error.

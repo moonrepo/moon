@@ -1,7 +1,7 @@
 use moon_config::RustConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
-use moon_platform_runtime::RuntimeReq;
+use moon_toolchain::RuntimeReq;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,

@@ -5,7 +5,7 @@ use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager, UnresolvedVersionSpec};
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
-use moon_platform_runtime::RuntimeReq;
+use moon_toolchain::RuntimeReq;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,

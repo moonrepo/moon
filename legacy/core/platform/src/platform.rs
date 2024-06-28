@@ -7,11 +7,11 @@ use moon_config::{
     ProjectsSourcesList, TasksConfigsMap, UnresolvedVersionSpec,
 };
 use moon_hash::ContentHasher;
-use moon_platform_runtime::{Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::Tool;
+use moon_toolchain::{Runtime, RuntimeReq};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;

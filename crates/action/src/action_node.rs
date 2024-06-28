@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_platform_runtime::Runtime;
+use moon_toolchain::Runtime;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use serde::Serialize;

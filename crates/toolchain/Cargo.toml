@@ -1,5 +1,5 @@
 [package]
-name = "moon_platform_runtime"
+name = "moon_toolchain"
 version = "0.0.1"
 edition = "2021"
 publish = false

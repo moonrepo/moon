@@ -15,7 +15,7 @@ moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_console = { path = "../console" }
 moon_notifier = { path = "../notifier" }
-moon_platform_runtime = { path = "../platform-runtime" }
+moon_toolchain = { path = "../toolchain" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }

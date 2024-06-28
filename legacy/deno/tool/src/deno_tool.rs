@@ -1,7 +1,7 @@
 use moon_config::DenoConfig;
 use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
-use moon_platform_runtime::RuntimeReq;
+use moon_toolchain::RuntimeReq;
 use moon_process::Command;
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,

@@ -2997,9 +2997,9 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_common",
- "moon_platform_runtime",
  "moon_target",
  "moon_time",
+ "moon_toolchain",
  "rustc-hash 1.1.0",
  "serde",
 ]
@@ -3084,10 +3084,10 @@ dependencies = [
  "moon_common",
  "moon_console",
  "moon_notifier",
- "moon_platform_runtime",
  "moon_project",
  "moon_project_graph",
  "moon_task",
+ "moon_toolchain",
  "num_cpus",
  "petgraph",
  "rustc-hash 1.1.0",
@@ -3299,9 +3299,9 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_logger",
- "moon_platform_runtime",
  "moon_process",
  "moon_tool",
+ "moon_toolchain",
  "moon_utils",
  "proto_core",
  "rustc-hash 1.1.0",
@@ -3517,9 +3517,9 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_deno_lang",
- "moon_platform_runtime",
  "moon_process",
  "moon_tool",
+ "moon_toolchain",
  "moon_utils",
  "proto_core",
  "rustc-hash 1.1.0",
@@ -3536,9 +3536,9 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_app_context",
- "moon_platform_runtime",
  "moon_project",
  "moon_target",
+ "moon_toolchain",
  "serde",
  "tokio",
 ]
@@ -3688,9 +3688,9 @@ dependencies = [
  "moon_console",
  "moon_logger",
  "moon_node_lang",
- "moon_platform_runtime",
  "moon_process",
  "moon_tool",
+ "moon_toolchain",
  "moon_utils",
  "proto_core",
  "rustc-hash 1.1.0",
@@ -3759,11 +3759,11 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_platform_runtime",
  "moon_process",
  "moon_project",
  "moon_task",
  "moon_tool",
+ "moon_toolchain",
  "rustc-hash 1.1.0",
 ]
 
@@ -3788,14 +3788,6 @@ dependencies = [
  "proto_core",
  "rustc-hash 1.1.0",
  "tracing",
-]
-
-[[package]]
-name = "moon_platform_runtime"
-version = "0.0.1"
-dependencies = [
- "moon_config",
- "serde",
 ]
 
 [[package]]
@@ -3997,9 +3989,9 @@ dependencies = [
  "moon_config",
  "moon_console",
  "moon_logger",
- "moon_platform_runtime",
  "moon_process",
  "moon_tool",
+ "moon_toolchain",
  "proto_core",
  "rustc-hash 1.1.0",
  "tracing",
@@ -4177,14 +4169,22 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_lang",
- "moon_platform_runtime",
  "moon_process",
+ "moon_toolchain",
  "proto_core",
  "rustc-hash 1.1.0",
  "starbase_styles",
  "thiserror",
  "tokio",
  "warpgate",
+]
+
+[[package]]
+name = "moon_toolchain"
+version = "0.0.1"
+dependencies = [
+ "moon_config",
+ "serde",
 ]
 
 [[package]]

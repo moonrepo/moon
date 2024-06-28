@@ -2,7 +2,7 @@ use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
 use moon_config::BunConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
-use moon_platform_runtime::RuntimeReq;
+use moon_toolchain::RuntimeReq;
 use moon_process::{output_to_string, Command};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, get_shared_lock,

@@ -1,6 +1,6 @@
 use crate::errors::ToolError;
 use crate::tool::Tool;
-use moon_platform_runtime::{Runtime, RuntimeReq};
+use moon_toolchain::{Runtime, RuntimeReq};
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 

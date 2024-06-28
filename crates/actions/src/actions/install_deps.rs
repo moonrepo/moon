@@ -3,6 +3,7 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
+use moon_common::path::encode_component;
 use moon_common::{color, is_ci};
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
@@ -249,7 +250,7 @@ fn get_state_path(
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> PathBuf {
-    let state_path = PathBuf::from(format!("deps{runtime}.json"));
+    let state_path = PathBuf::from(format!("deps-{}.json", encode_component(runtime.id())));
 
     if let Some(project) = project {
         return app_context

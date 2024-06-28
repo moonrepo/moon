@@ -2,12 +2,12 @@ use moon_bun_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
 use moon_config::BunConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
-use moon_platform_runtime::RuntimeReq;
 use moon_process::{output_to_string, Command};
 use moon_tool::{
     async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, get_shared_lock,
     load_tool_plugin, prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
 };
+use moon_toolchain::RuntimeReq;
 use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;

@@ -1,5 +1,6 @@
 use crate::resolve_path;
 use moon_cache_item::CacheItem;
+use moon_common::path::encode_component;
 use moon_target::{Target, TargetScope};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -29,7 +30,7 @@ impl StateEngine {
     }
 
     pub fn get_project_dir(&self, project_id: &str) -> PathBuf {
-        self.states_dir.join(project_id)
+        self.states_dir.join(encode_component(project_id))
     }
 
     pub fn get_project_snapshot_path(&self, project_id: &str) -> PathBuf {
@@ -37,11 +38,13 @@ impl StateEngine {
     }
 
     pub fn get_tag_dir(&self, tag: &str) -> PathBuf {
-        self.states_dir.join(format!("tag-{tag}"))
+        self.states_dir
+            .join(format!("tag-{}", encode_component(tag)))
     }
 
     pub fn get_task_dir(&self, project_id: &str, task_id: &str) -> PathBuf {
-        self.get_project_dir(project_id).join(task_id)
+        self.get_project_dir(project_id)
+            .join(encode_component(task_id))
     }
 
     pub fn get_target_dir(&self, target: &Target) -> PathBuf {
@@ -51,7 +54,7 @@ impl StateEngine {
             _ => self.get_project_dir("_"),
         };
 
-        dir.join(target.task_id.as_str())
+        dir.join(encode_component(target.task_id.as_str()))
     }
 
     pub fn load_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>

@@ -65,7 +65,7 @@ starbase_events = "0.6.2"
 starbase_sandbox = "0.6.3"
 starbase_shell = "0.2.5"
 starbase_styles = { version = "0.4.1", features = ["relative-path"] }
-starbase_utils = { version = "0.7.6", default-features = false, features = [
+starbase_utils = { version = "0.7.7", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",

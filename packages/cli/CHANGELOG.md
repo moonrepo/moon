@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where globs wouldn't match when leading with `./`.
+
 ## 1.26.4
 
 #### 🐞 Fixes

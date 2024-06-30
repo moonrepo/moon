@@ -7,7 +7,7 @@ projects:
   #   moon: '.'
   sources: {}
   globs:
-    - 'packages/*'
+    - './packages/*'
     - '!packages/cli'
     - '!packages/core-*'
     - 'website'

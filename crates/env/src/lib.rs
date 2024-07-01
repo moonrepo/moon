@@ -1,7 +1,6 @@
-use miette::miette;
 use moon_common::consts::CONFIG_DIRNAME;
+use moon_common::get_resolved_env_home;
 use std::collections::BTreeMap;
-use std::env;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -20,20 +19,9 @@ pub struct MoonEnvironment {
 
 impl MoonEnvironment {
     pub fn new() -> miette::Result<Self> {
-        let store_root = if let Ok(root) = env::var("MOON_HOME") {
-            root.into()
-        } else {
-            dirs::home_dir()
-                .ok_or_else(|| {
-                    miette!(
-                        code = "env::missing_home",
-                        "Unable to determine your home directory."
-                    )
-                })?
-                .join(CONFIG_DIRNAME)
-        };
-
-        Self::from(store_root)
+        Self::from(get_resolved_env_home("MOON_HOME", |user_dir| {
+            user_dir.join(CONFIG_DIRNAME)
+        }))
     }
 
     pub fn from<P: AsRef<Path>>(root: P) -> miette::Result<Self> {

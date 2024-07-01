@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
 moon_console = { path = "../../../crates/console" }
 moon_deno_lang = { path = "../lang" }

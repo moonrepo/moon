@@ -5,8 +5,8 @@ mod toolchain_hash;
 
 pub use rust_platform::*;
 
-use starbase_utils::{dirs, fs};
-use std::env;
+use moon_common::get_resolved_env_home;
+use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 
 fn find_cargo_lock(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf> {
@@ -14,7 +14,5 @@ fn find_cargo_lock(starting_dir: &Path, workspace_root: &Path) -> Option<PathBuf
 }
 
 fn get_cargo_home() -> PathBuf {
-    env::var("CARGO_HOME")
-        .map(|p| p.into())
-        .unwrap_or_else(|_| dirs::home_dir().unwrap().join(".cargo"))
+    get_resolved_env_home("CARGO_HOME", |home_dir| home_dir.join(".cargo"))
 }

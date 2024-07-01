@@ -1,3 +1,4 @@
+use moon_common::get_env_home;
 use moon_config::DenoConfig;
 use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
@@ -19,12 +20,12 @@ use tracing::{debug, instrument};
 pub fn get_deno_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
 
-    if let Ok(value) = env::var("DENO_INSTALL_ROOT") {
-        paths.push(PathBuf::from(value).join("bin"));
+    if let Some(value) = get_env_home("DENO_INSTALL_ROOT") {
+        paths.push(value.join("bin"));
     }
 
-    if let Ok(value) = env::var("DENO_HOME") {
-        paths.push(PathBuf::from(value).join("bin"));
+    if let Some(value) = get_env_home("DENO_HOME") {
+        paths.push(value.join("bin"));
     }
 
     paths.push(proto_env.home.join(".deno").join("bin"));

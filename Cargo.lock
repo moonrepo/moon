@@ -3407,6 +3407,7 @@ dependencies = [
 name = "moon_common"
 version = "0.0.7"
 dependencies = [
+ "dirs 5.0.1",
  "miette",
  "once_cell",
  "regex",
@@ -3514,6 +3515,7 @@ name = "moon_deno_tool"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "moon_config",
  "moon_console",
  "moon_deno_lang",
@@ -3994,6 +3996,7 @@ name = "moon_rust_tool"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "moon_config",
  "moon_console",
  "moon_logger",

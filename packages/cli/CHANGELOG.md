@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a regression where `pwsh.exe` would not fallback to `powershell.exe` when the former does
+  not exist.
+
 ## 1.26.5
 
 #### 🚀 Updates

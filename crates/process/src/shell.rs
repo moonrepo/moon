@@ -6,7 +6,12 @@ pub use starbase_shell::{ShellCommand, ShellType};
 
 #[cached]
 fn find_command_on_path(name: String) -> Option<PathBuf> {
-    system_env::find_command_on_path(name)
+    if name == "pwsh" || name == "powershell" {
+        system_env::find_command_on_path("pwsh")
+            .or_else(|| system_env::find_command_on_path("powershell"))
+    } else {
+        system_env::find_command_on_path(name)
+    }
 }
 
 #[cached]

@@ -6,6 +6,7 @@
 
 - Fixed a regression where `pwsh.exe` would not fallback to `powershell.exe` when the former does
   not exist.
+- Respect `CARGO_HOME` during automatic rustup installation.
 
 ## 1.26.5
 

@@ -65,3 +65,27 @@ pub fn is_test_env() -> bool {
 pub fn is_formatted_output() -> bool {
     env::args().any(|arg| arg == "--json" || arg == "--dot")
 }
+
+#[inline]
+pub fn get_env_home(key: &str) -> Option<PathBuf> {
+    match env::var(key) {
+        Ok(value) => {
+            let path = PathBuf::from(value);
+
+            Some(if path.is_absolute() {
+                path
+            } else {
+                env::current_dir().unwrap().join(path)
+            })
+        }
+        Err(_) => None,
+    }
+}
+
+#[inline]
+pub fn get_resolved_env_home<F: FnOnce(PathBuf) -> PathBuf>(key: &str, fallback: F) -> PathBuf {
+    match get_env_home(key) {
+        Some(path) => path,
+        None => fallback(dirs::home_dir().unwrap()),
+    }
+}

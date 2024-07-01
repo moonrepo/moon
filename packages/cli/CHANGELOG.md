@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated home-based environment variables, like `CARGO_HOME`, to support relative paths.
+
 #### 🐞 Fixes
 
 - Fixed an issue where globs wouldn't match when leading with `./`.

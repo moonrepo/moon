@@ -3339,7 +3339,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "1.26.4"
+version = "1.26.5"
 dependencies = [
  "clap",
  "httpmock",

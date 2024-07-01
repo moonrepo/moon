@@ -10,6 +10,10 @@
 
 - Fixed an issue where globs wouldn't match when leading with `./`.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.37.2 (from v0.37.1).
+
 ## 1.26.4
 
 #### 🐞 Fixes

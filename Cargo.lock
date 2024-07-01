@@ -4902,9 +4902,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.37.1"
+version = "0.37.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12686907cd92fc1b09741a9973f1c33aabdb5e6ba779f4c296ed8bf6cd1ae5aa"
+checksum = "aeabf538a74abb983e6e75521b4e721b7a333f6a85a31f1c795e7ab83e59dcfc"
 dependencies = [
  "cached",
  "indexmap 2.2.6",

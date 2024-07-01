@@ -1171,7 +1171,7 @@ rust:
             assert_eq!(
                 config.rust.unwrap().plugin.unwrap(),
                 PluginLocator::Url {
-                    url: "https://github.com/moonrepo/rust-plugin/releases/download/v0.10.3/rust_plugin.wasm".into()
+                    url: "https://github.com/moonrepo/rust-plugin/releases/download/v0.10.4/rust_plugin.wasm".into()
                 }
             );
         }

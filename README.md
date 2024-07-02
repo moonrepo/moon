@@ -74,4 +74,4 @@ provide a first-class developer experience.
 
 Special thanks to the wonderful people who have contributed to this project:
 
-[![Contributors][8]](https://github.com/moonrepo/moon/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=moonrepo/moon)](https://github.com/moonrepo/moon/graphs/contributors)

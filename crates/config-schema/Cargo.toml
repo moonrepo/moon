@@ -11,11 +11,11 @@ publish = false
 [dependencies]
 moon_config = { path = "../config" }
 miette = { workspace = true }
-schematic = { workspace = true, features = [
-	"renderer_json_schema",
-	"renderer_typescript",
-	"schema",
-] }
+schematic = { workspace = true, features = ["renderer_json_schema", "schema"] }
+
+[features]
+default = []
+typescript = ["schematic/renderer_typescript"]
 
 [lints]
 workspace = true

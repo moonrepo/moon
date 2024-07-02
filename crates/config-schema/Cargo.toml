@@ -1,0 +1,21 @@
+[package]
+name = "moon_config_schema"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Config schema generator."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_config = { path = "../config" }
+miette = { workspace = true }
+schematic = { workspace = true, features = ["renderer_json_schema", "schema"] }
+
+[features]
+default = []
+typescript = ["schematic/renderer_typescript"]
+
+[lints]
+workspace = true

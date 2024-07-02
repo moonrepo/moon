@@ -12,6 +12,8 @@ moon_cache_item = { path = "../cache-item" }
 moon_codeowners = { path = "../codeowners" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_config_schema = { path = "../config-schema" }
+moon_hash = { path = "../hash" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task_runner = { path = "../task-runner" }

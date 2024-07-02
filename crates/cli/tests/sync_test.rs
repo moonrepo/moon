@@ -47,6 +47,26 @@ mod sync_codeowners {
     }
 }
 
+mod sync_config_schemas {
+    use super::*;
+
+    #[test]
+    fn creates_schemas_dir() {
+        let (workspace_config, _, _) = get_cases_fixture_configs();
+        let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+
+        assert!(!sandbox.path().join(".moon/cache/schemas").exists());
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("sync").arg("config-schemas");
+            })
+            .success();
+
+        assert!(sandbox.path().join(".moon/cache/schemas").exists());
+    }
+}
+
 mod sync_hooks {
     use super::*;
 

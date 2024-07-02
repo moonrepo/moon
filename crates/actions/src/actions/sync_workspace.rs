@@ -44,7 +44,10 @@ pub async fn sync_workspace(
 
         futures.push(task::spawn(async move {
             Operation::sync_operation("Config schemas")
-                .track_async_with_check(|| sync_config_schemas(&app_context), |_| true)
+                .track_async_with_check(
+                    || sync_config_schemas(&app_context, false),
+                    |result| result,
+                )
                 .await
         }));
     }

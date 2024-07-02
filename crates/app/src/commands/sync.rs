@@ -1,4 +1,5 @@
 use super::syncs::codeowners::SyncCodeownersArgs;
+use super::syncs::config_schemas::SyncConfigSchemasArgs;
 use super::syncs::hooks::SyncHooksArgs;
 use crate::session::CliSession;
 use clap::Subcommand;
@@ -13,6 +14,12 @@ pub enum SyncCommands {
         about = "Aggregate and sync code owners to a `CODEOWNERS` file."
     )]
     Codeowners(SyncCodeownersArgs),
+
+    #[command(
+        name = "config-schemas",
+        about = "Generate and sync configuration JSON schemas for use within editors."
+    )]
+    ConfigSchemas(SyncConfigSchemasArgs),
 
     #[command(
         name = "hooks",

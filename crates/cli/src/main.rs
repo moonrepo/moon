@@ -174,6 +174,9 @@ async fn main() -> MainResult {
                     Some(SyncCommands::Codeowners(args)) => {
                         commands::syncs::codeowners::sync(session, args).await
                     }
+                    Some(SyncCommands::ConfigSchemas(args)) => {
+                        commands::syncs::config_schemas::sync(session, args).await
+                    }
                     Some(SyncCommands::Hooks(args)) => {
                         commands::syncs::hooks::sync(session, args).await
                     }

@@ -12,23 +12,30 @@ hash_content!(
 );
 
 #[instrument(skip_all)]
-pub async fn sync_config_schemas(app_context: &AppContext) -> miette::Result<()> {
-    if let Err(error) = app_context
-        .cache_engine
-        .execute_if_changed(
-            "configSchemas.json",
-            ConfigSchemaHash {
-                moon_version: &app_context.cli_version,
-            },
-            || async { generate_json_schemas(app_context.cache_engine.cache_dir.join("schemas")) },
-        )
-        .await
-    {
+pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miette::Result<bool> {
+    let out_dir = app_context.cache_engine.cache_dir.join("schemas");
+
+    if let Err(error) = if force {
+        generate_json_schemas(out_dir).map(|_| true)
+    } else {
+        app_context
+            .cache_engine
+            .execute_if_changed(
+                "configSchemas.json",
+                ConfigSchemaHash {
+                    moon_version: &app_context.cli_version,
+                },
+                || async { generate_json_schemas(out_dir) },
+            )
+            .await
+    } {
         warn!(
             "Failed to generate schemas for configuration: {}",
             color::muted_light(error.to_string())
         );
+
+        return Ok(false);
     }
 
-    Ok(())
+    Ok(true)
 }

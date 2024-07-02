@@ -2,109 +2,13 @@
 
 /* eslint-disable */
 
-/** Configuration for a template variable. */
-export interface PartialTemplateVariableBoolSetting {
-	/** The default value of the variable if none was provided. */
-	default?: boolean | null;
-	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal?: boolean | null;
-	/** The order in which variables should be prompted for. */
-	order?: number | null;
-	/** Prompt the user for a value when the generator is running. */
-	prompt?: string | null;
-	/** Marks the variable as required, and will not accept an empty value. */
-	required?: boolean | null;
-	type?: 'boolean' | null;
-}
-
-export type PartialTemplateVariableEnumDefault = string | string[];
-
-export interface PartialTemplateVariableEnumValueConfig {
-	/** A human-readable label for the value. */
-	label?: string | null;
-	/** The literal enumerable value. */
-	value?: string | null;
-}
-
-export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
-
-export interface PartialTemplateVariableEnumSetting {
-	/** The default value of the variable if none was provided. */
-	default?: PartialTemplateVariableEnumDefault | null;
-	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal?: boolean | null;
-	/** Allows multiple values to be selected. */
-	multiple?: boolean | null;
-	/** The order in which variables should be prompted for. */
-	order?: number | null;
-	/** Prompt the user for a value when the generator is running. */
-	prompt?: string | null;
-	type?: 'enum' | null;
-	/** List of acceptable values for this variable. */
-	values?: PartialTemplateVariableEnumValue[] | null;
-}
-
-/** Configuration for a template variable. */
-export interface PartialTemplateVariableNumberSetting {
-	/** The default value of the variable if none was provided. */
-	default?: number | null;
-	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal?: boolean | null;
-	/** The order in which variables should be prompted for. */
-	order?: number | null;
-	/** Prompt the user for a value when the generator is running. */
-	prompt?: string | null;
-	/** Marks the variable as required, and will not accept an empty value. */
-	required?: boolean | null;
-	type?: 'number' | null;
-}
-
-/** Configuration for a template variable. */
-export interface PartialTemplateVariableStringSetting {
-	/** The default value of the variable if none was provided. */
-	default?: string | null;
-	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal?: boolean | null;
-	/** The order in which variables should be prompted for. */
-	order?: number | null;
-	/** Prompt the user for a value when the generator is running. */
-	prompt?: string | null;
-	/** Marks the variable as required, and will not accept an empty value. */
-	required?: boolean | null;
-	type?: 'string' | null;
-}
-
-export type PartialTemplateVariable =
-	| PartialTemplateVariableBoolSetting
-	| PartialTemplateVariableEnumSetting
-	| PartialTemplateVariableNumberSetting
-	| PartialTemplateVariableStringSetting;
-
-/**
- * Configures a template and its files to be scaffolded.
- * Docs: https://moonrepo.dev/docs/config/template
- */
-export interface PartialTemplateConfig {
-	/** @default 'https://moonrepo.dev/schemas/template.json' */
-	$schema?: string | null;
-	/** A description on what the template scaffolds. */
-	description?: string | null;
-	/**
-	 * A pre-populated destination to scaffold to, relative from the
-	 * workspace root.
-	 */
-	destination?: string | null;
-	/** Extends one or many other templates. */
-	extends?: string[] | null;
-	/** Overrides the ID of the template, instead of using the folder name. */
-	id?: string | null;
-	/** A human-readable title for the template. */
-	title?: string | null;
-	/**
-	 * A mapping of variables that'll be interpolated within each template file.
-	 * Variables can also be populated by passing command line arguments.
-	 */
-	variables?: Record<string, PartialTemplateVariable> | null;
+/** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
+export interface TemplateFrontmatterConfig {
+	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
+	$schema?: string;
+	force: boolean;
+	skip: boolean;
+	to: string | null;
 }
 
 /** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
@@ -221,11 +125,107 @@ export interface TemplateConfig {
 	variables: Record<string, TemplateVariable>;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
-export interface TemplateFrontmatterConfig {
-	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
-	$schema?: string;
-	force: boolean;
-	skip: boolean;
-	to: string | null;
+/** Configuration for a template variable. */
+export interface PartialTemplateVariableBoolSetting {
+	/** The default value of the variable if none was provided. */
+	default?: boolean | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required?: boolean | null;
+	type?: 'boolean' | null;
+}
+
+export type PartialTemplateVariableEnumDefault = string | string[];
+
+export interface PartialTemplateVariableEnumValueConfig {
+	/** A human-readable label for the value. */
+	label?: string | null;
+	/** The literal enumerable value. */
+	value?: string | null;
+}
+
+export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
+
+export interface PartialTemplateVariableEnumSetting {
+	/** The default value of the variable if none was provided. */
+	default?: PartialTemplateVariableEnumDefault | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** Allows multiple values to be selected. */
+	multiple?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	type?: 'enum' | null;
+	/** List of acceptable values for this variable. */
+	values?: PartialTemplateVariableEnumValue[] | null;
+}
+
+/** Configuration for a template variable. */
+export interface PartialTemplateVariableNumberSetting {
+	/** The default value of the variable if none was provided. */
+	default?: number | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required?: boolean | null;
+	type?: 'number' | null;
+}
+
+/** Configuration for a template variable. */
+export interface PartialTemplateVariableStringSetting {
+	/** The default value of the variable if none was provided. */
+	default?: string | null;
+	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
+	internal?: boolean | null;
+	/** The order in which variables should be prompted for. */
+	order?: number | null;
+	/** Prompt the user for a value when the generator is running. */
+	prompt?: string | null;
+	/** Marks the variable as required, and will not accept an empty value. */
+	required?: boolean | null;
+	type?: 'string' | null;
+}
+
+export type PartialTemplateVariable =
+	| PartialTemplateVariableBoolSetting
+	| PartialTemplateVariableEnumSetting
+	| PartialTemplateVariableNumberSetting
+	| PartialTemplateVariableStringSetting;
+
+/**
+ * Configures a template and its files to be scaffolded.
+ * Docs: https://moonrepo.dev/docs/config/template
+ */
+export interface PartialTemplateConfig {
+	/** @default 'https://moonrepo.dev/schemas/template.json' */
+	$schema?: string | null;
+	/** A description on what the template scaffolds. */
+	description?: string | null;
+	/**
+	 * A pre-populated destination to scaffold to, relative from the
+	 * workspace root.
+	 */
+	destination?: string | null;
+	/** Extends one or many other templates. */
+	extends?: string[] | null;
+	/** Overrides the ID of the template, instead of using the folder name. */
+	id?: string | null;
+	/** A human-readable title for the template. */
+	title?: string | null;
+	/**
+	 * A mapping of variables that'll be interpolated within each template file.
+	 * Variables can also be populated by passing command line arguments.
+	 */
+	variables?: Record<string, PartialTemplateVariable> | null;
 }

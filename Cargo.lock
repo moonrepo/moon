@@ -3443,6 +3443,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_config_schema"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_config",
+ "schematic",
+]
+
+[[package]]
 name = "moon_console"
 version = "0.0.1"
 dependencies = [

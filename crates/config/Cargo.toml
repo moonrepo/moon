@@ -11,14 +11,6 @@ publish = true
 [package.metadata.docs.rs]
 features = ["loader"]
 
-[[bin]]
-name = "moon_config"
-path = "src/main.rs"
-
-[lib]
-name = "moon_config"
-path = "src/lib.rs"
-
 [dependencies]
 moon_common = { version = "0.0.7", path = "../common" }
 moon_target = { version = "0.0.6", path = "../target" }
@@ -28,8 +20,6 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
-	"renderer_json_schema",
-	"renderer_typescript",
 	"schema",
 	"type_semver",
 	"type_serde_json",

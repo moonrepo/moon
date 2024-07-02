@@ -3109,6 +3109,8 @@ dependencies = [
  "moon_codeowners",
  "moon_common",
  "moon_config",
+ "moon_config_schema",
+ "moon_hash",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
@@ -3440,6 +3442,15 @@ dependencies = [
  "tracing",
  "version_spec",
  "warpgate_api",
+]
+
+[[package]]
+name = "moon_config_schema"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_config",
+ "schematic",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-use crate::operations::{sync_codeowners, sync_vcs_hooks};
+use crate::operations::{sync_codeowners, sync_config_schemas, sync_vcs_hooks};
 use crate::utils::should_skip_action;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
@@ -36,6 +36,21 @@ pub async fn sync_workspace(
 
     // Run operations in parallel
     let mut futures = vec![];
+
+    {
+        debug!("Syncing config schemas");
+
+        let app_context = Arc::clone(&app_context);
+
+        futures.push(task::spawn(async move {
+            Operation::sync_operation("Config schemas")
+                .track_async_with_check(
+                    || sync_config_schemas(&app_context, false),
+                    |result| result,
+                )
+                .await
+        }));
+    }
 
     if app_context.workspace_config.codeowners.sync_on_run {
         debug!(

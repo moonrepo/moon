@@ -286,7 +286,7 @@ impl Tool for NodeTool {
             let mut yarn = self.yarn.take().unwrap();
 
             installed += yarn.setup(last_versions).await?;
-            yarn.set_version(self).await?;
+            yarn.install_plugins(self).await?;
 
             self.yarn = Some(yarn);
         }

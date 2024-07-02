@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- We now generate JSON schemas for our configuration files to `.moon/cache/schemas`, so that they
+  can be dynamically created based on the current moon version and environment.
+
 ## 1.26.6
 
 #### 🐞 Fixes

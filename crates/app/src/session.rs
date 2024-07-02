@@ -92,6 +92,7 @@ impl CliSession {
 
     pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
+            cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
             console: Arc::new(self.console.clone()),
             vcs: self.get_vcs_adapter()?,

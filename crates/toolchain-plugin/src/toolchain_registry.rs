@@ -1,16 +1,16 @@
-use crate::platform_plugin::PlatformPlugin;
+use crate::toolchain_plugin::ToolchainPlugin;
 use moon_config::ToolConfig;
 use moon_plugin::{serialize_config, PluginId, PluginRegistry};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
 use std::ops::Deref;
 
-pub struct PlatformRegistry {
+pub struct ToolchainRegistry {
     pub configs: FxHashMap<PluginId, ToolConfig>,
-    pub registry: PluginRegistry<PlatformPlugin>,
+    pub registry: PluginRegistry<ToolchainPlugin>,
 }
 
-impl PlatformRegistry {
+impl ToolchainRegistry {
     pub async fn load_all(&self) -> miette::Result<()> {
         let proto_env = &self.registry.proto_env;
 
@@ -18,7 +18,7 @@ impl PlatformRegistry {
             self.registry
                 .load_with_config(id, config.plugin.as_ref().unwrap(), move |manifest| {
                     manifest.config.insert(
-                        "moon_platform_config".to_owned(),
+                        "moon_toolchain_config".to_owned(),
                         serialize_config(config.config.iter())?,
                     );
 
@@ -33,8 +33,8 @@ impl PlatformRegistry {
     }
 }
 
-impl Deref for PlatformRegistry {
-    type Target = PluginRegistry<PlatformPlugin>;
+impl Deref for ToolchainRegistry {
+    type Target = PluginRegistry<ToolchainPlugin>;
 
     fn deref(&self) -> &Self::Target {
         &self.registry

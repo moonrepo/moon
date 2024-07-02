@@ -9,9 +9,9 @@ moon_args = { path = "../../../crates/args" }
 moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
 moon_node_lang = { path = "../../node/lang" }
-moon_platform_detector = { path = "../../../crates/platform-detector" }
 moon_project = { path = "../../../crates/project" }
 moon_target = { path = "../../../crates/target" }
+moon_toolchain = { path = "../../../crates/toolchain" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 once_cell = { workspace = true }

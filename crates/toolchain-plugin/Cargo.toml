@@ -1,9 +1,9 @@
 [package]
-name = "moon_platform_plugin"
+name = "moon_toolchain_plugin"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
-description = "A platform plugin, enabling new language support."
+description = "A toolchain plugin, enabling new language + ecosystem support."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false

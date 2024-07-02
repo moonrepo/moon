@@ -13,21 +13,21 @@ pub struct PluginRegistration {
 #[derive(Clone, Copy, Debug)]
 pub enum PluginType {
     Extension,
-    Platform,
+    Toolchain,
 }
 
 impl PluginType {
     pub fn get_dir_name(&self) -> &str {
         match self {
             PluginType::Extension => "extensions",
-            PluginType::Platform => "platforms",
+            PluginType::Toolchain => "toolchains",
         }
     }
 
     pub fn get_label(&self) -> &str {
         match self {
             PluginType::Extension => "extension",
-            PluginType::Platform => "platform",
+            PluginType::Toolchain => "toolchain",
         }
     }
 }

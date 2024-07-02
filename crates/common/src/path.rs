@@ -1,5 +1,7 @@
 pub use relative_path::*;
+use rustc_hash::FxHasher;
 use starbase_styles::color;
+use std::hash::Hasher;
 use std::path::Path;
 
 // Named types for better readability
@@ -86,4 +88,35 @@ pub fn exe_name<T: AsRef<str>>(name: T) -> String {
     {
         name.as_ref().into()
     }
+}
+
+/// Encode a value (typically an identifier) by removing invalid characters for use
+/// within a file name.
+pub fn encode_component(value: impl AsRef<str>) -> String {
+    let mut output = String::new();
+
+    // Handle supported characters from `Id`
+    for ch in value.as_ref().chars() {
+        match ch {
+            '@' => {
+                // Skip these
+            }
+            '.' | '/' => {
+                output.push('-');
+            }
+            _ => {
+                output.push(ch);
+            }
+        }
+    }
+
+    output
+}
+
+/// Hash a value that may contain special characters into a valid file name.
+pub fn hash_component(value: impl AsRef<str>) -> String {
+    let mut hasher = FxHasher::default();
+    hasher.write(value.as_ref().as_bytes());
+
+    format!("{}", hasher.finish())
 }

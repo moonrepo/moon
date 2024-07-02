@@ -3109,6 +3109,8 @@ dependencies = [
  "moon_codeowners",
  "moon_common",
  "moon_config",
+ "moon_config_schema",
+ "moon_hash",
  "moon_platform",
  "moon_project",
  "moon_project_graph",

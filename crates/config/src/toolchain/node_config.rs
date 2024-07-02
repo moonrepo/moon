@@ -190,6 +190,11 @@ pub struct NodeConfig {
     /// Can be used to support the "one version policy" pattern.
     pub root_package_only: bool,
 
+    /// Automatically syncs the configured package manager version
+    /// to the root `packageManager` field in `package.json`.
+    #[setting(default = true)]
+    pub sync_package_manager_field: bool,
+
     /// Automatically syncs moon project-to-project relationships as
     /// dependencies for each `package.json` in the workspace.
     #[setting(default = true)]

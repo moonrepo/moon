@@ -386,6 +386,31 @@ not have dependencies.
 
 :::
 
+### `syncPackageManagerField`<VersionLabel version="1.27.0" />
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#syncPackageManagerField" />
+
+Will sync the currently configured [package manager](#packagemanager) and its version to the
+`packageManager` field in the root `package.json`. This setting does nothing if the package manager
+or version is not defined. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  syncPackageManagerField: true
+  packageManager: pnpm
+  pnpm:
+    version: '9.0.0'
+```
+
+A quick example on how this works. Given the above, the following field will be injected:
+
+```json title="package.json"
+{
+  // ...
+  "packageManager": "pnpm@9.0.0"
+}
+```
+
 ### `syncProjectWorkspaceDependencies`
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#syncProjectWorkspaceDependencies" />

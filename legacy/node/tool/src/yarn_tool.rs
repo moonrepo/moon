@@ -12,7 +12,6 @@ use moon_tool::{
 use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
-use starbase_styles::color;
 use starbase_utils::fs;
 use std::env;
 use std::path::Path;
@@ -62,40 +61,17 @@ impl YarnTool {
     }
 
     #[instrument(skip_all)]
-    pub async fn set_version(&mut self, node: &NodeTool) -> miette::Result<()> {
+    pub async fn install_plugins(&mut self, node: &NodeTool) -> miette::Result<()> {
         if !self.is_berry() {
             return Ok(());
         }
 
-        let Some(version) = &self.config.version else {
-            return Ok(());
-        };
-
-        let yarn_bin = get_workspace_root()
-            .join(".yarn/releases")
-            .join(format!("yarn-{version}.cjs"));
-
-        if !yarn_bin.exists() {
-            let version_string = version.to_string();
-
-            debug!(
-                "Updating yarn version with {}",
-                color::shell(format!("yarn set version {version_string}"))
-            );
-
+        for plugin in &self.config.plugins {
             self.create_command(node)?
-                .args(["set", "version", &version_string])
+                .args(["plugin", "import", plugin])
                 .create_async()
                 .exec_capture_output()
                 .await?;
-
-            for plugin in &self.config.plugins {
-                self.create_command(node)?
-                    .args(["plugin", "import", plugin])
-                    .create_async()
-                    .exec_capture_output()
-                    .await?;
-            }
         }
 
         Ok(())

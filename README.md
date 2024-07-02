@@ -69,3 +69,9 @@ provide a first-class developer experience.
 - **Terminal notifications** - Receives notifications in your chosen terminal when builds are
   successful... or are not.
 - **Git hooks** - Manage Git hooks to enforce workflows and requirements for contributors.
+
+## Contributors
+
+Special thanks to the wonderful people who have contributed to this project:
+
+[![Contributors][8]](https://github.com/moonrepo/moon/graphs/contributors)

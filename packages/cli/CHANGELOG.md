@@ -38,6 +38,14 @@
   variables.
 - Fixed an issue where our console would be prematurely dropped, causing output flushing issues.
 
+#### 🧰 Toolchain
+
+- Node
+  - Added a `node.syncPackageManagerField` setting, to control the `packageManager` field in
+    `package.json`.
+- Yarn
+  - Will no longer call `yarn set version` and instead rely entirely on proto's toolchain.
+
 ## 1.26.6
 
 #### 🐞 Fixes

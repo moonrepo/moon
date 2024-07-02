@@ -1,4 +1,4 @@
-use crate::operations::{generate_json_schemas, sync_codeowners, sync_vcs_hooks};
+use crate::operations::{sync_codeowners, sync_config_schemas, sync_vcs_hooks};
 use crate::utils::should_skip_action;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
@@ -44,7 +44,7 @@ pub async fn sync_workspace(
 
         futures.push(task::spawn(async move {
             Operation::sync_operation("Config schemas")
-                .track_async_with_check(|| generate_json_schemas(&app_context), |_| true)
+                .track_async_with_check(|| sync_config_schemas(&app_context), |_| true)
                 .await
         }));
     }

@@ -10,6 +10,9 @@
 
 #### 🧰 Toolchain
 
+- Node
+  - Added a `node.syncPackageManagerField` setting, to control the `packageManager` field in
+    `package.json`.
 - Yarn
   - Will no longer call `yarn set version` and instead rely entirely on proto's toolchain.
 

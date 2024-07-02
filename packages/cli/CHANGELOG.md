@@ -8,6 +8,14 @@
   can be dynamically created based on the current moon version and environment.
   - Added a `moon sync config-schemas` command to manually run this operation.
 
+#### 🧰 Toolchain
+
+- Node
+  - Added a `node.syncPackageManagerField` setting, to control the `packageManager` field in
+    `package.json`.
+- Yarn
+  - Will no longer call `yarn set version` and instead rely entirely on proto's toolchain.
+
 ## 1.26.6
 
 #### 🐞 Fixes

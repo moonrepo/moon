@@ -3,7 +3,7 @@ use moon_common::path::hash_component;
 use rustc_hash::FxHashMap;
 use schematic::{Cacher, ConfigError};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 pub struct ConfigCache {
@@ -13,7 +13,7 @@ pub struct ConfigCache {
 
 impl ConfigCache {
     #[cfg(feature = "loader")]
-    pub fn new(workspace_root: &Path) -> Self {
+    pub fn new(workspace_root: &std::path::Path) -> Self {
         Self {
             memory: FxHashMap::default(),
             workspace_root: workspace_root.to_path_buf(),

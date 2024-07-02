@@ -398,6 +398,13 @@
           "type": "boolean",
           "markdownDescription": "Assumes only the root `package.json` is used for dependencies. Can be used to support the \"one version policy\" pattern."
         },
+        "syncPackageManagerField": {
+          "title": "syncPackageManagerField",
+          "description": "Automatically syncs the configured package manager version to the root packageManager field in package.json.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Automatically syncs the configured package manager version to the root `packageManager` field in `package.json`."
+        },
         "syncProjectWorkspaceDependencies": {
           "title": "syncProjectWorkspaceDependencies",
           "description": "Automatically syncs moon project-to-project relationships as dependencies for each package.json in the workspace.",

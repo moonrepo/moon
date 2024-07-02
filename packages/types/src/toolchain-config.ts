@@ -211,6 +211,13 @@ export interface NodeConfig {
 	 */
 	rootPackageOnly: boolean;
 	/**
+	 * Automatically syncs the configured package manager version
+	 * to the root `packageManager` field in `package.json`.
+	 *
+	 * @default true
+	 */
+	syncPackageManagerField?: boolean;
+	/**
 	 * Automatically syncs moon project-to-project relationships as
 	 * dependencies for each `package.json` in the workspace.
 	 *
@@ -530,6 +537,13 @@ export interface PartialNodeConfig {
 	 * Can be used to support the "one version policy" pattern.
 	 */
 	rootPackageOnly?: boolean | null;
+	/**
+	 * Automatically syncs the configured package manager version
+	 * to the root `packageManager` field in `package.json`.
+	 *
+	 * @default true
+	 */
+	syncPackageManagerField?: boolean | null;
 	/**
 	 * Automatically syncs moon project-to-project relationships as
 	 * dependencies for each `package.json` in the workspace.

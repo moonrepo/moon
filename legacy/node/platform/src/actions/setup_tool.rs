@@ -11,6 +11,10 @@ const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 
 /// Add `packageManager` to `package.json`.
 fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJsonCache) -> bool {
+    if !node_config.sync_package_manager_field {
+        return false;
+    }
+
     let format_version_value = |key: &str, config: Option<&UnresolvedVersionSpec>| -> String {
         // Only full versions are allowed
         if let Some(UnresolvedVersionSpec::Semantic(version)) = config {

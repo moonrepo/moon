@@ -59,8 +59,8 @@ configuration file. This file takes precedence during [version detection](./dete
 created/updated with [`proto pin`](./commands/pin).
 
 At its most basic level, you can map tools to specific versions, for the directory the file is
-located in. A version can either be a fully-qualified semantic version, a partial version, a range
-or requirement, or an alias.
+located in. A [version](./version-spec) can either be a fully-qualified version, a partial version,
+a range or requirement, or an alias.
 
 ```toml title=".prototools"
 node = "16.16.0"
@@ -74,16 +74,17 @@ rust = "stable"
 ### `[env]`<VersionLabel version="0.29.0" />
 
 This setting is a map of environment variables that will be applied to _all_ tools when they are
-executed. Variables defined here _will not_ override existing environment variables (either passed
-on the command line, or inherited from the shell).
+executed, or when [`proto activate`](./commands/activate) is ran in a shell profile. Variables
+defined here _will not_ override existing environment variables (either passed on the command line,
+or inherited from the shell).
 
 ```toml title=".prototools"
 [env]
 DEBUG = "*"
 ```
 
-Additionally, `false` can be provided as a value, which will _remove_ the environment variable when
-the tool is executed. This is useful for removing inherited shell variables.
+Additionally, `false` can be provided as a value, which will _remove_ the environment variable. This
+is useful for removing inherited shell variables.
 
 ```toml title=".prototools"
 [env]
@@ -100,7 +101,7 @@ supported!
 
 #### `auto-install`
 
-When enabled, will automatically installing missing tools when [`proto run`](./commands/run) is run,
+When enabled, will automatically installing missing tools when [`proto run`](./commands/run) is ran,
 instead of erroring. Defaults to `false` or `PROTO_AUTO_INSTALL`.
 
 ```toml title=".prototools"
@@ -110,7 +111,7 @@ auto-install = true
 
 #### `auto-clean`
 
-When enabled, will automatically clean up the proto cache when [`proto use`](./commands/use) is run.
+When enabled, will automatically clean up the proto cache when [`proto use`](./commands/use) is ran.
 Defaults to `false` or `PROTO_AUTO_CLEAN`.
 
 ```toml title=".prototools"
@@ -247,8 +248,8 @@ oss = "20"
 ### `[tools.*.env]`<VersionLabel version="0.29.0" />
 
 This setting is a map of environment variables for a specific tool, and will be applied when that
-tool is executed. These variables will override those defined in `[env]`. Refer to [`[env]`](#env)
-for usage examples.
+tool is executed, or when [`proto activate`](./commands/activate) is ran in a shell profile. These
+variables will override those defined in `[env]`. Refer to [`[env]`](#env) for usage examples.
 
 ```toml title=".prototools"
 [tools.node.env]

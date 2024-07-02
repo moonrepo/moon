@@ -45,9 +45,8 @@ The following fields are available on the
 
 :::caution
 
-The `version` field is either a fully-qualified semantic version (1.2.3), an alias ("latest",
-"stable"), or canary ("canary"). Be sure to account for all these variations when implementing
-plugin functions!
+The `version` field is either a fully-qualified version (1.2.3), an alias ("latest", "stable"), or
+canary ("canary"). Be sure to account for all these variations when implementing plugin functions!
 
 :::
 
@@ -204,9 +203,9 @@ pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
 
 ### Locating executables
 
-Even though a tool has been installed, we must inform proto of where to find the binary to execute.
-This can be achieved with the required `locate_executables` function. The `primary` field defines
-the location of the executable, relative from the installation directory.
+Even though a tool has been installed, we must inform proto of where to find executables. This can
+be achieved with the required `locate_executables` function. The `primary` field defines the
+location of the executable, relative from the installation directory.
 
 ```rust
 #[plugin_fn]
@@ -261,7 +260,7 @@ pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVers
     let response: Vec<NodeDistVersion> = fetch_url("https://nodejs.org/dist/index.json")?;
 
     for (index, item) in response.iter().enumerate() {
-        let version = Version::parse(&item.version[1..])?; // Starts with v
+        let version = VersionSpec::parse(&item.version[1..])?; // Starts with v
 
         if index == 0 {
             output.latest = Some(version.clone());

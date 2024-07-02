@@ -268,9 +268,10 @@ const sidebars: SidebarsConfig = {
 	proto: [
 		'proto/index',
 		'proto/install',
+		'proto/workflows',
+		'proto/config',
 		'proto/version-spec',
 		'proto/detection',
-		'proto/config',
 		'proto/tools',
 		{
 			type: 'category',

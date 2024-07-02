@@ -54,37 +54,6 @@ tool to `~/.proto/tools/<name>/<version>`. In the future, we'll support building
 From here, we make these tools globally available by prepending `~/.proto/shims` and `~/.proto/bin`
 to `PATH` (typically as part of your shell profile). Continue reading for more about these folders.
 
-### Shims
-
-proto is powered the by industry standard concept of shims. For each tool installed in proto, a shim
-file will exist at `~/.proto/shims/<tool>`. Shims _are not_ symlinks to the tool's binary, but are
-thin wrappers around [`proto run`](./proto/commands/run), enabling
-[automatic version detection](./proto/detection) on every invocation!
-
-:::info
-
-If you'd prefer to _not use_ shims, remove the `~/.proto/shims` directory from `PATH` in your shell
-profile.
-
-:::
-
-### Binaries
-
-Alternatively, we also support a non-shim based approach, which creates symlinks to a tool's primary
-executable. For each tool installed in proto, a symlink will exist at `~/.proto/bin/<tool>`.
-
-The version of a tool that's symlinked _is not_ dynamic, and is manually created by pinning the
-chosen version with [`proto install --pin`](./proto/commands/install). This also happens
-automatically the first time a tool is installed.
-
-:::info
-
-Not all tools support symlinking a binary, as not all files are executable. For example, most
-Node.js package managers currently do not support this, as JavaScript files are not executable
-(especially on Windows). Shims are required for these tools.
-
-:::
-
 ## Supported tools
 
 The following tools are [officially supported](./proto/tools) in proto via moonrepo. Additional

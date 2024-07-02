@@ -3,6 +3,7 @@ title: Install proto
 ---
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="1 min" />
 
@@ -23,9 +24,9 @@ apt-get install git unzip gzip xz-utils
 
 ## Installing
 
-The entirety of proto is packaged and shipped as a single binary. It works on _most_ operating
-systems, and does not require any external dependencies. For convenience, we provide the following
-scripts to download and install proto.
+The entirety of proto is packaged and shipped as 2 binaries. It works on _most_ operating systems,
+and does not require any external dependencies. For convenience, we provide the following scripts to
+download and install proto.
 
 :::info
 
@@ -60,7 +61,7 @@ and install proto, then open an interactive prompt to complete the installation.
 irm https://moonrepo.dev/install/proto.ps1 | iex
 ```
 
-You'll also need to run the following command for shims to be executable:
+You may also need to run the following command for shims to be executable:
 
 ```shell
 Set-ExecutionPolicy RemoteSigned
@@ -97,3 +98,20 @@ Canary releases are available as a
 proto supports nightly releases, which are built and published once a day from the latest commit on
 master. Nightly releases are available as a
 [GitHub prerelease](https://github.com/moonrepo/proto/releases/tag/nightly) using the `nightly` tag.
+
+## Next steps
+
+<NextSteps
+  links={[
+    { icon: 'run-task', label: 'Choose a workflow', url: './workflows' },
+    {
+      icon: 'workspace-config',
+      label: (
+        <span>
+          Learn about <code>.prototools</code>
+        </span>
+      ),
+      url: './config',
+    },
+  ]}
+/>

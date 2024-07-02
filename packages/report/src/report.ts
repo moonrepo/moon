@@ -44,7 +44,13 @@ export function prepareReportActions(report: RunReport, slowThreshold: number): 
 			comments.push('**FLAKY**');
 		}
 
-		if (action.attempts && action.attempts.length > 1) {
+		if (action.operations && action.operations.length > 0) {
+			const attempts = action.operations.filter((op) => op.meta.type === 'task-execution');
+
+			if (attempts.length > 1) {
+				comments.push(`${attempts.length} attempts`);
+			}
+		} else if (action.attempts && action.attempts.length > 1) {
 			comments.push(`${action.attempts.length} attempts`);
 		}
 

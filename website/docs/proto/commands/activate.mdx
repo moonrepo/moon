@@ -1,0 +1,111 @@
+---
+title: activate
+toc_max_heading_level: 4
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.38.0" header />
+
+:::danger
+
+This feature is extremely experimental and may change based on feedback! If you run into any issues,
+please report an issue on [GitHub](https://github.com/moonrepo/proto) or
+[Discord](https://discord.gg/qCh9MEynv2).
+
+:::
+
+The `proto activate <shell>` command will activate proto for the current shell session, by exporting
+environment variables and prepending `PATH` for each tool configured in the current directory.
+Activation is ran each time the current directory changes using a shell hook.
+
+:::info
+
+Learn more about
+[shell activation in the official workflow documentation](../workflows#shell-activation)!
+
+:::
+
+### Setup
+
+The following activation steps should be added _after_ all environment variable and `PATH`
+modifications have happened in your shell, typically at the end of your shell profile.
+
+#### Bash
+
+Add the following line to the end of your `~/.bashrc` or `~/.bash_profile`.
+
+```shell
+eval "$(proto activate bash)"
+```
+
+#### Elvish
+
+Generate the hook:
+
+```shell
+proto activate elvish > ~/.elvish/lib/proto-hook.elv
+```
+
+Then add the following line to your `~/.elvish/rc.elv` file.
+
+```shell
+use proto-hook
+```
+
+#### Fish
+
+Add the following line to the end of your `~/.config/fish/config.fish`.
+
+```shell
+proto activate fish | source
+```
+
+#### Murex
+
+Add the following line to the end of your `~/.murex_profile`.
+
+```shell
+proto activate murex -> source
+```
+
+#### Nu
+
+Generate the hook:
+
+```shell
+proto activate nu > ~/.config/nushell/proto-hook.nu
+```
+
+Then add the following line to your `~/.config/nushell/config.nu` file.
+
+```shell
+use proto-hook.nu
+```
+
+#### Pwsh
+
+Add the following line to the end of your profile (`$PROFILE`).
+
+```shell
+Invoke-Expression "$(proto activate pwsh)"
+```
+
+#### Zsh
+
+Add the following line to the end of your `~/.zshrc`.
+
+```shell
+eval "$(proto activate zsh)"
+```
+
+### Arguments
+
+- `<shell>` - The shell to activate for.
+
+### Options
+
+- `--export` - Print the activate instructions in shell-specific syntax.
+- `--json` - Print the activate instructions in JSON format.
+- `--no-bin` - Do not include `~/.proto/bin` when prepending `PATH`.
+- `--no-shim` - Do not include `~/.proto/shims` when prepending `PATH`.

@@ -71,20 +71,6 @@ Or to explicitly configure the version in [`.prototools`](./config):
 bun = "canary"
 ```
 
-### OS is unable to find an installed binary, how to resolve?
-
-To start, ensure that proto's shim and binary directories are listed first on `PATH`, and takes
-precedence over other binaries of the same name that may collide.
-
-Secondly, proto is powered through shims, which means on Windows, we do not provide `.exe` binaries
-(for shims), and instead use `.cmd`. If you're attempting to run a script that uses a hard-coded
-binary name like `node.exe`, you'll need to do one of the following:
-
-- Remove the trailing `.exe` and simply run `node` instead. Windows will use the `PATHEXT`
-  environment variable to find the appropriate extension, which includes `.cmd` by default.
-- Ensure `~/.proto/bin` is in your `PATH`. If a shim cannot be found, the original binary will be
-  used instead.
-
 ## Troubleshooting
 
 ### Network requests keep failing, how can I bypass?

@@ -268,9 +268,10 @@ const sidebars: SidebarsConfig = {
 	proto: [
 		'proto/index',
 		'proto/install',
+		'proto/workflows',
+		'proto/config',
 		'proto/version-spec',
 		'proto/detection',
-		'proto/config',
 		'proto/tools',
 		{
 			type: 'category',
@@ -282,6 +283,7 @@ const sidebars: SidebarsConfig = {
 			type: 'category',
 			label: 'Commands',
 			items: [
+				'proto/commands/activate',
 				'proto/commands/alias',
 				'proto/commands/bin',
 				'proto/commands/clean',

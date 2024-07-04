@@ -1,0 +1,115 @@
+---
+title: Workflows
+toc_max_heading_level: 6
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+With proto, we provide multiple workflows for everyday use for you to choose from. They can be used
+individually, or together, it's up to you!
+
+## Shims
+
+proto is primarily powered the by industry standard concept of shims. For each tool installed in
+proto, a shim file will exist at `~/.proto/shims` for the primary executable, and some secondary
+executables. Shims _are not_ symlinks to the tool's binary, but are thin wrappers around
+[`proto run`](./commands/run), enabling [runtime version detection](./detection) on every
+invocation! For example, these are equivalent:
+
+```shell
+$ proto run node -- --version
+20.0.0
+
+$ node --version
+20.0.0
+
+$ which node
+~/.proto/shims/node
+```
+
+To make use of shims, prepend the `~/.proto/shims` directory to `PATH` in your shell profile. This
+_must come before_ the [bin directory](#binary-linking) if using both.
+
+## Binary linking
+
+Alternatively, we also support a non-shim based approach, which creates symlinks to a versioned
+tool's primary and secondary executables. For each tool installed in proto, a symlink will exist at
+`~/.proto/bin` for the globally pinned version (configured in [`~/.proto/.prototools`](./config)).
+
+```shell
+$ node --version
+20.0.0
+
+$ which node
+~/.proto/bin/node -> /.proto/tools/node/20.0.0/bin/node
+```
+
+The version of a tool that's symlinked _is not_ dynamic and is manually linked by pinning the chosen
+version with [`proto install --pin=global`](./commands/install) or
+[`proto pin --global`](./commands/pin). This also happens automatically the first time a tool is
+installed.
+
+To make use of bins, prepend the `~/.proto/bin` directory to `PATH` in your shell profile. This
+_must come after_ the [shim directory](#shims) if using both.
+
+:::warning
+
+Not all tools support symlinking a binary, as not all files are executable. For example, most
+Node.js package managers currently do not support this, as JavaScript files are not executable
+(especially on Windows). Shims are required for these tools.
+
+:::
+
+## Shell activation<VersionLabel version="0.38.0" />
+
+:::danger
+
+This feature is extremely experimental and may change based on feedback! If you run into any issues,
+please report an issue on [GitHub](https://github.com/moonrepo/proto) or
+[Discord](https://discord.gg/qCh9MEynv2).
+
+:::
+
+Our last workflow is what we call shell activation (or shell hooks), and its where the proto
+environment is setup/reset every time you change directories. If you're coming from another version
+manager, you may be familiar with this kind of workflow.
+
+So how does this work exactly? In your shell profile, you'll evaluate a call to
+[`proto activate <shell>`](./commands/activate), which generates a bunch of shell specific syntax
+that registers a hook for "run this code when the current directory or prompt line changes". Once
+this hook is registered and you run `cd` (for example), proto will load all tools and...
+
+- Export environment variables based on [`[env]`](./config#env) and
+  [`[tools.*.env]`](./config#toolsenv)
+- Prepend `PATH` with tool-specific directories (like local and global executables) for the detected
+  version
+
+```shell
+$ cd /some/path && node --version
+20.0.0
+
+$ cd /another/path && node --version
+18.0.0
+```
+
+:::info
+
+View the [`proto activate`](./commands/activate) documentation for information on how to setup your
+shell profile for this workflow.
+
+:::
+
+## Comparison
+
+The workflows above may come across as information overload, so we've provided the following
+comparison table outlining the features each workflow supports.
+
+|                                | Shims                  | Bins | Activate                       |
+| ------------------------------ | ---------------------- | ---- | ------------------------------ |
+| Runtime version detection      | 🟢                     | 🔴   | 🟠 only when the hook triggers |
+| Supports multiple versions     | 🟢                     | 🔴   | 🟢                             |
+| Fixed to a single version      | 🟠 with arg or env var | 🟢   | 🟠 if not using shims          |
+| Includes all tool executables  | 🔴                     | 🔴   | 🟢                             |
+| Includes tool globals/packages | 🔴                     | 🔴   | 🟢                             |
+| Exports environment variables  | 🔴                     | 🔴   | 🟢                             |
+| Prepends `PATH`                | 🔴                     | 🔴   | 🟢                             |

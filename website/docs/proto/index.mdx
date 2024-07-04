@@ -14,6 +14,17 @@ downloaded, installed, and managed by version through a single interface. In the
 toolchain, a tool is either a programming language, a dependency/package manager for a language, or
 a custom implementation provided by a plugin. It's the next step in the version manager evolution.
 
+## Features
+
+- Lightspeed! With Rust and WASM, we can guarantee exceptional performance.
+- Multi-language. A single CLI for managing versions for all of your languages.
+- Cross-platform, for a consistent experience across machines and teams.
+- [Contextual version detection](./proto/detection), ensuring the correct version of a tool is
+  always used.
+- Checksum verification, ensuring a tool came from a trusted source.
+- Detects and infers from a language's ecosystem for maximum compatibility.
+- [Pluggable architecture](./proto/plugins), allowing for custom tooling.
+
 ## Why proto?
 
 proto was designed to be a modern and holistic version manager for all of your favorite programming
@@ -26,17 +37,6 @@ more in the future!
 proto powers [moon](/moon)'s toolchain, enabling a single source of truth for both tools!
 
 :::
-
-### Features
-
-- Lightspeed! With Rust and WASM, we can guarantee exceptional performance.
-- Multi-language. A single CLI for managing versions for all of your languages.
-- Cross-platform, for a consistent experience across machines and teams.
-- [Contextual version detection](./proto/detection), ensuring the correct version of a tool is
-  always used.
-- Checksum verification, ensuring a tool came from a trusted source.
-- Detects and infers from a language's ecosystem for maximum compatibility.
-- [Pluggable architecture](./proto/plugins), allowing for custom tooling.
 
 ## How does it work?
 

@@ -15,6 +15,7 @@ moon_toolchain = { path = "../../../crates/toolchain" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_utils = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

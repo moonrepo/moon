@@ -60,7 +60,12 @@ impl ProjectGraphContainer {
             graph.workspace_config = WorkspaceConfig::load_from(root).unwrap();
         } else {
             let mut projects = WorkspaceProjectsConfig {
-                globs: vec!["*".into()],
+                globs: vec![
+                    "*".into(),
+                    "!.home".into(),
+                    "!.moon".into(),
+                    "!.proto".into(),
+                ],
                 ..WorkspaceProjectsConfig::default()
             };
 

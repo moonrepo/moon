@@ -1,4 +1,3 @@
-use moon_common::get_env_home;
 use moon_config::RustConfig;
 use moon_console::{Checkpoint, Console};
 use moon_logger::debug;
@@ -10,6 +9,7 @@ use moon_tool::{
 use moon_toolchain::RuntimeReq;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use starbase_utils::env::path_var;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
@@ -18,11 +18,11 @@ use tracing::instrument;
 pub fn get_rust_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
 
-    if let Some(value) = get_env_home("CARGO_INSTALL_ROOT") {
+    if let Some(value) = path_var("CARGO_INSTALL_ROOT") {
         paths.push(value.join("bin"));
     }
 
-    if let Some(value) = get_env_home("CARGO_HOME") {
+    if let Some(value) = path_var("CARGO_HOME") {
         paths.push(value.join("bin"));
     }
 

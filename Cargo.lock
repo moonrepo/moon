@@ -5984,9 +5984,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4a6b84908341f3d93cdeb6be57be47a4a0d9650d124133b29a83ab38f095e93"
+checksum = "f0b3df0c2955e598b9ac24256ebfb6e0d0291eb5fbd0a30b7075546d5972b8fa"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",

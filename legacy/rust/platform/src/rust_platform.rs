@@ -69,7 +69,7 @@ impl RustPlatform {
         let mut globals_dir = get_cargo_home().join("bin");
 
         if let Some(tool) = tool {
-            if let Some(new_globals_dir) = tool.tool.get_globals_bin_dir() {
+            if let Some(new_globals_dir) = tool.tool.get_globals_dir() {
                 globals_dir = new_globals_dir.to_path_buf();
             }
         }

@@ -293,7 +293,7 @@ impl Template {
 
                         json::write_file_with_config(
                             &file.dest_path,
-                            json::merge(&prev, &next),
+                            &json::merge(&prev, &next),
                             true,
                         )?;
                     }

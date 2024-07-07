@@ -207,7 +207,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJsonCache) -> miette::Re
         }
     }
 
-    json::write_file_with_config(path, data, true)?;
+    json::write_file_with_config(path, &data, true)?;
 
     Ok(())
 }

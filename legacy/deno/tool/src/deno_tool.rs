@@ -98,7 +98,7 @@ impl Tool for DenoTool {
         }
 
         if self.tool.is_setup(version).await? {
-            self.tool.locate_globals_dir().await?;
+            self.tool.locate_globals_dirs().await?;
 
             debug!("Deno has already been setup");
 
@@ -131,7 +131,7 @@ impl Tool for DenoTool {
             count += 1;
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(count)
     }

@@ -165,7 +165,7 @@ impl Tool for RustTool {
             }
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(installed)
     }

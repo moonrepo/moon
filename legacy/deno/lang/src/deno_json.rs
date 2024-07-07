@@ -68,7 +68,7 @@ fn write_preserved_json(path: &Path, _config: &DenoJson) -> miette::Result<()> {
     // otherwise it's a ton of overhead and maintenance!
     // for field in &package.dirty {}
 
-    json::write_file_with_config(path, data, true)?;
+    json::write_file_with_config(path, &data, true)?;
 
     Ok(())
 }

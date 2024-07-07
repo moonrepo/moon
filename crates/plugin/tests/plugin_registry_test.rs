@@ -24,7 +24,7 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
     let registry = PluginRegistry::new(
         PluginType::Extension,
         Arc::new(MoonEnvironment::new_testing(sandbox)),
-        Arc::new(ProtoEnvironment::new_testing(sandbox)),
+        Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
     );
 
     // These must exist or extism errors

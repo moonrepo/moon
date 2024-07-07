@@ -13,7 +13,7 @@ use schematic::ConfigEnum;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, warn};
 
 #[derive(Args, Clone, Debug)]
@@ -23,6 +23,16 @@ pub struct DockerScaffoldArgs {
 
     #[arg(long, help = "Additional file globs to include in sources")]
     include: Vec<String>,
+}
+
+fn copy_files_from_paths(paths: Vec<PathBuf>, source: &Path, dest: &Path) -> AppResult {
+    let mut files = vec![];
+
+    for file in paths {
+        files.push(path::to_string(file.strip_prefix(source).unwrap())?);
+    }
+
+    copy_files(&files, source, dest)
 }
 
 fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResult {
@@ -215,13 +225,8 @@ async fn scaffold_workspace(
         "Copying core moon configuration"
     );
 
-    let moon_configs = glob::walk(moon_dir, ["*.yml", "tasks/**/*.yml"])?
-        .into_iter()
-        .map(|f| path::to_string(f.strip_prefix(&session.workspace_root).unwrap()))
-        .collect::<Result<Vec<String>, _>>()?;
-
-    copy_files(
-        &moon_configs,
+    copy_files_from_paths(
+        glob::walk(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
         &session.workspace_root,
         &docker_workspace_root,
     )?;
@@ -239,29 +244,41 @@ async fn scaffold_sources_project(
     manifest: &mut DockerManifest,
 ) -> AppResult {
     let project = project_graph.get(project_id)?;
+    let mut include_globs = vec!["!node_modules/**", "!target/**/*", "!vendor/**"];
+
+    manifest.focused_projects.insert(project_id.to_owned());
+
+    if project.config.docker.scaffold.include.is_empty() {
+        include_globs.push("**/*");
+    } else {
+        include_globs.extend(
+            project
+                .config
+                .docker
+                .scaffold
+                .include
+                .iter()
+                .map(|glob| glob.as_str()),
+        );
+    }
 
     debug!(
         id = project_id.as_str(),
+        globs = ?include_globs,
         "Copying sources from project {}",
         color::id(project_id),
     );
 
-    manifest.focused_projects.insert(project_id.to_owned());
-
-    for file in glob::walk_files(
-        &project.root,
-        ["**/*", "!node_modules/**", "!target/**/*", "!vendor/**"],
-    )? {
-        fs::copy_file(
-            &file,
-            docker_sources_root.join(file.strip_prefix(&session.workspace_root).unwrap()),
-        )?;
-    }
+    copy_files_from_paths(
+        glob::walk(&project.root, include_globs)?,
+        &session.workspace_root,
+        docker_sources_root,
+    )?;
 
     for dep_cfg in &project.dependencies {
         // Avoid root-level projects as it will pull in all sources,
         // which is usually not what users want. If they do want it,
-        // they can be explicitly on the command line!
+        // they can be explicit in config or on the command line!
         if !dep_cfg.is_root_scope() {
             debug!(
                 id = project_id.as_str(),
@@ -296,7 +313,7 @@ async fn scaffold_sources(
     debug!(
         scaffold_dir = ?docker_sources_root,
         projects = ?project_ids.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
-        "Scaffolding sources skeleton, including source files from focused projects"
+        "Scaffolding sources skeleton, including files from focused projects"
     );
 
     let mut manifest = DockerManifest {
@@ -330,12 +347,11 @@ async fn scaffold_sources(
             "Including additional sources"
         );
 
-        let files = glob::walk_files(&session.workspace_root, include)?
-            .into_iter()
-            .map(|f| path::to_string(f.strip_prefix(&session.workspace_root).unwrap()))
-            .collect::<Result<Vec<String>, _>>()?;
-
-        copy_files(&files, &session.workspace_root, &docker_sources_root)?;
+        copy_files_from_paths(
+            glob::walk(&session.workspace_root, include)?,
+            &session.workspace_root,
+            &docker_sources_root,
+        )?;
     }
 
     json::write_file(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
@@ -364,14 +380,16 @@ pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 
         // Check lines so we can match exactly and avoid comments or nested paths
         for line in ignore.lines() {
-            match line.trim() {
-                // Better way?
-                ".moon/cache" | ".moon/cache/" | "./.moon/cache" | "./.moon/cache/" => {
-                    is_ignored = true;
-                    break;
-                }
-                _ => {}
-            };
+            if line
+                .trim()
+                .trim_start_matches("./")
+                .trim_start_matches('/')
+                .trim_end_matches('/')
+                == ".moon/cache"
+            {
+                is_ignored = true;
+                break;
+            }
         }
     }
 

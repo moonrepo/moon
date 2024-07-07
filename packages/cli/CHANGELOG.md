@@ -4,9 +4,14 @@
 
 #### 🚀 Updates
 
+- Added support for [murex](https://murex.rocks/) shells.
+  - Updated both `unixShell` and `windowsShell` task options.
 - We now generate JSON schemas for our configuration files to `.moon/cache/schemas`, so that they
   can be dynamically created based on the current moon version and environment.
+  - Is automatically generated when running a task.
   - Added a `moon sync config-schemas` command to manually run this operation.
+- When writing JSON and YAML files, we attempt to write back to the file with its original
+  indentation.
 
 #### 🧰 Toolchain
 
@@ -15,6 +20,10 @@
     `package.json`.
 - Yarn
   - Will no longer call `yarn set version` and instead rely entirely on proto's toolchain.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.38.0 (from v0.37.2).
 
 ## 1.26.7
 

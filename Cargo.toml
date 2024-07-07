@@ -19,15 +19,15 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-recursion = "1.1.1"
 async-trait = "0.1.80"
-cached = "0.51.4"
+cached = "0.52.0"
 chrono = { version = "0.4.38", features = ["serde"] }
 cd_env = "0.2.0"
 ci_env = "0.3.0"
-clap = { version = "4.5.7", default-features = false, features = [
+clap = { version = "4.5.8", default-features = false, features = [
 	"std",
 	"error-context",
 ] }
-clap_complete = "4.5.6"
+clap_complete = "4.5.7"
 console = "0.15.8"
 dirs = "5.0.1"
 miette = "7.2.0"
@@ -46,26 +46,26 @@ reqwest = { version = "0.12.5", default-features = false, features = [
 	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
 ] }
-rustc-hash = "1.1.0"
-scc = "2.1.1"
-schematic = { version = "0.16.4", default-features = false, features = [
+rustc-hash = "=1.1.0"
+scc = "2.1.2"
+schematic = { version = "0.16.5", default-features = false, features = [
 	"schema",
 ] }
 serial_test = "3.1.1"
 semver = "1.0.23"
-serde = { version = "1.0.203", features = ["derive"] }
-serde_json = "1.0.118"
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.120"
 serde_yaml = "0.9.34"
 starbase = { version = "0.8.1" }
-starbase_archive = { version = "0.7.5", default-features = false, features = [
+starbase_archive = { version = "0.8.0", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
 starbase_events = "0.6.2"
-starbase_sandbox = "0.6.3"
-starbase_shell = "0.2.5"
+starbase_sandbox = "0.6.4"
+starbase_shell = "0.5.0"
 starbase_styles = { version = "0.4.1", features = ["relative-path"] }
-starbase_utils = { version = "0.7.7", default-features = false, features = [
+starbase_utils = { version = "0.8.2", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -92,11 +92,11 @@ uuid = { version = "1.9.1", features = ["v4"] }
 # proto/plugin related
 extism = "=1.3.0"
 extism-pdk = "1.2.0"
-proto_core = "0.37.3"
-proto_installer = "0.5.1"
+proto_core = "0.38.1"
+proto_installer = "0.5.2"
 system_env = "0.5.0"
 version_spec = "0.6.0"
-warpgate = "0.15.0"
+warpgate = "0.15.2"
 warpgate_api = "0.8.0"
 warpgate_pdk = "0.6.0"
 

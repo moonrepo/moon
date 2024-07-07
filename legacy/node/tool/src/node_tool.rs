@@ -268,7 +268,7 @@ impl Tool for NodeTool {
             }
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         if let Some(npm) = &mut self.npm {
             installed += npm.setup(last_versions).await?;

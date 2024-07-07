@@ -72,7 +72,7 @@ impl Tool for NpmTool {
         }
 
         if self.tool.is_setup(version).await? {
-            self.tool.locate_globals_dir().await?;
+            self.tool.locate_globals_dirs().await?;
 
             debug!("npm has already been setup");
 
@@ -105,7 +105,7 @@ impl Tool for NpmTool {
             count += 1;
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(count)
     }

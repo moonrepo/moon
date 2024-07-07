@@ -230,7 +230,7 @@ fn write_preserved_json(path: &Path, package: &PackageJsonCache) -> miette::Resu
         };
     }
 
-    json::write_file_with_config(path, data, true)?;
+    json::write_file_with_config(path, &data, true)?;
 
     Ok(())
 }

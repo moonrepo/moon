@@ -10,8 +10,8 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
-dirs = { workspace = true }
 miette = { workspace = true }
+starbase_utils = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

@@ -118,7 +118,7 @@ impl Tool for YarnTool {
         }
 
         if self.tool.is_setup(version).await? {
-            self.tool.locate_globals_dir().await?;
+            self.tool.locate_globals_dirs().await?;
 
             debug!("yarn has already been setup");
 
@@ -151,7 +151,7 @@ impl Tool for YarnTool {
             count += 1;
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(count)
     }

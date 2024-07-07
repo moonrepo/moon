@@ -147,6 +147,7 @@ derive_enum!(
         Elvish,
         Fish,
         Ion,
+        Murex,
         #[serde(alias = "nushell")]
         Nu,
         #[serde(alias = "powershell")]
@@ -163,6 +164,7 @@ derive_enum!(
         Bash,
         Elvish,
         Fish,
+        Murex,
         #[serde(alias = "nushell")]
         Nu,
         #[serde(alias = "powershell")]

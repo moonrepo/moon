@@ -63,7 +63,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 # Visualizer
-open = "5.1.4"
+open = "5.2.0"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"

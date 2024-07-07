@@ -1,4 +1,3 @@
-use moon_common::get_env_home;
 use moon_config::DenoConfig;
 use moon_console::{Checkpoint, Console};
 use moon_deno_lang::{load_lockfile_dependencies, LockfileDependencyVersions};
@@ -11,6 +10,7 @@ use moon_toolchain::RuntimeReq;
 use moon_utils::get_workspace_root;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use starbase_utils::env::path_var;
 use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -20,11 +20,11 @@ use tracing::{debug, instrument};
 pub fn get_deno_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
     let mut paths = get_proto_paths(proto_env);
 
-    if let Some(value) = get_env_home("DENO_INSTALL_ROOT") {
+    if let Some(value) = path_var("DENO_INSTALL_ROOT") {
         paths.push(value.join("bin"));
     }
 
-    if let Some(value) = get_env_home("DENO_HOME") {
+    if let Some(value) = path_var("DENO_HOME") {
         paths.push(value.join("bin"));
     }
 
@@ -98,7 +98,7 @@ impl Tool for DenoTool {
         }
 
         if self.tool.is_setup(version).await? {
-            self.tool.locate_globals_dir().await?;
+            self.tool.locate_globals_dirs().await?;
 
             debug!("Deno has already been setup");
 
@@ -131,7 +131,7 @@ impl Tool for DenoTool {
             count += 1;
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(count)
     }

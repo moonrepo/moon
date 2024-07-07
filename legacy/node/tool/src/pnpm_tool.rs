@@ -80,7 +80,7 @@ impl Tool for PnpmTool {
         }
 
         if self.tool.is_setup(version).await? {
-            self.tool.locate_globals_dir().await?;
+            self.tool.locate_globals_dirs().await?;
 
             debug!("pnpm has already been setup");
 
@@ -113,7 +113,7 @@ impl Tool for PnpmTool {
             count += 1;
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(count)
     }

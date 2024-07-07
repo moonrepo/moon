@@ -97,7 +97,7 @@ impl Tool for BunTool {
         let _lock = mutex.lock().await;
 
         if self.tool.is_setup(version).await? {
-            self.tool.locate_globals_dir().await?;
+            self.tool.locate_globals_dirs().await?;
 
             debug!("bun has already been setup");
 
@@ -130,7 +130,7 @@ impl Tool for BunTool {
             count += 1;
         }
 
-        self.tool.locate_globals_dir().await?;
+        self.tool.locate_globals_dirs().await?;
 
         Ok(count)
     }

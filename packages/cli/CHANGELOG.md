@@ -46,6 +46,10 @@
 - Yarn
   - Will no longer call `yarn set version` and instead rely entirely on proto's toolchain.
 
+#### ⚙️ Internal
+
+- Updated proto to v0.38.0 (from v0.37.2).
+
 ## 1.26.6
 
 #### 🐞 Fixes

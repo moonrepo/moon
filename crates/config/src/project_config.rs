@@ -3,7 +3,6 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
-use crate::shared::*;
 use moon_common::{cacheable, Id};
 use rustc_hash::FxHashMap;
 use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError};
@@ -112,7 +111,7 @@ cacheable!(
 
         /// Configures Docker integration for this project.
         #[setting(nested)]
-        pub docker: DockerConfig,
+        pub docker: ProjectDockerConfig,
 
         /// A mapping of environment variables that will be set for
         /// all tasks within the project.

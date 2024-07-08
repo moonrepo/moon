@@ -1,7 +1,6 @@
 // .moon/workspace.yml
 
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
-use crate::shared::*;
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;

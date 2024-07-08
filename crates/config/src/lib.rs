@@ -6,7 +6,6 @@ mod portable_path;
 mod project;
 mod project_config;
 mod shapes;
-mod shared;
 mod template;
 mod template_config;
 mod toolchain;

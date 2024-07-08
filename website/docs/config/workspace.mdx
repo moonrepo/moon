@@ -225,15 +225,15 @@ Configures Docker integration for the entire workspace.
 
 Configures aspects of the Docker scaffolding process when
 [`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
-[workspace skeleton](../commands/docker/scaffold#workspace) (`.moon/docker/workspace`).
+[workspace skeleton](../commands/docker/scaffold#workspace).
 
 #### `copyToolchainFiles`
 
 <HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#copyToolchainFiles" />
 
 Copy all toolchain specific configs, manifests, and related files in the entire repository into the
-workspace skeleton. This is required for certain tools, like package managers, to work correctly.
-Defaults to `true`.
+`.moon/docker/workspace` skeleton. This is required for certain tools, like package managers, to
+work correctly. Defaults to `true`.
 
 ```yaml title="moon.yml" {3}
 docker:
@@ -248,8 +248,8 @@ docker:
 
 <HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#include" />
 
-List of globs in which to copy additional workspace-relative files into the workspace skeleton. When
-not defined, does nothing.
+List of globs in which to copy additional workspace-relative files into the `.moon/docker/workspace`
+skeleton. When not defined, does nothing.
 
 ```yaml title="moon.yml" {3,4}
 docker:

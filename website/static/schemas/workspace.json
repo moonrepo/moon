@@ -237,7 +237,7 @@
       "additionalProperties": false
     },
     "DockerScaffoldConfig": {
-      "description": "Configures aspects of the Docker scaffolding process. When configured in a project, paths are relative from the project root. When configured at the workspace, paths are relative from the workspace root.",
+      "description": "Configures aspects of the Docker scaffolding process.",
       "type": "object",
       "properties": {
         "copyToolchainFiles": {
@@ -248,7 +248,7 @@
         },
         "include": {
           "title": "include",
-          "description": "List of glob patterns to include (or exclude) in the sources skeleton.",
+          "description": "List of glob patterns, relative from the workspace root, to include (or exclude) in the workspace skeleton.",
           "type": "array",
           "items": {
             "type": "string"

@@ -328,18 +328,18 @@ Configures Docker integration for the current project.
 
 ### `scaffold`
 
-<HeadingApiLink to="/api/types/interface/DockerConfig#scaffold" />
+<HeadingApiLink to="/api/types/interface/ProjectDockerConfig#scaffold" />
 
 Configures aspects of the Docker scaffolding process when
 [`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
-[sources skeleton](../commands/docker/scaffold#sources) (`.moon/docker/sources`).
+[sources skeleton](../commands/docker/scaffold#sources).
 
 #### `include`
 
-<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#include" />
+<HeadingApiLink to="/api/types/interface/ProjectDockerScaffoldConfig#include" />
 
-List of globs in which to copy project-relative files into the sources skeleton. When not defined,
-defaults to `**/*`.
+List of globs in which to copy project-relative files into the `.moon/docker/sources` skeleton. When
+not defined, defaults to `**/*`.
 
 ```yaml title="moon.yml" {3,4}
 docker:

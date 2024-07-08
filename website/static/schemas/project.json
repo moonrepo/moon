@@ -21,7 +21,7 @@
       "description": "Configures Docker integration for this project.",
       "allOf": [
         {
-          "$ref": "#/definitions/DockerConfig"
+          "$ref": "#/definitions/ProjectDockerConfig"
         }
       ]
     },
@@ -232,43 +232,6 @@
         "implicit"
       ]
     },
-    "DockerConfig": {
-      "description": "Configures our Docker integration.",
-      "type": "object",
-      "properties": {
-        "scaffold": {
-          "title": "scaffold",
-          "description": "Configures aspects of the Docker scaffolding process.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/DockerScaffoldConfig"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "DockerScaffoldConfig": {
-      "description": "Configures aspects of the Docker scaffolding process. When configured in a project, paths are relative from the project root. When configured at the workspace, paths are relative from the workspace root.",
-      "type": "object",
-      "properties": {
-        "copyToolchainFiles": {
-          "title": "copyToolchainFiles",
-          "description": "Copy toolchain specific configs/manifests/files into the workspace skeleton.",
-          "default": true,
-          "type": "boolean"
-        },
-        "include": {
-          "title": "include",
-          "description": "List of glob patterns to include (or exclude) in the sources skeleton.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
     "LanguageType": {
       "description": "Supported programming languages that each project can be written in.",
       "anyOf": [
@@ -422,6 +385,37 @@
           "$ref": "#/definitions/DependencyConfig"
         }
       ]
+    },
+    "ProjectDockerConfig": {
+      "description": "Configures our Docker integration.",
+      "type": "object",
+      "properties": {
+        "scaffold": {
+          "title": "scaffold",
+          "description": "Configures aspects of the Docker scaffolding process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectDockerScaffoldConfig"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectDockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process.",
+      "type": "object",
+      "properties": {
+        "include": {
+          "title": "include",
+          "description": "List of glob patterns, relative from the project root, to include (or exclude) in the sources skeleton.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "ProjectMetadataConfig": {
       "description": "Expanded information about the project.",

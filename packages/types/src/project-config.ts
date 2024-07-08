@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { UnresolvedVersionSpec } from './toolchain-config';
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { UnresolvedVersionSpec } from './toolchain-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -36,26 +36,19 @@ export interface DependencyConfig {
 
 export type ProjectDependsOn = string | DependencyConfig;
 
-/**
- * Configures aspects of the Docker scaffolding process.
- * When configured in a project, paths are relative from the project root.
- * When configured at the workspace, paths are relative from the workspace root.
- */
-export interface DockerScaffoldConfig {
+/** Configures aspects of the Docker scaffolding process. */
+export interface ProjectDockerScaffoldConfig {
 	/**
-	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
-	 *
-	 * @default true
+	 * List of glob patterns, relative from the project root,
+	 * to include (or exclude) in the sources skeleton.
 	 */
-	copyToolchainFiles?: boolean;
-	/** List of glob patterns to include (or exclude) in the sources skeleton. */
 	include: string[];
 }
 
 /** Configures our Docker integration. */
-export interface DockerConfig {
+export interface ProjectDockerConfig {
 	/** Configures aspects of the Docker scaffolding process. */
-	scaffold: DockerScaffoldConfig;
+	scaffold: ProjectDockerScaffoldConfig;
 }
 
 /** Supported programming languages that each project can be written in. */
@@ -203,7 +196,7 @@ export interface ProjectConfig {
 	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
 	/** Configures Docker integration for this project. */
-	docker: DockerConfig;
+	docker: ProjectDockerConfig;
 	/**
 	 * A mapping of environment variables that will be set for
 	 * all tasks within the project.
@@ -286,26 +279,19 @@ export interface PartialDependencyConfig {
 
 export type PartialProjectDependsOn = string | PartialDependencyConfig;
 
-/**
- * Configures aspects of the Docker scaffolding process.
- * When configured in a project, paths are relative from the project root.
- * When configured at the workspace, paths are relative from the workspace root.
- */
-export interface PartialDockerScaffoldConfig {
+/** Configures aspects of the Docker scaffolding process. */
+export interface PartialProjectDockerScaffoldConfig {
 	/**
-	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
-	 *
-	 * @default true
+	 * List of glob patterns, relative from the project root,
+	 * to include (or exclude) in the sources skeleton.
 	 */
-	copyToolchainFiles?: boolean | null;
-	/** List of glob patterns to include (or exclude) in the sources skeleton. */
 	include?: string[] | null;
 }
 
 /** Configures our Docker integration. */
-export interface PartialDockerConfig {
+export interface PartialProjectDockerConfig {
 	/** Configures aspects of the Docker scaffolding process. */
-	scaffold?: PartialDockerScaffoldConfig | null;
+	scaffold?: PartialProjectDockerScaffoldConfig | null;
 }
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
@@ -426,7 +412,7 @@ export interface PartialProjectConfig {
 	/** Other projects that this project depends on. */
 	dependsOn?: PartialProjectDependsOn[] | null;
 	/** Configures Docker integration for this project. */
-	docker?: PartialDockerConfig | null;
+	docker?: PartialProjectDockerConfig | null;
 	/**
 	 * A mapping of environment variables that will be set for
 	 * all tasks within the project.

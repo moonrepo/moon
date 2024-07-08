@@ -43,19 +43,19 @@ export interface ConstraintsConfig {
 	tagRelationships: Record<string, string[]>;
 }
 
-/**
- * Configures aspects of the Docker scaffolding process.
- * When configured in a project, paths are relative from the project root.
- * When configured at the workspace, paths are relative from the workspace root.
- */
+/** Configures aspects of the Docker scaffolding process. */
 export interface DockerScaffoldConfig {
 	/**
-	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
+	 * Copy toolchain specific configs/manifests/files into
+	 * the workspace skeleton.
 	 *
 	 * @default true
 	 */
 	copyToolchainFiles?: boolean;
-	/** List of glob patterns to include (or exclude) in the sources skeleton. */
+	/**
+	 * List of glob patterns, relative from the workspace root,
+	 * to include (or exclude) in the workspace skeleton.
+	 */
 	include: string[];
 }
 
@@ -321,19 +321,19 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<string, string[]> | null;
 }
 
-/**
- * Configures aspects of the Docker scaffolding process.
- * When configured in a project, paths are relative from the project root.
- * When configured at the workspace, paths are relative from the workspace root.
- */
+/** Configures aspects of the Docker scaffolding process. */
 export interface PartialDockerScaffoldConfig {
 	/**
-	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
+	 * Copy toolchain specific configs/manifests/files into
+	 * the workspace skeleton.
 	 *
 	 * @default true
 	 */
 	copyToolchainFiles?: boolean | null;
-	/** List of glob patterns to include (or exclude) in the sources skeleton. */
+	/**
+	 * List of glob patterns, relative from the workspace root,
+	 * to include (or exclude) in the workspace skeleton.
+	 */
 	include?: string[] | null;
 }
 

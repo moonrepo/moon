@@ -203,6 +203,14 @@ impl ToolchainConfig {
                 } else if bunpm_config.version.is_some() && bun_config.version.is_none() {
                     bun_config.version = bunpm_config.version.clone();
                 }
+
+                if !bun_config.install_args.is_empty() && bunpm_config.install_args.is_empty() {
+                    bunpm_config.install_args = bun_config.install_args.clone();
+                } else if !bunpm_config.install_args.is_empty()
+                    && bun_config.install_args.is_empty()
+                {
+                    bun_config.install_args = bunpm_config.install_args.clone();
+                }
             };
         }
 

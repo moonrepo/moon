@@ -269,6 +269,29 @@ node:
                 UnresolvedVersionSpec::parse("1.0.0").unwrap()
             );
         }
+
+        #[test]
+        fn inherits_args_from_node_pm() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+bun: {}
+node:
+  packageManager: bun
+  bun:
+    version: 1.0.0
+    installArgs: [--frozen]
+",
+                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+            );
+
+            assert_eq!(config.bun.unwrap().install_args, vec!["--frozen"]);
+
+            assert_eq!(
+                config.node.unwrap().bun.unwrap().install_args,
+                vec!["--frozen"]
+            );
+        }
     }
 
     mod deno {
@@ -1047,6 +1070,30 @@ node:
                 assert_eq!(
                     config.node.unwrap().bun.unwrap().version.unwrap(),
                     UnresolvedVersionSpec::parse("1.0.0").unwrap()
+                );
+            }
+
+            #[test]
+            #[serial]
+            fn inherits_args_from_bun_tool() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+bun:
+  version: 1.0.0
+  installArgs:
+    - --frozen
+node:
+  packageManager: bun
+",
+                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                );
+
+                assert_eq!(config.bun.unwrap().install_args, vec!["--frozen"]);
+
+                assert_eq!(
+                    config.node.unwrap().bun.unwrap().install_args,
+                    vec!["--frozen"]
                 );
             }
 

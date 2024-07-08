@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `bun.installArgs` and `node.bun.installArgs` to stay in sync.
+
 #### 🐞 Fixes
 
 - Fixed `moon run --affected` not auto-installing dependencies in CI.

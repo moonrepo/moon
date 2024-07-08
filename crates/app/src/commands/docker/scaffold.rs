@@ -246,7 +246,7 @@ async fn scaffold_workspace(
     );
 
     copy_files_from_paths(
-        glob::walk(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
+        glob::walk_files(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
         &session.workspace_root,
         &docker_workspace_root,
     )?;
@@ -261,7 +261,7 @@ async fn scaffold_workspace(
         );
 
         copy_files_from_paths(
-            glob::walk(&session.workspace_root, include)?,
+            glob::walk_files(&session.workspace_root, include)?,
             &session.workspace_root,
             &docker_workspace_root,
         )?;
@@ -306,7 +306,7 @@ async fn scaffold_sources_project(
     );
 
     copy_files_from_paths(
-        glob::walk(&project.root, include_globs)?,
+        glob::walk_files(&project.root, include_globs)?,
         &session.workspace_root,
         docker_sources_root,
     )?;
@@ -389,7 +389,7 @@ async fn scaffold_sources(
         );
 
         copy_files_from_paths(
-            glob::walk(&session.workspace_root, include)?,
+            glob::walk_files(&session.workspace_root, include)?,
             &session.workspace_root,
             &docker_sources_root,
         )?;

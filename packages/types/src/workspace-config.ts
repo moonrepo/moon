@@ -43,6 +43,28 @@ export interface ConstraintsConfig {
 	tagRelationships: Record<string, string[]>;
 }
 
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * When configured in a project, paths are relative from the project root.
+ * When configured at the workspace, paths are relative from the workspace root.
+ */
+export interface DockerScaffoldConfig {
+	/**
+	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
+	 *
+	 * @default true
+	 */
+	copyToolchainFiles?: boolean;
+	/** List of glob patterns to include (or exclude) in the sources skeleton. */
+	include: string[];
+}
+
+/** Configures our Docker integration. */
+export interface DockerConfig {
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold: DockerScaffoldConfig;
+}
+
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
 	/** Enables the new & modern action pipeline. */
@@ -226,6 +248,8 @@ export interface WorkspaceConfig {
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
+	/** Configures Docker integration for the workspace. */
+	docker: DockerConfig;
 	/** Configures experiments across the entire moon workspace. */
 	experiments: ExperimentsConfig;
 	/**
@@ -295,6 +319,28 @@ export interface PartialConstraintsConfig {
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
 	tagRelationships?: Record<string, string[]> | null;
+}
+
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * When configured in a project, paths are relative from the project root.
+ * When configured at the workspace, paths are relative from the workspace root.
+ */
+export interface PartialDockerScaffoldConfig {
+	/**
+	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
+	 *
+	 * @default true
+	 */
+	copyToolchainFiles?: boolean | null;
+	/** List of glob patterns to include (or exclude) in the sources skeleton. */
+	include?: string[] | null;
+}
+
+/** Configures our Docker integration. */
+export interface PartialDockerConfig {
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
 /** Configures experiments across the entire moon workspace. */
@@ -468,6 +514,8 @@ export interface PartialWorkspaceConfig {
 	codeowners?: PartialCodeownersConfig | null;
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
+	/** Configures Docker integration for the workspace. */
+	docker?: PartialDockerConfig | null;
 	/** Configures experiments across the entire moon workspace. */
 	experiments?: PartialExperimentsConfig | null;
 	/**

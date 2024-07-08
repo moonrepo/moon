@@ -29,10 +29,19 @@ export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
 /** A list of available shells on Unix. */
-export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'ion' | 'nu' | 'pwsh' | 'xonsh' | 'zsh';
+export type TaskUnixShell =
+	| 'bash'
+	| 'elvish'
+	| 'fish'
+	| 'ion'
+	| 'murex'
+	| 'nu'
+	| 'pwsh'
+	| 'xonsh'
+	| 'zsh';
 
 /** A list of available shells on Windows. */
-export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'nu' | 'pwsh' | 'xonsh';
+export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pwsh' | 'xonsh';
 
 /** Options to control task inheritance and execution. */
 export interface TaskOptionsConfig {

@@ -1,6 +1,7 @@
 // .moon/workspace.yml
 
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
+use crate::shared::*;
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
@@ -114,6 +115,10 @@ pub struct WorkspaceConfig {
     /// Configures boundaries and constraints between projects.
     #[setting(nested)]
     pub constraints: ConstraintsConfig,
+
+    /// Configures Docker integration for the workspace.
+    #[setting(nested)]
+    pub docker: DockerConfig,
 
     /// Configures experiments across the entire moon workspace.
     #[setting(nested)]

@@ -4,6 +4,8 @@
 
 #### 🚀 Updates
 
+- Added new `docker` settings to both `.moon/workspace.yml` and `moon.yml`, allowing it to be
+  configured at the workspace and project levels.
 - Added support for [murex](https://murex.rocks/) shells.
   - Updated both `unixShell` and `windowsShell` task options.
 - We now generate JSON schemas for our configuration files to `.moon/cache/schemas`, so that they

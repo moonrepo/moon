@@ -36,6 +36,28 @@ export interface DependencyConfig {
 
 export type ProjectDependsOn = string | DependencyConfig;
 
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * When configured in a project, paths are relative from the project root.
+ * When configured at the workspace, paths are relative from the workspace root.
+ */
+export interface DockerScaffoldConfig {
+	/**
+	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
+	 *
+	 * @default true
+	 */
+	copyToolchainFiles?: boolean;
+	/** List of glob patterns to include (or exclude) in the sources skeleton. */
+	include: string[];
+}
+
+/** Configures our Docker integration. */
+export interface DockerConfig {
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold: DockerScaffoldConfig;
+}
+
 /** Supported programming languages that each project can be written in. */
 export type LanguageType =
 	| 'bash'
@@ -180,6 +202,8 @@ export interface ProjectConfig {
 	$schema?: string;
 	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
+	/** Configures Docker integration for this project. */
+	docker: DockerConfig;
 	/**
 	 * A mapping of environment variables that will be set for
 	 * all tasks within the project.
@@ -261,6 +285,28 @@ export interface PartialDependencyConfig {
 }
 
 export type PartialProjectDependsOn = string | PartialDependencyConfig;
+
+/**
+ * Configures aspects of the Docker scaffolding process.
+ * When configured in a project, paths are relative from the project root.
+ * When configured at the workspace, paths are relative from the workspace root.
+ */
+export interface PartialDockerScaffoldConfig {
+	/**
+	 * Copy toolchain specific configs/manifests/files into the workspace skeleton.
+	 *
+	 * @default true
+	 */
+	copyToolchainFiles?: boolean | null;
+	/** List of glob patterns to include (or exclude) in the sources skeleton. */
+	include?: string[] | null;
+}
+
+/** Configures our Docker integration. */
+export interface PartialDockerConfig {
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold?: PartialDockerScaffoldConfig | null;
+}
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
@@ -379,6 +425,8 @@ export interface PartialProjectConfig {
 	$schema?: string | null;
 	/** Other projects that this project depends on. */
 	dependsOn?: PartialProjectDependsOn[] | null;
+	/** Configures Docker integration for this project. */
+	docker?: PartialDockerConfig | null;
 	/**
 	 * A mapping of environment variables that will be set for
 	 * all tasks within the project.

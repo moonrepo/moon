@@ -213,6 +213,50 @@ dependsOn: ['components']
 tags: ['react']
 ```
 
+## `docker`<VersionLabel version="1.27.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#docker" />
+
+Configures Docker integration for the entire workspace.
+
+### `scaffold`
+
+<HeadingApiLink to="/api/types/interface/DockerConfig#scaffold" />
+
+Configures aspects of the Docker scaffolding process when
+[`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
+[workspace skeleton](../commands/docker/scaffold#workspace) (`.moon/docker/workspace`).
+
+#### `copyToolchainFiles`
+
+<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#copyToolchainFiles" />
+
+Copy all toolchain specific configs, manifests, and related files in the entire repository into the
+workspace skeleton. This is required for certain tools, like package managers, to work correctly.
+
+```yaml title="moon.yml" {3}
+docker:
+  scaffold:
+    copyToolchainFiles: false
+```
+
+> If you disable this feature, you'll most likely need to manually `COPY` all necessary files in
+> your `Dockerfile`.
+
+#### `include`
+
+<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#include" />
+
+List of globs in which to copy additional workspace-relative files into the workspace skeleton. When
+not defined, does nothing.
+
+```yaml title="moon.yml" {3,4}
+docker:
+  scaffold:
+    include:
+      - '**/package.json'
+```
+
 ## `experiments`<VersionLabel version="1.11.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#experiments" />

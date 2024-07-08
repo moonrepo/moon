@@ -27,6 +27,15 @@
         }
       ]
     },
+    "docker": {
+      "title": "docker",
+      "description": "Configures Docker integration for the workspace.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/DockerConfig"
+        }
+      ]
+    },
     "experiments": {
       "title": "experiments",
       "description": "Configures experiments across the entire moon workspace.",
@@ -207,6 +216,43 @@
             "type": "string"
           },
           "markdownDescription": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags."
+        }
+      },
+      "additionalProperties": false
+    },
+    "DockerConfig": {
+      "description": "Configures our Docker integration.",
+      "type": "object",
+      "properties": {
+        "scaffold": {
+          "title": "scaffold",
+          "description": "Configures aspects of the Docker scaffolding process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DockerScaffoldConfig"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process. When configured in a project, paths are relative from the project root. When configured at the workspace, paths are relative from the workspace root.",
+      "type": "object",
+      "properties": {
+        "copyToolchainFiles": {
+          "title": "copyToolchainFiles",
+          "description": "Copy toolchain specific configs/manifests/files into the workspace skeleton.",
+          "default": true,
+          "type": "boolean"
+        },
+        "include": {
+          "title": "include",
+          "description": "List of glob patterns to include (or exclude) in the sources skeleton.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false

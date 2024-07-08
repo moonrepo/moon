@@ -99,56 +99,69 @@ async fn scaffold_workspace(
         ];
         let mut files_to_create: Vec<String> = vec![];
 
-        for lang in LanguageType::variants() {
-            files_to_copy.extend(detect_language_files(&lang));
+        if session
+            .workspace_config
+            .docker
+            .scaffold
+            .copy_toolchain_files
+        {
+            for lang in LanguageType::variants() {
+                files_to_copy.extend(detect_language_files(&lang));
 
-            // These are special cases
-            match lang {
-                LanguageType::JavaScript => {
-                    files_to_copy.extend([
-                        "postinstall.js".into(),
-                        "postinstall.cjs".into(),
-                        "postinstall.mjs".into(),
-                    ]);
-                }
-                LanguageType::Rust => {
-                    if let Some(cargo_toml) = CargoTomlCache::read(source)? {
-                        let manifests = cargo_toml.get_member_manifest_paths(source)?;
+                // These are special cases
+                match lang {
+                    LanguageType::JavaScript => {
+                        files_to_copy.extend([
+                            "postinstall.js".into(),
+                            "postinstall.cjs".into(),
+                            "postinstall.mjs".into(),
+                        ]);
+                    }
+                    LanguageType::Rust => {
+                        if let Some(cargo_toml) = CargoTomlCache::read(source)? {
+                            let manifests = cargo_toml.get_member_manifest_paths(source)?;
 
-                        // Non-workspace
-                        if manifests.is_empty() {
-                            if lang == project_lang {
-                                files_to_create.extend(["src/lib.rs".into(), "src/main.rs".into()]);
+                            // Non-workspace
+                            if manifests.is_empty() {
+                                if lang == project_lang {
+                                    files_to_create
+                                        .extend(["src/lib.rs".into(), "src/main.rs".into()]);
+                                }
                             }
-                        }
-                        // Workspace
-                        else {
-                            for manifest in manifests {
-                                if let Ok(rel_manifest) = manifest.strip_prefix(source) {
-                                    files_to_copy.push(path::to_string(rel_manifest)?);
+                            // Workspace
+                            else {
+                                for manifest in manifests {
+                                    if let Ok(rel_manifest) = manifest.strip_prefix(source) {
+                                        files_to_copy.push(path::to_string(rel_manifest)?);
 
-                                    let rel_manifest_dir = rel_manifest.parent().unwrap();
+                                        let rel_manifest_dir = rel_manifest.parent().unwrap();
 
-                                    if lang == project_lang {
-                                        files_to_create.extend([
-                                            path::to_string(rel_manifest_dir.join("src/lib.rs"))?,
-                                            path::to_string(rel_manifest_dir.join("src/main.rs"))?,
-                                        ]);
+                                        if lang == project_lang {
+                                            files_to_create.extend([
+                                                path::to_string(
+                                                    rel_manifest_dir.join("src/lib.rs"),
+                                                )?,
+                                                path::to_string(
+                                                    rel_manifest_dir.join("src/main.rs"),
+                                                )?,
+                                            ]);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                LanguageType::TypeScript => {
-                    if let Some(typescript_config) = &session.toolchain_config.typescript {
-                        files_to_copy.push(typescript_config.project_config_file_name.to_owned());
-                        files_to_copy.push(typescript_config.root_config_file_name.to_owned());
-                        files_to_copy
-                            .push(typescript_config.root_options_config_file_name.to_owned());
+                    LanguageType::TypeScript => {
+                        if let Some(typescript_config) = &session.toolchain_config.typescript {
+                            files_to_copy
+                                .push(typescript_config.project_config_file_name.to_owned());
+                            files_to_copy.push(typescript_config.root_config_file_name.to_owned());
+                            files_to_copy
+                                .push(typescript_config.root_options_config_file_name.to_owned());
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
             }
         }
 
@@ -186,33 +199,40 @@ async fn scaffold_workspace(
         )?;
     }
 
-    if let Some(js_config) = &session.toolchain_config.bun {
-        if js_config.packages_root != "." {
-            copy_from_dir(
-                &session.workspace_root.join(&js_config.packages_root),
-                &docker_workspace_root.join(&js_config.packages_root),
-                LanguageType::Unknown,
-            )?;
+    if session
+        .workspace_config
+        .docker
+        .scaffold
+        .copy_toolchain_files
+    {
+        if let Some(js_config) = &session.toolchain_config.bun {
+            if js_config.packages_root != "." {
+                copy_from_dir(
+                    &session.workspace_root.join(&js_config.packages_root),
+                    &docker_workspace_root.join(&js_config.packages_root),
+                    LanguageType::Unknown,
+                )?;
+            }
         }
-    }
 
-    if let Some(js_config) = &session.toolchain_config.node {
-        if js_config.packages_root != "." {
-            copy_from_dir(
-                &session.workspace_root.join(&js_config.packages_root),
-                &docker_workspace_root.join(&js_config.packages_root),
-                LanguageType::Unknown,
-            )?;
+        if let Some(js_config) = &session.toolchain_config.node {
+            if js_config.packages_root != "." {
+                copy_from_dir(
+                    &session.workspace_root.join(&js_config.packages_root),
+                    &docker_workspace_root.join(&js_config.packages_root),
+                    LanguageType::Unknown,
+                )?;
+            }
         }
-    }
 
-    if let Some(typescript_config) = &session.toolchain_config.typescript {
-        if typescript_config.root != "." {
-            copy_from_dir(
-                &session.workspace_root.join(&typescript_config.root),
-                &docker_workspace_root.join(&typescript_config.root),
-                LanguageType::Unknown,
-            )?;
+        if let Some(typescript_config) = &session.toolchain_config.typescript {
+            if typescript_config.root != "." {
+                copy_from_dir(
+                    &session.workspace_root.join(&typescript_config.root),
+                    &docker_workspace_root.join(&typescript_config.root),
+                    LanguageType::Unknown,
+                )?;
+            }
         }
     }
 
@@ -230,6 +250,22 @@ async fn scaffold_workspace(
         &session.workspace_root,
         &docker_workspace_root,
     )?;
+
+    // Include via globs
+    let include = &session.workspace_config.docker.scaffold.include;
+
+    if !include.is_empty() {
+        debug!(
+            include = ?include,
+            "Including additional files"
+        );
+
+        copy_files_from_paths(
+            glob::walk(&session.workspace_root, include)?,
+            &session.workspace_root,
+            &docker_workspace_root,
+        )?;
+    }
 
     Ok(())
 }
@@ -342,6 +378,11 @@ async fn scaffold_sources(
 
     // Include via globs
     if !include.is_empty() {
+        warn!(
+            "The --include argument is deprecated, use the {} settings instead",
+            color::property("docker")
+        );
+
         debug!(
             include = ?include,
             "Including additional sources"

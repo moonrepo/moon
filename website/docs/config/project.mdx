@@ -318,6 +318,36 @@ The project type is used in [task inheritance](../concepts/task-inheritance),
 
 :::
 
+## Integrations
+
+## `docker`<VersionLabel version="1.27.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#docker" />
+
+Configures Docker integration for the current project.
+
+### `scaffold`
+
+<HeadingApiLink to="/api/types/interface/DockerConfig#scaffold" />
+
+Configures aspects of the Docker scaffolding process when
+[`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
+[sources skeleton](../commands/docker/scaffold#sources) (`.moon/docker/sources`).
+
+#### `include`
+
+<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#include" />
+
+List of globs in which to copy project-relative files into the sources skeleton. When not defined,
+defaults to `**/*`.
+
+```yaml title="moon.yml" {3,4}
+docker:
+  scaffold:
+    include:
+      - 'src/**/*'
+```
+
 ## Tasks
 
 ## `env`

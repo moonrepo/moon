@@ -1,4 +1,4 @@
-use super::{DockerManifest, MANIFEST_NAME};
+use super::{disable_toolchain, DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use async_recursion::async_recursion;
 use clap::Args;
@@ -454,6 +454,7 @@ pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 #[instrument(skip_all)]
 pub async fn scaffold(session: CliSession, args: DockerScaffoldArgs) -> AppResult {
     check_docker_ignore(&session.workspace_root)?;
+    disable_toolchain(&session);
 
     let docker_root = session.workspace_root.join(CONFIG_DIRNAME).join("docker");
 

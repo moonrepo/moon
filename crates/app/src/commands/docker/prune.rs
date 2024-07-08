@@ -1,4 +1,4 @@
-use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
+use super::{disable_toolchain, docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
@@ -165,6 +165,8 @@ pub async fn prune(session: CliSession) -> AppResult {
     if !manifest_path.exists() {
         return Err(AppDockerError::MissingManifest.into());
     }
+
+    disable_toolchain(&session);
 
     let project_graph = session.get_project_graph().await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;

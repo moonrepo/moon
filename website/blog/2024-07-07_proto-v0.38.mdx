@@ -1,0 +1,49 @@
+---
+slug: proto-v0.38
+title: proto v0.38 - Shell activation / hooks
+authors: [milesj]
+tags: [shell, activate, hook, murex, env, path]
+# image: ./img/proto/v0.38.png
+---
+
+In this release, we're introducing a long requested feature, shell hooks!
+
+<!--truncate-->
+
+## New experimental shell activation workflow
+
+You've most likely used another version manager before proto, and may have used a workflow where `PATH` was automatically updated with versioned binaries of specific tools, or environment variables were injected into your shell. This functionality is what's known as shell hooks, and proto now has experimental support for them through a feature known as [shell activation](/docs/proto/workflows#shell-activation)!
+
+### How it works
+
+For example, say you're using Zsh as your shell. You could now append the following expression at the bottom of your shell profile, which evaluates our new [`proto activate`](/docs/proto/commands/activate) command.
+
+```shell
+eval "$(proto activate zsh)"
+```
+
+When the current working directory changes (via `cd`), or the CLI prompt changes, this activation workflow will trigger the following:
+
+- Download and install necessary proto plugins (if they do not exist)
+- Load and resolve all `.prototools` configurations up the file system
+- Detect and resolve versions for all configured tools
+- Export environment variables defined in `[env]` and `[tools.*.env]`
+- Prepend `PATH` with binary directories for detected tools
+
+Pretty awesome right? We think so. But as mentioned above, this feature is highly experimental, and may not work properly across all shells (we're unable to test everything). So if you run into an issue, please report it!
+
+### Unlocked features
+
+This new workflow unlocks some functionality that was previously not possible with proto shims/bins directly, and they are:
+
+- Directory paths to globally installed packages are now automatically prepended to `PATH`. Previously, you would need to add them manually. This was non-trivial if they were installed to versioned locations.
+- Directory paths to pre-installed binaries within a tool are also prepended to `PATH`. For example, Rust/Cargo and Python provide a lot of executables that were ignored by our shims.
+- This workflow is 1 step closer to replacing [direnv](https://direnv.net/) itself.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.38.0) for a full list
+of changes.
+
+- Added support for [murex](https://murex.rocks/) shells.
+- Added a `--include-global` flag to `proto use`, that will also install globally configured tools.

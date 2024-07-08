@@ -14,10 +14,13 @@ hash_content!(
         // Project and workspace configs required for cache invalidation.
         configs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
+        // Environment variables required for cache invalidation.
+        env: BTreeMap<String, String>,
+
         // The project graph stores absolute file paths, which breaks moon when
         // running tasks inside and outside of a container at the same time.
         // This flag helps to continuously bust the cache.
-        in_container: bool,
+        in_docker: bool,
 
         // Version of the moon CLI. We need to include this so that the graph
         // cache is invalidated between each release, otherwise internal Rust
@@ -33,7 +36,8 @@ impl<'cfg> ProjectGraphHash<'cfg> {
             aliases: BTreeMap::default(),
             sources: BTreeMap::default(),
             configs: BTreeMap::default(),
-            in_container: is_docker(),
+            env: BTreeMap::default(),
+            in_docker: is_docker(),
             version: env::var("MOON_VERSION").unwrap_or_default(),
         }
     }
@@ -48,5 +52,16 @@ impl<'cfg> ProjectGraphHash<'cfg> {
 
     pub fn add_sources(&mut self, sources: &'cfg FxHashMap<Id, WorkspaceRelativePathBuf>) {
         self.sources.extend(sources.iter());
+    }
+
+    pub fn gather_env(&mut self) {
+        for key in [
+            // Task options
+            "MOON_OUTPUT_STYLE",
+            "MOON_RETRY_COUNT",
+        ] {
+            self.env
+                .insert(key.to_owned(), env::var(key).unwrap_or_default());
+        }
     }
 }

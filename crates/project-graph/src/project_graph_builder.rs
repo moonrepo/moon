@@ -119,6 +119,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         graph_contents.add_sources(&graph.sources);
         graph_contents.add_aliases(&graph.aliases);
         graph_contents.add_configs(graph.hash_required_configs().await?);
+        graph_contents.gather_env();
 
         let hash = cache_engine
             .hash

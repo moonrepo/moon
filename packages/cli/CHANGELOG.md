@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed `moon run --affected` not auto-installing dependencies in CI.
+- Fixed an issue where the project graph cache would not invalidate based on certain environment
+  variables.
 
 ## 1.26.6
 

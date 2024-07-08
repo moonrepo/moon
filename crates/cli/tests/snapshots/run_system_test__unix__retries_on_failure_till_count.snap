@@ -1,5 +1,5 @@
 ---
-source: legacy/cli/tests/run_system_test.rs
+source: crates/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ unix:retryCount
@@ -10,7 +10,7 @@ stdout
 stdout
 ▪▪▪▪ unix:retryCount (attempt 4/4)
 stdout
-▪▪▪▪ unix:retryCount (100ms)
+▪▪▪▪ unix:retryCount (attempt 4/4, 100ms)
 stderr
 stderr
 stderr

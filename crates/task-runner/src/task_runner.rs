@@ -34,6 +34,7 @@ pub struct TaskRunner<'task> {
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
+    report_item: Option<TaskReportItem>,
 
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
@@ -71,6 +72,7 @@ impl<'task> TaskRunner<'task> {
             platform_manager: PlatformManager::read(),
             project,
             task,
+            report_item: None,
             app,
             operations: OperationList::default(),
         })
@@ -137,8 +139,14 @@ impl<'task> TaskRunner<'task> {
         self.cache.data.last_run_time = now_millis();
         self.cache.save()?;
 
-        // We lose the attempt state here, is that ok?
-        let mut item = TaskReportItem::default();
+        let mut item = self.report_item.take().unwrap_or_else(|| {
+            // When the task is cached, we don't have the original report,
+            // so create an empty one with necessary fields
+            TaskReportItem {
+                output_style: self.task.options.output_style,
+                ..Default::default()
+            }
+        });
 
         match result {
             Ok(maybe_hash) => {
@@ -441,6 +449,7 @@ impl<'task> TaskRunner<'task> {
 
         // Extract the attempts from the result
         self.operations.merge(result.attempts);
+        self.report_item = Some(result.report_item);
 
         // Update the action state based on the result
         context.set_target_state(&self.task.target, result.run_state);

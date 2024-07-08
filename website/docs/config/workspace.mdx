@@ -223,13 +223,13 @@ Configures Docker integration for the entire workspace.
 
 <HeadingApiLink to="/api/types/interface/DockerConfig#disableToolchain" />
 
-When in Docker, disable moon's toolchain entirely, and rely on tool's existing on `PATH` within the
-environment. Defaults to `false`.
+When in Docker, disable moon's toolchain entirely, and rely on tool binaries existing on `PATH`
+within the environment. Defaults to `false`.
 
 This is sometimes necessary in certain Docker environments where the toolchain cannot be utilized
 (Alpine), or you want to avoid unnecessarily installing tools when then already exist.
 
-```yaml title="moon.yml" {2}
+```yaml title=".moon/workspace.yml" {2}
 docker:
   disableToolchain: true
 ```
@@ -248,7 +248,7 @@ Configures aspects of the Docker pruning process when
 Automatically delete vendor directories (package manager dependencies, build targets, etc) while
 pruning. For example, `node_modules` for JavaScript, or `target` for Rust. Defaults to `true`.
 
-```yaml title="moon.yml" {3}
+```yaml title=".moon/workspace.yml" {3}
 docker:
   prune:
     deleteVendorDirectories: false
@@ -263,7 +263,7 @@ docker:
 Automatically install production dependencies for all required toolchain's of the focused projects
 within the Docker build. For example, `node_modules` for JavaScript. Defaults to `true`.
 
-```yaml title="moon.yml" {3}
+```yaml title=".moon/workspace.yml" {3}
 docker:
   prune:
     installToolchainDeps: false
@@ -287,7 +287,7 @@ Copy all toolchain specific configs, manifests, and related files in the entire 
 `.moon/docker/workspace` skeleton. This is required for certain tools, like package managers, to
 work correctly. Defaults to `true`.
 
-```yaml title="moon.yml" {3}
+```yaml title=".moon/workspace.yml" {3}
 docker:
   scaffold:
     copyToolchainFiles: false
@@ -303,7 +303,7 @@ docker:
 List of globs in which to copy additional workspace-relative files into the `.moon/docker/workspace`
 skeleton. When not defined, does nothing.
 
-```yaml title="moon.yml" {3,4}
+```yaml title=".moon/workspace.yml" {3,4}
 docker:
   scaffold:
     include:

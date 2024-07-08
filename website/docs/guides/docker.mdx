@@ -344,10 +344,13 @@ RUN moon docker prune
 ### Supporting `node:alpine` images
 
 If you're trying to use the `node:alpine` image with moon's
-[integrated toolchain](../concepts/toolchain), you'll need to set the `MOON_TOOLCHAIN_FORCE_GLOBALS`
-environment variable in the Docker image to disable moon's toolchain. This is required as Node.js
-does not provide pre-built binaries for the Alpine target, so installing the Node.js toolchain will
-fail.
+[integrated toolchain](../concepts/toolchain), you'll need to disable moon's toolchain. This is
+required as Node.js does not provide pre-built binaries for the Alpine target, so installing the
+Node.js toolchain will fail.
+
+This can be achieved by enabling the
+[`docker.disableToolchain`](../config/workspace#disableToolchain) setting, or setting the
+`MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable in the `Dockerfile`.
 
 ```docker
 FROM node:alpine

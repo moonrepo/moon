@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `moon run --affected` not auto-installing dependencies in CI.
+
 ## 1.26.6
 
 #### 🐞 Fixes

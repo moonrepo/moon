@@ -3,7 +3,7 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
-use moon_common::color;
+use moon_common::{color, is_ci};
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_time::{now_millis, to_millis};
@@ -49,27 +49,28 @@ pub async fn install_deps(
     }
 
     if proto_core::is_offline() {
-        debug!("No internet connection, skipping install");
+        debug!("No internet connection, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
     }
 
     if env::var("INTERNAL_MOON_INSTALLING_DEPS").is_ok_and(|other_pid| other_pid != pid) {
-        debug!("Detected another dependency install running, skipping install");
+        debug!("Detected another dependency install running, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
     }
 
     // When cache is write only, avoid install as user is typically force updating cache
     if app_context.cache_engine.is_write_only() {
-        debug!("Force updating cache, skipping install");
+        debug!("Force updating cache, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
     }
 
-    // When running against affected files, avoid install as it interrupts the workflow
-    if action_context.affected_only {
-        debug!("Running against affected files, skipping install");
+    // When running against affected files, avoid install as it interrupts the workflow,
+    // especially when used with VSC hooks
+    if action_context.affected_only && !is_ci() {
+        debug!("Running against affected files, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
     }
@@ -78,7 +79,7 @@ pub async fn install_deps(
     let platform = registry.get(runtime)?;
 
     let Some((lockfile_name, manifest_name)) = platform.get_dependency_configs()? else {
-        debug!("No dependency manager configured for language, skipping install");
+        debug!("No dependency manager configured for language, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);
     };

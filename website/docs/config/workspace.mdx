@@ -219,6 +219,43 @@ tags: ['react']
 
 Configures Docker integration for the entire workspace.
 
+### `prune`
+
+<HeadingApiLink to="/api/types/interface/DockerConfig#prune" />
+
+Configures aspects of the Docker pruning process when
+[`moon docker prune`](../commands/docker/prune) is executed.
+
+#### `deleteVendorDirectories`
+
+<HeadingApiLink to="/api/types/interface/DockerPruneConfig#deleteVendorDirectories" />
+
+Automatically delete vendor directories (package manager dependencies, build targets, etc) while
+pruning. For example, `node_modules` for JavaScript, or `target` for Rust. Defaults to `true`.
+
+```yaml title="moon.yml" {3}
+docker:
+  prune:
+    deleteVendorDirectories: false
+```
+
+> This process happens before toolchain dependencies are installed.
+
+#### `installToolchainDeps`
+
+<HeadingApiLink to="/api/types/interface/DockerPruneConfig#installToolchainDeps" />
+
+Automatically install production dependencies for all required toolchain's of the focused projects
+within the Docker build. For example, `node_modules` for JavaScript. Defaults to `true`.
+
+```yaml title="moon.yml" {3}
+docker:
+  prune:
+    installToolchainDeps: false
+```
+
+> This process happens after vendor directories are deleted.
+
 ### `scaffold`
 
 <HeadingApiLink to="/api/types/interface/DockerConfig#scaffold" />

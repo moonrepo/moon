@@ -43,6 +43,24 @@ export interface ConstraintsConfig {
 	tagRelationships: Record<string, string[]>;
 }
 
+/** Configures aspects of the Docker pruning process. */
+export interface DockerPruneConfig {
+	/**
+	 * Automatically delete vendor directories (package manager
+	 * dependencies, build targets, etc) while pruning.
+	 *
+	 * @default true
+	 */
+	deleteVendorDirectories?: boolean;
+	/**
+	 * Automatically install production dependencies for all required
+	 * toolchain's of the focused projects within the Docker build.
+	 *
+	 * @default true
+	 */
+	installToolchainDeps?: boolean;
+}
+
 /** Configures aspects of the Docker scaffolding process. */
 export interface DockerScaffoldConfig {
 	/**
@@ -61,6 +79,8 @@ export interface DockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface DockerConfig {
+	/** Configures aspects of the Docker pruning process. */
+	prune: DockerPruneConfig;
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold: DockerScaffoldConfig;
 }
@@ -321,6 +341,24 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<string, string[]> | null;
 }
 
+/** Configures aspects of the Docker pruning process. */
+export interface PartialDockerPruneConfig {
+	/**
+	 * Automatically delete vendor directories (package manager
+	 * dependencies, build targets, etc) while pruning.
+	 *
+	 * @default true
+	 */
+	deleteVendorDirectories?: boolean | null;
+	/**
+	 * Automatically install production dependencies for all required
+	 * toolchain's of the focused projects within the Docker build.
+	 *
+	 * @default true
+	 */
+	installToolchainDeps?: boolean | null;
+}
+
 /** Configures aspects of the Docker scaffolding process. */
 export interface PartialDockerScaffoldConfig {
 	/**
@@ -339,6 +377,8 @@ export interface PartialDockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface PartialDockerConfig {
+	/** Configures aspects of the Docker pruning process. */
+	prune?: PartialDockerPruneConfig | null;
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold?: PartialDockerScaffoldConfig | null;
 }

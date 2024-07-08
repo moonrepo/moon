@@ -224,6 +224,15 @@
       "description": "Configures our Docker integration.",
       "type": "object",
       "properties": {
+        "prune": {
+          "title": "prune",
+          "description": "Configures aspects of the Docker pruning process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DockerPruneConfig"
+            }
+          ]
+        },
         "scaffold": {
           "title": "scaffold",
           "description": "Configures aspects of the Docker scaffolding process.",
@@ -232,6 +241,25 @@
               "$ref": "#/definitions/DockerScaffoldConfig"
             }
           ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DockerPruneConfig": {
+      "description": "Configures aspects of the Docker pruning process.",
+      "type": "object",
+      "properties": {
+        "deleteVendorDirectories": {
+          "title": "deleteVendorDirectories",
+          "description": "Automatically delete vendor directories (package manager dependencies, build targets, etc) while pruning.",
+          "default": true,
+          "type": "boolean"
+        },
+        "installToolchainDeps": {
+          "title": "installToolchainDeps",
+          "description": "Automatically install production dependencies for all required toolchain's of the focused projects within the Docker build.",
+          "default": true,
+          "type": "boolean"
         }
       },
       "additionalProperties": false

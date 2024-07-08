@@ -7,6 +7,7 @@ use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
+use tracing::{debug, warn};
 
 #[derive(Clone, Copy)]
 pub enum ConsoleStream {
@@ -82,6 +83,14 @@ impl ConsoleBuffer {
     }
 
     pub fn close(&self) -> miette::Result<()> {
+        debug!(
+            "Closing {} stream",
+            match self.stream {
+                ConsoleStream::Stderr => "stderr",
+                ConsoleStream::Stdout => "stdout",
+            }
+        );
+
         self.flush()?;
 
         // Send the closed message
@@ -150,12 +159,6 @@ impl ConsoleBuffer {
     }
 }
 
-impl Drop for ConsoleBuffer {
-    fn drop(&mut self) {
-        self.close().unwrap();
-    }
-}
-
 impl Clone for ConsoleBuffer {
     fn clone(&self) -> Self {
         Self {
@@ -191,7 +194,11 @@ fn flush_on_loop(buffer: Arc<Mutex<Vec<u8>>>, stream: ConsoleStream, receiver: R
 
         // Has the thread been closed?
         match receiver.try_recv() {
-            Ok(true) | Err(TryRecvError::Disconnected) => {
+            Ok(true) => {
+                break;
+            }
+            Err(TryRecvError::Disconnected) => {
+                warn!("Console auto-flush has been disconnected, output will be heavily buffered");
                 break;
             }
             _ => {}

@@ -3454,6 +3454,7 @@ dependencies = [
  "moon_target",
  "parking_lot",
  "starbase_styles",
+ "tracing",
 ]
 
 [[package]]

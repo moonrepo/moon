@@ -17,6 +17,7 @@ inquire = "0.7.5"
 miette = { workspace = true }
 parking_lot = "0.12.3"
 starbase_styles = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

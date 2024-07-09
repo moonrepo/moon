@@ -213,6 +213,88 @@ dependsOn: ['components']
 tags: ['react']
 ```
 
+## `docker`<VersionLabel version="1.27.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#docker" />
+
+Configures Docker integration for the entire workspace.
+
+### `prune`
+
+<HeadingApiLink to="/api/types/interface/DockerConfig#prune" />
+
+Configures aspects of the Docker pruning process when
+[`moon docker prune`](../commands/docker/prune) is executed.
+
+#### `deleteVendorDirectories`
+
+<HeadingApiLink to="/api/types/interface/DockerPruneConfig#deleteVendorDirectories" />
+
+Automatically delete vendor directories (package manager dependencies, build targets, etc) while
+pruning. For example, `node_modules` for JavaScript, or `target` for Rust. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {3}
+docker:
+  prune:
+    deleteVendorDirectories: false
+```
+
+> This process happens before toolchain dependencies are installed.
+
+#### `installToolchainDeps`
+
+<HeadingApiLink to="/api/types/interface/DockerPruneConfig#installToolchainDeps" />
+
+Automatically install production dependencies for all required toolchain's of the focused projects
+within the Docker build. For example, `node_modules` for JavaScript. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {3}
+docker:
+  prune:
+    installToolchainDeps: false
+```
+
+> This process happens after vendor directories are deleted.
+
+### `scaffold`
+
+<HeadingApiLink to="/api/types/interface/DockerConfig#scaffold" />
+
+Configures aspects of the Docker scaffolding process when
+[`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
+[workspace skeleton](../commands/docker/scaffold#workspace).
+
+#### `copyToolchainFiles`
+
+<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#copyToolchainFiles" />
+
+Copy all toolchain specific configs, manifests, and related files in the entire repository into the
+`.moon/docker/workspace` skeleton. This is required for certain tools, like package managers, to
+work correctly. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {3}
+docker:
+  scaffold:
+    copyToolchainFiles: false
+```
+
+> If you disable this feature, you'll most likely need to manually `COPY` all necessary files in
+> your `Dockerfile`.
+
+#### `include`
+
+<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#include" />
+
+List of globs in which to copy additional workspace-relative files into the `.moon/docker/workspace`
+skeleton. When not defined, does nothing.
+
+```yaml title=".moon/workspace.yml" {3,4}
+docker:
+  scaffold:
+    include:
+      - '**/package.json'
+```
+
 ## `experiments`<VersionLabel version="1.11.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#experiments" />

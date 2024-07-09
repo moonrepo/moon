@@ -13,7 +13,7 @@ use schematic::ConfigEnum;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, warn};
 
 #[derive(Args, Clone, Debug)]
@@ -23,6 +23,16 @@ pub struct DockerScaffoldArgs {
 
     #[arg(long, help = "Additional file globs to include in sources")]
     include: Vec<String>,
+}
+
+fn copy_files_from_paths(paths: Vec<PathBuf>, source: &Path, dest: &Path) -> AppResult {
+    let mut files = vec![];
+
+    for file in paths {
+        files.push(path::to_string(file.strip_prefix(source).unwrap())?);
+    }
+
+    copy_files(&files, source, dest)
 }
 
 fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResult {
@@ -89,56 +99,69 @@ async fn scaffold_workspace(
         ];
         let mut files_to_create: Vec<String> = vec![];
 
-        for lang in LanguageType::variants() {
-            files_to_copy.extend(detect_language_files(&lang));
+        if session
+            .workspace_config
+            .docker
+            .scaffold
+            .copy_toolchain_files
+        {
+            for lang in LanguageType::variants() {
+                files_to_copy.extend(detect_language_files(&lang));
 
-            // These are special cases
-            match lang {
-                LanguageType::JavaScript => {
-                    files_to_copy.extend([
-                        "postinstall.js".into(),
-                        "postinstall.cjs".into(),
-                        "postinstall.mjs".into(),
-                    ]);
-                }
-                LanguageType::Rust => {
-                    if let Some(cargo_toml) = CargoTomlCache::read(source)? {
-                        let manifests = cargo_toml.get_member_manifest_paths(source)?;
+                // These are special cases
+                match lang {
+                    LanguageType::JavaScript => {
+                        files_to_copy.extend([
+                            "postinstall.js".into(),
+                            "postinstall.cjs".into(),
+                            "postinstall.mjs".into(),
+                        ]);
+                    }
+                    LanguageType::Rust => {
+                        if let Some(cargo_toml) = CargoTomlCache::read(source)? {
+                            let manifests = cargo_toml.get_member_manifest_paths(source)?;
 
-                        // Non-workspace
-                        if manifests.is_empty() {
-                            if lang == project_lang {
-                                files_to_create.extend(["src/lib.rs".into(), "src/main.rs".into()]);
+                            // Non-workspace
+                            if manifests.is_empty() {
+                                if lang == project_lang {
+                                    files_to_create
+                                        .extend(["src/lib.rs".into(), "src/main.rs".into()]);
+                                }
                             }
-                        }
-                        // Workspace
-                        else {
-                            for manifest in manifests {
-                                if let Ok(rel_manifest) = manifest.strip_prefix(source) {
-                                    files_to_copy.push(path::to_string(rel_manifest)?);
+                            // Workspace
+                            else {
+                                for manifest in manifests {
+                                    if let Ok(rel_manifest) = manifest.strip_prefix(source) {
+                                        files_to_copy.push(path::to_string(rel_manifest)?);
 
-                                    let rel_manifest_dir = rel_manifest.parent().unwrap();
+                                        let rel_manifest_dir = rel_manifest.parent().unwrap();
 
-                                    if lang == project_lang {
-                                        files_to_create.extend([
-                                            path::to_string(rel_manifest_dir.join("src/lib.rs"))?,
-                                            path::to_string(rel_manifest_dir.join("src/main.rs"))?,
-                                        ]);
+                                        if lang == project_lang {
+                                            files_to_create.extend([
+                                                path::to_string(
+                                                    rel_manifest_dir.join("src/lib.rs"),
+                                                )?,
+                                                path::to_string(
+                                                    rel_manifest_dir.join("src/main.rs"),
+                                                )?,
+                                            ]);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                LanguageType::TypeScript => {
-                    if let Some(typescript_config) = &session.toolchain_config.typescript {
-                        files_to_copy.push(typescript_config.project_config_file_name.to_owned());
-                        files_to_copy.push(typescript_config.root_config_file_name.to_owned());
-                        files_to_copy
-                            .push(typescript_config.root_options_config_file_name.to_owned());
+                    LanguageType::TypeScript => {
+                        if let Some(typescript_config) = &session.toolchain_config.typescript {
+                            files_to_copy
+                                .push(typescript_config.project_config_file_name.to_owned());
+                            files_to_copy.push(typescript_config.root_config_file_name.to_owned());
+                            files_to_copy
+                                .push(typescript_config.root_options_config_file_name.to_owned());
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
             }
         }
 
@@ -176,33 +199,40 @@ async fn scaffold_workspace(
         )?;
     }
 
-    if let Some(js_config) = &session.toolchain_config.bun {
-        if js_config.packages_root != "." {
-            copy_from_dir(
-                &session.workspace_root.join(&js_config.packages_root),
-                &docker_workspace_root.join(&js_config.packages_root),
-                LanguageType::Unknown,
-            )?;
+    if session
+        .workspace_config
+        .docker
+        .scaffold
+        .copy_toolchain_files
+    {
+        if let Some(js_config) = &session.toolchain_config.bun {
+            if js_config.packages_root != "." {
+                copy_from_dir(
+                    &session.workspace_root.join(&js_config.packages_root),
+                    &docker_workspace_root.join(&js_config.packages_root),
+                    LanguageType::Unknown,
+                )?;
+            }
         }
-    }
 
-    if let Some(js_config) = &session.toolchain_config.node {
-        if js_config.packages_root != "." {
-            copy_from_dir(
-                &session.workspace_root.join(&js_config.packages_root),
-                &docker_workspace_root.join(&js_config.packages_root),
-                LanguageType::Unknown,
-            )?;
+        if let Some(js_config) = &session.toolchain_config.node {
+            if js_config.packages_root != "." {
+                copy_from_dir(
+                    &session.workspace_root.join(&js_config.packages_root),
+                    &docker_workspace_root.join(&js_config.packages_root),
+                    LanguageType::Unknown,
+                )?;
+            }
         }
-    }
 
-    if let Some(typescript_config) = &session.toolchain_config.typescript {
-        if typescript_config.root != "." {
-            copy_from_dir(
-                &session.workspace_root.join(&typescript_config.root),
-                &docker_workspace_root.join(&typescript_config.root),
-                LanguageType::Unknown,
-            )?;
+        if let Some(typescript_config) = &session.toolchain_config.typescript {
+            if typescript_config.root != "." {
+                copy_from_dir(
+                    &session.workspace_root.join(&typescript_config.root),
+                    &docker_workspace_root.join(&typescript_config.root),
+                    LanguageType::Unknown,
+                )?;
+            }
         }
     }
 
@@ -215,16 +245,27 @@ async fn scaffold_workspace(
         "Copying core moon configuration"
     );
 
-    let moon_configs = glob::walk(moon_dir, ["*.yml", "tasks/**/*.yml"])?
-        .into_iter()
-        .map(|f| path::to_string(f.strip_prefix(&session.workspace_root).unwrap()))
-        .collect::<Result<Vec<String>, _>>()?;
-
-    copy_files(
-        &moon_configs,
+    copy_files_from_paths(
+        glob::walk_files(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
         &session.workspace_root,
         &docker_workspace_root,
     )?;
+
+    // Include via globs
+    let include = &session.workspace_config.docker.scaffold.include;
+
+    if !include.is_empty() {
+        debug!(
+            include = ?include,
+            "Including additional files"
+        );
+
+        copy_files_from_paths(
+            glob::walk_files(&session.workspace_root, include)?,
+            &session.workspace_root,
+            &docker_workspace_root,
+        )?;
+    }
 
     Ok(())
 }
@@ -239,29 +280,41 @@ async fn scaffold_sources_project(
     manifest: &mut DockerManifest,
 ) -> AppResult {
     let project = project_graph.get(project_id)?;
+    let mut include_globs = vec!["!node_modules/**", "!target/**/*", "!vendor/**"];
+
+    manifest.focused_projects.insert(project_id.to_owned());
+
+    if project.config.docker.scaffold.include.is_empty() {
+        include_globs.push("**/*");
+    } else {
+        include_globs.extend(
+            project
+                .config
+                .docker
+                .scaffold
+                .include
+                .iter()
+                .map(|glob| glob.as_str()),
+        );
+    }
 
     debug!(
         id = project_id.as_str(),
+        globs = ?include_globs,
         "Copying sources from project {}",
         color::id(project_id),
     );
 
-    manifest.focused_projects.insert(project_id.to_owned());
-
-    for file in glob::walk_files(
-        &project.root,
-        ["**/*", "!node_modules/**", "!target/**/*", "!vendor/**"],
-    )? {
-        fs::copy_file(
-            &file,
-            docker_sources_root.join(file.strip_prefix(&session.workspace_root).unwrap()),
-        )?;
-    }
+    copy_files_from_paths(
+        glob::walk_files(&project.root, include_globs)?,
+        &session.workspace_root,
+        docker_sources_root,
+    )?;
 
     for dep_cfg in &project.dependencies {
         // Avoid root-level projects as it will pull in all sources,
         // which is usually not what users want. If they do want it,
-        // they can be explicitly on the command line!
+        // they can be explicit in config or on the command line!
         if !dep_cfg.is_root_scope() {
             debug!(
                 id = project_id.as_str(),
@@ -296,7 +349,7 @@ async fn scaffold_sources(
     debug!(
         scaffold_dir = ?docker_sources_root,
         projects = ?project_ids.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
-        "Scaffolding sources skeleton, including source files from focused projects"
+        "Scaffolding sources skeleton, including files from focused projects"
     );
 
     let mut manifest = DockerManifest {
@@ -325,17 +378,21 @@ async fn scaffold_sources(
 
     // Include via globs
     if !include.is_empty() {
+        warn!(
+            "The --include argument is deprecated, use the {} settings instead",
+            color::property("docker")
+        );
+
         debug!(
             include = ?include,
             "Including additional sources"
         );
 
-        let files = glob::walk_files(&session.workspace_root, include)?
-            .into_iter()
-            .map(|f| path::to_string(f.strip_prefix(&session.workspace_root).unwrap()))
-            .collect::<Result<Vec<String>, _>>()?;
-
-        copy_files(&files, &session.workspace_root, &docker_sources_root)?;
+        copy_files_from_paths(
+            glob::walk_files(&session.workspace_root, include)?,
+            &session.workspace_root,
+            &docker_sources_root,
+        )?;
     }
 
     json::write_file(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
@@ -364,14 +421,16 @@ pub fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 
         // Check lines so we can match exactly and avoid comments or nested paths
         for line in ignore.lines() {
-            match line.trim() {
-                // Better way?
-                ".moon/cache" | ".moon/cache/" | "./.moon/cache" | "./.moon/cache/" => {
-                    is_ignored = true;
-                    break;
-                }
-                _ => {}
-            };
+            if line
+                .trim()
+                .trim_start_matches("./")
+                .trim_start_matches('/')
+                .trim_end_matches('/')
+                == ".moon/cache"
+            {
+                is_ignored = true;
+                break;
+            }
         }
     }
 

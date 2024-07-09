@@ -109,6 +109,10 @@ cacheable!(
         #[setting(nested)]
         pub depends_on: Vec<ProjectDependsOn>,
 
+        /// Configures Docker integration for this project.
+        #[setting(nested)]
+        pub docker: ProjectDockerConfig,
+
         /// A mapping of environment variables that will be set for
         /// all tasks within the project.
         pub env: FxHashMap<String, String>,

@@ -16,6 +16,15 @@
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
+    "docker": {
+      "title": "docker",
+      "description": "Configures Docker integration for this project.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectDockerConfig"
+        }
+      ]
+    },
     "env": {
       "title": "env",
       "description": "A mapping of environment variables that will be set for all tasks within the project.",
@@ -376,6 +385,37 @@
           "$ref": "#/definitions/DependencyConfig"
         }
       ]
+    },
+    "ProjectDockerConfig": {
+      "description": "Configures our Docker integration.",
+      "type": "object",
+      "properties": {
+        "scaffold": {
+          "title": "scaffold",
+          "description": "Configures aspects of the Docker scaffolding process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectDockerScaffoldConfig"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectDockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process.",
+      "type": "object",
+      "properties": {
+        "include": {
+          "title": "include",
+          "description": "List of glob patterns, relative from the project root, to include (or exclude) in the sources skeleton.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "ProjectMetadataConfig": {
       "description": "Expanded information about the project.",
@@ -1274,6 +1314,7 @@
         "elvish",
         "fish",
         "ion",
+        "murex",
         "nu",
         "pwsh",
         "xonsh",
@@ -1287,6 +1328,7 @@
         "bash",
         "elvish",
         "fish",
+        "murex",
         "nu",
         "pwsh",
         "xonsh"

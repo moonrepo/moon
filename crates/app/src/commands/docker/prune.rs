@@ -1,4 +1,4 @@
-use super::{disable_toolchain, docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
+use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use moon_bun_tool::BunTool;
 use moon_config::PlatformType;
@@ -30,7 +30,7 @@ pub async fn prune_bun(
     {
         debug!("Removing Bun vendor directories (node_modules)");
 
-        fs::remove_dir_all(&session.workspace_root.join("node_modules"))?;
+        fs::remove_dir_all(session.workspace_root.join("node_modules"))?;
 
         for source in project_graph.sources().values() {
             fs::remove_dir_all(source.join("node_modules").to_path(&session.workspace_root))?;
@@ -96,7 +96,7 @@ pub async fn prune_node(
     {
         debug!("Removing Node.js vendor directories (node_modules)");
 
-        fs::remove_dir_all(&session.workspace_root.join("node_modules"))?;
+        fs::remove_dir_all(session.workspace_root.join("node_modules"))?;
 
         for source in project_graph.sources().values() {
             fs::remove_dir_all(source.join("node_modules").to_path(&session.workspace_root))?;
@@ -165,8 +165,6 @@ pub async fn prune(session: CliSession) -> AppResult {
     if !manifest_path.exists() {
         return Err(AppDockerError::MissingManifest.into());
     }
-
-    disable_toolchain(&session);
 
     let project_graph = session.get_project_graph().await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;

@@ -224,12 +224,6 @@
       "description": "Configures our Docker integration.",
       "type": "object",
       "properties": {
-        "disableToolchain": {
-          "title": "disableToolchain",
-          "description": "Disable moon's toolchain entirely, and rely on tool's existing on PATH within the Docker environment.",
-          "type": "boolean",
-          "markdownDescription": "Disable moon's toolchain entirely, and rely on tool's existing on `PATH` within the Docker environment."
-        },
         "prune": {
           "title": "prune",
           "description": "Configures aspects of the Docker pruning process.",

@@ -37,10 +37,6 @@ cacheable!(
     /// Configures our Docker integration.
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct DockerConfig {
-        /// Disable moon's toolchain entirely, and rely on tool's
-        /// existing on `PATH` within the Docker environment.
-        pub disable_toolchain: bool,
-
         /// Configures aspects of the Docker pruning process.
         #[setting(nested)]
         pub prune: DockerPruneConfig,

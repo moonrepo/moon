@@ -79,11 +79,6 @@ export interface DockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface DockerConfig {
-	/**
-	 * Disable moon's toolchain entirely, and rely on tool's
-	 * existing on `PATH` within the Docker environment.
-	 */
-	disableToolchain: boolean;
 	/** Configures aspects of the Docker pruning process. */
 	prune: DockerPruneConfig;
 	/** Configures aspects of the Docker scaffolding process. */
@@ -382,11 +377,6 @@ export interface PartialDockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface PartialDockerConfig {
-	/**
-	 * Disable moon's toolchain entirely, and rely on tool's
-	 * existing on `PATH` within the Docker environment.
-	 */
-	disableToolchain?: boolean | null;
 	/** Configures aspects of the Docker pruning process. */
 	prune?: PartialDockerPruneConfig | null;
 	/** Configures aspects of the Docker scaffolding process. */

@@ -1,4 +1,4 @@
-use super::{disable_toolchain, docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
+use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
 use crate::experiments::run_action_pipeline;
 use crate::session::CliSession;
 use starbase::AppResult;
@@ -12,8 +12,6 @@ pub async fn setup(session: CliSession) -> AppResult {
     if !manifest_path.exists() {
         return Err(AppDockerError::MissingManifest.into());
     }
-
-    disable_toolchain(&session);
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let project_graph = session.get_project_graph().await?;

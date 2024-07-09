@@ -7,12 +7,10 @@ pub use prune::*;
 pub use scaffold::*;
 pub use setup::*;
 
-use crate::session::CliSession;
 use clap::Subcommand;
 use moon_common::Id;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use std::env;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DockerCommands {
@@ -43,9 +41,3 @@ pub struct DockerManifest {
 }
 
 pub const MANIFEST_NAME: &str = "dockerManifest.json";
-
-pub fn disable_toolchain(session: &CliSession) {
-    if session.workspace_config.docker.disable_toolchain {
-        env::set_var("MOON_TOOLCHAIN_FORCE_GLOBALS", "1");
-    }
-}

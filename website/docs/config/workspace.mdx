@@ -219,21 +219,6 @@ tags: ['react']
 
 Configures Docker integration for the entire workspace.
 
-### `disableToolchain`
-
-<HeadingApiLink to="/api/types/interface/DockerConfig#disableToolchain" />
-
-When in Docker, disable moon's toolchain entirely, and rely on tool binaries existing on `PATH`
-within the environment. Defaults to `false`.
-
-This is sometimes necessary in certain Docker environments where the toolchain cannot be utilized
-(Alpine), or you want to avoid unnecessarily installing tools when then already exist.
-
-```yaml title=".moon/workspace.yml" {2}
-docker:
-  disableToolchain: true
-```
-
 ### `prune`
 
 <HeadingApiLink to="/api/types/interface/DockerConfig#prune" />

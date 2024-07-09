@@ -3,16 +3,21 @@ use moon_common::Id;
 use moon_target::Target;
 use tera::{Context, Tera};
 
+#[derive(Default)]
 pub struct GenerateDockerfileOptions {
-    build_task: Option<Target>,
-    disable_toolchain: bool,
-    image: String,
-    project: Id,
-    prune: bool,
-    start_task: Option<Target>,
+    pub build_task: Option<Target>,
+    pub disable_toolchain: bool,
+    pub image: String,
+    pub project: Id,
+    pub prune: bool,
+    pub start_task: Option<Target>,
 }
 
 pub fn generate_dockerfile(mut options: GenerateDockerfileOptions) -> miette::Result<String> {
+    if options.image.is_empty() {
+        options.image = "scratch".into();
+    }
+
     if options.image.contains("alpine") {
         options.disable_toolchain = true;
     }

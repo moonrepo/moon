@@ -3542,6 +3542,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_docker"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_target",
+ "starbase_utils",
+ "tera",
+ "tracing",
+]
+
+[[package]]
 name = "moon_emitter"
 version = "0.0.1"
 dependencies = [

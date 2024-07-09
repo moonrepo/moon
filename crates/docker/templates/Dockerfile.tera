@@ -1,0 +1,62 @@
+#### BASE STAGE
+#### Installs moon.
+
+FROM {{ image }} AS base
+WORKDIR /app
+
+# Install moon binary
+RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+ENV PATH="/root/.moon/bin:$PATH"
+
+{% if disable_toolchain %}
+# Disable toolchain and rely on system binaries
+ENV MOON_TOOLCHAIN_FORCE_GLOBALS=1
+{% endif %}
+
+#### SKELETON STAGE
+#### Scaffolds repository skeleton structures.
+
+FROM base AS skeleton
+WORKDIR /app
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold {{ project }}
+
+#### BUILD STAGE
+#### Builds the project.
+
+FROM base AS build
+WORKDIR /app
+
+# Copy toolchain
+COPY --from=skeleton /root/.proto /root/.proto
+
+# Copy workspace skeleton
+COPY --from=skeleton /app/.moon/docker/workspace .
+
+# Install dependencies
+RUN moon docker setup
+
+# Copy source files
+COPY --from=skeleton /app/.moon/docker/sources .
+
+{% if build_task %}
+# Build the project
+RUN moon run {{ build_task }}
+{% endif %}
+
+{% if start_task %}
+#### START STAGE
+#### Runs the project.
+
+FROM build AS start
+WORKDIR /app
+
+{% if prune %}
+# Prune extraneous dependencies
+RUN moon docker prune
+{% endif %}
+
+CMD moon run {{ start_task }}
+{% endif %}

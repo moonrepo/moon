@@ -43,6 +43,48 @@ export interface ConstraintsConfig {
 	tagRelationships: Record<string, string[]>;
 }
 
+/** Configures aspects of the Docker pruning process. */
+export interface DockerPruneConfig {
+	/**
+	 * Automatically delete vendor directories (package manager
+	 * dependencies, build targets, etc) while pruning.
+	 *
+	 * @default true
+	 */
+	deleteVendorDirectories?: boolean;
+	/**
+	 * Automatically install production dependencies for all required
+	 * toolchain's of the focused projects within the Docker build.
+	 *
+	 * @default true
+	 */
+	installToolchainDeps?: boolean;
+}
+
+/** Configures aspects of the Docker scaffolding process. */
+export interface DockerScaffoldConfig {
+	/**
+	 * Copy toolchain specific configs/manifests/files into
+	 * the workspace skeleton.
+	 *
+	 * @default true
+	 */
+	copyToolchainFiles?: boolean;
+	/**
+	 * List of glob patterns, relative from the workspace root,
+	 * to include (or exclude) in the workspace skeleton.
+	 */
+	include: string[];
+}
+
+/** Configures our Docker integration. */
+export interface DockerConfig {
+	/** Configures aspects of the Docker pruning process. */
+	prune: DockerPruneConfig;
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold: DockerScaffoldConfig;
+}
+
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
 	/** Enables the new & modern action pipeline. */
@@ -226,6 +268,8 @@ export interface WorkspaceConfig {
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
+	/** Configures Docker integration for the workspace. */
+	docker: DockerConfig;
 	/** Configures experiments across the entire moon workspace. */
 	experiments: ExperimentsConfig;
 	/**
@@ -295,6 +339,48 @@ export interface PartialConstraintsConfig {
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
 	tagRelationships?: Record<string, string[]> | null;
+}
+
+/** Configures aspects of the Docker pruning process. */
+export interface PartialDockerPruneConfig {
+	/**
+	 * Automatically delete vendor directories (package manager
+	 * dependencies, build targets, etc) while pruning.
+	 *
+	 * @default true
+	 */
+	deleteVendorDirectories?: boolean | null;
+	/**
+	 * Automatically install production dependencies for all required
+	 * toolchain's of the focused projects within the Docker build.
+	 *
+	 * @default true
+	 */
+	installToolchainDeps?: boolean | null;
+}
+
+/** Configures aspects of the Docker scaffolding process. */
+export interface PartialDockerScaffoldConfig {
+	/**
+	 * Copy toolchain specific configs/manifests/files into
+	 * the workspace skeleton.
+	 *
+	 * @default true
+	 */
+	copyToolchainFiles?: boolean | null;
+	/**
+	 * List of glob patterns, relative from the workspace root,
+	 * to include (or exclude) in the workspace skeleton.
+	 */
+	include?: string[] | null;
+}
+
+/** Configures our Docker integration. */
+export interface PartialDockerConfig {
+	/** Configures aspects of the Docker pruning process. */
+	prune?: PartialDockerPruneConfig | null;
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold?: PartialDockerScaffoldConfig | null;
 }
 
 /** Configures experiments across the entire moon workspace. */
@@ -468,6 +554,8 @@ export interface PartialWorkspaceConfig {
 	codeowners?: PartialCodeownersConfig | null;
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
+	/** Configures Docker integration for the workspace. */
+	docker?: PartialDockerConfig | null;
 	/** Configures experiments across the entire moon workspace. */
 	experiments?: PartialExperimentsConfig | null;
 	/**

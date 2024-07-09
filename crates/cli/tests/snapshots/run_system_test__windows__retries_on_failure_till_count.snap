@@ -10,7 +10,7 @@ stdout
 stdout
 ▪▪▪▪ windows:retryCount (attempt 4/4)
 stdout
-▪▪▪▪ windows:retryCount (100ms)
+▪▪▪▪ windows:retryCount (attempt 4/4, 100ms)
 stderr 
 stderr 
 stderr 

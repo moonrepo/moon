@@ -225,8 +225,9 @@ RUN moon run <project>:<task>
 
 :::info
 
-If you need additional files for your commands to run successfully, you can manually use `COPY` or
-pass `--include` to the scaffold command.
+If you need to copy additional files for your commands to run successfully, you can configure the
+`docker.scaffold.include` setting in [`.moon/workspace.yaml`](../config/workspace#scaffold) (entire
+workspace) or [`moon.yml`](../config/project#scaffold) (per project).
 
 :::
 
@@ -241,10 +242,17 @@ _must be ran_ within the context of a `Dockerfile`!
 RUN moon docker prune
 ```
 
-When ran, this command will do the following:
+When ran, this command will do the following, in order:
 
-- Install production only dependencies for the projects that were scaffolded.
 - Remove extraneous dependencies (`node_modules`) for unfocused projects.
+- Install production only dependencies for the projects that were scaffolded.
+
+:::info
+
+This process can be customized using the `docker.prune` setting in
+[`.moon/workspace.yaml`](../config/workspace#prune).
+
+:::
 
 ### Final result
 

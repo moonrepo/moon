@@ -12,43 +12,55 @@ use moon_tool::DependencyManager;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_utils::{fs, json};
-use std::path::Path;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn prune_bun(
     bun: &BunTool,
-    workspace_root: &Path,
+    session: &CliSession,
     project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> AppResult {
-    let mut package_names = vec![];
+    // Some package managers do not delete stale node modules
+    if session
+        .workspace_config
+        .docker
+        .prune
+        .delete_vendor_directories
+    {
+        debug!("Removing Bun vendor directories (node_modules)");
 
-    for project_id in &manifest.focused_projects {
-        if let Some(source) = project_graph.sources().get(project_id) {
-            if let Some(package_json) = PackageJsonCache::read(source.to_path(workspace_root))? {
-                if let Some(package_name) = package_json.data.name {
-                    package_names.push(package_name);
-                }
-            }
+        fs::remove_dir_all(session.workspace_root.join("node_modules"))?;
+
+        for source in project_graph.sources().values() {
+            fs::remove_dir_all(source.join("node_modules").to_path(&session.workspace_root))?;
         }
     }
 
-    debug!(
-        packages = ?package_names,
-        "Pruning Bun dependencies (node_modules)"
-    );
-
-    // Some package managers do not delete stale node modules
-    fs::remove_dir_all(workspace_root.join("node_modules"))?;
-
-    for source in project_graph.sources().values() {
-        fs::remove_dir_all(source.join("node_modules").to_path(workspace_root))?;
-    }
-
     // Install production only dependencies for focused projects
-    bun.install_focused_dependencies(&(), &package_names, true)
-        .await?;
+    if session.workspace_config.docker.prune.install_toolchain_deps {
+        let mut package_names = vec![];
+
+        for project_id in &manifest.focused_projects {
+            if let Some(source) = project_graph.sources().get(project_id) {
+                if let Some(package_json) =
+                    PackageJsonCache::read(source.to_path(&session.workspace_root))?
+                {
+                    if let Some(package_name) = package_json.data.name {
+                        package_names.push(package_name);
+                    }
+                }
+            }
+        }
+
+        debug!(
+            packages = ?package_names,
+            "Pruning Bun dependencies"
+        );
+
+        bun.install_focused_dependencies(&(), &package_names, true)
+            .await?;
+    }
 
     Ok(())
 }
@@ -56,12 +68,14 @@ pub async fn prune_bun(
 #[instrument(skip_all)]
 pub async fn prune_deno(
     deno: &DenoTool,
-    _workspace_root: &Path,
+    session: &CliSession,
     _project_graph: &ProjectGraph,
     _manifest: &DockerManifest,
 ) -> AppResult {
     // noop
-    deno.install_focused_dependencies(&(), &[], true).await?;
+    if session.workspace_config.docker.prune.install_toolchain_deps {
+        deno.install_focused_dependencies(&(), &[], true).await?;
+    }
 
     Ok(())
 }
@@ -69,56 +83,76 @@ pub async fn prune_deno(
 #[instrument(skip_all)]
 pub async fn prune_node(
     node: &NodeTool,
-    workspace_root: &Path,
+    session: &CliSession,
     project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> AppResult {
-    let mut package_names = vec![];
+    // Some package managers do not delete stale node modules
+    if session
+        .workspace_config
+        .docker
+        .prune
+        .delete_vendor_directories
+    {
+        debug!("Removing Node.js vendor directories (node_modules)");
 
-    for project_id in &manifest.focused_projects {
-        if let Some(source) = project_graph.sources().get(project_id) {
-            if let Some(package_json) = PackageJsonCache::read(source.to_path(workspace_root))? {
-                if let Some(package_name) = package_json.data.name {
-                    package_names.push(package_name);
-                }
-            }
+        fs::remove_dir_all(session.workspace_root.join("node_modules"))?;
+
+        for source in project_graph.sources().values() {
+            fs::remove_dir_all(source.join("node_modules").to_path(&session.workspace_root))?;
         }
     }
 
-    debug!(
-        packages = ?package_names,
-        "Pruning Node.js dependencies (node_modules)"
-    );
-
-    // Some package managers do not delete stale node modules
-    fs::remove_dir_all(workspace_root.join("node_modules"))?;
-
-    for source in project_graph.sources().values() {
-        fs::remove_dir_all(source.join("node_modules").to_path(workspace_root))?;
-    }
-
     // Install production only dependencies for focused projects
-    node.get_package_manager()
-        .install_focused_dependencies(node, &package_names, true)
-        .await?;
+    if session.workspace_config.docker.prune.install_toolchain_deps {
+        let mut package_names = vec![];
+
+        for project_id in &manifest.focused_projects {
+            if let Some(source) = project_graph.sources().get(project_id) {
+                if let Some(package_json) =
+                    PackageJsonCache::read(source.to_path(&session.workspace_root))?
+                {
+                    if let Some(package_name) = package_json.data.name {
+                        package_names.push(package_name);
+                    }
+                }
+            }
+        }
+
+        debug!(
+            packages = ?package_names,
+            "Pruning Node.js dependencies"
+        );
+
+        node.get_package_manager()
+            .install_focused_dependencies(node, &package_names, true)
+            .await?;
+    }
 
     Ok(())
 }
 
 // This assumes that the project was built in --release mode. Is this correct?
 #[instrument(skip_all)]
-pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
-    let target_dir = workspace_root.join("target");
-    let lockfile_path = workspace_root.join("Cargo.lock");
+pub async fn prune_rust(_rust: &RustTool, session: &CliSession) -> AppResult {
+    if session
+        .workspace_config
+        .docker
+        .prune
+        .delete_vendor_directories
+    {
+        let target_dir = &session.workspace_root.join("target");
+        let lockfile_path = &session.workspace_root.join("Cargo.lock");
 
-    // Only delete target if relative to `Cargo.lock`
-    if target_dir.exists() && lockfile_path.exists() {
-        debug!(
-            target_dir = ?target_dir,
-            "Deleting Rust target directory"
-        );
+        // Only delete target if relative to `Cargo.lock`
+        if target_dir.exists() && lockfile_path.exists() {
+            debug!(
+                target_dir = ?target_dir,
+                "Deleting Rust target directory"
+            );
 
-        fs::remove_dir_all(target_dir)?;
+            fs::remove_dir_all(target_dir)?;
+        }
     }
 
     Ok(())
@@ -162,7 +196,7 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .as_any()
                         .downcast_ref::<BunTool>()
                         .unwrap(),
-                    &session.workspace_root,
+                    &session,
                     &project_graph,
                     &manifest,
                 )
@@ -175,7 +209,7 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .as_any()
                         .downcast_ref::<DenoTool>()
                         .unwrap(),
-                    &session.workspace_root,
+                    &session,
                     &project_graph,
                     &manifest,
                 )
@@ -188,7 +222,7 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .as_any()
                         .downcast_ref::<NodeTool>()
                         .unwrap(),
-                    &session.workspace_root,
+                    &session,
                     &project_graph,
                     &manifest,
                 )
@@ -201,7 +235,7 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .as_any()
                         .downcast_ref::<RustTool>()
                         .unwrap(),
-                    &session.workspace_root,
+                    &session,
                 )
                 .await?;
             }

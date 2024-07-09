@@ -115,6 +115,10 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub constraints: ConstraintsConfig,
 
+    /// Configures Docker integration for the workspace.
+    #[setting(nested)]
+    pub docker: DockerConfig,
+
     /// Configures experiments across the entire moon workspace.
     #[setting(nested)]
     pub experiments: ExperimentsConfig,

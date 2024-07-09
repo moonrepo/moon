@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { UnresolvedVersionSpec } from './toolchain-config';
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
+import type { UnresolvedVersionSpec } from './toolchain-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -35,6 +35,21 @@ export interface DependencyConfig {
 }
 
 export type ProjectDependsOn = string | DependencyConfig;
+
+/** Configures aspects of the Docker scaffolding process. */
+export interface ProjectDockerScaffoldConfig {
+	/**
+	 * List of glob patterns, relative from the project root,
+	 * to include (or exclude) in the sources skeleton.
+	 */
+	include: string[];
+}
+
+/** Configures our Docker integration. */
+export interface ProjectDockerConfig {
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold: ProjectDockerScaffoldConfig;
+}
 
 /** Supported programming languages that each project can be written in. */
 export type LanguageType =
@@ -180,6 +195,8 @@ export interface ProjectConfig {
 	$schema?: string;
 	/** Other projects that this project depends on. */
 	dependsOn: ProjectDependsOn[];
+	/** Configures Docker integration for this project. */
+	docker: ProjectDockerConfig;
 	/**
 	 * A mapping of environment variables that will be set for
 	 * all tasks within the project.
@@ -261,6 +278,21 @@ export interface PartialDependencyConfig {
 }
 
 export type PartialProjectDependsOn = string | PartialDependencyConfig;
+
+/** Configures aspects of the Docker scaffolding process. */
+export interface PartialProjectDockerScaffoldConfig {
+	/**
+	 * List of glob patterns, relative from the project root,
+	 * to include (or exclude) in the sources skeleton.
+	 */
+	include?: string[] | null;
+}
+
+/** Configures our Docker integration. */
+export interface PartialProjectDockerConfig {
+	/** Configures aspects of the Docker scaffolding process. */
+	scaffold?: PartialProjectDockerScaffoldConfig | null;
+}
 
 export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
@@ -379,6 +411,8 @@ export interface PartialProjectConfig {
 	$schema?: string | null;
 	/** Other projects that this project depends on. */
 	dependsOn?: PartialProjectDependsOn[] | null;
+	/** Configures Docker integration for this project. */
+	docker?: PartialProjectDockerConfig | null;
 	/**
 	 * A mapping of environment variables that will be set for
 	 * all tasks within the project.

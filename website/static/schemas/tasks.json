@@ -674,6 +674,7 @@
         "elvish",
         "fish",
         "ion",
+        "murex",
         "nu",
         "pwsh",
         "xonsh",
@@ -687,6 +688,7 @@
         "bash",
         "elvish",
         "fish",
+        "murex",
         "nu",
         "pwsh",
         "xonsh"

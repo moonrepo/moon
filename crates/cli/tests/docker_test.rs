@@ -446,9 +446,11 @@ mod prune_node {
 
         write_manifest(sandbox.path(), "other");
 
-        sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("prune");
-        });
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("docker").arg("prune");
+            })
+            .debug();
 
         // should exist
         assert!(sandbox.path().join("node_modules/solid-js").exists());

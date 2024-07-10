@@ -1,5 +1,6 @@
 use moon_common::Id;
 use moon_docker::{generate_dockerfile, GenerateDockerfileOptions};
+use moon_target::Target;
 use starbase_sandbox::assert_snapshot;
 
 fn create_options() -> GenerateDockerfileOptions {
@@ -10,8 +11,6 @@ fn create_options() -> GenerateDockerfileOptions {
 }
 
 mod dockerfile {
-    use moon_target::Target;
-
     use super::*;
 
     #[test]
@@ -40,6 +39,7 @@ mod dockerfile {
     fn with_prune() {
         let mut options = create_options();
         options.prune = true;
+        options.build_task = Some(Target::parse("app:compile").unwrap());
         options.start_task = Some(Target::parse("app:serve").unwrap());
 
         assert_snapshot!(generate_dockerfile(options).unwrap());

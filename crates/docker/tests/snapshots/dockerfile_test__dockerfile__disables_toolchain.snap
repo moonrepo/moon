@@ -19,7 +19,6 @@ ENV MOON_TOOLCHAIN_FORCE_GLOBALS=1
 #### Scaffolds repository skeleton structures.
 
 FROM base AS skeleton
-WORKDIR /app
 
 # Copy entire repository and scaffold
 COPY . .
@@ -29,7 +28,6 @@ RUN moon docker scaffold app
 #### Builds the project.
 
 FROM base AS build
-WORKDIR /app
 
 # Copy toolchain
 COPY --from=skeleton /root/.proto /root/.proto

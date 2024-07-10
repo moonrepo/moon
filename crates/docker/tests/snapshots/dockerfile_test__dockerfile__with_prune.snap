@@ -16,7 +16,6 @@ ENV PATH="/root/.moon/bin:$PATH"
 #### Scaffolds repository skeleton structures.
 
 FROM base AS skeleton
-WORKDIR /app
 
 # Copy entire repository and scaffold
 COPY . .
@@ -26,7 +25,6 @@ RUN moon docker scaffold app
 #### Builds the project.
 
 FROM base AS build
-WORKDIR /app
 
 # Copy toolchain
 COPY --from=skeleton /root/.proto /root/.proto
@@ -40,13 +38,19 @@ RUN moon docker setup
 # Copy project sources
 COPY --from=skeleton /app/.moon/docker/sources .
 
-#### START STAGE
-#### Runs the project.
-
-FROM build AS start
-WORKDIR /app
+# Build the project
+RUN moon run app:compile
 
 # Prune extraneous dependencies
 RUN moon docker prune
+
+#### START STAGE
+#### Runs the project.
+
+FROM base AS start
+
+# Copy built sources
+COPY --from=skeleton /root/.proto /root/.proto
+COPY --from=build /app /app
 
 CMD moon run app:serve

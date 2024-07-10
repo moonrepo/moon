@@ -1,26 +1,38 @@
 use crate::session::CliSession;
 use clap::Args;
-use moon_common::Id;
+use moon_common::{color, Id};
 use moon_config::PlatformType;
 use moon_console::prompts::{Select, Text};
 use moon_docker::*;
 use starbase::AppResult;
 use starbase_utils::fs;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct DockerFileArgs {
     #[arg(help = "ID of project to create a Dockerfile for")]
     id: Id,
 
-    #[arg(long, help = "Use default value instead of prompting")]
-    pub defaults: bool,
+    #[arg(long, help = "Use default options instead of prompting")]
+    defaults: bool,
+
+    #[arg(help = "Destination path, relative from the project root")]
+    dest: Option<String>,
 
     #[arg(long, help = "ID of a task to build the project")]
     build_task: Option<Id>,
 
-    #[arg(long, help = "Base Docker image")]
+    #[arg(long, help = "Base Docker image to use")]
     image: Option<String>,
+
+    #[arg(long, help = "Do not prune the workspace in the build stage")]
+    no_prune: bool,
+
+    #[arg(
+        long,
+        help = "Do not use the toolchain and instead use system binaries"
+    )]
+    no_toolchain: bool,
 
     #[arg(long, help = "ID of a task to run the project")]
     start_task: Option<Id>,
@@ -36,9 +48,13 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
 
     // Build the options
     let mut options = GenerateDockerfileOptions {
+        disable_toolchain: args.no_toolchain,
         project: args.id,
+        prune: !args.no_prune,
         ..GenerateDockerfileOptions::default()
     };
+
+    debug!("Gathering Dockerfile options");
 
     if let Some(image) = args.image {
         options.image = image;
@@ -57,6 +73,8 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
             ),
         )?;
     }
+
+    debug!(image = &options.image, "Using Docker image");
 
     let build_task_id = if let Some(id) = &args.build_task {
         Some(id)
@@ -82,7 +100,13 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     };
 
     if let Some(task_id) = build_task_id {
-        options.build_task = Some(project.get_task(task_id)?.target.to_owned());
+        let target = project.get_task(task_id)?.target.to_owned();
+
+        debug!(task = target.as_str(), "Using build task");
+
+        options.build_task = Some(target);
+    } else {
+        debug!("Not using a build task");
     }
 
     let start_task_id = if let Some(id) = &args.start_task {
@@ -109,14 +133,31 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     };
 
     if let Some(task_id) = start_task_id {
-        options.start_task = Some(project.get_task(task_id)?.target.to_owned());
+        let target = project.get_task(task_id)?.target.to_owned();
+
+        debug!(task = target.as_str(), "Using start task");
+
+        options.start_task = Some(target);
+    } else {
+        debug!("Not using a start task");
     }
 
     // Generate the file
-    fs::write_file(
-        project.root.join("Dockerfile"),
-        generate_dockerfile(options)?,
-    )?;
+    let out = args.dest.unwrap_or("Dockerfile".into());
+    let out_file = project.root.join(&out);
+
+    debug!(
+        dockerfile = ?out_file,
+        project = options.project.as_str(),
+        "Generating Dockerfile in project",
+    );
+
+    fs::write_file(out_file, generate_dockerfile(options)?)?;
+
+    console.out.write_line(format!(
+        "Generated {}",
+        color::rel_path(project.source.join(out))
+    ))?;
 
     Ok(())
 }

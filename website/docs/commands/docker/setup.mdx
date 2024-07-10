@@ -4,19 +4,23 @@ sidebar_label: setup
 ---
 
 The `moon docker setup` command will efficiently install dependencies for focused projects. This is
-an all-in-one command for all dependency installations, and should replace `npm install` and other
-commands.
+an all-in-one command for tool and dependency installations, and should replace `npm install` and
+other commands.
 
 ```shell
 $ moon docker setup
 ```
 
-> View the official [Docker usage guide](../../guides/docker) for a more in-depth example of how to
-> utilize this command.
+:::info
+
+View the official [Docker usage guide](../../guides/docker) for a more in-depth example of how to
+utilize this command.
+
+:::
 
 :::caution
 
 This command _must be_ ran after [`moon docker scaffold`](./scaffold) and is typically ran within a
-`Dockerfile`!
+`Dockerfile`! The [`moon docker file`](./file) command can be used to generate a `Dockerfile`.
 
 :::

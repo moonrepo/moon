@@ -19,7 +19,7 @@ pub struct DockerFileArgs {
     #[arg(help = "Destination path, relative from the project root")]
     dest: Option<String>,
 
-    #[arg(long, help = "ID of a task to build the project")]
+    #[arg(long = "buildTask", help = "ID of a task to build the project")]
     build_task: Option<Id>,
 
     #[arg(long, help = "Base Docker image to use")]
@@ -34,7 +34,7 @@ pub struct DockerFileArgs {
     )]
     no_toolchain: bool,
 
-    #[arg(long, help = "ID of a task to run the project")]
+    #[arg(long = "startTask", help = "ID of a task to run the project")]
     start_task: Option<Id>,
 }
 

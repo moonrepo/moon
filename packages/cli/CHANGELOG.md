@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added a new command, `moon docker file`, that can be used to generate an initial multi-stage `Dockerfile` for a project.
 - Added new `docker` settings to both `.moon/workspace.yml` and `moon.yml`, allowing it to be
   configured at the workspace and project levels.
 - Added support for [murex](https://murex.rocks/) shells.

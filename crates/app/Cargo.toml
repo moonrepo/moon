@@ -18,6 +18,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_console = { path = "../console" }
 moon_console_reporter = { path = "../console-reporter" }
+moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_plugin = { path = "../plugin" }
@@ -32,13 +33,13 @@ async-trait = { workspace = true }
 bytes = "1.6.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
-	"color",
-	"derive",
-	"env",
-	"help",
-	"suggestions",
-	"usage",
-	"wrap_help",
+    "color",
+    "derive",
+    "env",
+    "help",
+    "suggestions",
+    "usage",
+    "wrap_help",
 ] }
 clap_complete = { workspace = true }
 clap_complete_nushell = "4.5.2"

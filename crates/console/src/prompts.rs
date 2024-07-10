@@ -40,6 +40,14 @@ impl Console {
         self.handle_prompt(prompt.with_render_config(*self.theme()).prompt())
     }
 
+    pub fn prompt_select_skippable<T: Display>(
+        &self,
+        prompt: Select<T>,
+    ) -> miette::Result<Option<T>> {
+        self.err.flush()?;
+        self.handle_prompt(prompt.with_render_config(*self.theme()).prompt_skippable())
+    }
+
     pub fn prompt_text(&self, prompt: Text) -> miette::Result<String> {
         self.err.flush()?;
         self.handle_prompt(prompt.with_render_config(*self.theme()).prompt())

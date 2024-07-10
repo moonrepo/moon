@@ -3,7 +3,7 @@ use moon_common::Id;
 use moon_target::Target;
 use tera::{Context, Tera};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct GenerateDockerfileOptions {
     pub build_task: Option<Target>,
     pub disable_toolchain: bool,

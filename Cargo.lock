@@ -3185,6 +3185,7 @@ dependencies = [
  "moon_console_reporter",
  "moon_deno_platform",
  "moon_deno_tool",
+ "moon_docker",
  "moon_env",
  "moon_extension_plugin",
  "moon_lang",

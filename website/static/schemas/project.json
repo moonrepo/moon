@@ -390,6 +390,16 @@
       "description": "Configures our Docker integration.",
       "type": "object",
       "properties": {
+        "file": {
+          "title": "file",
+          "description": "Configures aspects of the Dockerfile generation process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectDockerFileConfig"
+            }
+          ],
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process."
+        },
         "scaffold": {
           "title": "scaffold",
           "description": "Configures aspects of the Docker scaffolding process.",
@@ -401,6 +411,50 @@
         }
       },
       "additionalProperties": false
+    },
+    "ProjectDockerFileConfig": {
+      "description": "Configures Dockerfile generation.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task within the current project for building the project.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task within the current project for starting the project.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation."
     },
     "ProjectDockerScaffoldConfig": {
       "description": "Configures aspects of the Docker scaffolding process.",

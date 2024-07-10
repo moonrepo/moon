@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type { UnresolvedVersionSpec } from './toolchain-config';
+import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -36,6 +36,16 @@ export interface DependencyConfig {
 
 export type ProjectDependsOn = string | DependencyConfig;
 
+/** Configures `Dockerfile` generation. */
+export interface ProjectDockerFileConfig {
+	/** A task within the current project for building the project. */
+	buildTask: string | null;
+	/** The base Docker image. */
+	image: string | null;
+	/** A task within the current project for starting the project. */
+	startTask: string | null;
+}
+
 /** Configures aspects of the Docker scaffolding process. */
 export interface ProjectDockerScaffoldConfig {
 	/**
@@ -47,6 +57,8 @@ export interface ProjectDockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface ProjectDockerConfig {
+	/** Configures aspects of the `Dockerfile` generation process. */
+	file: ProjectDockerFileConfig;
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold: ProjectDockerScaffoldConfig;
 }
@@ -279,6 +291,16 @@ export interface PartialDependencyConfig {
 
 export type PartialProjectDependsOn = string | PartialDependencyConfig;
 
+/** Configures `Dockerfile` generation. */
+export interface PartialProjectDockerFileConfig {
+	/** A task within the current project for building the project. */
+	buildTask?: string | null;
+	/** The base Docker image. */
+	image?: string | null;
+	/** A task within the current project for starting the project. */
+	startTask?: string | null;
+}
+
 /** Configures aspects of the Docker scaffolding process. */
 export interface PartialProjectDockerScaffoldConfig {
 	/**
@@ -290,6 +312,8 @@ export interface PartialProjectDockerScaffoldConfig {
 
 /** Configures our Docker integration. */
 export interface PartialProjectDockerConfig {
+	/** Configures aspects of the `Dockerfile` generation process. */
+	file?: PartialProjectDockerFileConfig | null;
 	/** Configures aspects of the Docker scaffolding process. */
 	scaffold?: PartialProjectDockerScaffoldConfig | null;
 }

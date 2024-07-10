@@ -1,8 +1,10 @@
 mod docker_error;
+mod file;
 mod prune;
 mod scaffold;
 mod setup;
 
+pub use file::*;
 pub use prune::*;
 pub use scaffold::*;
 pub use setup::*;
@@ -14,6 +16,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DockerCommands {
+    #[command(name = "file", about = "Generate a default Dockerfile for a project.")]
+    File(DockerFileArgs),
+
     #[command(
         name = "prune",
         about = "Remove extraneous files and folders within a Dockerfile."

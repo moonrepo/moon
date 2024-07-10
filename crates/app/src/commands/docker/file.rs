@@ -59,7 +59,13 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     if let Some(image) = args.image {
         options.image = image;
     } else if args.defaults {
-        options.image = project.config.docker.file.image.clone().unwrap_or_default();
+        options.image = project
+            .config
+            .docker
+            .file
+            .image
+            .clone()
+            .unwrap_or_else(|| get_base_image_from_platform(&project.platform).into());
     } else {
         options.image = console.prompt_text(
             Text::new("Docker image?").with_default(

@@ -18,7 +18,5 @@ expression: "fs::read_to_string(sandbox.path().join(\"CODEOWNERS\")).unwrap()"
 /list-paths/*.config.js @frontend
 
 # map-paths
-/map-paths/config/ @backend
 /map-paths/*.rs @rust-dev @api-team
-
-
+/map-paths/config/ @backend

@@ -1,11 +1,12 @@
 ---
-source: legacy/cli/tests/run_test.rs
+source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:bufferFailureFail
 stdout
 ▪▪▪▪ outputStyles:bufferFailureFail (100ms)
+▪▪▪▪ outputStyles:bufferFailureFailPrimary (skipped)
 stderr
 Error: task_runner::run_failed
 

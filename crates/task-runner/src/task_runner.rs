@@ -23,6 +23,7 @@ use tracing::{debug, instrument, trace};
 #[derive(Debug)]
 pub struct TaskRunResult {
     pub hash: Option<String>,
+    pub error: Option<miette::Report>,
     pub operations: OperationList,
 }
 
@@ -160,6 +161,7 @@ impl<'task> TaskRunner<'task> {
                 )?;
 
                 Ok(TaskRunResult {
+                    error: None,
                     hash: maybe_hash,
                     operations: self.operations.take(),
                 })
@@ -172,9 +174,28 @@ impl<'task> TaskRunner<'task> {
                     Some(&error),
                 )?;
 
-                Err(error)
+                Ok(TaskRunResult {
+                    error: Some(error),
+                    hash: None,
+                    operations: self.operations.take(),
+                })
             }
         }
+    }
+
+    #[cfg(debug_assertions)]
+    pub async fn run_with_panic(
+        &mut self,
+        context: &ActionContext,
+        node: &ActionNode,
+    ) -> miette::Result<TaskRunResult> {
+        let result = self.run(context, node).await?;
+
+        if let Some(error) = result.error {
+            panic!("{}", error.to_string());
+        }
+
+        Ok(result)
     }
 
     #[instrument(skip(self))]

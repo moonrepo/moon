@@ -6,6 +6,7 @@ cacheable!(
     #[derive(Clone, Config, Debug)]
     pub struct ExperimentsConfig {
         /// Enables the new & modern action pipeline.
+        #[setting(default = true)]
         pub action_pipeline_v2: bool,
 
         #[deprecated]

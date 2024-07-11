@@ -4,7 +4,10 @@
 
 #### 🚀 Updates
 
-- Added a new command, `moon docker file`, that can be used to generate an initial multi-stage `Dockerfile` for a project.
+- Enabled the `experiments.actionPipelineV2` setting in `.moon/workspace.yml` by default.
+  - If you run into any issues running tasks, disable this setting and report an issue.
+- Added a new command, `moon docker file`, that can be used to generate an initial multi-stage
+  `Dockerfile` for a project.
 - Added new `docker` settings to both `.moon/workspace.yml` and `moon.yml`, allowing it to be
   configured at the workspace and project levels.
 - Added support for [murex](https://murex.rocks/) shells.
@@ -16,6 +19,11 @@
 - When writing JSON and YAML files, we attempt to write back to the file with its original
   indentation.
 
+#### 🐞 Fixes
+
+- Fixed action operations not being present in the run report when a task fails to run.
+- Fixed stdout/stderr not being included in the summary review of failed tasks.
+
 #### 🧰 Toolchain
 
 - Node
@@ -26,7 +34,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.38.0 (from v0.37.2).
+- Updated proto to v0.38.1 (from v0.37.2).
 
 ## 1.26.7
 

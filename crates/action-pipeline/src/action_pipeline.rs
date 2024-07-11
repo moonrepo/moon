@@ -92,7 +92,7 @@ impl ActionPipeline {
                         actions: &actions,
                         aborted: self.aborted,
                         context: &self.action_context,
-                        duration: self.duration.unwrap(),
+                        duration: self.duration,
                         error: None,
                         error_report: None,
                     })
@@ -106,7 +106,7 @@ impl ActionPipeline {
                         actions: &actions,
                         aborted: self.aborted,
                         context: &self.action_context,
-                        duration: self.duration.unwrap(),
+                        duration: self.duration,
                         error: Some(error.to_string()),
                         error_report: Some(&error),
                     })

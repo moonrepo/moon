@@ -48,7 +48,9 @@ impl ReportsSubscriber {
 impl Subscriber for ReportsSubscriber {
     async fn on_emit<'data>(&mut self, event: &Event<'data>) -> miette::Result<()> {
         if let Event::PipelineCompleted {
-            actions, duration, ..
+            actions,
+            duration: Some(duration),
+            ..
         } = event
         {
             debug!("Creating run report");

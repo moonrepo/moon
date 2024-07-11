@@ -87,8 +87,12 @@ export interface DockerConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
-	/** Enables the new & modern action pipeline. */
-	actionPipelineV2: boolean;
+	/**
+	 * Enables the new & modern action pipeline.
+	 *
+	 * @default true
+	 */
+	actionPipelineV2?: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -385,7 +389,11 @@ export interface PartialDockerConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
-	/** Enables the new & modern action pipeline. */
+	/**
+	 * Enables the new & modern action pipeline.
+	 *
+	 * @default true
+	 */
 	actionPipelineV2?: boolean | null;
 	/**
 	 * @default true

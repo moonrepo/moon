@@ -48,7 +48,7 @@ pub enum Event<'data> {
         actions: &'data [Action],
         aborted: bool,
         context: &'data ActionContext,
-        duration: Duration,
+        duration: Option<Duration>,
         error: Option<String>,
         #[serde(skip)]
         error_report: Option<&'data miette::Report>,

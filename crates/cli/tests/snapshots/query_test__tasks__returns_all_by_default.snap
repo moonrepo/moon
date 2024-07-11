@@ -2,12 +2,12 @@
 source: crates/cli/tests/query_test.rs
 expression: assert.output_standardized()
 ---
-platforms
-	:node | node
-	:system | noop
 metadata
 	:build | noop
 	:test | noop
+platforms
+	:node | node
+	:system | noop
 tasks
 	:internal | build
 	:lint | eslint

@@ -7,6 +7,7 @@ use moon_config::{
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
+use schematic::schema::IndexMap;
 use utils::*;
 
 mod project_config {
@@ -368,7 +369,7 @@ owners:
 
             assert_eq!(
                 config.owners.paths,
-                OwnersPaths::Map(FxHashMap::from_iter([
+                OwnersPaths::Map(IndexMap::from_iter([
                     ("file.txt".into(), vec!["a".into(), "b".into()]),
                     ("dir/**/*".into(), vec!["c".into(), "d".into()]),
                 ]))

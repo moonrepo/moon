@@ -292,6 +292,7 @@
         "actionPipelineV2": {
           "title": "actionPipelineV2",
           "description": "Enables the new & modern action pipeline.",
+          "default": true,
           "type": "boolean"
         },
         "interweavedTaskInheritance": {

@@ -4,7 +4,8 @@
 
 #### 🚀 Updates
 
-- Added a new command, `moon docker file`, that can be used to generate an initial multi-stage `Dockerfile` for a project.
+- Added a new command, `moon docker file`, that can be used to generate an initial multi-stage
+  `Dockerfile` for a project.
 - Added new `docker` settings to both `.moon/workspace.yml` and `moon.yml`, allowing it to be
   configured at the workspace and project levels.
 - Added support for [murex](https://murex.rocks/) shells.
@@ -31,7 +32,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.38.0 (from v0.37.2).
+- Updated proto to v0.38.1 (from v0.37.2).
 
 ## 1.26.7
 

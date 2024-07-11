@@ -16,6 +16,11 @@
 - When writing JSON and YAML files, we attempt to write back to the file with its original
   indentation.
 
+#### 🐞 Fixes
+
+- Fixed action operations not being present in the run report when a task fails to run.
+- Fixed stdout/stderr not being included in the summary review of failed tasks.
+
 #### 🧰 Toolchain
 
 - Node

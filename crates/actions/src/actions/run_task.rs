@@ -32,14 +32,13 @@ pub async fn run_task(
         action_context.set_target_state(&task.target, TargetState::Passthrough);
     }
 
-    let operations = TaskRunner::new(&app_context, &project, task)?
+    let result = TaskRunner::new(&app_context, &project, task)?
         .run(&action_context, &action.node)
-        .await?
-        .operations;
+        .await?;
 
-    action.flaky = operations.is_flaky();
-    action.status = operations.get_final_status();
-    action.operations = operations;
+    action.flaky = result.operations.is_flaky();
+    action.status = result.operations.get_final_status();
+    action.operations = result.operations;
 
     if action.has_failed() && action.allow_failure {
         warn!(
@@ -48,5 +47,8 @@ pub async fn run_task(
         );
     }
 
-    Ok(action.status)
+    match result.error {
+        Some(error) => Err(error),
+        None => Ok(action.status),
+    }
 }

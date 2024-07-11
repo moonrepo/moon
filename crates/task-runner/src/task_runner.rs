@@ -23,6 +23,7 @@ use tracing::{debug, instrument, trace};
 #[derive(Debug)]
 pub struct TaskRunResult {
     pub hash: Option<String>,
+    pub error: Option<miette::Report>,
     pub operations: OperationList,
 }
 
@@ -160,6 +161,7 @@ impl<'task> TaskRunner<'task> {
                 )?;
 
                 Ok(TaskRunResult {
+                    error: None,
                     hash: maybe_hash,
                     operations: self.operations.take(),
                 })
@@ -172,7 +174,11 @@ impl<'task> TaskRunner<'task> {
                     Some(&error),
                 )?;
 
-                Err(error)
+                Ok(TaskRunResult {
+                    error: Some(error),
+                    hash: None,
+                    operations: self.operations.take(),
+                })
             }
         }
     }

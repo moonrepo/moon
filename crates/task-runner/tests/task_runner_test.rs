@@ -22,7 +22,7 @@ mod task_runner {
             let node = container.create_action_node("base");
             let context = ActionContext::default();
 
-            runner.run(&context, &node).await.unwrap();
+            runner.run_with_panic(&context, &node).await.unwrap();
 
             assert_eq!(
                 context
@@ -45,7 +45,7 @@ mod task_runner {
                 let node = container.create_action_node("has-deps");
                 let context = ActionContext::default();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
             }
 
             #[tokio::test]
@@ -60,7 +60,7 @@ mod task_runner {
                     .insert(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                     .unwrap();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(
                     context
@@ -84,7 +84,7 @@ mod task_runner {
                     .insert(Target::new("project", "dep").unwrap(), TargetState::Failed)
                     .unwrap();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(
                     context
@@ -109,7 +109,7 @@ mod task_runner {
                 let node = container.create_action_node("create-file");
                 let context = ActionContext::default();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert!(container
                     .sandbox
@@ -129,7 +129,7 @@ mod task_runner {
                 let node = container.create_action_node("create-file");
                 let context = ActionContext::default();
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert!(result.hash.is_some());
             }
@@ -143,7 +143,7 @@ mod task_runner {
                 let node = container.create_action_node("noop");
                 let context = ActionContext::default();
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert!(result.hash.is_some());
             }
@@ -161,8 +161,8 @@ mod task_runner {
                     .sandbox
                     .create_file(format!("{}/file.txt", container.project_id), "same");
 
-                let a = runner.run(&context, &node).await.unwrap();
-                let b = runner.run(&context, &node).await.unwrap();
+                let a = runner.run_with_panic(&context, &node).await.unwrap();
+                let b = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(a.hash, b.hash);
             }
@@ -180,13 +180,13 @@ mod task_runner {
                     .sandbox
                     .create_file(format!("{}/file.txt", container.project_id), "before");
 
-                let a = runner.run(&context, &node).await.unwrap();
+                let a = runner.run_with_panic(&context, &node).await.unwrap();
 
                 container
                     .sandbox
                     .create_file(format!("{}/file.txt", container.project_id), "after");
 
-                let b = runner.run(&context, &node).await.unwrap();
+                let b = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_ne!(a.hash, b.hash);
             }
@@ -200,7 +200,7 @@ mod task_runner {
                 let node = container.create_action_node("create-file");
                 let context = ActionContext::default();
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(result.operations.len(), 4);
                 assert!(result.operations[0].meta.is_hash_generation());
@@ -222,11 +222,11 @@ mod task_runner {
                 let node = container.create_action_node("create-file");
                 let context = ActionContext::default();
 
-                let before = runner.run(&context, &node).await.unwrap();
+                let before = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(before.operations.len(), 4);
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(before.hash, result.hash);
                 assert_eq!(result.operations.len(), 2);
@@ -246,7 +246,7 @@ mod task_runner {
                 let node = container.create_action_node("missing-output");
                 let context = ActionContext::default();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
             }
 
             #[tokio::test]
@@ -259,7 +259,7 @@ mod task_runner {
                 let node = container.create_action_node("missing-output-glob");
                 let context = ActionContext::default();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
             }
         }
 
@@ -275,7 +275,7 @@ mod task_runner {
                 let node = container.create_action_node("without-cache");
                 let context = ActionContext::default();
 
-                runner.run(&context, &node).await.unwrap();
+                runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert!(container
                     .sandbox
@@ -295,7 +295,7 @@ mod task_runner {
                 let node = container.create_action_node("without-cache");
                 let context = ActionContext::default();
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert!(result.hash.is_none());
             }
@@ -309,7 +309,7 @@ mod task_runner {
                 let node = container.create_action_node("without-cache");
                 let context = ActionContext::default();
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert!(result
                     .operations
@@ -326,13 +326,13 @@ mod task_runner {
                 let node = container.create_action_node("without-cache");
                 let context = ActionContext::default();
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(result.operations.len(), 1);
                 assert!(result.operations[0].meta.is_task_execution());
                 assert_eq!(result.operations[0].status, ActionStatus::Passed);
 
-                let result = runner.run(&context, &node).await.unwrap();
+                let result = runner.run_with_panic(&context, &node).await.unwrap();
 
                 assert_eq!(result.operations.len(), 1);
                 assert!(result.operations[0].meta.is_task_execution());

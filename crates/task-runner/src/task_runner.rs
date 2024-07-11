@@ -183,6 +183,21 @@ impl<'task> TaskRunner<'task> {
         }
     }
 
+    #[cfg(debug_assertions)]
+    pub async fn run_with_panic(
+        &mut self,
+        context: &ActionContext,
+        node: &ActionNode,
+    ) -> miette::Result<TaskRunResult> {
+        let result = self.run(context, node).await?;
+
+        if let Some(error) = result.error {
+            panic!("{}", error.to_string());
+        }
+
+        Ok(result)
+    }
+
     #[instrument(skip(self))]
     pub async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
         let cache_engine = &self.app.cache_engine;

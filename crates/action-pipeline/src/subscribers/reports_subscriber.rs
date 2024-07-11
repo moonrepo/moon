@@ -51,18 +51,20 @@ impl Subscriber for ReportsSubscriber {
             actions, duration, ..
         } = event
         {
-            debug!("Creating run report");
+            if let Some(duration) = duration {
+                debug!("Creating run report");
 
-            let estimate = Estimate::calculate(actions, duration);
+                let estimate = Estimate::calculate(actions, duration);
 
-            let report = RunReport {
-                actions,
-                context: &self.action_context,
-                duration,
-                comparison_estimate: estimate,
-            };
+                let report = RunReport {
+                    actions,
+                    context: &self.action_context,
+                    duration,
+                    comparison_estimate: estimate,
+                };
 
-            self.cache_engine.write(&self.report_name, &report)?;
+                self.cache_engine.write(&self.report_name, &report)?;
+            }
         }
 
         Ok(())

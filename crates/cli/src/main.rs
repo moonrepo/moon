@@ -129,6 +129,7 @@ async fn main() -> MainResult {
                 }
                 Commands::DepGraph(args) => commands::graph::dep::dep_graph(session, args).await,
                 Commands::Docker { command } => match command {
+                    DockerCommands::File(args) => commands::docker::file(session, args).await,
                     DockerCommands::Prune => commands::docker::prune(session).await,
                     DockerCommands::Scaffold(args) => {
                         commands::docker::scaffold(session, args).await

@@ -1,5 +1,5 @@
 ---
-title: Docker usage
+title: Docker integration
 ---
 
 import Tabs from '@theme/Tabs';
@@ -36,7 +36,14 @@ moon within Docker. There's 2 scenarios to choose from:
    `COPY`. moon will work with full functionality, but it will increase the overall size of the
    image because of caching.
 
-## `Dockerfile` setup
+## Creating a `Dockerfile`
+
+:::info
+
+Our [`moon docker file`][file] command can automatically generate a `Dockerfile` based on this
+guide! We suggest generating the file then reading the guide below to understand what's going on.
+
+:::
 
 We're very familiar with how tedious `Dockerfile`s are to write and maintain, so in an effort to
 reduce this headache, we've built a handful of tools to make this process much easier. With moon,
@@ -47,7 +54,7 @@ document them below):
 
 - Running `moon docker` commands _before_ running `docker run|build` commands.
 - Running `moon docker` commands _within_ the `Dockerfile`.
-- Using multi-staged or standard builds.
+- Using multi-staged or non-staged (standard) builds.
 - Something else unique to your setup!
 
 ### What we're trying to avoid
@@ -93,12 +100,13 @@ COPY ./.yarn ./.yarn
 COPY ./.yarnrc.yml ./yarnrc.yml
 
 # Install toolchain and dependencies
+# In non-moon repos: yarn install
 RUN moon docker setup
 
 # Copy project and required files
+# Or COPY . .
 COPY ./packages/types ./packages/types
 COPY ./packages/runtime ./packages/runtime
-# OR COPY . .
 
 # Build the target
 RUN moon run runtime:build
@@ -113,7 +121,7 @@ The first step in this process is to only copy the bare minimum of files necessa
 dependencies (Node.js modules, etc). This is typically manifests (`package.json`), lockfiles
 (`yarn.lock`, etc), and any configuration (`.yarnrc.yml`, etc).
 
-This can all be achieved by the [`moon docker scaffold`][scaffold] command, which scaffolds a
+This can all be achieved with the [`moon docker scaffold`][scaffold] command, which scaffolds a
 skeleton of the repository structure, with only necessary files (the above). Let's update our
 `Dockerfile` usage.
 
@@ -121,7 +129,7 @@ skeleton of the repository structure, with only necessary files (the above). Let
   groupId="dockerfile"
   defaultValue="standard"
   values={[
-    { label: 'Standard', value: 'standard' },
+    { label: 'Non-staged', value: 'standard' },
     { label: 'Multi-staged', value: 'staged' },
   ]}
 >
@@ -154,9 +162,8 @@ WORKDIR /app
 # Install moon binary
 RUN npm install -g @moonrepo/cli
 
-#### WORKSPACE
-FROM base AS workspace
-WORKDIR /app
+#### SKELETON
+FROM base AS skeleton
 
 # Copy entire repository and scaffold
 COPY . .
@@ -164,13 +171,12 @@ RUN moon docker scaffold <project>
 
 #### BUILD
 FROM base AS build
-WORKDIR /app
 
 # Copy toolchain
-COPY --from=workspace /root/.proto /root/.proto
+COPY --from=skeleton /root/.proto /root/.proto
 
 # Copy workspace skeleton
-COPY --from=workspace /app/.moon/docker/workspace .
+COPY --from=skeleton /app/.moon/docker/workspace .
 
 # Install toolchain and dependencies
 RUN moon docker setup
@@ -195,7 +201,7 @@ continue updating our `Dockerfile` to account for this, by appending the followi
   groupId="dockerfile"
   defaultValue="standard"
   values={[
-    { label: 'Standard', value: 'standard' },
+    { label: 'Non-staged', value: 'standard' },
     { label: 'Multi-staged', value: 'staged' },
   ]}
 >
@@ -205,7 +211,7 @@ continue updating our `Dockerfile` to account for this, by appending the followi
 # Copy source files
 COPY ./.moon/docker/sources .
 
-# Run something
+# Build something (optional)
 RUN moon run <project>:<task>
 ```
 
@@ -214,9 +220,9 @@ RUN moon run <project>:<task>
 
 ```docker
 # Copy source files
-COPY --from=workspace /app/.moon/docker/sources .
+COPY --from=skeleton /app/.moon/docker/sources .
 
-# Run something
+# Build something (optional)
 RUN moon run <project>:<task>
 ```
 
@@ -264,7 +270,7 @@ cascading updates, while the moon approach is `O(1)`!
   groupId="dockerfile"
   defaultValue="standard"
   values={[
-    { label: 'Standard', value: 'standard' },
+    { label: 'Non-staged', value: 'standard' },
     { label: 'Multi-staged', value: 'staged' },
   ]}
 >
@@ -286,13 +292,13 @@ RUN moon docker setup
 # Copy source files
 COPY ./.moon/docker/sources .
 
-# Run something
+# Build something (optional)
 RUN moon run <project>:<task>
 
 # Prune workspace
 RUN moon docker prune
 
-# Or CMD
+# CMD
 ```
 
 </TabItem>
@@ -306,9 +312,8 @@ WORKDIR /app
 # Install moon binary
 RUN npm install -g @moonrepo/cli
 
-#### WORKSPACE
-FROM base AS workspace
-WORKDIR /app
+#### SKELETON
+FROM base AS skeleton
 
 # Copy entire repository and scaffold
 COPY . .
@@ -316,28 +321,42 @@ RUN moon docker scaffold <project>
 
 #### BUILD
 FROM base AS build
-WORKDIR /app
 
 # Copy workspace skeleton
-COPY --from=workspace /app/.moon/docker/workspace .
+COPY --from=skeleton /app/.moon/docker/workspace .
 
 # Install toolchain and dependencies
 RUN moon docker setup
 
 # Copy source files
-COPY --from=workspace /app/.moon/docker/sources .
+COPY --from=skeleton /app/.moon/docker/sources .
 
-# Run something
+# Build something (optional)
 RUN moon run <project>:<task>
 
 # Prune workspace
 RUN moon docker prune
 
-# Or CMD
+# CMD
 ```
 
 </TabItem>
 </Tabs>
+
+## Running `docker` commands
+
+When running `docker` commands, they _must_ be ran from moon's workspace root (typically the
+repository root) so that the project graph and all `moon docker` commands resolve correctly.
+
+```shell
+docker build .
+```
+
+If you're `Dockerfile`s are located within each applicable project, use the `-f` argument.
+
+```shell
+docker run -f ./apps/client/Dockerfile .
+```
 
 ## Troubleshooting
 
@@ -355,5 +374,6 @@ FROM node:alpine
 ENV MOON_TOOLCHAIN_FORCE_GLOBALS=1
 ```
 
+[file]: ../commands/docker/file
 [prune]: ../commands/docker/prune
 [scaffold]: ../commands/docker/scaffold

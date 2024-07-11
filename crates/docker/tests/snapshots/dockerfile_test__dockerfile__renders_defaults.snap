@@ -1,0 +1,39 @@
+---
+source: crates/docker/tests/dockerfile_test.rs
+expression: generate_dockerfile(create_options()).unwrap()
+---
+#### BASE STAGE
+#### Installs moon.
+
+FROM scratch AS base
+WORKDIR /app
+
+# Install moon binary
+RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+ENV PATH="/root/.moon/bin:$PATH"
+
+#### SKELETON STAGE
+#### Scaffolds repository skeleton structures.
+
+FROM base AS skeleton
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold app
+
+#### BUILD STAGE
+#### Builds the project.
+
+FROM base AS build
+
+# Copy toolchain
+COPY --from=skeleton /root/.proto /root/.proto
+
+# Copy workspace configs
+COPY --from=skeleton /app/.moon/docker/workspace .
+
+# Install dependencies
+RUN moon docker setup
+
+# Copy project sources
+COPY --from=skeleton /app/.moon/docker/sources .

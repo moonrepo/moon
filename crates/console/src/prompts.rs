@@ -40,6 +40,14 @@ impl Console {
         self.handle_prompt(prompt.with_render_config(*self.theme()).prompt())
     }
 
+    pub fn prompt_select_skippable<T: Display>(
+        &self,
+        prompt: Select<T>,
+    ) -> miette::Result<Option<T>> {
+        self.err.flush()?;
+        self.handle_prompt(prompt.with_render_config(*self.theme()).prompt_skippable())
+    }
+
     pub fn prompt_text(&self, prompt: Text) -> miette::Result<String> {
         self.err.flush()?;
         self.handle_prompt(prompt.with_render_config(*self.theme()).prompt())
@@ -59,7 +67,7 @@ pub fn create_theme() -> RenderConfig<'static> {
             .with_scroll_up_prefix(Styled::new("▴"))
             .with_scroll_down_prefix(Styled::new("▾"))
             .with_highlighted_option_prefix(Styled::new("›"))
-            .with_canceled_prompt_indicator(Styled::new("[canceled]"))
+            .with_canceled_prompt_indicator(Styled::new("(skipped)"))
             .with_selected_checkbox(Styled::new("◉"))
             .with_unselected_checkbox(Styled::new("◯"))
             .with_error_message(ErrorMessageRenderConfig::empty().with_prefix(Styled::new("✘")));
@@ -86,7 +94,7 @@ pub fn create_theme() -> RenderConfig<'static> {
                 .with_prefix(Styled::new("✘").with_fg(rgb(Color::Red)))
                 .with_message(StyleSheet::new().with_fg(rgb(Color::Red))),
         )
-        .with_canceled_prompt_indicator(Styled::new("[canceled]").with_fg(rgb(Color::Orange)))
+        .with_canceled_prompt_indicator(Styled::new("(skipped)").with_fg(rgb(Color::Gray)))
         // Selects
         .with_selected_option(Some(StyleSheet::new().with_fg(rgb(Color::Teal))))
         .with_selected_checkbox(Styled::new("◉").with_fg(rgb(Color::Teal)))

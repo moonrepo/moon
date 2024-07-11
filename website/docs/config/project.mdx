@@ -326,6 +326,58 @@ The project type is used in [task inheritance](../concepts/task-inheritance),
 
 Configures Docker integration for the current project.
 
+### `file`
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerConfig#file" />
+
+Configures the `Dockerfile` generation process when [`moon docker file`](../commands/docker/file) is
+executed.
+
+#### `buildTask`
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#buildTask" />
+
+The name of a task within the current project that will be used for building the project before
+running it. If not defined, does nothing.
+
+```yaml title="moon.yml" {3}
+docker:
+  file:
+    buildTask: 'build'
+```
+
+#### `image`
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#image" />
+
+The Docker image to use in the base stage. Defaults to an image based on the project's
+[platform](#platform), as outlined below.
+
+- `oven/bun:latest` for Bun
+- `denoland/deno:latest` for Deno
+- `node:latest` for Node.js
+- `rust:latest` for Rust
+- `scratch` for everything else
+
+```yaml title="moon.yml" {3}
+docker:
+  file:
+    image: 'node:latest'
+```
+
+#### `startTask`
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#startTask" />
+
+The name of a task within the current project that will run the project after it has been built (if
+required). This task will be used as `CMD` within the `Dockerfile`.
+
+```yaml title="moon.yml" {3}
+docker:
+  file:
+    startTask: 'start'
+```
+
 ### `scaffold`
 
 <HeadingApiLink to="/api/types/interface/ProjectDockerConfig#scaffold" />

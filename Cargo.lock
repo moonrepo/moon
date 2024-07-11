@@ -3185,6 +3185,7 @@ dependencies = [
  "moon_console_reporter",
  "moon_deno_platform",
  "moon_deno_tool",
+ "moon_docker",
  "moon_env",
  "moon_extension_plugin",
  "moon_lang",
@@ -3538,6 +3539,18 @@ dependencies = [
  "proto_core",
  "rustc-hash 1.1.0",
  "starbase_utils",
+ "tracing",
+]
+
+[[package]]
+name = "moon_docker"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_target",
+ "starbase_sandbox",
+ "tera",
  "tracing",
 ]
 

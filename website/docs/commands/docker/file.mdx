@@ -1,0 +1,59 @@
+---
+title: docker file
+sidebar_label: file
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="1.27.0" header />
+
+The `moon docker file <project>` command can be used to generate a multi-staged `Dockerfile` for a
+project, that takes full advantage of Docker's layer caching, and is primarily for production
+deploys (this should not be used for development).
+
+```shell
+$ moon docker file <project>
+```
+
+As mentioned above, the generated `Dockerfile` uses a multi-stage approach, where each stage is
+broken up into the following:
+
+- `base` - The base stage, which simply installs moon for a chosen Docker image. This stage requires
+  Bash.
+- `skeleton` - Scaffolds workspace and sources repository skeletons using
+  [`moon docker scaffold`](./scaffold).
+- `build` - Copies required sources, installs the toolchain using [`moon docker setup`](./setup),
+  optionally builds the project, and optionally prunes the image using
+  [`moon docker prune`](./prune).
+- `start` - Runs the project after it has been built. This is typically starting an HTTP server, or
+  executing a binary.
+
+:::info
+
+View the official [Docker usage guide](../../guides/docker) for a more in-depth example of how to
+utilize this command.
+
+:::
+
+### Arguments
+
+- `<name>` - Name or alias of a project, as defined in
+  [`projects`](../../config/workspace#projects).
+
+### Options
+
+- `--defaults` - Use default options instead of prompting in the terminal.
+- `--dest` - Destination path, relative from the project root. Defaults to `Dockerfile`.
+- `--buildTask` - Name of a task to build the project. Defaults to the
+  [`docker.file.buildTask`](../../config/project#buildtask) setting, or prompts in the terminal.
+- `--image` - Base Docker image to use. Defaults to `scratch` / derived from the toolchain (for
+  example, Node.js is `node:latest`), or prompts in the terminal.
+- `--no-prune` - Do not prune the workspace in the build stage.
+- `--no-toolchain` - Do not use the toolchain and instead use system binaries.
+- `--startTask` - Name of a task to start the project. Defaults to the
+  [`docker.file.startTask`](../../config/project#starttask) setting, or prompts in the terminal.
+
+### Configuration
+
+Options may be customized with the [`docker.file`](../../config/project#file) setting in
+[`moon.yml`](../../config/project).

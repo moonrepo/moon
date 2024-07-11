@@ -1,0 +1,22 @@
+[package]
+name = "moon_docker"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "moon and Docker integration."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_target = { path = "../target" }
+miette = { workspace = true }
+tera = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

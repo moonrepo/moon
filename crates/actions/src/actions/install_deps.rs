@@ -108,7 +108,12 @@ pub async fn install_deps(
         .state
         .load_state::<DependenciesCacheState>(get_state_path(&app_context, runtime, project))?;
 
-    if lockfile_timestamp == 0
+    if
+    // Lockfile doesn't exist
+    lockfile_timestamp == 0
+        // Dependencies haven't been installed yet
+        || state.data.last_install_time == 0
+        // Dependencies have changed since last run
         || manifests_hash
             .as_ref()
             .is_some_and(|hash| hash != &state.data.last_hash)
@@ -140,7 +145,7 @@ pub async fn install_deps(
         return Ok(ActionStatus::Passed);
     }
 
-    debug!("Lockfile or manifests have not changed since last run, skipping install",);
+    debug!("Lockfile or manifests have not changed since last run, skipping dependency install");
 
     Ok(ActionStatus::Skipped)
 }

@@ -3426,6 +3426,7 @@ name = "moon_config"
 version = "0.0.9"
 dependencies = [
  "httpmock",
+ "indexmap 2.2.6",
  "miette",
  "moon_common",
  "moon_target",

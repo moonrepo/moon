@@ -1,5 +1,5 @@
+use indexmap::IndexMap;
 use moon_common::cacheable;
-use schematic::schema::IndexMap;
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(

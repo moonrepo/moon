@@ -1,6 +1,6 @@
+use indexmap::IndexMap;
 use moon_common::cacheable;
 use rustc_hash::FxHashMap;
-use schematic::schema::IndexMap;
 use schematic::{Config, PathSegment, ValidateError};
 
 cacheable!(

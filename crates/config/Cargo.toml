@@ -14,6 +14,7 @@ features = ["loader"]
 [dependencies]
 moon_common = { version = "0.0.7", path = "../common" }
 moon_target = { version = "0.0.6", path = "../target" }
+indexmap = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
@@ -21,6 +22,7 @@ rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
 	"schema",
+	"type_indexmap",
 	"type_semver",
 	"type_serde_json",
 	"valid_url",

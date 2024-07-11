@@ -109,7 +109,7 @@ export interface EventPipelineCompleted {
 	actions: Action[];
 	aborted: boolean;
 	context: ActionContext;
-	duration: Duration;
+	duration: Duration | null;
 	error: string | null;
 }
 

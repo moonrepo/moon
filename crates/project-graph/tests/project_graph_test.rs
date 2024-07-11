@@ -426,12 +426,12 @@ mod project_graph {
 
             assert_eq!(
                 map_ids(graph.dependencies_of(&graph.get("b").unwrap()).unwrap()),
-                string_vec![]
+                ["c"]
             );
 
             assert_eq!(
                 map_ids(graph.dependencies_of(&graph.get("c").unwrap()).unwrap()),
-                ["a"]
+                string_vec![]
             );
         }
     }
@@ -726,7 +726,7 @@ mod project_graph {
                     .build_graph_for(context, &["some-depends-on"])
                     .await;
 
-                assert_eq!(map_ids(graph.ids()), ["c", "a", "some-depends-on"]);
+                assert_eq!(map_ids(graph.ids()), ["a", "c", "some-depends-on"]);
             }
 
             #[tokio::test]
@@ -901,7 +901,7 @@ mod project_graph {
                         .dependencies_of(&graph.get("explicit").unwrap())
                         .unwrap()
                 ),
-                ["alias-one", "alias-two"]
+                ["alias-two", "alias-one"]
             );
 
             assert_eq!(

@@ -1,30 +1,30 @@
 ---
-source: crates/rust/lang/tests/cargo_lock_test.rs
+source: legacy/rust/lang/tests/cargo_lock_test.rs
 expression: deps
 ---
 {
+    "ci_env": [
+        "b8ec45c59e470d7c361345776fea051dd4d3e9c2db8ed0d3fb343cbaf0f2b50b",
+    ],
     "serde_derive": [
         "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df",
-    ],
-    "non-workspace-project": [
-        "0.0.1",
     ],
     "quote": [
         "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc",
     ],
+    "syn": [
+        "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822",
+    ],
+    "non-workspace-project": [
+        "0.0.1",
+    ],
     "proc-macro2": [
         "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435",
-    ],
-    "ci_env": [
-        "b8ec45c59e470d7c361345776fea051dd4d3e9c2db8ed0d3fb343cbaf0f2b50b",
-    ],
-    "unicode-ident": [
-        "e5464a87b239f13a63a501f2701565754bae92d243d4bb7eb12f6d57d2269bf4",
     ],
     "serde": [
         "bb2f3770c8bce3bcda7e149193a069a0f4365bda1fa5cd88e03bca26afc1216c",
     ],
-    "syn": [
-        "a34fcf3e8b60f57e6a14301a2e916d323af98b0ea63c599441eec8558660c822",
+    "unicode-ident": [
+        "e5464a87b239f13a63a501f2701565754bae92d243d4bb7eb12f6d57d2269bf4",
     ],
 }

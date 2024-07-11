@@ -43,7 +43,7 @@ pub struct QueryProjectsResult {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryTasksResult {
-    pub tasks: FxHashMap<Id, BTreeMap<Id, Task>>,
+    pub tasks: BTreeMap<Id, BTreeMap<Id, Task>>,
     pub options: QueryProjectsOptions,
 }
 

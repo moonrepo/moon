@@ -1,5 +1,6 @@
 use moon_common::cacheable;
 use rustc_hash::FxHashMap;
+use schematic::schema::IndexMap;
 use schematic::{Config, PathSegment, ValidateError};
 
 cacheable!(
@@ -14,7 +15,7 @@ cacheable!(
         #[setting(default)]
         List(Vec<String>),
         /// A mapping of file paths to owners.
-        Map(FxHashMap<String, Vec<String>>),
+        Map(IndexMap<String, Vec<String>>),
     }
 );
 

@@ -4,6 +4,8 @@
 
 #### 🚀 Updates
 
+- Enabled the `experiments.actionPipelineV2` setting in `.moon/workspace.yml` by default.
+  - If you run into any issues running tasks, disable this setting and report an issue.
 - Added a new command, `moon docker file`, that can be used to generate an initial multi-stage
   `Dockerfile` for a project.
 - Added new `docker` settings to both `.moon/workspace.yml` and `moon.yml`, allowing it to be

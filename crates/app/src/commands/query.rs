@@ -9,7 +9,7 @@ pub use crate::queries::touched_files::{
 use crate::session::CliSession;
 use clap::{Args, Subcommand};
 use moon_vcs::TouchedStatus;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
@@ -298,7 +298,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     };
 
     // Filter and group tasks
-    let mut grouped_tasks = FxHashMap::default();
+    let mut grouped_tasks = BTreeMap::default();
 
     for project in projects {
         let filtered_tasks = project
@@ -388,14 +388,14 @@ pub async fn touched_files(session: CliSession, args: QueryTouchedFilesArgs) -> 
     if args.json {
         console.out.write_line(json::format(&result, true)?)?;
     } else if !result.files.is_empty() {
-        console.out.write_line(
-            result
-                .files
-                .iter()
-                .map(|f| f.to_string())
-                .collect::<Vec<_>>()
-                .join("\n"),
-        )?;
+        let mut files = result
+            .files
+            .iter()
+            .map(|f| f.to_string())
+            .collect::<Vec<_>>();
+        files.sort();
+
+        console.out.write_line(files.join("\n"))?;
     }
 
     Ok(())

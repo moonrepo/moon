@@ -46,7 +46,7 @@ reqwest = { version = "0.12.5", default-features = false, features = [
 	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
 ] }
-rustc-hash = "=1.1.0"
+rustc-hash = "2.0.0"
 scc = "2.1.2"
 schematic = { version = "0.16.5", default-features = false, features = [
 	"schema",

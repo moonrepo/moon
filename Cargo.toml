@@ -98,7 +98,7 @@ proto_installer = "0.5.2"
 system_env = "0.5.0"
 version_spec = "0.6.1"
 warpgate = "0.15.2"
-warpgate_api = "0.8.0"
+warpgate_api = "0.8.1"
 warpgate_pdk = "0.6.0"
 
 # proto_core = { path = "../proto/crates/core" }

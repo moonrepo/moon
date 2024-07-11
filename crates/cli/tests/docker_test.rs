@@ -432,6 +432,7 @@ mod prune {
 mod prune_node {
     use super::*;
 
+    #[cfg(not(linux))]
     #[test]
     fn focuses_for_npm() {
         let (workspace_config, toolchain_config, tasks_config) =

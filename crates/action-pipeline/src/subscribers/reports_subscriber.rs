@@ -48,23 +48,23 @@ impl ReportsSubscriber {
 impl Subscriber for ReportsSubscriber {
     async fn on_emit<'data>(&mut self, event: &Event<'data>) -> miette::Result<()> {
         if let Event::PipelineCompleted {
-            actions, duration, ..
+            actions,
+            duration: Some(duration),
+            ..
         } = event
         {
-            if let Some(duration) = duration {
-                debug!("Creating run report");
+            debug!("Creating run report");
 
-                let estimate = Estimate::calculate(actions, duration);
+            let estimate = Estimate::calculate(actions, duration);
 
-                let report = RunReport {
-                    actions,
-                    context: &self.action_context,
-                    duration,
-                    comparison_estimate: estimate,
-                };
+            let report = RunReport {
+                actions,
+                context: &self.action_context,
+                duration,
+                comparison_estimate: estimate,
+            };
 
-                self.cache_engine.write(&self.report_name, &report)?;
-            }
+            self.cache_engine.write(&self.report_name, &report)?;
         }
 
         Ok(())

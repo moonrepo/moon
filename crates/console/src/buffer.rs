@@ -7,7 +7,7 @@ use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread::{sleep, spawn, JoinHandle};
 use std::time::Duration;
-use tracing::{debug, warn};
+use tracing::{trace, warn};
 
 #[derive(Clone, Copy)]
 pub enum ConsoleStream {
@@ -83,7 +83,7 @@ impl ConsoleBuffer {
     }
 
     pub fn close(&self) -> miette::Result<()> {
-        debug!(
+        trace!(
             "Closing {} stream",
             match self.stream {
                 ConsoleStream::Stderr => "stderr",

@@ -98,8 +98,15 @@ pub async fn run_action(
                 })
                 .await?;
 
-            let result =
-                install_deps(action, action_context, app_context, &inner.runtime, None).await;
+            let result = install_deps(
+                action,
+                action_context,
+                app_context,
+                project_graph,
+                &inner.runtime,
+                None,
+            )
+            .await;
 
             emitter
                 .emit(Event::DependenciesInstalled {
@@ -126,6 +133,7 @@ pub async fn run_action(
                 action,
                 action_context,
                 app_context,
+                project_graph,
                 &inner.runtime,
                 Some(&project),
             )

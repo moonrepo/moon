@@ -80,6 +80,7 @@ pub async fn process_action(
                 &mut action,
                 action_context,
                 app_context,
+                project_graph,
                 &inner.runtime,
                 None,
             )
@@ -111,6 +112,7 @@ pub async fn process_action(
                 &mut action,
                 action_context,
                 app_context,
+                project_graph,
                 &inner.runtime,
                 Some(&project),
             )

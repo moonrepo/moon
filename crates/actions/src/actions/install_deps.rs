@@ -7,6 +7,7 @@ use moon_common::path::encode_component;
 use moon_common::{color, is_ci};
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_time::{now_millis, to_millis};
 use starbase_utils::fs;
 use std::path::PathBuf;
@@ -26,6 +27,7 @@ pub async fn install_deps(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
+    project_graph: Arc<ProjectGraph>,
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> miette::Result<ActionStatus> {
@@ -90,6 +92,7 @@ pub async fn install_deps(
         action,
         &action_context,
         &app_context,
+        &project_graph,
         project,
         platform,
         &manifest_name,
@@ -105,9 +108,15 @@ pub async fn install_deps(
         .state
         .load_state::<DependenciesCacheState>(get_state_path(&app_context, runtime, project))?;
 
-    if manifests_hash != state.data.last_hash
-        || lockfile_timestamp == 0
-        || lockfile_timestamp > state.data.last_install_time
+    if
+    // Lockfile doesn't exist
+    lockfile_timestamp == 0
+        // Dependencies haven't been installed yet
+        || state.data.last_install_time == 0
+        // Dependencies have changed since last run
+        || manifests_hash
+            .as_ref()
+            .is_some_and(|hash| hash != &state.data.last_hash)
     {
         let working_dir = project.map_or(&app_context.workspace_root, |proj| &proj.root);
 
@@ -129,14 +138,14 @@ pub async fn install_deps(
                 .await?,
         );
 
-        state.data.last_hash = manifests_hash;
+        state.data.last_hash = manifests_hash.unwrap_or_default();
         state.data.last_install_time = now_millis();
         state.save()?;
 
         return Ok(ActionStatus::Passed);
     }
 
-    debug!("Lockfile or manifests have not changed since last run, skipping install",);
+    debug!("Lockfile or manifests have not changed since last run, skipping dependency install");
 
     Ok(ActionStatus::Skipped)
 }
@@ -145,26 +154,30 @@ async fn hash_manifests(
     action: &mut Action,
     action_context: &ActionContext,
     app_context: &AppContext,
+    project_graph: &ProjectGraph,
     project: Option<&Project>,
     platform: &BoxedPlatform,
     manifest_name: &str,
-) -> miette::Result<String> {
+) -> miette::Result<Option<String>> {
     let mut operation = Operation::hash_generation();
-    let mut hasher = app_context.cache_engine.hash.create_hasher(&action.label);
-    let root_manifest = app_context.workspace_root.join(manifest_name);
 
-    // Always include the root manifest
-    if root_manifest.exists() {
-        platform
-            .hash_manifest_deps(
-                &root_manifest,
-                &mut hasher,
-                &app_context.workspace_config.hasher,
-            )
-            .await?;
+    // If no manifests touched, then do nothing
+    let has_touched_manifests = action_context
+        .touched_files
+        .iter()
+        .any(|file| file.as_str().ends_with(manifest_name));
+
+    if !has_touched_manifests {
+        operation.finish(ActionStatus::Skipped);
+
+        action.operations.push(operation);
+
+        return Ok(None);
     }
 
-    // When running in the project root, include their manifest
+    let mut hasher = app_context.cache_engine.hash.create_hasher(&action.label);
+
+    // When running in the project root, include only their manifest
     if let Some(project) = project {
         let project_manifest = project.root.join(manifest_name);
 
@@ -178,20 +191,33 @@ async fn hash_manifests(
                 .await?;
         }
     }
-    // When running in the workspace root, account for nested manifests
+    // When running in the workspace root, include all project manifests
     else {
-        for touched_file in &action_context.touched_files {
-            if touched_file.ends_with(manifest_name) {
-                let nested_manifest = touched_file.to_path(&app_context.workspace_root);
+        for project in project_graph.get_all()? {
+            let project_manifest = project.root.join(manifest_name);
 
+            if project_manifest.exists() {
                 platform
                     .hash_manifest_deps(
-                        &nested_manifest,
+                        &project_manifest,
                         &mut hasher,
                         &app_context.workspace_config.hasher,
                     )
                     .await?;
             }
+        }
+
+        // And include the root manifest
+        let root_manifest = app_context.workspace_root.join(manifest_name);
+
+        if root_manifest.exists() {
+            platform
+                .hash_manifest_deps(
+                    &root_manifest,
+                    &mut hasher,
+                    &app_context.workspace_config.hasher,
+                )
+                .await?;
         }
     }
 
@@ -202,7 +228,7 @@ async fn hash_manifests(
 
     action.operations.push(operation);
 
-    Ok(hash)
+    Ok(Some(hash))
 }
 
 fn track_lockfile(
@@ -210,17 +236,9 @@ fn track_lockfile(
     project: Option<&Project>,
     lockfile_name: &str,
 ) -> miette::Result<u128> {
-    let mut lockfile_path = app_context.workspace_root.join(lockfile_name);
-
-    // Check if the project has their own lockfile
-    if let Some(project) = project {
-        let project_lockfile = project.root.join(lockfile_name);
-
-        if project_lockfile.exists() {
-            lockfile_path = project_lockfile;
-        }
-    }
-
+    let lockfile_path = project
+        .map(|proj| proj.root.join(lockfile_name))
+        .unwrap_or_else(|| app_context.workspace_root.join(lockfile_name));
     let mut last_modified = 0;
 
     if lockfile_path.exists() {

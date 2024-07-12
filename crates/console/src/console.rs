@@ -6,7 +6,7 @@ use moon_common::is_formatted_output;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use tracing::debug;
+use tracing::trace;
 
 pub type ConsoleTheme = RenderConfig<'static>;
 
@@ -25,7 +25,7 @@ pub struct Console {
 
 impl Console {
     pub fn new(quiet: bool) -> Self {
-        debug!("Creating buffered console");
+        trace!("Creating buffered console");
 
         let quiet = Arc::new(AtomicBool::new(quiet || is_formatted_output()));
 
@@ -59,7 +59,7 @@ impl Console {
     }
 
     pub fn close(&mut self) -> miette::Result<()> {
-        debug!("Closing console and flushing buffered output");
+        trace!("Closing console and flushing buffered output");
 
         self.err.close()?;
         self.out.close()?;

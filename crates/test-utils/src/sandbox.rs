@@ -1,4 +1,3 @@
-use starbase_sandbox::assert_cmd::cargo::cargo_bin;
 pub use starbase_sandbox::{create_temp_dir, Sandbox, SandboxAssert, SandboxSettings};
 use std::collections::HashMap;
 use std::ops::Deref;
@@ -47,7 +46,7 @@ fn apply_settings(sandbox: &mut Sandbox) {
     // env.insert("PROTO_LOG", "trace");
     // env.insert("MOON_DEBUG_WASM", "true");
 
-    sandbox.settings.bin = cargo_bin("moon").to_string_lossy().to_string();
+    sandbox.settings.bin = "moon".into();
 
     sandbox
         .settings

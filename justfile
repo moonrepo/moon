@@ -68,7 +68,7 @@ docs:
 	cargo run -- run website:start
 
 moon-check:
-	cargo run -- check --all --log trace
+	cargo run -- check --all --log trace --summary
 
 schemas:
 	cargo run -p moon_config_schema --features typescript

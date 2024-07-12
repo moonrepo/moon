@@ -100,8 +100,8 @@ const sidebars: SidebarsConfig = {
 				'commands/overview',
 				'commands/action-graph',
 				'commands/bin',
-				'commands/ci',
 				'commands/check',
+				'commands/ci',
 				'commands/clean',
 				'commands/completions',
 				{

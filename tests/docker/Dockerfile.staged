@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Copy entire repository and scaffold
 COPY . .
-RUN moon docker scaffold website --include '*.config.js' --log debug
+RUN moon docker scaffold website --log debug
 
 #### BUILD
 FROM base AS build
@@ -20,7 +20,7 @@ WORKDIR /app
 
 # Copy toolchain
 COPY --from=workspace /root/.proto /root/.proto
-COPY --from=workspace /root/.rustup /root/.rustup
+# COPY --from=workspace /root/.rustup /root/.rustup
 
 # Copy workspace skeleton
 COPY --from=workspace /app/.moon/docker/workspace .

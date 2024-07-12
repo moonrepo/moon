@@ -32,3 +32,9 @@ vcs:
   # hooks:
   #   pre-commit:
   #     - 'cargo run -- run :lint'
+
+docker:
+  scaffold:
+    include:
+      - '*.config.js'
+      - '*.json'

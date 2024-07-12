@@ -26,12 +26,14 @@ moon_config = { path = "../config" }
 moon_task = { path = "../task" }
 moon_task_runner = { path = "../task-runner" }
 moon_test_utils = { path = "../../legacy/core/test-utils" }
+moon_test_utils2 = { path = "../test-utils" }
 moon_vcs = { path = "../vcs" }
 httpmock = "0.7.0"
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serial_test = { workspace = true }
 starbase_archive = { workspace = true }
+starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

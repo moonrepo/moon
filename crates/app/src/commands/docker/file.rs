@@ -13,11 +13,11 @@ pub struct DockerFileArgs {
     #[arg(help = "ID of project to create a Dockerfile for")]
     id: Id,
 
-    #[arg(long, help = "Use default options instead of prompting")]
-    defaults: bool,
-
     #[arg(help = "Destination path, relative from the project root")]
     dest: Option<String>,
+
+    #[arg(long, help = "Use default options instead of prompting")]
+    defaults: bool,
 
     #[arg(long = "buildTask", help = "ID of a task to build the project")]
     build_task: Option<Id>,

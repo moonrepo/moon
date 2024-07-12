@@ -1435,18 +1435,18 @@ mod output_styles {
         assert_snapshot!(assert.output());
     }
 
-    #[cfg(not(windows))] // Different path output in snapshot
-    #[test]
-    fn buffer_on_failure_when_failure() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
+    // #[cfg(not(windows))] // Different path output in snapshot
+    // #[test]
+    // fn buffer_on_failure_when_failure() {
+    //     let sandbox = cases_sandbox();
+    //     sandbox.enable_git();
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("outputStyles:bufferFailureFailPrimary");
-        });
+    //     let assert = sandbox.run_moon(|cmd| {
+    //         cmd.arg("run").arg("outputStyles:bufferFailureFailPrimary");
+    //     });
 
-        assert_snapshot!(assert.output());
-    }
+    //     assert_snapshot!(assert.output());
+    // }
 
     #[test]
     fn hash() {

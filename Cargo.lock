@@ -3354,6 +3354,7 @@ dependencies = [
  "moon_task",
  "moon_task_runner",
  "moon_test_utils",
+ "moon_test_utils2",
  "moon_vcs",
  "proto_core",
  "rustc-hash 2.0.0",
@@ -3361,6 +3362,7 @@ dependencies = [
  "sigpipe",
  "starbase",
  "starbase_archive",
+ "starbase_sandbox",
  "starbase_styles",
  "starbase_utils",
  "tokio",
@@ -5915,9 +5917,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e800f7aaa0528904cb9bbb8028a1e17c3604125c0e074eb2b4dc259359536f8d"
+checksum = "7b60b6af732c95391e0e8d6d38f938c30d9f980c79637e9e1789d68021b6221f"
 dependencies = [
  "binstall-tar",
  "flate2",
@@ -5929,7 +5931,7 @@ dependencies = [
  "tracing",
  "xz2",
  "zip",
- "zstd 0.13.1",
+ "zstd 0.13.2",
 ]
 
 [[package]]
@@ -5958,15 +5960,14 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.6.4"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee8d70a85be618d0ea80eb99c8f22ad7200414c20e03f1ac2f31062d9e4ed4b5"
+checksum = "ef8a1b40b7859260a4371b1dcebb24ebf27356de1514cca4beb6b10fc273c03a"
 dependencies = [
  "assert_cmd",
  "assert_fs",
  "clean-path",
  "insta",
- "once_cell",
  "predicates",
  "pretty_assertions",
  "starbase_utils",
@@ -5974,9 +5975,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50174867b02331e50260305b647e91d323422ffcff3713d236931777c80608c3"
+checksum = "fbc3e63c1c7ca0e51179eddc7550024518d4495b10a61c3006e1cc722870d889"
 dependencies = [
  "regex",
  "sysinfo",
@@ -6130,9 +6131,9 @@ checksum = "a7065abeca94b6a8a577f9bd45aa0867a2238b74e8eb67cf10d492bc39351394"
 
 [[package]]
 name = "sysinfo"
-version = "0.30.12"
+version = "0.30.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "732ffa00f53e6b2af46208fba5718d9662a421049204e156328b66791ffa15ae"
+checksum = "0a5b4ddaee55fb2bea2bf0e5000747e5f5c0de765e5a5ff87f4cd106439f4bb3"
 dependencies = [
  "cfg-if",
  "core-foundation-sys",
@@ -6273,18 +6274,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.61"
+version = "1.0.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c546c80d6be4bc6a00c0f01730c08df82eaa7a7a61f11d656526506112cc1709"
+checksum = "f2675633b1499176c2dff06b0856a27976a8f9d436737b4cf4f312d4d91d8bbb"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.61"
+version = "1.0.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46c3384250002a6d5af4d114f2845d37b57521033f30d5c3f46c4d70e1197533"
+checksum = "d20468752b09f49e909e55a5d338caa8bedf615594e9d80bc4c565d30faf798c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7937,9 +7938,9 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d789b1514203a1120ad2429eae43a7bd32b90976a7bb8a05f7ec02fa88cc23a"
+checksum = "fcf2b778a664581e31e389454a7072dab1647606d44f7feea22cd5abb9c9f3f9"
 dependencies = [
  "zstd-safe 7.1.0",
 ]

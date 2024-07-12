@@ -12,7 +12,7 @@
   configured at the workspace and project levels.
 - Added support for [murex](https://murex.rocks/) shells.
   - Updated both `unixShell` and `windowsShell` task options.
-- Improved the automatically install dependencies if a manifest/lockfile has changed flow. This
+- Improved the "automatically install dependencies if a manifest/lockfile has changed" flow. This
   should trigger less than before.
 - We now generate JSON schemas for our configuration files to `.moon/cache/schemas`, so that they
   can be dynamically created based on the current moon version and environment.

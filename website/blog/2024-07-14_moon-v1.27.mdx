@@ -1,0 +1,135 @@
+---
+slug: moon-v1.27
+title: moon v1.27 - Task scripts, Docker settings, and more
+authors: [milesj]
+tags: [action, pipeline, trace, profile, shell]
+# image: ./img/moon/v1.26.png
+---
+
+???
+
+<!--truncate-->
+
+## Experimental pipeline enabled by default
+
+In our last release, we [introduced a new action pipeline](./moon-v1.26#new-experimental-pipeline)
+that is more performant, accurate, and resilient, but was hidden behind an experimental flag. Since
+then, we've seen many users enable it successfully, and no issues have been reported! And with that,
+we're enabling the experiment by default.
+
+If you run into an issue with this new pipeline, you can disable the experiment in
+`.moon/workspace.yml`, like so. If you do encounter an issue, please report it to GitHub or Discord!
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  actionPipelineV2: false
+```
+
+## New task scripts
+
+## Improved Docker integration
+
+As it turns out, a lot of moon users rely heavily on our Docker integration, which hasn't seen some
+love in quite a while. We felt it was time to change that.
+
+### New `moon docker file` command
+
+Since our release of Docker in moon (v0.15), we've provided an [in-depth guide](/docs/guides/docker)
+on why our integration exists, and what it aims to solve. However, the guide required a bit of
+manual non-trivial setup, which left users confused more than we like. To remedy this, we're
+introducing a new command, [`moon docker file`](/docs/commands/docker/file), which will generate a
+multi-staged `Dockerfile` for a project.
+
+To demonstrate this, here's what the `Dockerfile` looks like for our website.
+
+```docker
+#### BASE STAGE
+#### Installs moon.
+
+FROM node:latest AS base
+WORKDIR /app
+
+# Install moon binary
+RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+ENV PATH="/root/.moon/bin:$PATH"
+
+#### SKELETON STAGE
+#### Scaffolds repository skeleton structures.
+
+FROM base AS skeleton
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold website
+
+#### BUILD STAGE
+#### Builds the project.
+
+FROM base AS build
+
+# Copy toolchain
+COPY --from=skeleton /root/.proto /root/.proto
+
+# Copy workspace configs
+COPY --from=skeleton /app/.moon/docker/workspace .
+
+# Install dependencies
+RUN moon docker setup
+
+# Copy project sources
+COPY --from=skeleton /app/.moon/docker/sources .
+
+# Build the project
+RUN moon run website:build
+
+# Prune extraneous dependencies
+RUN moon docker prune
+
+#### START STAGE
+#### Runs the project.
+
+FROM base AS start
+
+# Copy built sources
+COPY --from=build /root/.proto /root/.proto
+COPY --from=build /app /app
+
+CMD moon run website:start
+```
+
+### New `docker` settings
+
+To further improve our Docker support, we're also introducing new `docker` settings to both
+[`.moon/workspace.yml`](/docs/config/workspace#docker) and
+[`moon.yml`](/docs/config/project#docker). These settings allow you to customize the scaffold,
+prune, and `Dockerfile` generation flows.
+
+```yaml title=".moon/workspace.yml"
+docker:
+  prune:
+    installToolchainDeps: false
+  scaffold:
+    include:
+      - '*.config.js'
+```
+
+```yaml title="moon.yml"
+docker:
+  file:
+    image: 'node:latest'
+    buildTask: 'build'
+    startTask: 'start'
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.27.0) for a full list
+of changes.
+
+- Added support for [murex](https://murex.rocks/) shells.
+- Improved the "automatically install dependencies if a manifest/lockfile has changed" flow. This
+  should trigger less than before.
+- We now generate JSON schemas for our configuration files to `.moon/cache/schemas`, so that they
+  can be dynamically created based on the current moon version and environment.
+- When writing JSON and YAML files, we attempt to write back to the file with its original
+  indentation.

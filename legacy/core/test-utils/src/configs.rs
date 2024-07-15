@@ -505,7 +505,7 @@ pub fn get_node_depman_fixture_configs(
             "bun" => {
                 node_config.package_manager = Some(NodePackageManager::Bun);
                 node_config.bun = Some(PartialBunpmConfig {
-                    version: Some(UnresolvedVersionSpec::parse("1.0.0").unwrap()),
+                    version: Some(UnresolvedVersionSpec::parse("1.1.19").unwrap()),
                     ..PartialBunpmConfig::default()
                 });
             }

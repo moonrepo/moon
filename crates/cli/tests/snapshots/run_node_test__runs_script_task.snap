@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_node_test.rs
+expression: assert.output()
+---
+▪▪▪▪ node:viaScript
+node platform
+v18.0.0
+▪▪▪▪ node:viaScript (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

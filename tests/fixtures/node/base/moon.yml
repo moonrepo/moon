@@ -90,3 +90,5 @@ tasks:
     command: node ./ctrlc.js
     options:
       interactive: true
+  viaScript:
+    script: 'echo "node platform" && node --version'

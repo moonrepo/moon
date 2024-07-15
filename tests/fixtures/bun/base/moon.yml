@@ -83,3 +83,5 @@ tasks:
     command: bun ./affectedFiles.js
     options:
       affectedFiles: 'env'
+  viaScript:
+    script: 'echo "bun platform"; bun --version'

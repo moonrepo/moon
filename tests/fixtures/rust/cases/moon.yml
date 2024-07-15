@@ -49,3 +49,5 @@ tasks:
     command: 'cargo run --quiet --bin standard'
     inputs:
       - 'src/**/*'
+  viaScript:
+    script: 'echo "rust platform" && cargo --version && rustc --version'

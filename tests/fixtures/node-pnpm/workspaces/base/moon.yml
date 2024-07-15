@@ -11,3 +11,5 @@ tasks:
     args: --check *.yml
   runScript:
     command: pnpm run lint
+  viaScript:
+    script: 'echo "node+pnpm platform"; node --version; pnpm --version'

@@ -49,3 +49,5 @@ tasks:
     command: deno run --allow-env ./affectedFiles.ts
     options:
       affectedFiles: 'env'
+  viaScript:
+    script: 'echo "deno platform" && deno --version'

@@ -218,6 +218,17 @@ mod deno {
         assert!(predicate::str::contains("exit code 1").eval(&output));
     }
 
+    #[test]
+    fn runs_script_task() {
+        let sandbox = deno_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("deno:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
     mod workspace_overrides {
         use super::*;
 

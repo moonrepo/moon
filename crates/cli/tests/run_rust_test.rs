@@ -152,6 +152,20 @@ fn retries_on_failure_till_count() {
     assert!(predicate::str::contains("exit code 1").eval(&output));
 }
 
+#[test]
+fn runs_script_task() {
+    let sandbox = rust_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("rust:viaScript");
+    });
+
+    let output = assert.output();
+
+    // Versions aren't pinned, so don't use snapshots
+    assert!(predicate::str::contains("rust platform").eval(&output));
+}
+
 mod rustup_toolchain {
     use super::*;
 

@@ -337,8 +337,10 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let func = matches.get(1).unwrap().as_str(); // name
         let arg = matches.get(2).unwrap().as_str(); // arg
 
-        let mut result = ExpandedResult::default();
-        result.token = Some(token.to_owned());
+        let mut result = ExpandedResult {
+            token: Some(token.to_owned()),
+            ..ExpandedResult::default()
+        };
 
         let loose_check = matches!(self.scope, TokenScope::Outputs);
         let file_group = || -> miette::Result<&FileGroup> {

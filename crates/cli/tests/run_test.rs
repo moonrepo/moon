@@ -724,11 +724,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "7e215e62b9638062652afe57741e2d0c8f2f00a6266f7a08afae064c765bef00"
+            "6327629ca97be90906a73654ab686bcc1ac032ae9d1f6baba2945a9ee9847a7a"
         );
         assert_eq!(
             hash_glob,
-            "0c47617895ad77d9dc87afbcb71de5717349de3c9b9004312a0e054f2b2aefc5"
+            "ef9068f77d3a2f21c38b389eafeab2fce98d50f2dc647cbb865633089139588a"
         );
     }
 }
@@ -2076,5 +2076,74 @@ mod sync_vcs_hooks {
         });
 
         assert!(sandbox.path().join(".moon/hooks").exists());
+    }
+}
+
+// Tasks are using unix commands!
+#[cfg(unix)]
+mod task_scripts {
+    use super::*;
+
+    #[test]
+    fn supports_multiple_commands() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskScript:multi");
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.success();
+    }
+
+    #[test]
+    fn supports_pipes() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskScript:pipe");
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.success();
+    }
+
+    #[test]
+    fn supports_redirects() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("run").arg("taskScript:redirect");
+            })
+            .success();
+
+        sandbox.debug_files();
+
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join("task-script/file.txt")).unwrap(),
+            "contents\n"
+        );
+    }
+
+    #[test]
+    fn doesnt_passthrough_args() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("taskScript:args")
+                .args(["--", "a", "-b", "--c"]);
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.success();
     }
 }

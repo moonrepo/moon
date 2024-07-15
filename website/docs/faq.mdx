@@ -93,70 +93,42 @@ indent_size = 4
 
 ### How to pipe or redirect tasks?
 
-Piping (`|`) or redirecting (`>`) the output of a task (maybe to another task), whether via stdin or
-through `inputs`, is currently not possible. However, you _could_ execute a custom bash script that
-handles this for you, for example:
+Piping (`|`) or redirecting (`>`) the output of one moon task to another moon task, whether via
+stdin or through `inputs`, is not possible within our pipeline (task runner) directly.
+
+However, we do support this functionality on the command line, or within a task itself, using the
+[`script`](./config/project#script) setting.
+
+```yaml title="moon.yml"
+tasks:
+  pipe:
+    script: 'gen-json | jq ...'
+```
+
+Alternativaly, you can wrap this script in something like a Bash file, and execute that instead.
 
 ```bash title="scripts/pipe.sh"
 #!/usr/bin/env bash
-moon project foo --json | jq ...
+gen-json | jq ...
 ```
 
 ```yaml title="moon.yml"
 tasks:
   pipe:
     command: 'bash ./scripts/pipe.sh'
-    platform: 'system'
 ```
-
-:::caution
-
-Be careful when using this approach, as it may not be portable across operating systems, nor will it
-utilize the toolchain. For example, if your Bash script uses `node`, this will be the binary found
-on your machine, and _not_ the one in moon's toolchain. [proto](/proto) helps to solve this, but
-it's not a perfect solution.
-
-:::
 
 ### How to run multiple commands within a task?
 
-Only system tasks can run multiple commands via `&&` or `;` syntax. This is possible as we execute
-these commands within a shell, and not directly with the toolchain.
+Only [`script`](./config/project#script) based tasks can run multiple commands via `&&` or `;`
+syntax. This is possible as we execute the entire script within a shell, and not directly with the
+toolchain.
 
 ```yaml title="moon.yml"
 tasks:
   multiple:
-    command: 'mkdir test && cd test'
-    platform: 'system'
+    script: 'mkdir test && cd test && do-something'
 ```
-
-Non system-tasks cannot run multiple commands for the following reasons:
-
-- A task in moon is a represented as a single command, with its own arguments, inputs, outputs, and
-  more. This isolation is required for [task inheritance](./concepts/task-inheritance) to work
-  correctly. For example, if you had multiple commands in a task and were using inheritance, where
-  should arguments be appended?
-- If using the [integrated toolchain](./concepts/toolchain), we cannot easily statically analyze the
-  command string to determine where the binary is located. For example, given the multi-command
-  `rm -rf ./dist && node ./build.js && tsc --build`, moon has no knowledge of where to find these
-  binaries without considerable effort at runtime.
-  - `rm` can be assumed to exist on the system, but what if it's actually an npm package? This also
-    isn't portable on Windows.
-  - `node` is straight forward enough. This is Node.js.
-  - `tsc` is what exactly? A node module? An npm global? A system command? moon has no idea, and
-    since we can't use Node.js's built-in module resolution, we need to locate it ourselves.
-- The `platform` setting on each task easily solves these problems, but requires a single command
-  per task to avoid unnecessary complexity.
-
-However, we do suggest the following alternatives:
-
-- Create a task for each command, and link them as dependencies with
-  [`deps`](./config/project#deps). This allows for each command to be incrementally cached (when
-  enabled).
-- Create a task for each command, and run them concurrently with [`moon run`](./commands/run).
-- Wrap all commands in an external file, and execute that file instead. Refer to the
-  [piping question](#how-to-pipe-or-redirect-tasks) above for an example.
-- Avoid using the toolchain and assume everything exists on `PATH`.
 
 ### How to run tasks in a shell?
 

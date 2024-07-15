@@ -271,14 +271,18 @@ impl<'task> CommandExecutor<'task> {
     }
 
     fn get_command_line(&self, context: &ActionContext) -> String {
-        let mut args = vec![&self.task.command];
-        args.extend(&self.task.args);
+        if self.task.script.is_some() {
+            self.task.get_command_line()
+        } else {
+            let mut args = vec![&self.task.command];
+            args.extend(&self.task.args);
 
-        if context.should_inherit_args(&self.task.target) {
-            args.extend(&context.passthrough_args);
+            if context.should_inherit_args(&self.task.target) {
+                args.extend(&context.passthrough_args);
+            }
+
+            join_args(args)
         }
-
-        join_args(args)
     }
 
     fn print_command_line(&self, command_line: &str) -> miette::Result<()> {

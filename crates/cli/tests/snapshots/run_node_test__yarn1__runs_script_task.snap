@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_node_test.rs
+expression: assert.output()
+---
+▪▪▪▪ yarn1:viaScript
+node+yarn1 platform
+v18.0.0
+1.22.0
+▪▪▪▪ yarn1:viaScript (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

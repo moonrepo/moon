@@ -64,6 +64,13 @@ impl<'task> CommandBuilder<'task> {
             )
             .await?;
 
+        // If a script, overwrite the binary (command) with the script and reset args,
+        // but also inherit all environment variables and paths from the platform.
+        if let Some(script) = &self.task.script {
+            self.command.bin = script.into();
+            self.command.args.clear();
+        }
+
         debug!(
             task = self.task.target.as_str(),
             command = self.command.bin.to_str(),
@@ -101,7 +108,10 @@ impl<'task> CommandBuilder<'task> {
             }
         }
 
-        if context.should_inherit_args(&self.task.target) && !context.passthrough_args.is_empty() {
+        if self.task.script.is_none()
+            && context.should_inherit_args(&self.task.target)
+            && !context.passthrough_args.is_empty()
+        {
             trace!(
                 task = self.task.target.as_str(),
                 args = ?context.passthrough_args,

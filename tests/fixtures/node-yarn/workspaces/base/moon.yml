@@ -11,3 +11,5 @@ tasks:
     args: --check *.yml
   runScript:
     command: yarn run build
+  viaScript:
+    script: 'echo "node+yarn platform" && node --version && yarn --version'

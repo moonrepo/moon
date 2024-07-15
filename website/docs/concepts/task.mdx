@@ -114,6 +114,29 @@ tasks:
 Tasks can be configured per project through [`moon.yml`](../config/project), or for many projects
 through [`.moon/tasks.yml`](../config/tasks).
 
+### Commands vs Scripts
+
+A task is either a command or script, but not both. So what's the difference exactly? In the context
+of a moon task, a command is a single binary execution with optional arguments, configured with the
+[`command`](../config/project#command) and [`args`](../config/project#args) settings (which both
+support a string or array). While a script is one or many binary executions, with support for pipes
+and redirects, and configured with the [`script`](../config/project#script) setting (which is only a
+string).
+
+A command also supports merging during task inheritance, while a script does not and will always
+replace values. Refer to the table below for more differences between the 2.
+
+|                                          | Command                   | Script             |
+| :--------------------------------------- | :------------------------ | :----------------- |
+| Inheritance merging                      | ✅ via `mergeArgs` option | ⚠️ always replaces |
+| Additional args                          | ✅ via `args` setting     | ❌                 |
+| Passthrough args (from CLI)              | ✅                        | ❌                 |
+| Multiple commands (with `&&` or `;`)     | ❌                        | ✅                 |
+| Pipes, redirects, etc                    | ❌                        | ✅                 |
+| Always ran in a shell                    | ❌                        | ✅                 |
+| Custom platform/toolchain                | ✅                        | ✅                 |
+| [Token](./token) functions and variables | ✅                        | ✅                 |
+
 ### Inheritance
 
 View the official documentation on [task inheritance](./task-inheritance).

@@ -3885,6 +3885,7 @@ version = "0.0.1"
 dependencies = [
  "dotenvy",
  "miette",
+ "moon_args",
  "moon_common",
  "moon_config",
  "moon_project",

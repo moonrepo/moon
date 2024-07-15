@@ -3,3 +3,5 @@ platform: node
 tasks:
   help:
     command: node --help
+  viaScript:
+    script: 'echo "node platform"; bun --version; node --version'

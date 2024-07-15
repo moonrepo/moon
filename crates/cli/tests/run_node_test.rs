@@ -384,6 +384,17 @@ fn can_exec_global_bin_as_child_process_from_postinstall() {
     assert.success();
 }
 
+#[test]
+fn runs_script_task() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:viaScript");
+    });
+
+    assert_snapshot!(assert.output());
+}
+
 mod install_deps {
     use super::*;
 
@@ -747,6 +758,17 @@ mod npm {
 
         assert!(predicate::str::contains("8.0.0").eval(&assert.output()));
     }
+
+    #[test]
+    fn runs_script_task() {
+        let sandbox = depman_sandbox("npm");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("npm:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
+    }
 }
 
 mod pnpm {
@@ -860,6 +882,17 @@ mod pnpm {
 
         assert!(predicate::str::contains("7.5.0").eval(&assert.output()));
     }
+
+    #[test]
+    fn runs_script_task() {
+        let sandbox = depman_sandbox("pnpm");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("pnpm:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
+    }
 }
 
 mod yarn1 {
@@ -950,6 +983,17 @@ mod yarn1 {
         });
 
         assert!(predicate::str::contains("1.22.0").eval(&assert.output()));
+    }
+
+    #[test]
+    fn runs_script_task() {
+        let sandbox = depman_sandbox("yarn1");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn1:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -1042,10 +1086,19 @@ mod yarn {
 
         assert!(predicate::str::contains("3.3.0").eval(&assert.output()));
     }
+
+    #[test]
+    fn runs_script_task() {
+        let sandbox = depman_sandbox("yarn");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
+    }
 }
 
-// TODO: Bun doesn't support Windows yet!
-#[cfg(not(windows))]
 mod bun {
     use super::*;
 
@@ -1117,6 +1170,17 @@ mod bun {
         });
 
         assert!(predicate::str::contains("7.5.0").eval(&assert.output()));
+    }
+
+    #[test]
+    fn runs_script_task() {
+        let sandbox = depman_sandbox("bun");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
     }
 }
 

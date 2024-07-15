@@ -346,7 +346,7 @@ impl<'task> TaskRunner<'task> {
             &self.app.workspace_config.hasher,
         );
 
-        if context.should_inherit_args(&self.task.target) {
+        if self.task.script.is_none() && context.should_inherit_args(&self.task.target) {
             task_hasher.hash_args(&context.passthrough_args);
         }
 

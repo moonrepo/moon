@@ -70,8 +70,12 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
 
     console.print_entry_header("Process")?;
     console.print_entry(
-        "Command",
-        color::shell(format!("{} {}", task.command, task.args.join(" "))),
+        if task.script.is_some() {
+            "Script"
+        } else {
+            "Command"
+        },
+        color::shell(task.get_command_line()),
     )?;
 
     if !task.env.is_empty() {

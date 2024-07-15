@@ -218,6 +218,21 @@ mod deno {
         assert!(predicate::str::contains("exit code 1").eval(&output));
     }
 
+    #[test]
+    fn runs_script_task() {
+        let sandbox = deno_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("deno:viaScript");
+        });
+
+        let output = assert.output();
+
+        // Output includes the arch, so can't be snapshotted
+        assert!(predicate::str::contains("deno platform").eval(&output));
+        assert!(predicate::str::contains("deno 1.40.0").eval(&output));
+    }
+
     mod workspace_overrides {
         use super::*;
 

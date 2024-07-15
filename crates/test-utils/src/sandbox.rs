@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_types)]
+
 pub use starbase_sandbox::{create_temp_dir, Sandbox, SandboxAssert, SandboxSettings};
 use std::collections::HashMap;
 use std::ops::Deref;

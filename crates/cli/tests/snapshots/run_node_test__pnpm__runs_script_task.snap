@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_node_test.rs
+expression: assert.output()
+---
+▪▪▪▪ pnpm:viaScript
+node+pnpm platform
+v18.0.0
+7.5.0
+▪▪▪▪ pnpm:viaScript (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

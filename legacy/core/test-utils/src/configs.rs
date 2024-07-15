@@ -44,6 +44,7 @@ pub fn get_cases_fixture_configs() -> (
             ("noop".try_into().unwrap(), "noop".to_owned()),
             ("files".try_into().unwrap(), "files".to_owned()),
             ("states".try_into().unwrap(), "states".to_owned()),
+            ("taskScript".try_into().unwrap(), "task-script".to_owned()),
             // Runner
             ("interactive".try_into().unwrap(), "interactive".to_owned()),
             ("mutex".try_into().unwrap(), "mutex".to_owned()),
@@ -505,7 +506,7 @@ pub fn get_node_depman_fixture_configs(
             "bun" => {
                 node_config.package_manager = Some(NodePackageManager::Bun);
                 node_config.bun = Some(PartialBunpmConfig {
-                    version: Some(UnresolvedVersionSpec::parse("1.0.0").unwrap()),
+                    version: Some(UnresolvedVersionSpec::parse("1.1.19").unwrap()),
                     ..PartialBunpmConfig::default()
                 });
             }

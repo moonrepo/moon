@@ -108,7 +108,10 @@ impl<'task> CommandBuilder<'task> {
             }
         }
 
-        if context.should_inherit_args(&self.task.target) && !context.passthrough_args.is_empty() {
+        if self.task.script.is_none()
+            && context.should_inherit_args(&self.task.target)
+            && !context.passthrough_args.is_empty()
+        {
             trace!(
                 task = self.task.target.as_str(),
                 args = ?context.passthrough_args,

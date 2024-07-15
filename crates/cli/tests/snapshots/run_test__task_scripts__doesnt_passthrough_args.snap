@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: assert.output()
+---
+▪▪▪▪ taskScript:args
+Args: 
+▪▪▪▪ taskScript:args (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

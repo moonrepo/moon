@@ -2078,3 +2078,72 @@ mod sync_vcs_hooks {
         assert!(sandbox.path().join(".moon/hooks").exists());
     }
 }
+
+// Tasks are using unix commands!
+#[cfg(unix)]
+mod task_scripts {
+    use super::*;
+
+    #[test]
+    fn supports_multiple_commands() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskScript:multi");
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.success();
+    }
+
+    #[test]
+    fn supports_pipes() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskScript:pipe");
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.success();
+    }
+
+    #[test]
+    fn supports_redirects() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("run").arg("taskScript:redirect");
+            })
+            .success();
+
+        sandbox.debug_files();
+
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join("task-script/file.txt")).unwrap(),
+            "contents\n"
+        );
+    }
+
+    #[test]
+    fn doesnt_passthrough_args() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("taskScript:args")
+                .args(["--", "a", "-b", "--c"]);
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.success();
+    }
+}

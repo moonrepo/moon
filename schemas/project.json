@@ -16,6 +16,15 @@
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
+    "docker": {
+      "title": "docker",
+      "description": "Configures Docker integration for this project.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectDockerConfig"
+        }
+      ]
+    },
     "env": {
       "title": "env",
       "description": "A mapping of environment variables that will be set for all tasks within the project.",
@@ -376,6 +385,91 @@
           "$ref": "#/definitions/DependencyConfig"
         }
       ]
+    },
+    "ProjectDockerConfig": {
+      "description": "Configures our Docker integration.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "title": "file",
+          "description": "Configures aspects of the Dockerfile generation process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectDockerFileConfig"
+            }
+          ],
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process."
+        },
+        "scaffold": {
+          "title": "scaffold",
+          "description": "Configures aspects of the Docker scaffolding process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectDockerScaffoldConfig"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectDockerFileConfig": {
+      "description": "Configures Dockerfile generation.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task within the current project for building the project.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task within the current project for starting the project.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation."
+    },
+    "ProjectDockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process.",
+      "type": "object",
+      "properties": {
+        "include": {
+          "title": "include",
+          "description": "List of glob patterns, relative from the project root, to include (or exclude) in the sources skeleton.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "ProjectMetadataConfig": {
       "description": "Expanded information about the project.",
@@ -833,6 +927,18 @@
             }
           ]
         },
+        "script": {
+          "title": "script",
+          "description": "A script to run within a shell. A script is anything from a single command, to multiple commands (&&, etc), or shell specific syntax. Does not support arguments, merging, or inheritance.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "type": {
           "title": "type",
           "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",
@@ -1274,6 +1380,7 @@
         "elvish",
         "fish",
         "ion",
+        "murex",
         "nu",
         "pwsh",
         "xonsh",
@@ -1287,6 +1394,7 @@
         "bash",
         "elvish",
         "fish",
+        "murex",
         "nu",
         "pwsh",
         "xonsh"

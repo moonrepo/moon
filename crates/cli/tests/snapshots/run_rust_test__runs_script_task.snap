@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_rust_test.rs
+expression: assert.output()
+---
+▪▪▪▪ rust:viaScript
+rust platform
+cargo 1.79.0 (ffa9cf99a 2024-06-03)
+rustc 1.79.0 (129f3b996 2024-06-10)
+▪▪▪▪ rust:viaScript (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

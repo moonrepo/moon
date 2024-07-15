@@ -11,3 +11,5 @@ tasks:
     args: --check *.yml
   runScript:
     command: bun run test
+  viaScript:
+    script: 'echo "node+bun platform" && node --version && bun --version'

@@ -67,6 +67,8 @@ cacheable!(
 
         pub platform: PlatformType,
 
+        pub script: Option<String>,
+
         pub target: Target,
 
         #[serde(rename = "type")]
@@ -107,6 +109,14 @@ impl Task {
         }
 
         Ok(files)
+    }
+
+    /// Return the task command/args/script as a full command line for
+    /// use within logs and debugs.
+    pub fn get_command_line(&self) -> String {
+        self.script
+            .clone()
+            .unwrap_or_else(|| format!("{} {}", self.command, self.args.join(" ")))
     }
 
     /// Return true if this task is affected based on touched files.
@@ -222,7 +232,8 @@ impl Task {
 
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
-        self.command == "nop" || self.command == "noop" || self.command == "no-op"
+        (self.command == "nop" || self.command == "noop" || self.command == "no-op")
+            && self.script.is_none()
     }
 
     /// Return true if the task is a "run" type.

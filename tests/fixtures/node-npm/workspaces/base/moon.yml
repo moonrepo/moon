@@ -11,3 +11,5 @@ tasks:
     args: --check *.yml
   runScript:
     command: npm run test
+  viaScript:
+    script: 'echo "node+npm platform" && node --version && npm --version'

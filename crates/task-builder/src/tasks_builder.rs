@@ -252,18 +252,18 @@ impl<'proj> TasksBuilder<'proj> {
         let mut args_sets = vec![];
 
         for link in &chain {
-            let (command, base_args) = self.get_command_and_args(link.config)?;
-
-            if let Some(command) = command {
-                task.command = command;
-            }
-
-            // Add to task later after we have a merge strategy
-            args_sets.push(base_args);
-
             if let Some(local) = link.config.local {
                 is_local = local;
             }
+
+            if let Some((command, base_args)) = self.get_command_and_args(link.config)? {
+                if let Some(command) = command {
+                    task.command = command;
+                }
+
+                // Add to task later after we have a merge strategy
+                args_sets.push(base_args);
+            };
         }
 
         if is_local {
@@ -299,6 +299,10 @@ impl<'proj> TasksBuilder<'proj> {
                 .cloned()
                 .map(|d| d.into_config())
                 .collect::<Vec<_>>();
+
+            if config.script.is_some() {
+                task.script = config.script.clone();
+            }
 
             task.deps = self.merge_vec(
                 task.deps,
@@ -384,6 +388,18 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        // If a script, wipe out inherited arguments, and extract the first command
+        if let Some(script) = &task.script {
+            task.args.clear();
+            task.platform = PlatformType::System;
+
+            if let Some(i) = script.find(' ') {
+                task.command = script[0..i].to_owned();
+            } else {
+                task.command = script.to_owned();
+            }
+        }
+
         // And lastly, before we return the task and options, we should finalize
         // all necessary fields and populate/calculate with values.
         if task.command.is_empty() {
@@ -428,7 +444,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if task.options.shell.is_none() {
             // Windows requires a shell for path resolution to work correctly
-            if cfg!(windows) || task.platform.is_system() {
+            if cfg!(windows) || task.platform.is_system() || task.script.is_some() {
                 task.options.shell = Some(true);
             }
 
@@ -643,7 +659,11 @@ impl<'proj> TasksBuilder<'proj> {
     fn get_command_and_args(
         &self,
         config: &TaskConfig,
-    ) -> miette::Result<(Option<String>, Vec<String>)> {
+    ) -> miette::Result<Option<(Option<String>, Vec<String>)>> {
+        if config.script.is_some() {
+            return Ok(None);
+        }
+
         let mut command = None;
         let mut args = vec![];
         let mut cmd_list = parse_task_args(&config.command)?;
@@ -655,7 +675,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         args.extend(parse_task_args(&config.args)?);
 
-        Ok((command, args))
+        Ok(Some((command, args)))
     }
 
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {

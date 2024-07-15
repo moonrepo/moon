@@ -6,9 +6,9 @@ use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{derive_enum, merge, Config, ConfigEnum, ValidateError};
 
-fn validate_command<D, C>(
+fn validate_command<C>(
     command: &PartialTaskArgs,
-    _task: &D,
+    task: &PartialTaskConfig,
     _ctx: &C,
     _finalize: bool,
 ) -> Result<(), ValidateError> {
@@ -22,7 +22,7 @@ fn validate_command<D, C>(
         PartialTaskArgs::List(args) => args.is_empty() || args[0].is_empty(),
     };
 
-    if invalid {
+    if invalid && task.script.is_none() {
         return Err(ValidateError::new(
             "a command is required; use \"noop\" otherwise",
         ));
@@ -203,6 +203,11 @@ cacheable!(
         /// available binaries, lookup paths, and more. When not provided, will
         /// be automatically detected.
         pub platform: PlatformType,
+
+        /// A script to run within a shell. A script is anything from a single command,
+        /// to multiple commands (&&, etc), or shell specific syntax. Does not support
+        /// arguments, merging, or inheritance.
+        pub script: Option<String>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined.

@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_deno_test.rs
+expression: assert.output()
+---
+▪▪▪▪ deno:viaScript
+deno platform
+deno 1.40.0 (release, aarch64-apple-darwin)
+v8 12.1.285.6
+typescript 5.3.3
+▪▪▪▪ deno:viaScript (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

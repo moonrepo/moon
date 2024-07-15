@@ -6,6 +6,10 @@
 
 - Enabled the `experiments.actionPipelineV2` setting in `.moon/workspace.yml` by default.
   - If you run into any issues running tasks, disable this setting and report an issue.
+- Added a new task field `script`, as an alternative to `command` + `args`.
+  - Scripts support multiple commands (`&&`), pipes, and redirects.
+  - Scripts do not support task inheritance argument merging.
+  - Scripts are always ran in a shell.
 - Added a new command, `moon docker file`, that can be used to generate an initial multi-stage
   `Dockerfile` for a project.
 - Added new `docker` settings to both `.moon/workspace.yml` and `moon.yml`, allowing it to be
@@ -36,7 +40,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to v0.38.1 (from v0.37.2).
+- Updated proto to v0.38.2 (from v0.37.2).
 
 ## 1.26.7
 

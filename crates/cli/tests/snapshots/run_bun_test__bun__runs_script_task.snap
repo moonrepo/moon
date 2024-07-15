@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_bun_test.rs
+expression: assert.output()
+---
+▪▪▪▪ bun:viaScript
+bun platform
+1.1.3
+▪▪▪▪ bun:viaScript (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

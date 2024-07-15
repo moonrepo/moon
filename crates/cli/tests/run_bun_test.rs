@@ -292,6 +292,17 @@ mod bun {
         assert!(predicate::str::contains("bun:mjs | stderr").eval(&output));
     }
 
+    #[test]
+    fn runs_script_task() {
+        let sandbox = bun_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("bun:viaScript");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
     mod package_manager {
         use super::*;
 

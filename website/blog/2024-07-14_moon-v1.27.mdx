@@ -6,7 +6,7 @@ tags: [action, pipeline, trace, profile, shell]
 # image: ./img/moon/v1.26.png
 ---
 
-???
+In this release, we're adding improved Docker support, and a long-awaited task request.
 
 <!--truncate-->
 
@@ -26,6 +26,45 @@ experiments:
 ```
 
 ## New task scripts
+
+Since the beginning, tasks in moon have been modeled around a single command and its arguments; they
+are a 1-to-1 relationship. It was designed this way as it was a hard requirement for task
+inheritance to work correctly. If you have multiple tasks in the chain that need to be merged
+together, how will arguments be handled? Do they merge, overwrite, or replace? Do they prepend or
+append? Or maybe you want to keep the arguments but rename the binary/command itself? And many more
+such combinations.
+
+But because of this limitation, tasks did not support executing multiple commands (via `&&` or `;`),
+as this breaks argument merging (which command should the arguments belong too?). Tasks also did not
+support redirects, pipes, and other shell scripting syntax. Over the year we've slowly tried to
+support these in tasks, and while they technically do in some capacity, the experience is subpar.
+
+To remedy this, we're introducing a new task field called [`script`](/docs/config/project#script),
+which is an alternative to [`command`](/docs/config/project#command) +
+[`args`](/docs/config/project#args). Scripts support everything mentioned above, and can be defined
+as such (using a very contrived example).
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    script: 'rm -rf ./out && ./doBuild.sh out && ./genStats.sh > stats.json'
+    outputs:
+      - 'out'
+```
+
+- Scripts do support multiple commands, redirects, and pipes, while command/args do not.
+- Scripts do not support argument task inheritance merging, while command/args do.
+- Scripts do not support passthrough arguments (after `--`), while command/args do.
+- Scripts can only be defined with a string, while command/args support a string or array.
+- Both scripts and commands support the toolchain.
+- Both scripts and commands support task tokens and variables.
+
+:::info
+
+For a full list of comparisons, and more information on commands vs scripts, head over to the
+[official task documentation](/docs/concepts/task#commands-vs-scripts)!
+
+:::
 
 ## Improved Docker integration
 

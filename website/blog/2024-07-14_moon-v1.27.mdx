@@ -1,0 +1,174 @@
+---
+slug: moon-v1.27
+title: moon v1.27 - Task scripts, Docker settings, and more
+authors: [milesj]
+tags: [action, pipeline, task, script, command, docker, dockerfile]
+image: ./img/moon/v1.27.png
+---
+
+In this release, we're adding improved Docker support, and a long-awaited task request.
+
+<!--truncate-->
+
+## Experimental pipeline enabled by default
+
+In our last release, we [introduced a new action pipeline](./moon-v1.26#new-experimental-pipeline)
+that is more performant, accurate, and resilient, but was hidden behind an experimental flag. Since
+then, we've seen many users enable it successfully, and no issues have been reported! And with that,
+we're enabling the experiment by default.
+
+If you run into an issue with this new pipeline, you can disable the experiment in
+`.moon/workspace.yml`, like so. If you do encounter an issue, please report it to GitHub or Discord!
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  actionPipelineV2: false
+```
+
+## New task scripts
+
+Since the beginning, tasks in moon have been modeled around a single command and its arguments; they
+are a 1-to-1 relationship. It was designed this way as it was a hard requirement for task
+inheritance to work correctly. If you have multiple tasks in the chain that need to be merged
+together, how will arguments be handled? Do they merge, overwrite, or replace? Do they prepend or
+append? Or maybe you want to keep the arguments but rename the binary/command itself? And many more
+such combinations.
+
+But because of this limitation, tasks did not support executing multiple commands (via `&&` or `;`),
+as this breaks argument merging (which command should the arguments belong too?). Tasks also did not
+support redirects, pipes, and other shell scripting syntax. Over the year we've slowly tried to
+support these in tasks, and while they technically do in some capacity, the experience is subpar.
+
+To remedy this, we're introducing a new task field called [`script`](/docs/config/project#script),
+which is an alternative to [`command`](/docs/config/project#command) +
+[`args`](/docs/config/project#args). Scripts support everything mentioned above, and can be defined
+as such (using a very contrived example).
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    script: 'rm -rf ./out && ./doBuild.sh out && ./genStats.sh > stats.json'
+    outputs:
+      - 'out'
+```
+
+- Scripts do support multiple commands, redirects, and pipes, while command/args do not.
+- Scripts do not support argument task inheritance merging, while command/args do.
+- Scripts do not support passthrough arguments (after `--`), while command/args do.
+- Scripts can only be defined with a string, while command/args support a string or array.
+- Both scripts and commands support the toolchain.
+- Both scripts and commands support task tokens and variables.
+
+:::info
+
+For a full list of comparisons, and more information on commands vs scripts, head over to the
+[official task documentation](/docs/concepts/task#commands-vs-scripts)!
+
+:::
+
+## Improved Docker integration
+
+As it turns out, a lot of moon users rely heavily on our Docker integration, which hasn't seen some
+love in quite a while. We felt it was time to change that.
+
+### New `moon docker file` command
+
+Since our release of Docker in moon (v0.15), we've provided an [in-depth guide](/docs/guides/docker)
+on why our integration exists, and what it aims to solve. However, the guide required a bit of
+manual non-trivial setup, which left users confused more than we like. To remedy this, we're
+introducing a new command, [`moon docker file`](/docs/commands/docker/file), which will generate a
+multi-staged `Dockerfile` for a project.
+
+To demonstrate this, here's what the `Dockerfile` looks like for our website.
+
+```docker
+#### BASE STAGE
+#### Installs moon.
+
+FROM node:latest AS base
+WORKDIR /app
+
+# Install moon binary
+RUN curl -fsSL https://moonrepo.dev/install/moon.sh | bash
+ENV PATH="/root/.moon/bin:$PATH"
+
+#### SKELETON STAGE
+#### Scaffolds repository skeleton structures.
+
+FROM base AS skeleton
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold website
+
+#### BUILD STAGE
+#### Builds the project.
+
+FROM base AS build
+
+# Copy toolchain
+COPY --from=skeleton /root/.proto /root/.proto
+
+# Copy workspace configs
+COPY --from=skeleton /app/.moon/docker/workspace .
+
+# Install dependencies
+RUN moon docker setup
+
+# Copy project sources
+COPY --from=skeleton /app/.moon/docker/sources .
+
+# Build the project
+RUN moon run website:build
+
+# Prune extraneous dependencies
+RUN moon docker prune
+
+#### START STAGE
+#### Runs the project.
+
+FROM base AS start
+
+# Copy built sources
+COPY --from=build /root/.proto /root/.proto
+COPY --from=build /app /app
+
+CMD moon run website:start
+```
+
+### New `docker` settings
+
+To further improve our Docker support, we're also introducing new `docker` settings to both
+[`.moon/workspace.yml`](/docs/config/workspace#docker) and
+[`moon.yml`](/docs/config/project#docker). These settings allow you to customize the scaffold,
+prune, and `Dockerfile` generation flows.
+
+```yaml title=".moon/workspace.yml"
+docker:
+  prune:
+    installToolchainDeps: false
+  scaffold:
+    include:
+      - '*.config.js'
+```
+
+```yaml title="moon.yml"
+docker:
+  file:
+    image: 'node:latest'
+    buildTask: 'build'
+    startTask: 'start'
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.27.0) for a full list
+of changes.
+
+- Added support for [murex](https://murex.rocks/) shells.
+- Improved the "automatically install dependencies if a manifest/lockfile has changed" flow. This
+  should trigger less than before.
+- We now generate JSON schemas for our configuration files to `.moon/cache/schemas`, so that they
+  can be dynamically created based on the current moon version and environment.
+- When writing JSON and YAML files, we attempt to write back to the file with its original
+  indentation.

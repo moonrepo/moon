@@ -60,7 +60,7 @@ RUN moon docker prune
 FROM base AS start
 
 # Copy built sources
-COPY --from=skeleton /root/.proto /root/.proto
+COPY --from=build /root/.proto /root/.proto
 COPY --from=build /app /app
 
 CMD moon run {{ start_task }}

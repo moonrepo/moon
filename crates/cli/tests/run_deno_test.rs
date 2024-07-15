@@ -226,7 +226,11 @@ mod deno {
             cmd.arg("run").arg("deno:viaScript");
         });
 
-        assert_snapshot!(assert.output());
+        let output = assert.output();
+
+        // Output includes the arch, so can't be snapshotted
+        assert!(predicate::str::contains("deno platform").eval(&output));
+        assert!(predicate::str::contains("deno 1.40.0").eval(&output));
     }
 
     mod workspace_overrides {

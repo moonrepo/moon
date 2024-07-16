@@ -50,6 +50,10 @@ impl DependencyConfig {
         }
     }
 
+    pub fn is_build_scope(&self) -> bool {
+        matches!(self.scope, DependencyScope::Build)
+    }
+
     pub fn is_root_scope(&self) -> bool {
         matches!(self.scope, DependencyScope::Root)
     }

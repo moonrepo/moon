@@ -297,7 +297,10 @@ impl<'app> TypeScriptSyncer<'app> {
                 continue;
             };
 
-            if dep_project.is_root_level() || dep_config.is_root_scope() {
+            if dep_project.is_root_level()
+                || dep_config.is_root_scope()
+                || dep_config.is_build_scope()
+            {
                 continue;
             }
 

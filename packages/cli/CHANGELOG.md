@@ -8,6 +8,8 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where task scripts would error with "command not found" (caused by over
+  escaping/quoting).
 - Fixed an issue where a persistent task may not run or error with a missing dependency hash, if ran
   alongside many other persistent tasks.
 - Fixed an issue where "build" dependencies were being synced as project references.

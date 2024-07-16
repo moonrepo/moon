@@ -21,6 +21,9 @@ pub struct Command {
     /// Convert non-zero exits to errors
     pub error_on_nonzero: bool,
 
+    /// Escape/quote arguments when joining.
+    pub escape_args: bool,
+
     /// Values to pass to stdin
     pub input: Vec<OsString>,
 
@@ -45,6 +48,7 @@ impl Command {
             cwd: None,
             env: FxHashMap::default(),
             error_on_nonzero: true,
+            escape_args: true,
             input: vec![],
             prefix: None,
             print_command: false,

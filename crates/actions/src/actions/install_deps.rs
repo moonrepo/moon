@@ -5,6 +5,7 @@ use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::path::encode_component;
 use moon_common::{color, is_ci};
+use moon_config::PlatformType;
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -113,6 +114,7 @@ pub async fn install_deps(
     lockfile_timestamp == 0
         // Dependencies haven't been installed yet
         || state.data.last_install_time == 0
+        || !has_vendor_dir(&app_context, runtime.platform, project)
         // Dependencies have changed since last run
         || manifests_hash
             .as_ref()
@@ -148,6 +150,23 @@ pub async fn install_deps(
     debug!("Lockfile or manifests have not changed since last run, skipping dependency install");
 
     Ok(ActionStatus::Skipped)
+}
+
+fn has_vendor_dir(
+    app_context: &AppContext,
+    platform: PlatformType,
+    project: Option<&Project>,
+) -> bool {
+    let vendor_dir_name = match platform {
+        PlatformType::Bun | PlatformType::Node => "node_modules",
+        // Ignore for other platforms
+        _ => return true,
+    };
+
+    project
+        .map(|proj| proj.root.join(vendor_dir_name))
+        .unwrap_or_else(|| app_context.workspace_root.join(vendor_dir_name))
+        .exists()
 }
 
 async fn hash_manifests(

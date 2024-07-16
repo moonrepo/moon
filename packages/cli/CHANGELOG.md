@@ -11,6 +11,8 @@
 - Fixed an issue where a persistent task may not run or error with a missing dependency hash, if ran
   alongside many other persistent tasks.
 - Fixed an issue where "build" dependencies were being synced as project references.
+- Fixed an issue where the install depenencies action wouldn't run if the vendor directory
+  (node_modules) was missing, but our operation was previously cached.
 
 ## 1.27.0
 

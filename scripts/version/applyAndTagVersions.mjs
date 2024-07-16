@@ -44,11 +44,11 @@ async function syncCargoVersion(oldVersion, newVersion) {
 async function releaseChangelog(newVersion) {
 	console.log('Releasing version in changelog');
 
-	let changelog = await fs.readFile('packages/cli/CHANGELOG.md', 'utf8');
+	let changelog = await fs.readFile('CHANGELOG.md', 'utf8');
 
 	changelog = changelog.replace('## Unreleased', `## ${newVersion}`);
 
-	await fs.writeFile('packages/cli/CHANGELOG.md', changelog, 'utf8');
+	await fs.writeFile('CHANGELOG.md', changelog, 'utf8');
 }
 
 async function removeLocalBuilds() {

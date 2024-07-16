@@ -79,7 +79,12 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
             expander.expand_inputs(&mut task)?;
             expander.expand_outputs(&mut task)?;
             expander.expand_args(&mut task)?;
-            expander.expand_command(&mut task)?;
+
+            if task.script.is_some() {
+                expander.expand_script(&mut task)?;
+            } else {
+                expander.expand_command(&mut task)?;
+            }
 
             task.metadata.expanded = true;
 

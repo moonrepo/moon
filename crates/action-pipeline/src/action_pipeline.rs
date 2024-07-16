@@ -264,7 +264,7 @@ impl ActionPipeline {
                 }
 
                 // Otherwise run the action topologically
-                job_handles.spawn(dispatch_job(
+                job_handles.spawn(dispatch_job_with_permit(
                     node.to_owned(),
                     node_index.index(),
                     job_context.clone(),
@@ -393,13 +393,6 @@ async fn dispatch_job(
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
 ) {
-    let permit = job_context
-        .semaphore
-        .clone()
-        .acquire_owned()
-        .await
-        .expect("Failed to dispatch job!");
-
     let job = Job {
         timeout: match &node {
             ActionNode::RunTask(inner) => inner.timeout,
@@ -413,6 +406,23 @@ async fn dispatch_job(
     };
 
     job.dispatch().await;
+}
+
+async fn dispatch_job_with_permit(
+    node: ActionNode,
+    node_index: usize,
+    job_context: JobContext,
+    app_context: Arc<AppContext>,
+    action_context: Arc<ActionContext>,
+) {
+    let permit = job_context
+        .semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .expect("Failed to dispatch job!");
+
+    dispatch_job(node, node_index, job_context, app_context, action_context).await;
 
     drop(permit);
 }

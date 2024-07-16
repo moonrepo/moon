@@ -2085,6 +2085,24 @@ mod task_scripts {
     use super::*;
 
     #[test]
+    fn supports_basic_echo() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskScript:echo");
+        });
+
+        assert!(assert.output().contains("foo"));
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskScript:echo-nonquoted");
+        });
+
+        assert!(assert.output().contains("bar"));
+    }
+
+    #[test]
     fn supports_multiple_commands() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();

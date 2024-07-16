@@ -69,6 +69,9 @@ impl<'task> CommandBuilder<'task> {
         if let Some(script) = &self.task.script {
             self.command.bin = script.into();
             self.command.args.clear();
+
+            // Scripts should be used as-is
+            self.command.escape_args = false;
         }
 
         debug!(

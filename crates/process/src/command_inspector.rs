@@ -61,7 +61,11 @@ impl<'l> CommandLine<'l> {
                 let mut sub_line: Vec<LineValue> = vec![];
                 push_to_line(&mut sub_line);
 
-                command_line.push(Cow::Owned(join_args_os(sub_line)));
+                command_line.push(Cow::Owned(if command.escape_args {
+                    join_args_os(sub_line)
+                } else {
+                    sub_line.join(&OsStr::new(" "))
+                }));
             }
 
             // Otherwise we have a normal command and arguments.

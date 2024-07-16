@@ -1,4 +1,8 @@
 tasks:
+  echo:
+    script: 'echo "foo"'
+  echo-nonquoted:
+    script: echo "bar"
   multi:
     script: 'echo "foo"; echo "bar" && echo "baz"'
   pipe:

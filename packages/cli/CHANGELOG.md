@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Removed the concurrency limit when running persistent tasks.
+
+#### 🐞 Fixes
+
+- Fixed an issue where a persistent task may not run or error with a missing dependency hash, if ran
+  alongside many other persistent tasks.
+
 ## 1.27.0
 
 #### 🚀 Updates

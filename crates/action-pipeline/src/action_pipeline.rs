@@ -7,7 +7,7 @@ use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use moon_action::{Action, ActionNode};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
@@ -264,7 +264,7 @@ impl ActionPipeline {
                 }
 
                 // Otherwise run the action topologically
-                job_handles.spawn(dispatch_job(
+                job_handles.spawn(dispatch_job_with_permit(
                     node.to_owned(),
                     node_index.index(),
                     job_context.clone(),
@@ -289,18 +289,30 @@ impl ActionPipeline {
                     persistent_indices.len()
                 );
 
-                for node_index in persistent_indices {
-                    job_handles.spawn(dispatch_job(
-                        action_graph
-                            .get_node_from_index(&node_index)
-                            .unwrap()
-                            .to_owned(),
-                        node_index.index(),
-                        job_context.clone(),
-                        Arc::clone(&app_context),
-                        Arc::clone(&action_context),
-                    ));
-                }
+                persistent_indices
+                    .into_iter()
+                    .flat_map(|node_index| {
+                        let node = action_graph.get_node_from_index(&node_index)?;
+
+                        // Since the task is persistent, set the state early since
+                        // it "never finishes", otherwise the runner will error about
+                        // a missing hash if it's a dependency of another persistent task
+                        if let ActionNode::RunTask(inner) = node {
+                            action_context
+                                .set_target_state(inner.target.clone(), TargetState::Passthrough);
+                        }
+
+                        Some((node.to_owned(), node_index.index()))
+                    })
+                    .for_each(|(node, node_index)| {
+                        job_handles.spawn(dispatch_job(
+                            node,
+                            node_index,
+                            job_context.clone(),
+                            Arc::clone(&app_context),
+                            Arc::clone(&action_context),
+                        ));
+                    });
 
                 exhaust_job_handles(&mut job_handles).await;
             }
@@ -381,13 +393,6 @@ async fn dispatch_job(
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
 ) {
-    let permit = job_context
-        .semaphore
-        .clone()
-        .acquire_owned()
-        .await
-        .expect("Failed to dispatch job!");
-
     let job = Job {
         timeout: match &node {
             ActionNode::RunTask(inner) => inner.timeout,
@@ -401,6 +406,23 @@ async fn dispatch_job(
     };
 
     job.dispatch().await;
+}
+
+async fn dispatch_job_with_permit(
+    node: ActionNode,
+    node_index: usize,
+    job_context: JobContext,
+    app_context: Arc<AppContext>,
+    action_context: Arc<ActionContext>,
+) {
+    let permit = job_context
+        .semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .expect("Failed to dispatch job!");
+
+    dispatch_job(node, node_index, job_context, app_context, action_context).await;
 
     drop(permit);
 }

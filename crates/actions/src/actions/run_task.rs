@@ -1,5 +1,5 @@
 use moon_action::{Action, ActionStatus, RunTaskNode};
-use moon_action_context::{ActionContext, TargetState};
+use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project_graph::ProjectGraph;
@@ -25,12 +25,6 @@ pub async fn run_task(
     // Must be set before running the task in case it fails and
     // and error is bubbled up the stack
     action.allow_failure = task.options.allow_failure;
-
-    // If the task is persistent, set the status early since it "never finshes",
-    // and the runner will error about a missing hash if it's a dependency
-    if task.is_persistent() {
-        action_context.set_target_state(&task.target, TargetState::Passthrough);
-    }
 
     let result = TaskRunner::new(&app_context, &project, task)?
         .run(&action_context, &action.node)

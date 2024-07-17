@@ -388,7 +388,10 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
-                FxHashMap::from_iter([("GROUP".into(), "project/source/config.yml,project/source/dir/subdir,project/source/*.md,project/source/**/*.json".into())])
+                FxHashMap::from_iter([(
+                    "GROUP".into(),
+                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                )])
             );
         }
 
@@ -405,10 +408,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
-                FxHashMap::from_iter([(
-                    "DIRS".into(),
-                    "project/source/dir/subdir,project/source/other".into()
-                )])
+                FxHashMap::from_iter([("DIRS".into(), "./dir/subdir,./other".into())])
             );
         }
 
@@ -427,7 +427,7 @@ mod token_expander {
                 expander.expand_env(&task).unwrap(),
                 FxHashMap::from_iter([(
                     "FILES".into(),
-                    "project/source/config.yml,project/source/dir/subdir/nested.json,project/source/docs.md,project/source/other/file.json".into()
+                    "./config.yml,./dir/subdir/nested.json,./docs.md,./other/file.json".into()
                 )])
             );
         }
@@ -445,10 +445,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
-                FxHashMap::from_iter([(
-                    "GLOBS".into(),
-                    "project/source/*.md,project/source/**/*.json".into()
-                )])
+                FxHashMap::from_iter([("GLOBS".into(), "./*.md,./**/*.json".into())])
             );
         }
 
@@ -465,7 +462,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
-                FxHashMap::from_iter([("ROOT".into(), "project/source/dir/subdir".into())])
+                FxHashMap::from_iter([("ROOT".into(), "./dir/subdir".into())])
             );
         }
 
@@ -1096,7 +1093,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_script(&task).unwrap(),
-                "bin --foo -az project/source/**/*.json"
+                "bin --foo -az ./**/*.json"
             );
         }
 
@@ -1117,7 +1114,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_script(&task).unwrap(),
-                "bin --foo -az project/source/docs.md project/source/other/file.json"
+                "bin --foo -az ./docs.md ./other/file.json"
             );
         }
     }

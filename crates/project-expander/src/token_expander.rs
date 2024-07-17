@@ -109,8 +109,14 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
             if let Some(token) = result.token {
                 let mut paths = vec![];
-                paths.extend(result.files);
-                paths.extend(result.globs);
+
+                for file in result.files {
+                    paths.push(self.resolve_path_for_task(task, file)?);
+                }
+
+                for glob in result.globs {
+                    paths.push(self.resolve_path_for_task(task, glob)?);
+                }
 
                 value = Cow::Owned(value.replace(&token, &join_args(&paths)));
             }
@@ -133,36 +139,17 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
         let mut args = vec![];
 
-        let handle_path = |path: WorkspaceRelativePathBuf| -> miette::Result<String> {
-            // From workspace root to any file
-            if task.options.run_from_workspace_root {
-                Ok(format!("./{}", path))
-
-                // From project root to project file
-            } else if let Ok(proj_path) = path.strip_prefix(&self.context.project.source) {
-                Ok(format!("./{}", proj_path))
-
-                // From project root to non-project file
-            } else {
-                let abs_path = path.to_logical_path(self.context.workspace_root);
-
-                path::to_virtual_string(
-                    diff_paths(&abs_path, &self.context.project.root).unwrap_or(abs_path),
-                )
-            }
-        };
-
         for arg in base_args {
             // Token functions
             if self.has_token_function(arg) {
                 let result = self.replace_function(task, arg)?;
 
                 for file in result.files {
-                    args.push(handle_path(file)?);
+                    args.push(self.resolve_path_for_task(task, file)?);
                 }
 
                 for glob in result.globs {
-                    args.push(handle_path(glob)?);
+                    args.push(self.resolve_path_for_task(task, glob)?);
                 }
 
             // Token variables
@@ -199,17 +186,19 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         for (key, value) in base_env {
             if self.has_token_function(value) {
                 let result = self.replace_function(task, value)?;
+                let mut paths = vec![];
 
-                let mut list = vec![];
-                list.extend(result.files);
-                list.extend(result.globs);
+                for file in result.files {
+                    paths.push(self.resolve_path_for_task(task, file)?);
+                }
+
+                for glob in result.globs {
+                    paths.push(self.resolve_path_for_task(task, glob)?);
+                }
 
                 env.insert(
                     key.to_owned(),
-                    list.iter()
-                        .map(|i| i.as_str())
-                        .collect::<Vec<_>>()
-                        .join(","),
+                    paths.into_iter().collect::<Vec<_>>().join(","),
                 );
             } else if self.has_token_variable(value) {
                 env.insert(key.to_owned(), self.replace_variables(task, value)?);
@@ -552,5 +541,28 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 token: token.to_owned(),
                 index: value.to_owned(),
             })?)
+    }
+
+    fn resolve_path_for_task(
+        &self,
+        task: &Task,
+        path: WorkspaceRelativePathBuf,
+    ) -> miette::Result<String> {
+        // From workspace root to any file
+        if task.options.run_from_workspace_root {
+            Ok(format!("./{}", path))
+
+            // From project root to project file
+        } else if let Ok(proj_path) = path.strip_prefix(&self.context.project.source) {
+            Ok(format!("./{}", proj_path))
+
+            // From project root to non-project file
+        } else {
+            let abs_path = path.to_logical_path(self.context.workspace_root);
+
+            path::to_virtual_string(
+                diff_paths(&abs_path, &self.context.project.root).unwrap_or(abs_path),
+            )
+        }
     }
 }

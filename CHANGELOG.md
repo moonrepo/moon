@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where file groups expanded with task `script` or `env` weren't resolving relative
+  to the project or workspace root (based on options).
+
 ## 1.27.1
 
 #### 🚀 Updates

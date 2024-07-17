@@ -186,7 +186,6 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         for (key, value) in base_env {
             if self.has_token_function(value) {
                 let result = self.replace_function(task, value)?;
-
                 let mut paths = vec![];
 
                 for file in result.files {

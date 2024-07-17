@@ -1023,9 +1023,32 @@ mod tasks_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
+                    ("KEY1".into(), "./*.md,./**/*.json".into()),
+                    ("KEY2".into(), "project-task".into()),
+                ])
+            );
+        }
+
+        #[test]
+        fn replaces_tokens_from_workspace_root() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.run_from_workspace_root = true;
+
+            task.env.insert("KEY1".into(), "@globs(all)".into());
+            task.env.insert("KEY2".into(), "$project-$task".into());
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
                     (
                         "KEY1".into(),
-                        "project/source/*.md,project/source/**/*.json".into()
+                        "./project/source/*.md,./project/source/**/*.json".into()
                     ),
                     ("KEY2".into(), "project-task".into()),
                 ])

@@ -33,13 +33,15 @@ $ proto completions > ./path/to/write/to
 If using [bash-completion](https://github.com/scop/bash-completion).
 
 ```shell
-$ proto completions > ~/.bash_completion.d/proto.sh
+mkdir -p ~/.bash_completion.d
+proto completions > ~/.bash_completion.d/proto.sh
 ```
 
 Otherwise write the file to a common location, and source it in your profile.
 
 ```shell
-$ proto completions > ~/.bash_completions/proto.sh
+mkdir -p ~/.bash_completions
+proto completions > ~/.bash_completions/proto.sh
 
 # In your profile
 source ~/.bash_completions/proto.sh
@@ -51,7 +53,8 @@ source ~/.bash_completions/proto.sh
 Write the file to Fish's completions directory.
 
 ```shell
-$ proto completions > ~/.config/fish/completions/proto.fish
+mkdir -p ~/.config/fish/completions
+proto completions > ~/.config/fish/completions/proto.fish
 ```
 
 </TabItem>
@@ -60,10 +63,11 @@ $ proto completions > ~/.config/fish/completions/proto.fish
 If using [oh-my-zsh](https://ohmyz.sh/) (the `_` prefix is required).
 
 ```shell
-$ proto completions > ~/.oh-my-zsh/completions/_proto
+mkdir -p ~/.oh-my-zsh/completions
+proto completions > ~/.oh-my-zsh/completions/_proto
 
 # Reload shell (or restart terminal)
-$ omz reload
+omz reload
 ```
 
 </TabItem>

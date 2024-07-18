@@ -32,13 +32,15 @@ $ moon completions > ./path/to/write/to
 If using [bash-completion](https://github.com/scop/bash-completion).
 
 ```shell
-$ moon completions > ~/.bash_completion.d/moon.sh
+mkdir -p ~/.bash_completion.d
+moon completions > ~/.bash_completion.d/moon.sh
 ```
 
 Otherwise write the file to a common location, and source it in your profile.
 
 ```shell
-$ moon completions > ~/.bash_completions/moon.sh
+mkdir -p ~/.bash_completions
+moon completions > ~/.bash_completions/moon.sh
 
 # In your profile
 source ~/.bash_completions/moon.sh
@@ -50,7 +52,8 @@ source ~/.bash_completions/moon.sh
 Write the file to Fish's completions directory.
 
 ```shell
-$ moon completions > ~/.config/fish/completions/moon.fish
+mkdir -p ~/.config/fish/completions
+moon completions > ~/.config/fish/completions/moon.fish
 ```
 
 </TabItem>
@@ -59,10 +62,11 @@ $ moon completions > ~/.config/fish/completions/moon.fish
 If using [oh-my-zsh](https://ohmyz.sh/) (the `_` prefix is required).
 
 ```shell
-$ moon completions > ~/.oh-my-zsh/completions/_moon
+mkdir -p ~/.oh-my-zsh/completions
+moon completions > ~/.oh-my-zsh/completions/_moon
 
 # Reload shell (or restart terminal)
-$ omz reload
+omz reload
 ```
 
 </TabItem>

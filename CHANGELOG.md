@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the action pipeline wouldn't wait for in-flight moonbase (remote caching)
+  requests to finish.
+
 ## 1.27.2
 
 #### 🐞 Fixes

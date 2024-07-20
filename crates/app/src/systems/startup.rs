@@ -203,7 +203,7 @@ pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<Inherite
 
 #[instrument(skip_all)]
 pub async fn signin_to_moonbase(vcs: &BoxedVcs) -> AppResult<Option<Arc<Moonbase>>> {
-    if vcs.is_enabled() {
+    if vcs.is_enabled() && env::var("MOONBASE_REPO_SLUG").is_err() {
         if let Ok(slug) = vcs.get_repository_slug().await {
             env::set_var("MOONBASE_REPO_SLUG", slug.as_str());
         }

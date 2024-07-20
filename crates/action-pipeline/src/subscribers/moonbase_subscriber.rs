@@ -18,7 +18,7 @@ impl MoonbaseSubscriber {
 impl Subscriber for MoonbaseSubscriber {
     async fn on_emit<'data>(&mut self, event: &Event<'data>) -> miette::Result<()> {
         if matches!(event, Event::PipelineCompleted { .. }) {
-            debug!("Waiting for archive uploads to finish");
+            debug!("Waiting for in-flight moonbase requests to finish");
 
             self.session.wait_for_requests().await;
         }

@@ -76,7 +76,7 @@ cacheable!(
         pub channel: Option<String>,
 
         /// Custom metadata fields.
-        pub custom: FxHashMap<String, serde_json::Value>,
+        pub metadata: FxHashMap<String, serde_json::Value>,
     }
 );
 

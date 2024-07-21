@@ -480,7 +480,7 @@ project:
                 r"
 project:
   description: 'Test'
-  custom:
+  metadata:
     bool: true
     string: 'abc'
 ",
@@ -490,7 +490,7 @@ project:
             let meta = config.project.unwrap();
 
             assert_eq!(
-                meta.custom,
+                meta.metadata,
                 FxHashMap::from_iter([
                     ("bool".into(), Value::Bool(true)),
                     ("string".into(), Value::String("abc".into())),

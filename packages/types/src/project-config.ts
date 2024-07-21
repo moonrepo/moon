@@ -116,12 +116,12 @@ export interface ProjectMetadataConfig {
 	 * Must start with a `#`.
 	 */
 	channel: string | null;
-	/** Custom metadata fields. */
-	custom: Record<string, unknown>;
 	/** A description on what the project does, and why it exists. */
 	description: string;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers: string[];
+	/** Custom metadata fields. */
+	metadata: Record<string, unknown>;
 	/** A human-readable name of the project. */
 	name: string | null;
 	/**
@@ -359,12 +359,12 @@ export interface PartialProjectMetadataConfig {
 	 * Must start with a `#`.
 	 */
 	channel?: string | null;
-	/** Custom metadata fields. */
-	custom?: Record<string, unknown> | null;
 	/** A description on what the project does, and why it exists. */
 	description?: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers?: string[] | null;
+	/** Custom metadata fields. */
+	metadata?: Record<string, unknown> | null;
 	/** A human-readable name of the project. */
 	name?: string | null;
 	/**

@@ -488,8 +488,21 @@
           ],
           "markdownDescription": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`."
         },
-        "custom": {
-          "title": "custom",
+        "description": {
+          "title": "description",
+          "description": "A description on what the project does, and why it exists.",
+          "type": "string"
+        },
+        "maintainers": {
+          "title": "maintainers",
+          "description": "The individual maintainers of the project. The format is unspecified.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "title": "metadata",
           "description": "Custom metadata fields.",
           "type": "object",
           "additionalProperties": {
@@ -503,19 +516,6 @@
             ]
           },
           "propertyNames": {
-            "type": "string"
-          }
-        },
-        "description": {
-          "title": "description",
-          "description": "A description on what the project does, and why it exists.",
-          "type": "string"
-        },
-        "maintainers": {
-          "title": "maintainers",
-          "description": "The individual maintainers of the project. The format is unspecified.",
-          "type": "array",
-          "items": {
             "type": "string"
           }
         },

@@ -488,6 +488,24 @@
           ],
           "markdownDescription": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`."
         },
+        "custom": {
+          "title": "custom",
+          "description": "Custom metadata fields.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "description": {
           "title": "description",
           "description": "A description on what the project does, and why it exists.",

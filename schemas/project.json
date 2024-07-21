@@ -501,6 +501,24 @@
             "type": "string"
           }
         },
+        "metadata": {
+          "title": "metadata",
+          "description": "Custom metadata fields.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
         "name": {
           "title": "name",
           "description": "A human-readable name of the project.",

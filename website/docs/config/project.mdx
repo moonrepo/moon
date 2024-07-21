@@ -238,6 +238,19 @@ is the kind of information search engines would index on.
 A list of people/developers that maintain the project, review code changes, and can provide support.
 Can be a name, email, LDAP name, GitHub username, etc, the choice is yours.
 
+### `metadata`<VersionLabel version="1.27.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#metadata" />
+
+A map of custom metadata to associate to this project. Supports all value types that are valid JSON.
+
+```yaml title="moon.yml"
+project:
+  # ...
+  metadata:
+    deprecated: true
+```
+
 ### `name`
 
 <HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#name" />

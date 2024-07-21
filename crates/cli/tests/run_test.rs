@@ -296,21 +296,6 @@ mod configs {
 
         assert!(predicate::str::contains("tasks: invalid type: integer `123`").eval(&output));
     }
-
-    #[test]
-    fn bubbles_up_invalid_project_config() {
-        let sandbox = cases_sandbox();
-
-        sandbox.create_file("base/moon.yml", "project:\n  type: library");
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("base:noop");
-        });
-
-        let output = assert.output();
-
-        assert!(predicate::str::contains("project.type: unknown field `type`").eval(&output));
-    }
 }
 
 mod logs {

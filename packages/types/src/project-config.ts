@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type { UnresolvedVersionSpec } from './toolchain-config';
+import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -120,6 +120,8 @@ export interface ProjectMetadataConfig {
 	description: string;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers: string[];
+	/** Custom metadata fields. */
+	metadata: Record<string, unknown>;
 	/** A human-readable name of the project. */
 	name: string | null;
 	/**
@@ -361,6 +363,8 @@ export interface PartialProjectMetadataConfig {
 	description?: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers?: string[] | null;
+	/** Custom metadata fields. */
+	metadata?: Record<string, unknown> | null;
 	/** A human-readable name of the project. */
 	name?: string | null;
 	/**

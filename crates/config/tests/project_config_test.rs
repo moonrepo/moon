@@ -423,6 +423,7 @@ owners:
 
     mod project {
         use super::*;
+        use serde_json::Value;
 
         #[test]
         #[should_panic(expected = "must not be empty")]
@@ -470,6 +471,31 @@ project:
             assert_eq!(meta.owner.unwrap(), "team");
             assert_eq!(meta.maintainers, vec!["a", "b", "c"]);
             assert_eq!(meta.channel.unwrap(), "#abc");
+        }
+
+        #[test]
+        fn can_set_custom_fields() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+project:
+  description: 'Test'
+  metadata:
+    bool: true
+    string: 'abc'
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            let meta = config.project.unwrap();
+
+            assert_eq!(
+                meta.metadata,
+                FxHashMap::from_iter([
+                    ("bool".into(), Value::Bool(true)),
+                    ("string".into(), Value::String("abc".into())),
+                ])
+            );
         }
 
         #[test]

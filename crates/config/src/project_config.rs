@@ -74,6 +74,9 @@ cacheable!(
         /// Must start with a `#`.
         #[setting(validate = validate_channel)]
         pub channel: Option<String>,
+
+        /// Custom metadata fields.
+        pub metadata: FxHashMap<String, serde_json::Value>,
     }
 );
 

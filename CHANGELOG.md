@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added `project.metadata` to `moon.yml` so that custom fields can be defined.
+
 #### 🐞 Fixes
 
 - Fixed an issue where the new action pipeline wouldn't wait for in-flight moonbase (remote caching)

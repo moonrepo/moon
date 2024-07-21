@@ -6,7 +6,6 @@ use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::FxHashMap;
 use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError};
-use serde_json::Value as JsonValue;
 use std::collections::BTreeMap;
 
 #[cfg(feature = "loader")]
@@ -77,8 +76,7 @@ cacheable!(
         pub channel: Option<String>,
 
         /// Custom metadata fields.
-        #[setting(flatten)]
-        pub custom: FxHashMap<String, JsonValue>,
+        pub custom: FxHashMap<String, serde_json::Value>,
     }
 );
 

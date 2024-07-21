@@ -37,7 +37,9 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Token @in(str) received an invalid type for index \"str\"")]
+    #[should_panic(
+        expected = "Token @in(str) in task project:task received an invalid type for index"
+    )]
     fn errors_for_invalid_in_index_type() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -49,7 +51,7 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Input index 10 does not exist for token @in(10).")]
+    #[should_panic(expected = "Input index 10 does not exist for token @in(10)")]
     fn errors_for_invalid_in_index() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -61,7 +63,9 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Token @out(str) received an invalid type for index \"str\"")]
+    #[should_panic(
+        expected = "Token @out(str) in task project:task received an invalid type for index"
+    )]
     fn errors_for_invalid_out_index_type() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -73,7 +77,7 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Output index 10 does not exist for token @out(10).")]
+    #[should_panic(expected = "Output index 10 does not exist for token @out(10)")]
     fn errors_for_invalid_out_index() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -263,7 +267,7 @@ mod token_expander {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Token @files(sources) cannot be used within task commands.")]
+        #[should_panic(expected = "Token @files(sources) in task project:task cannot be used")]
         fn errors_for_func() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
@@ -467,7 +471,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @in(0) cannot be used within task env.")]
+        #[should_panic(
+            expected = "Token @in(0) in task project:task cannot be used within task env."
+        )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -482,7 +488,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @out(0) cannot be used within task env.")]
+        #[should_panic(
+            expected = "Token @out(0) in task project:task cannot be used within task env."
+        )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -497,7 +505,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @envs(envs) cannot be used within task env.")]
+        #[should_panic(
+            expected = "Token @envs(envs) in task project:task cannot be used within task env."
+        )]
         fn errors_for_envs_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -711,7 +721,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @in(0) cannot be used within task inputs.")]
+        #[should_panic(
+            expected = "Token @in(0) in task project:task cannot be used within task inputs."
+        )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -726,7 +738,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @out(0) cannot be used within task inputs.")]
+        #[should_panic(
+            expected = "Token @out(0) in task project:task cannot be used within task inputs."
+        )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -951,7 +965,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @in(0) cannot be used within task outputs.")]
+        #[should_panic(
+            expected = "Token @in(0) in task project:task cannot be used within task outputs."
+        )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -966,7 +982,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @out(0) cannot be used within task outputs.")]
+        #[should_panic(
+            expected = "Token @out(0) in task project:task cannot be used within task outputs."
+        )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -981,7 +999,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @envs(envs) cannot be used within task outputs.")]
+        #[should_panic(
+            expected = "Token @envs(envs) in task project:task cannot be used within task outputs."
+        )]
         fn errors_for_envs_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());

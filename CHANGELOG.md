@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added `project.metadata` to `moon.yml` so that custom fields can be defined.
+- Improved some task related error messages to include more information.
 
 #### 🐞 Fixes
 

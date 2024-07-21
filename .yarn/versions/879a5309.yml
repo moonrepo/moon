@@ -8,3 +8,9 @@ releases:
   '@moonrepo/core-macos-x64': patch
   '@moonrepo/core-windows-x64-msvc': patch
   '@moonrepo/types': patch
+
+declined:
+  - '@moonrepo/nx-compat'
+  - '@moonrepo/report'
+  - '@moonrepo/runtime'
+  - website

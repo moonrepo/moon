@@ -334,6 +334,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let loose_check = matches!(self.scope, TokenScope::Outputs);
         let file_group = || -> miette::Result<&FileGroup> {
             self.check_scope(
+                task,
                 token,
                 &[
                     TokenScope::Script,
@@ -385,20 +386,21 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 }
             }
             "envs" => {
-                self.check_scope(token, &[TokenScope::Inputs])?;
+                self.check_scope(task, token, &[TokenScope::Inputs])?;
 
                 result.env.extend(file_group()?.env()?.to_owned());
             }
             // Inputs, outputs
             "in" => {
-                self.check_scope(token, &[TokenScope::Script, TokenScope::Args])?;
+                self.check_scope(task, token, &[TokenScope::Script, TokenScope::Args])?;
 
-                let index = self.parse_index(token, arg)?;
+                let index = self.parse_index(task, token, arg)?;
                 let input =
                     task.inputs
                         .get(index)
                         .ok_or_else(|| TokenExpanderError::MissingInIndex {
                             index,
+                            target: task.target.to_string(),
                             token: token.to_owned(),
                         })?;
 
@@ -413,8 +415,14 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                             .globs
                             .push(input.to_workspace_relative(&self.context.project.source));
                     }
+                    InputPath::TokenFunc(func) => {
+                        let inner_result = self.replace_function(task, func)?;
+                        result.files.extend(inner_result.files);
+                        result.globs.extend(inner_result.globs);
+                    }
                     _ => {
                         return Err(TokenExpanderError::InvalidTokenIndexReference {
+                            target: task.target.to_string(),
                             token: token.to_owned(),
                         }
                         .into())
@@ -422,14 +430,15 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 };
             }
             "out" => {
-                self.check_scope(token, &[TokenScope::Script, TokenScope::Args])?;
+                self.check_scope(task, token, &[TokenScope::Script, TokenScope::Args])?;
 
-                let index = self.parse_index(token, arg)?;
+                let index = self.parse_index(task, token, arg)?;
                 let output =
                     task.outputs
                         .get(index)
                         .ok_or_else(|| TokenExpanderError::MissingOutIndex {
                             index,
+                            target: task.target.to_string(),
                             token: token.to_owned(),
                         })?;
 
@@ -448,11 +457,10 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                                 .unwrap(),
                         );
                     }
-                    _ => {
-                        return Err(TokenExpanderError::InvalidTokenIndexReference {
-                            token: token.to_owned(),
-                        }
-                        .into())
+                    OutputPath::TokenFunc(func) => {
+                        let inner_result = self.replace_function(task, func)?;
+                        result.files.extend(inner_result.files);
+                        result.globs.extend(inner_result.globs);
                     }
                 };
             }
@@ -522,9 +530,10 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(value.replace(token, &replaced_value).into())
     }
 
-    fn check_scope(&self, token: &str, allowed: &[TokenScope]) -> miette::Result<()> {
+    fn check_scope(&self, task: &Task, token: &str, allowed: &[TokenScope]) -> miette::Result<()> {
         if !allowed.contains(&self.scope) {
             return Err(TokenExpanderError::InvalidTokenScope {
+                target: task.target.to_string(),
                 token: token.to_owned(),
                 scope: self.scope.label(),
             }
@@ -534,10 +543,11 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         Ok(())
     }
 
-    fn parse_index(&self, token: &str, value: &str) -> miette::Result<usize> {
+    fn parse_index(&self, task: &Task, token: &str, value: &str) -> miette::Result<usize> {
         Ok(value
             .parse::<usize>()
             .map_err(|_| TokenExpanderError::InvalidTokenIndex {
+                target: task.target.to_string(),
                 token: token.to_owned(),
                 index: value.to_owned(),
             })?)

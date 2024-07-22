@@ -26,7 +26,7 @@ mod tasks_expander {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Token @dirs(group) cannot be used within task commands.")]
+        #[should_panic(expected = "Token @dirs(group) in task project:task cannot be used")]
         fn errors_on_token_funcs() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());

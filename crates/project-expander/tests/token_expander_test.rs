@@ -37,7 +37,9 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Token @in(str) received an invalid type for index \"str\"")]
+    #[should_panic(
+        expected = "Token @in(str) in task project:task received an invalid type for index"
+    )]
     fn errors_for_invalid_in_index_type() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -49,7 +51,7 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Input index 10 does not exist for token @in(10).")]
+    #[should_panic(expected = "Input index 10 does not exist for token @in(10)")]
     fn errors_for_invalid_in_index() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -61,7 +63,9 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Token @out(str) received an invalid type for index \"str\"")]
+    #[should_panic(
+        expected = "Token @out(str) in task project:task received an invalid type for index"
+    )]
     fn errors_for_invalid_out_index_type() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -73,7 +77,7 @@ mod token_expander {
     }
 
     #[test]
-    #[should_panic(expected = "Output index 10 does not exist for token @out(10).")]
+    #[should_panic(expected = "Output index 10 does not exist for token @out(10)")]
     fn errors_for_invalid_out_index() {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
@@ -82,6 +86,77 @@ mod token_expander {
         let expander = TokenExpander::new(&context);
 
         expander.replace_function(&task, "@out(10)").unwrap();
+    }
+
+    mod funcs {
+        use super::*;
+
+        #[test]
+        fn in_can_ref_other_token_funcs() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.inputs.push(InputPath::TokenFunc("@globs(all)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            let result = expander.replace_function(&task, "@in(0)").unwrap();
+
+            assert_eq!(
+                result.globs,
+                ["project/source/*.md", "project/source/**/*.json"]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Unknown file group unknown")]
+        fn errors_if_in_refs_invalid_group() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.inputs
+                .push(InputPath::TokenFunc("@globs(unknown)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            expander.replace_function(&task, "@in(0)").unwrap();
+        }
+
+        #[test]
+        fn out_can_ref_other_token_funcs() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.outputs
+                .push(OutputPath::TokenFunc("@globs(all)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            let result = expander.replace_function(&task, "@out(0)").unwrap();
+
+            assert_eq!(
+                result.globs,
+                ["project/source/*.md", "project/source/**/*.json"]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Unknown file group unknown")]
+        fn errors_if_out_refs_invalid_group() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.outputs
+                .push(OutputPath::TokenFunc("@globs(unknown)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            expander.replace_function(&task, "@out(0)").unwrap();
+        }
     }
 
     mod vars {
@@ -263,7 +338,7 @@ mod token_expander {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Token @files(sources) cannot be used within task commands.")]
+        #[should_panic(expected = "Token @files(sources) in task project:task cannot be used")]
         fn errors_for_func() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
@@ -467,7 +542,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @in(0) cannot be used within task env.")]
+        #[should_panic(
+            expected = "Token @in(0) in task project:task cannot be used within task env."
+        )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -482,7 +559,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @out(0) cannot be used within task env.")]
+        #[should_panic(
+            expected = "Token @out(0) in task project:task cannot be used within task env."
+        )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -497,7 +576,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @envs(envs) cannot be used within task env.")]
+        #[should_panic(
+            expected = "Token @envs(envs) in task project:task cannot be used within task env."
+        )]
         fn errors_for_envs_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -711,7 +792,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @in(0) cannot be used within task inputs.")]
+        #[should_panic(
+            expected = "Token @in(0) in task project:task cannot be used within task inputs."
+        )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -726,7 +809,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @out(0) cannot be used within task inputs.")]
+        #[should_panic(
+            expected = "Token @out(0) in task project:task cannot be used within task inputs."
+        )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -951,7 +1036,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @in(0) cannot be used within task outputs.")]
+        #[should_panic(
+            expected = "Token @in(0) in task project:task cannot be used within task outputs."
+        )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -966,7 +1053,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @out(0) cannot be used within task outputs.")]
+        #[should_panic(
+            expected = "Token @out(0) in task project:task cannot be used within task outputs."
+        )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
@@ -981,7 +1070,9 @@ mod token_expander {
         }
 
         #[test]
-        #[should_panic(expected = "Token @envs(envs) cannot be used within task outputs.")]
+        #[should_panic(
+            expected = "Token @envs(envs) in task project:task cannot be used within task outputs."
+        )]
         fn errors_for_envs_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());

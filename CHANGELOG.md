@@ -5,11 +5,13 @@
 #### 🚀 Updates
 
 - Added `project.metadata` to `moon.yml` so that custom fields can be defined.
+- Improved some task related error messages to include more information.
 
 #### 🐞 Fixes
 
 - Fixed an issue where the new action pipeline wouldn't wait for in-flight moonbase (remote caching)
   requests to finish. The old pipeline was not affected.
+- Fixed `@in` and `@out` tokens not being able to reference other token functions.
 
 ## 1.27.2
 

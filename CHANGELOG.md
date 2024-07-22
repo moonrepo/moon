@@ -11,6 +11,7 @@
 
 - Fixed an issue where the new action pipeline wouldn't wait for in-flight moonbase (remote caching)
   requests to finish. The old pipeline was not affected.
+- Fixed `@in` and `@out` tokens not being able to reference other token functions.
 
 ## 1.27.2
 

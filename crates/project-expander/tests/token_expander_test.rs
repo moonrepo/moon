@@ -88,6 +88,77 @@ mod token_expander {
         expander.replace_function(&task, "@out(10)").unwrap();
     }
 
+    mod funcs {
+        use super::*;
+
+        #[test]
+        fn in_can_ref_other_token_funcs() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.inputs.push(InputPath::TokenFunc("@globs(all)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            let result = expander.replace_function(&task, "@in(0)").unwrap();
+
+            assert_eq!(
+                result.globs,
+                ["project/source/*.md", "project/source/**/*.json"]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Unknown file group unknown")]
+        fn errors_if_in_refs_invalid_group() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.inputs
+                .push(InputPath::TokenFunc("@globs(unknown)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            expander.replace_function(&task, "@in(0)").unwrap();
+        }
+
+        #[test]
+        fn out_can_ref_other_token_funcs() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.outputs
+                .push(OutputPath::TokenFunc("@globs(all)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            let result = expander.replace_function(&task, "@out(0)").unwrap();
+
+            assert_eq!(
+                result.globs,
+                ["project/source/*.md", "project/source/**/*.json"]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Unknown file group unknown")]
+        fn errors_if_out_refs_invalid_group() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.outputs
+                .push(OutputPath::TokenFunc("@globs(unknown)".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            expander.replace_function(&task, "@out(0)").unwrap();
+        }
+    }
+
     mod vars {
         use super::*;
 

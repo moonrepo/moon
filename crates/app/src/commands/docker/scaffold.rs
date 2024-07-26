@@ -93,6 +93,7 @@ async fn scaffold_workspace(
     // not just the one the project is configured as!
     let copy_from_dir = |source: &Path, dest: &Path, project_lang: LanguageType| -> AppResult {
         let mut files_to_copy: Vec<String> = vec![
+            ".gitignore".into(),
             ".prototools".into(),
             CONFIG_PROJECT_FILENAME.into(),
             CONFIG_TEMPLATE_FILENAME.into(),

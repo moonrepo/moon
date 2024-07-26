@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon docker scaffold` would not respect `.gitignore` files.
+
 ## 1.27.3
 
 #### 🚀 Updates

@@ -64,7 +64,7 @@ impl<'l> CommandLine<'l> {
                 command_line.push(Cow::Owned(if command.escape_args {
                     join_args_os(sub_line)
                 } else {
-                    sub_line.join(&OsStr::new(" "))
+                    sub_line.join(OsStr::new(" "))
                 }));
             }
 

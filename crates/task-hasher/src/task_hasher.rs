@@ -144,14 +144,16 @@ impl<'task> TaskHasher<'task> {
         // Also run this LAST as it should take highest precedence!
         if !is_ci() {
             for local_file in self.vcs.get_touched_files().await?.all() {
-                let local_file = local_file.to_path(self.workspace_root);
+                let abs_file = local_file.to_path(self.workspace_root);
 
                 // Deleted files are listed in `git status` but are
                 // not valid inputs, so avoid hashing them!
-                if local_file.exists() {
-                    files.insert(local_file);
+                if abs_file.exists() {
+                    if local_file.starts_with(&self.project.source) {
+                        files.insert(abs_file);
+                    }
                 } else {
-                    files.remove(&local_file);
+                    files.remove(&abs_file);
                 }
             }
         }

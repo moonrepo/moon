@@ -7,6 +7,8 @@
 - Fixed an issue where `moon docker scaffold` would not respect `.gitignore` files.
 - Fixed an issue where task hashing would potentially hash too many files when extracting touched
   files from `git status`.
+- Fixed an issue where the automatic dependency installation wasn't triggering when switching
+  branches.
 
 ## 1.27.3
 

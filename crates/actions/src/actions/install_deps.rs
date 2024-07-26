@@ -9,7 +9,7 @@ use moon_config::PlatformType;
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_time::{now_millis, to_millis};
+use moon_time::to_millis;
 use starbase_utils::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -101,7 +101,7 @@ pub async fn install_deps(
     .await?;
 
     // Extract lockfile timestamp
-    let lockfile_timestamp = track_lockfile(&app_context, project, &lockfile_name)?;
+    let mut lockfile_timestamp = track_lockfile(&app_context, project, &lockfile_name)?;
 
     // Only install deps if a cache miss
     let mut state = app_context
@@ -116,6 +116,7 @@ pub async fn install_deps(
         || state.data.last_install_time == 0
         || !has_vendor_dir(&app_context, runtime.platform, project)
         // Dependencies have changed since last run
+        || state.data.last_install_time != lockfile_timestamp
         || manifests_hash
             .as_ref()
             .is_some_and(|hash| hash != &state.data.last_hash)
@@ -140,8 +141,11 @@ pub async fn install_deps(
                 .await?,
         );
 
+        // Reload the timestamp as the lockfile may have changed from the install
+        lockfile_timestamp = track_lockfile(&app_context, project, &lockfile_name)?;
+
         state.data.last_hash = manifests_hash.unwrap_or_default();
-        state.data.last_install_time = now_millis();
+        state.data.last_install_time = lockfile_timestamp;
         state.save()?;
 
         return Ok(ActionStatus::Passed);

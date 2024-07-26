@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where `moon docker scaffold` would not respect `.gitignore` files.
+- Fixed an issue where task hashing would potentially hash too many files when extracting touched
+  files from `git status`.
 
 ## 1.27.3
 

@@ -91,10 +91,10 @@ const config: Config = {
 							to: '/moon',
 							html: '<strong class="block mr-2">moon</strong><div class="opacity-60">Build system for managing codebases</div>',
 						},
-						{
-							to: '/moonbase',
-							html: '<strong class="block mr-2">moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
-						},
+						// {
+						// 	to: '/moonbase',
+						// 	html: '<strong class="block mr-2">moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
+						// },
 						{
 							to: '/proto',
 							html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Multi-language version manager</div>',

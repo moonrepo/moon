@@ -9,7 +9,7 @@ import {
 } from '@fortawesome/pro-duotone-svg-icons';
 import ProductSection from '@site/src/components/Home/ProductSection';
 import UsedBy from '@site/src/components/Home/UsedBy';
-import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
+// import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
 import TextVector from '../../static/brand/moonrepo/text-vector.svg';
@@ -135,7 +135,7 @@ export default function Home() {
 					]}
 				/>
 
-				<ProductSection
+				{/* <ProductSection
 					stretched
 					id="moonbase"
 					color="text-teal-700"
@@ -161,7 +161,7 @@ export default function Home() {
 					<div className="relative sm:pb-8 h-full">
 						<MoonbaseScreenshots />
 					</div>
-				</ProductSection>
+				</ProductSection> */}
 			</main>
 
 			<UsedBy />

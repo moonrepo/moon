@@ -73,7 +73,7 @@ export default function ProductProto() {
 					<div className="relative py-4 sm:py-5 lg:py-6">
 						<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 							<div className="bg-white rounded-lg p-6 drop-shadow">
-								<div className="grid grid-cols-2 gap-4 text-gray-900">
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-900">
 									<div>
 										<Heading level={3} className="mb-2">
 											Get started

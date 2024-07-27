@@ -68,7 +68,7 @@ export default function ProductMoonbase() {
 				<div className="bg-gradient-to-b from-slate-600 via-teal-800 to-white">
 					<Features
 						header="Continuous integration"
-						description="Highly efficient pipelines"
+						description="Efficient pipelines"
 						features={ciFeatures}
 						tier={3}
 					/>

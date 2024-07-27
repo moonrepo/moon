@@ -20,7 +20,8 @@ export default function Hero() {
 				<div className="text-center md:text-left md:w-6/12">
 					<HeroIcon
 						icon={<LogoIcon height={75} style={{ marginTop: 1 }} />}
-						text={<TextVector height={51} style={{ top: 19 }} className="absolute" />}
+						text={<TextVector height={51} />}
+						textClass="pt-2"
 					/>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:pr-4">

@@ -495,7 +495,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             return Ok(value);
         };
 
-        let token = matches.get(0).unwrap().as_str(); // $var
+        let token_match = matches.get(0).unwrap(); // $var
         let variable = matches.get(1).unwrap().as_str(); // var
         let project = self.context.project;
 
@@ -527,7 +527,10 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         };
 
-        Ok(value.replace(token, &replaced_value).into())
+        let mut inner = value.to_string();
+        inner.replace_range(token_match.range(), &replaced_value);
+
+        Ok(inner.into())
     }
 
     fn check_scope(&self, task: &Task, token: &str, allowed: &[TokenScope]) -> miette::Result<()> {

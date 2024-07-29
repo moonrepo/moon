@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where token expansion would clobber variable replacement when multiple variables
+  are used.
+
 ## 1.27.4
 
 #### 🐞 Fixes

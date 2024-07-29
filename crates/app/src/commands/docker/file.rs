@@ -87,7 +87,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     } else if args.defaults {
         project.config.docker.file.build_task.as_ref()
     } else {
-        let mut ids = project.tasks.keys().collect::<Vec<_>>();
+        let mut ids = project.get_task_ids()?;
         ids.sort();
 
         let starting_cursor = project
@@ -120,7 +120,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     } else if args.defaults {
         project.config.docker.file.start_task.as_ref()
     } else {
-        let mut ids = project.tasks.keys().collect::<Vec<_>>();
+        let mut ids = project.get_task_ids()?;
         ids.sort();
 
         let starting_cursor = project

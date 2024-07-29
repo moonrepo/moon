@@ -89,12 +89,25 @@ impl Project {
         Ok(task)
     }
 
-    /// Return all tasks within the project.
+    /// Return a list of all visible task IDs.
+    pub fn get_task_ids(&self) -> miette::Result<Vec<&Id>> {
+        Ok(self
+            .get_tasks()?
+            .iter()
+            .map(|task| &task.id)
+            .collect::<Vec<_>>())
+    }
+
+    /// Return all visible tasks within the project. Does not include internal tasks!
     pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
         let mut tasks = vec![];
 
         for task_id in self.tasks.keys() {
-            tasks.push(self.get_task(task_id)?);
+            let task = self.get_task(task_id)?;
+
+            if !task.is_internal() {
+                tasks.push(task);
+            }
         }
 
         Ok(tasks)

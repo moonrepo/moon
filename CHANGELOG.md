@@ -6,6 +6,7 @@
 
 - Fixed an issue where token expansion would clobber variable replacement when multiple variables
   are used.
+- Fixed internal tasks being displayed in `moon query` results.
 
 ## 1.27.4
 

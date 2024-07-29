@@ -9,6 +9,5 @@ platforms
 	:node | node
 	:system | noop
 tasks
-	:internal | build
 	:lint | eslint
 	:test | jest

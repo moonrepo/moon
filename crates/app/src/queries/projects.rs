@@ -167,7 +167,10 @@ fn load_with_regex(
         }
 
         if let Some(regex) = &tasks_regex {
-            let has_task = project.tasks.keys().any(|task_id| regex.is_match(task_id));
+            let has_task = project
+                .get_task_ids()?
+                .iter()
+                .any(|task_id| regex.is_match(&task_id));
 
             if !has_task {
                 continue;

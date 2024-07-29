@@ -321,6 +321,7 @@ impl<'app> ActionGraphBuilder<'app> {
             }
 
             for project in projects_to_build {
+                // Include internal tasks!
                 for dep_task in project.tasks.values() {
                     // Don't skip internal tasks, since they are a dependency of the parent
                     // task, and must still run! They just can't be ran manually.

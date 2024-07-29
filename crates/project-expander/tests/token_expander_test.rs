@@ -317,6 +317,36 @@ mod token_expander {
         }
 
         #[test]
+        fn doesnt_clobber_same_name_variables() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+            project.language = LanguageType::JavaScript;
+            let task = create_task();
+
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander
+                    .replace_variables(&task, "$project $projectName $projectType")
+                    .unwrap(),
+                "project projectName unknown"
+            );
+            assert_eq!(
+                expander
+                    .replace_variables(&task, "$projectName $project $projectType")
+                    .unwrap(),
+                "projectName project unknown"
+            );
+            assert_eq!(
+                expander
+                    .replace_variables(&task, "$projectType $projectName $project")
+                    .unwrap(),
+                "unknown projectName project"
+            );
+        }
+
+        #[test]
         fn keeps_unknown_var_asis() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());

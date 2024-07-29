@@ -714,7 +714,7 @@ mod tasks {
 
         projects.sort();
 
-        assert_eq!(tasks, string_vec!["internal", "lint", "test"]);
+        assert_eq!(tasks, string_vec!["lint", "test"]);
         assert_eq!(projects, string_vec!["metadata", "platforms", "tasks"]);
     }
 }

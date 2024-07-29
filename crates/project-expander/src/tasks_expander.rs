@@ -97,6 +97,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                                       dep: &TaskDependencyConfig,
                                       skip_if_missing: bool|
          -> miette::Result<()> {
+            // Allow internal tasks!
             let Some(dep_task) = dep_project.tasks.get(&dep.target.task_id) else {
                 if skip_if_missing {
                     return Ok(());

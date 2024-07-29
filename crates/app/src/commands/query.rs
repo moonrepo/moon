@@ -302,11 +302,11 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
 
     for project in projects {
         let filtered_tasks = project
-            .tasks
-            .iter()
-            .filter_map(|(task_id, task)| {
+            .get_tasks()?
+            .into_iter()
+            .filter_map(|task| {
                 if !args.affected || task.is_affected(&touched_files).is_ok_and(|v| v) {
-                    Some((task_id.to_owned(), task.to_owned()))
+                    Some((task.id.to_owned(), task.to_owned()))
                 } else {
                     None
                 }

@@ -128,17 +128,13 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
         }
     }
 
-    if !project.tasks.is_empty() {
+    let tasks = project.get_tasks()?;
+
+    if !tasks.is_empty() {
         console.print_entry_header("Tasks")?;
 
-        for name in project.tasks.keys() {
-            let task = project.tasks.get(name).unwrap();
-
-            if task.is_internal() {
-                continue;
-            }
-
-            console.print_entry(name, "")?;
+        for task in tasks {
+            console.print_entry(&task.id, "")?;
 
             console.write_line(format!(
                 "  {} {}",

@@ -69,6 +69,20 @@ go = "~1.20"
 rust = "stable"
 ```
 
+### Lock `proto` version<VersionLabel version="0.39.0" />
+
+You can also pin the version of proto that you want all tools to execute with by adding a `proto`
+version entry. This entry _does not_ support partial versions and _must_ contain a fully-qualified
+semantic version.
+
+```toml title=".prototools"
+proto = "0.38.0"
+```
+
+When configured, all shims (tools) will be executed with that explicit version of proto. This _does
+not_ apply to the version of proto globally installed, or for binaries linked in `~/.proto/bin` or
+via [`proto activate`](./commands/activate).
+
 ## Available settings
 
 ### `[env]`<VersionLabel version="0.29.0" />
@@ -117,6 +131,20 @@ Defaults to `false` or `PROTO_AUTO_CLEAN`.
 ```toml title=".prototools"
 [settings]
 auto-clean = true
+```
+
+#### `builtin-plugins`<VersionLabel version="0.39.0" />
+
+Can be used to customize the [built-in plugins](./tools#built-in) within proto. Can disable all
+built-ins by passing `false`, or enabling a select few by name. Defaults to `true`, which enables
+all.
+
+```toml title=".prototools"
+[settings]
+# Disable all
+builtin-plugins = false
+# Enable some
+builtin-plugins = ["node", "bun"]
 ```
 
 #### `detect-strategy`

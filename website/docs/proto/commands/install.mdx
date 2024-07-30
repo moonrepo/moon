@@ -1,24 +1,47 @@
 ---
 title: install
+toc_max_heading_level: 6
 ---
 
-The `proto install <tool> [version]` (or `proto i`) command will download and install a tool by
-unpacking their archive to `~/.proto/tools/<tool>`. If the tool has already been installed, the
-command will exit early.
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+The `proto install` (or `proto i`) command can be used to install one or many tools.
+
+### Installing all tools<VersionLabel version="0.39.0" />
+
+The `proto install` command (without arguments) will download and install _all_ tools and plugins
+from all parent [`.prototools`](../config) configuration files, and any
+[versions detected](../detection) in the current working directory (if not defined in
+`.prototools`).
+
+```shell
+$ proto install
+```
+
+> By default, this command _does not_ install tools for versions pinned in the global
+> `~/.proto/.prototools` file. Pass `--include-global` to include them.
+
+### Installing one tool
+
+The `proto install <tool> [version]` command will download and install a single tool by unpacking
+their archive to `~/.proto/tools/<tool>`. If the tool has already been installed, the command will
+exit early.
 
 The command is also smart enough to resolve partial versions, so 1, 1.2, and 1.2.3 are all
 acceptable. It even supports aliases when applicable, like `latest`, `next`, `beta`, etc. To install
 a canary release, use `--canary`.
 
 ```shell
+$ proto install deno
 $ proto install deno 1.31
 $ proto install deno --canary
 ```
 
 ### Pinning the version
 
-By default this command will only install the tool into `~/.proto/tools`. If you would like to also
-pin the resolved version to a `.prototools` file, use the `--pin` option.
+By default this command will only install the tool into `~/.proto/tools` but will not make the
+binary available. If you would like to also pin the resolved version to a `.prototools` file, use
+the `--pin` option.
 
 ```shell
 # ~/.prototools
@@ -40,12 +63,15 @@ $ proto install go -- --no-gobin
 
 ### Arguments
 
-- `<tool>` - Type of tool.
+- `[tool]` - Type of tool.
 - `[version]` - Version of tool. Defaults to "latest".
 - `[-- <args>]` - Additional arguments to pass to post-install hooks.
 
 ### Options
 
-- `--canary` - Install a canary (next, nightly, etc) version.
-- `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean (pins
-  locally by default), or the string "global", or the string "local".
+- All
+  - `--include-global` - Include versions configured in global `~/.proto/.prototools`.
+- One
+  - `--canary` - Install a canary (next, nightly, etc) version.
+  - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean
+    (pins locally by default), or the string "global", or the string "local".

@@ -1,0 +1,81 @@
+---
+slug: proto-v0.39
+title: proto v0.39 - Mid-year quality of life improvements
+authors: [milesj]
+tags: [activate, install, github, locator, pin, builtin]
+image: ./img/proto/v0.39.png
+---
+
+This is a small release that includes many quality of life improvements.
+
+<!--truncate-->
+
+## Improved `proto activate` performance
+
+In [v0.38](./proto-v0.38) we released the [`proto activate`](/docs/proto/commands/activate) command
+as a means of bootstrapping your shell with necessary paths and variables. Since then, we've fixed a
+handful of bugs and focused on performance for this release.
+
+In this release, we've reduced the time it took to execute activation from 200-300ms down to
+10-20ms. We've also fixed some syntax isses around Bash and Zsh shells.
+
+## Merged `proto install` and `proto use` commands
+
+When proto was first built we had separate commands for installing all tools
+([`proto use`](/docs/proto/commands/use)), and installing a single tool
+([`proto install`](/docs/proto/commands/install)). For historical reasons, this was loosely based
+off of nvm, but we have diverged heavily since then.
+
+Going forward, the `proto use` command is now deprecated, and all of its functionality has been
+merged into `proto install`. To install all tools, simply don't pass arguments to the command!
+
+```shell
+# Install all tools
+$ proto install
+
+# Install a single tool
+$ proto install node
+```
+
+We like this change, as it aligns with package/dependency manager based workflows.
+
+## Customize built-in tools
+
+proto ships with a handful of [official built-in plugins](/docs/proto/tools#built-in) for popular
+tools like Node.js, Go, and more. While this is great as it reduces configuration boilerplate, it
+may cause an inconvenience for adoption or migration related reasons. To support these workflows,
+we're introducing a new setting, [`settings.builtin-plugins`](/docs/proto/config#builtin-plugins),
+that can be used to disable all built-in plugins, or only allow a few select plugins.
+
+```toml title=".prototools"
+[settings]
+# Disable all
+builtin-plugins = false
+# Enable some
+builtin-plugins = ["node", "bun"]
+```
+
+## Pin proto itself
+
+proto has yet to reach an official v1 release, as we're constantly fine-tuning and reworking APIs.
+Because of this, we may accidentally introduce unexpected changes, or introduce breaking changes
+that you were relying on. To help mitigate these issues, you can now
+[pin the version of proto itself](/docs/proto/config#lock-proto-version) in `.prototools`.
+
+```toml title=".prototools"
+proto = "0.39.0"
+```
+
+When this pin exists, all proto shims will attempt to execute proto using that exact version. This
+allows for the global `proto` binary to differ in version from what is executed.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.39.0) for a full list
+of changes.
+
+- Added `PROTO_NO_MODIFY_PROFILE` and `PROTO_NO_MODIFY_PATH` environment variables to `proto setup`
+  (for automated workflows).
+- Updated `proto status` to display and include versions from ecosystem files (`.nvmrc`, etc).
+- Updated `github://` plugin locators to support monorepos. Append the project name (that tags are
+  prefixed with) to the path: `github://moonrepo/tools/node_tool`

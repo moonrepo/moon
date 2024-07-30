@@ -298,6 +298,14 @@ The location must be an organization + repository slug (owner/repo), and the rel
 "github://moonrepo/example-repo"
 ```
 
+If you are targeting releases in a monorepo, you can append the project name after the repository.
+The project name will be used as a prefix for tags, and will match `<name>@v?<version>` or
+`<name>-v?<version>` based tags.
+
+```toml
+"github://moonrepo/example-repo/project-name"
+```
+
 By default, the latest release will be used and cached for 7 days. If you'd prefer to target a
 specific release (preferred), append the release tag to the end of the location.
 

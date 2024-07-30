@@ -4,10 +4,64 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Sun, 14 Jul 2024 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Fri, 26 Jul 2024 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[proto v0.39 - Mid-year quality of life improvements]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.39</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.39</guid>
+            <pubDate>Fri, 26 Jul 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[This is a small release that includes many quality of life improvements.]]></description>
+            <content:encoded><![CDATA[<p>This is a small release that includes many quality of life improvements.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-proto-activate-performance">Improved <code>proto activate</code> performance<a class="hash-link" aria-label="Direct link to improved-proto-activate-performance" title="Direct link to improved-proto-activate-performance" href="https://moonrepo.dev/blog/proto-v0.39#improved-proto-activate-performance">​</a></h2>
+<p>In <a href="https://moonrepo.dev/blog/proto-v0.38">v0.38</a> we released the <a href="https://moonrepo.dev/docs/proto/commands/activate"><code>proto activate</code></a> command
+as a means of bootstrapping your shell with necessary paths and variables. Since then, we've fixed a
+handful of bugs and focused on performance for this release.</p>
+<p>In this release, we've reduced the time it took to execute activation from 200-300ms down to
+10-20ms. We've also fixed some syntax isses around Bash and Zsh shells.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="merged-proto-install-and-proto-use-commands">Merged <code>proto install</code> and <code>proto use</code> commands<a class="hash-link" aria-label="Direct link to merged-proto-install-and-proto-use-commands" title="Direct link to merged-proto-install-and-proto-use-commands" href="https://moonrepo.dev/blog/proto-v0.39#merged-proto-install-and-proto-use-commands">​</a></h2>
+<p>When proto was first built we had separate commands for installing all tools
+(<a href="https://moonrepo.dev/docs/proto/commands/use"><code>proto use</code></a>), and installing a single tool
+(<a href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a>). For historical reasons, this was loosely based
+off of nvm, but we have diverged heavily since then.</p>
+<p>Going forward, the <code>proto use</code> command is now deprecated, and all of its functionality has been
+merged into <code>proto install</code>. To install all tools, simply don't pass arguments to the command!</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Install all tools</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Install a single tool</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>We like this change, as it aligns with package/dependency manager based workflows.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-built-in-tools">Customize built-in tools<a class="hash-link" aria-label="Direct link to Customize built-in tools" title="Direct link to Customize built-in tools" href="https://moonrepo.dev/blog/proto-v0.39#customize-built-in-tools">​</a></h2>
+<p>proto ships with a handful of <a href="https://moonrepo.dev/docs/proto/tools#built-in">official built-in plugins</a> for popular
+tools like Node.js, Go, and more. While this is great as it reduces configuration boilerplate, it
+may cause an inconvenience for adoption or migration related reasons. To support these workflows,
+we're introducing a new setting, <a href="https://moonrepo.dev/docs/proto/config#builtin-plugins"><code>settings.builtin-plugins</code></a>,
+that can be used to disable all built-in plugins, or only allow a few select plugins.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Disable all</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">builtin-plugins</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Enable some</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">builtin-plugins</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"node"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"bun"</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="pin-proto-itself">Pin proto itself<a class="hash-link" aria-label="Direct link to Pin proto itself" title="Direct link to Pin proto itself" href="https://moonrepo.dev/blog/proto-v0.39#pin-proto-itself">​</a></h2>
+<p>proto has yet to reach an official v1 release, as we're constantly fine-tuning and reworking APIs.
+Because of this, we may accidentally introduce unexpected changes, or introduce breaking changes
+that you were relying on. To help mitigate these issues, you can now
+<a href="https://moonrepo.dev/docs/proto/config#lock-proto-version">pin the version of proto itself</a> in <code>.prototools</code>.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_x_ju">.prototools</div><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">proto</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.39.0"</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>When this pin exists, all proto shims will attempt to execute proto using that exact version. This
+allows for the global <code>proto</code> binary to differ in version from what is executed.</p>
+<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.39#other-changes">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.39.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>
+<ul>
+<li>Added <code>PROTO_NO_MODIFY_PROFILE</code> and <code>PROTO_NO_MODIFY_PATH</code> environment variables to <code>proto setup</code>
+(for automated workflows).</li>
+<li>Updated <code>proto status</code> to display and include versions from ecosystem files (<code>.nvmrc</code>, etc).</li>
+<li>Updated <code>github://</code> plugin locators to support monorepos. Append the project name (that tags are
+prefixed with) to the path: <code>github://moonrepo/tools/node_tool</code></li>
+</ul>]]></content:encoded>
+            <category>activate</category>
+            <category>install</category>
+            <category>github</category>
+            <category>locator</category>
+            <category>pin</category>
+            <category>builtin</category>
+        </item>
         <item>
             <title><![CDATA[moon v1.27 - Task scripts, Docker settings, and more]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.27</link>
@@ -1320,60 +1374,6 @@ of changes.</p>
             <category>codegen</category>
             <category>templates</category>
             <category>experiments</category>
-        </item>
-        <item>
-            <title><![CDATA[proto v0.26 - New native shim implementation]]></title>
-            <link>https://moonrepo.dev/blog/proto-v0.26</link>
-            <guid>https://moonrepo.dev/blog/proto-v0.26</guid>
-            <pubDate>Thu, 21 Dec 2023 00:00:00 GMT</pubDate>
-            <description><![CDATA[After many release candidates, and a ton of testing, proto v0.26 is finally here!]]></description>
-            <content:encoded><![CDATA[<p>After many release candidates, and a ton of testing, proto v0.26 is finally here!</p>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="rethinking-shims">Rethinking shims<a class="hash-link" aria-label="Direct link to Rethinking shims" title="Direct link to Rethinking shims" href="https://moonrepo.dev/blog/proto-v0.26#rethinking-shims">​</a></h2>
-<p>proto at its core is a version manager, which means like most version managers, it relies on a
-concept known as shims. Shims are lightweight executable scripts that act like a proxy to the
-underlying binary, and are useful for proto to intercept executions and inject custom functionality,
-like our dynamic version detection.</p>
-<p>On Unix machines, we relied on Bash scripts for shims, which worked rather well. However, on
-Windows, we relied on PowerShell scripts (<code>.ps1</code>), batch/cmd scripts (<code>.cmd</code>), and Bash scripts, all
-with differing levels of functionality, and each serving a separate purpose. Windows support <em>did
-not</em> work well.</p>
-<p>To avoid current and future compatibility issues, we needed a truly native solution, and that's
-exactly what we did. In this release, we wrote our own Rust based executable, that will replace all
-of the custom shim scripts. This new executable is named <code>proto-shim</code> (<code>proto-shim.exe</code> on Windows)
-and is published alongside the <code>proto</code> binary.</p>
-<p>This new executable solves all of the following problems (hopfully):</p>
-<ul>
-<li>Locatable on <code>PATH</code> (is an <code>.exe</code> for Windows)</li>
-<li>Can pipe/redirect data</li>
-<li>Handles stdin prompts/interactivity</li>
-<li>Supports ctrl+c interruptions</li>
-<li>Passes parent signals to child processes (uses <code>execvp</code> on Unix)</li>
-<li>Attempts to kill child processes on parent exit</li>
-<li>Bubbles exit codes</li>
-<li>Native performance</li>
-<li>Doesn't require special privileges (no symlinks)</li>
-</ul>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="upgrade-troubleshooting">Upgrade troubleshooting<a class="hash-link" aria-label="Direct link to Upgrade troubleshooting" title="Direct link to Upgrade troubleshooting" href="https://moonrepo.dev/blog/proto-v0.26#upgrade-troubleshooting">​</a></h2>
-<p>Because this release adds a new executable (<code>proto-shim</code>), you'll most likely run into issues when
-upgrading via <code>proto upgrade</code>. The root issue is that the upgrade process was only aware of the
-single <code>proto</code> file, and not the new <code>proto-shim</code> file, so it will not copy the shim into the
-correct location, and subsequent proto commands will fail.</p>
-<p>We could backport this change to v0.25, but it would require all users to upgrade to that patch
-version first before upgrading to v0.26. But this still wouldn't solve the issue for users upgrading
-from v0.24, or an even earlier version.</p>
-<p>The best way to remedy this situation is to simply
-<a href="https://moonrepo.dev/docs/proto/install">re-install proto as a whole</a>. Once you're on v0.26, this will be a non-issue.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Unix</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">-fsSL</span><span class="token plain"> https://moonrepo.dev/install/proto.sh </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">bash</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Windows</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">irm https://moonrepo.dev/install/proto.ps1 </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> iex</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_FoOz"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_L0B6"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" href="https://moonrepo.dev/blog/proto-v0.26#other-changes">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.26.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
-of changes.</p>
-<ul>
-<li>Added basic telemetry to track tool install/uninstall metrics.</li>
-<li>Fixed an issue where binaries were being symlinked with broken versions in their file name (most
-commonly for Python).</li>
-</ul>]]></content:encoded>
-            <category>proto</category>
-            <category>shim</category>
         </item>
     </channel>
 </rss>

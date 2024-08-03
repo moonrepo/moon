@@ -1,4 +1,4 @@
-use moon_common::consts::{CONFIG_TASKS_FILENAME, CONFIG_WORKSPACE_FILENAME_YML};
+use moon_common::consts::{CONFIG_TASKS_FILENAME_YML, CONFIG_WORKSPACE_FILENAME_YML};
 use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
@@ -29,7 +29,7 @@ fn creates_files_in_dest() {
 fn doesnt_create_project_config_when_minimal() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
-    let project_config = root.join(".moon").join(CONFIG_TASKS_FILENAME);
+    let project_config = root.join(".moon").join(CONFIG_TASKS_FILENAME_YML);
 
     assert!(!project_config.exists());
 

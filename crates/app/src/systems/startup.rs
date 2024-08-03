@@ -93,7 +93,6 @@ pub fn detect_proto_environment(
 ) -> AppResult<Arc<ProtoEnvironment>> {
     let mut env = ProtoEnvironment::new()?;
     env.cwd = working_dir.to_path_buf();
-    // env.workspace_root = workspace_root.to_path_buf();
 
     Ok(Arc::new(env))
 }
@@ -129,9 +128,10 @@ pub async fn load_toolchain_config(
     working_dir: &Path,
     proto_env: Arc<ProtoEnvironment>,
 ) -> AppResult<Arc<ToolchainConfig>> {
-    let config_name = get_config_file_label("toolchain", true);
-
-    debug!("Attempting to load {} (optional)", color::file(config_name));
+    debug!(
+        "Attempting to load {} (optional)",
+        color::file(get_config_file_label("toolchain", true))
+    );
 
     let root = workspace_root.to_owned();
     let cwd = working_dir.to_owned();
@@ -151,14 +151,10 @@ pub async fn load_toolchain_config(
 /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
 #[instrument]
 pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasksManager>> {
-    let config_name = format!("{}/{}", CONFIG_DIRNAME, CONFIG_TASKS_FILENAME);
-    let config_file = workspace_root.join(&config_name);
-
     debug!(
-        config_file = ?config_file,
         "Attempting to load {} and {} (optional)",
-        color::file(config_name),
-        color::file(format!("{}/tasks/**/*", CONFIG_DIRNAME)),
+        color::file(get_config_file_label("tasks", true)),
+        color::file(get_config_file_label("tasks/**/*", true)),
     );
 
     let root = workspace_root.to_owned();

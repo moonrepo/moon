@@ -1,4 +1,3 @@
-use moon_common::consts::{CONFIG_TEMPLATE_FILENAME_PKL, CONFIG_TEMPLATE_FILENAME_YML};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ValidateError};
@@ -257,6 +256,7 @@ pub struct TemplateConfig {
 impl TemplateConfig {
     pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
         use crate::validate::check_yml_extension;
+        use moon_common::consts::{CONFIG_TEMPLATE_FILENAME_PKL, CONFIG_TEMPLATE_FILENAME_YML};
         use moon_common::{color, supports_pkl_configs};
         use schematic::ConfigLoader;
 

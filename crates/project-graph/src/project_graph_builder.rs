@@ -6,7 +6,7 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
-use moon_common::{color, consts, Id};
+use moon_common::{color, consts, get_config_file_label, supports_pkl_configs, Id};
 use moon_config::{
     DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
     WorkspaceConfig, WorkspaceProjects,
@@ -426,10 +426,19 @@ impl<'app> ProjectGraphBuilder<'app> {
         for source in self.sources.values() {
             configs.push(
                 source
-                    .join(consts::CONFIG_PROJECT_FILENAME)
+                    .join(consts::CONFIG_PROJECT_FILENAME_YML)
                     .as_str()
                     .to_owned(),
             );
+
+            if supports_pkl_configs() {
+                configs.push(
+                    source
+                        .join(consts::CONFIG_PROJECT_FILENAME_PKL)
+                        .as_str()
+                        .to_owned(),
+                );
+            }
         }
 
         // Hash all workspace-level config files
@@ -595,17 +604,13 @@ impl<'app> ProjectGraphBuilder<'app> {
         let mut renamed_ids = FxHashMap::default();
 
         for (id, source) in sources {
-            let config_name = source.join(consts::CONFIG_PROJECT_FILENAME);
-            let config_path = config_name.to_path(context.workspace_root);
-
             debug!(
                 id = id.as_str(),
-                file = ?config_path,
                 "Attempting to load {} (optional)",
-                color::file(config_name.as_str())
+                color::file(source.join(get_config_file_label("moon", false)))
             );
 
-            let config = ProjectConfig::load(context.workspace_root, config_path)?;
+            let config = ProjectConfig::load_from(context.workspace_root, source)?;
 
             // Track ID renames
             if let Some(new_id) = &config.id {

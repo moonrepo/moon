@@ -1,7 +1,7 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_api::Moonbase;
-use moon_common::{consts::*, supports_pkl_configs};
+use moon_common::{consts::*, get_config_file_label};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_vcs::BoxedVcs;
@@ -15,19 +15,6 @@ use std::sync::Arc;
 use tokio::spawn;
 use tokio::task::{block_in_place, JoinError};
 use tracing::{debug, instrument};
-
-fn get_config_name(file: &str) -> String {
-    format!(
-        "{}/{}.{}",
-        CONFIG_DIRNAME,
-        file,
-        if supports_pkl_configs() {
-            "{pkl,yml}"
-        } else {
-            "yml"
-        }
-    )
-}
 
 // We need to load configuration in a blocking task, because config
 // loading is synchronous but uses `reqwest::blocking` under the hood,
@@ -115,7 +102,7 @@ pub fn detect_proto_environment(
 /// This file is required to exist, so error if not found.
 #[instrument]
 pub async fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
-    let config_name = get_config_name("workspace");
+    let config_name = get_config_file_label("workspace", true);
     let config_dir = workspace_root.join(CONFIG_DIRNAME);
 
     debug!(

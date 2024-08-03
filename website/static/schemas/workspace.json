@@ -320,12 +320,6 @@
           "deprecated": true,
           "type": "boolean"
         },
-        "pklConfigs": {
-          "title": "pklConfigs",
-          "description": "Enable support for .pkl configuration files.",
-          "type": "boolean",
-          "markdownDescription": "Enable support for `.pkl` configuration files."
-        },
         "strictProjectAliases": {
           "title": "strictProjectAliases",
           "default": true,

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_common::{color, Id};
+use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
@@ -662,10 +662,11 @@ impl<'proj> TasksBuilder<'proj> {
             .map(|d| (*d).to_owned())
             .collect::<Vec<_>>();
 
-        // TODO wrap in condition
-        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.pkl".into()));
-
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
+
+        if supports_pkl_configs() {
+            global_inputs.push(InputPath::WorkspaceGlob(".moon/*.pkl".into()));
+        }
 
         if let Some(env_files) = &options.env_files {
             global_inputs.extend(env_files.to_owned());

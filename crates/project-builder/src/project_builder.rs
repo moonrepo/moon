@@ -1,5 +1,5 @@
 use moon_common::path::WorkspaceRelativePath;
-use moon_common::{color, consts, Id};
+use moon_common::{color, get_config_file_label, Id};
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
     InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig,
@@ -158,17 +158,13 @@ impl<'app> ProjectBuilder<'app> {
     /// Load a `moon.*` config file from the root of the project (derived from source).
     #[instrument(skip_all)]
     pub async fn load_local_config(&mut self) -> miette::Result<()> {
-        let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
-        let config_path = config_name.to_path(self.context.workspace_root);
-
         debug!(
             id = self.id.as_str(),
-            file = ?config_path,
             "Attempting to load {} (optional)",
-            color::file(config_name.as_str())
+            color::file(self.source.join(get_config_file_label("moon", false)))
         );
 
-        let config = ProjectConfig::load(self.context.workspace_root, config_path)?;
+        let config = ProjectConfig::load_from(self.context.workspace_root, self.source)?;
 
         self.inherit_local_config(config).await?;
 

@@ -60,7 +60,11 @@ async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
     build_tasks_with_config(
         root,
         &source,
-        ProjectConfig::load(root, root.join(config_path)).unwrap(),
+        ProjectConfig::create_loader(root.join(&source))
+            .unwrap()
+            .load()
+            .unwrap()
+            .config,
         ToolchainConfig::default(),
         None,
     )
@@ -68,10 +72,20 @@ async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
 }
 
 async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+    let source = if config_path == "moon.yml" {
+        ".".into()
+    } else {
+        config_path.replace("/moon.yml", "")
+    };
+
     build_tasks_with_config(
         root,
-        &config_path.replace("/moon.yml", ""),
-        ProjectConfig::load(root, root.join(config_path)).unwrap(),
+        &source,
+        ProjectConfig::create_loader(root.join(&source))
+            .unwrap()
+            .load()
+            .unwrap()
+            .config,
         ToolchainConfig {
             bun: Some(BunConfig::default()),
             deno: Some(DenoConfig::default()),
@@ -1571,11 +1585,7 @@ mod tasks_builder {
             let tasks = build_tasks_with_config(
                 sandbox.path(),
                 "extends-interweave",
-                ProjectConfig::load(
-                    sandbox.path(),
-                    sandbox.path().join("extends-interweave/moon.yml"),
-                )
-                .unwrap(),
+                ProjectConfig::load_from(sandbox.path(), "extends-interweave").unwrap(),
                 ToolchainConfig::default(),
                 Some("global-interweave"),
             )

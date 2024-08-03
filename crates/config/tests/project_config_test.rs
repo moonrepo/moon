@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
+use moon_common::{consts::CONFIG_PROJECT_FILENAME_YML, Id};
 use moon_config::{
     DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
     ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
@@ -18,14 +18,14 @@ mod project_config {
         expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `owners`, `platform`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `type`, `workspace`"
     )]
     fn error_unknown_field() {
-        test_load_config(CONFIG_PROJECT_FILENAME, "unknown: 123", |path| {
+        test_load_config(CONFIG_PROJECT_FILENAME_YML, "unknown: 123", |path| {
             ProjectConfig::load_from(path, ".")
         });
     }
 
     #[test]
     fn loads_defaults() {
-        let config = test_load_config(CONFIG_PROJECT_FILENAME, "{}", |path| {
+        let config = test_load_config(CONFIG_PROJECT_FILENAME_YML, "{}", |path| {
             ProjectConfig::load_from(path, ".")
         });
 
@@ -36,7 +36,7 @@ mod project_config {
     #[test]
     fn can_use_references() {
         let config = test_load_config(
-            CONFIG_PROJECT_FILENAME,
+            CONFIG_PROJECT_FILENAME_YML,
             r"
 tasks:
   build: &webpack
@@ -74,7 +74,7 @@ tasks:
     #[should_panic(expected = "unknown field `_webpack`")]
     fn can_use_references_from_root() {
         let config = test_load_config(
-            CONFIG_PROJECT_FILENAME,
+            CONFIG_PROJECT_FILENAME_YML,
             r"
 _webpack: &webpack
     command: 'webpack'
@@ -115,7 +115,7 @@ tasks:
         #[test]
         fn supports_list_of_strings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 "dependsOn: ['a', 'b', 'c']",
                 |path| ProjectConfig::load_from(path, "."),
             );
@@ -133,7 +133,7 @@ tasks:
         #[test]
         fn supports_list_of_objects() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 dependsOn:
   - id: 'a'
@@ -163,7 +163,7 @@ dependsOn:
         #[test]
         fn supports_list_of_strings_and_objects() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 dependsOn:
   - 'a'
@@ -189,7 +189,7 @@ dependsOn:
         #[should_panic(expected = "expected a project name or dependency config object")]
         fn errors_on_invalid_object_scope() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 dependsOn:
   - id: 'a'
@@ -206,7 +206,7 @@ dependsOn:
         #[test]
         fn groups_into_correct_enums() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 fileGroups:
   files:
@@ -250,7 +250,7 @@ fileGroups:
 
         #[test]
         fn supports_variant() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "language: rust", |path| {
+            let config = test_load_config(CONFIG_PROJECT_FILENAME_YML, "language: rust", |path| {
                 ProjectConfig::load_from(path, ".")
             });
 
@@ -259,9 +259,10 @@ fileGroups:
 
         #[test]
         fn unsupported_variant_becomes_other() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "language: dotnet", |path| {
-                ProjectConfig::load_from(path, ".")
-            });
+            let config =
+                test_load_config(CONFIG_PROJECT_FILENAME_YML, "language: dotnet", |path| {
+                    ProjectConfig::load_from(path, ".")
+                });
 
             assert_eq!(config.language, LanguageType::Other(Id::raw("dotnet")));
         }
@@ -272,7 +273,7 @@ fileGroups:
 
         #[test]
         fn supports_variant() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "platform: rust", |path| {
+            let config = test_load_config(CONFIG_PROJECT_FILENAME_YML, "platform: rust", |path| {
                 ProjectConfig::load_from(path, ".")
             });
 
@@ -284,7 +285,7 @@ fileGroups:
             expected = "unknown variant `perl`, expected one of `bun`, `deno`, `node`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "platform: perl", |path| {
+            test_load_config(CONFIG_PROJECT_FILENAME_YML, "platform: perl", |path| {
                 ProjectConfig::load_from(path, ".")
             });
         }
@@ -295,7 +296,7 @@ fileGroups:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "owners: {}", |path| {
+            let config = test_load_config(CONFIG_PROJECT_FILENAME_YML, "owners: {}", |path| {
                 ProjectConfig::load_from(path, ".")
             });
 
@@ -309,7 +310,7 @@ fileGroups:
         #[test]
         fn can_set_values() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 owners:
   customGroups:
@@ -337,7 +338,7 @@ owners:
         #[test]
         fn can_set_paths_as_list() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 owners:
   defaultOwner: x
@@ -357,7 +358,7 @@ owners:
         #[test]
         fn can_set_paths_as_map() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 owners:
   paths:
@@ -380,7 +381,7 @@ owners:
         #[should_panic(expected = "a default owner is required when defining a list of paths")]
         fn errors_on_paths_list_empty_owner() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 owners:
   paths:
@@ -397,7 +398,7 @@ owners:
         )]
         fn errors_on_paths_map_empty_owner() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 owners:
   paths:
@@ -415,7 +416,7 @@ owners:
         #[test]
         #[should_panic(expected = "must not be empty")]
         fn errors_if_empty() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "project: {}", |path| {
+            test_load_config(CONFIG_PROJECT_FILENAME_YML, "project: {}", |path| {
                 ProjectConfig::load_from(path, ".")
             });
         }
@@ -423,7 +424,7 @@ owners:
         #[test]
         fn can_set_only_description() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 project:
   description: 'Text'
@@ -439,7 +440,7 @@ project:
         #[test]
         fn can_set_all() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 project:
   name: Name
@@ -463,7 +464,7 @@ project:
         #[test]
         fn can_set_custom_fields() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 project:
   description: 'Test'
@@ -489,7 +490,7 @@ project:
         #[should_panic(expected = "must start with a `#`")]
         fn errors_if_channel_no_hash() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 project:
   description: Description
@@ -506,7 +507,7 @@ project:
         #[test]
         fn can_set_tags() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 tags:
   - normal
@@ -535,7 +536,7 @@ tags:
         #[test]
         #[should_panic(expected = "Invalid format for foo bar")]
         fn errors_on_invalid_format() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "tags: ['foo bar']", |path| {
+            test_load_config(CONFIG_PROJECT_FILENAME_YML, "tags: ['foo bar']", |path| {
                 ProjectConfig::load_from(path, ".")
             });
         }
@@ -547,7 +548,7 @@ tags:
         #[test]
         fn supports_id_patterns() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 tasks:
   normal:
@@ -577,7 +578,7 @@ tasks:
         #[test]
         fn can_extend_siblings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 tasks:
   base:
@@ -600,7 +601,7 @@ tasks:
         #[test]
         fn can_set_settings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 toolchain:
   node:
@@ -633,7 +634,7 @@ toolchain:
         #[test]
         fn can_set_settings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                CONFIG_PROJECT_FILENAME_YML,
                 r"
 workspace:
   inheritedTasks:

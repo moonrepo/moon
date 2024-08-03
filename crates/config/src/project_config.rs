@@ -169,52 +169,48 @@ cacheable!(
 
 #[cfg(feature = "loader")]
 impl ProjectConfig {
-    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+    pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
         workspace_root: R,
-        path: P,
+        project_source: P,
     ) -> miette::Result<ProjectConfig> {
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
-        use schematic::ConfigLoader;
+        let workspace_root = workspace_root.as_ref();
+        let project_root = workspace_root.join(project_source.as_ref());
 
-        let result = ConfigLoader::<ProjectConfig>::new()
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/project",
-            ))
-            .set_root(workspace_root.as_ref())
-            .file_optional(check_yml_extension(path.as_ref()))?
+        let result = Self::create_loader(project_root)?
+            .set_root(workspace_root)
             .load()?;
 
         Ok(result.config)
     }
 
-    pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
-        workspace_root: R,
-        project_source: P,
-    ) -> miette::Result<ProjectConfig> {
-        use moon_common::consts;
-
-        let workspace_root = workspace_root.as_ref();
-
-        Self::load(
-            workspace_root,
-            workspace_root
-                .join(project_source.as_ref())
-                .join(consts::CONFIG_PROJECT_FILENAME),
-        )
+    pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
+        Ok(Self::create_loader(project_root)?.load_partial(&())?)
     }
 
-    pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
-        use moon_common::{color, consts};
+    pub fn create_loader<P: AsRef<Path>>(
+        project_root: P,
+    ) -> miette::Result<schematic::ConfigLoader<ProjectConfig>> {
+        use crate::validate::check_yml_extension;
+        use moon_common::consts::{CONFIG_PROJECT_FILENAME_PKL, CONFIG_PROJECT_FILENAME_YML};
+        use moon_common::{color, supports_pkl_configs};
         use schematic::ConfigLoader;
 
-        let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
+        let project_root = project_root.as_ref();
+        let yml_file = project_root.join(CONFIG_PROJECT_FILENAME_YML);
+        let pkl_file = project_root.join(CONFIG_PROJECT_FILENAME_PKL);
 
-        Ok(ConfigLoader::<ProjectConfig>::new()
+        let mut loader = ConfigLoader::<ProjectConfig>::new();
+
+        loader
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/project",
             ))
-            .file_optional(path)?
-            .load_partial(&())?)
+            .file_optional(check_yml_extension(&yml_file))?;
+
+        if supports_pkl_configs() {
+            loader.file_optional(pkl_file)?;
+        }
+
+        Ok(loader)
     }
 }

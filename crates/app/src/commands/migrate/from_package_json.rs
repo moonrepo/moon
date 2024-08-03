@@ -1,7 +1,7 @@
 use super::check_dirty_repo;
 use crate::session::CliSession;
 use clap::Args;
-use moon_common::consts::CONFIG_PROJECT_FILENAME;
+use moon_common::consts::CONFIG_PROJECT_FILENAME_YML;
 use moon_common::Id;
 use moon_config::{
     DependencyScope, NodePackageManager, PartialDependencyConfig, PartialProjectDependsOn,
@@ -105,7 +105,10 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
         Ok(true)
     })?;
 
-    yaml::write_file_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
+    yaml::write_file_with_config(
+        project.root.join(CONFIG_PROJECT_FILENAME_YML),
+        &partial_config,
+    )?;
 
     Ok(())
 }

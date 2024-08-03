@@ -109,8 +109,6 @@ export interface ExperimentsConfig {
 	 * @deprecated
 	 */
 	interweavedTaskInheritance?: boolean;
-	/** Enable support for `.pkl` configuration files. */
-	pklConfigs: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -425,8 +423,6 @@ export interface PartialExperimentsConfig {
 	 * @deprecated
 	 */
 	interweavedTaskInheritance?: boolean | null;
-	/** Enable support for `.pkl` configuration files. */
-	pklConfigs?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

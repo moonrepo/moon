@@ -15,7 +15,7 @@ pub const CONFIG_WORKSPACE_FILENAME_PKL: &str = "workspace.pkl";
 pub const CONFIG_TASKS_FILENAME: &str = "tasks.yml";
 pub const CONFIG_TASKS_FILENAME_PKL: &str = "tasks.pkl";
 
-pub const CONFIG_PROJECT_FILENAME: &str = "moon.yml";
+pub const CONFIG_PROJECT_FILENAME_YML: &str = "moon.yml";
 pub const CONFIG_PROJECT_FILENAME_PKL: &str = "moon.pkl";
 
 pub const CONFIG_TEMPLATE_FILENAME_YML: &str = "template.yml";

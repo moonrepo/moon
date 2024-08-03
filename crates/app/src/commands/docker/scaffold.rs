@@ -95,7 +95,8 @@ async fn scaffold_workspace(
         let mut files_to_copy: Vec<String> = vec![
             ".gitignore".into(),
             ".prototools".into(),
-            CONFIG_PROJECT_FILENAME.into(),
+            CONFIG_PROJECT_FILENAME_YML.into(),
+            CONFIG_PROJECT_FILENAME_PKL.into(),
             CONFIG_TEMPLATE_FILENAME_YML.into(),
             CONFIG_TEMPLATE_FILENAME_PKL.into(),
         ];

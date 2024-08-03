@@ -177,7 +177,7 @@ impl WorkspaceConfig {
     pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
         use crate::config_cache::ConfigCache;
         use crate::validate::check_yml_extension;
-        use moon_common::consts::{CONFIG_WORKSPACE_FILENAME_PKL, CONFIG_WORKSPACE_FILENAME_YML};
+        use moon_common::consts::*;
         use moon_common::{color, supports_pkl_configs};
         use schematic::ConfigLoader;
 

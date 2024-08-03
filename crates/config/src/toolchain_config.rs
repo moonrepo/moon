@@ -218,46 +218,49 @@ impl ToolchainConfig {
         Ok(())
     }
 
-    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+    pub fn load_from<R: AsRef<Path>>(
         workspace_root: R,
-        path: P,
         proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainConfig> {
-        use crate::config_cache::ConfigCache;
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let root = workspace_root.as_ref();
-
-        let mut result = ConfigLoader::<ToolchainConfig>::new()
-            .set_cacher(ConfigCache::new(root))
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/toolchain",
-            ))
-            .set_root(root)
-            .file_optional(check_yml_extension(path.as_ref()))?
-            .load()?;
+        let mut result = Self::create_loader(workspace_root)?.load()?;
 
         result.config.inherit_proto(proto_config)?;
 
         Ok(result.config)
     }
 
-    pub fn load_from<R: AsRef<Path>>(
+    pub fn create_loader<R: AsRef<Path>>(
         workspace_root: R,
-        proto_config: &proto_core::ProtoConfig,
-    ) -> miette::Result<ToolchainConfig> {
-        use moon_common::consts;
+    ) -> miette::Result<schematic::ConfigLoader<ToolchainConfig>> {
+        use crate::config_cache::ConfigCache;
+        use crate::validate::check_yml_extension;
+        use moon_common::color;
+        use moon_common::consts::*;
+        use moon_common::supports_pkl_configs;
+        use schematic::ConfigLoader;
 
         let workspace_root = workspace_root.as_ref();
+        let yml_file = workspace_root
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_TOOLCHAIN_FILENAME_YML);
+        let pkl_file = workspace_root
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_TOOLCHAIN_FILENAME_PKL);
 
-        Self::load(
-            workspace_root,
-            workspace_root
-                .join(consts::CONFIG_DIRNAME)
-                .join(consts::CONFIG_TOOLCHAIN_FILENAME),
-            proto_config,
-        )
+        let mut loader = ConfigLoader::<ToolchainConfig>::new();
+
+        loader
+            .set_cacher(ConfigCache::new(workspace_root))
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/toolchain",
+            ))
+            .set_root(workspace_root)
+            .file_optional(check_yml_extension(&yml_file))?;
+
+        if supports_pkl_configs() {
+            loader.file_optional(pkl_file)?;
+        }
+
+        Ok(loader)
     }
 }

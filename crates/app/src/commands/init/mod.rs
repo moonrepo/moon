@@ -13,7 +13,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_common::consts::{
-    CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME_YML,
+    CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME_YML, CONFIG_WORKSPACE_FILENAME_YML,
 };
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
@@ -153,7 +153,7 @@ pub async fn init_tool(
 
     let toolchain_config_path = dest_dir
         .join(CONFIG_DIRNAME)
-        .join(CONFIG_TOOLCHAIN_FILENAME);
+        .join(CONFIG_TOOLCHAIN_FILENAME_YML);
 
     if !toolchain_config_path.exists() {
         fs::write_file(

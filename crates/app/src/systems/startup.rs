@@ -102,13 +102,10 @@ pub fn detect_proto_environment(
 /// This file is required to exist, so error if not found.
 #[instrument]
 pub async fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
-    let config_name = get_config_file_label("workspace", true);
     let config_dir = workspace_root.join(CONFIG_DIRNAME);
+    let config_name = get_config_file_label("workspace", true);
 
-    debug!(
-        config_dir = ?config_dir,
-        "Loading {} (required)", color::file(&config_name),
-    );
+    debug!("Loading {} (required)", color::file(&config_name),);
 
     let pkl_file = config_dir.join(CONFIG_WORKSPACE_FILENAME_PKL);
     let yml_file = config_dir.join(CONFIG_WORKSPACE_FILENAME_YML);
@@ -132,32 +129,20 @@ pub async fn load_toolchain_config(
     working_dir: &Path,
     proto_env: Arc<ProtoEnvironment>,
 ) -> AppResult<Arc<ToolchainConfig>> {
-    let config_name = format!("{}/{}", CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME);
-    let config_file = workspace_root.join(&config_name);
+    let config_name = get_config_file_label("toolchain", true);
 
-    debug!(
-        config_file = ?config_file,
-        "Attempting to load {} (optional)",
-        color::file(config_name),
-    );
+    debug!("Attempting to load {} (optional)", color::file(config_name));
 
-    let config = if !config_file.exists() {
-        debug!("Toolchain config file does not exist, using defaults");
-
-        ToolchainConfig::default()
-    } else {
-        let root = workspace_root.to_owned();
-
-        load_config_blocking(move || {
-            ToolchainConfig::load(
-                &root,
-                config_file,
-                proto_env.load_config_manager()?.get_local_config(&root)?,
-            )
-        })
-        .await
-        .into_diagnostic()??
-    };
+    let root = workspace_root.to_owned();
+    let cwd = working_dir.to_owned();
+    let config = load_config_blocking(move || {
+        ToolchainConfig::load_from(
+            root,
+            proto_env.load_config_manager()?.get_local_config(&cwd)?,
+        )
+    })
+    .await
+    .into_diagnostic()??;
 
     Ok(Arc::new(config))
 }

@@ -13,9 +13,6 @@ cacheable!(
         #[setting(default = true)]
         pub interweaved_task_inheritance: bool,
 
-        /// Enable support for `.pkl` configuration files.
-        pub pkl_configs: bool,
-
         #[deprecated]
         #[setting(default = true)]
         pub strict_project_aliases: bool,

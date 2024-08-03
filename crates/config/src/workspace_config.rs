@@ -1,6 +1,7 @@
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
+use moon_common::{consts::*, supports_pkl_configs};
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, PathSegment, ValidateError};
 use semver::VersionReq;
@@ -174,41 +175,39 @@ impl WorkspaceConfig {
 
 #[cfg(feature = "loader")]
 impl WorkspaceConfig {
-    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
-        workspace_root: R,
-        path: P,
-    ) -> miette::Result<WorkspaceConfig> {
+    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
         use crate::config_cache::ConfigCache;
         use crate::validate::check_yml_extension;
         use moon_common::color;
         use schematic::ConfigLoader;
 
-        let root = workspace_root.as_ref();
+        let workspace_root = workspace_root.as_ref();
+        let yml_file = workspace_root
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_WORKSPACE_FILENAME_YML);
+        let pkl_file = workspace_root
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_WORKSPACE_FILENAME_PKL);
 
-        let mut result = ConfigLoader::<WorkspaceConfig>::new()
-            .set_cacher(ConfigCache::new(root))
+        let mut loader = ConfigLoader::<WorkspaceConfig>::new();
+
+        loader
+            .set_cacher(ConfigCache::new(workspace_root))
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/workspace",
             ))
-            .set_root(root)
-            .file(check_yml_extension(path.as_ref()))?
-            .load()?;
+            .set_root(workspace_root);
 
+        if supports_pkl_configs() {
+            loader.file_optional(check_yml_extension(&yml_file))?;
+            loader.file_optional(pkl_file)?;
+        } else {
+            loader.file(check_yml_extension(&yml_file))?;
+        }
+
+        let mut result = loader.load()?;
         result.config.inherit_default_plugins();
 
         Ok(result.config)
-    }
-
-    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
-        use moon_common::consts;
-
-        let workspace_root = workspace_root.as_ref();
-
-        Self::load(
-            workspace_root,
-            workspace_root
-                .join(consts::CONFIG_DIRNAME)
-                .join(consts::CONFIG_WORKSPACE_FILENAME),
-        )
     }
 }

@@ -12,7 +12,9 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::consts::{
+    CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME_YML,
+};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_console::Console;
@@ -133,19 +135,13 @@ pub async fn init_tool(
     theme: &ColorfulTheme,
     console: &Console,
 ) -> AppResult {
-    if !is_test_env() {
-        let workspace_config_path = dest_dir
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_WORKSPACE_FILENAME);
+    if !is_test_env() && !dest_dir.join(CONFIG_DIRNAME).exists() {
+        console.err.write_line(format!(
+            "moon has not been initialized! Try running {} first?",
+            color::shell("moon init")
+        ))?;
 
-        if !workspace_config_path.exists() {
-            console.err.write_line(format!(
-                "moon has not been initialized! Try running {} first?",
-                color::shell("moon init")
-            ))?;
-
-            return Err(ExitCode(1).into());
-        }
+        return Err(ExitCode(1).into());
     }
 
     let tool_config = match tool {
@@ -226,7 +222,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Create workspace file
     fs::write_file(
-        moon_dir.join(CONFIG_WORKSPACE_FILENAME),
+        moon_dir.join(CONFIG_WORKSPACE_FILENAME_YML),
         render_workspace_template(&context)?,
     )?;
 

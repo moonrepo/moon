@@ -5,13 +5,14 @@ use std::fs;
 
 fn load_generator(provider: VcsProvider) -> Sandbox {
     let sandbox = create_empty_sandbox();
-    let mut generator = CodeownersGenerator::new(sandbox.path(), provider).unwrap();
 
-    let workspace_config = WorkspaceConfig::load(
-        sandbox.path(),
-        locate_fixture("workspace").join("workspace.yml"),
-    )
-    .unwrap();
+    sandbox.create_file(
+        ".moon/workspace.yml",
+        fs::read_to_string(locate_fixture("workspace").join("workspace.yml")).unwrap(),
+    );
+
+    let mut generator = CodeownersGenerator::new(sandbox.path(), provider).unwrap();
+    let workspace_config = WorkspaceConfig::load_from(sandbox.path()).unwrap();
 
     generator
         .add_workspace_entries(&workspace_config.codeowners)

@@ -1,7 +1,7 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_api::Moonbase;
-use moon_common::consts;
+use moon_common::{consts::*, supports_pkl_configs};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_vcs::BoxedVcs;
@@ -15,6 +15,19 @@ use std::sync::Arc;
 use tokio::spawn;
 use tokio::task::{block_in_place, JoinError};
 use tracing::{debug, instrument};
+
+fn get_config_name(file: &str) -> String {
+    format!(
+        "{}/{}.{}",
+        CONFIG_DIRNAME,
+        file,
+        if supports_pkl_configs() {
+            "{pkl,yml}"
+        } else {
+            "yml"
+        }
+    )
+}
 
 // We need to load configuration in a blocking task, because config
 // loading is synchronous but uses `reqwest::blocking` under the hood,
@@ -47,14 +60,13 @@ pub fn find_workspace_root(working_dir: &Path) -> AppResult<PathBuf> {
             .parse()
             .map_err(|_| AppError::InvalidWorkspaceRootEnvVar)?;
 
-        if !root.join(consts::CONFIG_DIRNAME).exists() {
+        if !root.join(CONFIG_DIRNAME).exists() {
             return Err(AppError::MissingConfigDir.into());
         }
 
         root
     } else {
-        fs::find_upwards_root(consts::CONFIG_DIRNAME, working_dir)
-            .ok_or(AppError::MissingConfigDir)?
+        fs::find_upwards_root(CONFIG_DIRNAME, working_dir).ok_or(AppError::MissingConfigDir)?
     };
 
     // Avoid finding the ~/.moon directory
@@ -103,24 +115,23 @@ pub fn detect_proto_environment(
 /// This file is required to exist, so error if not found.
 #[instrument]
 pub async fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
-    let config_name = format!(
-        "{}/{}",
-        consts::CONFIG_DIRNAME,
-        consts::CONFIG_WORKSPACE_FILENAME
-    );
-    let config_file = workspace_root.join(&config_name);
+    let config_name = get_config_name("workspace");
+    let config_dir = workspace_root.join(CONFIG_DIRNAME);
 
     debug!(
-        config_file = ?config_file,
+        config_dir = ?config_dir,
         "Loading {} (required)", color::file(&config_name),
     );
 
-    if !config_file.exists() {
+    let pkl_file = config_dir.join(CONFIG_WORKSPACE_FILENAME_PKL);
+    let yml_file = config_dir.join(CONFIG_WORKSPACE_FILENAME_YML);
+
+    if !pkl_file.exists() && !yml_file.exists() {
         return Err(AppError::MissingConfigFile(config_name).into());
     }
 
     let root = workspace_root.to_owned();
-    let config = load_config_blocking(move || WorkspaceConfig::load(root, config_file))
+    let config = load_config_blocking(move || WorkspaceConfig::load_from(root))
         .await
         .into_diagnostic()??;
 
@@ -134,11 +145,7 @@ pub async fn load_toolchain_config(
     working_dir: &Path,
     proto_env: Arc<ProtoEnvironment>,
 ) -> AppResult<Arc<ToolchainConfig>> {
-    let config_name = format!(
-        "{}/{}",
-        consts::CONFIG_DIRNAME,
-        consts::CONFIG_TOOLCHAIN_FILENAME
-    );
+    let config_name = format!("{}/{}", CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME);
     let config_file = workspace_root.join(&config_name);
 
     debug!(
@@ -172,18 +179,14 @@ pub async fn load_toolchain_config(
 /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
 #[instrument]
 pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasksManager>> {
-    let config_name = format!(
-        "{}/{}",
-        consts::CONFIG_DIRNAME,
-        consts::CONFIG_TASKS_FILENAME
-    );
+    let config_name = format!("{}/{}", CONFIG_DIRNAME, CONFIG_TASKS_FILENAME);
     let config_file = workspace_root.join(&config_name);
 
     debug!(
         config_file = ?config_file,
         "Attempting to load {} and {} (optional)",
         color::file(config_name),
-        color::file(format!("{}/tasks/**/*", consts::CONFIG_DIRNAME)),
+        color::file(format!("{}/tasks/**/*", CONFIG_DIRNAME)),
     );
 
     let root = workspace_root.to_owned();

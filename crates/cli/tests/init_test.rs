@@ -1,4 +1,4 @@
-use moon_common::consts::{CONFIG_TASKS_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::consts::{CONFIG_TASKS_FILENAME, CONFIG_WORKSPACE_FILENAME_YML};
 use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
@@ -6,7 +6,7 @@ use std::fs;
 fn creates_files_in_dest() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
-    let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME);
+    let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME_YML);
     let gitignore = root.join(".gitignore");
 
     assert!(!workspace_config.exists());

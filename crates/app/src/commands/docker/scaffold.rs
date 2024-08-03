@@ -2,7 +2,7 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use async_recursion::async_recursion;
 use clap::Args;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME};
+use moon_common::consts::*;
 use moon_common::{path, Id};
 use moon_config::LanguageType;
 use moon_project_graph::ProjectGraph;
@@ -96,7 +96,8 @@ async fn scaffold_workspace(
             ".gitignore".into(),
             ".prototools".into(),
             CONFIG_PROJECT_FILENAME.into(),
-            CONFIG_TEMPLATE_FILENAME.into(),
+            CONFIG_TEMPLATE_FILENAME_YML.into(),
+            CONFIG_TEMPLATE_FILENAME_PKL.into(),
         ];
         let mut files_to_create: Vec<String> = vec![];
 

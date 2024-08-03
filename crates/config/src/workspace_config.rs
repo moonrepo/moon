@@ -1,7 +1,7 @@
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
+use moon_common::consts::*;
 use moon_common::Id;
-use moon_common::{consts::*, supports_pkl_configs};
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, PathSegment, ValidateError};
 use semver::VersionReq;
@@ -178,7 +178,7 @@ impl WorkspaceConfig {
     pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
         use crate::config_cache::ConfigCache;
         use crate::validate::check_yml_extension;
-        use moon_common::color;
+        use moon_common::{color, supports_pkl_configs};
         use schematic::ConfigLoader;
 
         let workspace_root = workspace_root.as_ref();

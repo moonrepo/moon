@@ -1,7 +1,7 @@
 use crate::codegen_error::CodegenError;
 use crate::template::Template;
 use miette::IntoDiagnostic;
-use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_common::consts::*;
 use moon_common::path::RelativePathBuf;
 use moon_common::Id;
 use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocator};
@@ -58,7 +58,9 @@ impl<'app> CodeGenerator<'app> {
             for template_root in fs::read_dir(location)? {
                 let template_root = template_root.path();
 
-                if !template_root.is_dir() || !template_root.join(CONFIG_TEMPLATE_FILENAME).exists()
+                if !template_root.is_dir()
+                    || (!template_root.join(CONFIG_TEMPLATE_FILENAME_YML).exists()
+                        && !template_root.join(CONFIG_TEMPLATE_FILENAME_PKL).exists())
                 {
                     continue;
                 }
@@ -112,7 +114,7 @@ impl<'app> CodeGenerator<'app> {
         );
 
         fs::write_file(
-            template_root.join(CONFIG_TEMPLATE_FILENAME),
+            template_root.join(CONFIG_TEMPLATE_FILENAME_YML),
             load_template_config_template(),
         )?;
 

@@ -10,7 +10,7 @@ individually, or together, it's up to you!
 
 ## Shims
 
-proto is primarily powered the by industry standard concept of shims. For each tool installed in
+proto is primarily powered by the industry standard concept of shims. For each tool installed in
 proto, a shim file will exist at `~/.proto/shims` for the primary executable, and some secondary
 executables. Shims _are not_ symlinks to the tool's binary, but are thin wrappers around
 [`proto run`](./commands/run), enabling [runtime version detection](./detection) on every
@@ -27,8 +27,13 @@ $ which node
 ~/.proto/shims/node
 ```
 
+### Setup
+
 To make use of shims, prepend the `~/.proto/shims` directory to `PATH` in your shell profile. This
 _must come before_ the [bin directory](#binary-linking) if using both.
+
+If you're using or plan to use [shell activation](#shell-activation), this happens automatically and
+can be ignored.
 
 ## Binary linking
 
@@ -41,16 +46,13 @@ $ node --version
 20.0.0
 
 $ which node
-~/.proto/bin/node -> /.proto/tools/node/20.0.0/bin/node
+~/.proto/bin/node -> ~/.proto/tools/node/20.0.0/bin/node
 ```
 
 The version of a tool that's symlinked _is not_ dynamic and is manually linked by pinning the chosen
 version with [`proto install --pin=global`](./commands/install) or
 [`proto pin --global`](./commands/pin). This also happens automatically the first time a tool is
 installed.
-
-To make use of bins, prepend the `~/.proto/bin` directory to `PATH` in your shell profile. This
-_must come after_ the [shim directory](#shims) if using both.
 
 :::warning
 
@@ -59,6 +61,14 @@ Node.js package managers currently do not support this, as JavaScript files are 
 (especially on Windows). Shims are required for these tools.
 
 :::
+
+### Setup
+
+To make use of bins, prepend the `~/.proto/bin` directory to `PATH` in your shell profile. This
+_must come after_ the [shim directory](#shims) if using both.
+
+If you're using or plan to use [shell activation](#shell-activation), this happens automatically and
+can be ignored.
 
 ## Shell activation<VersionLabel version="0.38.0" />
 
@@ -70,19 +80,23 @@ please report an issue on [GitHub](https://github.com/moonrepo/proto) or
 
 :::
 
-Our last workflow is what we call shell activation (or shell hooks), and its where the proto
+Our last workflow is what we call shell activation (or shell hooks), and it's where the proto
 environment is setup/reset every time you change directories. If you're coming from another version
 manager, you may be familiar with this kind of workflow.
 
 So how does this work exactly? In your shell profile, you'll evaluate a call to
 [`proto activate <shell>`](./commands/activate), which generates a bunch of shell specific syntax
 that registers a hook for "run this code when the current directory or prompt line changes". Once
-this hook is registered and you run `cd` (for example), proto will load all tools and...
+this hook is registered and you run `cd` (for example), proto will...
 
-- Export environment variables based on [`[env]`](./config#env) and
-  [`[tools.*.env]`](./config#toolsenv)
-- Prepend `PATH` with tool-specific directories (like local and global executables) for the detected
-  version
+- Load all `.prototools` files
+- Extract tools with a [configured version](./config#pinning-versions)
+- For each tool:
+  - Load associated WASM plugin
+  - Export environment variables based on [`[env]`](./config#env) and
+    [`[tools.*.env]`](./config#toolsenv)
+  - Prepend `PATH` with tool-specific directories (like local and global executables) for the
+    detected version
 
 ```shell
 $ cd /some/path && node --version
@@ -92,12 +106,10 @@ $ cd /another/path && node --version
 18.0.0
 ```
 
-:::info
+### Setup
 
-View the [`proto activate`](./commands/activate) documentation for information on how to setup your
-shell profile for this workflow.
-
-:::
+View the [`proto activate`](./commands/activate#setup) documentation for information on how to setup
+your shell profile for this workflow.
 
 ## Comparison
 
@@ -113,3 +125,4 @@ comparison table outlining the features each workflow supports.
 | Includes tool globals/packages | 🔴                     | 🔴   | 🟢                             |
 | Exports environment variables  | 🔴                     | 🔴   | 🟢                             |
 | Prepends `PATH`                | 🔴                     | 🔴   | 🟢                             |
+| Can pin proto's version        | 🔴                     | 🔴   | 🟢                             |

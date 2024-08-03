@@ -26,6 +26,28 @@ Learn more about
 
 :::
 
+### Arguments
+
+- `<shell>` - The shell to activate for.
+
+### Options
+
+- `--export` - Print the activate instructions in shell-specific syntax.
+- `--include-global` - Include global tools configured in `~/.proto/.prototools`.
+- `--json` - Print the activate instructions in JSON format.
+- `--no-bin` - Do not include `~/.proto/bin` when appending `PATH`.
+- `--no-shim` - Do not include `~/.proto/shims` when prepending `PATH`.
+
+### Caveats
+
+- Only tools that have a [version configured in `.prototools`](../config#pinning-versions) will be
+  activated.
+- Tool versions configured in the global `~/.proto/.prototools` are _not_ included by default. Pass
+  `--include-global` during activation to include them.
+  - Do note that this will worsen performance depending on the number of tools.
+- Activation is only applied _after changing directories_ and not when a new shell session is
+  started. We are looking into ways to support this.
+
 ### Setup
 
 The following activation steps should be added _after_ all environment variable and `PATH`
@@ -98,15 +120,3 @@ Add the following line to the end of your `~/.zshrc`.
 ```shell
 eval "$(proto activate zsh)"
 ```
-
-### Arguments
-
-- `<shell>` - The shell to activate for.
-
-### Options
-
-- `--export` - Print the activate instructions in shell-specific syntax.
-- `--include-global` - Include global tools configured in `~/.proto/.prototools`.
-- `--json` - Print the activate instructions in JSON format.
-- `--no-bin` - Do not include `~/.proto/bin` when prepending `PATH`.
-- `--no-shim` - Do not include `~/.proto/shims` when prepending `PATH`.

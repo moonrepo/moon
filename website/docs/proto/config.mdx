@@ -79,9 +79,9 @@ semantic version.
 proto = "0.38.0"
 ```
 
-When configured, all shims (tools) will be executed with that explicit version of proto. This _does
-not_ apply to the version of proto globally installed, or for binaries linked in `~/.proto/bin` or
-via [`proto activate`](./commands/activate).
+Locking is currently enforced through [`proto activate`](./commands/activate), and when activated,
+all shims (tools) will be executed with that explicit version of proto. This _does not_ apply to the
+version of proto globally installed (in some situations), or for binaries linked in `~/.proto/bin`.
 
 ## Available settings
 
@@ -125,8 +125,8 @@ auto-install = true
 
 #### `auto-clean`
 
-When enabled, will automatically clean up the proto cache when [`proto use`](./commands/use) is ran.
-Defaults to `false` or `PROTO_AUTO_CLEAN`.
+When enabled, will automatically clean up the proto store in the background, by removing unused
+tools and outdated plugins. Defaults to `false` or `PROTO_AUTO_CLEAN`.
 
 ```toml title=".prototools"
 [settings]

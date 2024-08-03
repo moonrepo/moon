@@ -2,11 +2,16 @@
 title: upgrade
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `proto upgrade` (or `proto up`) command can be used to upgrade your current proto binary to the
-latest version.
+latest version, or check if you're currently outdated.
 
 ```shell
 $ proto upgrade
+
+# Up/downgrade to a specific version
+$ proto upgrade 0.39.0
 ```
 
 :::info
@@ -15,3 +20,13 @@ The previous binary will be moved to `~/.proto/tools/proto/<version>`, while the
 installed to `~/.proto/bin`.
 
 :::
+
+### Arguments
+
+- `<version>` - The version of proto to explicitly upgrade or downgrade to.
+  <VersionLabel version="0.39.3" />
+
+### Options
+
+- `--check` - Check if there's a new version without executing the upgrade.
+- `--json` - Print the upgrade information as JSON.

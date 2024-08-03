@@ -47,7 +47,7 @@ pub struct ProjectGraphBuilder<'app> {
     /// Mapping of project IDs to project aliases.
     aliases: FxHashMap<Id, String>,
 
-    /// Loaded project configuration (`moon.yml`) files.
+    /// Loaded project configuration files.
     #[serde(skip)]
     configs: FxHashMap<Id, ProjectConfig>,
 
@@ -435,7 +435,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Hash all workspace-level config files
         for file in glob::walk(
             context.workspace_root.join(consts::CONFIG_DIRNAME),
-            ["*.yml", "tasks/**/*.yml"],
+            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
         )? {
             configs.push(to_virtual_string(
                 file.strip_prefix(context.workspace_root).unwrap(),

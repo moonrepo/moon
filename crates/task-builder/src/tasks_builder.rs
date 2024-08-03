@@ -662,6 +662,9 @@ impl<'proj> TasksBuilder<'proj> {
             .map(|d| (*d).to_owned())
             .collect::<Vec<_>>();
 
+        // TODO wrap in condition
+        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.pkl".into()));
+
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
 
         if let Some(env_files) = &options.env_files {

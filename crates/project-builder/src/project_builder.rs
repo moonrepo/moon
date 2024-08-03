@@ -155,7 +155,7 @@ impl<'app> ProjectBuilder<'app> {
         Ok(())
     }
 
-    /// Load a `moon.yml` config file from the root of the project (derived from source).
+    /// Load a `moon.*` config file from the root of the project (derived from source).
     #[instrument(skip_all)]
     pub async fn load_local_config(&mut self) -> miette::Result<()> {
         let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);

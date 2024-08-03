@@ -247,7 +247,10 @@ async fn scaffold_workspace(
     );
 
     copy_files_from_paths(
-        glob::walk_files(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
+        glob::walk_files(
+            moon_dir,
+            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
+        )?,
         &session.workspace_root,
         &docker_workspace_root,
     )?;

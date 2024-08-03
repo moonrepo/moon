@@ -109,6 +109,8 @@ export interface ExperimentsConfig {
 	 * @deprecated
 	 */
 	interweavedTaskInheritance?: boolean;
+	/** Enable support for `.pkl` configuration files. */
+	pklConfigs: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -196,7 +198,7 @@ export interface NotifierConfig {
 export interface WorkspaceProjectsConfig {
 	/**
 	 * A list of globs in which to locate project directories.
-	 * Can be suffixed with `moon.yml` to only find distinct projects.
+	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
 	 */
 	globs: string[];
 	/** A mapping of project IDs to relative file paths to each project directory. */
@@ -423,6 +425,8 @@ export interface PartialExperimentsConfig {
 	 * @deprecated
 	 */
 	interweavedTaskInheritance?: boolean | null;
+	/** Enable support for `.pkl` configuration files. */
+	pklConfigs?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated
@@ -502,7 +506,7 @@ export interface PartialNotifierConfig {
 export interface PartialWorkspaceProjectsConfig {
 	/**
 	 * A list of globs in which to locate project directories.
-	 * Can be suffixed with `moon.yml` to only find distinct projects.
+	 * Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
 	 */
 	globs?: string[] | null;
 	/** A mapping of project IDs to relative file paths to each project directory. */

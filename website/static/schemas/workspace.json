@@ -320,6 +320,12 @@
           "deprecated": true,
           "type": "boolean"
         },
+        "pklConfigs": {
+          "title": "pklConfigs",
+          "description": "Enable support for .pkl configuration files.",
+          "type": "boolean",
+          "markdownDescription": "Enable support for `.pkl` configuration files."
+        },
         "strictProjectAliases": {
           "title": "strictProjectAliases",
           "default": true,
@@ -628,12 +634,12 @@
       "properties": {
         "globs": {
           "title": "globs",
-          "description": "A list of globs in which to locate project directories. Can be suffixed with moon.yml to only find distinct projects.",
+          "description": "A list of globs in which to locate project directories. Can be suffixed with moon.yml or moon.pkl to only find distinct projects.",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "markdownDescription": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects."
+          "markdownDescription": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects."
         },
         "sources": {
           "title": "sources",

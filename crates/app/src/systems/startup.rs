@@ -183,7 +183,7 @@ pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<Inherite
         config_file = ?config_file,
         "Attempting to load {} and {} (optional)",
         color::file(config_name),
-        color::file(format!("{}/tasks/**/*.yml", consts::CONFIG_DIRNAME)),
+        color::file(format!("{}/tasks/**/*", consts::CONFIG_DIRNAME)),
     );
 
     let root = workspace_root.to_owned();

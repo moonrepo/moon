@@ -166,7 +166,7 @@ impl<'task> TaskHasher<'task> {
         sources_globset: &GlobSet,
         workspace_relative_path: &WorkspaceRelativePath,
     ) -> bool {
-        // Don't invalidate existing hashes when moon.yml changes
+        // Don't invalidate existing hashes when moon.* changes
         // as we already hash the contents of each task!
         if workspace_relative_path.ends_with(CONFIG_PROJECT_FILENAME) {
             return false;

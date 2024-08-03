@@ -180,7 +180,7 @@ impl InheritedTasksManager {
         let workspace_root = workspace_root.as_ref();
         let moon_dir = moon_dir.as_ref();
 
-        // tasks.yml
+        // tasks.*
         let tasks_file = moon_dir.join(consts::CONFIG_TASKS_FILENAME);
 
         if tasks_file.exists() {
@@ -191,7 +191,7 @@ impl InheritedTasksManager {
             );
         }
 
-        // tasks/**/*.yml
+        // tasks/**/*.*
         let tasks_dir = moon_dir.join("tasks");
 
         if tasks_dir.exists() {
@@ -226,6 +226,8 @@ impl InheritedTasksManager {
         let name = if name == consts::CONFIG_TASKS_FILENAME {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
+            stripped_name
+        } else if let Some(stripped_name) = name.strip_suffix(".pkl") {
             stripped_name
         } else {
             return;
@@ -277,7 +279,7 @@ impl InheritedTasksManager {
                     standardize_separators(format!("{}", config_entry.input.display()));
                 let mut managed_config = config_entry.config.clone();
 
-                // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
+                // Only modify tasks for `tasks/*.*` files instead of `tasks.*`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
                 // We also don't know what platform each of the tasks should be yet.
                 if let Some(tasks) = &mut managed_config.tasks {

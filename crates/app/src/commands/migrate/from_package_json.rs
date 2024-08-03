@@ -45,7 +45,7 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
         }
     }
 
-    // Create or update the local `moon.yml`
+    // Create or update the local `moon.*`
     let project = project_graph.get(&args.id)?;
     let mut partial_config = ProjectConfig::load_partial(&project.root)?;
 

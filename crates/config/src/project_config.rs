@@ -1,5 +1,3 @@
-// moon.yml
-
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;

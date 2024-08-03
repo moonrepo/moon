@@ -18,7 +18,7 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub alias: Option<String>,
 
-        /// Project configuration loaded from "moon.yml", if it exists.
+        /// Project configuration loaded from "moon.*", if it exists.
         #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub config: ProjectConfig,
 

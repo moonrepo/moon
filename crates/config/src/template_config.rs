@@ -1,5 +1,3 @@
-// template.yml
-
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ValidateError};

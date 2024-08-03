@@ -1,5 +1,3 @@
-// .moon/workspace.yml
-
 use crate::portable_path::{PortablePath, ProjectFilePath, ProjectGlobPath};
 use crate::workspace::*;
 use moon_common::Id;
@@ -71,7 +69,7 @@ fn validate_projects<D, C>(
 #[derive(Clone, Config, Debug)]
 pub struct WorkspaceProjectsConfig {
     /// A list of globs in which to locate project directories.
-    /// Can be suffixed with `moon.yml` to only find distinct projects.
+    /// Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
     pub globs: Vec<String>,
 
     /// A mapping of project IDs to relative file paths to each project directory.
@@ -89,7 +87,7 @@ pub enum WorkspaceProjects {
     #[setting(nested)]
     Both(WorkspaceProjectsConfig),
 
-    /// Using globs. Suffix with `moon.yml` to be distinct.
+    /// Using globs. Suffix with `moon.yml` or `moon.pkl` to be distinct.
     Globs(Vec<String>),
 
     /// Using a mapping of IDs to source paths.

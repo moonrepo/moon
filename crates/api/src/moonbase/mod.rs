@@ -25,10 +25,6 @@ static INSTANCE: OnceLock<Arc<Moonbase>> = OnceLock::new();
 pub struct Moonbase {
     pub auth_token: String,
 
-    pub ci_insights_enabled: bool,
-
-    pub job_id: Option<i64>,
-
     #[allow(dead_code)]
     pub organization_id: i32,
 
@@ -39,9 +35,6 @@ pub struct Moonbase {
     download_urls: Arc<RwLock<FxHashMap<String, Option<String>>>>,
 
     upload_requests: Arc<RwLock<Vec<JoinHandle<()>>>>,
-
-    // Temporary (target -> id)
-    pub job_ids: Arc<RwLock<FxHashMap<String, i64>>>,
 }
 
 impl Moonbase {
@@ -78,24 +71,21 @@ impl Moonbase {
 
         match data {
             Ok(Response::Success(SigninResponse {
-                ci_insights,
                 organization_id,
                 remote_caching,
                 repository_id,
                 token,
+                ..
             })) => {
                 debug!("Sign in successful!");
 
                 let instance = Arc::new(Moonbase {
                     auth_token: token,
-                    ci_insights_enabled: ci_insights,
-                    job_id: None,
                     organization_id,
                     remote_caching_enabled: remote_caching,
                     repository_id,
                     download_urls: Arc::new(RwLock::new(FxHashMap::default())),
                     upload_requests: Arc::new(RwLock::new(vec![])),
-                    job_ids: Arc::new(RwLock::new(FxHashMap::default())),
                 });
 
                 let _ = INSTANCE.set(Arc::clone(&instance));
@@ -287,14 +277,13 @@ impl Moonbase {
         let moonbase = self.clone();
         let hash = hash.to_owned();
         let src_path = src_path.to_owned();
-        let job_id = self.job_ids.read().await.get(target_id).cloned();
 
         self.upload_requests
             .write()
             .await
             .push(tokio::spawn(async move {
                 if let Err(error) = moonbase
-                    .upload_artifact(&hash, &src_path, presigned_url, job_id)
+                    .upload_artifact(&hash, &src_path, presigned_url)
                     .await
                 {
                     warn!(
@@ -309,13 +298,12 @@ impl Moonbase {
         Ok(())
     }
 
-    #[instrument(skip(self, job_id))]
+    #[instrument(skip(self))]
     pub async fn upload_artifact(
         &self,
         hash: &str,
         src_path: &Path,
         upload_url: Option<String>,
-        job_id: Option<i64>,
     ) -> miette::Result<()> {
         let file = tokio::fs::File::open(src_path).await.into_diagnostic()?;
         let file_length = file
@@ -343,11 +331,11 @@ impl Moonbase {
                 let status = response.status();
 
                 if status.is_success() {
-                    self.mark_upload_complete(hash, true, job_id).await?;
+                    self.mark_upload_complete(hash, true).await?;
 
                     Ok(())
                 } else {
-                    self.mark_upload_complete(hash, false, job_id).await?;
+                    self.mark_upload_complete(hash, false).await?;
 
                     Err(MoonbaseError::ArtifactUploadFailure {
                         hash: hash.to_string(),
@@ -360,7 +348,7 @@ impl Moonbase {
                 }
             }
             Err(error) => {
-                self.mark_upload_complete(hash, false, job_id).await?;
+                self.mark_upload_complete(hash, false).await?;
 
                 Err(MoonbaseError::ArtifactUploadFailure {
                     hash: hash.to_string(),
@@ -383,15 +371,13 @@ impl Moonbase {
 
     // Once the upload to cloud storage is complete, we need to mark the upload
     // as completed on our end, whether a success or failure!
-    async fn mark_upload_complete(
-        &self,
-        hash: &str,
-        success: bool,
-        job_id: Option<i64>,
-    ) -> Result<(), MoonbaseError> {
+    async fn mark_upload_complete(&self, hash: &str, success: bool) -> Result<(), MoonbaseError> {
         let _: Response<EmptyData> = post_request(
             format!("artifacts/{hash}/complete"),
-            ArtifactCompleteInput { job_id, success },
+            ArtifactCompleteInput {
+                job_id: None,
+                success,
+            },
             Some(&self.auth_token),
         )
         .await?;

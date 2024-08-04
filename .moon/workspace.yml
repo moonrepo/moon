@@ -12,9 +12,6 @@ projects:
     - '!packages/core-*'
     - 'website'
 
-experiments:
-  actionPipelineV2: true
-
 generator:
   templates:
     # - './.moon/templates'

@@ -1,5 +1,0 @@
-projects:
-  - '*'
-
-experiments:
-  strictProjectAliases: false

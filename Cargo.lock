@@ -3059,35 +3059,6 @@ dependencies = [
 name = "moon_action_pipeline"
 version = "0.0.1"
 dependencies = [
- "ci_env",
- "miette",
- "moon_action",
- "moon_action_context",
- "moon_action_graph",
- "moon_actions",
- "moon_api",
- "moon_app_context",
- "moon_common",
- "moon_console",
- "moon_emitter",
- "moon_logger",
- "moon_notifier",
- "moon_project_graph",
- "moon_utils",
- "num_cpus",
- "rustc-hash 2.0.0",
- "serde",
- "starbase_styles",
- "thiserror",
- "tokio",
- "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "moon_action_pipeline2"
-version = "0.0.1"
-dependencies = [
  "async-trait",
  "miette",
  "moon_action",
@@ -3187,7 +3158,6 @@ dependencies = [
  "moon_action_context",
  "moon_action_graph",
  "moon_action_pipeline",
- "moon_action_pipeline2",
  "moon_actions",
  "moon_api",
  "moon_app_context",
@@ -3571,22 +3541,6 @@ dependencies = [
  "starbase_sandbox",
  "tera",
  "tracing",
-]
-
-[[package]]
-name = "moon_emitter"
-version = "0.0.1"
-dependencies = [
- "async-trait",
- "miette",
- "moon_action",
- "moon_action_context",
- "moon_app_context",
- "moon_project",
- "moon_target",
- "moon_toolchain",
- "serde",
- "tokio",
 ]
 
 [[package]]

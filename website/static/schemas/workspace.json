@@ -291,8 +291,8 @@
       "properties": {
         "actionPipelineV2": {
           "title": "actionPipelineV2",
-          "description": "Enables the new & modern action pipeline.",
           "default": true,
+          "deprecated": true,
           "type": "boolean"
         },
         "interweavedTaskInheritance": {
@@ -303,8 +303,8 @@
         },
         "strictProjectAliases": {
           "title": "strictProjectAliases",
-          "description": "Ensure that the a project alias is only used once. Duplicate aliases will trigger a hard failure.",
           "default": true,
+          "deprecated": true,
           "type": "boolean"
         },
         "taskOutputBoundaries": {

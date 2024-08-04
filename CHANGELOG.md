@@ -8,6 +8,11 @@
   pipeline code has been deleted. If you run into any issues, please report an issue!
 - Resolved the `strictProjectAliases` experiment and enabled its functionality going forward.
 
+#### ⚙️ Internal
+
+- We've sunset the CI insights feature in moonbase. We will no longer be tracking CI run history.
+  This is a retroactive change that applies to all moon versions.
+
 ## 1.27.5
 
 #### 🐞 Fixes

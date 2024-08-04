@@ -4,72 +4,55 @@ Implementing a new language is _a lot_ of work, so this guide outlines all the n
 so. Ideally these are done sequentially, as separate PRs, that correlate to our tiered language
 support paradigm.
 
-- INIT SCRIPT
-
 ## Tier 1
 
-### Add variant to `ProjectLanguage` enum in `moon_config`
+### Add variant to `LanguageType` enum in `moon_config`
 
 This allows projects to configure their primary language, and is utilized by editor extensions.
 
 ```rust
-enum ProjectLanguage {
+enum LanguageType {
   // ...
   Kotlin,
 }
 ```
 
 - [ ] Updated enum
-- [ ] Updated TypeScript types at `packages/types/src/project-config.ts`
 - [ ] Verified all `match` callsites handle the new variant
-- [ ] Ran `just schemas` and updated the JSON schemas
-
-### Add case to `PlatformType::from` in `moon_config`
-
-At this stage, new languages will default to the system platform. Once they reach tier 2, they'll
-have their own platform.
-
-```rust
-ProjectLanguage::Kotlin => PlatformType::System,
-```
-
-- [ ] Updated enum
+- [ ] Ran `just schemas` and updated the JSON schemas/types
 
 ### Create language crate
 
 Every language will have a "lang" crate that defines metadata about the language, and helper
 functions for interacting with its ecosystem (like parsing manifest and lockfiles).
 
-Crate must exist at `crates/<language>/lang`. Feel free to copy an existing language crate and
+Crate must exist at `legacy/<language>/lang`. Feel free to copy an existing language crate and
 update the implementation.
-
-- [ ] Implemented `Language` struct
-- [ ] Implemented `DependencyManager` struct (if applicable)
-- [ ] Implemented `VersionManager` struct (if applicable)
 
 #### Parsing manifests/lockfiles
 
-When reading/writing the manifests/lockfiles, the `config_cache!` macro from the `moon_lang` crate
-must be used. This macro handles concurrency (avoids race conditions) and caching.
+When reading/writing the manifests/lockfiles, the `config_cache_model!` macro from the `moon_lang`
+crate must be used. This macro handles concurrency (avoids race conditions) and caching.
 
 The Node.js
-[`package.json` implementation](https://github.com/moonrepo/moon/blob/master/legacy/node/lang/src/package.rs)
+[`package.json` implementation](https://github.com/moonrepo/moon/blob/master/legacy/node/lang/src/package_json.rs)
 can be used as a reference.
 
 - [ ] Implemented manifests (if applicable)
 - [ ] Implemented lockfiles (if applicable)
   - [ ] `load_lockfile_dependencies`
 
-### Update `moon_platform_detector` crate
+### Update `moon_toolchain` crate
 
 moon implements a lot of inference, detection, and automation, to avoid explicit configuration from
-the developer. The `moon_platform_detector` handles this, and must be updated to support the new
-language.
+the developer. The `moon_toolchain` handles this, and must be updated to support the new language.
 
+- [ ] Updated `languages.rs`
 - [ ] Updated `detect_language_files`
 - [ ] Updated `detect_project_language`
 
-> The `detect_task_platform` can be skipped as it's required for tier 2.
+> The `detect_task_platform` and `detect_project_platform` can be skipped as it's required for
+> tier 2.
 
 ### Add tests
 
@@ -79,7 +62,6 @@ Of course this should all be tested.
 - [ ] Added fixture to `crates/project-builder/tests/__fixtures__/langs`
 - [ ] Added fixture to `crates/task-builder/tests/__fixtures__/builder/platforms`
 - [ ] Updated `crates/config/tests/inherited_tasks_config_test.rs`
-- [ ] Updated `crates/project-builder/tests/__fixtures__/langs/ts-config`
 
 ### Create a pull request
 
@@ -122,7 +104,7 @@ pub struct ToolchainConfig {
 - [ ] Created language struct
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
-- [ ] Ran `just schemas` and updated the JSON schemas
+- [ ] Ran `just schemas`
 - [ ] Add `.prototools` support in `crates/config/src/toolchain_config.rs`
 - [ ] Add tests to `crates/config/tests/toolchain_config_test.rs`
 
@@ -138,24 +120,15 @@ enum PlatformType {
 ```
 
 - [ ] Updated enum
-- [ ] Updated TypeScript types at `packages/types/src/common.ts`
 - [ ] Verified all `match` callsites handle the new variant
+- [ ] Ran `just schemas`
 
-### Update `PlatformType::from` case in `moon_config`
-
-Now that the language has a platform, we should explicitly map it.
-
-```rust
-ProjectLanguage::Kotlin => PlatformType::Kotlin,
-```
-
-- [ ] Updated enum
-
-### Update `moon_platform_detector` crate
+### Update `moon_toolchain` crate
 
 Tasks run against the platform, so we can now attempt to detect this.
 
 - [ ] Updated `detect_task_platform`
+- [ ] Updated `detect_project_platform`
 
 ### Create tool crate
 
@@ -174,7 +147,7 @@ pub struct KotlinTool {
 This is required _even when not using_ the toolchain, as we fallback to a global binary available on
 `PATH`.
 
-Crate must exist at `crates/<language>/tool`. Feel free to copy an existing tool crate and update
+Crate must exist at `legacy/<language>/tool`. Feel free to copy an existing tool crate and update
 the implementation.
 
 - [ ] Implemented `Tool` trait
@@ -187,7 +160,7 @@ Every language will have a "platform" crate that implements the `Platform` trait
 a ton of methods for interacting with the language's ecosystem, and how that interoperates with
 moon.
 
-Crate must exist at `crates/<language>/platform`. Feel free to copy an existing platform crate and
+Crate must exist at `legacy/<language>/platform`. Feel free to copy an existing platform crate and
 update the implementation.
 
 - [ ] Implemented `Platform` trait
@@ -236,7 +209,7 @@ kotlin = "1.2.3"
 
 - [ ] Updated config struct: `crates/config/src/toolchain/<lang>.rs`
 - [ ] Supported proto version in `crates/config/src/toolchain_config.rs`
-- [ ] Ran `just schemas` and updated the JSON schemas
+- [ ] Ran `just schemas`
 
 ### Integrate proto tool into moon tool crate
 
@@ -283,17 +256,17 @@ variants.
 ### Update `bin` command
 
 The `moon bin` command uses a hard-coded tool list, and is not based on the `PlatformType` or
-`ProjectLanguage` enums. Because of this, tools will need to be handled manually.
+`LanguageType` enums. Because of this, tools will need to be handled manually.
 
-- [ ] Updated `legacy/cli/src/commands/bin.rs`
+- [ ] Updated `crates/app/src/commands/bin.rs`
 
 ### Update `docker prune` and `docker scaffold` commands
 
 By default these commands will do their best to handle languages/platforms, but each tool is
 different and may require custom logic.
 
-- [ ] Updated `legacy/cli/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
-- [ ] Updated `legacy/cli/src/commands/docker/prune.rs` (added another prune function)
+- [ ] Updated `crates/app/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
+- [ ] Updated `crates/app/src/commands/docker/prune.rs` (added another prune function)
 
 ### Add runner tests
 
@@ -301,7 +274,7 @@ The biggest thing to test besides the tool and platform, is that running tasks f
 correctly. There are many cases to test for: error handling, exit codes, stdout, stderr, etc. Refer
 to Node.js for a complete example.
 
-- [ ] Added `legacy/cli/tests/run_<lang>_test.rs`
+- [ ] Added `crates/cli/tests/run_<lang>_test.rs`
 
 ### Update docs
 

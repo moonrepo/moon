@@ -3,7 +3,7 @@ use crate::session::CliSession;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
-use moon_action_pipeline2::ActionPipeline as ExpActionPipeline;
+use moon_action_pipeline::ActionPipeline;
 use moon_platform::PlatformManager;
 use moon_project_graph::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
@@ -19,8 +19,7 @@ pub async fn run_action_pipeline(
     action_context: Option<ActionContext>,
 ) -> miette::Result<Vec<Action>> {
     let project_graph = session.get_project_graph().await?;
-
-    let mut pipeline = ExpActionPipeline::new(session.get_app_context()?, project_graph);
+    let mut pipeline = ActionPipeline::new(session.get_app_context()?, project_graph);
 
     if let Some(concurrency) = &session.cli.concurrency {
         pipeline.concurrency = *concurrency;

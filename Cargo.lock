@@ -3041,7 +3041,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_action_pipeline2"
+name = "moon_action_pipeline"
 version = "0.0.1"
 dependencies = [
  "async-trait",
@@ -3142,7 +3142,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_action_graph",
- "moon_action_pipeline2",
+ "moon_action_pipeline",
  "moon_actions",
  "moon_api",
  "moon_app_context",

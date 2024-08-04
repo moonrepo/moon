@@ -1,4 +1,4 @@
-use crate::experiments::run_action_pipeline;
+use crate::components::run_action_pipeline;
 use crate::helpers::create_progress_bar;
 use crate::session::CliSession;
 use starbase::AppResult;

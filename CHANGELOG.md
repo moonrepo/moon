@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Resolved the `actionPipelineV2` experiment and the new pipeline is now always enabled. The old
+  pipeline code has been deleted. If you run into any issues, please report an issue!
+- Resolved the `strictProjectAliases` experiment and enabled its functionality going forward.
+
+#### ⚙️ Internal
+
+- We've sunset the CI insights feature in moonbase. We will no longer be tracking CI run history.
+  This is a retroactive change that applies to all moon versions.
+
 ## 1.27.8
 
 #### 🚀 Updates

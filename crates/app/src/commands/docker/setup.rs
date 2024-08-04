@@ -1,5 +1,5 @@
 use super::{docker_error::AppDockerError, DockerManifest, MANIFEST_NAME};
-use crate::experiments::run_action_pipeline;
+use crate::components::run_action_pipeline;
 use crate::session::CliSession;
 use starbase::AppResult;
 use starbase_utils::json;

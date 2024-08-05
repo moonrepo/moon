@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{consts, Id, Style, Stylize};
+use moon_common::{get_config_file_label, Id, Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -25,7 +25,7 @@ pub enum ProjectGraphError {
         .old_source.style(Style::File),
         .new_source.style(Style::File),
         "id".style(Style::Property),
-        consts::CONFIG_PROJECT_FILENAME.style(Style::File)
+        get_config_file_label("moon", false).style(Style::File)
     )]
     DuplicateId {
         id: Id,

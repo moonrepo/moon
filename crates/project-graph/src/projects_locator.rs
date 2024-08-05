@@ -65,9 +65,11 @@ where
     potential_projects.sort();
 
     for mut project_root in potential_projects {
-        // Remove trailing moon.yml
+        // Remove trailing moon filename
         if project_root.is_file() {
-            if project_root.ends_with(consts::CONFIG_PROJECT_FILENAME) {
+            if project_root.ends_with(consts::CONFIG_PROJECT_FILENAME_YML)
+                || project_root.ends_with(consts::CONFIG_PROJECT_FILENAME_PKL)
+            {
                 project_root = project_root.parent().unwrap().to_owned();
 
                 // Avoid overwriting an existing root project

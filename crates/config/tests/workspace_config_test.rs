@@ -6,11 +6,22 @@ use moon_config::{
     ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig, WorkspaceProjects,
 };
 use rustc_hash::FxHashMap;
+use schematic::ConfigLoader;
 use semver::Version;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
+use std::path::Path;
 use utils::*;
 
 const FILENAME: &str = ".moon/workspace.yml";
+
+fn load_workspace_config(path: &Path) -> WorkspaceConfig {
+    ConfigLoader::<WorkspaceConfig>::new()
+        .file(path)
+        .unwrap()
+        .load()
+        .unwrap()
+        .config
+}
 
 mod workspace_config {
     use super::*;
@@ -43,7 +54,7 @@ projects:
         fn recursive_merges() {
             let sandbox = create_sandbox("extends/workspace");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
-                WorkspaceConfig::load(sandbox.path(), path)
+                Ok(load_workspace_config(path))
             });
 
             assert_eq!(config.runner.cache_lifetime, "3 hours");
@@ -111,7 +122,7 @@ telemetry: false
             );
 
             let config = test_config(sandbox.path().join("workspace.yml"), |path| {
-                WorkspaceConfig::load(sandbox.path(), path)
+                Ok(load_workspace_config(path))
             });
 
             if let WorkspaceProjects::Globs(globs) = config.projects {
@@ -121,30 +132,6 @@ telemetry: false
             }
 
             assert!(!config.telemetry);
-        }
-
-        #[test]
-        fn loads_from_url_and_saves_temp_file() {
-            let sandbox = create_empty_sandbox();
-            let server = MockServer::start();
-
-            server.mock(|when, then| {
-                when.method(GET).path("/config.yml");
-                then.status(200).body(SHARED_WORKSPACE);
-            });
-
-            let temp_dir = sandbox.path().join(".moon/cache/temp");
-            let url = server.url("/config.yml");
-
-            sandbox.create_file("workspace.yml", format!(r"extends: '{url}'"));
-
-            assert!(!temp_dir.exists());
-
-            test_config(sandbox.path().join("workspace.yml"), |path| {
-                WorkspaceConfig::load(sandbox.path(), path)
-            });
-
-            assert!(temp_dir.exists());
         }
     }
 

@@ -18,7 +18,7 @@ cacheable!(
         /// This is typically for language specific semantics, like `name` from `package.json`.
         pub alias: Option<String>,
 
-        /// Project configuration loaded from "moon.yml", if it exists.
+        /// Project configuration loaded from "moon.*", if it exists.
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.

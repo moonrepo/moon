@@ -2,7 +2,7 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use async_recursion::async_recursion;
 use clap::Args;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME};
+use moon_common::consts::*;
 use moon_common::{path, Id};
 use moon_config::LanguageType;
 use moon_project_graph::ProjectGraph;
@@ -95,8 +95,10 @@ async fn scaffold_workspace(
         let mut files_to_copy: Vec<String> = vec![
             ".gitignore".into(),
             ".prototools".into(),
-            CONFIG_PROJECT_FILENAME.into(),
-            CONFIG_TEMPLATE_FILENAME.into(),
+            CONFIG_PROJECT_FILENAME_YML.into(),
+            CONFIG_PROJECT_FILENAME_PKL.into(),
+            CONFIG_TEMPLATE_FILENAME_YML.into(),
+            CONFIG_TEMPLATE_FILENAME_PKL.into(),
         ];
         let mut files_to_create: Vec<String> = vec![];
 
@@ -247,7 +249,10 @@ async fn scaffold_workspace(
     );
 
     copy_files_from_paths(
-        glob::walk_files(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
+        glob::walk_files(
+            moon_dir,
+            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
+        )?,
         &session.workspace_root,
         &docker_workspace_root,
     )?;

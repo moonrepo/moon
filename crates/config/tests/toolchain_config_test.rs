@@ -46,7 +46,10 @@ node: {}";
         fn recursive_merges() {
             let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
-                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
+                Ok(ToolchainConfig::create_loader(sandbox.path())?
+                    .file(path)?
+                    .load()?
+                    .config)
             });
 
             let node = config.node.unwrap();
@@ -71,7 +74,10 @@ node: {}";
         fn recursive_merges_typescript() {
             let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("typescript-2.yml"), |path| {
-                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
+                Ok(ToolchainConfig::create_loader(sandbox.path())?
+                    .file(path)?
+                    .load()?
+                    .config)
             });
 
             let typescript = config.typescript.unwrap();
@@ -105,7 +111,10 @@ deno: {{}}
             );
 
             let config = test_config(sandbox.path().join("toolchain.yml"), |path| {
-                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
+                Ok(ToolchainConfig::create_loader(sandbox.path())?
+                    .file(path)?
+                    .load()?
+                    .config)
             });
 
             assert!(config.bun.is_some());
@@ -131,7 +140,10 @@ deno: {{}}
             assert!(!temp_dir.exists());
 
             test_config(sandbox.path().join("toolchain.yml"), |path| {
-                ToolchainConfig::load(sandbox.path(), path, &ProtoConfig::default())
+                Ok(ToolchainConfig::create_loader(sandbox.path())?
+                    .file(path)?
+                    .load()?
+                    .config)
             });
 
             assert!(temp_dir.exists());

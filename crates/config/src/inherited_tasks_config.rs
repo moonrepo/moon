@@ -174,24 +174,37 @@ impl InheritedTasksManager {
         workspace_root: T,
         moon_dir: D,
     ) -> miette::Result<InheritedTasksManager> {
-        use moon_common::consts;
+        use moon_common::consts::*;
+        use moon_common::supports_pkl_configs;
 
         let mut manager = InheritedTasksManager::default();
         let workspace_root = workspace_root.as_ref();
         let moon_dir = moon_dir.as_ref();
 
-        // tasks.yml
-        let tasks_file = moon_dir.join(consts::CONFIG_TASKS_FILENAME);
+        // tasks.*
+        let yml_file = moon_dir.join(CONFIG_TASKS_FILENAME_YML);
 
-        if tasks_file.exists() {
+        if yml_file.exists() {
             manager.add_config(
                 workspace_root,
-                &tasks_file,
-                InheritedTasksConfig::load_partial(workspace_root, &tasks_file)?,
+                &yml_file,
+                InheritedTasksConfig::load_partial(workspace_root, &yml_file)?,
             );
         }
 
-        // tasks/**/*.yml
+        if supports_pkl_configs() {
+            let pkl_file = moon_dir.join(CONFIG_TASKS_FILENAME_PKL);
+
+            if pkl_file.exists() {
+                manager.add_config(
+                    workspace_root,
+                    &pkl_file,
+                    InheritedTasksConfig::load_partial(workspace_root, &pkl_file)?,
+                );
+            }
+        }
+
+        // tasks/**/*.*
         let tasks_dir = moon_dir.join("tasks");
 
         if tasks_dir.exists() {
@@ -215,7 +228,7 @@ impl InheritedTasksManager {
         path: &Path,
         config: PartialInheritedTasksConfig,
     ) {
-        use moon_common::consts;
+        use moon_common::consts::*;
 
         let name = path
             .file_name()
@@ -223,9 +236,11 @@ impl InheritedTasksManager {
             .to_str()
             .unwrap_or_default();
 
-        let name = if name == consts::CONFIG_TASKS_FILENAME {
+        let name = if name == CONFIG_TASKS_FILENAME_YML || name == CONFIG_TASKS_FILENAME_PKL {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
+            stripped_name
+        } else if let Some(stripped_name) = name.strip_suffix(".pkl") {
             stripped_name
         } else {
             return;
@@ -277,7 +292,7 @@ impl InheritedTasksManager {
                     standardize_separators(format!("{}", config_entry.input.display()));
                 let mut managed_config = config_entry.config.clone();
 
-                // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
+                // Only modify tasks for `tasks/*.*` files instead of `tasks.*`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
                 // We also don't know what platform each of the tasks should be yet.
                 if let Some(tasks) = &mut managed_config.tasks {
@@ -346,8 +361,11 @@ fn load_dir(
     workspace_root: &Path,
     dir: &Path,
 ) -> miette::Result<()> {
+    use moon_common::supports_pkl_configs;
     use schematic::ConfigError;
     use std::fs;
+
+    let use_pkl = supports_pkl_configs();
 
     for entry in fs::read_dir(dir)
         .map_err(|error| ConfigError::ReadFileFailed {
@@ -365,11 +383,11 @@ fn load_dir(
             })?;
 
         if file_type.is_file() {
-            // Non-yaml files may be located in these folders,
+            // Non-yaml/pkl files may be located in these folders,
             // so avoid failing when trying to parse it as a config
             if path
                 .extension()
-                .is_some_and(|ext| ext == "yml" || ext == "yaml")
+                .is_some_and(|ext| ext == "yml" || ext == "yaml" || use_pkl && ext == "pkl")
             {
                 manager.add_config(
                     workspace_root,

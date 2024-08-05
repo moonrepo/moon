@@ -1,5 +1,5 @@
 [package]
-name = "moon_action_pipeline2"
+name = "moon_action_pipeline"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"

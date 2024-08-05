@@ -301,20 +301,6 @@ docker:
 
 Enable or disable experiments that alter core functionality.
 
-### `strictProjectAliases`<VersionLabel version="1.18.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#strictProjectAliases" />
-
-When enabled, will fail with an error when multiple
-[projects have the same alias](../concepts/project#aliases). When disabled, the duplicate aliases
-will not be assigned to their project, and only the first project will use the alias. Defaults to
-`true`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  strictProjectAliases: false
-```
-
 ## `extensions`<VersionLabel version="1.20.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />

@@ -88,9 +88,8 @@ export interface DockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
 	/**
-	 * Enables the new & modern action pipeline.
-	 *
 	 * @default true
+	 * @deprecated
 	 */
 	actionPipelineV2?: boolean;
 	/**
@@ -99,10 +98,8 @@ export interface ExperimentsConfig {
 	 */
 	interweavedTaskInheritance?: boolean;
 	/**
-	 * Ensure that the a project alias is only used once. Duplicate
-	 * aliases will trigger a hard failure.
-	 *
 	 * @default true
+	 * @deprecated
 	 */
 	strictProjectAliases?: boolean;
 	/**
@@ -390,9 +387,8 @@ export interface PartialDockerConfig {
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
 	/**
-	 * Enables the new & modern action pipeline.
-	 *
 	 * @default true
+	 * @deprecated
 	 */
 	actionPipelineV2?: boolean | null;
 	/**
@@ -401,10 +397,8 @@ export interface PartialExperimentsConfig {
 	 */
 	interweavedTaskInheritance?: boolean | null;
 	/**
-	 * Ensure that the a project alias is only used once. Duplicate
-	 * aliases will trigger a hard failure.
-	 *
 	 * @default true
+	 * @deprecated
 	 */
 	strictProjectAliases?: boolean | null;
 	/**

@@ -1,4 +1,4 @@
-use crate::experiments::run_action_pipeline;
+use crate::components::run_action_pipeline;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::session::CliSession;
 use clap::Args;

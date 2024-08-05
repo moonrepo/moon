@@ -976,15 +976,6 @@ mod project_graph {
         }
 
         #[tokio::test]
-        async fn doesnt_error_for_duplicate_aliases_if_setting_off() {
-            let graph =
-                generate_aliases_project_graph_for_fixture("aliases-conflict-disabled").await;
-
-            assert_eq!(graph.get("one").unwrap().alias, Some("@test".to_owned()));
-            assert_eq!(graph.get("two").unwrap().alias, None);
-        }
-
-        #[tokio::test]
         async fn ignores_duplicate_aliases_if_ids_match() {
             let sandbox = create_sandbox("aliases-conflict");
             let container = ProjectGraphContainer::new(sandbox.path());

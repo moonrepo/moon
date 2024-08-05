@@ -12,7 +12,6 @@ moon_time = { path = "../time" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }
 md5 = "0.7.0"
-graphql_client = { version = "0.14.0", features = ["reqwest-rustls"] }
 miette = { workspace = true }
 proto_core = { workspace = true }
 reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
@@ -25,8 +24,6 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
-
-# Rebuild schema: graphql-client introspect-schema http://localhost:8080/graphql --output ./crates/api/schema.json
 
 [lints]
 workspace = true

@@ -72,6 +72,3 @@ moon-check:
 
 schemas:
 	cargo run -p moon_config_schema --features typescript
-
-gql:
-	graphql-client introspect-schema http://localhost:8080/graphql --output crates/api/schema.json --header "X-Moonbase-TestingId: 1"

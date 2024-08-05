@@ -1,6 +1,5 @@
 mod common;
 pub mod endpoints;
-pub mod graphql;
 
 use crate::moonbase::common::*;
 use crate::moonbase::endpoints::*;
@@ -11,8 +10,7 @@ use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::io;
 use std::path::Path;
-use std::sync::Arc;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio_util::codec::{BytesCodec, FramedRead};

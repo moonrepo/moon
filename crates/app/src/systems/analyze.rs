@@ -97,7 +97,7 @@ pub async fn install_proto(
 
     debug!("Unpacking archive and installing proto");
 
-    unpack_release(result, &install_dir, &proto_env.store.temp_dir, false)?;
+    install_release(result, &install_dir, &proto_env.store.temp_dir, false)?;
 
     debug!("Successfully installed proto!");
 

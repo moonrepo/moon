@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.80.
+- Updated dependencies.
+
 ## 1.27.5
 
 #### 🐞 Fixes

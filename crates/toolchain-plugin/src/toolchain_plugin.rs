@@ -1,5 +1,8 @@
 use moon_common::Id;
-use moon_pdk_api::{MoonContext, SyncProjectInput, SyncProjectRecord, SyncWorkspaceInput};
+use moon_pdk_api::{
+    MoonContext, SyncProjectInput, SyncProjectRecord, SyncWorkspaceInput, ToolchainMetadataInput,
+    ToolchainMetadataOutput,
+};
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
 use rustc_hash::FxHashMap;
@@ -8,6 +11,7 @@ use tracing::{debug, instrument};
 
 pub struct ToolchainPlugin {
     pub id: PluginId,
+    pub metadata: ToolchainMetadataOutput,
 
     plugin: Arc<PluginContainer>,
 
@@ -63,6 +67,13 @@ impl Plugin for ToolchainPlugin {
     fn new(registration: PluginRegistration) -> miette::Result<Self> {
         let plugin = Arc::new(registration.container);
 
+        let metadata: ToolchainMetadataOutput = plugin.cache_func_with(
+            "register_toolchain",
+            ToolchainMetadataInput {
+                id: registration.id.to_string(),
+            },
+        )?;
+
         Ok(Self {
             // Only create the proto tool instance if we know that
             // the WASM file has support for it!
@@ -77,6 +88,7 @@ impl Plugin for ToolchainPlugin {
             // },
             tool: None,
             id: registration.id,
+            metadata,
             plugin,
         })
     }

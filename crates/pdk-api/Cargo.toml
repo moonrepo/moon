@@ -16,5 +16,9 @@ schematic = { workspace = true, features = ["schema_serde"] }
 serde = { workspace = true }
 warpgate_api = { workspace = true }
 
+[features]
+default = []
+schematic = ["warpgate_api/schematic"]
+
 [lints]
 workspace = true

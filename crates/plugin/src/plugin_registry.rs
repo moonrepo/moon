@@ -43,11 +43,8 @@ impl<T: Plugin> PluginRegistry<T> {
         loader.set_offline_checker(is_offline);
 
         // Merge proto and moon virtual paths
-        let mut paths = proto_env
-            .get_virtual_paths()
-            .into_iter()
-            .collect::<BTreeMap<_, _>>();
-
+        let mut paths = BTreeMap::new();
+        paths.extend(proto_env.get_virtual_paths());
         paths.extend(moon_env.get_virtual_paths());
 
         Self {

@@ -1,4 +1,4 @@
-use crate::MoonContext;
+use crate::common::*;
 use moon_common::Id;
 use moon_config::{DependencyConfig, ProjectConfig};
 use rustc_hash::FxHashMap;
@@ -18,7 +18,11 @@ api_struct!(
 api_struct!(
     /// Output returned from the `register_toolchain` function.
     pub struct ToolchainMetadataOutput {
+        /// Schema shape of the tool's configuration.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub config_schema: Option<Schema>,
+
+        /// Version of the plugin.
         pub plugin_version: String,
     }
 );
@@ -30,6 +34,14 @@ api_struct!(
     pub struct SyncWorkspaceInput {
         /// Current moon context.
         pub context: MoonContext,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `sync_workspace` function.
+    pub struct SyncWorkspaceOutput {
+        /// Operations to perform.
+        pub operations: Vec<Operation>,
     }
 );
 

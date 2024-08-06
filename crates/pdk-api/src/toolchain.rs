@@ -1,9 +1,27 @@
+use crate::MoonContext;
 use moon_common::Id;
 use moon_config::{DependencyConfig, ProjectConfig};
 use rustc_hash::FxHashMap;
+use schematic::Schema;
 use warpgate_api::{api_struct, VirtualPath};
 
-pub use crate::MoonContext;
+// METADATA
+
+api_struct!(
+    /// Input passed to the `register_toolchain` function.
+    pub struct ToolchainMetadataInput {
+        /// ID of the toolchain, as it was configured.
+        pub id: String,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `register_toolchain` function.
+    pub struct ToolchainMetadataOutput {
+        pub config_schema: Option<Schema>,
+        pub plugin_version: String,
+    }
+);
 
 // SYNC WORKSPACE
 

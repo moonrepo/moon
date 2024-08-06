@@ -1,5 +1,6 @@
 use moon_env::MoonEnvironment;
 use proto_core::ProtoEnvironment;
+use std::fmt::Debug;
 use std::sync::Arc;
 use warpgate::{Id, PluginContainer};
 
@@ -32,7 +33,7 @@ impl PluginType {
     }
 }
 
-pub trait Plugin: Sized {
+pub trait Plugin: Debug + Sized {
     fn new(registration: PluginRegistration) -> miette::Result<Self>;
     fn get_type(&self) -> PluginType;
 }

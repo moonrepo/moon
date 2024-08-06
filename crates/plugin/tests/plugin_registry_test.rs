@@ -8,6 +8,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
+#[derive(Debug)]
 struct TestPlugin;
 
 impl Plugin for TestPlugin {

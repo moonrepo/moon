@@ -3,8 +3,9 @@ use moon_plugin::{MoonEnvironment, PluginRegistry, PluginType, ProtoEnvironment}
 use std::ops::Deref;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct ExtensionRegistry {
-    pub registry: Arc<PluginRegistry<ExtensionPlugin>>,
+    registry: Arc<PluginRegistry<ExtensionPlugin>>,
 }
 
 impl ExtensionRegistry {

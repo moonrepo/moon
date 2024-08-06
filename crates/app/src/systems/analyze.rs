@@ -194,11 +194,11 @@ pub async fn load_toolchain(registry: Arc<ToolchainRegistry>) -> AppResult {
         return Ok(());
     }
 
+    registry.load_all().await?;
+
     for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;
     }
-
-    registry.load_all().await?;
 
     Ok(())
 }

@@ -1,5 +1,6 @@
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
+use std::fmt;
 use tracing::instrument;
 
 pub struct ExtensionPlugin {
@@ -28,5 +29,13 @@ impl Plugin for ExtensionPlugin {
 
     fn get_type(&self) -> PluginType {
         PluginType::Extension
+    }
+}
+
+impl fmt::Debug for ExtensionPlugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExtensionPlugin")
+            .field("id", &self.id)
+            .finish()
     }
 }

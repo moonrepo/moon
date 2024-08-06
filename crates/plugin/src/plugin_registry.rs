@@ -6,6 +6,7 @@ use proto_core::{is_offline, ProtoEnvironment};
 use scc::hash_map::OccupiedEntry;
 use scc::HashMap;
 use starbase_utils::fs;
+use std::fmt;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
@@ -32,7 +33,7 @@ impl<T: Plugin> PluginRegistry<T> {
         moon_env: Arc<MoonEnvironment>,
         proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
-        debug!(kind = type_of.get_label(), "Creating plugin registry");
+        debug!(plugin = type_of.get_label(), "Creating plugin registry");
 
         // Create the loader
         let mut loader = PluginLoader::new(
@@ -69,7 +70,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             path = ?wasm_file,
             "Creating plugin manifest from WASM file",
@@ -124,7 +125,7 @@ impl<T: Plugin> PluginRegistry<T> {
             })?;
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Accessing information from the plugin (async)",
         );
@@ -142,7 +143,7 @@ impl<T: Plugin> PluginRegistry<T> {
         })?;
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Accessing information from the plugin (sync)",
         );
@@ -177,7 +178,7 @@ impl<T: Plugin> PluginRegistry<T> {
                 })?;
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Performing an action on the plugin (async)",
         );
@@ -195,7 +196,7 @@ impl<T: Plugin> PluginRegistry<T> {
         })?;
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Performing an action on the plugin (sync)",
         );
@@ -242,7 +243,7 @@ impl<T: Plugin> PluginRegistry<T> {
         }
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Attempting to load and register plugin",
         );
@@ -263,7 +264,7 @@ impl<T: Plugin> PluginRegistry<T> {
         op(&mut manifest)?;
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Updated plugin manifest, attempting to register plugin",
         );
@@ -284,7 +285,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn register(&self, id: Id, plugin: T) {
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Registered plugin",
         );
@@ -293,6 +294,17 @@ impl<T: Plugin> PluginRegistry<T> {
     }
 }
 
+impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PluginRegistry")
+            .field("moon_env", &self.moon_env)
+            .field("proto_env", &self.proto_env)
+            .field("plugins", &self.plugins)
+            .field("type_of", &self.type_of)
+            .field("virtual_paths", &self.virtual_paths)
+            .finish()
+    }
+}
 pub struct PluginInstance<'l, T: Plugin> {
     entry: OccupiedEntry<'l, Id, T>,
 }

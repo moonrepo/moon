@@ -6,14 +6,19 @@ $schema: '../website/static/schemas/toolchain.json'
 #     - 'cargo-nextest'
 #   syncToolchainConfig: true
 
-node:
-  version: '20.15.0'
-  packageManager: 'yarn'
-  yarn:
-    version: '4.3.1'
-  addEnginesConstraint: false
-  inferTasksFromScripts: false
+# node:
+#   version: '20.15.0'
+#   packageManager: 'yarn'
+#   yarn:
+#     version: '4.3.1'
+#   addEnginesConstraint: false
+#   inferTasksFromScripts: false
 
-typescript:
-  routeOutDirToCache: true
-  syncProjectReferences: true
+# typescript:
+#   routeOutDirToCache: true
+#   syncProjectReferences: true
+
+node-test:
+  plugin: 'file:///Users/miles/.cargo/shared-target/wasm32-wasi/debug/node_toolchain.wasm'
+  addEnginesConstraint: true
+  inferTasksFromScripts: true

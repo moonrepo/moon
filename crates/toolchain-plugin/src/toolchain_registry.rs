@@ -9,11 +9,12 @@ use rustc_hash::FxHashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::debug;
+use tracing::{debug, trace};
 
+#[derive(Debug)]
 pub struct ToolchainRegistry {
-    pub configs: FxHashMap<PluginId, ToolConfig>, // TODO
-    pub registry: Arc<PluginRegistry<ToolchainPlugin>>,
+    pub configs: FxHashMap<PluginId, ToolConfig>,
+    registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 
 impl ToolchainRegistry {
@@ -43,10 +44,17 @@ impl ToolchainRegistry {
             set.spawn(async move {
                 registry
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
-                        manifest.config.insert(
-                            "moon_toolchain_config".to_owned(),
-                            serialize_config(config.config.iter())?,
+                        let value = serialize_config(config.config.iter())?;
+
+                        trace!(
+                            id = id.as_str(),
+                            config = %value,
+                            "Storing moon toolchain configuration",
                         );
+
+                        manifest
+                            .config
+                            .insert("moon_toolchain_config".to_owned(), value);
 
                         inject_proto_manifest_config(&id, &registry.proto_env, manifest)?;
 

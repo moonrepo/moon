@@ -33,6 +33,7 @@ pub struct ToolConfig {
 /// Configures all tools and platforms required for tasks.
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Config, Debug)]
+#[config(allow_unknown_fields)]
 pub struct ToolchainConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/toolchain.json",

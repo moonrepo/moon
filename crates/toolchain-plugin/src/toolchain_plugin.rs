@@ -6,6 +6,7 @@ use moon_pdk_api::{
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
 use rustc_hash::FxHashMap;
+use std::fmt;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -95,5 +96,14 @@ impl Plugin for ToolchainPlugin {
 
     fn get_type(&self) -> PluginType {
         PluginType::Toolchain
+    }
+}
+
+impl fmt::Debug for ToolchainPlugin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ToolchainPlugin")
+            .field("id", &self.id)
+            .field("metadata", &self.metadata)
+            .finish()
     }
 }

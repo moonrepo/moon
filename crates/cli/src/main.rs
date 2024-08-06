@@ -170,7 +170,7 @@ async fn main() -> MainResult {
                     }
                 },
                 Commands::Run(args) => commands::run::run(session, args).await,
-                Commands::Setup => commands::setup::setup().await,
+                Commands::Setup => commands::setup::setup(session).await,
                 Commands::Sync { command } => match command {
                     Some(SyncCommands::Codeowners(args)) => {
                         commands::syncs::codeowners::sync(session, args).await

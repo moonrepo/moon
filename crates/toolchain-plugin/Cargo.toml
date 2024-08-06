@@ -16,6 +16,7 @@ moon_plugin = { path = "../plugin" }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

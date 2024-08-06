@@ -67,12 +67,12 @@ impl Plugin for ToolchainPlugin {
     fn new(registration: PluginRegistration) -> miette::Result<Self> {
         let plugin = Arc::new(registration.container);
 
-        let metadata: ToolchainMetadataOutput = plugin.cache_func_with(
-            "register_toolchain",
-            ToolchainMetadataInput {
-                id: registration.id.to_string(),
-            },
-        )?;
+        // let metadata: ToolchainMetadataOutput = plugin.cache_func_with(
+        //     "register_toolchain",
+        //     ToolchainMetadataInput {
+        //         id: registration.id.to_string(),
+        //     },
+        // )?;
 
         Ok(Self {
             // Only create the proto tool instance if we know that
@@ -88,7 +88,7 @@ impl Plugin for ToolchainPlugin {
             // },
             tool: None,
             id: registration.id,
-            metadata,
+            metadata: ToolchainMetadataOutput::default(),
             plugin,
         })
     }

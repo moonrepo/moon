@@ -12,9 +12,9 @@ use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
 use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
-use moon_extension_plugin::ExtensionPlugin;
-use moon_plugin::{PluginRegistry, PluginType};
+use moon_extension_plugin::*;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
+use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
@@ -26,8 +26,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::try_join;
 use tracing::debug;
-
-pub type ExtensionRegistry = PluginRegistry<ExtensionPlugin>;
 
 #[derive(Clone)]
 pub struct CliSession {
@@ -44,6 +42,7 @@ pub struct CliSession {
     cache_engine: OnceCell<Arc<CacheEngine>>,
     extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     project_graph: OnceCell<Arc<ProjectGraph>>,
+    toolchain_registry: OnceCell<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
 
     // Configs
@@ -71,6 +70,7 @@ impl CliSession {
             proto_env: Arc::new(ProtoEnvironment::default()),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
+            toolchain_registry: OnceCell::new(),
             working_dir: PathBuf::new(),
             workspace_root: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
@@ -117,8 +117,7 @@ impl CliSession {
 
     pub fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
         let item = self.extension_registry.get_or_init(|| {
-            Arc::new(PluginRegistry::new(
-                PluginType::Extension,
+            Arc::new(ExtensionRegistry::new(
                 Arc::clone(&self.moon_env),
                 Arc::clone(&self.proto_env),
             ))
@@ -140,6 +139,17 @@ impl CliSession {
         let _ = self.project_graph.set(Arc::clone(&graph));
 
         Ok(graph)
+    }
+
+    pub fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
+        let item = self.toolchain_registry.get_or_init(|| {
+            Arc::new(ToolchainRegistry::new(
+                Arc::clone(&self.moon_env),
+                Arc::clone(&self.proto_env),
+            ))
+        });
+
+        Ok(Arc::clone(item))
     }
 
     pub fn get_vcs_adapter(&self) -> AppResult<Arc<BoxedVcs>> {
@@ -248,7 +258,7 @@ impl AppSession for CliSession {
             .await?;
 
             if self.requires_toolchain_installed() {
-                analyze::load_toolchain().await?;
+                analyze::load_toolchain(self.get_toolchain_registry()?).await?;
             }
         }
 

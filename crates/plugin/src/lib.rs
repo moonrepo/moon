@@ -2,9 +2,11 @@ mod plugin;
 mod plugin_error;
 mod plugin_registry;
 
+pub use moon_env::MoonEnvironment;
 pub use plugin::*;
 pub use plugin_error::*;
 pub use plugin_registry::*;
+pub use proto_core::ProtoEnvironment;
 pub use warpgate::{
     Id as PluginId, PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm,
 };

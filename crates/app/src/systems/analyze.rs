@@ -9,6 +9,7 @@ use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
+use moon_toolchain_plugin::ToolchainRegistry;
 use proto_core::{is_offline, ProtoEnvironment, ProtoError};
 use proto_installer::*;
 use semver::{Version, VersionReq};
@@ -186,8 +187,8 @@ pub async fn register_platforms(
     Ok(())
 }
 
-#[instrument]
-pub async fn load_toolchain() -> AppResult {
+#[instrument(skip(registry))]
+pub async fn load_toolchain(registry: Arc<ToolchainRegistry>) -> AppResult {
     // This isn't an action but we should also support skipping here!
     if should_skip_action("MOON_SKIP_SETUP_TOOLCHAIN").is_some() {
         return Ok(());
@@ -196,6 +197,8 @@ pub async fn load_toolchain() -> AppResult {
     for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;
     }
+
+    registry.load_all().await?;
 
     Ok(())
 }

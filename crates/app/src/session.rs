@@ -13,6 +13,7 @@ use moon_console::Console;
 use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
+use moon_plugin::PluginId;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
@@ -143,10 +144,15 @@ impl CliSession {
 
     pub fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
         let item = self.toolchain_registry.get_or_init(|| {
-            Arc::new(ToolchainRegistry::new(
-                Arc::clone(&self.moon_env),
-                Arc::clone(&self.proto_env),
-            ))
+            let mut registry =
+                ToolchainRegistry::new(Arc::clone(&self.moon_env), Arc::clone(&self.proto_env));
+
+            // Convert moon IDs to plugin IDs
+            for (id, config) in self.toolchain_config.toolchains.clone() {
+                registry.configs.insert(PluginId::raw(id), config);
+            }
+
+            Arc::new(registry)
         });
 
         Ok(Arc::clone(item))

@@ -118,10 +118,15 @@ impl CliSession {
 
     pub fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
         let item = self.extension_registry.get_or_init(|| {
-            Arc::new(ExtensionRegistry::new(
-                Arc::clone(&self.moon_env),
-                Arc::clone(&self.proto_env),
-            ))
+            let mut registry =
+                ExtensionRegistry::new(Arc::clone(&self.moon_env), Arc::clone(&self.proto_env));
+
+            // Convert moon IDs to plugin IDs
+            for (id, config) in self.workspace_config.extensions.clone() {
+                registry.configs.insert(PluginId::raw(id), config);
+            }
+
+            Arc::new(registry)
         });
 
         Ok(Arc::clone(item))

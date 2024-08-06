@@ -2,7 +2,7 @@ use crate::app_error::AppError;
 use crate::session::CliSession;
 use clap::Args;
 use moon_common::Id;
-use moon_plugin::{serialize_config, PluginId};
+use moon_plugin::PluginId;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -18,24 +18,15 @@ pub struct ExtArgs {
 
 #[instrument(skip_all)]
 pub async fn ext(session: CliSession, args: ExtArgs) -> AppResult {
-    let Some(config) = session.workspace_config.extensions.get(&args.id) else {
+    if !session.workspace_config.extensions.contains_key(&args.id) {
         return Err(AppError::UnknownExtension { id: args.id }.into());
-    };
+    }
 
     let id = PluginId::raw(&args.id);
     let extensions = session.get_extension_registry()?;
 
-    // Load and configure the plugin
-    extensions
-        .load_with_config(&id, config.get_plugin_locator(), move |manifest| {
-            manifest.config.insert(
-                "moon_extension_config".to_owned(),
-                serialize_config(config.config.iter())?,
-            );
-
-            Ok(())
-        })
-        .await?;
+    // Load the plugin
+    extensions.load(&id).await?;
 
     // Execute the plugin
     let plugin = extensions.get(&id).await?;

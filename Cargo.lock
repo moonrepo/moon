@@ -3447,8 +3447,10 @@ name = "moon_extension_plugin"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_config",
  "moon_pdk_api",
  "moon_plugin",
+ "rustc-hash 2.0.0",
  "tracing",
 ]
 

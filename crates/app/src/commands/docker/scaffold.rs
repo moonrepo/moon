@@ -42,7 +42,7 @@ fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResul
 
         if file != "." && source_file.exists() {
             if source_file.is_dir() {
-                fs::copy_dir_all(&source_file, &source_file, &dest.join(file))?;
+                fs::copy_dir_all(&source_file, &source_file, dest.join(file))?;
             } else {
                 fs::copy_file(source_file, dest.join(file))?;
             }

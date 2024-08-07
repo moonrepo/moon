@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+#### 📢 Notice
+
+There have been reports of the `moon.exe` binary being flagged as a Trojan on Windows. This looks to
+be a common false positive (`Wacatac.B!ml`) that targets Rust built binaries (as seen in the
+[Tauri project as well](https://github.com/tauri-apps/tauri/issues/2486)).
+
+While this isn't a simple fix on our end, we're publishing a new binary to replace the old one. You
+may also have to unquarantine moon on your system. And lastly, we also suggest
+[adding an exclusion for `moon.exe` to Windows Defender](https://support.microsoft.com/en-gb/windows/add-an-exclusion-to-windows-security-811816c0-4dfd-af4a-47e4-c301afe13b26).
+
+#### ⚙️ Internal
+
+- Updated proto to v0.39.7 (from v0.38.3).
+- Updated Rust to v1.80.
+- Updated dependencies.
+
 ## 1.27.5
 
 #### 🐞 Fixes

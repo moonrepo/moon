@@ -19,18 +19,18 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-recursion = "1.1.1"
 async-trait = "0.1.81"
-cached = "0.52.0"
+cached = "0.53.1"
 chrono = { version = "0.4.38", features = ["serde"] }
 cd_env = "0.2.0"
 ci_env = "0.3.0"
-clap = { version = "4.5.9", default-features = false, features = [
+clap = { version = "4.5.13", default-features = false, features = [
 	"std",
 	"error-context",
 ] }
-clap_complete = "4.5.8"
+clap_complete = "4.5.12"
 console = "0.15.8"
 dirs = "5.0.1"
-indexmap = "2.2.6"
+indexmap = "2.3.0"
 miette = "7.2.0"
 once_cell = "1.19.0"
 pathdiff = "0.2.1"
@@ -38,7 +38,7 @@ petgraph = { version = "0.6.5", default-features = false, features = [
 	"serde-1",
 ] }
 relative-path = { version = "1.9.3" }
-regex = { version = "1.10.5", default-features = false, features = [
+regex = { version = "1.10.6", default-features = false, features = [
 	"std",
 	"perf",
 ] }
@@ -48,25 +48,25 @@ reqwest = { version = "0.12.5", default-features = false, features = [
 	"native-tls-vendored",
 ] }
 rustc-hash = "2.0.0"
-scc = "2.1.2"
-schematic = { version = "0.16.5", default-features = false, features = [
+scc = "2.1.9"
+schematic = { version = "0.16.6", default-features = false, features = [
 	"schema",
 ] }
 serial_test = "3.1.1"
 semver = "1.0.23"
 serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
+serde_json = "1.0.122"
 serde_yaml = "0.9.34"
-starbase = { version = "0.8.1" }
-starbase_archive = { version = "0.8.1", default-features = false, features = [
+starbase = { version = "0.8.2" }
+starbase_archive = { version = "0.8.4", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
-starbase_events = "0.6.2"
-starbase_sandbox = "0.7.0"
-starbase_shell = "0.5.1"
-starbase_styles = { version = "0.4.1", features = ["relative-path"] }
-starbase_utils = { version = "0.8.2", default-features = false, features = [
+starbase_events = "0.6.3"
+starbase_sandbox = "0.7.2"
+starbase_shell = "0.5.5"
+starbase_styles = { version = "0.4.2", features = ["relative-path"] }
+starbase_utils = { version = "0.8.5", default-features = false, features = [
 	"editor-config",
 	"glob",
 	"json",
@@ -76,8 +76,8 @@ starbase_utils = { version = "0.8.2", default-features = false, features = [
 	"yaml",
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
-thiserror = "1.0.61"
-tokio = { version = "1.38.0", default-features = false, features = [
+thiserror = "1.0.63"
+tokio = { version = "1.39.2", default-features = false, features = [
 	"macros",
 	"process",
 	"rt-multi-thread",
@@ -93,13 +93,13 @@ uuid = { version = "1.10.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.3.0"
 extism-pdk = "1.2.0"
-proto_core = "0.38.3"
-proto_installer = "0.5.2"
+proto_core = "0.39.3"
+proto_installer = "0.6.0"
 system_env = "0.5.0"
 version_spec = "0.6.1"
-warpgate = "0.15.3"
-warpgate_api = "0.8.2"
-warpgate_pdk = "0.6.1"
+warpgate = "0.16.1"
+warpgate_api = "0.9.0"
+warpgate_pdk = "0.7.0"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_installer = { path = "../proto/crates/installer" }

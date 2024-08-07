@@ -386,7 +386,7 @@ deno:
             assert_eq!(
                 config.deno.unwrap().plugin.unwrap(),
                 PluginLocator::Url {
-                    url: "https://github.com/moonrepo/tools/releases/download/deno_tool-v0.11.3/deno_tool.wasm".into()
+                    url: "https://github.com/moonrepo/tools/releases/download/deno_tool-v0.11.4/deno_tool.wasm".into()
                 }
             );
         }
@@ -513,7 +513,7 @@ node:
             assert_eq!(
                 config.node.unwrap().plugin.unwrap(),
                 PluginLocator::Url {
-                    url: "https://github.com/moonrepo/tools/releases/download/node_tool-v0.11.6/node_tool.wasm".into()
+                    url: "https://github.com/moonrepo/tools/releases/download/node_tool-v0.11.8/node_tool.wasm".into()
                 }
             );
         }
@@ -617,7 +617,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().npm.plugin.unwrap(),
                     PluginLocator::Url {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.11.6/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.12.0/node_depman_tool.wasm".into()
                     }
                 );
             }
@@ -709,7 +709,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::Url {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.11.6/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.12.0/node_depman_tool.wasm".into()
                     }
                 );
             }
@@ -733,7 +733,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
                     PluginLocator::Url {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.11.6/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.12.0/node_depman_tool.wasm".into()
                     }
                 );
             }
@@ -835,7 +835,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::Url {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.11.6/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.12.0/node_depman_tool.wasm".into()
                     }
                 );
             }
@@ -859,7 +859,7 @@ node:
                 assert_eq!(
                     config.node.unwrap().yarn.unwrap().plugin.unwrap(),
                     PluginLocator::Url {
-                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.11.6/node_depman_tool.wasm".into()
+                        url: "https://github.com/moonrepo/tools/releases/download/node_depman_tool-v0.12.0/node_depman_tool.wasm".into()
                     }
                 );
             }

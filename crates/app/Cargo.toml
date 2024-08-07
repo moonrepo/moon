@@ -30,7 +30,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_vcs = { path = "../vcs" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.6.0"
+bytes = "1.7.1"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
@@ -42,7 +42,7 @@ clap = { workspace = true, features = [
     "wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_complete_nushell = "4.5.2"
+clap_complete_nushell = "4.5.3"
 diff = "0.1.13"
 miette = { workspace = true }
 once_cell = { workspace = true }

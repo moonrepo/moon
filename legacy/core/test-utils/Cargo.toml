@@ -7,11 +7,11 @@ publish = false
 [dependencies]
 moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
-assert_cmd = "2.0.14"
-assert_fs = "1.1.1"
+assert_cmd = "2.0.15"
+assert_fs = "1.1.2"
 clean-path = "0.2.1"
 insta = "1.39.0"
-predicates = "3.1.0"
+predicates = "3.1.2"
 pretty_assertions = "1.4.0"
 rustc-hash = { workspace = true }
 serde_yaml = { workspace = true }

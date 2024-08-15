@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where codeowners `requiredAppprovals` wouldn't allow `1`.
+
 ## 1.27.6
 
 #### 📢 Notice

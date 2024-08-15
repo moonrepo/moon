@@ -303,7 +303,7 @@ fileGroups:
             assert_eq!(config.owners.default_owner, None);
             assert!(!config.owners.optional);
             assert_eq!(config.owners.paths, OwnersPaths::List(vec![]));
-            assert_eq!(config.owners.required_approvals, 1);
+            assert_eq!(config.owners.required_approvals, 0);
         }
 
         #[test]
@@ -402,19 +402,6 @@ owners:
 owners:
   paths:
     'file.txt': []
-",
-                |path| ProjectConfig::load_from(path, "."),
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "at least 1 approver is required")]
-        fn errors_if_approvers_zero() {
-            test_load_config(
-                CONFIG_PROJECT_FILENAME,
-                r"
-owners:
-  requiredApprovals: 0
 ",
                 |path| ProjectConfig::load_from(path, "."),
             );

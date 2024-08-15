@@ -28,7 +28,12 @@ pub async fn setup(session: CliSession) -> AppResult {
         action_graph_builder.install_deps(&project, None)?;
     }
 
-    run_action_pipeline(&session, action_graph_builder.build()?, None).await?;
+    run_action_pipeline(
+        &session,
+        action_graph_builder.build_context(),
+        action_graph_builder.build(),
+    )
+    .await?;
 
     Ok(())
 }

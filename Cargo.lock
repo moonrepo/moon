@@ -3039,6 +3039,7 @@ dependencies = [
  "graph-cycles",
  "miette",
  "moon_action",
+ "moon_action_context",
  "moon_common",
  "moon_config",
  "moon_platform",

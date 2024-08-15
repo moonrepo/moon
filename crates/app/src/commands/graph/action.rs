@@ -48,7 +48,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
         }
     }
 
-    let action_graph = action_graph_builder.build()?;
+    let action_graph = action_graph_builder.build();
 
     if args.dot {
         println!("{}", action_graph.to_dot());

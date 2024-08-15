@@ -139,7 +139,7 @@ async fn gather_touched_files(
     Ok(result.files)
 }
 
-/// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
+/// Gather runnable targets.
 async fn gather_runnable_targets(
     console: &mut CiConsole,
     project_graph: &ProjectGraph,
@@ -211,7 +211,7 @@ async fn generate_action_graph(
     project_graph: &ProjectGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-) -> AppResult<ActionGraph> {
+) -> AppResult<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
     let mut action_graph_builder = session.build_action_graph(project_graph).await?;
@@ -230,13 +230,14 @@ async fn generate_action_graph(
         action_graph_builder.run_task_by_target(target, &requirements)?;
     }
 
-    let action_graph = action_graph_builder.build()?;
+    let action_context = action_graph_builder.build_context();
+    let action_graph = action_graph_builder.build();
 
     console.write_line(format!("Target count: {}", targets.len()))?;
     console.write_line(format!("Action count: {}", action_graph.get_node_count()))?;
     console.print_footer()?;
 
-    Ok(action_graph)
+    Ok((action_graph, action_context))
 }
 
 #[instrument(skip_all)]
@@ -261,7 +262,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     }
 
     let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
-    let action_graph = generate_action_graph(
+    let (action_graph, base_context) = generate_action_graph(
         &mut console,
         &session,
         &project_graph,
@@ -279,13 +280,15 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     // Process all tasks in the graph
     console.print_header("Running targets")?;
 
-    let context = ActionContext {
-        primary_targets: FxHashSet::from_iter(targets),
-        touched_files,
-        ..ActionContext::default()
-    };
-
-    let results = run_action_pipeline(&session, action_graph, Some(context)).await?;
+    let results = run_action_pipeline(
+        &session,
+        ActionContext {
+            touched_files,
+            ..base_context
+        },
+        action_graph,
+    )
+    .await?;
 
     console.print_footer()?;
 

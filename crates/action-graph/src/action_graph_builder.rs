@@ -3,6 +3,7 @@ use moon_action::{
     ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
     SyncProjectNode,
 };
+use moon_action_context::{ActionContext, TargetState};
 use moon_common::Id;
 use moon_common::{color, path::WorkspaceRelativePathBuf};
 use moon_config::{PlatformType, TaskDependencyConfig};
@@ -13,6 +14,7 @@ use moon_query::{build_query, Criteria};
 use moon_task::{parse_task_args, Target, TargetError, TargetLocator, TargetScope, Task};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::mem;
 use tracing::{debug, instrument, trace};
 
 type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
@@ -41,6 +43,10 @@ pub struct ActionGraphBuilder<'app> {
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
     project_graph: &'app ProjectGraph,
+
+    // Target tracking
+    passthrough_targets: FxHashSet<Target>,
+    primary_targets: FxHashSet<Target>,
 }
 
 impl<'app> ActionGraphBuilder<'app> {
@@ -58,13 +64,31 @@ impl<'app> ActionGraphBuilder<'app> {
             all_query: None,
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
+            passthrough_targets: FxHashSet::default(),
             platform_manager,
+            primary_targets: FxHashSet::default(),
             project_graph,
         })
     }
 
-    pub fn build(self) -> miette::Result<ActionGraph> {
-        Ok(ActionGraph::new(self.graph))
+    pub fn build(self) -> ActionGraph {
+        ActionGraph::new(self.graph)
+    }
+
+    pub fn build_context(&mut self) -> ActionContext {
+        let mut context = ActionContext::default();
+
+        if !self.passthrough_targets.is_empty() {
+            for target in mem::take(&mut self.passthrough_targets) {
+                context.set_target_state(target, TargetState::Passthrough);
+            }
+        }
+
+        if !self.primary_targets.is_empty() {
+            context.primary_targets = mem::take(&mut self.primary_targets);
+        }
+
+        context
     }
 
     pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
@@ -188,6 +212,8 @@ impl<'app> ActionGraphBuilder<'app> {
         // but not `moon run`, since the latter should be able to
         // manually run local tasks in CI (deploys, etc).
         if reqs.ci && reqs.ci_check && !task.should_run_in_ci() {
+            self.passthrough_targets.insert(task.target.clone());
+
             debug!(
                 task = task.target.as_str(),
                 "Not running task {} because {} is false",
@@ -270,10 +296,7 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut previous_target_index = None;
 
         for dep in &task.deps {
-            let (_, dep_indices) =
-                self.run_task_by_target_with_config(&dep.target, &reqs, Some(dep))?;
-
-            for dep_index in dep_indices {
+            for dep_index in self.run_task_by_target_with_config(&dep.target, &reqs, Some(dep))? {
                 // When parallel, parent depends on child
                 if parallel {
                     indices.push(dep_index);
@@ -321,10 +344,10 @@ impl<'app> ActionGraphBuilder<'app> {
             }
 
             for project in projects_to_build {
-                // Include internal tasks!
+                // Don't skip internal tasks, since they are a dependency of the parent
+                // task, and must still run! They just can't be ran manually.
                 for dep_task in project.tasks.values() {
-                    // Don't skip internal tasks, since they are a dependency of the parent
-                    // task, and must still run! They just can't be ran manually.
+                    // But do skip persistent tasks!
                     if dep_task.is_persistent() {
                         continue;
                     }
@@ -333,6 +356,7 @@ impl<'app> ActionGraphBuilder<'app> {
                     // that should not run in CI, as we don't know what side-effects it
                     // will cause. This applies to both `moon ci` and `moon run`.
                     if parent_reqs.ci && !dep_task.should_run_in_ci() {
+                        self.passthrough_targets.insert(dep_task.target.clone());
                         continue;
                     }
 
@@ -352,7 +376,7 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         target: T,
         reqs: &RunRequirements<'app>,
-    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
+    ) -> miette::Result<FxHashSet<NodeIndex>> {
         self.run_task_by_target_with_config(target, reqs, None)
     }
 
@@ -360,7 +384,7 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         target_locator: T,
         reqs: &mut RunRequirements<'app>,
-    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
+    ) -> miette::Result<FxHashSet<NodeIndex>> {
         match target_locator.as_ref() {
             TargetLocator::Qualified(target) => self.run_task_by_target(target, reqs),
             TargetLocator::TaskFromWorkingDir(task_id) => {
@@ -380,7 +404,7 @@ impl<'app> ActionGraphBuilder<'app> {
         target: T,
         reqs: &RunRequirements<'app>,
         config: Option<&TaskDependencyConfig>,
-    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
+    ) -> miette::Result<FxHashSet<NodeIndex>> {
         let target = target.as_ref();
         let mut inserted_targets = FxHashSet::default();
         let mut inserted_indices = FxHashSet::default();
@@ -463,7 +487,9 @@ impl<'app> ActionGraphBuilder<'app> {
             }
         };
 
-        Ok((inserted_targets, inserted_indices))
+        self.primary_targets.extend(inserted_targets);
+
+        Ok(inserted_indices)
     }
 
     #[instrument(skip_all)]

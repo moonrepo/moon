@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where codeowners `requiredAppprovals` wouldn't allow `1`.
+- Fixed an issue where a task that depends on another task that has `runInCI: false`, would not run
+  as affected in `moon ci` because the dependency task was skipped.
 
 ## 1.27.6
 

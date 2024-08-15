@@ -1,8 +1,7 @@
 use clap::ValueEnum;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
-use rustc_hash::FxHashSet;
-use scc::HashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -48,7 +47,7 @@ pub struct ActionContext {
     /// Active mutexes for tasks to acquire locks against.
     /// @mutable
     #[serde(skip)]
-    pub named_mutexes: HashMap<String, Arc<Mutex<()>>>,
+    pub named_mutexes: scc::HashMap<String, Arc<Mutex<()>>>,
 
     /// Additional arguments passed after `--` to passthrough.
     pub passthrough_args: Vec<String>,
@@ -61,7 +60,7 @@ pub struct ActionContext {
 
     /// The current state of running tasks (via their target).
     /// @mutable
-    pub target_states: HashMap<Target, TargetState>,
+    pub target_states: scc::HashMap<Target, TargetState>,
 
     /// Files that have currently been touched.
     pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
@@ -80,6 +79,14 @@ impl ActionContext {
             .insert(name.to_owned(), Arc::clone(&mutex));
 
         mutex
+    }
+
+    pub fn get_target_states(&self) -> FxHashMap<Target, TargetState> {
+        let mut map = FxHashMap::default();
+        self.target_states.scan(|k, v| {
+            map.insert(k.to_owned(), v.to_owned());
+        });
+        map
     }
 
     pub fn is_primary_target<T: AsRef<Target>>(&self, target: T) -> bool {

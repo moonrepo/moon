@@ -7,8 +7,8 @@ use moon_action_pipeline2::ActionPipeline as ExpActionPipeline;
 
 pub async fn run_action_pipeline(
     session: &CliSession,
+    action_context: ActionContext,
     action_graph: ActionGraph,
-    action_context: Option<ActionContext>,
 ) -> miette::Result<Vec<Action>> {
     let project_graph = session.get_project_graph().await?;
 
@@ -36,10 +36,9 @@ pub async fn run_action_pipeline(
             _ => {}
         };
 
-        let results = match action_context {
-            Some(ctx) => pipeline.run_with_context(action_graph, ctx).await?,
-            None => pipeline.run(action_graph).await?,
-        };
+        let results = pipeline
+            .run_with_context(action_graph, action_context)
+            .await?;
 
         return Ok(results);
     }
@@ -71,7 +70,7 @@ pub async fn run_action_pipeline(
             _ => {}
         };
 
-        let results = pipeline.run(action_graph, action_context).await?;
+        let results = pipeline.run(action_graph, Some(action_context)).await?;
 
         Ok(results)
     }

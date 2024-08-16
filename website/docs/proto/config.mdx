@@ -10,28 +10,63 @@ We support configuration at both the project-level and user-level using a
 tools, provide tool specific configuration, enable new tools via plugins, define proto settings, and
 more.
 
-## Resolution order
+## Resolution mode<VersionLabel version="0.40.0" />
 
-When a `proto` command or shim is ran, we load the `.prototools` file in the current directory, and
-traverse upwards loading `.prototools` within each directory, until we reach the system root or the
-user directory (`~`), whichever comes first. Once complete, we then load the special
-`~/.proto/.prototools` file, which acts as configuration at the user-level and includes fallback
-settings. This operation may look like the following:
+When a `proto` command or shim is ran, we must find and load all applicable `.prototools` files. We
+then deeply merge all of these configuration files into a final configuration object, with the
+current directory taking highest precedence.
+
+The order in which to resolve configuration can be defined using the `--config-mode` (`-c`) command
+line option, or the `PROTO_CONFIG_MODE` environment variable. The following 4 modes are supported:
+
+### `global`
+
+In this mode, proto will _only_ load the `~/.proto/.prototools` file. This "global" file acts as
+configuration at the user-level and allows for fallback settings.
 
 ```text
-~/Projects/web-app/packages/components/src/.prototools
-~/Projects/web-app/packages/components/.prototools
-~/Projects/web-app/packages/.prototools
-~/Projects/web-app/.prototools
+~/.proto/.prototools
+```
+
+### `local`
+
+In this mode, proto will _only_ load the `.prototools` file in the current directory.
+
+```text
+./.prototools
+```
+
+### `upwards`
+
+In this mode, proto will traverse upwards starting from the current directory, and load
+`.prototools` within each directory, until we reach the system root or the user directory (`~`),
+whichever comes first.
+
+```text
+~/Projects/app/.prototools (cwd)
+~/Projects/.prototools
+~/.prototools
+```
+
+> This is the default mode for the [`activate`](./commands/activate),
+> [`install`](./commands/install), [`outdated`](./commands/outdated), and
+> [`status`](./commands/status) commands.
+
+### `upwards-global` / `all`
+
+This mode works exactly like [`upwards`](#upwards) but with the functionality of [`global`](#global)
+as well. The global `~/.proto/.prototools` file is appended as the final entry.
+
+```text
+~/Projects/app/.prototools (cwd)
 ~/Projects/.prototools
 ~/.prototools
 ~/.proto/.prototools
 ```
 
-We then deeply merge all of these configuration files into a final configuration object, with the
-current directory taking highest precedence.
+> This is the default mode for all other commands not listed above in `upwards`.
 
-### Environment mode<VersionLabel version="0.29.0" />
+## Environment mode<VersionLabel version="0.29.0" />
 
 We also support environment specific configuration, such as `.prototools.production` or
 `.prototools.development`, when the `PROTO_ENV` environment variable is set. This is useful for
@@ -42,7 +77,6 @@ directory it's located in, and are merged in the same way as the default configu
 the lookup order would be the following when `PROTO_ENV=production`:
 
 ```text
-...
 ~/Projects/.prototools.production
 ~/Projects/.prototools
 ~/.prototools.production

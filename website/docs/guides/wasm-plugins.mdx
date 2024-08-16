@@ -136,6 +136,8 @@ provide a mechanism known as host functions, which are functions that are implem
   environment variable value from the host environment.
 - [`host_log`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_log.html) - Log an
   stdout, stderr, or tracing message to the host's terminal.
+- [`send_request`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.send_request.html) -
+  Requests a URL on the host machine using a Rust-based HTTP client (not WASM).
 - [`set_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_env.html) - Set an
   environment variable to the host environment.
 - [`to_virtual_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.virtual_path.html) -
@@ -154,6 +156,7 @@ extern "ExtismHost" {
     fn from_virtual_path(path: String) -> String;
     fn get_env_var(key: String) -> String;
     fn host_log(input: Json<HostLogInput>);
+    fn send_request(input: Json<SendRequestInput>) -> Json<SendRequestOutput>;
     fn set_env_var(key: String, value: String);
     fn to_virtual_path(path: String) -> String;
 }
@@ -226,6 +229,35 @@ exec_command!(input, ExecCommandInput {
     ..ExecCommandInput::default()
 });
 ```
+
+#### Sending requests
+
+The [`send_request`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.send_request.html) macro
+can be used to request a URL on the host, instead of from WASM, allowing it to use the same HTTP
+client as the host CLI. This macro returns a response object, with the raw body in bytes, and the
+status code.
+
+```rust
+let response = send_request!("https://some.com/url/to/fetch");
+
+if response.status == 200 {
+  let json = response.json::<T>()?;
+  let text = response.text()?;
+} else {
+  // Error!
+}
+```
+
+To simplify the handling of requests -> responses, we also provide the
+[`fetch_bytes`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.fetch_bytes.html),
+[`fetch_json`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.fetch_json.html), and
+[`fetch_text`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.fetch_text.html) functions.
+
+```rust
+let json: T = fetch_json("https://some.com/url/to/fetch.json")?;
+```
+
+> Only GET requests are supported.
 
 #### Logging
 

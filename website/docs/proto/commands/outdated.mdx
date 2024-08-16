@@ -6,9 +6,9 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.19.0" header />
 
-The `proto outdated` command will load all `.prototools` files and check for newer (matching
-configured range) and latest versions of each configured tool. Will also include the configuration
-file in which the version has been configured.
+The `proto outdated` command will load all [`.prototools`](./config) files and check for newer
+(matching configured range) and latest versions of each configured tool. Will also include the
+configuration file in which the version has been configured.
 
 ```
 $ proto outdated
@@ -19,13 +19,11 @@ node  20.8.0   20.12.2  21.7.3  ~/.prototools
 npm   10.1.0   10.5.2   10.5.2  ~/.prototools
 ```
 
-> [Learn more about the `.prototools` configuration file!](../config)
+> By default, this command _does not_ check tools for versions pinned in the global
+> `~/.proto/.prototools` file. Pass `--config-mode all` to include them.
 
 ### Options
 
 - `--json` - Print the list in JSON format.
-- `--include-global` - Include versions from the global `~/.proto/.prototools` file.
 - `--latest` - When updating versions with `--update`, use the latest version instead of newest.
-- `--only-local` - Only check versions from the local `./.prototools` file, instead of aggregating
-  parents.
 - `--update` - Update and write newest/latest versions to their respective configuration.

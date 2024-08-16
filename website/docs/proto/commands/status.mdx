@@ -18,12 +18,9 @@ node  20.8.0      20.8.0    ~/.proto/tools/node/20.8.0  ~/.prototools
 npm   10.1.0      10.1.0    ~/.proto/tools/npm/10.1.0   ~/.prototools
 ```
 
-By default this includes tools from all `.prototools` files up the hierarchy, excluding
-`~/.proto/.prototools`. To include global tools as well, pass `--include-global`.
+> By default, this command _does not_ check tools for versions pinned in the global
+> `~/.proto/.prototools` file. Pass `--config-mode all` to include them.
 
 ### Options
 
 - `--json` - Print the list in JSON format.
-- `--include-global` - Include tools from the global `~/.proto/.prototools` file.
-- `--only-local` - Only check tools from the local `./.prototools` file, instead of aggregating
-  parents.

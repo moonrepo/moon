@@ -4,6 +4,8 @@ sidebar_label: WASM
 toc_max_heading_level: 5
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 If you want more control over how your tool works, a WASM plugin is the way to go.
 
 :::success
@@ -116,6 +118,29 @@ pub fn register_tool(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<Tool
   input.id
   // ...
 }
+```
+
+#### Configuration schema<VersionLabel version="0.40.0" />
+
+If you are using [tool configuration](#tool-configuration), you can register the shape of the
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate. This shape will be
+used to generate outputs such as JSON schemas, or TypeScript types.
+
+```rust
+#[plugin_fn]
+pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
+    Ok(Json(ToolMetadataOutput {
+        config_schema: Some(schematic::SchemaBuilder::build_root::<NodeConfig>()),
+        // ...
+    }))
+}
+```
+
+Schematic is a heavy library, so we suggest adding the dependency like so:
+
+```toml
+[dependencies]
+schematic = { version = "*", default-features = false, features = ["schema"] }
 ```
 
 ### Downloading pre-builts
@@ -257,7 +282,7 @@ versions to actually be installed. To provide a list of versions and language sp
 #[plugin_fn]
 pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
     let mut output = LoadVersionsOutput::default();
-    let response: Vec<NodeDistVersion> = fetch_url("https://nodejs.org/dist/index.json")?;
+    let response: Vec<NodeDistVersion> = fetch_json("https://nodejs.org/dist/index.json")?;
 
     for (index, item) in response.iter().enumerate() {
         let version = VersionSpec::parse(&item.version[1..])?; // Starts with v
@@ -405,13 +430,13 @@ calling the appropriate method.
 use proto_pdk_test_utils::*;
 use starbase_sandbox::create_empty_sandbox;
 
-#[test]
-fn registers_metadata() {
-    let sandbox = create_empty_sandbox();
-    let plugin = create_plugin("id", sandbox.path());
+#[tokio::test(flavor = "multi_thread")]
+async fn registers_metadata() {
+    let sandbox = create_empty_proto_sandbox();
+    let plugin = sandbox.create_plugin("id").await;
 
     assert_eq!(
-        plugin.register_tool(ToolMetadataInput::default()),
+        plugin.register_tool(ToolMetadataInput::default()).await,
         ToolMetadataOutput {
             name: "Name".into(),
             ..ToolMetadataOutput::default()

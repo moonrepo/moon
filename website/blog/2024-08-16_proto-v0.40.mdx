@@ -1,0 +1,76 @@
+---
+slug: proto-v0.40
+title: proto v0.40 - Config mode, progress bars, and more
+authors: [milesj]
+tags: [config, mode, progress, install, http, request, fetch]
+# image: ./img/proto/v0.39.png
+---
+
+import Image from '@site/src/components/Image';
+
+This is a small release that includes many quality of life improvements.
+
+<!--truncate-->
+
+## New `--config-mode` global option
+
+When proto is ran, we find and load all applicable [`.prototools` files](/docs/proto/config). For
+the most part, we would traverse upwards, and sometimes load `~/.proto/.prototools`, while other
+times not. It was quite confusing when certain config files were loaded. This was further
+exacerbated by the `--include-global` and `--only-local` options, which were only available to some
+commands (and have been removed entirely).
+
+To remedy and standardize this, we're introducing a new global option
+[`--config-mode`](/docs/proto/config#resolution-mode) (`-c`), which controls how configuration are
+loaded. This option supports the following values.
+
+- `global` - Only load `~/.proto/.prototools`.
+- `local` - Only load `./.prototools` in the current directory.
+- `upwards` - Load `.prototools` while traversing upwards, but do not load `~/.proto/.prototools`.
+- `upwards-global` / `all` - Load `.prototools` while traversing upwards, and do load
+  `~/.proto/.prototools`.
+
+Now what is the default mode? As mentioned above, we wanted to standardize the default across all
+commands, but the problem is, is that each command has different requirements. So in the end, the
+default mode is actually 2 different modes depending on the command being ran, which is:
+
+- For `activate`, `install`, `outdated`, `status` commands -> `upwards` mode
+- All other commands -> `upwards-global` mode
+
+## Improved progress bars
+
+We've improved (or added) the progress bars for [`proto install`](/docs/proto/commands/install),
+[`proto upgrade`](/docs/proto/commands/upgrade), and the auto-install flow for
+[`proto run`](/docs/proto/commands/run). The progress bars will now display the current phase
+(download, unpack, etc), and the download phase will now include current / total downloaded bytes.
+
+Furthermore, when installing multiple tools, we now display a progress bar for each tool.
+
+<Image src={require('./img/proto/v0.40-progress.png')} width="100%" />
+
+## Improved HTTP requests
+
+For historical context, requests made from the proto CLI itself use a different HTTP client than
+requests made from a WASM plugin. The reason for this is that the Rust-based HTTP client that proto
+uses is not compatible within WASM, so plugins use a different library. This disconnect meant that
+WASM requests did _not_ inherit the [`[settings.http]`](/docs/proto/config#settingshttp) settings,
+which meant in some cases, requests would fail or not authenticate correctly, and there was no
+work-around.
+
+This is a very tricky problem to solve, but we have implemented a possible solution through a
+concept known as [host functions](/docs/guides/wasm-plugins#host-functions--macros). Host functions
+are basically functions that exist on the host machine (proto), and can be called from the guest
+runtime (WASM). This new host function utilizes the same HTTP client as proto to make requests,
+which results in WASM no longer being disconnected.
+
+However, since there is a cost for calling host functions from the guest, and then serializing the
+response from the host back to the guest, there is a small chance that performance will be affected.
+We will continue to monitor the implementation, so please report any issues!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.40.0) for a full list
+of changes.
+
+- Removed `--include-global` and `--only-local` flags from all applicable commands. Use the new
+  `--config-mode` instead.

@@ -19,7 +19,7 @@ $ proto install
 ```
 
 > By default, this command _does not_ install tools for versions pinned in the global
-> `~/.proto/.prototools` file. Pass `--include-global` to include them.
+> `~/.proto/.prototools` file. Pass `--config-mode all` to include them.
 
 ### Installing one tool
 
@@ -44,7 +44,7 @@ binary available. If you would like to also pin the resolved version to a `.prot
 the `--pin` option.
 
 ```shell
-# ~/.prototools
+# ./.prototools
 $ proto install bun --pin
 $ proto install bun --pin local
 
@@ -69,8 +69,6 @@ $ proto install go -- --no-gobin
 
 ### Options
 
-- All
-  - `--include-global` - Include versions configured in global `~/.proto/.prototools`.
 - One
   - `--canary` - Install a canary (next, nightly, etc) version.
   - `--pin` - Pin the resolved version and create a symlink in `~/.proto/bin`. Accepts a boolean

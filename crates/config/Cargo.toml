@@ -21,11 +21,15 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
+	"env",
+	"extends",
+	"json",
 	"schema",
 	"type_indexmap",
 	"type_semver",
-	"type_serde_json",
-	"valid_url",
+	"url",
+	"validate",
+	"validate_url",
 	"yaml",
 ] }
 semver = { workspace = true, features = ["serde"] }

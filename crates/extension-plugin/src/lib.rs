@@ -9,11 +9,10 @@ pub struct ExtensionPlugin {
 
 impl ExtensionPlugin {
     #[instrument(skip(self, context))]
-    pub fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
-        self.plugin.call_func_without_output(
-            "execute_extension",
-            ExecuteExtensionInput { args, context },
-        )?;
+    pub async fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
+        self.plugin
+            .call_func_without_output("execute_extension", ExecuteExtensionInput { args, context })
+            .await?;
 
         Ok(())
     }

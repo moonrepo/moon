@@ -7,6 +7,7 @@ use moon_tool::{
     Tool,
 };
 use moon_toolchain::RuntimeReq;
+use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::env::path_var;
@@ -158,7 +159,7 @@ impl Tool for RustTool {
                     .out
                     .print_checkpoint(Checkpoint::Setup, format!("installing rust {version}"))?;
 
-                if self.tool.setup(version, false).await? {
+                if self.tool.setup(version, InstallOptions::default()).await? {
                     last_versions.insert("rust".into(), version.to_owned());
                     installed += 1;
                 }

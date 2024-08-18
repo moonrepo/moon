@@ -8,6 +8,7 @@ use moon_tool::{
 };
 use moon_toolchain::RuntimeReq;
 use moon_utils::get_workspace_root;
+use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::env::path_var;
@@ -126,7 +127,7 @@ impl Tool for DenoTool {
             .out
             .print_checkpoint(Checkpoint::Setup, format!("installing deno {version}"))?;
 
-        if self.tool.setup(version, false).await? {
+        if self.tool.setup(version, InstallOptions::default()).await? {
             last_versions.insert("deno".into(), version.to_owned());
             count += 1;
         }

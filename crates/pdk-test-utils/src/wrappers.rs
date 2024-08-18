@@ -14,9 +14,10 @@ impl ExtensionTestWrapper {
         }
     }
 
-    pub fn execute_extension(&self, input: ExecuteExtensionInput) {
+    pub async fn execute_extension(&self, input: ExecuteExtensionInput) {
         self.plugin
             .call_func_without_output("execute_extension", input)
+            .await
             .unwrap();
     }
 }

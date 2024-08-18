@@ -96,7 +96,7 @@ pub async fn load_tool_plugin(
     inject_default_manifest_config(id, &proto.home, &mut manifest)?;
     inject_proto_manifest_config(id, proto, &mut manifest)?;
 
-    ProtoTool::load_from_manifest(id, proto, manifest)
+    ProtoTool::load_from_manifest(id, proto, manifest).await
 }
 
 static LOCKS: OnceLock<RwLock<FxHashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();

@@ -9,8 +9,8 @@ use std::fmt::Debug;
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
-    host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
-    PluginLoader, PluginLocator, PluginManifest, Wasm,
+    host::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer, PluginLoader,
+    PluginLocator, PluginManifest, Wasm,
 };
 
 #[allow(dead_code)]
@@ -241,6 +241,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(HostData {
+            http_client: self.loader.get_client()?.clone(),
             virtual_paths: self.virtual_paths.clone(),
             working_dir: self.moon_env.working_dir.clone(),
         });

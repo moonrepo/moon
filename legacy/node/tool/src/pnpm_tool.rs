@@ -10,6 +10,7 @@ use moon_tool::{
     use_global_tool_on_path, DependencyManager, Tool,
 };
 use moon_utils::get_workspace_root;
+use proto_core::flow::install::InstallOptions;
 use proto_core::{
     Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec, VersionReq, VersionSpec,
 };
@@ -108,7 +109,7 @@ impl Tool for PnpmTool {
             .out
             .print_checkpoint(Checkpoint::Setup, format!("installing pnpm {version}"))?;
 
-        if self.tool.setup(version, false).await? {
+        if self.tool.setup(version, InstallOptions::default()).await? {
             last_versions.insert("pnpm".into(), version.to_owned());
             count += 1;
         }

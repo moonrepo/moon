@@ -24,6 +24,8 @@ mod ext {
 }
 
 mod ext_download {
+    use proto_core::warpgate::FileLocator;
+
     use super::*;
 
     #[test]
@@ -74,10 +76,10 @@ mod ext_download {
                 .insert(
                     Id::raw("example"),
                     PartialExtensionConfig {
-                        plugin: Some(PluginLocator::File {
+                        plugin: Some(PluginLocator::File(Box::new(FileLocator {
                             file: "invalid.wasm".into(),
                             path: Some(PathBuf::from("invalid.wasm")),
-                        }),
+                        }))),
                         config: None,
                     },
                 );

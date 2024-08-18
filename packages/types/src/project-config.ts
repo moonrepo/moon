@@ -22,12 +22,14 @@ export interface DependencyConfig {
 	 * Scope of the dependency relationship.
 	 *
 	 * @default 'production'
+	 * @type {'build' | 'development' | 'peer' | 'production' | 'root'}
 	 */
 	scope: DependencyScope;
 	/**
 	 * Source of where the dependeny came from.
 	 *
 	 * @default 'explicit'
+	 * @type {'explicit' | 'implicit'}
 	 */
 	source: DependencySource;
 	/** Metadata about the source. */
@@ -230,6 +232,7 @@ export interface ProjectConfig {
 	 * The primary programming language of the project.
 	 *
 	 * @default 'unknown'
+	 * @type {'bash' | 'batch' | 'go' | 'javascript' | 'php' | 'python' | 'ruby' | 'rust' | 'typescript' | 'unknown' | string}
 	 */
 	language: LanguageType;
 	/**
@@ -250,6 +253,7 @@ export interface ProjectConfig {
 	 * The technology stack of the project, for categorizing.
 	 *
 	 * @default 'unknown'
+	 * @type {'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown'}
 	 */
 	stack: StackType;
 	/**
@@ -265,6 +269,7 @@ export interface ProjectConfig {
 	 * The type of project.
 	 *
 	 * @default 'unknown'
+	 * @type {'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown'}
 	 */
 	type: ProjectType;
 	/** Overrides top-level workspace settings, scoped to this project. */

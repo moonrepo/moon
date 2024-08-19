@@ -1,0 +1,36 @@
+tasks:
+  ci1-dependency:
+    options:
+      runInCI: false
+  ci1-dependant:
+    deps:
+      - ci1-dependency
+    options:
+      runInCI: true
+
+  ci2-dependency:
+    options:
+      runInCI: false
+  ci2-dependant:
+    deps:
+      - ci2-dependency
+    options:
+      runInCI: false
+
+  ci3-dependency:
+    options:
+      runInCI: true
+  ci3-dependant:
+    deps:
+      - ci2-dependency
+    options:
+      runInCI: false
+
+  ci4-dependency:
+    options:
+      runInCI: true
+  ci4-dependant:
+    deps:
+      - ci4-dependency
+    options:
+      runInCI: true

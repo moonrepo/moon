@@ -150,7 +150,7 @@ pub async fn run_target(
     }
 
     // Run targets, optionally based on affected files
-    let mut primary_targets = vec![];
+    let mut inserted_nodes = vec![];
     let mut requirements = RunRequirements {
         ci: is_ci(),
         ci_check: false,
@@ -166,14 +166,11 @@ pub async fn run_target(
     };
 
     for locator in target_locators {
-        primary_targets.extend(
-            action_graph_builder
-                .run_task_by_target_locator(locator, &mut requirements)?
-                .0,
-        );
+        inserted_nodes
+            .extend(action_graph_builder.run_task_by_target_locator(locator, &mut requirements)?);
     }
 
-    if primary_targets.is_empty() {
+    if inserted_nodes.is_empty() {
         let targets_list = target_locators
             .iter()
             .map(color::label)
@@ -210,17 +207,19 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    let context = ActionContext {
-        affected_only: should_run_affected,
-        initial_targets: FxHashSet::from_iter(target_locators.to_owned()),
-        passthrough_args: args.passthrough.to_owned(),
-        primary_targets: FxHashSet::from_iter(primary_targets),
-        profile: args.profile.to_owned(),
-        touched_files: touched_files.clone(),
-        ..ActionContext::default()
-    };
-
-    run_action_pipeline(session, action_graph_builder.build()?, Some(context)).await?;
+    run_action_pipeline(
+        session,
+        ActionContext {
+            affected_only: should_run_affected,
+            initial_targets: FxHashSet::from_iter(target_locators.to_owned()),
+            passthrough_args: args.passthrough.to_owned(),
+            profile: args.profile.to_owned(),
+            touched_files: touched_files.clone(),
+            ..action_graph_builder.build_context()
+        },
+        action_graph_builder.build(),
+    )
+    .await?;
 
     Ok(())
 }

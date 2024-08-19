@@ -17,7 +17,12 @@ pub async fn sync(session: CliSession) -> AppResult {
         project_count += 1;
     }
 
-    run_action_pipeline(&session, action_graph_builder.build()?, None).await?;
+    run_action_pipeline(
+        &session,
+        action_graph_builder.build_context(),
+        action_graph_builder.build(),
+    )
+    .await?;
 
     done(
         format!("Successfully synced {project_count} projects"),

@@ -3,6 +3,7 @@
 mod utils;
 
 use moon_action::*;
+use moon_action_context::TargetState;
 use moon_action_graph::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
@@ -93,7 +94,7 @@ mod action_graph {
             )
             .unwrap();
 
-        builder.build().unwrap().sort_topological().unwrap();
+        builder.build().sort_topological().unwrap();
     }
 
     mod install_deps {
@@ -108,7 +109,7 @@ mod action_graph {
             let bar = container.project_graph.get("bar").unwrap();
             builder.install_deps(&bar, None).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -136,7 +137,7 @@ mod action_graph {
             builder.install_deps(&bar, None).unwrap();
             builder.install_deps(&bar, None).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -164,7 +165,7 @@ mod action_graph {
             let outside = container.project_graph.get("out").unwrap();
             builder.install_deps(&outside, None).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -204,7 +205,7 @@ mod action_graph {
             builder.install_deps(&project, Some(&bun)).unwrap();
             builder.install_deps(&project, Some(&node)).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -226,7 +227,7 @@ mod action_graph {
             builder.install_deps(&project, Some(&node)).unwrap();
             builder.install_deps(&project, Some(&bun)).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -261,7 +262,7 @@ mod action_graph {
                 .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -304,7 +305,7 @@ mod action_graph {
                 .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -350,7 +351,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert!(topo(graph).is_empty());
         }
@@ -382,7 +383,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert!(!topo(graph).is_empty());
         }
@@ -403,7 +404,7 @@ mod action_graph {
                 .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -444,7 +445,7 @@ mod action_graph {
                 .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph).last().unwrap(),
@@ -476,7 +477,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph).last().unwrap(),
@@ -503,7 +504,7 @@ mod action_graph {
                 .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph).last().unwrap(),
@@ -557,7 +558,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -624,7 +625,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -682,7 +683,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -749,7 +750,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -816,7 +817,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -897,7 +898,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -965,9 +966,65 @@ mod action_graph {
                     )
                     .unwrap();
 
-                let graph = builder.build().unwrap();
+                let context = builder.build_context();
+                let graph = builder.build();
 
+                assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test]
+            async fn doesnt_run_dependents_if_its_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci3-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test]
+            async fn runs_dependents_if_both_are_ci_true() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci4-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
             }
         }
 
@@ -997,7 +1054,16 @@ mod action_graph {
                     )
                     .unwrap();
 
-                let graph = builder.build().unwrap();
+                let context = builder.build_context();
+                let graph = builder.build();
+
+                assert_eq!(
+                    context.get_target_states(),
+                    FxHashMap::from_iter([(
+                        Target::parse("bar:build").unwrap(),
+                        TargetState::Passthrough
+                    )])
+                );
 
                 assert!(topo(graph).is_empty());
             }
@@ -1025,8 +1091,10 @@ mod action_graph {
                     )
                     .unwrap();
 
-                let graph = builder.build().unwrap();
+                let context = builder.build_context();
+                let graph = builder.build();
 
+                assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
             }
 
@@ -1053,9 +1121,65 @@ mod action_graph {
                     )
                     .unwrap();
 
-                let graph = builder.build().unwrap();
+                let context = builder.build_context();
+                let graph = builder.build();
 
+                assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test]
+            async fn runs_dependents_if_dependency_is_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci1-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test]
+            async fn doesnt_run_dependents_if_both_are_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci2-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
             }
         }
     }
@@ -1076,7 +1200,7 @@ mod action_graph {
                 .run_task(&project, task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1094,7 +1218,7 @@ mod action_graph {
                 .run_task(&project, task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1112,7 +1236,7 @@ mod action_graph {
                 .run_task(&project, task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1130,7 +1254,7 @@ mod action_graph {
                 .run_task(&project, task, &RunRequirements::default())
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1155,7 +1279,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1181,7 +1305,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1233,7 +1357,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1253,7 +1377,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1271,7 +1395,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert!(graph.is_empty());
         }
@@ -1289,7 +1413,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert!(graph.is_empty());
         }
@@ -1307,7 +1431,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1375,7 +1499,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1398,7 +1522,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1416,7 +1540,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1434,7 +1558,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert!(graph.is_empty());
         }
@@ -1452,7 +1576,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert!(graph.is_empty());
         }
@@ -1474,7 +1598,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1495,7 +1619,7 @@ mod action_graph {
                 )
                 .unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1535,7 +1659,7 @@ mod action_graph {
             builder.setup_toolchain(&system);
             builder.setup_toolchain(&node);
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1567,7 +1691,7 @@ mod action_graph {
             builder.setup_toolchain(&node2);
             builder.setup_toolchain(&node3);
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1590,7 +1714,7 @@ mod action_graph {
             builder.setup_toolchain(&system);
             builder.setup_toolchain(&system);
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -1613,7 +1737,7 @@ mod action_graph {
             let bar = pg.get("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1639,7 +1763,7 @@ mod action_graph {
             let foo = pg.get("foo").unwrap();
             builder.sync_project(&foo).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1675,7 +1799,7 @@ mod action_graph {
             let qux = pg.get("qux").unwrap();
             builder.sync_project(&qux).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1712,7 +1836,7 @@ mod action_graph {
             builder.sync_project(&foo).unwrap();
             builder.sync_project(&foo).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(
                 topo(graph),
@@ -1745,7 +1869,7 @@ mod action_graph {
             let qux = container.project_graph.get("qux").unwrap();
             builder.sync_project(&qux).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1782,7 +1906,7 @@ mod action_graph {
             let baz = container.project_graph.get("baz").unwrap();
             builder.sync_project(&baz).unwrap();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(
@@ -1824,7 +1948,7 @@ mod action_graph {
             let mut builder = ActionGraphBuilder::new(&pg).unwrap();
             builder.sync_workspace();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
@@ -1839,7 +1963,7 @@ mod action_graph {
             builder.sync_workspace();
             builder.sync_workspace();
 
-            let graph = builder.build().unwrap();
+            let graph = builder.build();
 
             assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
         }

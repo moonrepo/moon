@@ -57,19 +57,6 @@ fn validate_paths<C>(
     Ok(())
 }
 
-fn validate_required_approvals<C>(
-    value: &u8,
-    _data: &PartialOwnersConfig,
-    _context: &C,
-    _finalize: bool,
-) -> Result<(), ValidateError> {
-    if *value == 0 {
-        return Err(ValidateError::new("at least 1 approver is required"));
-    }
-
-    Ok(())
-}
-
 cacheable!(
     /// Defines ownership of source code within the current project, by mapping
     /// file paths and globs to owners. An owner is either a user, team, or group.
@@ -94,7 +81,6 @@ cacheable!(
         /// Bitbucket and GitLab only. The number of approvals required for the
         /// request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
         /// For GitLab, marks the code owners section as required.
-        #[setting(default = 1, validate = validate_required_approvals)]
         pub required_approvals: u8,
     }
 );

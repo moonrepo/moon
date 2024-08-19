@@ -221,6 +221,22 @@ impl<'app> ActionGraphBuilder<'app> {
                 color::property("runInCI"),
             );
 
+            // Dependents may still want to run though!
+            if reqs.dependents {
+                self.run_task_dependents(task, reqs)?;
+            }
+
+            return Ok(None);
+        }
+
+        // These tasks shouldn't actually run, so filter them out
+        if self.passthrough_targets.contains(&task.target) {
+            trace!(
+                task = task.target.as_str(),
+                "Not adding task {} to graph because it has been marked as passthrough",
+                color::label(&task.target.id),
+            );
+
             return Ok(None);
         }
 

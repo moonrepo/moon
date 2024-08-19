@@ -125,15 +125,14 @@ async fn gather_touched_files(
         return Err(AppError::CiNoShallowHistory.into());
     }
 
-    console.write_line(
-        result
-            .files
-            .iter()
-            .map(|f| color::file(f.as_str()))
-            .collect::<Vec<_>>()
-            .join("\n"),
-    )?;
+    let mut files = result
+        .files
+        .iter()
+        .map(|f| format!("  {}", color::file(f.as_str())))
+        .collect::<Vec<_>>();
+    files.sort();
 
+    console.write_line(files.join("\n"))?;
     console.print_footer()?;
 
     Ok(result.files)

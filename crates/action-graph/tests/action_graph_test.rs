@@ -972,6 +972,60 @@ mod action_graph {
                 assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
             }
+
+            #[tokio::test]
+            async fn doesnt_run_dependents_if_its_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci3-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test]
+            async fn runs_dependents_if_both_are_ci_true() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci4-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
         }
 
         mod dont_run_in_ci {
@@ -1072,6 +1126,60 @@ mod action_graph {
 
                 assert_eq!(context.get_target_states(), FxHashMap::default());
                 assert!(!topo(graph).is_empty());
+            }
+
+            #[tokio::test]
+            async fn runs_dependents_if_dependency_is_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci1-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test]
+            async fn doesnt_run_dependents_if_both_are_ci_false() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci2-dependency").unwrap();
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
             }
         }
     }

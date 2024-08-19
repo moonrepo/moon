@@ -5,6 +5,7 @@ use moon_common::Id;
 use moon_config::{
     ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig, WorkspaceProjects,
 };
+use proto_core::warpgate::UrlLocator;
 use rustc_hash::FxHashMap;
 use semver::Version;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
@@ -811,9 +812,9 @@ extensions:
                 config.extensions.get("test-id").unwrap(),
                 &ExtensionConfig {
                     config: FxHashMap::default(),
-                    plugin: Some(PluginLocator::Url {
+                    plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                         url: "https://domain.com".into()
-                    }),
+                    }))),
                 }
             );
         }
@@ -839,9 +840,9 @@ extensions:
                         ("fooBar".into(), serde_json::Value::String("abc".into())),
                         ("bar-baz".into(), serde_json::Value::Bool(true)),
                     ]),
-                    plugin: Some(PluginLocator::Url {
+                    plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                         url: "https://domain.com".into()
-                    }),
+                    }))),
                 }
             );
         }

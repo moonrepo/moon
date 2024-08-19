@@ -3,14 +3,16 @@ use crate::plugin_error::PluginError;
 use moon_env::MoonEnvironment;
 use moon_pdk_api::MoonContext;
 use proto_core::{is_offline, ProtoEnvironment};
+use scc::hash_map::OccupiedEntry;
 use scc::HashMap;
 use starbase_utils::fs;
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
-    host_funcs::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
-    PluginLoader, PluginLocator, PluginManifest, Wasm,
+    host::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer, PluginLoader,
+    PluginLocator, PluginManifest, Wasm,
 };
 
 #[allow(dead_code)]
@@ -151,6 +153,18 @@ impl<T: Plugin> PluginRegistry<T> {
         op(plugin.get())
     }
 
+    pub async fn get(&self, id: &Id) -> miette::Result<PluginInstance<T>> {
+        Ok(self
+            .plugins
+            .get_async(id)
+            .await
+            .map(|entry| PluginInstance { entry })
+            .ok_or_else(|| PluginError::UnknownId {
+                name: self.type_of.get_label().to_owned(),
+                id: id.to_owned(),
+            })?)
+    }
+
     pub async fn perform<F, Fut, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
     where
         F: FnMut(&mut T, MoonContext) -> Fut,
@@ -241,6 +255,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(HostData {
+            http_client: self.loader.get_client()?.clone(),
             virtual_paths: self.virtual_paths.clone(),
             working_dir: self.moon_env.working_dir.clone(),
         });
@@ -278,5 +293,23 @@ impl<T: Plugin> PluginRegistry<T> {
         );
 
         let _ = self.plugins.insert(id, plugin);
+    }
+}
+
+pub struct PluginInstance<'l, T: Plugin> {
+    entry: OccupiedEntry<'l, Id, T>,
+}
+
+impl<'l, T: Plugin> Deref for PluginInstance<'l, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.entry.get()
+    }
+}
+
+impl<'l, T: Plugin> DerefMut for PluginInstance<'l, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.entry.get_mut()
     }
 }

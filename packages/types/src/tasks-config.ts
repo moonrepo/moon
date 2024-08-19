@@ -205,6 +205,7 @@ export interface TaskConfig {
 	 * be automatically detected.
 	 *
 	 * @default 'unknown'
+	 * @type {'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown'}
 	 */
 	platform: PlatformType;
 	/**

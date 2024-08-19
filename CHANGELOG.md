@@ -12,6 +12,7 @@
 
 - We've sunset the CI insights feature in moonbase. We will no longer be tracking CI run history.
   This is a retroactive change that applies to all moon versions.
+- Updated proto to v0.40.0 (from v0.39.7).
 
 ## 1.27.10
 

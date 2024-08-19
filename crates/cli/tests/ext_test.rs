@@ -90,9 +90,7 @@ mod ext_download {
                 cmd.arg("ext").arg("example");
             })
             .failure()
-            .stderr(predicates::str::contains(
-                "Cannot load example plugin, source file invalid.wasm does not exist.",
-            ));
+            .stderr(predicates::str::contains("Cannot load example plugin"));
     }
 
     #[test]

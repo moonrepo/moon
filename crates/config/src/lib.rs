@@ -1,3 +1,4 @@
+#[cfg(feature = "loader")]
 mod config_cache;
 mod inherited_tasks_config;
 mod language_platform;
@@ -8,15 +9,14 @@ mod project_config;
 mod shapes;
 mod template;
 mod template_config;
+#[cfg(feature = "template")]
+mod templates;
 mod toolchain;
 mod toolchain_config;
 mod types;
 mod validate;
 mod workspace;
 mod workspace_config;
-
-#[cfg(feature = "template")]
-mod templates;
 
 pub use inherited_tasks_config::*;
 pub use language_platform::*;

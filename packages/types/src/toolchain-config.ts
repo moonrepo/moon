@@ -28,6 +28,7 @@ export interface BunConfig {
 	 * as dependencies.
 	 *
 	 * @default 'workspace'
+	 * @type {'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde'}
 	 */
 	dependencyVersionFormat: NodeVersionFormat;
 	/** Automatically infer moon tasks from `package.json` scripts. */
@@ -189,6 +190,7 @@ export interface NodeConfig {
 	 * as dependencies.
 	 *
 	 * @default 'workspace'
+	 * @type {'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde'}
 	 */
 	dependencyVersionFormat: NodeVersionFormat;
 	/** Automatically infer moon tasks from `package.json` scripts. */
@@ -199,6 +201,7 @@ export interface NodeConfig {
 	 * The package manager to use for installing dependencies.
 	 *
 	 * @default 'npm'
+	 * @type {'bun' | 'npm' | 'pnpm' | 'yarn'}
 	 */
 	packageManager: NodePackageManager;
 	/** Location of the WASM plugin to use for Node.js support. */

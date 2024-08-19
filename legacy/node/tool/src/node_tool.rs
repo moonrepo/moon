@@ -11,6 +11,7 @@ use moon_tool::{
     prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool, ToolError,
 };
 use moon_toolchain::RuntimeReq;
+use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -260,7 +261,7 @@ impl Tool for NodeTool {
                         format!("installing node {version}"),
                     )?;
 
-                    if self.tool.setup(version, false).await? {
+                    if self.tool.setup(version, InstallOptions::default()).await? {
                         last_versions.insert("node".into(), version.to_owned());
                         installed += 1;
                     }

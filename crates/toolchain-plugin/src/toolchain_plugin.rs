@@ -17,40 +17,43 @@ pub struct ToolchainPlugin {
 
 impl ToolchainPlugin {
     #[instrument(skip_all)]
-    pub fn sync_workspace(&self, context: MoonContext) -> miette::Result<()> {
-        if !self.plugin.has_func("sync_workspace") {
+    pub async fn sync_workspace(&self, context: MoonContext) -> miette::Result<()> {
+        if !self.plugin.has_func("sync_workspace").await {
             return Ok(());
         }
 
         debug!(toolchain = self.id.as_str(), "Syncing workspace");
 
         self.plugin
-            .call_func_without_output("sync_workspace", SyncWorkspaceInput { context })?;
+            .call_func_without_output("sync_workspace", SyncWorkspaceInput { context })
+            .await?;
 
         Ok(())
     }
 
     #[instrument(skip_all)]
-    pub fn sync_project(
+    pub async fn sync_project(
         &self,
         project: SyncProjectRecord,
         dependencies: FxHashMap<Id, SyncProjectRecord>,
         context: MoonContext,
     ) -> miette::Result<()> {
-        if !self.plugin.has_func("sync_project") {
+        if !self.plugin.has_func("sync_project").await {
             return Ok(());
         }
 
         debug!(toolchain = self.id.as_str(), "Syncing project");
 
-        self.plugin.call_func_without_output(
-            "sync_project",
-            SyncProjectInput {
-                context,
-                dependencies,
-                project,
-            },
-        )?;
+        self.plugin
+            .call_func_without_output(
+                "sync_project",
+                SyncProjectInput {
+                    context,
+                    dependencies,
+                    project,
+                },
+            )
+            .await?;
 
         Ok(())
     }
@@ -63,15 +66,16 @@ impl Plugin for ToolchainPlugin {
         Ok(Self {
             // Only create the proto tool instance if we know that
             // the WASM file has support for it!
-            tool: if plugin.has_func("register_tool") {
-                Some(Tool::new(
-                    registration.id.clone(),
-                    Arc::clone(&registration.proto_env),
-                    Arc::clone(&plugin),
-                )?)
-            } else {
-                None
-            },
+            // tool: if plugin.has_func("register_tool") {
+            //     Some(Tool::new(
+            //         registration.id.clone(),
+            //         Arc::clone(&registration.proto_env),
+            //         Arc::clone(&plugin),
+            //     )?)
+            // } else {
+            //     None
+            // },
+            tool: None,
             id: registration.id,
             plugin,
         })

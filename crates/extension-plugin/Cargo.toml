@@ -12,6 +12,7 @@ publish = false
 moon_config = { path = "../config" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
+async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 tracing = { workspace = true }

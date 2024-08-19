@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_env = { path = "../env" }
 moon_pdk_api = { version = "0.0.8", path = "../pdk-api" }
+async-trait = { workspace = true }
 convert_case = "0.6.0"
 miette = { workspace = true }
 proto_core = { workspace = true }

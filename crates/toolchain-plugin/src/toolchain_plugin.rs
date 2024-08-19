@@ -1,11 +1,9 @@
-use moon_common::Id;
+use async_trait::async_trait;
 use moon_pdk_api::{
-    MoonContext, SyncProjectInput, SyncProjectRecord, SyncWorkspaceInput, ToolchainMetadataInput,
-    ToolchainMetadataOutput,
+    MoonContext, SyncWorkspaceInput, ToolchainMetadataInput, ToolchainMetadataOutput,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
-use rustc_hash::FxHashMap;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -36,60 +34,65 @@ impl ToolchainPlugin {
         Ok(())
     }
 
-    #[instrument(skip_all)]
-    pub async fn sync_project(
-        &self,
-        project: SyncProjectRecord,
-        dependencies: FxHashMap<Id, SyncProjectRecord>,
-        context: MoonContext,
-    ) -> miette::Result<()> {
-        if !self.plugin.has_func("sync_project").await {
-            return Ok(());
-        }
+    // #[instrument(skip_all)]
+    // pub async fn sync_project(
+    //     &self,
+    //     project: SyncProjectRecord,
+    //     dependencies: FxHashMap<Id, SyncProjectRecord>,
+    //     context: MoonContext,
+    // ) -> miette::Result<()> {
+    //     if !self.plugin.has_func("sync_project").await {
+    //         return Ok(());
+    //     }
 
-        debug!(toolchain = self.id.as_str(), "Syncing project");
+    //     debug!(toolchain = self.id.as_str(), "Syncing project");
 
-        self.plugin
-            .call_func_without_output(
-                "sync_project",
-                SyncProjectInput {
-                    context,
-                    dependencies,
-                    project,
+    //     self.plugin
+    //         .call_func_without_output(
+    //             "sync_project",
+    //             SyncProjectInput {
+    //                 context,
+    //                 dependencies,
+    //                 project,
+    //             },
+    //         )
+    //         .await?;
+
+    //     Ok(())
+    // }
+}
+
+#[async_trait]
+impl Plugin for ToolchainPlugin {
+    async fn new(registration: PluginRegistration) -> miette::Result<Self> {
+        let plugin = Arc::new(registration.container);
+
+        let metadata: ToolchainMetadataOutput = plugin
+            .cache_func_with(
+                "register_toolchain",
+                ToolchainMetadataInput {
+                    id: registration.id.to_string(),
                 },
             )
             .await?;
 
-        Ok(())
-    }
-}
-
-impl Plugin for ToolchainPlugin {
-    fn new(registration: PluginRegistration) -> miette::Result<Self> {
-        let plugin = Arc::new(registration.container);
-
-        // let metadata: ToolchainMetadataOutput = plugin.cache_func_with(
-        //     "register_toolchain",
-        //     ToolchainMetadataInput {
-        //         id: registration.id.to_string(),
-        //     },
-        // )?;
-
         Ok(Self {
             // Only create the proto tool instance if we know that
             // the WASM file has support for it!
-            // tool: if plugin.has_func("register_tool") {
-            //     Some(Tool::new(
-            //         registration.id.clone(),
-            //         Arc::clone(&registration.proto_env),
-            //         Arc::clone(&plugin),
-            //     )?)
-            // } else {
-            //     None
-            // },
-            tool: None,
+            tool: if plugin.has_func("register_tool").await {
+                Some(
+                    Tool::new(
+                        registration.id.clone(),
+                        Arc::clone(&registration.proto_env),
+                        Arc::clone(&plugin),
+                    )
+                    .await?,
+                )
+            } else {
+                None
+            },
             id: registration.id,
-            metadata: ToolchainMetadataOutput::default(),
+            metadata,
             plugin,
         })
     }

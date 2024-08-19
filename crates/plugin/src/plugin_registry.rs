@@ -9,7 +9,7 @@ use starbase_utils::fs;
 use std::fmt;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
     host::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer, PluginLoader,
@@ -110,107 +110,17 @@ impl<T: Plugin> PluginRegistry<T> {
         &self.virtual_paths
     }
 
-    pub async fn access<F, Fut, R>(&self, id: &Id, op: F) -> miette::Result<R>
-    where
-        F: FnOnce(&T) -> Fut,
-        Fut: Future<Output = miette::Result<R>> + Send + 'static,
-    {
-        let plugin = self
-            .plugins
-            .get_async(id)
-            .await
-            .ok_or_else(|| PluginError::UnknownId {
-                id: id.to_string(),
-                ty: self.type_of,
-            })?;
-
-        debug!(
-            plugin = self.type_of.get_label(),
-            id = id.as_str(),
-            "Accessing information from the plugin (async)",
-        );
-
-        op(plugin.get()).await
-    }
-
-    pub fn access_sync<F, R>(&self, id: &Id, op: F) -> miette::Result<R>
-    where
-        F: FnOnce(&T) -> miette::Result<R>,
-    {
-        let plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
-            id: id.to_string(),
-            ty: self.type_of,
-        })?;
-
-        debug!(
-            plugin = self.type_of.get_label(),
-            id = id.as_str(),
-            "Accessing information from the plugin (sync)",
-        );
-
-        op(plugin.get())
-    }
-
-    pub async fn get(&self, id: &Id) -> miette::Result<PluginInstance<T>> {
+    pub async fn get_instance(&self, id: &Id) -> miette::Result<PluginInstance<T>> {
         Ok(self
             .plugins
             .get_async(id)
             .await
             .map(|entry| PluginInstance { entry })
             .ok_or_else(|| PluginError::UnknownId {
-                name: self.type_of.get_label().to_owned(),
-                id: id.to_owned(),
+                id: id.to_string(),
+                ty: self.type_of,
             })?)
     }
-
-    pub async fn perform<F, Fut, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
-    where
-        F: FnMut(&mut T, MoonContext) -> Fut,
-        Fut: Future<Output = miette::Result<R>> + Send + 'static,
-    {
-        let mut plugin =
-            self.plugins
-                .get_async(id)
-                .await
-                .ok_or_else(|| PluginError::UnknownId {
-                    id: id.to_string(),
-                    ty: self.type_of,
-                })?;
-
-        debug!(
-            plugin = self.type_of.get_label(),
-            id = id.as_str(),
-            "Performing an action on the plugin (async)",
-        );
-
-        op(plugin.get_mut(), self.create_context()).await
-    }
-
-    pub fn perform_sync<F, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
-    where
-        F: FnMut(&mut T, MoonContext) -> miette::Result<R>,
-    {
-        let mut plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
-            id: id.to_string(),
-            ty: self.type_of,
-        })?;
-
-        debug!(
-            plugin = self.type_of.get_label(),
-            id = id.as_str(),
-            "Performing an action on the plugin (sync)",
-        );
-
-        op(plugin.get_mut(), self.create_context())
-    }
-
-    // pub fn iter(&self) -> Iter<'_, Id, T> {
-    //     self.plugins.iter()
-    // }
-
-    // pub fn iter_mut(&self) -> IterMut<'_, Id, T> {
-    //     self.plugins.iter_mut()
-    // }
 
     pub fn is_registered(&self, id: &Id) -> bool {
         self.plugins.contains(id)
@@ -273,7 +183,8 @@ impl<T: Plugin> PluginRegistry<T> {
                 id: id.to_owned(),
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-            })?,
+            })
+            .await?,
         );
 
         Ok(())

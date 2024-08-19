@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use std::fmt;
@@ -19,8 +20,9 @@ impl ExtensionPlugin {
     }
 }
 
+#[async_trait]
 impl Plugin for ExtensionPlugin {
-    fn new(registration: PluginRegistration) -> miette::Result<Self> {
+    async fn new(registration: PluginRegistration) -> miette::Result<Self> {
         Ok(Self {
             id: registration.id,
             plugin: registration.container,

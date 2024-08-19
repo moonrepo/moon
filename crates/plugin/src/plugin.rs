@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use moon_env::MoonEnvironment;
 use proto_core::ProtoEnvironment;
 use std::fmt::Debug;
@@ -33,7 +34,8 @@ impl PluginType {
     }
 }
 
+#[async_trait]
 pub trait Plugin: Debug + Sized {
-    fn new(registration: PluginRegistration) -> miette::Result<Self>;
+    async fn new(registration: PluginRegistration) -> miette::Result<Self>;
     fn get_type(&self) -> PluginType;
 }

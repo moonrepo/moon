@@ -10,6 +10,7 @@ use moon_tool::{
     prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
 };
 use moon_utils::get_workspace_root;
+use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
@@ -125,7 +126,7 @@ impl Tool for BunTool {
             .out
             .print_checkpoint(Checkpoint::Setup, format!("installing bun {version}"))?;
 
-        if self.tool.setup(version, false).await? {
+        if self.tool.setup(version, InstallOptions::default()).await? {
             last_versions.insert("bun".into(), version.to_owned());
             count += 1;
         }

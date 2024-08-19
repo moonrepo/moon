@@ -2,7 +2,7 @@ use moon_env::MoonEnvironment;
 use moon_plugin::{
     Plugin, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry, PluginType,
 };
-use proto_core::ProtoEnvironment;
+use proto_core::{warpgate::FileLocator, ProtoEnvironment};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::fs;
 use std::path::Path;
@@ -107,10 +107,10 @@ mod plugin_registry {
         registry
             .load(
                 Id::raw("id"),
-                PluginLocator::File {
+                PluginLocator::File(Box::new(FileLocator {
                     file: "".into(),
                     path: Some(sandbox.path().join("test.wasm")),
-                },
+                })),
             )
             .await
             .unwrap();
@@ -125,10 +125,10 @@ mod plugin_registry {
         registry
             .load(
                 Id::raw("id"),
-                PluginLocator::File {
+                PluginLocator::File(Box::new(FileLocator {
                     file: "".into(),
                     path: Some(sandbox.path().join("test.wasm")),
-                },
+                })),
             )
             .await
             .unwrap();
@@ -136,10 +136,10 @@ mod plugin_registry {
         registry
             .load(
                 Id::raw("id"),
-                PluginLocator::File {
+                PluginLocator::File(Box::new(FileLocator {
                     file: "".into(),
                     path: Some(sandbox.path().join("test.wasm")),
-                },
+                })),
             )
             .await
             .unwrap();

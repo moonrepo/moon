@@ -38,9 +38,19 @@ pub async fn ext(session: CliSession, args: ExtArgs) -> AppResult {
         .await?;
 
     // Execute the plugin
-    extensions.perform_sync(&id, |plugin, context| {
-        plugin.execute(args.passthrough.clone(), context)
-    })?;
+    let plugin = extensions.get(&id).await?;
+
+    plugin
+        .execute(args.passthrough, extensions.create_context())
+        .await?;
+
+    // let passthrough_args = args.passthrough.clone();
+
+    // extensions
+    //     .perform(&id, |plugin, context| async move {
+    //         plugin.execute(passthrough_args, context).await
+    //     })
+    //     .await?;
 
     Ok(())
 }

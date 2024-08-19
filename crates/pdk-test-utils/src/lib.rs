@@ -8,9 +8,10 @@ use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use warpgate::host_funcs::{create_host_functions, HostData};
 use warpgate::{
-    inject_default_manifest_config, test_utils, Id, PluginContainer, PluginManifest, Wasm,
+    host::{create_host_functions, HostData},
+    inject_default_manifest_config, test_utils, Id, PluginContainer, PluginLoader, PluginManifest,
+    Wasm,
 };
 
 pub use moon_pdk_api::*;
@@ -22,7 +23,7 @@ pub fn create_plugin_container_with_config(
     config: HashMap<String, String>,
 ) -> PluginContainer {
     let id = Id::new(id).unwrap();
-
+    let loader = PluginLoader::new(sandbox.join("plugins"), sandbox.join("temp"));
     let virtual_paths = BTreeMap::<PathBuf, PathBuf>::from_iter([
         (sandbox.to_path_buf(), "/cwd".into()),
         (sandbox.to_path_buf(), "/workspace".into()),
@@ -50,6 +51,7 @@ pub fn create_plugin_container_with_config(
     manifest.config.extend(config);
 
     let funcs = create_host_functions(HostData {
+        http_client: loader.get_client().unwrap().clone(),
         virtual_paths,
         working_dir: sandbox.to_path_buf(),
     });

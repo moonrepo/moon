@@ -3,7 +3,7 @@ use schematic::schema::json_schema::{JsonSchemaOptions, JsonSchemaRenderer};
 use schematic::schema::SchemaGenerator;
 use std::path::Path;
 
-fn create_jsonschema_renderer() -> JsonSchemaRenderer<'static> {
+fn create_jsonschema_renderer() -> JsonSchemaRenderer {
     JsonSchemaRenderer::new(JsonSchemaOptions {
         markdown_description: true,
         mark_struct_fields_required: false,

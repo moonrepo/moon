@@ -4,7 +4,7 @@ use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
-use schematic::schema::{IndexMap, IndexSet};
+use schematic::schema::indexmap::{IndexMap, IndexSet};
 use schematic::{merge, validate, Config, MergeResult};
 use std::collections::BTreeMap;
 use std::hash::{BuildHasherDefault, Hash};
@@ -311,17 +311,20 @@ impl InheritedTasksManager {
 
         config
             .validate(&context, true)
-            .map_err(|error| ConfigError::Validator {
-                config: format!(
-                    "inherited tasks {}",
-                    if platform.is_javascript() {
-                        format!("({}, {}, {}, {})", platform, language, stack, project)
-                    } else {
-                        format!("({}, {}, {})", language, stack, project)
-                    }
-                ),
-                error: Box::new(error),
-                help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
+            .map_err(|error| match error {
+                ConfigError::Validator { error, .. } => ConfigError::Validator {
+                    location: format!(
+                        "inherited tasks {}",
+                        if platform.is_javascript() {
+                            format!("({}, {}, {}, {})", platform, language, stack, project)
+                        } else {
+                            format!("({}, {}, {})", language, stack, project)
+                        }
+                    ),
+                    error,
+                    help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
+                },
+                _ => error,
             })?;
 
         let result = InheritedTasksResult {

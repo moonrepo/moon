@@ -18,6 +18,7 @@ export interface CodeownersConfig {
 	 * How to order ownership rules within the generated file.
 	 *
 	 * @default 'file-source'
+	 * @type {'file-source' | 'project-name'}
 	 */
 	orderBy: CodeownersOrderBy;
 	/**
@@ -155,12 +156,14 @@ export interface HasherConfig {
 	 * The optimization to use when hashing.
 	 *
 	 * @default 'accuracy'
+	 * @type {'accuracy' | 'performance'}
 	 */
 	optimization: HasherOptimization;
 	/**
 	 * The strategy to use when walking the file system.
 	 *
 	 * @default 'vcs'
+	 * @type {'glob' | 'vcs'}
 	 */
 	walkStrategy: HasherWalkStrategy;
 	/**
@@ -243,6 +246,7 @@ export interface VcsConfig {
 	 * The VCS client being utilized by the repository.
 	 *
 	 * @default 'git'
+	 * @type {'git'}
 	 */
 	manager: VcsManager;
 	/**
@@ -250,6 +254,7 @@ export interface VcsConfig {
 	 * source code is stored.
 	 *
 	 * @default 'github'
+	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
 	 */
 	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */

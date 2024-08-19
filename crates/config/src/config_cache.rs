@@ -1,7 +1,7 @@
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::path::hash_component;
 use rustc_hash::FxHashMap;
-use schematic::{Cacher, ConfigError};
+use schematic::{Cacher, HandlerError};
 use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
@@ -32,7 +32,13 @@ impl ConfigCache {
 // If reading/writing the cache fails, don't crash the entire process,
 // just store in memory and move on!
 impl Cacher for ConfigCache {
-    fn read(&mut self, url: &str) -> Result<Option<String>, ConfigError> {
+    fn get_file_path(&self, url: &str) -> Result<Option<PathBuf>, HandlerError> {
+        let file = self.get_temp_path(url);
+
+        Ok(if file.exists() { Some(file) } else { None })
+    }
+
+    fn read(&mut self, url: &str) -> Result<Option<String>, HandlerError> {
         if let Some(contents) = self.memory.get(url) {
             return Ok(Some(contents.to_owned()));
         }
@@ -61,7 +67,7 @@ impl Cacher for ConfigCache {
         Ok(None)
     }
 
-    fn write(&mut self, url: &str, contents: &str) -> Result<(), ConfigError> {
+    fn write(&mut self, url: &str, contents: &str) -> Result<(), HandlerError> {
         if !self.memory.contains_key(url) {
             let file = self.get_temp_path(url);
 

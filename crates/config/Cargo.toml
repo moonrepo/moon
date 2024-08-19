@@ -27,9 +27,7 @@ schematic = { workspace = true, features = [
 	"schema",
 	"type_indexmap",
 	"type_semver",
-	"url",
 	"validate",
-	"validate_url",
 	"yaml",
 ] }
 semver = { workspace = true, features = ["serde"] }
@@ -50,7 +48,7 @@ starbase_sandbox = { workspace = true }
 
 [features]
 default = []
-loader = ["schematic/url"]
+loader = ["schematic/url", "schematic/validate_url"]
 proto = ["loader", "dep:proto_core"]
 template = []
 tracing = ["dep:tracing"]

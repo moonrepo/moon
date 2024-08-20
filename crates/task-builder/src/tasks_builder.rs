@@ -471,6 +471,7 @@ impl<'proj> TasksBuilder<'proj> {
                 );
 
                 task.command = "noop".into();
+                task.args.clear();
                 task.script = None;
             }
         }

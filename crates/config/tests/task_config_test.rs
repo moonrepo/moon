@@ -2,7 +2,7 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FilePath, InputPath, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
+    FilePath, InputPath, OneOrMany, OutputPath, PlatformType, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
@@ -597,6 +597,58 @@ options:
 options:
   interactive: true
   persistent: true
+",
+                    |code| TaskConfig::parse(code),
+                );
+            }
+        }
+
+        mod os {
+            use super::*;
+            use moon_config::TaskOperatingSystem;
+
+            #[test]
+            fn can_set_one() {
+                let config = test_parse_config(
+                    r"
+options:
+  os: windows
+",
+                    |code| TaskConfig::parse(code),
+                );
+
+                assert_eq!(
+                    config.options.os,
+                    Some(OneOrMany::One(TaskOperatingSystem::Windows))
+                );
+            }
+
+            #[test]
+            fn can_set_many() {
+                let config = test_parse_config(
+                    r"
+options:
+  os: [linux, macos]
+",
+                    |code| TaskConfig::parse(code),
+                );
+
+                assert_eq!(
+                    config.options.os,
+                    Some(OneOrMany::Many(vec![
+                        TaskOperatingSystem::Linux,
+                        TaskOperatingSystem::Macos
+                    ]))
+                );
+            }
+
+            #[test]
+            #[should_panic(expected = "expected a single value, or a list of values")]
+            fn errors_for_unknown() {
+                test_parse_config(
+                    r"
+options:
+  os: unknown
 ",
                     |code| TaskConfig::parse(code),
                 );

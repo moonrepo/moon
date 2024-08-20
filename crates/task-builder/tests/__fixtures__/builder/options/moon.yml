@@ -42,3 +42,13 @@ tasks:
       cache: true
       interactive: true
       runInCI: true
+
+  os-one:
+    options:
+      os: windows
+  os-many:
+    options:
+      os: [linux, macos]
+  os-none:
+    options:
+      os: []

@@ -1,10 +1,5 @@
 use moon_common::Id;
-use moon_config::{
-    BunConfig, DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
-    ProjectConfig, ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, RustConfig,
-    TaskArgs, TaskConfig, TaskDependencyConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
-    ToolchainConfig,
-};
+use moon_config::*;
 use moon_target::Target;
 use moon_task::Task;
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
@@ -629,6 +624,27 @@ mod tasks_builder {
                 assert_eq!(tasks.get("bun").unwrap().options.shell, None);
                 assert_eq!(tasks.get("node").unwrap().options.shell, None);
             }
+        }
+
+        #[tokio::test]
+        async fn os() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml").await;
+
+            let task = tasks.get("os-one").unwrap();
+
+            assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Windows]));
+
+            let task = tasks.get("os-many").unwrap();
+
+            assert_eq!(
+                task.options.os,
+                Some(vec![TaskOperatingSystem::Linux, TaskOperatingSystem::Macos])
+            );
+
+            let task = tasks.get("os-none").unwrap();
+
+            assert_eq!(task.options.os, Some(vec![]));
         }
     }
 
@@ -1609,6 +1625,67 @@ mod tasks_builder {
             let task = tasks.get("custom-platform").unwrap();
 
             assert_eq!(task.platform, PlatformType::System);
+        }
+    }
+
+    mod os_targeting {
+        use super::*;
+
+        #[tokio::test]
+        async fn handles_linux() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options-os/moon.yml").await;
+            let task = tasks.get("os-linux").unwrap();
+
+            assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Linux]));
+
+            if cfg!(target_os = "linux") {
+                assert_eq!(task.command, "noop");
+                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.script, Some("execute --nix".to_owned()));
+            } else {
+                assert_eq!(task.command, "noop");
+                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.script, None);
+            }
+        }
+
+        #[tokio::test]
+        async fn handles_macos() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options-os/moon.yml").await;
+            let task = tasks.get("os-macos").unwrap();
+
+            assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Macos]));
+
+            if cfg!(target_os = "macos") {
+                assert_eq!(task.command, "execute");
+                assert_eq!(task.args, ["--mac"]);
+                assert_eq!(task.script, None);
+            } else {
+                assert_eq!(task.command, "noop");
+                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.script, None);
+            }
+        }
+
+        #[tokio::test]
+        async fn handles_windows() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options-os/moon.yml").await;
+            let task = tasks.get("os-windows").unwrap();
+
+            assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Windows]));
+
+            if cfg!(target_os = "windows") {
+                assert_eq!(task.command, "execute");
+                assert_eq!(task.args, ["--win"]);
+                assert_eq!(task.script, None);
+            } else {
+                assert_eq!(task.command, "noop");
+                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.script, None);
+            }
         }
     }
 }

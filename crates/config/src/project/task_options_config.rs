@@ -145,8 +145,9 @@ derive_enum!(
     #[derive(ConfigEnum, Copy)]
     pub enum TaskOperatingSystem {
         Linux,
-        #[serde(alias = "osx")]
+        #[serde(alias = "mac", alias = "osx")]
         Macos,
+        #[serde(alias = "win")]
         Windows,
     }
 );

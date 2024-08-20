@@ -1,0 +1,13 @@
+tasks:
+  os-windows:
+    command: 'execute --win'
+    options:
+      os: windows
+  os-linux:
+    script: 'execute --nix'
+    options:
+      os: linux
+  os-macos:
+    command: 'execute --mac'
+    options:
+      os: macos

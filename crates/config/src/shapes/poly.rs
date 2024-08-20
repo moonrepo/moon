@@ -4,7 +4,7 @@ use schematic::{Schema, SchemaBuilder, Schematic};
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
-    #[serde(untagged)]
+    #[serde(untagged, expecting = "expected a single value, or a list of values")]
     pub enum OneOrMany<T: Schematic> {
         One(T),
         Many(Vec<T>),

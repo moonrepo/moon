@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a panic that occurs in the action graph builder.
+
 ## 1.27.7
 
 #### 🐞 Fixes

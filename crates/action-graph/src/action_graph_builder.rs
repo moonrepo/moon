@@ -327,7 +327,9 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         if !parallel {
-            indices.push(previous_target_index.unwrap());
+            if let Some(index) = previous_target_index {
+                indices.push(index);
+            }
         }
 
         Ok(indices)

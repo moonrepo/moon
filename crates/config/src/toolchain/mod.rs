@@ -34,10 +34,19 @@ macro_rules! is_using_tool_version {
 macro_rules! inherit_tool {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
         pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
+            use moon_common::color;
+            use tracing::trace;
+
             if let Some(version) = proto_config.versions.get($key) {
                 let config = self.$tool.get_or_insert_with($config::default);
 
                 if config.version.is_none() {
+                    trace!(
+                        "Inheriting {} version {} from .prototools",
+                        color::id($key),
+                        version
+                    );
+
                     config.version = Some(version.to_owned());
                 }
             }
@@ -45,6 +54,14 @@ macro_rules! inherit_tool {
             if let Some(config) = &mut self.$tool {
                 if config.plugin.is_none() {
                     config.plugin = proto_config.plugins.get($key).cloned();
+
+                    if let Some(plugin) = &config.plugin {
+                        trace!(
+                            plugin = plugin.to_string(),
+                            "Inheriting {} plugin from proto",
+                            color::id($key),
+                        );
+                    }
                 }
             }
 
@@ -58,14 +75,31 @@ macro_rules! inherit_tool {
 macro_rules! inherit_tool_required {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
         pub fn $method(&mut self, proto_config: &proto_core::ProtoConfig) -> miette::Result<()> {
+            use moon_common::color;
+            use tracing::trace;
+
             if let Some(version) = proto_config.versions.get($key) {
                 if self.$tool.version.is_none() {
+                    trace!(
+                        "Inheriting {} version {} from .prototools",
+                        color::id($key),
+                        version
+                    );
+
                     self.$tool.version = Some(version.to_owned());
                 }
             }
 
             if self.$tool.plugin.is_none() {
                 self.$tool.plugin = proto_config.plugins.get($key).cloned();
+
+                if let Some(plugin) = &self.$tool.plugin {
+                    trace!(
+                        plugin = plugin.to_string(),
+                        "Inheriting {} plugin from proto",
+                        color::id($key),
+                    );
+                }
             }
 
             Ok(())

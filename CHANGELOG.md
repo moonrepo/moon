@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- We now log messages when inheriting values from the root `.prototools`.
+
 #### 🐞 Fixes
 
 - Fixed a panic that occurs in the action graph builder.
+- Fixed an issue where the root `.prototools` wasn't always loaded.
 
 ## 1.27.7
 

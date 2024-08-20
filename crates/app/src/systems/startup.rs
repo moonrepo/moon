@@ -153,13 +153,12 @@ pub async fn load_toolchain_config(
         ToolchainConfig::default()
     } else {
         let root = workspace_root.to_owned();
-        let cwd = working_dir.to_owned();
 
         load_config_blocking(move || {
             ToolchainConfig::load(
-                root,
+                &root,
                 config_file,
-                proto_env.load_config_manager()?.get_local_config(&cwd)?,
+                proto_env.load_config_manager()?.get_local_config(&root)?,
             )
         })
         .await

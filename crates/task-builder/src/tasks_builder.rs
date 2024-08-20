@@ -460,11 +460,13 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        if let Some(os) = &task.options.os {
-            if !os.is_current_system() {
+        if let Some(os_list) = &task.options.os {
+            let for_current_system = os_list.iter().any(|os| os.is_current_system());
+
+            if !for_current_system {
                 trace!(
                     target = target.as_str(),
-                    os = os.to_string(),
+                    os_list = ?os_list.iter().map(|os| os.to_string()).collect::<Vec<_>>(),
                     "Task has been marked for another operating system, disabling command/script",
                 );
 
@@ -556,7 +558,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(os) = &config.os {
-                options.os = Some(*os);
+                options.os = Some(os.to_list());
             }
 
             if let Some(output_style) = &config.output_style {

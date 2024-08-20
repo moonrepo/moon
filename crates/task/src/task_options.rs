@@ -33,7 +33,7 @@ cacheable!(
 
         pub mutex: Option<String>,
 
-        pub os: Option<TaskOperatingSystem>,
+        pub os: Option<Vec<TaskOperatingSystem>>,
 
         pub output_style: Option<TaskOutputStyle>,
 

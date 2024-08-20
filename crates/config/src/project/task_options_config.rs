@@ -1,5 +1,5 @@
 use crate::portable_path::FilePath;
-use crate::shapes::InputPath;
+use crate::shapes::{InputPath, OneOrMany};
 use moon_common::cacheable;
 use schematic::schema::{StringType, UnionType};
 use schematic::{derive_enum, Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
@@ -247,7 +247,7 @@ cacheable!(
         pub mutex: Option<String>,
 
         /// The operating system in which to only run this task on.
-        pub os: Option<TaskOperatingSystem>,
+        pub os: Option<OneOrMany<TaskOperatingSystem>>,
 
         /// The style in which task output will be printed to the console.
         #[setting(env = "MOON_OUTPUT_STYLE")]

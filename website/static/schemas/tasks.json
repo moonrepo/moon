@@ -543,7 +543,17 @@
           "description": "The operating system in which to only run this task on.",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOperatingSystem"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TaskOperatingSystem"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/TaskOperatingSystem"
+                  }
+                }
+              ]
             },
             {
               "type": "null"

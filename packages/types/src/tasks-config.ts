@@ -110,7 +110,7 @@ export interface TaskOptionsConfig {
 	 */
 	mutex: string | null;
 	/** The operating system in which to only run this task on. */
-	os: TaskOperatingSystem | null;
+	os: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
@@ -342,7 +342,7 @@ export interface PartialTaskOptionsConfig {
 	 */
 	mutex?: string | null;
 	/** The operating system in which to only run this task on. */
-	os?: TaskOperatingSystem | null;
+	os?: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *

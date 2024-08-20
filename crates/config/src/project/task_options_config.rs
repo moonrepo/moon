@@ -5,6 +5,7 @@ use schematic::schema::{StringType, UnionType};
 use schematic::{derive_enum, Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
+use std::env::consts;
 use std::str::FromStr;
 
 fn validate_interactive<C>(
@@ -140,6 +141,29 @@ derive_enum!(
 );
 
 derive_enum!(
+    /// The operating system in which to only run this task on.
+    #[derive(ConfigEnum, Copy)]
+    pub enum TaskOperatingSystem {
+        Linux,
+        #[serde(alias = "osx")]
+        Macos,
+        Windows,
+    }
+);
+
+impl TaskOperatingSystem {
+    pub fn is_current_system(&self) -> bool {
+        let os = consts::OS;
+
+        match self {
+            Self::Linux => os == "linux" || os.ends_with("bsd"),
+            Self::Macos => os == "macos",
+            Self::Windows => os == "windows",
+        }
+    }
+}
+
+derive_enum!(
     /// A list of available shells on Unix.
     #[derive(ConfigEnum, Copy)]
     pub enum TaskUnixShell {
@@ -221,6 +245,9 @@ cacheable!(
         /// Creates an exclusive lock on a virtual resource, preventing other
         /// tasks using the same resource from running concurrently.
         pub mutex: Option<String>,
+
+        /// The operating system in which to only run this task on.
+        pub os: Option<TaskOperatingSystem>,
 
         /// The style in which task output will be printed to the console.
         #[setting(env = "MOON_OUTPUT_STYLE")]

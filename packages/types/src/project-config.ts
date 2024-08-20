@@ -105,10 +105,8 @@ export interface OwnersConfig {
 	 * Bitbucket and GitLab only. The number of approvals required for the
 	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
 	 * For GitLab, marks the code owners section as required.
-	 *
-	 * @default 1
 	 */
-	requiredApprovals?: number;
+	requiredApprovals: number;
 }
 
 /** Expanded information about the project. */
@@ -135,6 +133,9 @@ export interface ProjectMetadataConfig {
 
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
+
+/** The operating system in which to only run this task on. */
+export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
 
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
@@ -351,8 +352,6 @@ export interface PartialOwnersConfig {
 	 * Bitbucket and GitLab only. The number of approvals required for the
 	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
 	 * For GitLab, marks the code owners section as required.
-	 *
-	 * @default 1
 	 */
 	requiredApprovals?: number | null;
 }

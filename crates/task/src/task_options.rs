@@ -1,7 +1,7 @@
 use moon_common::cacheable;
 use moon_config::{
-    InputPath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOutputStyle, TaskUnixShell,
-    TaskWindowsShell,
+    InputPath, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOutputStyle,
+    TaskUnixShell, TaskWindowsShell,
 };
 
 cacheable!(
@@ -32,6 +32,8 @@ cacheable!(
         pub merge_outputs: TaskMergeStrategy,
 
         pub mutex: Option<String>,
+
+        pub os: Option<TaskOperatingSystem>,
 
         pub output_style: Option<TaskOutputStyle>,
 
@@ -72,6 +74,7 @@ impl Default for TaskOptions {
             merge_inputs: TaskMergeStrategy::Append,
             merge_outputs: TaskMergeStrategy::Append,
             mutex: None,
+            os: None,
             output_style: None,
             persistent: false,
             retry_count: 0,

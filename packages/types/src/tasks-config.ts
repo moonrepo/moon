@@ -25,6 +25,9 @@ export type TaskOptionEnvFile = boolean | string | string[];
 /** The strategy in which to merge a specific task option. */
 export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 
+/** The operating system in which to only run this task on. */
+export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
+
 /** The style in which task output will be printed to the console. */
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
@@ -106,6 +109,8 @@ export interface TaskOptionsConfig {
 	 * tasks using the same resource from running concurrently.
 	 */
 	mutex: string | null;
+	/** The operating system in which to only run this task on. */
+	os: TaskOperatingSystem | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
@@ -336,6 +341,8 @@ export interface PartialTaskOptionsConfig {
 	 * tasks using the same resource from running concurrently.
 	 */
 	mutex?: string | null;
+	/** The operating system in which to only run this task on. */
+	os?: TaskOperatingSystem | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *

@@ -402,6 +402,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // And lastly, before we return the task and options, we should finalize
         // all necessary fields and populate/calculate with values.
+
         if task.command.is_empty() {
             task.command = "noop".into();
         }
@@ -456,6 +457,19 @@ impl<'proj> TasksBuilder<'proj> {
                 );
 
                 task.options.shell = Some(true);
+            }
+        }
+
+        if let Some(os) = &task.options.os {
+            if !os.is_current_system() {
+                trace!(
+                    target = target.as_str(),
+                    os = os.to_string(),
+                    "Task has been marked for another operating system, disabling command/script",
+                );
+
+                task.command = "noop".into();
+                task.script = None;
             }
         }
 
@@ -539,6 +553,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(mutex) = &config.mutex {
                 options.mutex = Some(mutex.clone());
+            }
+
+            if let Some(os) = &config.os {
+                options.os = Some(*os);
             }
 
             if let Some(output_style) = &config.output_style {

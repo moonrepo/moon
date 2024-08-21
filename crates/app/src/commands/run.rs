@@ -150,7 +150,7 @@ pub async fn run_target(
     }
 
     // Run targets, optionally based on affected files
-    let inserted_nodes = action_graph_builder.run_with_requirements(RunRequirements {
+    let inserted_nodes = action_graph_builder.run_from_requirements(RunRequirements {
         ci: is_ci(),
         dependents: args.dependents,
         interactive: args.interactive,

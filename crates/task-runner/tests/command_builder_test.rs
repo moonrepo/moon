@@ -6,7 +6,7 @@ use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_config::TaskOptionAffectedFiles;
 use moon_process::Command;
-use moon_task::{Target, TargetLocator};
+use moon_task::Target;
 use std::ffi::OsString;
 use utils::*;
 
@@ -96,7 +96,7 @@ mod command_builder {
             context.passthrough_args.push("--passthrough".into());
             context
                 .initial_targets
-                .insert(TargetLocator::Qualified(Target::parse(":base").unwrap()));
+                .insert(Target::parse(":base").unwrap());
 
             let command = container.create_command(context).await;
 

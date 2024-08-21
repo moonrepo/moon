@@ -497,7 +497,7 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     #[instrument(skip_all)]
-    pub fn run_with_requirements(
+    pub fn run_from_requirements(
         &mut self,
         reqs: RunRequirements<'app>,
     ) -> miette::Result<Vec<NodeIndex>> {

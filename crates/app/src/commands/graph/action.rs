@@ -28,7 +28,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     let project_graph = session.get_project_graph().await?;
     let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
 
-    let mut requirements = RunRequirements {
+    let requirements = RunRequirements {
         dependents: args.dependents,
         ..Default::default()
     };
@@ -36,7 +36,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     // Focus a target and its dependencies/dependents
     if let Some(targets) = &args.targets {
         for target in targets {
-            action_graph_builder.run_task_by_target(target, &mut requirements)?;
+            action_graph_builder.run_task_by_target(target, &requirements)?;
         }
 
         // Show all targets and actions

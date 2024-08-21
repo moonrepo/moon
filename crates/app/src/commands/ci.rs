@@ -216,7 +216,7 @@ async fn generate_action_graph(
     let mut action_graph_builder = session.build_action_graph(project_graph).await?;
 
     // Run dependents to ensure consumers still work correctly
-    action_graph_builder.run_with_requirements(RunRequirements {
+    action_graph_builder.run_from_requirements(RunRequirements {
         ci: true,
         ci_check: true,
         dependents: true,

@@ -1479,7 +1479,7 @@ mod action_graph {
                 .run_task_by_target(
                     Target::parse("common:internal").unwrap(),
                     &RunRequirements {
-                        target_locators: vec![&locator],
+                        target_locators: FxHashSet::from_iter([locator]),
                         ..RunRequirements::default()
                     },
                 )
@@ -1516,7 +1516,7 @@ mod action_graph {
                 .run_task_by_target(
                     Target::parse("misc:requiresInternal").unwrap(),
                     &RunRequirements {
-                        target_locators: vec![&locator],
+                        target_locators: FxHashSet::from_iter([locator]),
                         ..RunRequirements::default()
                     },
                 )
@@ -1582,7 +1582,7 @@ mod action_graph {
         }
     }
 
-    mod run_task_by_target_locator {
+    mod run_from_requirements {
         use super::*;
 
         #[tokio::test]
@@ -1592,10 +1592,12 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::Qualified(Target::parse("server:build").unwrap()),
-                    &mut RunRequirements::default(),
-                )
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::Qualified(
+                        Target::parse("server:build").unwrap(),
+                    )]),
+                    ..Default::default()
+                })
                 .unwrap();
 
             let graph = builder.build();
@@ -1613,10 +1615,12 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    &mut RunRequirements::default(),
-                )
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
+                        Id::raw("lint"),
+                    )]),
+                    ..Default::default()
+                })
                 .unwrap();
 
             let graph = builder.build();
@@ -1635,10 +1639,12 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    &mut RunRequirements::default(),
-                )
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
+                        Id::raw("lint"),
+                    )]),
+                    ..Default::default()
+                })
                 .unwrap();
         }
     }

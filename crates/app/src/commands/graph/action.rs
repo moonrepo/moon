@@ -2,7 +2,7 @@ use crate::commands::graph::utils::{action_graph_repr, respond_to_request, setup
 use crate::session::CliSession;
 use clap::Args;
 use moon_action_graph::RunRequirements;
-use moon_task::TargetLocator;
+use moon_task::Target;
 use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
@@ -11,7 +11,7 @@ use tracing::instrument;
 #[derive(Args, Clone, Debug)]
 pub struct ActionGraphArgs {
     #[arg(help = "Targets to *only* graph")]
-    targets: Option<Vec<TargetLocator>>,
+    targets: Option<Vec<Target>>,
 
     #[arg(long, help = "Include dependents of the focused target(s)")]
     dependents: bool,
@@ -28,15 +28,15 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
     let project_graph = session.get_project_graph().await?;
     let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
 
-    let mut requirements = RunRequirements {
+    let requirements = RunRequirements {
         dependents: args.dependents,
         ..Default::default()
     };
 
     // Focus a target and its dependencies/dependents
-    if let Some(locators) = &args.targets {
-        for locator in locators {
-            action_graph_builder.run_task_by_target_locator(locator, &mut requirements)?;
+    if let Some(targets) = &args.targets {
+        for target in targets {
+            action_graph_builder.run_task_by_target(target, &requirements)?;
         }
 
         // Show all targets and actions

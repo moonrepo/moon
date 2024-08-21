@@ -9,7 +9,7 @@ use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
 use moon_project_graph::ProjectGraph;
-use moon_task::Target;
+use moon_task::{Target, TargetLocator};
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -216,18 +216,18 @@ async fn generate_action_graph(
     let mut action_graph_builder = session.build_action_graph(project_graph).await?;
 
     // Run dependents to ensure consumers still work correctly
-    let requirements = RunRequirements {
+    action_graph_builder.run_from_requirements(RunRequirements {
         ci: true,
         ci_check: true,
         dependents: true,
+        target_locators: FxHashSet::from_iter(
+            targets
+                .iter()
+                .map(|target| TargetLocator::Qualified(target.to_owned())),
+        ),
         touched_files: Some(touched_files),
         ..Default::default()
-    };
-
-    for target in targets {
-        // Run the target and its dependencies
-        action_graph_builder.run_task_by_target(target, &requirements)?;
-    }
+    })?;
 
     let action_context = action_graph_builder.build_context();
     let action_graph = action_graph_builder.build();

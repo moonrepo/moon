@@ -1479,7 +1479,7 @@ mod action_graph {
                 .run_task_by_target(
                     Target::parse("common:internal").unwrap(),
                     &RunRequirements {
-                        initial_locators: vec![&locator],
+                        target_locators: FxHashSet::from_iter([locator]),
                         ..RunRequirements::default()
                     },
                 )
@@ -1516,7 +1516,7 @@ mod action_graph {
                 .run_task_by_target(
                     Target::parse("misc:requiresInternal").unwrap(),
                     &RunRequirements {
-                        initial_locators: vec![&locator],
+                        target_locators: FxHashSet::from_iter([locator]),
                         ..RunRequirements::default()
                     },
                 )
@@ -1582,7 +1582,7 @@ mod action_graph {
         }
     }
 
-    mod run_task_by_target_locator {
+    mod run_from_requirements {
         use super::*;
 
         #[tokio::test]
@@ -1592,10 +1592,12 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::Qualified(Target::parse("server:build").unwrap()),
-                    &mut RunRequirements::default(),
-                )
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::Qualified(
+                        Target::parse("server:build").unwrap(),
+                    )]),
+                    ..Default::default()
+                })
                 .unwrap();
 
             let graph = builder.build();
@@ -1613,10 +1615,12 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    &mut RunRequirements::default(),
-                )
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
+                        Id::raw("lint"),
+                    )]),
+                    ..Default::default()
+                })
                 .unwrap();
 
             let graph = builder.build();
@@ -1635,11 +1639,73 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             builder
-                .run_task_by_target_locator(
-                    TargetLocator::TaskFromWorkingDir(Id::raw("lint")),
-                    &mut RunRequirements::default(),
-                )
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
+                        Id::raw("lint"),
+                    )]),
+                    ..Default::default()
+                })
                 .unwrap();
+        }
+
+        #[tokio::test]
+        async fn computes_context() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let target = Target::parse("client:build").unwrap();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::Qualified(
+                        target.clone(),
+                    )]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let context = builder.build_context();
+
+            assert_eq!(
+                context.initial_targets,
+                FxHashSet::from_iter([target.clone()])
+            );
+            assert_eq!(context.primary_targets, FxHashSet::from_iter([target]));
+        }
+
+        #[tokio::test]
+        async fn computes_context_for_all() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let target = Target::parse(":build").unwrap();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::Qualified(
+                        target.clone(),
+                    )]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let context = builder.build_context();
+
+            assert_eq!(
+                context.initial_targets,
+                FxHashSet::from_iter([target.clone()])
+            );
+            assert_eq!(
+                context.primary_targets,
+                FxHashSet::from_iter([
+                    Target::parse("client:build").unwrap(),
+                    Target::parse("common:build").unwrap(),
+                    Target::parse("server:build").unwrap(),
+                    Target::parse("base:build").unwrap(),
+                ])
+            );
         }
     }
 

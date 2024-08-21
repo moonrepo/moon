@@ -227,7 +227,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
             // Dependents may still want to run though!
             if reqs.dependents {
-                self.run_task_dependents(task, reqs)?;
+                self.run_task_dependents(task, reqs, true)?;
             }
 
             return Ok(None);
@@ -300,7 +300,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // And possibly dependents
         if reqs.dependents {
-            self.run_task_dependents(task, reqs)?;
+            self.run_task_dependents(task, reqs, false)?;
         }
 
         Ok(Some(index))
@@ -348,12 +348,22 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         task: &Task,
         parent_reqs: &RunRequirements<'app>,
+        with_touched: bool,
     ) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
 
         // Create a new requirements object as we only want direct
         // dependents, and shouldn't recursively create.
-        let reqs = RunRequirements::default();
+        let reqs = RunRequirements {
+            ci: parent_reqs.ci,
+            interactive: parent_reqs.interactive,
+            touched_files: if with_touched {
+                parent_reqs.touched_files
+            } else {
+                None
+            },
+            ..Default::default()
+        };
 
         if let TargetScope::Project(project_locator) = &task.target.scope {
             let mut projects_to_build = vec![];

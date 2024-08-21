@@ -5,7 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed a regression where the "primary target" detection would include far too many targets. This
-  would result in passthrough arguments being unexpectedly passed deeper.
+  would result in passthrough arguments being unintentionally passed deeper.
+- Fixed a regression where dependent tasks would always run in CI.
 
 ## 1.27.8
 

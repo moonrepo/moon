@@ -1647,6 +1647,66 @@ mod action_graph {
                 })
                 .unwrap();
         }
+
+        #[tokio::test]
+        async fn computes_context() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let target = Target::parse("client:build").unwrap();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::Qualified(
+                        target.clone(),
+                    )]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let context = builder.build_context();
+
+            assert_eq!(
+                context.initial_targets,
+                FxHashSet::from_iter([target.clone()])
+            );
+            assert_eq!(context.primary_targets, FxHashSet::from_iter([target]));
+        }
+
+        #[tokio::test]
+        async fn computes_context_for_all() {
+            let sandbox = create_sandbox("tasks");
+            let container = ActionGraphContainer::new(sandbox.path()).await;
+            let mut builder = container.create_builder();
+
+            let target = Target::parse(":build").unwrap();
+
+            builder
+                .run_from_requirements(RunRequirements {
+                    target_locators: FxHashSet::from_iter([TargetLocator::Qualified(
+                        target.clone(),
+                    )]),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            let context = builder.build_context();
+
+            assert_eq!(
+                context.initial_targets,
+                FxHashSet::from_iter([target.clone()])
+            );
+            assert_eq!(
+                context.primary_targets,
+                FxHashSet::from_iter([
+                    Target::parse("client:build").unwrap(),
+                    Target::parse("common:build").unwrap(),
+                    Target::parse("server:build").unwrap(),
+                    Target::parse("base:build").unwrap(),
+                ])
+            );
+        }
     }
 
     mod setup_toolchain {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a regression where the "primary target" detection would include far too many targets. This
+  would result in passthrough arguments being unexpectedly passed deeper.
+
 ## 1.27.8
 
 #### 🚀 Updates

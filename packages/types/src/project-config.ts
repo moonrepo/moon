@@ -134,9 +134,6 @@ export interface ProjectMetadataConfig {
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
-/** The operating system in which to only run this task on. */
-export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
-
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */

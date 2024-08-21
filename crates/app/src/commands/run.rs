@@ -150,25 +150,18 @@ pub async fn run_target(
     }
 
     // Run targets, optionally based on affected files
-    let mut inserted_nodes = vec![];
-    let mut requirements = RunRequirements {
+    let inserted_nodes = action_graph_builder.run_with_requirements(RunRequirements {
         ci: is_ci(),
-        ci_check: false,
         dependents: args.dependents,
-        initial_locators: target_locators.iter().collect(),
-        resolved_locators: vec![],
         interactive: args.interactive,
+        target_locators: FxHashSet::from_iter(target_locators.to_owned()),
         touched_files: if should_run_affected {
             Some(&touched_files)
         } else {
             None
         },
-    };
-
-    for locator in target_locators {
-        inserted_nodes
-            .extend(action_graph_builder.run_task_by_target_locator(locator, &mut requirements)?);
-    }
+        ..Default::default()
+    })?;
 
     if inserted_nodes.is_empty() {
         let targets_list = target_locators
@@ -211,7 +204,6 @@ pub async fn run_target(
         session,
         ActionContext {
             affected_only: should_run_affected,
-            initial_targets: FxHashSet::from_iter(target_locators.to_owned()),
             passthrough_args: args.passthrough.to_owned(),
             profile: args.profile.to_owned(),
             touched_files: touched_files.clone(),

@@ -24,16 +24,14 @@ pub struct RunRequirements<'app> {
     pub ci: bool,         // Are we in a CI environment
     pub ci_check: bool,   // Check the `runInCI` option
     pub dependents: bool, // Run dependent tasks as well
-    pub initial_locators: Vec<&'app TargetLocator>,
-    pub resolved_locators: Vec<TargetLocator>,
     pub interactive: bool,
+    pub target_locators: FxHashSet<TargetLocator>,
     pub touched_files: Option<&'app TouchedFilePaths>,
 }
 
 impl<'app> RunRequirements<'app> {
     pub fn has_target(&self, target: &Target) -> bool {
-        self.resolved_locators.iter().any(|loc| loc == target)
-            || self.initial_locators.iter().any(|loc| *loc == target)
+        self.target_locators.iter().any(|loc| loc == target)
     }
 }
 
@@ -45,6 +43,7 @@ pub struct ActionGraphBuilder<'app> {
     project_graph: &'app ProjectGraph,
 
     // Target tracking
+    initial_targets: FxHashSet<Target>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 }
@@ -64,6 +63,7 @@ impl<'app> ActionGraphBuilder<'app> {
             all_query: None,
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
+            initial_targets: FxHashSet::default(),
             passthrough_targets: FxHashSet::default(),
             platform_manager,
             primary_targets: FxHashSet::default(),
@@ -77,6 +77,10 @@ impl<'app> ActionGraphBuilder<'app> {
 
     pub fn build_context(&mut self) -> ActionContext {
         let mut context = ActionContext::default();
+
+        if !self.initial_targets.is_empty() {
+            context.initial_targets = mem::take(&mut self.initial_targets);
+        }
 
         if !self.passthrough_targets.is_empty() {
             for target in mem::take(&mut self.passthrough_targets) {
@@ -312,7 +316,10 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut previous_target_index = None;
 
         for dep in &task.deps {
-            for dep_index in self.run_task_by_target_with_config(&dep.target, &reqs, Some(dep))? {
+            let (_, dep_indices) =
+                self.run_task_by_target_with_config(&dep.target, &reqs, Some(dep))?;
+
+            for dep_index in dep_indices {
                 // When parallel, parent depends on child
                 if parallel {
                     indices.push(dep_index);
@@ -394,27 +401,8 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         target: T,
         reqs: &RunRequirements<'app>,
-    ) -> miette::Result<FxHashSet<NodeIndex>> {
+    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         self.run_task_by_target_with_config(target, reqs, None)
-    }
-
-    pub fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
-        &mut self,
-        target_locator: T,
-        reqs: &mut RunRequirements<'app>,
-    ) -> miette::Result<FxHashSet<NodeIndex>> {
-        match target_locator.as_ref() {
-            TargetLocator::Qualified(target) => self.run_task_by_target(target, reqs),
-            TargetLocator::TaskFromWorkingDir(task_id) => {
-                let project = self.project_graph.get_from_path(None)?;
-                let target = Target::new(&project.id, task_id)?;
-
-                reqs.resolved_locators
-                    .push(TargetLocator::Qualified(target.clone()));
-
-                self.run_task_by_target(target, reqs)
-            }
-        }
     }
 
     pub fn run_task_by_target_with_config<T: AsRef<Target>>(
@@ -422,7 +410,7 @@ impl<'app> ActionGraphBuilder<'app> {
         target: T,
         reqs: &RunRequirements<'app>,
         config: Option<&TaskDependencyConfig>,
-    ) -> miette::Result<FxHashSet<NodeIndex>> {
+    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         let target = target.as_ref();
         let mut inserted_targets = FxHashSet::default();
         let mut inserted_indices = FxHashSet::default();
@@ -505,9 +493,37 @@ impl<'app> ActionGraphBuilder<'app> {
             }
         };
 
-        self.primary_targets.extend(inserted_targets);
+        Ok((inserted_targets, inserted_indices))
+    }
 
-        Ok(inserted_indices)
+    #[instrument(skip_all)]
+    pub fn run_with_requirements(
+        &mut self,
+        reqs: RunRequirements<'app>,
+    ) -> miette::Result<Vec<NodeIndex>> {
+        let mut inserted_nodes = vec![];
+
+        for locator in reqs.target_locators.clone() {
+            let target = match locator {
+                TargetLocator::Qualified(target) => target,
+                TargetLocator::TaskFromWorkingDir(task_id) => {
+                    Target::new(&self.project_graph.get_from_path(None)?.id, task_id)?
+                }
+            };
+
+            // Track the qualified as an initial target
+            self.initial_targets.insert(target.clone());
+
+            // Run the target
+            let (inserted_targets, inserted_indicies) = self.run_task_by_target(target, &reqs)?;
+
+            // Track the primary targets
+            self.primary_targets.extend(inserted_targets);
+
+            inserted_nodes.extend(inserted_indicies);
+        }
+
+        Ok(inserted_nodes)
     }
 
     #[instrument(skip_all)]

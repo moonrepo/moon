@@ -1479,7 +1479,7 @@ mod action_graph {
                 .run_task_by_target(
                     Target::parse("common:internal").unwrap(),
                     &RunRequirements {
-                        initial_locators: vec![&locator],
+                        target_locators: vec![&locator],
                         ..RunRequirements::default()
                     },
                 )
@@ -1516,7 +1516,7 @@ mod action_graph {
                 .run_task_by_target(
                     Target::parse("misc:requiresInternal").unwrap(),
                     &RunRequirements {
-                        initial_locators: vec![&locator],
+                        target_locators: vec![&locator],
                         ..RunRequirements::default()
                     },
                 )

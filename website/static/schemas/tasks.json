@@ -326,6 +326,15 @@
         "replace"
       ]
     },
+    "TaskOperatingSystem": {
+      "description": "The operating system in which to only run this task on.",
+      "type": "string",
+      "enum": [
+        "linux",
+        "macos",
+        "windows"
+      ]
+    },
     "TaskOptionAffectedFiles": {
       "anyOf": [
         {
@@ -523,6 +532,28 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "os": {
+          "title": "os",
+          "description": "The operating system in which to only run this task on.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TaskOperatingSystem"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/TaskOperatingSystem"
+                  }
+                }
+              ]
             },
             {
               "type": "null"

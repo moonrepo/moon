@@ -1,0 +1,50 @@
+---
+slug: moon-v1.28
+title: moon v1.28 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.28.png
+---
+
+???
+
+<!--truncate-->
+
+## OS specific tasks
+
+When moon was originally designed, it was meant to be a very simple but easily configurable task
+runner. But since then, moon has grown drastically, and so has the requirements of its users. One
+such request was being able to define tasks that only run for certain operating systems.
+
+This wasn't possible before; but is now thanks to the new
+[`os` task option](/docs/config/project#os). This option can be configured with "linux", "macos", or
+"windows" to target those specific systems, and can be a single value, or list of values.
+
+```yaml title="moon.yml"
+tasks:
+  build-linux:
+    command: 'cargo build --target x86_64-unknown-linux-gnu'
+    options:
+      os: 'linux'
+  build-macos:
+    command: 'cargo build --target x86_64-apple-darwin'
+    options:
+      os: 'macos'
+  build-windows:
+    command: 'cargo build --target x86_64-pc-windows-msvc'
+    options:
+      os: 'windows'
+```
+
+When a task is ran on a non-compatible system, it will be converted to a no-operation task, so that
+dependency chains still resolve correctly.
+
+> In the future, we will look into supporting system architecture as well.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.28.0) for a full list
+of changes.
+
+- We've sunset the CI insights feature in moonbase. We will no longer be tracking CI run history.
+  This is a retroactive change that applies to all moon versions.

@@ -33,10 +33,13 @@ cacheable!(
     pub struct DependencyConfig {
         /// ID of the depended on project.
         pub id: Id,
+
         /// Scope of the dependency relationship.
         pub scope: DependencyScope,
+
         /// Source of where the dependeny came from.
         pub source: DependencySource,
+
         /// Metadata about the source.
         pub via: Option<String>,
     }

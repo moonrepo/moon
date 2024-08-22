@@ -1129,7 +1129,39 @@ mod action_graph {
             }
 
             #[tokio::test]
-            async fn runs_dependents_if_dependency_is_ci_false() {
+            async fn runs_dependents_if_dependency_is_ci_false_but_affected() {
+                let sandbox = create_sandbox("tasks");
+                let container = ActionGraphContainer::new(sandbox.path()).await;
+                let mut builder = container.create_builder();
+
+                let project = container.project_graph.get("ci").unwrap();
+                let task = project.get_task("ci1-dependency").unwrap();
+
+                // Must be affected to run the dependent
+                let touched_files =
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("ci/input.txt")]);
+
+                builder
+                    .run_task(
+                        &project,
+                        task,
+                        &RunRequirements {
+                            ci: true,
+                            ci_check: true,
+                            dependents: true,
+                            touched_files: Some(&touched_files),
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .unwrap();
+
+                let graph = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test]
+            async fn doesnt_run_dependents_if_dependency_is_ci_false_and_not_affected() {
                 let sandbox = create_sandbox("tasks");
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
@@ -1145,6 +1177,7 @@ mod action_graph {
                             ci: true,
                             ci_check: true,
                             dependents: true,
+                            touched_files: None,
                             ..RunRequirements::default()
                         },
                     )

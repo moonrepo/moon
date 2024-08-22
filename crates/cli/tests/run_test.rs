@@ -709,11 +709,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "6327629ca97be90906a73654ab686bcc1ac032ae9d1f6baba2945a9ee9847a7a"
+            "500718ab88fb35afcdc851a737e6b816f663b9ce8fe8ff702de1c1270fb6bd55"
         );
         assert_eq!(
             hash_glob,
-            "ef9068f77d3a2f21c38b389eafeab2fce98d50f2dc647cbb865633089139588a"
+            "5acf190dfc1d52c0e049d8fa29a218e955dc71f96abc0aea2d71318777590540"
         );
     }
 }
@@ -2146,6 +2146,73 @@ mod task_scripts {
         });
 
         assert_snapshot!(assert.output());
+
+        assert.success();
+    }
+}
+
+mod task_os {
+    use super::*;
+
+    #[test]
+    fn runs_linux() {
+        let sandbox = cases_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskOs:linux");
+        });
+
+        let output = assert.output();
+
+        if cfg!(target_os = "linux") {
+            assert!(output.contains("runs-linux"));
+            assert!(!output.contains("no op"));
+        } else {
+            assert!(!output.contains("runs-linux"));
+            assert!(output.contains("no op"));
+        }
+
+        assert.success();
+    }
+
+    #[test]
+    fn runs_macos() {
+        let sandbox = cases_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskOs:macos");
+        });
+
+        let output = assert.output();
+
+        if cfg!(target_os = "macos") {
+            assert!(output.contains("runs-macos"));
+            assert!(!output.contains("no op"));
+        } else {
+            assert!(!output.contains("runs-macos"));
+            assert!(output.contains("no op"));
+        }
+
+        assert.success();
+    }
+
+    #[test]
+    fn runs_windows() {
+        let sandbox = cases_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("taskOs:windows");
+        });
+
+        let output = assert.output();
+
+        if cfg!(target_os = "windows") {
+            assert!(output.contains("runs-windows"));
+            assert!(!output.contains("no op"));
+        } else {
+            assert!(!output.contains("runs-windows"));
+            assert!(output.contains("no op"));
+        }
 
         assert.success();
     }

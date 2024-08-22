@@ -7,6 +7,7 @@
 - Resolved the `actionPipelineV2` experiment and the new pipeline is now always enabled. The old
   pipeline code has been deleted. If you run into any problems, please report an issue!
 - Resolved the `strictProjectAliases` experiment and enabled its functionality going forward.
+- Added an `os` task option, which allows a specific operating system to be targeted for the task.
 
 #### ⚙️ Internal
 

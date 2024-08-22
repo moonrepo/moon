@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue around running dependents when a dependency is affected in CI.
+
 ## 1.27.9
 
 #### 🐞 Fixes

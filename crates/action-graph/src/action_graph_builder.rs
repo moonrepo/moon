@@ -225,9 +225,19 @@ impl<'app> ActionGraphBuilder<'app> {
                 color::property("runInCI"),
             );
 
-            // Dependents may still want to run though!
+            // Dependents may still want to run though,
+            // but only if this task was affected
             if reqs.dependents {
-                self.run_task_dependents(task, reqs, true)?;
+                if let Some(touched) = &reqs.touched_files {
+                    debug!(
+                        task = task.target.as_str(),
+                        "But will run all dependent tasks if affected"
+                    );
+
+                    if task.is_affected(touched)? {
+                        self.run_task_dependents(task, reqs)?;
+                    }
+                }
             }
 
             return Ok(None);
@@ -300,7 +310,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         // And possibly dependents
         if reqs.dependents {
-            self.run_task_dependents(task, reqs, false)?;
+            self.run_task_dependents(task, reqs)?;
         }
 
         Ok(Some(index))
@@ -348,7 +358,6 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         task: &Task,
         parent_reqs: &RunRequirements<'app>,
-        with_touched: bool,
     ) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
 
@@ -357,11 +366,6 @@ impl<'app> ActionGraphBuilder<'app> {
         let reqs = RunRequirements {
             ci: parent_reqs.ci,
             interactive: parent_reqs.interactive,
-            touched_files: if with_touched {
-                parent_reqs.touched_files
-            } else {
-                None
-            },
             ..Default::default()
         };
 

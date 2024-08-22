@@ -1,5 +1,7 @@
 tasks:
   ci1-dependency:
+    inputs:
+      - 'input.txt'
     options:
       runInCI: false
   ci1-dependant:
@@ -9,6 +11,8 @@ tasks:
       runInCI: true
 
   ci2-dependency:
+    inputs:
+      - 'input.txt'
     options:
       runInCI: false
   ci2-dependant:
@@ -18,6 +22,8 @@ tasks:
       runInCI: false
 
   ci3-dependency:
+    inputs:
+      - 'input.txt'
     options:
       runInCI: true
   ci3-dependant:
@@ -27,6 +33,8 @@ tasks:
       runInCI: false
 
   ci4-dependency:
+    inputs:
+      - 'input.txt'
     options:
       runInCI: true
   ci4-dependant:

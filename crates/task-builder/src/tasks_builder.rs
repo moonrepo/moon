@@ -402,6 +402,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // And lastly, before we return the task and options, we should finalize
         // all necessary fields and populate/calculate with values.
+
         if task.command.is_empty() {
             task.command = "noop".into();
         }
@@ -409,8 +410,6 @@ impl<'proj> TasksBuilder<'proj> {
         if !global_deps.is_empty() {
             task.deps = self.merge_vec(task.deps, global_deps, TaskMergeStrategy::Append, true);
         }
-
-        task.id = id.to_owned();
 
         if !global_inputs.is_empty() {
             task.inputs =
@@ -459,6 +458,23 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        if let Some(os_list) = &task.options.os {
+            let for_current_system = os_list.iter().any(|os| os.is_current_system());
+
+            if !for_current_system {
+                trace!(
+                    target = target.as_str(),
+                    os_list = ?os_list.iter().map(|os| os.to_string()).collect::<Vec<_>>(),
+                    "Task has been marked for another operating system, disabling command/script",
+                );
+
+                task.command = "noop".into();
+                task.args.clear();
+                task.script = None;
+            }
+        }
+
+        task.id = id.to_owned();
         task.target = target;
 
         Ok(task)
@@ -539,6 +555,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(mutex) = &config.mutex {
                 options.mutex = Some(mutex.clone());
+            }
+
+            if let Some(os) = &config.os {
+                options.os = Some(os.to_list());
             }
 
             if let Some(output_style) = &config.output_style {

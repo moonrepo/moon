@@ -2,8 +2,8 @@
 
 /* eslint-disable */
 
-import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type { UnresolvedVersionSpec } from './toolchain-config';
+import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
@@ -105,10 +105,8 @@ export interface OwnersConfig {
 	 * Bitbucket and GitLab only. The number of approvals required for the
 	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
 	 * For GitLab, marks the code owners section as required.
-	 *
-	 * @default 1
 	 */
-	requiredApprovals?: number;
+	requiredApprovals: number;
 }
 
 /** Expanded information about the project. */
@@ -351,8 +349,6 @@ export interface PartialOwnersConfig {
 	 * Bitbucket and GitLab only. The number of approvals required for the
 	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
 	 * For GitLab, marks the code owners section as required.
-	 *
-	 * @default 1
 	 */
 	requiredApprovals?: number | null;
 }

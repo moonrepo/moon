@@ -333,7 +333,6 @@
         "requiredApprovals": {
           "title": "requiredApprovals",
           "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
-          "default": 1,
           "type": "number",
           "markdownDescription": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
         }
@@ -1038,6 +1037,15 @@
         "replace"
       ]
     },
+    "TaskOperatingSystem": {
+      "description": "The operating system in which to only run this task on.",
+      "type": "string",
+      "enum": [
+        "linux",
+        "macos",
+        "windows"
+      ]
+    },
     "TaskOptionAffectedFiles": {
       "anyOf": [
         {
@@ -1235,6 +1243,28 @@
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "os": {
+          "title": "os",
+          "description": "The operating system in which to only run this task on.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TaskOperatingSystem"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/TaskOperatingSystem"
+                  }
+                }
+              ]
             },
             {
               "type": "null"

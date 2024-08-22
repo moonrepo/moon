@@ -19,14 +19,19 @@ cacheable!(
     pub struct ProjectToolchainTypeScriptConfig {
         /// Disables all TypeScript functionality for this project.
         pub disabled: bool,
+
         /// Appends sources of project reference to `include` in `tsconfig.json`.
         pub include_project_reference_sources: Option<bool>,
+
         /// Appends shared types to `include` in `tsconfig.json`.
         pub include_shared_types: Option<bool>,
+
         /// Updates and routes `outDir` in `tsconfig.json` to moon's cache.
         pub route_out_dir_to_cache: Option<bool>,
+
         /// Syncs all project dependencies as `references` in `tsconfig.json`.
         pub sync_project_references: Option<bool>,
+
         /// Syncs all project dependencies as `paths` in `tsconfig.json`.
         pub sync_project_references_to_paths: Option<bool>,
     }

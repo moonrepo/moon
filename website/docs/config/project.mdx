@@ -1116,18 +1116,40 @@ If you have many tasks that require exclusive access to a resource that can't be
 (like a database, an ignored file, a file that's not part of the project, or a remote resource) you
 can use the `mutex` option to prevent them from running at the same time.
 
-```yaml title="moon.yml" {5}
+```yaml title="moon.yml" {5,10}
 tasks:
-  task_a:
+  a:
     # ...
     options:
       mutex: 'virtual_resource_name'
 
-  # task_b doesn't necessarily have to be in the same project
-  task_b:
+  # b doesn't necessarily have to be in the same project
+  b:
     # ...
     options:
       mutex: 'virtual_resource_name'
+```
+
+#### `os`<VersionLabel version="1.28.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#os" />
+
+When defined, the task will _only_ run on the configured operating system. For other operating
+systems, the task becomes a no-operation. Supports the values `linux`, `macos`, and `windows`.
+
+Can be defined as a single value, or a list of values.
+
+```yaml title="moon.yml" {5,10}
+tasks:
+  build-unix:
+    # ...
+    options:
+      os: ['linux', 'macos']
+
+  build-windows:
+    # ...
+    options:
+      os: 'windows'
 ```
 
 #### `outputStyle`

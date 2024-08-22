@@ -45,6 +45,7 @@ pub fn get_cases_fixture_configs() -> (
             ("files".try_into().unwrap(), "files".to_owned()),
             ("states".try_into().unwrap(), "states".to_owned()),
             ("taskScript".try_into().unwrap(), "task-script".to_owned()),
+            ("taskOs".try_into().unwrap(), "task-os".to_owned()),
             // Runner
             ("interactive".try_into().unwrap(), "interactive".to_owned()),
             ("mutex".try_into().unwrap(), "mutex".to_owned()),

@@ -1,0 +1,13 @@
+tasks:
+  linux:
+    command: 'echo "runs-linux"'
+    options:
+      os: linux
+  macos:
+    command: 'echo "runs-macos"'
+    options:
+      os: macos
+  windows:
+    command: 'echo "runs-windows"'
+    options:
+      os: windows

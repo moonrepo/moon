@@ -411,8 +411,6 @@ impl<'proj> TasksBuilder<'proj> {
             task.deps = self.merge_vec(task.deps, global_deps, TaskMergeStrategy::Append, true);
         }
 
-        task.id = id.to_owned();
-
         if !global_inputs.is_empty() {
             task.inputs =
                 self.merge_vec(task.inputs, global_inputs, TaskMergeStrategy::Append, true);
@@ -476,6 +474,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        task.id = id.to_owned();
         task.target = target;
 
         Ok(task)

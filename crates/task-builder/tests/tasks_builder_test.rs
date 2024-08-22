@@ -1640,7 +1640,7 @@ mod tasks_builder {
             assert_eq!(task.options.os, Some(vec![TaskOperatingSystem::Linux]));
 
             if cfg!(target_os = "linux") {
-                assert_eq!(task.command, "noop");
+                assert_eq!(task.command, "execute");
                 assert_eq!(task.args, Vec::<String>::new());
                 assert_eq!(task.script, Some("execute --nix".to_owned()));
             } else {

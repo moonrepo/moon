@@ -2,7 +2,7 @@ use crate::expander_context::{substitute_env_var, ExpanderContext};
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{patterns, InputPath, OutputPath};
+use moon_config::{patterns, InputPath, OutputPath, ProjectMetadataConfig};
 use moon_project::FileGroup;
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
@@ -19,6 +19,7 @@ pub struct ExpandedResult {
     pub files: Vec<WorkspaceRelativePathBuf>,
     pub globs: Vec<WorkspaceRelativePathBuf>,
     pub token: Option<String>,
+    pub value: Option<String>,
 }
 
 #[derive(PartialEq)]
@@ -90,39 +91,48 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
     pub fn expand_command(&mut self, task: &Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;
 
-        if self.has_token_function(&task.command) {
-            // Trigger the scope error
-            self.replace_function(task, &task.command)?;
+        let mut command = Cow::Borrowed(&task.command);
+
+        if self.has_token_function(&command) {
+            let result = self.replace_function(task, &command)?;
+
+            if let (Some(token), Some(value)) = (result.token, result.value) {
+                command = Cow::Owned(command.replace(&token, &value));
+            }
         }
 
-        self.replace_variables(task, &task.command)
+        self.replace_variables(task, &command)
     }
 
     #[instrument(skip_all)]
     pub fn expand_script(&mut self, task: &Task) -> miette::Result<String> {
         self.scope = TokenScope::Script;
 
-        let mut value = Cow::Borrowed(task.script.as_ref().expect("Script not defined!"));
+        let mut script = Cow::Borrowed(task.script.as_ref().expect("Script not defined!"));
 
-        while self.has_token_function(&value) {
-            let result = self.replace_function(task, &value)?;
+        while self.has_token_function(&script) {
+            let result = self.replace_function(task, &script)?;
 
             if let Some(token) = result.token {
-                let mut paths = vec![];
+                let mut items = vec![];
 
                 for file in result.files {
-                    paths.push(self.resolve_path_for_task(task, file)?);
+                    items.push(self.resolve_path_for_task(task, file)?);
                 }
 
                 for glob in result.globs {
-                    paths.push(self.resolve_path_for_task(task, glob)?);
+                    items.push(self.resolve_path_for_task(task, glob)?);
                 }
 
-                value = Cow::Owned(value.replace(&token, &join_args(&paths)));
+                if let Some(value) = result.value {
+                    items.push(value);
+                }
+
+                script = Cow::Owned(script.replace(&token, &join_args(&items)));
             }
         }
 
-        self.replace_variables(task, &value)
+        self.replace_variables(task, &script)
     }
 
     #[instrument(skip_all)]
@@ -150,6 +160,10 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
                 for glob in result.globs {
                     args.push(self.resolve_path_for_task(task, glob)?);
+                }
+
+                if let Some(value) = result.value {
+                    args.push(value);
                 }
 
             // Token variables
@@ -186,19 +200,23 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         for (key, value) in base_env {
             if self.has_token_function(value) {
                 let result = self.replace_function(task, value)?;
-                let mut paths = vec![];
+                let mut items = vec![];
 
                 for file in result.files {
-                    paths.push(self.resolve_path_for_task(task, file)?);
+                    items.push(self.resolve_path_for_task(task, file)?);
                 }
 
                 for glob in result.globs {
-                    paths.push(self.resolve_path_for_task(task, glob)?);
+                    items.push(self.resolve_path_for_task(task, glob)?);
+                }
+
+                if let Some(value) = result.value {
+                    items.push(value);
                 }
 
                 env.insert(
                     key.to_owned(),
-                    paths.into_iter().collect::<Vec<_>>().join(","),
+                    items.into_iter().collect::<Vec<_>>().join(","),
                 );
             } else if self.has_token_variable(value) {
                 env.insert(key.to_owned(), self.replace_variables(task, value)?);
@@ -238,6 +256,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     result.env.extend(inner_result.env);
                     result.files.extend(inner_result.files);
                     result.globs.extend(inner_result.globs);
+                    result.value = inner_result.value;
                 }
                 InputPath::TokenVar(var) => {
                     result.files.push(
@@ -295,6 +314,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
                     result.files.extend(inner_result.files);
                     result.globs.extend(inner_result.globs);
+                    result.value = inner_result.value;
                 }
                 _ => {
                     let path = WorkspaceRelativePathBuf::from(
@@ -385,11 +405,6 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     result.env.extend(group.env.clone());
                 }
             }
-            "envs" => {
-                self.check_scope(task, token, &[TokenScope::Inputs])?;
-
-                result.env.extend(file_group()?.env()?.to_owned());
-            }
             // Inputs, outputs
             "in" => {
                 self.check_scope(task, token, &[TokenScope::Script, TokenScope::Args])?;
@@ -464,6 +479,50 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     }
                 };
             }
+            // Misc
+            "envs" => {
+                self.check_scope(task, token, &[TokenScope::Inputs])?;
+
+                result.env.extend(file_group()?.env()?.to_owned());
+            }
+            "meta" => {
+                self.check_scope(
+                    task,
+                    token,
+                    &[
+                        TokenScope::Command,
+                        TokenScope::Script,
+                        TokenScope::Args,
+                        TokenScope::Env,
+                    ],
+                )?;
+
+                let project = self.context.project;
+                let metadata = project.config.project.as_ref();
+
+                result.value = match arg {
+                    "channel" => metadata.and_then(|md| md.channel.clone()),
+                    "description" => metadata.and_then(|md| {
+                        if md.description.is_empty() {
+                            None
+                        } else {
+                            Some(md.description.clone())
+                        }
+                    }),
+                    "maintainers" => metadata.and_then(|md| {
+                        if md.maintainers.is_empty() {
+                            None
+                        } else {
+                            Some(md.maintainers.join(","))
+                        }
+                    }),
+                    "name" => metadata.and_then(|md| md.name.clone()),
+                    "owner" => metadata.and_then(|md| md.owner.clone()),
+                    custom_field => metadata.and_then(|md| {
+                        md.metadata.get(custom_field).map(|value| value.to_string())
+                    }),
+                };
+            }
             _ => {
                 return Err(TokenExpanderError::UnknownToken {
                     token: token.to_owned(),
@@ -499,6 +558,12 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let variable = matches.get(1).unwrap().as_str(); // var
         let project = self.context.project;
 
+        let get_metadata =
+            |op: fn(md: &ProjectMetadataConfig) -> Option<&'_ str>| match &project.config.project {
+                Some(metadata) => Cow::Borrowed(op(metadata).unwrap_or_default()),
+                None => Cow::Owned(String::new()),
+            };
+
         let replaced_value = match variable {
             "workspaceRoot" => Cow::Owned(path::to_string(self.context.workspace_root)?),
             // Project
@@ -508,6 +573,9 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 Some(alias) => Cow::Borrowed(alias.as_str()),
                 None => Cow::Owned(String::new()),
             },
+            "projectChannel" => get_metadata(|md| md.channel.as_deref()),
+            "projectName" => get_metadata(|md| md.name.as_deref()),
+            "projectOwner" => get_metadata(|md| md.owner.as_deref()),
             "projectRoot" => Cow::Owned(path::to_string(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
             "projectStack" => Cow::Owned(project.stack.to_string()),

@@ -157,6 +157,80 @@ mod token_expander {
 
             expander.replace_function(&task, "@out(0)").unwrap();
         }
+
+        #[test]
+        fn meta_refs_native_metadata() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            let metadata = project.config.project.get_or_insert(Default::default());
+
+            metadata.name = Some("name".into());
+            metadata.description = "description".into();
+            metadata.channel = Some("#channel".into());
+            metadata.owner = Some("owner".into());
+            metadata.maintainers.push("user1".into());
+            metadata.maintainers.push("user2".into());
+
+            let task = create_task();
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            let get_value = |token: &str| {
+                expander
+                    .replace_function(&task, token)
+                    .unwrap()
+                    .value
+                    .unwrap()
+            };
+
+            assert_eq!(get_value("@meta(name)"), "name");
+            assert_eq!(get_value("@meta(description)"), "description");
+            assert_eq!(get_value("@meta(channel)"), "#channel");
+            assert_eq!(get_value("@meta(owner)"), "owner");
+            assert_eq!(get_value("@meta(maintainers)"), "user1,user2");
+        }
+
+        #[test]
+        fn meta_refs_custom_metadata() {
+            use starbase_utils::json::JsonValue;
+
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            let metadata = project.config.project.get_or_insert(Default::default());
+
+            metadata.name = Some("name".into());
+            metadata
+                .metadata
+                .insert("name".into(), JsonValue::String("custom-name".into()));
+            metadata
+                .metadata
+                .insert("string".into(), JsonValue::String("custom".into()));
+            metadata.metadata.insert(
+                "list".into(),
+                JsonValue::Array(vec![
+                    JsonValue::String("item".into()),
+                    JsonValue::Bool(true),
+                ]),
+            );
+
+            let task = create_task();
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
+
+            let get_value = |token: &str| {
+                expander
+                    .replace_function(&task, token)
+                    .unwrap()
+                    .value
+                    .unwrap()
+            };
+
+            assert_eq!(get_value("@meta(name)"), "name");
+            assert_eq!(get_value("@meta(string)"), "\"custom\"");
+            assert_eq!(get_value("@meta(list)"), "[\"item\",true]");
+        }
     }
 
     mod vars {
@@ -328,26 +402,26 @@ mod token_expander {
 
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$project $projectName $projectType")
+                    .replace_variables(&task, "$project $projectStack $projectType")
                     .unwrap(),
-                "project projectName unknown"
+                "project unknown unknown"
             );
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$projectName $project $projectType")
+                    .replace_variables(&task, "$projectStack $project $projectType")
                     .unwrap(),
-                "projectName project unknown"
+                "unknown project unknown"
             );
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$projectType $projectName $project")
+                    .replace_variables(&task, "$projectType $projectStack $project")
                     .unwrap(),
-                "unknown projectName project"
+                "unknown unknown project"
             );
         }
 
         #[test]
-        fn keeps_unknown_var_asis() {
+        fn keeps_unknown_var_as_is() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
             let task = create_task();
@@ -422,6 +496,52 @@ mod token_expander {
             let mut expander = TokenExpander::new(&context);
 
             assert_eq!(expander.expand_command(&task).unwrap(), "project/bin/task");
+        }
+
+        #[test]
+        fn supports_meta_func() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            project
+                .config
+                .project
+                .get_or_insert(Default::default())
+                .name = Some("name".into());
+
+            let mut task = create_task();
+
+            task.command = "@meta(name)".into();
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(expander.expand_command(&task).unwrap(), "name");
+        }
+    }
+
+    mod args {
+        use super::*;
+
+        #[test]
+        fn supports_meta_func() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            project
+                .config
+                .project
+                .get_or_insert(Default::default())
+                .name = Some("name".into());
+
+            let mut task = create_task();
+
+            task.args.push("@meta(name)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(expander.expand_args(&task).unwrap(), vec!["name"]);
         }
     }
 
@@ -568,6 +688,30 @@ mod token_expander {
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
                 FxHashMap::from_iter([("ROOT".into(), "./dir/subdir".into())])
+            );
+        }
+
+        #[test]
+        fn supports_meta_func() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            project
+                .config
+                .project
+                .get_or_insert(Default::default())
+                .name = Some("name".into());
+
+            let mut task = create_task();
+
+            task.env.insert("ROOT".into(), "@meta(name)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([("ROOT".into(), "name".into())])
             );
         }
 
@@ -856,6 +1000,23 @@ mod token_expander {
         }
 
         #[test]
+        #[should_panic(
+            expected = "Token @meta(name) in task project:task cannot be used within task inputs."
+        )]
+        fn errors_for_meta_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs = vec![InputPath::TokenFunc("@meta(name)".into())];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            expander.expand_inputs(&task).unwrap();
+        }
+
+        #[test]
         fn supports_vars() {
             let sandbox = create_empty_sandbox();
             let project = create_project(sandbox.path());
@@ -1101,6 +1262,23 @@ mod token_expander {
 
         #[test]
         #[should_panic(
+            expected = "Token @meta(name) in task project:task cannot be used within task outputs."
+        )]
+        fn errors_for_meta_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs = vec![OutputPath::TokenFunc("@meta(name)".into())];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            expander.expand_outputs(&task).unwrap();
+        }
+
+        #[test]
+        #[should_panic(
             expected = "Token @envs(envs) in task project:task cannot be used within task outputs."
         )]
         fn errors_for_envs_func() {
@@ -1201,7 +1379,7 @@ mod token_expander {
         }
 
         #[test]
-        fn supports_outputs() {
+        fn supports_out_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
@@ -1219,7 +1397,7 @@ mod token_expander {
         }
 
         #[test]
-        fn supports_inputs() {
+        fn supports_in_func() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
@@ -1237,6 +1415,27 @@ mod token_expander {
                 expander.expand_script(&task).unwrap(),
                 "bin --foo -az ./docs.md ./other/file.json"
             );
+        }
+
+        #[test]
+        fn supports_meta_func() {
+            let sandbox = create_empty_sandbox();
+            let mut project = create_project(sandbox.path());
+
+            project
+                .config
+                .project
+                .get_or_insert(Default::default())
+                .name = Some("name".into());
+
+            let mut task = create_task();
+
+            task.script = Some("bin --name @meta(name)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(expander.expand_script(&task).unwrap(), "bin --name name");
         }
     }
 }

@@ -62,6 +62,8 @@ impl Cacher for ConfigCache {
                     return Ok(Some(contents));
                 }
             }
+
+            let _ = fs::remove_file(&file);
         }
 
         Ok(None)

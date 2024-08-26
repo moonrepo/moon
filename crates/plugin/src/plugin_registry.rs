@@ -6,9 +6,10 @@ use proto_core::{is_offline, ProtoEnvironment};
 use scc::hash_map::OccupiedEntry;
 use scc::HashMap;
 use starbase_utils::fs;
+use std::fmt;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-use std::{collections::BTreeMap, future::Future, path::PathBuf, sync::Arc};
+use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
     host::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer, PluginLoader,
@@ -32,7 +33,7 @@ impl<T: Plugin> PluginRegistry<T> {
         moon_env: Arc<MoonEnvironment>,
         proto_env: Arc<ProtoEnvironment>,
     ) -> Self {
-        debug!(kind = type_of.get_label(), "Creating plugin registry");
+        debug!(plugin = type_of.get_label(), "Creating plugin registry");
 
         // Create the loader
         let mut loader = PluginLoader::new(
@@ -43,11 +44,8 @@ impl<T: Plugin> PluginRegistry<T> {
         loader.set_offline_checker(is_offline);
 
         // Merge proto and moon virtual paths
-        let mut paths = proto_env
-            .get_virtual_paths()
-            .into_iter()
-            .collect::<BTreeMap<_, _>>();
-
+        let mut paths = BTreeMap::new();
+        paths.extend(proto_env.get_virtual_paths());
         paths.extend(moon_env.get_virtual_paths());
 
         Self {
@@ -72,7 +70,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_manifest(&self, id: &Id, wasm_file: PathBuf) -> miette::Result<PluginManifest> {
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             path = ?wasm_file,
             "Creating plugin manifest from WASM file",
@@ -112,114 +110,20 @@ impl<T: Plugin> PluginRegistry<T> {
         &self.virtual_paths
     }
 
-    pub async fn access<F, Fut, R>(&self, id: &Id, op: F) -> miette::Result<R>
-    where
-        F: FnOnce(&T) -> Fut,
-        Fut: Future<Output = miette::Result<R>> + Send + 'static,
-    {
-        let plugin = self
-            .plugins
-            .get_async(id)
-            .await
-            .ok_or_else(|| PluginError::UnknownId {
-                name: self.type_of.get_label().to_owned(),
-                id: id.to_owned(),
-            })?;
-
-        debug!(
-            kind = self.type_of.get_label(),
-            id = id.as_str(),
-            "Accessing information from the plugin (async)",
-        );
-
-        op(plugin.get()).await
-    }
-
-    pub fn access_sync<F, R>(&self, id: &Id, op: F) -> miette::Result<R>
-    where
-        F: FnOnce(&T) -> miette::Result<R>,
-    {
-        let plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
-            name: self.type_of.get_label().to_owned(),
-            id: id.to_owned(),
-        })?;
-
-        debug!(
-            kind = self.type_of.get_label(),
-            id = id.as_str(),
-            "Accessing information from the plugin (sync)",
-        );
-
-        op(plugin.get())
-    }
-
-    pub async fn get(&self, id: &Id) -> miette::Result<PluginInstance<T>> {
+    pub async fn get_instance(&self, id: &Id) -> miette::Result<PluginInstance<T>> {
         Ok(self
             .plugins
             .get_async(id)
             .await
             .map(|entry| PluginInstance { entry })
             .ok_or_else(|| PluginError::UnknownId {
-                name: self.type_of.get_label().to_owned(),
-                id: id.to_owned(),
+                id: id.to_string(),
+                ty: self.type_of,
             })?)
     }
 
-    pub async fn perform<F, Fut, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
-    where
-        F: FnMut(&mut T, MoonContext) -> Fut,
-        Fut: Future<Output = miette::Result<R>> + Send + 'static,
-    {
-        let mut plugin =
-            self.plugins
-                .get_async(id)
-                .await
-                .ok_or_else(|| PluginError::UnknownId {
-                    name: self.type_of.get_label().to_owned(),
-                    id: id.to_owned(),
-                })?;
-
-        debug!(
-            kind = self.type_of.get_label(),
-            id = id.as_str(),
-            "Performing an action on the plugin (async)",
-        );
-
-        op(plugin.get_mut(), self.create_context()).await
-    }
-
-    pub fn perform_sync<F, R>(&self, id: &Id, mut op: F) -> miette::Result<R>
-    where
-        F: FnMut(&mut T, MoonContext) -> miette::Result<R>,
-    {
-        let mut plugin = self.plugins.get(id).ok_or_else(|| PluginError::UnknownId {
-            name: self.type_of.get_label().to_owned(),
-            id: id.to_owned(),
-        })?;
-
-        debug!(
-            kind = self.type_of.get_label(),
-            id = id.as_str(),
-            "Performing an action on the plugin (sync)",
-        );
-
-        op(plugin.get_mut(), self.create_context())
-    }
-
-    // pub fn iter(&self) -> Iter<'_, Id, T> {
-    //     self.plugins.iter()
-    // }
-
-    // pub fn iter_mut(&self) -> IterMut<'_, Id, T> {
-    //     self.plugins.iter_mut()
-    // }
-
-    pub async fn load<I, L>(&self, id: I, locator: L) -> miette::Result<()>
-    where
-        I: AsRef<Id> + Debug,
-        L: AsRef<PluginLocator> + Debug,
-    {
-        self.load_with_config(id, locator, |_| Ok(())).await
+    pub fn is_registered(&self, id: &Id) -> bool {
+        self.plugins.contains(id)
     }
 
     #[instrument(skip(self, op))]
@@ -238,14 +142,14 @@ impl<T: Plugin> PluginRegistry<T> {
 
         if self.plugins.contains(id) {
             return Err(PluginError::ExistingId {
-                name: self.type_of.get_label().to_owned(),
-                id: id.to_owned(),
+                id: id.to_string(),
+                ty: self.type_of,
             }
             .into());
         }
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Attempting to load and register plugin",
         );
@@ -266,7 +170,7 @@ impl<T: Plugin> PluginRegistry<T> {
         op(&mut manifest)?;
 
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Updated plugin manifest, attempting to register plugin",
         );
@@ -279,15 +183,24 @@ impl<T: Plugin> PluginRegistry<T> {
                 id: id.to_owned(),
                 moon_env: Arc::clone(&self.moon_env),
                 proto_env: Arc::clone(&self.proto_env),
-            })?,
+            })
+            .await?,
         );
 
         Ok(())
     }
 
+    pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<()>
+    where
+        I: AsRef<Id> + Debug,
+        L: AsRef<PluginLocator> + Debug,
+    {
+        self.load_with_config(id, locator, |_| Ok(())).await
+    }
+
     pub fn register(&self, id: Id, plugin: T) {
         debug!(
-            kind = self.type_of.get_label(),
+            plugin = self.type_of.get_label(),
             id = id.as_str(),
             "Registered plugin",
         );
@@ -296,6 +209,17 @@ impl<T: Plugin> PluginRegistry<T> {
     }
 }
 
+impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PluginRegistry")
+            .field("moon_env", &self.moon_env)
+            .field("proto_env", &self.proto_env)
+            .field("plugins", &self.plugins)
+            .field("type_of", &self.type_of)
+            .field("virtual_paths", &self.virtual_paths)
+            .finish()
+    }
+}
 pub struct PluginInstance<'l, T: Plugin> {
     entry: OccupiedEntry<'l, Id, T>,
 }

@@ -1,4 +1,4 @@
-use crate::MoonContext;
+use crate::common::MoonContext;
 use warpgate_api::*;
 
 api_struct!(

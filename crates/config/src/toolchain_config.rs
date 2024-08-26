@@ -2,6 +2,7 @@
 
 use crate::language_platform::*;
 use crate::toolchain::*;
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
 use version_spec::UnresolvedVersionSpec;
@@ -32,6 +33,7 @@ pub struct ToolConfig {
 /// Configures all tools and platforms required for tasks.
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Config, Debug)]
+#[config(allow_unknown_fields)]
 pub struct ToolchainConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/toolchain.json",
@@ -63,9 +65,10 @@ pub struct ToolchainConfig {
     /// Configures and enables the TypeScript platform.
     #[setting(nested)]
     pub typescript: Option<TypeScriptConfig>,
-    // TODO: enable once platforms are live!
-    // #[setting(flatten, nested)]
-    // pub tools: FxHashMap<Id, ToolConfig>,
+
+    /// All configured toolchains by unique ID.
+    #[setting(flatten, nested)]
+    pub toolchains: FxHashMap<Id, ToolConfig>,
 }
 
 impl ToolchainConfig {

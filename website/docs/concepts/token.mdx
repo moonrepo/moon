@@ -331,9 +331,9 @@ tasks:
 The `@meta(key)` token can be used to access project metadata and will be replaced with a value
 derived from [`project`](../config/project#project) in [`moon.yml`](../config/project).
 
-The top-level fields (like `name` and `description`) will be used as-is. If the setting is not
-defined, it will default to nothing or an empty string. For lists of values, they will be joined
-with `,`.
+The top-level fields (like `name` and `description`) will be used as-is (no quotes). If the setting
+is not defined, it will default to nothing or an empty string. For lists of values, they will be
+joined with `,`.
 
 Custom metadata defined in [`project.metadata`](../config/project#metadata-1) can also be accessed
 by key, but will return a JSON stringified value. For example, a custom string value of `example`

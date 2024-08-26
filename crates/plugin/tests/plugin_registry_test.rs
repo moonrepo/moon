@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use moon_env::MoonEnvironment;
 use moon_plugin::{
     Plugin, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry, PluginType,
@@ -11,8 +12,9 @@ use std::sync::Arc;
 #[derive(Debug)]
 struct TestPlugin;
 
+#[async_trait]
 impl Plugin for TestPlugin {
-    fn new(_reg: PluginRegistration) -> miette::Result<Self> {
+    async fn new(_reg: PluginRegistration) -> miette::Result<Self> {
         Ok(TestPlugin)
     }
 
@@ -56,48 +58,11 @@ mod plugin_registry {
 
     #[tokio::test]
     #[should_panic(expected = "The extension plugin unknown does not exist.")]
-    async fn access_errors_if_unknown_id() {
+    async fn errors_if_unknown_id() {
         let sandbox = create_empty_sandbox();
         let registry = create_registry(sandbox.path());
 
-        registry
-            .access(&Id::raw("unknown"), |_| async { Ok(()) })
-            .await
-            .unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "The extension plugin unknown does not exist.")]
-    fn access_sync_errors_if_unknown_id() {
-        let sandbox = create_empty_sandbox();
-        let registry = create_registry(sandbox.path());
-
-        registry
-            .access_sync(&Id::raw("unknown"), |_| Ok(()))
-            .unwrap();
-    }
-
-    #[tokio::test]
-    #[should_panic(expected = "The extension plugin unknown does not exist.")]
-    async fn perform_errors_if_unknown_id() {
-        let sandbox = create_empty_sandbox();
-        let registry = create_registry(sandbox.path());
-
-        registry
-            .perform(&Id::raw("unknown"), |_, _| async { Ok(()) })
-            .await
-            .unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "The extension plugin unknown does not exist.")]
-    fn perform_sync_errors_if_unknown_id() {
-        let sandbox = create_empty_sandbox();
-        let registry = create_registry(sandbox.path());
-
-        registry
-            .perform_sync(&Id::raw("unknown"), |_, _| Ok(()))
-            .unwrap();
+        registry.get_instance(&Id::raw("unknown")).await.unwrap();
     }
 
     #[tokio::test]

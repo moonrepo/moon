@@ -3753,6 +3753,7 @@ dependencies = [
  "regex",
  "rustc-hash 2.0.0",
  "starbase_sandbox",
+ "starbase_utils",
  "thiserror",
  "tracing",
 ]

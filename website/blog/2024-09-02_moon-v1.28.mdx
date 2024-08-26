@@ -1,8 +1,8 @@
 ---
 slug: moon-v1.28
-title: moon v1.28 - ???
+title: moon v1.28 - OS tasks, meta tokens, and more
 authors: [milesj]
-tags: []
+tags: [os, task, meta, token, toolchain]
 # image: ./img/moon/v1.28.png
 ---
 
@@ -10,7 +10,7 @@ tags: []
 
 <!--truncate-->
 
-## OS specific tasks
+## New OS specific tasks
 
 When moon was originally designed, it was meant to be a very simple but easily configurable task
 runner. But since then, moon has grown drastically, and so has the requirements of its users. One
@@ -40,6 +40,40 @@ When a task is ran on a non-compatible system, it will be converted to a no-oper
 dependency chains still resolve correctly.
 
 > In the future, we will look into supporting system architecture as well.
+
+## New `@meta` token function
+
+In our last release, we introduced the [`project.metadata`](/docs/config/project#metadata-1) setting
+as a means for consumers to define their own metadata. This is great but it provided no other
+benefit, as it required consumers to open up config files to discover this metadata, or consumers to
+write custom abstractions/tooling. We want to improve the integration of this information within
+moon, so to start, we're introducing a new token function [`@meta(key)`](/docs/concepts/token#meta).
+
+The [`@meta(key)`](/docs/concepts/token#meta) token function can be used to access project metdata
+from both the [`project`](/docs/config/project#project) and
+[`project.metadata`](/docs/config/project#metadata-1) settings. The former values will be used
+as-is, while the latter values will be JSON stringified (since consumers can define anything).
+
+With this new token, our task composition has grown even deeper. For example, you can define a task
+at the top-level that a project inherits, and then define metadata within that project for the task!
+With that said, this is more of a stopgap solution until we support true variables within
+configuration.
+
+```yaml title=".moon/tasks.yml"
+tasks:
+  build:
+    script: 'compile --label @meta(name) --compress @meta(compression)'
+```
+
+```yaml title="<project>/moon.yml"
+project:
+  name: 'example'
+  metadata:
+    compression: 9
+```
+
+And lastly, while we're on the topic of tokens, we're also introducing `$projectName`,
+`$projectChannel`, and `$projectOwner` token variables, as an easier alternative solution.
 
 ## Other changes
 

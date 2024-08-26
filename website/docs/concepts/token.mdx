@@ -322,6 +322,40 @@ tasks:
       - '/path/to/project/lib'
 ```
 
+### Miscellaneous
+
+### `@meta`<VersionLabel version="1.28.0" />
+
+> Usable in `command`, `script`, `args`, and `env` only.
+
+The `@meta(key)` token can be used to access project metadata and will be replaced with a value
+derived from [`project`](../config/project#project) in [`moon.yml`](../config/project).
+
+The top-level fields (like `name` and `description`) will be used as-is (no quotes). If the setting
+is not defined, it will default to nothing or an empty string. For lists of values, they will be
+joined with `,`.
+
+Custom metadata defined in [`project.metadata`](../config/project#metadata-1) can also be accessed
+by key, but will return a JSON stringified value. For example, a custom string value of `example`
+will be stringified to `"example"` (with quotes).
+
+```yaml
+project:
+  name: 'example'
+  metadata:
+    index: 123
+
+# Configured as
+tasks:
+  build:
+    script: 'build --name @meta(name) --index @meta(index)'
+
+# Resolves to
+tasks:
+  build:
+    script: 'build --name example --index 123'
+```
+
 ## Variables
 
 A token variable is a value that starts with `$` and is substituted to a value derived from the
@@ -330,9 +364,7 @@ _within_ content when necessary, and supports multiple variables within the same
 
 ### Workspace
 
-### `$workspaceRoot`
-
-Absolute file path to the workspace root.
+- `$workspaceRoot` - Absolute file path to the workspace root.
 
 ```yaml
 # Configured as
@@ -354,12 +386,30 @@ tasks:
 
 ### Project
 
-### `$language`
+Most values are derived from settings in [`moon.yml`](../config/project). When a setting is not
+defined, or does not have a config, the variable defaults to "unknown" (for enums) or an empty
+string.
 
-Programming language the project is written in, as defined in
-[`moon.yml`](../config/project#language). If the project has not defined the
-[`language`](../config/project#language) setting, or does not have a config, this defaults to
-"unknown".
+- `$language` Programming language the project is written in, as defined with
+  [`language`](../config/project#language).
+- `$project` - ID of the project that owns the currently running task, as defined in
+  [`.moon/workspace.yml`](../config/workspace).
+- `$projectAlias` - Alias of the project that owns the currently running task.
+- `$projectChannel` - The discussion channel for the project, as defined with
+  [`project.channel`](../config/project#channel).
+  <VersionLabel version="1.28.0" />
+- `$projectName` - The human-readable name of the project, as defined with
+  [`project.name`](../config/project#name).
+  <VersionLabel version="1.28.0" />
+- `$projectOwner` - The owner of the project, as defined with
+  [`project.owner`](../config/project#name).
+  <VersionLabel version="1.28.0" />
+- `$projectRoot` - Absolute file path to the project root.
+- `$projectSource` - Relative file path from the workspace root to the project root, as defined in
+  [`.moon/workspace.yml`](../config/workspace).
+- `$projectStack` - The stack of the project, as defined with [`stack`](../config/project#stack).
+  <VersionLabel version="1.22.0" />
+- `$projectType` - The type of project, as defined with [`type`](../config/project#type).
 
 ```yaml
 # Configured as
@@ -376,135 +426,13 @@ tasks:
       - 'node'
 ```
 
-### `$project`
-
-ID/name of the project that owns the currently running task, as defined in
-[`.moon/workspace.yml`](../config/workspace).
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --project $project'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--project'
-      - 'web'
-```
-
-### `$projectAlias`
-
-Alias of the project that owns the currently running task. If not enabled, or no alias exists for
-the project, this will return an empty string.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --projectAlias $projectAlias'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--projectAlias'
-      - '@web/app'
-```
-
-### `$projectRoot`
-
-Absolute file path to the project root.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --cwd $projectRoot'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--cwd'
-      - '/path/to/repo/apps/web'
-```
-
-### `$projectSource`
-
-Relative file path from the workspace root to the project root, as defined in
-[`.moon/workspace.yml`](../config/workspace).
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--cache-dir'
-      - '../../.cache/$projectSource'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--cache-dir'
-      - '../../.cache/apps/web'
-```
-
-### `$projectStack`<VersionLabel version="1.22.0" />
-
-The stack of the project, as defined in [`moon.yml`](../config/project#stack). If the project has
-not defined the [`stack`](../config/project#stack) setting, or does not have a config, this defaults
-to "unknown".
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example debug $projectStack'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - 'debug'
-      - 'backend'
-```
-
-### `$projectType`
-
-The type of project, as defined in [`moon.yml`](../config/project#type). If the project has not
-defined the [`type`](../config/project#type) setting, or does not have a config, this defaults to
-"unknown".
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example debug $projectType'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - 'debug'
-      - 'application'
-```
-
 ### Task
 
-### `$target`
-
-Target that is currently running.
+- `$target` - Fully-qualified target that is currently running.
+- `$task` - ID of the task that is currently running. Does not include the project ID.
+- `$taskPlatform` - The platform that task will run against, as defined in
+  [`moon.yml`](../config/project#platform-1).
+- `$taskType` - The [type of task](./task#types), based on its configured settings.
 
 ```yaml
 # Configured as
@@ -520,67 +448,12 @@ tasks:
       - 'web:build'
 ```
 
-### `$task`
-
-ID/name of the task that is currently running.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --task=$task'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--task=build'
-```
-
-### `$taskPlatform`
-
-The platform that task will run against, as defined in [`moon.yml`](../config/project#platform-1).
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --platform $taskPlatform'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--platform'
-      - 'system'
-```
-
-### `$taskType`
-
-The [type of task](./task#types), based on its configured settings.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --type $taskType'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--type'
-      - 'build'
-```
-
 ### Date/Time
 
-### `$date`
-
-The current date in the format of `YYYY-MM-DD`.
+- `$date` - The current date in the format of `YYYY-MM-DD`.
+- `$datetime` - The current date and time in the format of `YYYY-MM-DD_HH:MM:SS`.
+- `$time` - The current time in the format of `HH:MM:SS`.
+- `$timestamp` - The current date and time as a UNIX timestamp in seconds.
 
 ```yaml
 # Configured as
@@ -595,61 +468,4 @@ tasks:
       - 'example'
       - '--date'
       - '2023-03-17'
-```
-
-### `$time`
-
-The current time in the format of `HH:MM:SS`.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --time $time'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--time'
-      - '14:05:10'
-```
-
-### `$datetime`
-
-The current date and time in the format of `YYYY-MM-DD_HH:MM:SS`.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --datetime $datetime'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--datetime'
-      - '2023-03-17_14:05:10'
-```
-
-### `$timestamp`
-
-The current date and time as a UNIX timestamp in seconds.
-
-```yaml
-# Configured as
-tasks:
-  build:
-    command: 'example --timestamp $timestamp'
-
-# Resolves to
-tasks:
-  build:
-    command:
-      - 'example'
-      - '--timestamp'
-      - '1679087127'
 ```

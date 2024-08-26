@@ -21,9 +21,9 @@ pattern!(TOKEN_FUNC, "@([a-z]+)\\(([0-9A-Za-z_-]+)\\)");
 pattern!(TOKEN_FUNC_DISTINCT, "^@([a-z]+)\\(([0-9A-Za-z_-]+)\\)$");
 pattern!(
     TOKEN_VAR,
-    "\\$(language|projectAlias|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)"
+    "\\$(language|projectAlias|projectChannel|projectName|projectOwner|projectRoot|projectSource|projectStack|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)"
 );
 pattern!(
     TOKEN_VAR_DISTINCT,
-    "^\\$(language|projectAlias|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)$"
+    "^\\$(language|projectAlias|projectChannel|projectName|projectOwner|projectRoot|projectSource|projectStack|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)$"
 );

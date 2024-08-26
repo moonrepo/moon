@@ -7,10 +7,9 @@ use tracing::instrument;
 pub async fn teardown() -> AppResult {
     let done = create_progress_bar("Tearing down toolchain and uninstalling tools...");
 
-    // TODO
-    // for platform in PlatformManager::write().list_mut() {
-    //     platform.teardown_toolchain().await?;
-    // }
+    for platform in PlatformManager::write().list_mut() {
+        platform.teardown_toolchain().await?;
+    }
 
     done("Teardown complete", true);
 

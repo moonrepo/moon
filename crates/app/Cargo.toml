@@ -27,6 +27,7 @@ moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
 moon_task = { path = "../task" }
 moon_toolchain = { path = "../toolchain" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }

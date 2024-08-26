@@ -68,6 +68,17 @@
         }
       ]
     },
+    "toolchains": {
+      "title": "toolchains",
+      "description": "All configured toolchains by unique ID.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ToolConfig"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
     "typescript": {
       "title": "typescript",
       "description": "Configures and enables the TypeScript platform.",
@@ -633,6 +644,55 @@
             }
           ],
           "markdownDescription": "The version of Rust to download, install, and run `cargo` tasks with."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolConfig": {
+      "description": "Configures an individual platform.",
+      "type": "object",
+      "properties": {
+        "config": {
+          "title": "config",
+          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "title": "version",
+          "description": "The version to download, install, and run tasks with.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false

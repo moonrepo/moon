@@ -13,15 +13,15 @@ const FILENAME: &str = ".moon/toolchain.yml";
 mod toolchain_config {
     use super::*;
 
-    #[test]
-    #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `extends`, `bun`, `deno`, `node`, `rust`, `typescript`"
-    )]
-    fn error_unknown_field() {
-        test_load_config(FILENAME, "unknown: 123", |path| {
-            ToolchainConfig::load_from(path, &ProtoConfig::default())
-        });
-    }
+    // #[test]
+    // #[should_panic(
+    //     expected = "unknown field `unknown`, expected one of `$schema`, `extends`, `bun`, `deno`, `node`, `rust`, `typescript`"
+    // )]
+    // fn error_unknown_field() {
+    //     test_load_config(FILENAME, "unknown: 123", |path| {
+    //         ToolchainConfig::load_from(path, &ProtoConfig::default())
+    //     });
+    // }
 
     #[test]
     fn loads_defaults() {

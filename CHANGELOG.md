@@ -10,6 +10,9 @@
 - Added an `os` task option, which allows a specific operating system to be targeted for the task.
 - Added a `@meta` token function that can access project metadata.
 - Added `$projectName`, `$projectChannel`, and `$projectOwner` token variables.
+- Updated the terminal checkpoint (4 squares) colors to better reflect their state.
+  - Cached tasks continue to be blue, but non-cached but successful tasks are now green.
+  - Announcements are now yellow.
 
 #### ⚙️ Internal
 

@@ -83,6 +83,8 @@ impl DefaultReporter {
         self.out.print_checkpoint_with_comments(
             if operation.has_failed() {
                 Checkpoint::RunFailed
+            } else if operation.is_cached() {
+                Checkpoint::RunCached
             } else if operation.has_passed() {
                 Checkpoint::RunPassed
             } else {

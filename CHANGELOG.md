@@ -17,6 +17,8 @@
 - Updated the terminal checkpoint (4 squares) colors to better reflect their state.
   - Cached tasks continue to be blue, but non-cached but successful tasks are now green.
   - Announcements are now yellow.
+- Updated `MOON_TOOLCHAIN_FORCE_GLOBALS` to support filtering by tool IDs, instead of applying to
+  everything.
 
 #### ⚙️ Internal
 

@@ -63,7 +63,7 @@ impl DenoTool {
             proto_env: proto,
         };
 
-        if use_global_tool_on_path() || req.is_global() || deno.config.version.is_none() {
+        if use_global_tool_on_path("deno") || req.is_global() || deno.config.version.is_none() {
             deno.global = true;
             deno.config.version = None;
         } else {

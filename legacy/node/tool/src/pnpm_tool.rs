@@ -42,7 +42,7 @@ impl PnpmTool {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(PnpmTool {
-            global: use_global_tool_on_path() || config.version.is_none(),
+            global: use_global_tool_on_path("pnpm") || config.version.is_none(),
             tool: load_tool_plugin(
                 &Id::raw("pnpm"),
                 &proto_env,

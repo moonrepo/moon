@@ -119,6 +119,18 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                 .into());
             }
 
+            // Do not depend on tasks that can't run in CI
+            if self.context.check_ci_relationships
+                && !dep_task.options.run_in_ci
+                && task.options.run_in_ci
+            {
+                return Err(TasksExpanderError::RunInCiDepRequirement {
+                    dep: dep_task.target.to_owned(),
+                    task: task.target.to_owned(),
+                }
+                .into());
+            }
+
             // Enforce persistent constraints
             if dep_task.is_persistent() && !task.is_persistent() {
                 return Err(TasksExpanderError::PersistentDepRequirement {

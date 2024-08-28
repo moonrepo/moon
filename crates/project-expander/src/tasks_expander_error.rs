@@ -34,6 +34,15 @@ pub enum TasksExpanderError {
     )]
     PersistentDepRequirement { dep: Target, task: Target },
 
+    #[diagnostic(code(task_expander::dependency::run_in_ci_mismatch))]
+    #[error(
+        "Task {} cannot depend on task {}, as the dependency cannot run in CI because {} is disabled. Because of this, the pipeline will not run tasks correctly.",
+        .task.id.style(Style::Label),
+        .dep.id.style(Style::Label),
+        "options.runInCI".style(Style::Symbol),
+    )]
+    RunInCiDepRequirement { dep: Target, task: Target },
+
     #[diagnostic(code(task_expander::unknown_target))]
     #[error(
         "Invalid dependency {} for {}, target does not exist.",

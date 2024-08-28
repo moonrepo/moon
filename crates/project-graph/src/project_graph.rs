@@ -12,6 +12,7 @@ use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use scc::HashMap;
 use serde::Serialize;
+use starbase_utils::env::bool_var;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -334,6 +335,7 @@ impl ProjectGraph {
 
             let mut expander = ProjectExpander::new(ExpanderContext {
                 aliases: self.aliases(),
+                check_ci_relationships: bool_var("MOON_INTERNAL_CONSTRAINT_RUNINCI"),
                 project: self.get_unexpanded(&id)?,
                 query: Box::new(query),
                 workspace_root: &self.workspace_root,

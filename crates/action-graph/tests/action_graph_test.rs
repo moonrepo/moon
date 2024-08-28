@@ -14,6 +14,7 @@ use moon_task::{Target, TargetLocator, Task};
 use moon_test_utils2::generate_project_graph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
+use std::env;
 use utils::ActionGraphContainer;
 
 fn create_task(id: &str, project: &str) -> Task {
@@ -1213,6 +1214,19 @@ mod action_graph {
                 let graph = builder.build();
 
                 assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test]
+            #[should_panic(
+                expected = "Task ci:ci1-dependant cannot depend on task ci:ci1-dependency"
+            )]
+            async fn errors_if_dependency_is_ci_false_and_constraint_enabled() {
+                env::set_var("MOON_INTERNAL_CONSTRAINT_RUNINCI", "true");
+
+                let sandbox = create_sandbox("tasks");
+                ActionGraphContainer::new(sandbox.path()).await;
+
+                env::remove_var("MOON_INTERNAL_CONSTRAINT_RUNINCI");
             }
         }
     }

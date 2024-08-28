@@ -10,6 +10,10 @@
 - Added an `os` task option, which allows a specific operating system to be targeted for the task.
 - Added a `@meta` token function that can access project metadata.
 - Added `$projectName`, `$projectChannel`, and `$projectOwner` token variables.
+- Added a new experiment `disallowRunInCiMismatch`, that errors when a task that is `runInCI`
+  enabled depends on a task that is `runInCI` disabled. These kinds of relationships cause a handful
+  of issues in the pipeline.
+  - Currently this only applies to `moon ci` and may also apply to `moon run` in the future.
 - Updated the terminal checkpoint (4 squares) colors to better reflect their state.
   - Cached tasks continue to be blue, but non-cached but successful tasks are now green.
   - Announcements are now yellow.

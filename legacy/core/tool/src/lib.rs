@@ -18,8 +18,16 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use warpgate::{inject_default_manifest_config, Wasm};
 
-pub fn use_global_tool_on_path() -> bool {
-    env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|v| v == "1" || v == "true" || v == "on")
+pub fn use_global_tool_on_path(key: &str) -> bool {
+    env::var("MOON_TOOLCHAIN_FORCE_GLOBALS").is_ok_and(|value| {
+        if value == "1" || value == "true" || value == "on" || value == key {
+            true
+        } else if value.contains(",") {
+            value.split(',').any(|val| val == key)
+        } else {
+            false
+        }
+    })
 }
 
 /// We need to ensure that our toolchain binaries are executed instead of

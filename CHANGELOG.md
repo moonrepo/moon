@@ -10,6 +10,8 @@
 - Added an `os` task option, which allows a specific operating system to be targeted for the task.
 - Added a `@meta` token function that can access project metadata.
 - Added `$projectName`, `$projectChannel`, and `$projectOwner` token variables.
+- Added `codeowners.requiredApprovals` setting to `.moon/workspace.yml`, that will apply
+  requirements to all paths.
 - Added a new experiment `disallowRunInCiMismatch`, that errors when a task that is `runInCI`
   enabled depends on a task that is `runInCI` disabled. These kinds of relationships cause a handful
   of issues in the pipeline.
@@ -17,6 +19,8 @@
 - Updated the terminal checkpoint (4 squares) colors to better reflect their state.
   - Cached tasks continue to be blue, but non-cached but successful tasks are now green.
   - Announcements are now yellow.
+- Updated `MOON_TOOLCHAIN_FORCE_GLOBALS` to support filtering by tool IDs, instead of applying to
+  everything.
 
 #### ⚙️ Internal
 

@@ -22,6 +22,11 @@ export interface CodeownersConfig {
 	 */
 	orderBy: CodeownersOrderBy;
 	/**
+	 * Bitbucket and GitLab only. The number of approvals required for the
+	 * request to be satisfied. This will be applied to all paths.
+	 */
+	requiredApprovals: number | null;
+	/**
 	 * Generates a `CODEOWNERS` file after aggregating all ownership
 	 * rules from each project in the workspace.
 	 */
@@ -93,6 +98,12 @@ export interface ExperimentsConfig {
 	 * @deprecated
 	 */
 	actionPipelineV2?: boolean;
+	/**
+	 * Disallow task relationships with different `runInCI` options.
+	 *
+	 * @default true
+	 */
+	disallowRunInCiMismatch?: boolean;
 	/**
 	 * @default true
 	 * @deprecated
@@ -325,6 +336,11 @@ export interface PartialCodeownersConfig {
 	 */
 	orderBy?: CodeownersOrderBy | null;
 	/**
+	 * Bitbucket and GitLab only. The number of approvals required for the
+	 * request to be satisfied. This will be applied to all paths.
+	 */
+	requiredApprovals?: number | null;
+	/**
 	 * Generates a `CODEOWNERS` file after aggregating all ownership
 	 * rules from each project in the workspace.
 	 */
@@ -396,6 +412,12 @@ export interface PartialExperimentsConfig {
 	 * @deprecated
 	 */
 	actionPipelineV2?: boolean | null;
+	/**
+	 * Disallow task relationships with different `runInCI` options.
+	 *
+	 * @default true
+	 */
+	disallowRunInCiMismatch?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

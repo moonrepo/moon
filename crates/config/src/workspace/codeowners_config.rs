@@ -25,6 +25,10 @@ cacheable!(
         /// How to order ownership rules within the generated file.
         pub order_by: CodeownersOrderBy,
 
+        /// Bitbucket and GitLab only. The number of approvals required for the
+        /// request to be satisfied. This will be applied to all paths.
+        pub required_approvals: Option<u8>,
+
         /// Generates a `CODEOWNERS` file after aggregating all ownership
         /// rules from each project in the workspace.
         pub sync_on_run: bool,

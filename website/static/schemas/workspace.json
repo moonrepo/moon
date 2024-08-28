@@ -295,6 +295,13 @@
           "deprecated": true,
           "type": "boolean"
         },
+        "disallowRunInCiMismatch": {
+          "title": "disallowRunInCiMismatch",
+          "description": "Disallow task relationships with different runInCI options.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Disallow task relationships with different `runInCI` options."
+        },
         "interweavedTaskInheritance": {
           "title": "interweavedTaskInheritance",
           "default": true,

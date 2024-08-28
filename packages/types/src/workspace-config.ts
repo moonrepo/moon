@@ -94,6 +94,12 @@ export interface ExperimentsConfig {
 	 */
 	actionPipelineV2?: boolean;
 	/**
+	 * Disallow task relationships with different `runInCI` options.
+	 *
+	 * @default true
+	 */
+	disallowRunInCiMismatch?: boolean;
+	/**
 	 * @default true
 	 * @deprecated
 	 */
@@ -396,6 +402,12 @@ export interface PartialExperimentsConfig {
 	 * @deprecated
 	 */
 	actionPipelineV2?: boolean | null;
+	/**
+	 * Disallow task relationships with different `runInCI` options.
+	 *
+	 * @default true
+	 */
+	disallowRunInCiMismatch?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

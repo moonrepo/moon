@@ -53,7 +53,7 @@ impl BunTool {
             proto_env: proto,
         };
 
-        if use_global_tool_on_path() || req.is_global() || bun.config.version.is_none() {
+        if use_global_tool_on_path("bun") || req.is_global() || bun.config.version.is_none() {
             bun.global = true;
             bun.config.version = None;
         } else {

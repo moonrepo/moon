@@ -40,7 +40,7 @@ impl BunTool {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(BunTool {
-            global: use_global_tool_on_path() || config.version.is_none(),
+            global: use_global_tool_on_path("bun") || config.version.is_none(),
             tool: load_tool_plugin(&Id::raw("bun"), &proto_env, config.plugin.as_ref().unwrap())
                 .await?,
             config,

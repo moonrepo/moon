@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../../../crates/common" }
 moon_config = { path = "../../../crates/config" }
-assert_cmd = "2.0.15"
+assert_cmd = "2.0.16"
 assert_fs = "1.1.2"
 clean-path = "0.2.1"
 insta = "1.39.0"

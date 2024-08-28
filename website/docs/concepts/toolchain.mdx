@@ -26,6 +26,17 @@ The `MOON_TOOLCHAIN_FORCE_GLOBALS` environment variable can be set to `true` to 
 tool binaries available on `PATH`, instead of downloading and installing them. This is useful for
 pre-configured environments, like CI and Docker.
 
+```shell
+MOON_TOOLCHAIN_FORCE_GLOBALS=true
+```
+
+Additionally, the name of one or many tools can be passed to this variable to only force globals for
+those tools, and use the toolchain for the remaining tools.
+
+```shell
+MOON_TOOLCHAIN_FORCE_GLOBALS=node,yarn
+```
+
 ## Configuration
 
 The tools that are managed by the toolchain are configured through the

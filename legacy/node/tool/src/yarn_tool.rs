@@ -40,7 +40,7 @@ impl YarnTool {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(YarnTool {
-            global: use_global_tool_on_path() || config.version.is_none(),
+            global: use_global_tool_on_path("yarn") || config.version.is_none(),
             tool: load_tool_plugin(
                 &Id::raw("yarn"),
                 &proto_env,

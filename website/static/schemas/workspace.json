@@ -173,6 +173,18 @@
             }
           ]
         },
+        "requiredApprovals": {
+          "title": "requiredApprovals",
+          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. This will be applied to all paths.",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "syncOnRun": {
           "title": "syncOnRun",
           "description": "Generates a CODEOWNERS file after aggregating all ownership rules from each project in the workspace.",
@@ -294,6 +306,13 @@
           "default": true,
           "deprecated": true,
           "type": "boolean"
+        },
+        "disallowRunInCiMismatch": {
+          "title": "disallowRunInCiMismatch",
+          "description": "Disallow task relationships with different runInCI options.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Disallow task relationships with different `runInCI` options."
         },
         "interweavedTaskInheritance": {
           "title": "interweavedTaskInheritance",

@@ -45,6 +45,7 @@ pub async fn sync_codeowners(
                 &project.id,
                 project.source.as_str(),
                 &project.config.owners,
+                &app_context.workspace_config.codeowners,
             )?;
         }
     }

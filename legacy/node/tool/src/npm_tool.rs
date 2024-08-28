@@ -38,7 +38,7 @@ impl NpmTool {
         config: &NpmConfig,
     ) -> miette::Result<NpmTool> {
         Ok(NpmTool {
-            global: use_global_tool_on_path() || config.version.is_none(),
+            global: use_global_tool_on_path("npm") || config.version.is_none(),
             config: config.to_owned(),
             tool: load_tool_plugin(&Id::raw("npm"), &proto_env, config.plugin.as_ref().unwrap())
                 .await?,

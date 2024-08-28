@@ -75,7 +75,7 @@ impl NodeTool {
             console: Arc::clone(&console),
         };
 
-        if use_global_tool_on_path() || req.is_global() {
+        if use_global_tool_on_path("node") || req.is_global() {
             node.global = true;
             node.config.version = None;
         } else {

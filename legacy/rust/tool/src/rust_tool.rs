@@ -64,7 +64,7 @@ impl RustTool {
             console,
         };
 
-        if use_global_tool_on_path() || req.is_global() {
+        if use_global_tool_on_path("rust") || req.is_global() {
             rust.global = true;
             rust.config.version = None;
         } else {

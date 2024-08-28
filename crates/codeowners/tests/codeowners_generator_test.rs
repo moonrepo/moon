@@ -25,7 +25,12 @@ fn load_generator(provider: VcsProvider) -> Sandbox {
         .unwrap();
 
         generator
-            .add_project_entry(project_fixture, project_fixture, &project_config.owners)
+            .add_project_entry(
+                project_fixture,
+                project_fixture,
+                &project_config.owners,
+                &workspace_config.codeowners,
+            )
             .unwrap();
     }
 

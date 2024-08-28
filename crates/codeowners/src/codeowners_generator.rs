@@ -41,6 +41,7 @@ impl CodeownersGenerator {
         id: &str,
         source: &str,
         config: &OwnersConfig,
+        root_config: &CodeownersConfig,
     ) -> miette::Result<()> {
         if config.paths.is_empty() {
             return Ok(());
@@ -53,13 +54,18 @@ impl CodeownersGenerator {
         // Render the header
         self.write(format!("# {}", id))?;
 
+        let required_approvals = config
+            .required_approvals
+            .or(root_config.required_approvals)
+            .unwrap_or(0);
+
         match &self.provider {
             VcsProvider::Bitbucket => {
-                if config.required_approvals > 0 {
+                if required_approvals > 0 {
                     if let Some(default_owner) = &config.default_owner {
                         self.write(format!(
                             "Check({} >= {})",
-                            default_owner, config.required_approvals
+                            default_owner, required_approvals
                         ))?;
                     }
                 }
@@ -72,8 +78,8 @@ impl CodeownersGenerator {
                     header = format!("^{header}")
                 }
 
-                if config.required_approvals > 0 {
-                    header = format!("{header}[{}]", config.required_approvals);
+                if required_approvals > 0 {
+                    header = format!("{header}[{}]", required_approvals);
                 }
 
                 if matches!(config.paths, OwnersPaths::List(_)) {

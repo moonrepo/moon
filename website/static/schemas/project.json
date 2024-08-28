@@ -333,7 +333,14 @@
         "requiredApprovals": {
           "title": "requiredApprovals",
           "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
-          "type": "number",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "markdownDescription": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
         }
       },

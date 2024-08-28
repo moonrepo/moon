@@ -303,7 +303,7 @@ fileGroups:
             assert_eq!(config.owners.default_owner, None);
             assert!(!config.owners.optional);
             assert_eq!(config.owners.paths, OwnersPaths::List(vec![]));
-            assert_eq!(config.owners.required_approvals, 0);
+            assert_eq!(config.owners.required_approvals, None);
         }
 
         #[test]
@@ -331,7 +331,7 @@ owners:
             );
             assert_eq!(config.owners.default_owner, Some("x".to_string()));
             assert!(config.owners.optional);
-            assert_eq!(config.owners.required_approvals, 2);
+            assert_eq!(config.owners.required_approvals, Some(2));
         }
 
         #[test]

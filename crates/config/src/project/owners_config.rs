@@ -81,6 +81,6 @@ cacheable!(
         /// Bitbucket and GitLab only. The number of approvals required for the
         /// request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
         /// For GitLab, marks the code owners section as required.
-        pub required_approvals: u8,
+        pub required_approvals: Option<u8>,
     }
 );

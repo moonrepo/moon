@@ -75,6 +75,45 @@ project:
 And lastly, while we're on the topic of tokens, we're also introducing `$projectName`,
 `$projectChannel`, and `$projectOwner` token variables, as an easier alternative solution.
 
+## New `disallowRunInCiMismatch` experiment
+
+Have you ever ran [`moon ci`](/docs/commands/ci) in CI and encountered a scenario where tasks that
+_should_ have run didn't run? Or the dependency of a task never runs causing the dependent to fail?
+If so, this may apply to you!
+
+This scenario is most likely caused by an invalid relationship where the dependent is
+[`runInCI`](/docs/config/project#runinci) enabled, but the dependency is
+[`runInCI`](/docs/config/project#runinci) disabled. For example:
+
+```yml title="moon.yml"
+tasks:
+  build:
+    # ...
+    options:
+      runInCI: false
+
+  analyze:
+    # ...
+    deps: ['build']
+    options:
+      runInCI: true
+```
+
+Because `build` is disabled, its outputs may not be created. Additionally, if `build` is affected by
+touched files, the `analyze` task will not run automatically unless it was also affected. We try our
+best to accomdate these scenarios and "detect" when things should run or not, but it's fallible, as
+there's many ways that tasks can relate to each other.
+
+To try and remedy this going forward, we're introducing the new `disallowRunInCiMismatch` experiment
+that will _hard error_ if an invalid relationship is configured. We want to try and capture how
+often users are configuring this, whether intentionally or accidentally. If the error becomes a
+blocker, the experiment can be disabled as so:
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  disallowRunInCiMismatch: false
+```
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.28.0) for a full list
@@ -82,3 +121,4 @@ of changes.
 
 - We've sunset the CI insights feature in moonbase. We will no longer be tracking CI run history.
   This is a retroactive change that applies to all moon versions.
+- Updated the terminal checkpoint (4 squares) colors to better reflect their state.

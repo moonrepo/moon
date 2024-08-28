@@ -297,7 +297,7 @@ impl<'proj> TasksBuilder<'proj> {
                 .deps
                 .iter()
                 .cloned()
-                .map(|d| d.into_config())
+                .map(|dep| dep.into_config())
                 .collect::<Vec<_>>();
 
             if config.script.is_some() {

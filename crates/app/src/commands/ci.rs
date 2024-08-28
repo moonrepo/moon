@@ -13,6 +13,7 @@ use moon_task::{Target, TargetLocator};
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
+use std::env;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -80,6 +81,20 @@ impl CiConsole {
                 .join("\n"),
         )
     }
+}
+
+async fn generate_project_graph(session: &CliSession) -> AppResult<Arc<ProjectGraph>> {
+    // We have no easy way of passing this experiment boolean into the
+    // project graph, so use an environment variable for now...
+    if session
+        .workspace_config
+        .experiments
+        .disallow_run_in_ci_mismatch
+    {
+        env::set_var("MOON_INTERNAL_CONSTRAINT_RUNINCI", "true");
+    }
+
+    session.get_project_graph().await
 }
 
 /// Gather a list of files that have been modified between branches.
@@ -250,7 +265,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
         last_title: String::new(),
     };
 
-    let project_graph = session.get_project_graph().await?;
+    let project_graph = generate_project_graph(&session).await?;
     let touched_files = gather_touched_files(&mut console, &session, &args).await?;
     let targets = gather_runnable_targets(&mut console, &project_graph, &args).await?;
 

@@ -16,6 +16,7 @@ pub fn create_context<'g, 'q>(
 ) -> ExpanderContext<'g, 'q> {
     ExpanderContext {
         aliases: FxHashMap::default(),
+        check_ci_relationships: true,
         project,
         query: Box::new(|_| Ok(vec![])),
         workspace_root,

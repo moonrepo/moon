@@ -173,7 +173,9 @@ impl<'app> ProjectGraphBuilder<'app> {
         let mut nodes = FxHashMap::default();
 
         for (id, index) in self.nodes {
-            let source = self.sources.remove(&id).unwrap();
+            let Some(source) = self.sources.remove(&id) else {
+                continue;
+            };
 
             nodes.insert(
                 id,

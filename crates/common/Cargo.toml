@@ -1,6 +1,6 @@
 [package]
 name = "moon_common"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 license = "MIT"
 description = "Common utilities."

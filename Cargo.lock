@@ -3286,7 +3286,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "dirs 5.0.1",
  "miette",
@@ -3301,7 +3301,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "httpmock",
  "indexmap 2.4.0",
@@ -3610,7 +3610,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -3621,7 +3621,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "moon_common",
  "moon_config",
@@ -3633,7 +3633,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "extism",
  "moon_pdk_api",
@@ -3895,7 +3895,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "miette",
  "moon_common",

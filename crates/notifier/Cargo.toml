@@ -11,7 +11,7 @@ ci_env = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }

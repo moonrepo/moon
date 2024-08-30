@@ -15,7 +15,7 @@ predicates = "3.1.2"
 pretty_assertions = "1.4.0"
 rustc-hash = { workspace = true }
 serde_yaml = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 
 [lints]
 workspace = true

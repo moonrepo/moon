@@ -14,7 +14,7 @@ common-path = "1.0.0"
 miette = { workspace = true }
 once_cell = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]

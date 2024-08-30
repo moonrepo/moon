@@ -68,12 +68,7 @@ starbase_shell = "0.5.6"
 starbase_styles = { version = "0.4.2", features = ["relative-path"] }
 starbase_utils = { version = "0.8.7", default-features = false, features = [
 	"editor-config",
-	"glob",
-	"json",
 	"miette",
-	"net",
-	"toml",
-	"yaml",
 ] }
 tera = { version = "1.20.0", features = ["preserve_order"] }
 thiserror = "1.0.63"

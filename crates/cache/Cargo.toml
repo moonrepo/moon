@@ -16,7 +16,7 @@ moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 tracing = { workspace = true }
 
 [dev-dependencies]

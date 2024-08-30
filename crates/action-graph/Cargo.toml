@@ -18,6 +18,7 @@ moon_platform = { path = "../../legacy/core/platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
+moon_task_args = { path = "../task-args" }
 moon_query = { path = "../query" }
 graph-cycles = "0.1.0"
 miette = { workspace = true }

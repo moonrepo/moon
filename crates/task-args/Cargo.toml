@@ -1,0 +1,17 @@
+[package]
+name = "moon_task_args"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Utility for parsing task args."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_args = { path = "../args" }
+moon_config = { path = "../config" }
+miette = { workspace = true }
+
+[lints]
+workspace = true

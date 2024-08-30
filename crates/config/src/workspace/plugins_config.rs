@@ -28,7 +28,7 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
             Id::raw("download"),
             ExtensionConfig {
                 plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_download_extension-v0.0.5/moon_download_extension.wasm".into()
+                    url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_download_extension-v0.0.6/moon_download_extension.wasm".into()
                 }))),
                 config: FxHashMap::default(),
             },
@@ -37,7 +37,7 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
             Id::raw("migrate-nx"),
             ExtensionConfig {
                 plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_nx_extension-v0.0.5/moon_migrate_nx_extension.wasm".into()
+                    url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_nx_extension-v0.0.6/moon_migrate_nx_extension.wasm".into()
                 }))),
                 config: FxHashMap::default(),
             },
@@ -46,7 +46,7 @@ pub(crate) fn default_extensions() -> FxHashMap<Id, ExtensionConfig> {
             Id::raw("migrate-turborepo"),
             ExtensionConfig {
                 plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                    url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_turborepo_extension-v0.1.2/moon_migrate_turborepo_extension.wasm".into()
+                    url: "https://github.com/moonrepo/moon-extensions/releases/download/moon_migrate_turborepo_extension-v0.1.3/moon_migrate_turborepo_extension.wasm".into()
                 }))),
                 config: FxHashMap::default(),
             },

@@ -3708,7 +3708,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_file_group",
- "moon_query",
  "moon_task",
  "rustc-hash 2.0.0",
  "serde",

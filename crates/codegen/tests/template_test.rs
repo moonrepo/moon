@@ -1,5 +1,4 @@
 use moon_codegen::{CodeGenerator, Template, TemplateContext, TemplateFile};
-use moon_common::consts::CONFIG_TEMPLATE_FILENAME_YML;
 use moon_common::Id;
 use moon_config::{GeneratorConfig, TemplateFrontmatterConfig};
 use moon_env::MoonEnvironment;
@@ -140,7 +139,7 @@ mod template {
             let has_schema = template
                 .files
                 .values()
-                .any(|f| f.name.ends_with(CONFIG_TEMPLATE_FILENAME_YML));
+                .any(|f| f.name.ends_with("template.yml"));
 
             assert!(!has_schema);
         }

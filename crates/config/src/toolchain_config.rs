@@ -233,20 +233,12 @@ impl ToolchainConfig {
         workspace_root: R,
     ) -> miette::Result<schematic::ConfigLoader<ToolchainConfig>> {
         use crate::config_cache::ConfigCache;
-        use crate::validate::check_yml_extension;
+        use crate::config_finder::ConfigFinder;
         use moon_common::color;
-        use moon_common::consts::*;
-        use moon_common::supports_pkl_configs;
         use schematic::ConfigLoader;
 
         let workspace_root = workspace_root.as_ref();
-        let yml_file = workspace_root
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_TOOLCHAIN_FILENAME_YML);
-        let pkl_file = workspace_root
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_TOOLCHAIN_FILENAME_PKL);
-
+        let finder = ConfigFinder::default();
         let mut loader = ConfigLoader::<ToolchainConfig>::new();
 
         loader
@@ -254,12 +246,9 @@ impl ToolchainConfig {
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/toolchain",
             ))
-            .set_root(workspace_root)
-            .file_optional(check_yml_extension(&yml_file))?;
+            .set_root(workspace_root);
 
-        if supports_pkl_configs() {
-            loader.file_optional(pkl_file)?;
-        }
+        finder.prepare_loader(&mut loader, finder.get_toolchain_files(workspace_root))?;
 
         Ok(loader)
     }

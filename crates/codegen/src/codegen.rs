@@ -1,10 +1,9 @@
 use crate::codegen_error::CodegenError;
 use crate::template::Template;
 use miette::IntoDiagnostic;
-use moon_common::consts::*;
 use moon_common::path::RelativePathBuf;
 use moon_common::Id;
-use moon_config::{load_template_config_template, GeneratorConfig, TemplateLocator};
+use moon_config::{load_template_config_template, ConfigFinder, GeneratorConfig, TemplateLocator};
 use moon_env::MoonEnvironment;
 use moon_process::Command;
 use moon_time::now_millis;
@@ -52,16 +51,16 @@ impl<'app> CodeGenerator<'app> {
 
         debug!("Loading all available templates from locations");
 
+        let finder = ConfigFinder::default();
+
         for location in &self.template_locations {
             debug!(location = ?location, "Scanning location");
 
             for template_root in fs::read_dir(location)? {
                 let template_root = template_root.path();
+                let config_files = finder.get_template_files(&template_root);
 
-                if !template_root.is_dir()
-                    || (!template_root.join(CONFIG_TEMPLATE_FILENAME_YML).exists()
-                        && !template_root.join(CONFIG_TEMPLATE_FILENAME_PKL).exists())
-                {
+                if !template_root.is_dir() || config_files.iter().all(|file| !file.exists()) {
                     continue;
                 }
 
@@ -114,7 +113,7 @@ impl<'app> CodeGenerator<'app> {
         );
 
         fs::write_file(
-            template_root.join(CONFIG_TEMPLATE_FILENAME_YML),
+            &ConfigFinder::default().get_template_files(&template_root)[0],
             load_template_config_template(),
         )?;
 

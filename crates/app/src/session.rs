@@ -8,7 +8,7 @@ use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_test_env};
-use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{ConfigFinder, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
 use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
@@ -34,6 +34,7 @@ pub struct CliSession {
     pub cli_version: Version,
 
     // Components
+    pub config_finder: ConfigFinder,
     pub console: Console,
     pub moonbase: Option<Arc<Moonbase>>,
     pub moon_env: Arc<MoonEnvironment>,
@@ -63,6 +64,7 @@ impl CliSession {
         Self {
             cache_engine: OnceCell::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
+            config_finder: ConfigFinder::default(),
             console: Console::new(cli.quiet),
             extension_registry: OnceCell::new(),
             moonbase: None,

@@ -834,4 +834,23 @@ extensions:
             );
         }
     }
+
+    mod pkl {
+        use super::*;
+        use starbase_sandbox::locate_fixture;
+
+        #[test]
+        fn loads_pkl() {
+            moon_common::enable_pkl_configs();
+
+            let config = test_config(locate_fixture("pkl"), |path| {
+                dbg!(&path);
+                WorkspaceConfig::load_from(path)
+            });
+
+            dbg!(&config);
+
+            assert!(false);
+        }
+    }
 }

@@ -12,12 +12,9 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_common::consts::{
-    CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME_YML, CONFIG_WORKSPACE_FILENAME_YML,
-};
+use moon_common::consts::{CONFIG_DIRNAME, CONFIG_WORKSPACE_FILENAME_YML};
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
-use moon_console::Console;
 use moon_vcs::{Git, Vcs};
 use node::init_node;
 use rust::init_rust;
@@ -133,8 +130,10 @@ pub async fn init_tool(
     tool: &InitTool,
     options: &InitOptions,
     theme: &ColorfulTheme,
-    console: &Console,
+    session: &CliSession,
 ) -> AppResult {
+    let console = &session.console;
+
     if !is_test_env() && !dest_dir.join(CONFIG_DIRNAME).exists() {
         console.err.write_line(format!(
             "moon has not been initialized! Try running {} first?",
@@ -151,13 +150,11 @@ pub async fn init_tool(
         InitTool::TypeScript => init_typescript(dest_dir, options, theme, console).await?,
     };
 
-    let toolchain_config_path = dest_dir
-        .join(CONFIG_DIRNAME)
-        .join(CONFIG_TOOLCHAIN_FILENAME_YML);
+    let toolchain_config_path = &session.config_finder.get_toolchain_files(dest_dir)[0];
 
     if !toolchain_config_path.exists() {
         fs::write_file(
-            &toolchain_config_path,
+            toolchain_config_path,
             render_toolchain_template(&Context::new())?.trim(),
         )?;
     }
@@ -193,7 +190,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Initialize a specific tool and exit early
     if let Some(tool) = &args.tool {
-        init_tool(&dest_dir, tool, &options, &theme, &session.console).await?;
+        init_tool(&dest_dir, tool, &options, &theme, &session).await?;
 
         return Ok(());
     }

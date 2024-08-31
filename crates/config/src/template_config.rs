@@ -255,27 +255,19 @@ pub struct TemplateConfig {
 #[cfg(feature = "loader")]
 impl TemplateConfig {
     pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
-        use crate::validate::check_yml_extension;
-        use moon_common::consts::{CONFIG_TEMPLATE_FILENAME_PKL, CONFIG_TEMPLATE_FILENAME_YML};
-        use moon_common::{color, supports_pkl_configs};
+        use crate::config_finder::ConfigFinder;
+        use moon_common::color;
         use schematic::ConfigLoader;
 
         let template_root = template_root.as_ref();
-        let yml_file = template_root.join(CONFIG_TEMPLATE_FILENAME_YML);
-        let pkl_file = template_root.join(CONFIG_TEMPLATE_FILENAME_PKL);
-
+        let finder = ConfigFinder::default();
         let mut loader = ConfigLoader::<TemplateConfig>::new();
 
         loader.set_help(color::muted_light(
             "https://moonrepo.dev/docs/config/template",
         ));
 
-        if supports_pkl_configs() {
-            loader.file_optional(check_yml_extension(&yml_file))?;
-            loader.file_optional(pkl_file)?;
-        } else {
-            loader.file(check_yml_extension(&yml_file))?;
-        }
+        finder.prepare_loader(&mut loader, finder.get_template_files(template_root))?;
 
         let result = loader.load()?;
 

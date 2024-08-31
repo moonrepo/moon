@@ -2,10 +2,9 @@ use crate::asset_file::AssetFile;
 use crate::template_file::{FileState, MergeType, TemplateFile};
 use crate::{filters, funcs, CodegenError};
 use miette::IntoDiagnostic;
-use moon_common::consts::{CONFIG_TEMPLATE_FILENAME_PKL, CONFIG_TEMPLATE_FILENAME_YML};
 use moon_common::path::{to_virtual_string, RelativePathBuf};
 use moon_common::Id;
-use moon_config::TemplateConfig;
+use moon_config::{ConfigFinder, TemplateConfig};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use starbase_utils::{fs, json, yaml};
@@ -107,6 +106,7 @@ impl Template {
         self.load_extended_files(dest, context)?;
 
         let mut files = vec![];
+        let filenames = ConfigFinder::default().get_template_file_names();
 
         debug!(
             template = self.id.as_str(),
@@ -116,8 +116,9 @@ impl Template {
 
         for entry in fs::read_dir_all(&self.root)? {
             // This is our schema, so skip it
-            if entry.file_name() == CONFIG_TEMPLATE_FILENAME_YML
-                || entry.file_name() == CONFIG_TEMPLATE_FILENAME_PKL
+            if filenames
+                .iter()
+                .any(|name| name.as_str() == entry.file_name())
             {
                 continue;
             }

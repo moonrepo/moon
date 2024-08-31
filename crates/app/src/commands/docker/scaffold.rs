@@ -92,15 +92,14 @@ async fn scaffold_workspace(
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
     let copy_from_dir = |source: &Path, dest: &Path, project_lang: LanguageType| -> AppResult {
+        let mut files_to_create: Vec<String> = vec![];
         let mut files_to_copy: Vec<String> = vec![
             ".gitignore".into(),
             ".prototools".into(),
             CONFIG_PROJECT_FILENAME_YML.into(),
             CONFIG_PROJECT_FILENAME_PKL.into(),
-            CONFIG_TEMPLATE_FILENAME_YML.into(),
-            CONFIG_TEMPLATE_FILENAME_PKL.into(),
         ];
-        let mut files_to_create: Vec<String> = vec![];
+        files_to_copy.extend(session.config_finder.get_template_file_names());
 
         if session
             .workspace_config

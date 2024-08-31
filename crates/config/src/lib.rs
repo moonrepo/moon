@@ -1,5 +1,6 @@
 #[cfg(feature = "loader")]
 mod config_cache;
+mod config_finder;
 mod inherited_tasks_config;
 mod language_platform;
 pub mod patterns;
@@ -18,6 +19,7 @@ mod validate;
 mod workspace;
 mod workspace_config;
 
+pub use config_finder::*;
 pub use inherited_tasks_config::*;
 pub use language_platform::*;
 pub use portable_path::*;

@@ -5074,6 +5074,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmpv"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e0e0214a4a2b444ecce41a4025792fc31f77c7bb89c46d253953ea8c65701ec"
+dependencies = [
+ "num-traits",
+ "rmp",
+]
+
+[[package]]
+name = "rpkl"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93d11c8e6ebe4095fdbb13e88cee7c682588da98982ced7de67983e53b3b6844"
+dependencies = [
+ "dunce",
+ "rmp-serde",
+ "rmpv",
+ "serde",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5235,6 +5257,7 @@ dependencies = [
  "markdown",
  "miette",
  "reqwest",
+ "rpkl",
  "schemars",
  "schematic_macros",
  "schematic_types",
@@ -5268,6 +5291,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baae6c4555fd2a9cad6b1675fde90c8c3eff3772a1053b251d6ff0d547852e1f"
 dependencies = [
  "indexmap",
+ "rpkl",
  "semver",
  "serde",
  "serde_json",

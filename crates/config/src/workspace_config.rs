@@ -176,19 +176,12 @@ impl WorkspaceConfig {
 impl WorkspaceConfig {
     pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
         use crate::config_cache::ConfigCache;
-        use crate::validate::check_yml_extension;
-        use moon_common::consts::*;
-        use moon_common::{color, supports_pkl_configs};
+        use crate::config_finder::ConfigFinder;
+        use moon_common::color;
         use schematic::ConfigLoader;
 
         let workspace_root = workspace_root.as_ref();
-        let yml_file = workspace_root
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_WORKSPACE_FILENAME_YML);
-        let pkl_file = workspace_root
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_WORKSPACE_FILENAME_PKL);
-
+        let finder = ConfigFinder::default();
         let mut loader = ConfigLoader::<WorkspaceConfig>::new();
 
         loader
@@ -198,12 +191,7 @@ impl WorkspaceConfig {
             ))
             .set_root(workspace_root);
 
-        if supports_pkl_configs() {
-            loader.file_optional(check_yml_extension(&yml_file))?;
-            loader.file_optional(pkl_file)?;
-        } else {
-            loader.file(check_yml_extension(&yml_file))?;
-        }
+        finder.prepare_loader(&mut loader, finder.get_workspace_files(workspace_root))?;
 
         let mut result = loader.load()?;
         result.config.inherit_default_plugins();

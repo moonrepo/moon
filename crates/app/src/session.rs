@@ -236,9 +236,10 @@ impl AppSession for CliSession {
 
         if self.requires_workspace_setup() {
             let (workspace_config, tasks_config, toolchain_config) = try_join!(
-                startup::load_workspace_config(&self.workspace_root),
-                startup::load_tasks_configs(&self.workspace_root),
+                startup::load_workspace_config(&self.config_finder, &self.workspace_root),
+                startup::load_tasks_configs(&self.config_finder, &self.workspace_root),
                 startup::load_toolchain_config(
+                    &self.config_finder,
                     &self.workspace_root,
                     &self.working_dir,
                     self.proto_env.clone(),

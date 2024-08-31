@@ -1,3 +1,4 @@
+use crate::config_finder::ConfigFinder;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
@@ -126,6 +127,7 @@ pub struct InheritedTasksEntry {
 pub struct InheritedTasksManager {
     #[cfg(feature = "loader")]
     cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
+    config_finder: ConfigFinder,
 
     pub configs: FxHashMap<String, InheritedTasksEntry>,
 }
@@ -170,56 +172,32 @@ impl InheritedTasksManager {
 
 #[cfg(feature = "loader")]
 impl InheritedTasksManager {
-    pub fn load<T: AsRef<Path>, D: AsRef<Path>>(
-        workspace_root: T,
-        moon_dir: D,
-    ) -> miette::Result<InheritedTasksManager> {
-        use moon_common::consts::*;
-        use moon_common::supports_pkl_configs;
-
-        let mut manager = InheritedTasksManager::default();
+    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
         let workspace_root = workspace_root.as_ref();
-        let moon_dir = moon_dir.as_ref();
+        let mut manager = InheritedTasksManager::default();
+        let mut files = vec![];
 
         // tasks.*
-        let yml_file = moon_dir.join(CONFIG_TASKS_FILENAME_YML);
+        files.extend(manager.config_finder.get_tasks_files(workspace_root));
 
-        if yml_file.exists() {
-            manager.add_config(
-                workspace_root,
-                &yml_file,
-                InheritedTasksConfig::load_partial(workspace_root, &yml_file)?,
-            );
-        }
+        // tasks/**/*.*
+        files.extend(
+            manager
+                .config_finder
+                .get_scoped_tasks_files(workspace_root)?,
+        );
 
-        if supports_pkl_configs() {
-            let pkl_file = moon_dir.join(CONFIG_TASKS_FILENAME_PKL);
-
-            if pkl_file.exists() {
+        for file in files {
+            if file.exists() {
                 manager.add_config(
                     workspace_root,
-                    &pkl_file,
-                    InheritedTasksConfig::load_partial(workspace_root, &pkl_file)?,
+                    &file,
+                    InheritedTasksConfig::load_partial(workspace_root, &file)?,
                 );
             }
         }
 
-        // tasks/**/*.*
-        let tasks_dir = moon_dir.join("tasks");
-
-        if tasks_dir.exists() {
-            load_dir(&mut manager, workspace_root, &tasks_dir)?;
-        }
-
         Ok(manager)
-    }
-
-    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
-        use moon_common::consts;
-
-        let workspace_root = workspace_root.as_ref();
-
-        Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
     }
 
     pub fn add_config(
@@ -228,15 +206,14 @@ impl InheritedTasksManager {
         path: &Path,
         config: PartialInheritedTasksConfig,
     ) {
-        use moon_common::consts::*;
-
+        let valid_names = self.config_finder.get_tasks_file_names();
         let name = path
             .file_name()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
 
-        let name = if name == CONFIG_TASKS_FILENAME_YML || name == CONFIG_TASKS_FILENAME_PKL {
+        let name = if valid_names.iter().any(|n| n == name) {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
             stripped_name
@@ -356,52 +333,4 @@ impl InheritedTasksManager {
 
         Ok(result)
     }
-}
-
-#[cfg(feature = "loader")]
-fn load_dir(
-    manager: &mut InheritedTasksManager,
-    workspace_root: &Path,
-    dir: &Path,
-) -> miette::Result<()> {
-    use moon_common::supports_pkl_configs;
-    use schematic::ConfigError;
-    use std::fs;
-
-    let use_pkl = supports_pkl_configs();
-
-    for entry in fs::read_dir(dir)
-        .map_err(|error| ConfigError::ReadFileFailed {
-            path: dir.to_path_buf(),
-            error: Box::new(error),
-        })?
-        .flatten()
-    {
-        let path = entry.path();
-        let file_type = entry
-            .file_type()
-            .map_err(|error| ConfigError::ReadFileFailed {
-                path: path.to_path_buf(),
-                error: Box::new(error),
-            })?;
-
-        if file_type.is_file() {
-            // Non-yaml/pkl files may be located in these folders,
-            // so avoid failing when trying to parse it as a config
-            if path
-                .extension()
-                .is_some_and(|ext| ext == "yml" || ext == "yaml" || use_pkl && ext == "pkl")
-            {
-                manager.add_config(
-                    workspace_root,
-                    &path,
-                    InheritedTasksConfig::load_partial(workspace_root, &path)?,
-                );
-            }
-        } else if file_type.is_dir() {
-            load_dir(manager, workspace_root, &path)?;
-        }
-    }
-
-    Ok(())
 }

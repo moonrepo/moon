@@ -1,8 +1,8 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_api::Moonbase;
-use moon_common::{consts::*, get_config_file_label};
-use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_common::consts::*;
+use moon_config::{ConfigFinder, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
@@ -99,17 +99,18 @@ pub fn detect_proto_environment(
 
 /// Load the workspace configuration file from the `.moon` directory in the workspace root.
 /// This file is required to exist, so error if not found.
-#[instrument]
-pub async fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<WorkspaceConfig>> {
-    let config_dir = workspace_root.join(CONFIG_DIRNAME);
-    let config_name = get_config_file_label("workspace", true);
+#[instrument(skip(config_finder))]
+pub async fn load_workspace_config(
+    config_finder: &ConfigFinder,
+    workspace_root: &Path,
+) -> AppResult<Arc<WorkspaceConfig>> {
+    let config_name = config_finder.get_debug_label("workspace", true);
 
-    debug!("Loading {} (required)", color::file(&config_name),);
+    debug!("Loading {} (required)", color::file(&config_name));
 
-    let pkl_file = config_dir.join(CONFIG_WORKSPACE_FILENAME_PKL);
-    let yml_file = config_dir.join(CONFIG_WORKSPACE_FILENAME_YML);
+    let config_files = config_finder.get_workspace_files(workspace_root);
 
-    if !pkl_file.exists() && !yml_file.exists() {
+    if config_files.iter().all(|file| !file.exists()) {
         return Err(AppError::MissingConfigFile(config_name).into());
     }
 
@@ -122,15 +123,16 @@ pub async fn load_workspace_config(workspace_root: &Path) -> AppResult<Arc<Works
 }
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
-#[instrument(skip(proto_env))]
+#[instrument(skip(config_finder, proto_env))]
 pub async fn load_toolchain_config(
+    config_finder: &ConfigFinder,
     workspace_root: &Path,
     working_dir: &Path,
     proto_env: Arc<ProtoEnvironment>,
 ) -> AppResult<Arc<ToolchainConfig>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(get_config_file_label("toolchain", true))
+        color::file(config_finder.get_debug_label("toolchain", true))
     );
 
     let root = workspace_root.to_owned();
@@ -149,12 +151,15 @@ pub async fn load_toolchain_config(
 
 /// Load the tasks configuration file from the `.moon` directory if it exists.
 /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
-#[instrument]
-pub async fn load_tasks_configs(workspace_root: &Path) -> AppResult<Arc<InheritedTasksManager>> {
+#[instrument(skip(config_finder))]
+pub async fn load_tasks_configs(
+    config_finder: &ConfigFinder,
+    workspace_root: &Path,
+) -> AppResult<Arc<InheritedTasksManager>> {
     debug!(
         "Attempting to load {} and {} (optional)",
-        color::file(get_config_file_label("tasks", true)),
-        color::file(get_config_file_label("tasks/**/*", true)),
+        color::file(config_finder.get_debug_label("tasks", true)),
+        color::file(config_finder.get_debug_label("tasks/**/*", true)),
     );
 
     let root = workspace_root.to_owned();

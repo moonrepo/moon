@@ -12,7 +12,7 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_WORKSPACE_FILENAME_YML};
+use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_vcs::{Git, Vcs};
@@ -196,12 +196,13 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
     }
 
     // Extract template variables
-    let Some(moon_dir) = verify_dest_dir(&dest_dir, &options, &theme)? else {
+    if verify_dest_dir(&dest_dir, &options, &theme)?.is_none() {
         return Ok(());
-    };
-    let mut context = create_default_context();
+    }
 
     let git = Git::load(&dest_dir, "master", &[])?;
+
+    let mut context = create_default_context();
     context.insert("vcs_manager", "git");
     context.insert(
         "vcs_provider",
@@ -219,7 +220,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Create workspace file
     fs::write_file(
-        moon_dir.join(CONFIG_WORKSPACE_FILENAME_YML),
+        &session.config_finder.get_workspace_files(&dest_dir)[0],
         render_workspace_template(&context)?,
     )?;
 

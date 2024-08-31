@@ -1,22 +1,17 @@
 [package]
-name = "moon_query"
+name = "moon_task_args"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
-description = "Query language for moon (MQL)."
+description = "Utility for parsing task args."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-moon_common = { path = "../common" }
+moon_args = { path = "../args" }
 moon_config = { path = "../config" }
 miette = { workspace = true }
-pest = "2.7.11"
-pest_derive = "2.7.11"
-starbase_utils = { workspace = true, features = ["glob"] }
-thiserror = { workspace = true }
-tracing = { workspace = true }
 
 [lints]
 workspace = true

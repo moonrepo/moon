@@ -8,7 +8,8 @@ use moon_config::{
     TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
-use moon_task::{parse_task_args, Task, TaskOptions};
+use moon_task::{Task, TaskOptions};
+use moon_task_args::parse_task_args;
 use moon_toolchain::detect::detect_task_platform;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;

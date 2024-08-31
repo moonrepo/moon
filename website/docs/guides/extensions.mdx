@@ -142,6 +142,49 @@ Refer to our [moonrepo/moon-extensions][repo] repository for in-depth examples.
 
 :::
 
+### Registering metadata
+
+Before we begin, we must implement the `register_extension` function, which simply provides some
+metadata that we can bubble up to users, or to use for deeper integrations.
+
+```rust
+use extism_pdk::*;
+use moon_pdk::*;
+
+#[plugin_fn]
+pub fn register_extension(Json(input): Json<ExtensionMetadataInput>) -> FnResult<Json<ExtensionMetadataOutput>> {
+   Ok(Json(ExtensionMetadataOutput {
+        name: "Extension name".into(),
+        description: Some("A description about what the extension does.".into()),
+        plugin_version: env!("CARGO_PKG_VERSION").into(),
+        ..ExtensionMetadataOutput::default()
+    }))
+}
+```
+
+#### Configuration schema
+
+If you are using [configuration](#supporting-configuration), you can register the shape of the
+configuration using the [`schematic`](https://crates.io/crates/schematic) crate. This shape will be
+used to generate outputs such as JSON schemas, or TypeScript types.
+
+```rust
+#[plugin_fn]
+pub fn register_extension(_: ()) -> FnResult<Json<ExtensionMetadataOutput>> {
+    Ok(Json(ExtensionMetadataOutput {
+        // ...
+        config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
+    }))
+}
+```
+
+Schematic is a heavy library, so we suggest adding the dependency like so:
+
+```toml
+[dependencies]
+schematic = { version = "*", default-features = false, features = ["schema"] }
+```
+
 ### Implementing execution
 
 Extensions support a single plugin function, `execute_extension`, which is called by the
@@ -149,9 +192,6 @@ Extensions support a single plugin function, `execute_extension`, which is calle
 logic will reside.
 
 ```rust
-use extism_pdk::*;
-use moon_pdk::{*, extension::*};
-
 #[host_fn]
 extern "ExtismHost" {
     fn host_log(input: Json<HostLogInput>);
@@ -175,7 +215,7 @@ into the WASM runtime. To parse arguments, we provide the
 support everything).
 
 ```rust
-use moon_pdk::args::*;
+use moon_pdk::*;
 
 #[derive(Args)]
 pub struct ExampleExtensionArgs {
@@ -228,7 +268,7 @@ config_struct!(
 
 Once your struct has been defined, you can access the configuration using the
 [`get_extension_config`](https://docs.rs/moon_pdk/latest/moon_pdk/extension/fn.get_extension_config.html)
-function
+function.
 
 ```rust
 #[plugin_fn]

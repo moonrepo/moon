@@ -18,7 +18,7 @@ moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 tracing = { workspace = true }
 
 [dev-dependencies]

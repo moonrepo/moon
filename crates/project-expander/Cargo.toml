@@ -14,6 +14,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
+moon_task_args = { path = "../task-args" }
 moon_time = { path = "../time" }
 dotenvy = "0.15.7"
 miette = { workspace = true }
@@ -25,7 +26,7 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 
 [lints]
 workspace = true

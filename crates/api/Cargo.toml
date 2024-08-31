@@ -18,7 +18,7 @@ reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
 rustc-hash = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tokio-util = { workspace = true }

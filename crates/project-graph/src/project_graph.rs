@@ -1,10 +1,11 @@
 use crate::project_graph_error::ProjectGraphError;
+use crate::project_matcher::matches_criteria;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
 use moon_project_expander::{ExpanderContext, ProjectExpander};
-use moon_query::{build_query, Criteria, Queryable};
+use moon_query::{build_query, Criteria};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -372,7 +373,7 @@ impl ProjectGraph {
         for node in self.graph.raw_nodes() {
             let project = &node.weight;
 
-            if project.matches_criteria(query)? {
+            if matches_criteria(project, query)? {
                 project_ids.push(project.id.clone());
             }
         }

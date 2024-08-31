@@ -2,11 +2,14 @@ use async_trait::async_trait;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use std::fmt;
+use std::sync::Arc;
 use tracing::instrument;
 
 pub struct ExtensionPlugin {
     pub id: PluginId,
-    plugin: PluginContainer,
+    pub metadata: ExtensionMetadataOutput,
+
+    plugin: Arc<PluginContainer>,
 }
 
 impl ExtensionPlugin {
@@ -23,9 +26,21 @@ impl ExtensionPlugin {
 #[async_trait]
 impl Plugin for ExtensionPlugin {
     async fn new(registration: PluginRegistration) -> miette::Result<Self> {
+        let plugin = Arc::new(registration.container);
+
+        let metadata: ExtensionMetadataOutput = plugin
+            .cache_func_with(
+                "register_extension",
+                ExtensionMetadataInput {
+                    id: registration.id.to_string(),
+                },
+            )
+            .await?;
+
         Ok(Self {
             id: registration.id,
-            plugin: registration.container,
+            metadata,
+            plugin,
         })
     }
 
@@ -38,6 +53,7 @@ impl fmt::Debug for ExtensionPlugin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExtensionPlugin")
             .field("id", &self.id)
+            .field("metadata", &self.metadata)
             .finish()
     }
 }

@@ -130,8 +130,8 @@ used to generate outputs such as JSON schemas, or TypeScript types.
 #[plugin_fn]
 pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
     Ok(Json(ToolMetadataOutput {
-        config_schema: Some(schematic::SchemaBuilder::build_root::<NodeConfig>()),
         // ...
+        config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
     }))
 }
 ```

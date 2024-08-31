@@ -14,7 +14,7 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob", "toml"] }
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }

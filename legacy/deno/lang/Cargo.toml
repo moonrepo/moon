@@ -13,7 +13,7 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 
 [lints]
 workspace = true

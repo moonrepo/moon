@@ -4,7 +4,8 @@ use crate::token_expander::TokenExpander;
 use moon_common::color;
 use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
-use moon_task::{parse_task_args, Target, TargetScope, Task};
+use moon_task::{Target, TargetScope, Task};
+use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
 use tracing::{instrument, trace, warn};
 

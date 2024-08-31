@@ -28,7 +28,7 @@ moon_time = { path = "../time" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

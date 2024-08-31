@@ -6,17 +6,15 @@ license = "MIT"
 description = "A task within a project."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
-publish = false
 
 [dependencies]
-moon_args = { path = "../args" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
 tracing = { workspace = true }
 once_cell = { workspace = true }
 

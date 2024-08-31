@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Extensions (WASM plugins) must implement the `register_extension` API. All built-in extensions
+  have been updated.
+
 #### 🚀 Updates
 
 - Resolved the `actionPipelineV2` experiment and the new pipeline is now always enabled. The old
@@ -26,7 +31,7 @@
 
 - We've sunset the CI insights feature in moonbase. We will no longer be tracking CI run history.
   This is a retroactive change that applies to all moon versions.
-- Updated proto to v0.40.2 (from v0.39.7).
+- Updated proto to v0.40.4 (from v0.39.7).
 
 ## 1.27.10
 

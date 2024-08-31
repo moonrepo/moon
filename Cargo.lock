@@ -3016,6 +3016,7 @@ dependencies = [
  "starbase_shell",
  "starbase_styles",
  "starbase_utils",
+ "system_env",
  "tera",
  "thiserror",
  "tiny_http",

@@ -134,6 +134,9 @@ export interface ProjectMetadataConfig {
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
+/** Preset options to inherit. */
+export type TaskPreset = 'server' | 'watcher';
+
 /** Overrides top-level toolchain settings. */
 export interface ProjectToolchainCommonToolConfig {
 	/** Version of the tool this project will use. */

@@ -12,6 +12,8 @@
 - Resolved the `actionPipelineV2` experiment and the new pipeline is now always enabled. The old
   pipeline code has been deleted. If you run into any problems, please report an issue!
 - Resolved the `strictProjectAliases` experiment and enabled its functionality going forward.
+- Added a `preset` task setting, that enables a collection of task options.
+  - Will be replacing the `local` setting, which is now deprecated.
 - Added an `os` task option, which allows a specific operating system to be targeted for the task.
 - Added a `@meta` token function that can access project metadata.
 - Added `$projectName`, `$projectChannel`, and `$projectOwner` token variables.

@@ -2,13 +2,49 @@
 slug: moon-v1.28
 title: moon v1.28 - OS tasks, meta tokens, and more
 authors: [milesj]
-tags: [os, task, meta, token, toolchain]
+tags: [os, task, meta, token, toolchain, preset]
 # image: ./img/moon/v1.28.png
 ---
 
 ???
 
 <!--truncate-->
+
+## New task presets
+
+For the longest time, moon has supported the [`local`](/docs/config/project#local) setting for
+tasks. This setting was added early on to reduce the amount of options configuration necessary for
+tasks that "should only run locally". However, after years of supporting this setting, we've
+discovered a few short-comings with it:
+
+- The name is confusing. It's not apparent what "local" really means for newcomers.
+- This setting also changes non-local related options, like `persistent` and `cache`, which isn't
+  apparent to the user.
+- Setting the value to `false` doesn't inverse the options values. For example, enabling `runInCI`.
+
+At this point we thought to ourselves "how can we improve this experience?". Instead of reworking
+`local`, we've opted to introduce a new task setting called [`preset`](/docs/config/project#preset),
+which configures a collection of task options. Presets are a much better pattern, as it allows us to
+support multiple presets, and uniquely name our presets. For example, old `local` tasks can be
+rewritten as such:
+
+```yaml title="moon.yml"
+# Before
+tasks:
+  start:
+    command: 'vite start'
+    local: true
+
+# After
+tasks:
+  start:
+    command: 'vite start'
+    preset: 'server'
+```
+
+To start, we're introducing 2 presets: `server` and `watcher`. Check out the
+[documentation for more information](/docs/config/project#preset) on what these presets configure!
+And lastly, the `local` setting is now deprecated, and will be removed in v2.
 
 ## New OS specific tasks
 

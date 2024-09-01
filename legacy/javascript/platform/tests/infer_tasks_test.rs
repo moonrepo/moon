@@ -758,6 +758,7 @@ mod infer_tasks_from_scripts {
                         ..PartialTaskConfig::default()
                     }
                 ),
+                #[allow(deprecated)]
                 (
                     "dev".try_into().unwrap(),
                     PartialTaskConfig {

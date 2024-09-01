@@ -5,7 +5,7 @@ use moon_common::{color, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
-    TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskType, ToolchainConfig,
+    TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
@@ -249,10 +249,19 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
-        let mut is_local = id == "dev" || id == "serve" || id == "start";
+        let mut is_local = false;
+        let mut preset = None;
         let mut args_sets = vec![];
 
+        if id == "dev" || id == "serve" || id == "start" {
+            is_local = true;
+            preset = Some(TaskPreset::Server);
+        }
+
         for link in &chain {
+            preset = link.config.preset;
+
+            #[allow(deprecated)]
             if let Some(local) = link.config.local {
                 is_local = local;
             }
@@ -269,9 +278,15 @@ impl<'proj> TasksBuilder<'proj> {
 
         if is_local {
             trace!(target = target.as_str(), "Marking task as local");
+
+            // Backwards compatibility
+            if preset.is_none() {
+                preset = Some(TaskPreset::Server);
+            }
         }
 
-        task.options = self.build_task_options(id, is_local)?;
+        task.preset = preset;
+        task.options = self.build_task_options(id, preset)?;
         task.metadata.local_only = is_local;
         task.metadata.root_level = self.project_source == ".";
 
@@ -482,16 +497,12 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     #[instrument(skip(self))]
-    fn build_task_options(&self, id: &Id, is_local: bool) -> miette::Result<TaskOptions> {
-        let mut options = TaskOptions {
-            cache: !is_local,
-            interactive: false,
-            output_style: is_local.then_some(TaskOutputStyle::Stream),
-            persistent: is_local,
-            run_in_ci: !is_local,
-            ..TaskOptions::default()
-        };
-
+    fn build_task_options(
+        &self,
+        id: &Id,
+        preset: Option<TaskPreset>,
+    ) -> miette::Result<TaskOptions> {
+        let mut options = self.get_task_options_from_preset(preset);
         let mut chain = vec![];
 
         if let Some(default_options) = self.global_task_options {
@@ -604,9 +615,9 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if options.interactive {
-            options.cache = false;
+            // options.cache = false;
             options.output_style = Some(TaskOutputStyle::Stream);
-            options.persistent = false;
+            // options.persistent = false;
             options.run_in_ci = false;
         }
 
@@ -704,6 +715,20 @@ impl<'proj> TasksBuilder<'proj> {
         stack.reverse();
 
         Ok(stack)
+    }
+
+    fn get_task_options_from_preset(&self, preset: Option<TaskPreset>) -> TaskOptions {
+        match preset {
+            Some(TaskPreset::Server | TaskPreset::Watcher) => TaskOptions {
+                cache: false,
+                interactive: preset.is_some_and(|p| p == TaskPreset::Watcher),
+                output_style: Some(TaskOutputStyle::Stream),
+                persistent: true,
+                run_in_ci: false,
+                ..TaskOptions::default()
+            },
+            _ => TaskOptions::default(),
+        }
     }
 
     fn apply_filters_to_deps(&self, deps: Vec<TaskDependencyConfig>) -> Vec<TaskDependencyConfig> {

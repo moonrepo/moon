@@ -190,26 +190,19 @@ impl ProjectConfig {
     pub fn create_loader<P: AsRef<Path>>(
         project_root: P,
     ) -> miette::Result<schematic::ConfigLoader<ProjectConfig>> {
-        use crate::validate::check_yml_extension;
-        use moon_common::consts::{CONFIG_PROJECT_FILENAME_PKL, CONFIG_PROJECT_FILENAME_YML};
-        use moon_common::{color, supports_pkl_configs};
+        use crate::config_finder::ConfigFinder;
+        use moon_common::color;
         use schematic::ConfigLoader;
 
         let project_root = project_root.as_ref();
-        let yml_file = project_root.join(CONFIG_PROJECT_FILENAME_YML);
-        let pkl_file = project_root.join(CONFIG_PROJECT_FILENAME_PKL);
-
+        let finder = ConfigFinder::default();
         let mut loader = ConfigLoader::<ProjectConfig>::new();
 
-        loader
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/project",
-            ))
-            .file_optional(check_yml_extension(&yml_file))?;
+        loader.set_help(color::muted_light(
+            "https://moonrepo.dev/docs/config/project",
+        ));
 
-        if supports_pkl_configs() {
-            loader.file_optional(pkl_file)?;
-        }
+        finder.prepare_loader(&mut loader, finder.get_project_files(project_root))?;
 
         Ok(loader)
     }

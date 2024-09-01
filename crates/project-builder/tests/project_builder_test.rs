@@ -1,8 +1,8 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, LanguageType,
-    NodeConfig, PlatformType, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
+    ConfigFinder, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
+    LanguageType, NodeConfig, PlatformType, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 
 // We need some top-level struct to hold the data used for lifetime refs.
 struct Stub {
+    config_finder: ConfigFinder,
     toolchain_config: ToolchainConfig,
     workspace_root: PathBuf,
     id: Id,
@@ -29,6 +30,7 @@ impl Stub {
         };
 
         Self {
+            config_finder: ConfigFinder::default(),
             toolchain_config,
             workspace_root: root.to_path_buf(),
             id: Id::raw(id),
@@ -41,6 +43,7 @@ impl Stub {
             &self.id,
             &self.source,
             ProjectBuilderContext {
+                config_finder: &self.config_finder,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
                 workspace_root: &self.workspace_root,

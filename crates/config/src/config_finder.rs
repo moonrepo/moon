@@ -27,7 +27,7 @@ impl ConfigFinder {
         for file in files {
             if file
                 .extension()
-                .is_some_and(|ext| ext == "yaml" || ext == "yml")
+                .is_some_and(|ext| ext == "yml" || ext == "yaml")
             {
                 loader.file_optional(check_yml_extension(&file))?;
             } else {
@@ -38,12 +38,23 @@ impl ConfigFinder {
         Ok(())
     }
 
+    pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
+        self.get_project_file_names()
+            .into_iter()
+            .map(|name| project_root.join(name))
+            .collect()
+    }
+
+    pub fn get_project_file_names(&self) -> Vec<String> {
+        self.get_file_names("moon")
+    }
+
     pub fn get_scoped_tasks_files(&self, workspace_root: &Path) -> miette::Result<Vec<PathBuf>> {
-        self.load_dir(workspace_root.join(CONFIG_DIRNAME).join("tasks"))
+        self.get_from_dir(workspace_root.join(CONFIG_DIRNAME).join("tasks"))
     }
 
     pub fn get_tasks_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
-        self.get_workspace_file_names()
+        self.get_tasks_file_names()
             .into_iter()
             .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
             .collect()
@@ -115,7 +126,7 @@ impl ConfigFinder {
         files
     }
 
-    fn load_dir(&self, dir: PathBuf) -> miette::Result<Vec<PathBuf>> {
+    pub fn get_from_dir(&self, dir: PathBuf) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
 
         if !dir.exists() {
@@ -147,7 +158,7 @@ impl ConfigFinder {
                     files.push(path);
                 }
             } else if file_type.is_dir() {
-                files.extend(self.load_dir(path)?);
+                files.extend(self.get_from_dir(path)?);
             }
         }
 

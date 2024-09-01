@@ -6,10 +6,10 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
-use moon_common::{color, consts, get_config_file_label, supports_pkl_configs, Id};
+use moon_common::{color, consts, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigFinder, DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList,
+    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -29,6 +29,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
+    pub config_finder: &'app ConfigFinder,
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
@@ -320,6 +321,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             &id,
             &source,
             ProjectBuilderContext {
+                config_finder: context.config_finder,
                 root_project_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,
@@ -420,24 +422,13 @@ impl<'app> ProjectGraphBuilder<'app> {
         &self,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let context = self.context();
+        let config_names = context.config_finder.get_project_file_names();
         let mut configs = vec![];
 
         // Hash all project-level config files
         for source in self.sources.values() {
-            configs.push(
-                source
-                    .join(consts::CONFIG_PROJECT_FILENAME_YML)
-                    .as_str()
-                    .to_owned(),
-            );
-
-            if supports_pkl_configs() {
-                configs.push(
-                    source
-                        .join(consts::CONFIG_PROJECT_FILENAME_PKL)
-                        .as_str()
-                        .to_owned(),
-                );
+            for name in &config_names {
+                configs.push(source.join(name).as_str().to_owned());
             }
         }
 
@@ -500,12 +491,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            locate_projects_with_globs(
-                context.workspace_root,
-                &globs,
-                &mut sources,
-                context.vcs.as_deref(),
-            )?;
+            locate_projects_with_globs(&context, &globs, &mut sources)?;
         }
 
         // Load all config files first so that ID renaming occurs
@@ -607,7 +593,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             debug!(
                 id = id.as_str(),
                 "Attempting to load {} (optional)",
-                color::file(source.join(get_config_file_label("moon", false)))
+                color::file(source.join(context.config_finder.get_debug_label("moon", false)))
             );
 
             let config = ProjectConfig::load_from(context.workspace_root, source)?;

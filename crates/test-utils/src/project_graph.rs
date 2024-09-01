@@ -1,7 +1,7 @@
 use moon_config::{
-    InheritedTasksEntry, InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig,
-    PartialTaskConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-    WorkspaceProjectsConfig,
+    ConfigFinder, InheritedTasksEntry, InheritedTasksManager, NodeConfig,
+    PartialInheritedTasksConfig, PartialTaskConfig, ToolchainConfig, WorkspaceConfig,
+    WorkspaceProjects, WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
     ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphBuilder, ProjectGraphBuilderContext,
@@ -18,6 +18,7 @@ pub use moon_project_graph::ProjectGraph;
 
 #[derive(Default)]
 pub struct ProjectGraphContainer {
+    pub config_finder: ConfigFinder,
     pub inherited_tasks: InheritedTasksManager,
     pub toolchain_config: ToolchainConfig,
     pub workspace_config: WorkspaceConfig,
@@ -89,6 +90,7 @@ impl ProjectGraphContainer {
 
     pub fn create_context(&self) -> ProjectGraphBuilderContext {
         ProjectGraphBuilderContext {
+            config_finder: &self.config_finder,
             extend_project: Emitter::<ExtendProjectEvent>::new(),
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,

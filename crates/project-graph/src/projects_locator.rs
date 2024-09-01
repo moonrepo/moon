@@ -1,7 +1,7 @@
+use crate::project_graph_builder::ProjectGraphBuilderContext;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
-use moon_vcs::BoxedVcs;
 use starbase_utils::{fs, glob};
 use std::path::Path;
 use tracing::{debug, instrument, warn};
@@ -32,10 +32,9 @@ fn infer_project_id_and_source(
 /// for potential projects, and infer their name and source.
 #[instrument(skip_all)]
 pub fn locate_projects_with_globs<'glob, I, V>(
-    workspace_root: &Path,
+    context: &ProjectGraphBuilderContext,
     globs: I,
     sources: &mut ProjectsSourcesList,
-    vcs: Option<&BoxedVcs>,
 ) -> miette::Result<()>
 where
     I: IntoIterator<Item = &'glob V>,
@@ -54,26 +53,25 @@ where
             }
 
             has_root_level = true;
-            sources.push(infer_project_id_and_source("", workspace_root)?);
+            sources.push(infer_project_id_and_source("", context.workspace_root)?);
         } else {
             locate_globs.push(glob);
         }
     }
 
     // Glob for all other projects
-    let mut potential_projects = glob::walk(workspace_root, locate_globs)?;
+    let config_names = context.config_finder.get_project_file_names();
+    let mut potential_projects = glob::walk(context.workspace_root, locate_globs)?;
     potential_projects.sort();
 
     for mut project_root in potential_projects {
         // Remove trailing moon filename
         if project_root.is_file() {
-            if project_root.ends_with(consts::CONFIG_PROJECT_FILENAME_YML)
-                || project_root.ends_with(consts::CONFIG_PROJECT_FILENAME_PKL)
-            {
+            if config_names.iter().any(|name| project_root.ends_with(name)) {
                 project_root = project_root.parent().unwrap().to_owned();
 
                 // Avoid overwriting an existing root project
-                if project_root == workspace_root && has_root_level {
+                if project_root == context.workspace_root && has_root_level {
                     continue;
                 }
             } else {
@@ -95,7 +93,7 @@ where
 
         if project_root.is_dir() {
             let project_source =
-                to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
+                to_virtual_string(project_root.strip_prefix(context.workspace_root).unwrap())?;
 
             if project_source == consts::CONFIG_DIRNAME
                 || project_source.starts_with(consts::CONFIG_DIRNAME)
@@ -103,7 +101,7 @@ where
                 continue;
             }
 
-            if let Some(vcs) = vcs {
+            if let Some(vcs) = &context.vcs {
                 if vcs.is_ignored(&project_root) {
                     warn!(
                         source = project_source,
@@ -115,7 +113,8 @@ where
                 }
             }
 
-            let (id, source) = infer_project_id_and_source(&project_source, workspace_root)?;
+            let (id, source) =
+                infer_project_id_and_source(&project_source, context.workspace_root)?;
 
             if id.starts_with(".") {
                 debug!(

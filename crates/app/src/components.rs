@@ -57,6 +57,7 @@ pub async fn create_project_graph_context(
     session: &CliSession,
 ) -> miette::Result<ProjectGraphBuilderContext> {
     let context = ProjectGraphBuilderContext {
+        config_finder: &session.config_finder,
         extend_project: Emitter::<ExtendProjectEvent>::new(),
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,

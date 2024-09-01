@@ -1,8 +1,8 @@
-use crate::config_finder::ConfigFinder;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
+use crate::ConfigFinder;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};
@@ -172,8 +172,12 @@ impl InheritedTasksManager {
 
 #[cfg(feature = "loader")]
 impl InheritedTasksManager {
-    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
+    pub fn load<T: AsRef<Path>, D: AsRef<Path>>(
+        workspace_root: T,
+        moon_dir: D,
+    ) -> miette::Result<InheritedTasksManager> {
         let workspace_root = workspace_root.as_ref();
+        let moon_dir = moon_dir.as_ref();
         let mut manager = InheritedTasksManager::default();
         let mut files = vec![];
 
@@ -181,11 +185,7 @@ impl InheritedTasksManager {
         files.extend(manager.config_finder.get_tasks_files(workspace_root));
 
         // tasks/**/*.*
-        files.extend(
-            manager
-                .config_finder
-                .get_scoped_tasks_files(workspace_root)?,
-        );
+        files.extend(manager.config_finder.get_from_dir(moon_dir.join("tasks"))?);
 
         for file in files {
             if file.exists() {
@@ -198,6 +198,14 @@ impl InheritedTasksManager {
         }
 
         Ok(manager)
+    }
+
+    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
+        use moon_common::consts;
+
+        let workspace_root = workspace_root.as_ref();
+
+        Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
     }
 
     pub fn add_config(

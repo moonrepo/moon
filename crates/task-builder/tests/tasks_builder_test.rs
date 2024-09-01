@@ -744,6 +744,7 @@ mod tasks_builder {
 
             let task = tasks.get("server").unwrap();
 
+            assert_eq!(task.preset, Some(TaskPreset::Server));
             assert!(!task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
@@ -753,6 +754,7 @@ mod tasks_builder {
             // Custom overrides
             let task = tasks.get("server-custom").unwrap();
 
+            assert_eq!(task.preset, Some(TaskPreset::Server));
             assert!(task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);
@@ -767,6 +769,7 @@ mod tasks_builder {
 
             let task = tasks.get("watcher").unwrap();
 
+            assert_eq!(task.preset, Some(TaskPreset::Watcher));
             assert!(!task.options.cache);
             assert!(task.options.interactive);
             assert!(task.options.persistent);
@@ -776,6 +779,7 @@ mod tasks_builder {
             // Custom overrides
             let task = tasks.get("watcher-custom").unwrap();
 
+            assert_eq!(task.preset, Some(TaskPreset::Watcher));
             assert!(!task.options.cache);
             assert!(!task.options.interactive);
             assert!(task.options.persistent);

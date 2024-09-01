@@ -277,7 +277,10 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if is_local {
-            trace!(target = target.as_str(), "Marking task as local");
+            trace!(
+                target = target.as_str(),
+                "Marking task as local (using server preset)"
+            );
 
             // Backwards compatibility
             if preset.is_none() {
@@ -451,7 +454,9 @@ impl<'proj> TasksBuilder<'proj> {
 
         task.type_of = if !task.outputs.is_empty() {
             TaskType::Build
-        } else if is_local {
+        } else if is_local
+            || preset.is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
+        {
             TaskType::Run
         } else {
             TaskType::Test
@@ -464,7 +469,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             // If an arg contains a glob, we must run in a shell for expansion to work
-            if task.args.iter().any(|a| is_glob_like(a)) {
+            if task.args.iter().any(|arg| is_glob_like(arg)) {
                 trace!(
                     target = target.as_str(),
                     "Task has a glob-like argument, wrapping in a shell so glob expansion works",
@@ -721,7 +726,7 @@ impl<'proj> TasksBuilder<'proj> {
         match preset {
             Some(TaskPreset::Server | TaskPreset::Watcher) => TaskOptions {
                 cache: false,
-                interactive: preset.is_some_and(|p| p == TaskPreset::Watcher),
+                interactive: preset.is_some_and(|set| set == TaskPreset::Watcher),
                 output_style: Some(TaskOutputStyle::Stream),
                 persistent: true,
                 run_in_ci: false,

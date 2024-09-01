@@ -24,9 +24,9 @@ discovered a few short-comings with it:
 
 At this point we thought to ourselves "how can we improve this experience?". Instead of reworking
 `local`, we've opted to introduce a new task setting called [`preset`](/docs/config/project#preset),
-which configures a collection of task options. Presets are a much better pattern, as it allows us to
-support multiple presets, and uniquely name our presets. For example, old `local` tasks can be
-rewritten as such:
+which configures a collection of task options, and deprecate the `local` setting. Presets are a much
+better pattern, as it allows us to support multiple presets, and uniquely name our presets. For
+example, old `local` tasks can be rewritten as such:
 
 ```yaml title="moon.yml"
 # Before
@@ -44,7 +44,7 @@ tasks:
 
 To start, we're introducing 2 presets: `server` and `watcher`. Check out the
 [documentation for more information](/docs/config/project#preset) on what these presets configure!
-And lastly, the `local` setting is now deprecated, and will be removed in v2.
+If you have ideas for other presets, we would love to hear them.
 
 ## New OS specific tasks
 

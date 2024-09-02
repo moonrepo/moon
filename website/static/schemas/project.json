@@ -906,6 +906,7 @@
         "local": {
           "title": "local",
           "description": "Marks the task as local only. Local tasks do not run in CI, do not have options.cache enabled, and are marked as options.persistent.",
+          "deprecated": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -948,6 +949,18 @@
           "allOf": [
             {
               "$ref": "#/definitions/PlatformType"
+            }
+          ]
+        },
+        "preset": {
+          "title": "preset",
+          "description": "The preset to apply for the task. Will inherit default options.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskPreset"
+            },
+            {
+              "type": "null"
             }
           ]
         },
@@ -1416,6 +1429,14 @@
         "hash",
         "none",
         "stream"
+      ]
+    },
+    "TaskPreset": {
+      "description": "Preset options to inherit.",
+      "type": "string",
+      "enum": [
+        "server",
+        "watcher"
       ]
     },
     "TaskType": {

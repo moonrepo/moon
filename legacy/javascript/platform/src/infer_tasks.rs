@@ -224,6 +224,7 @@ pub fn create_task(
         task_config.outputs = Some(outputs);
     }
 
+    #[allow(deprecated)]
     if !should_run_in_ci(script_name, script) {
         task_config.local = Some(true);
     }

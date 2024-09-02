@@ -154,6 +154,9 @@ export interface TaskOptionsConfig {
 /** Platforms that each programming language can belong to. */
 export type PlatformType = 'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown';
 
+/** Preset options to inherit. */
+export type TaskPreset = 'server' | 'watcher';
+
 /** The type of task. */
 export type TaskType = 'build' | 'run' | 'test';
 
@@ -195,6 +198,8 @@ export interface TaskConfig {
 	/**
 	 * Marks the task as local only. Local tasks do not run in CI, do not have
 	 * `options.cache` enabled, and are marked as `options.persistent`.
+	 *
+	 * @deprecated Use `preset` instead.
 	 */
 	local: boolean | null;
 	/** Options to control task inheritance and execution. */
@@ -213,6 +218,8 @@ export interface TaskConfig {
 	 * @type {'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown'}
 	 */
 	platform: PlatformType;
+	/** The preset to apply for the task. Will inherit default options. */
+	preset: TaskPreset | null;
 	/**
 	 * A script to run within a shell. A script is anything from a single command,
 	 * to multiple commands (&&, etc), or shell specific syntax. Does not support
@@ -421,6 +428,8 @@ export interface PartialTaskConfig {
 	/**
 	 * Marks the task as local only. Local tasks do not run in CI, do not have
 	 * `options.cache` enabled, and are marked as `options.persistent`.
+	 *
+	 * @deprecated Use `preset` instead.
 	 */
 	local?: boolean | null;
 	/** Options to control task inheritance and execution. */
@@ -438,6 +447,8 @@ export interface PartialTaskConfig {
 	 * @default 'unknown'
 	 */
 	platform?: PlatformType | null;
+	/** The preset to apply for the task. Will inherit default options. */
+	preset?: TaskPreset | null;
 	/**
 	 * A script to run within a shell. A script is anything from a single command,
 	 * to multiple commands (&&, etc), or shell specific syntax. Does not support

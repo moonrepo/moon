@@ -4,7 +4,9 @@ use moon_common::{
     path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf},
     Id,
 };
-use moon_config::{InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskType};
+use moon_config::{
+    InputPath, OutputPath, PlatformType, TaskDependencyConfig, TaskPreset, TaskType,
+};
 use moon_target::Target;
 use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -66,6 +68,8 @@ cacheable!(
         pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub platform: PlatformType,
+
+        pub preset: Option<TaskPreset>,
 
         pub script: Option<String>,
 

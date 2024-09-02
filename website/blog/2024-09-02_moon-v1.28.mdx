@@ -1,6 +1,6 @@
 ---
 slug: moon-v1.28
-title: moon v1.28 - OS tasks, meta tokens, and more
+title: moon v1.28 - Task presets, OS tasks, meta tokens, and more
 authors: [milesj]
 tags: [os, task, meta, token, toolchain, preset]
 image: ./img/moon/v1.28.png
@@ -32,13 +32,13 @@ example, old `local` tasks can be rewritten as such:
 # Before
 tasks:
   start:
-    command: 'vite start'
+    command: 'vite dev'
     local: true
 
 # After
 tasks:
   start:
-    command: 'vite start'
+    command: 'vite dev'
     preset: 'server'
 ```
 

@@ -333,8 +333,14 @@
         "requiredApprovals": {
           "title": "requiredApprovals",
           "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
-          "default": 1,
-          "type": "number",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "markdownDescription": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
         }
       },
@@ -900,6 +906,7 @@
         "local": {
           "title": "local",
           "description": "Marks the task as local only. Local tasks do not run in CI, do not have options.cache enabled, and are marked as options.persistent.",
+          "deprecated": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -942,6 +949,18 @@
           "allOf": [
             {
               "$ref": "#/definitions/PlatformType"
+            }
+          ]
+        },
+        "preset": {
+          "title": "preset",
+          "description": "The preset to apply for the task. Will inherit default options.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskPreset"
+            },
+            {
+              "type": "null"
             }
           ]
         },
@@ -1036,6 +1055,15 @@
         "append",
         "prepend",
         "replace"
+      ]
+    },
+    "TaskOperatingSystem": {
+      "description": "The operating system in which to only run this task on.",
+      "type": "string",
+      "enum": [
+        "linux",
+        "macos",
+        "windows"
       ]
     },
     "TaskOptionAffectedFiles": {
@@ -1241,6 +1269,28 @@
             }
           ]
         },
+        "os": {
+          "title": "os",
+          "description": "The operating system in which to only run this task on.",
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/TaskOperatingSystem"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/TaskOperatingSystem"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "outputStyle": {
           "title": "outputStyle",
           "description": "The style in which task output will be printed to the console.",
@@ -1379,6 +1429,14 @@
         "hash",
         "none",
         "stream"
+      ]
+    },
+    "TaskPreset": {
+      "description": "Preset options to inherit.",
+      "type": "string",
+      "enum": [
+        "server",
+        "watcher"
       ]
     },
     "TaskType": {

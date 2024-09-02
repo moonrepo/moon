@@ -68,6 +68,15 @@ pub(crate) fn validate_deps<D, C>(
 }
 
 derive_enum!(
+    /// Preset options to inherit.
+    #[derive(ConfigEnum, Copy)]
+    pub enum TaskPreset {
+        Server,
+        Watcher,
+    }
+);
+
+derive_enum!(
     /// The type of task.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskType {
@@ -189,6 +198,7 @@ cacheable!(
 
         /// Marks the task as local only. Local tasks do not run in CI, do not have
         /// `options.cache` enabled, and are marked as `options.persistent`.
+        #[deprecated = "Use `preset` instead."]
         pub local: Option<bool>,
 
         /// Outputs that will be created when the task has successfully ran.
@@ -203,6 +213,9 @@ cacheable!(
         /// available binaries, lookup paths, and more. When not provided, will
         /// be automatically detected.
         pub platform: PlatformType,
+
+        /// The preset to apply for the task. Will inherit default options.
+        pub preset: Option<TaskPreset>,
 
         /// A script to run within a shell. A script is anything from a single command,
         /// to multiple commands (&&, etc), or shell specific syntax. Does not support

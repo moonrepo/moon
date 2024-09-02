@@ -1,0 +1,14 @@
+tasks:
+  server:
+    preset: 'server'
+  server-custom:
+    preset: 'server'
+    options:
+      cache: true
+
+  watcher:
+    preset: 'watcher'
+  watcher-custom:
+    preset: 'watcher'
+    options:
+      interactive: false

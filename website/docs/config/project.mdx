@@ -770,6 +770,12 @@ similar), will _not_ be considered an input. To work around this, use explicit f
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#local" />
 
+:::info
+
+This setting is deprecated and will be removed in v2. We suggest using [`preset`](#preset) instead.
+
+:::
+
 Marks the task as local only. This should primarily be enabled for long-running or never-ending
 tasks, like development servers and watch mode. Defaults to `true` if the task name is "dev",
 "start", or "serve", and `false` otherwise.
@@ -850,6 +856,32 @@ tasks:
 
 > This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
 > command is ran.
+
+### `preset`<VersionLabel version="1.28.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#preset" />
+
+Applies the chosen preset to the task. A preset defines a collection of task options that will be
+inherited as the default, and can then be overridden within the task itself. The following presets
+are available:
+
+- `server`
+  - [`cache`](#cache) -> Turned off
+  - [`outputStyle`](#outputstyle) -> Set to "stream"
+  - [`persistent`](#persistent) -> Turned on
+  - [`runInCI`](#runinci) -> Turned off
+- `watcher`
+  - Inherits `server` options
+  - [`interactive`](#interactive) -> Turned on
+
+Tasks named "dev", "start", or "serve" are marked as `server` automatically.
+
+```yaml title="moon.yml" {5}
+tasks:
+  dev:
+    command: 'webpack server'
+    preset: 'server'
+```
 
 ### `script`<VersionLabel version="1.27.0" />
 

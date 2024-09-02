@@ -75,8 +75,8 @@ jobs:
       RUSTC_WRAPPER: ${{ vars.ENABLE_SCCACHE == 'true' && 'sccache' || '' }}
       SCCACHE_BUCKET: moon-ci-sccache
       SCCACHE_GHA_ENABLED: ${{ vars.ENABLE_SCCACHE == 'true' }}
-      # SCCACHE_LOG: debug
-      # SCCACHE_NO_DAEMON: 1
+      SCCACHE_LOG: debug
+      SCCACHE_NO_DAEMON: 1
       SCCACHE_REGION: us-east-2
       SCCACHE_S3_SERVER_SIDE_ENCRYPTION: true
     steps:

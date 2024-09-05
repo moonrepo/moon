@@ -104,10 +104,10 @@ where
 
         if has_special_chars
             // env var
-            || bytes.starts_with(&[b'$'])
+            || bytes.starts_with(b"$")
             // already quoted
-            || bytes.starts_with(&[b'\''])
-            || bytes.starts_with(&[b'"'])
+            || bytes.starts_with(b"'")
+            || bytes.starts_with(b"\"")
             // glob expansion
             || bytes.contains(&b'*')
             || bytes.contains(&b'[')

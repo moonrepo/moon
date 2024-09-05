@@ -250,12 +250,16 @@ impl<'task> CommandExecutor<'task> {
         };
 
         // Transitive targets may run concurrently, so differentiate them with a prefix.
-        if self.stream && (is_ci_env() || !is_primary || context.primary_targets.len() > 1) {
-            let prefix_max_width = context
-                .primary_targets
-                .iter()
-                .map(|target| target.id.len())
-                .max();
+        if !is_primary || is_ci_env() || context.primary_targets.len() > 1 {
+            let prefix_max_width = if context.primary_targets.len() > 1 {
+                context
+                    .primary_targets
+                    .iter()
+                    .map(|target| target.id.len())
+                    .max()
+            } else {
+                None
+            };
 
             self.command
                 .set_prefix(&self.task.target.id, prefix_max_width);

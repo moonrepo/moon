@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated environment variable substitution to support different outputs when a variable is missing,
+  based on a trailing flag syntax.
+  - `$FOO` or `${FOO}` - If variable is missing, keeps the original syntax (current default).
+  - `$FOO?` or `${FOO?}` - If variable is missing, replaces with an empty string.
+  - `$FOO!` or `${FOO!}` - Ignores variable substitution and preserves the syntax (without !).
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.81.

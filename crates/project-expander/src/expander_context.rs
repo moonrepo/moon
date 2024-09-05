@@ -45,30 +45,87 @@ pub fn substitute_env_var(
     patterns::ENV_VAR_SUBSTITUTE.replace_all(
         value,
         |caps: &patterns::Captures| {
-            // First with wrapping {} then without: ${FOO} -> $FOO
-            let name = caps.get(1).or_else(|| caps.get(2)).unwrap().as_str();
+            let Some(name) = caps.name("name1")
+                .or_else(|| caps.name("name2"))
+                .map(|cap| cap.as_str())
+                else {
+                return String::new();
+            };
+
+            let flag = caps.name("flag1").or_else(|| caps.name("flag2")).map(|cap| cap.as_str());
 
             // If the variable is referencing itself, don't pull
             // from the local map, and instead only pull from the
             // system environment. Otherwise we hit recursion!
-            let maybe_var = if !base_name.is_empty() && base_name == name {
-                env::var(name).ok()
-            } else {
-                env_map.get(name).cloned().or_else(|| env::var(name).ok())
+            let get_replacement_value = || {
+                if !base_name.is_empty() && base_name == name {
+                    env::var(name).ok()
+                } else {
+                    env_map.get(name).cloned().or_else(|| env::var(name).ok())
+                }
             };
 
-            match maybe_var {
-                Some(var) => var,
-                None => {
+            match flag {
+                // Don't substitute
+                Some("!") => {
+                    format!("${name}")
+                },
+                // Substitute with empty string when missing
+                Some("?") =>{
                     debug!(
-                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is.",
+                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Replacing with an empty value.",
                         value,
                         name
                     );
 
-                    caps.get(0).unwrap().as_str().to_owned()
+                    get_replacement_value().unwrap_or_default()
+                },
+                // Substitute with self when missing
+                _ => {
+                    debug!(
+                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is. Append with ? or ! to change outcome.",
+                        value,
+                        name
+                    );
+
+                    get_replacement_value()
+                        .unwrap_or_else(|| caps.get(0).unwrap().as_str().to_owned())
                 }
             }
         })
     .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn handles_flags_when_missing() {
+        let envs = FxHashMap::default();
+
+        assert_eq!(substitute_env_var("", "$KEY", &envs), "$KEY");
+        assert_eq!(substitute_env_var("", "${KEY}", &envs), "${KEY}");
+
+        assert_eq!(substitute_env_var("", "$KEY!", &envs), "$KEY");
+        assert_eq!(substitute_env_var("", "${KEY!}", &envs), "$KEY");
+
+        assert_eq!(substitute_env_var("", "$KEY?", &envs), "");
+        assert_eq!(substitute_env_var("", "${KEY?}", &envs), "");
+    }
+
+    #[test]
+    fn handles_flags_when_not_missing() {
+        let mut envs = FxHashMap::default();
+        envs.insert("KEY".to_owned(), "value".to_owned());
+
+        assert_eq!(substitute_env_var("", "$KEY", &envs), "value");
+        assert_eq!(substitute_env_var("", "${KEY}", &envs), "value");
+
+        assert_eq!(substitute_env_var("", "$KEY!", &envs), "$KEY");
+        assert_eq!(substitute_env_var("", "${KEY!}", &envs), "$KEY");
+
+        assert_eq!(substitute_env_var("", "$KEY?", &envs), "value");
+        assert_eq!(substitute_env_var("", "${KEY?}", &envs), "value");
+    }
 }

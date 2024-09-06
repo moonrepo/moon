@@ -7,3 +7,4 @@ tasks:
     inputs:
       - 'input.txt'
       - 'file.*'
+      - 'routes/**/*'

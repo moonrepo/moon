@@ -272,8 +272,16 @@ impl<'task> CommandBuilder<'task> {
                 self.command.arg_if_missing(".");
             } else {
                 // Mimic relative from ("./")
-                self.command
-                    .args(files.iter().map(|file| format!("./{file}")));
+                self.command.args(files.iter().map(|file| {
+                    let arg = format!("./{file}");
+
+                    // Escape files with special characters
+                    if arg.contains(['*', '$', '+', '[', ']']) {
+                        format!("\"{arg}\"")
+                    } else {
+                        arg
+                    }
+                }));
             }
         }
 

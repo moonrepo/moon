@@ -367,5 +367,43 @@ mod command_builder {
 
             assert_eq!(get_args(&command), vec!["arg", "--opt", "./input.txt"]);
         }
+
+        #[tokio::test]
+        async fn quotes_files_with_special_chars() {
+            let container = TaskRunnerContainer::new("builder").await;
+
+            let mut context = ActionContext::default();
+            context.affected_only = true;
+            context.touched_files.insert("project/file.txt".into());
+            context.touched_files.insert("project/routes/*.ts".into());
+            context
+                .touched_files
+                .insert("project/routes/[id].ts".into());
+            context
+                .touched_files
+                .insert("project/routes/$slug.tsx".into());
+            context
+                .touched_files
+                .insert("project/routes/+page.svelte".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                vec![
+                    "arg",
+                    "--opt",
+                    "./file.txt",
+                    "\"./routes/$slug.tsx\"",
+                    "\"./routes/*.ts\"",
+                    "\"./routes/+page.svelte\"",
+                    "\"./routes/[id].ts\""
+                ]
+            );
+        }
     }
 }

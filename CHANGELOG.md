@@ -10,6 +10,11 @@
   - `$FOO?` or `${FOO?}` - If variable is missing, replaces with an empty string.
   - `$FOO!` or `${FOO!}` - Ignores variable substitution and preserves the syntax (without !).
 
+#### 🐞 Fixes
+
+- Fixed an issue where an affected task with files that contain non-standard characters would fail
+  to run because Bash expansion fails. We now quote file paths that contain `*`, `$`, `+`, and `[]`.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.81.

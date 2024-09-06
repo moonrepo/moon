@@ -2,11 +2,12 @@ use cached::proc_macro::cached;
 use miette::IntoDiagnostic;
 use moon_lang::LockfileDependencyVersions;
 use rustc_hash::FxHashMap;
+use std::sync::Arc;
 use yarn_lock_parser::{parse_str, Entry};
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(
-    lockfile_text: String,
+    lockfile_text: Arc<String>,
 ) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 

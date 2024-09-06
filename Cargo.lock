@@ -3185,6 +3185,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash 2.0.0",
+ "scc",
  "starbase_utils",
  "tracing",
 ]
@@ -3588,6 +3589,7 @@ dependencies = [
  "moon_utils",
  "proto_core",
  "rustc-hash 2.0.0",
+ "scc",
  "starbase_styles",
  "starbase_utils",
  "tracing",

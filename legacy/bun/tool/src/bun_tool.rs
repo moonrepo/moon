@@ -12,6 +12,7 @@ use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
+use scc::hash_cache::Entry;
 use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -34,6 +35,8 @@ pub struct BunTool {
 
     console: Arc<Console>,
 
+    lockfile_cache: scc::HashCache<PathBuf, Arc<String>>,
+
     proto_env: Arc<ProtoEnvironment>,
 }
 
@@ -50,6 +53,7 @@ impl BunTool {
             global: false,
             tool: load_tool_plugin(&Id::raw("bun"), &proto, config.plugin.as_ref().unwrap())
                 .await?,
+            lockfile_cache: scc::HashCache::default(),
             proto_env: proto,
         };
 
@@ -61,6 +65,37 @@ impl BunTool {
         };
 
         Ok(bun)
+    }
+
+    // Bun lockfiles are binary, so we need to convert them to text first
+    // using Bun itself!
+    async fn load_lockfile(&self, cwd: &Path) -> miette::Result<Arc<String>> {
+        let key = cwd.to_path_buf();
+
+        let cache = match self.lockfile_cache.entry_async(key).await {
+            Entry::Occupied(o) => o.get().clone(),
+            Entry::Vacant(v) => {
+                let yarn_lock = cwd.join("yarn.lock");
+
+                let content = if yarn_lock.exists() {
+                    Arc::new(fs::read_file(yarn_lock)?)
+                } else {
+                    let mut cmd = self.create_command(&())?;
+                    cmd.arg("bun.lockb");
+                    cmd.cwd(cwd);
+
+                    let output = cmd.create_async().exec_capture_output().await?;
+
+                    Arc::new(output_to_string(&output.stdout))
+                };
+
+                v.put_entry(content.clone());
+
+                content
+            }
+        };
+
+        Ok(cache)
     }
 }
 
@@ -189,17 +224,9 @@ impl DependencyManager<()> for BunTool {
             return Ok(FxHashMap::default());
         };
 
-        // Bun lockfiles are binary, so we need to convert them to text first
-        // using Bun itself!
-        let mut cmd = self.create_command(&())?;
-        cmd.arg("bun.lockb");
-        cmd.cwd(lockfile_path.parent().unwrap());
-
-        let output = cmd.create_async().exec_capture_output().await?;
-
-        Ok(load_lockfile_dependencies(output_to_string(
-            &output.stdout,
-        ))?)
+        Ok(load_lockfile_dependencies(
+            self.load_lockfile(lockfile_path.parent().unwrap()).await?,
+        )?)
     }
 
     #[instrument(skip_all)]

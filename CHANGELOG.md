@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added caching around `bun bun.lockb` commands, instead of running them for every task.
 - Updated environment variable substitution to support different outputs when a variable is missing,
   based on a trailing flag syntax.
   - `$FOO` or `${FOO}` - If variable is missing, keeps the original syntax (current default).

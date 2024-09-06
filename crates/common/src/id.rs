@@ -13,7 +13,7 @@ pub static ID_CLEAN: OnceLock<Regex> = OnceLock::new();
 
 #[derive(Error, Debug, Diagnostic)]
 #[diagnostic(code(id::invalid_format))]
-#[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.), and must start with an alpha character.", .0.style(Style::Id))]
+#[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and periods (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 
 #[derive(Clone, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -24,9 +24,8 @@ impl Id {
         let id = id.as_ref();
 
         // The @ is to support npm package scopes!
-        let pattern = ID_PATTERN.get_or_init(|| {
-            Regex::new(format!("^([A-Za-z@_]{{1}}{})$", ID_CHARS).as_str()).unwrap()
-        });
+        let pattern =
+            ID_PATTERN.get_or_init(|| Regex::new(format!("^(@?{})$", ID_CHARS).as_str()).unwrap());
 
         if !pattern.is_match(id) {
             return Err(IdError(id.to_owned()));
@@ -40,7 +39,7 @@ impl Id {
         // with a leading -, causing pattern failures
         let id = id.as_ref().replace('@', "");
 
-        // This is to clean and ID and remove unwanted characters
+        // This is to clean an ID and remove unwanted characters
         let pattern = ID_CLEAN.get_or_init(|| Regex::new(r"[^0-9A-Za-z/\._-]+").unwrap());
 
         Id::new(pattern.replace_all(&id, "-"))

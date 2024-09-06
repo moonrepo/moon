@@ -4,11 +4,11 @@ use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use moon_vcs::BoxedVcs;
 use starbase_utils::{fs, glob};
 use std::path::Path;
-use tracing::{instrument, warn};
+use tracing::{debug, instrument, warn};
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-pub fn infer_project_id_and_source(
+fn infer_project_id_and_source(
     path: &str,
     workspace_root: &Path,
 ) -> miette::Result<ProjectSourceEntry> {
@@ -113,10 +113,17 @@ where
                 }
             }
 
-            sources.push(infer_project_id_and_source(
-                &project_source,
-                workspace_root,
-            )?)
+            let (id, source) = infer_project_id_and_source(&project_source, workspace_root)?;
+
+            if id.starts_with(".") {
+                debug!(
+                    id = id.as_str(),
+                    source = source.as_str(),
+                    "Received a project for a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
+                );
+            } else {
+                sources.push((id, source));
+            }
         }
     }
 

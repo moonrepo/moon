@@ -193,8 +193,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Invalid format for .foo")]
-        async fn errors_for_dot_folders() {
+        async fn filters_dot_folders() {
             let sandbox = create_sandbox("dependencies");
             sandbox.create_file(".foo/moon.yml", "");
 

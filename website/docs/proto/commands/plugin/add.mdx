@@ -8,8 +8,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="0.23.0" header />
 
 The `proto plugin add <id> <plugin>` command will add the provided ID and plugin locator string to
-the `[plugins]` section of the local (`./.prototools`) or global (`~/.proto/.prototools`) config
-file.
+the `[plugins]` section of a chosen `.prototools`.
 
 ```shell
 $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest/download/node_plugin.wasm"
@@ -24,4 +23,7 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 
 ### Options
 
-- `--global` - Add to the global `~/.proto/.prototools` instead of the local `./.prototools`.
+- `--global` (deprecated) - Add to the global `~/.proto/.prototools` instead of the local
+  `./.prototools`.
+- `--to` - [Location of `.prototools`](../../config#locations) to update.
+  <VersionLabel version="0.41.0" />

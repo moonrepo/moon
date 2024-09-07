@@ -12,12 +12,27 @@ more.
 
 ## Locations<VersionLabel version="0.41.0" />
 
-The following pre-defined locations where a `.prototools` file can exist are available throughout
-the command line and proto's own settings.
+proto supports 3 locations in which a `.prototools` file can exist. These locations are used
+throughout the command line and proto's own settings.
 
 - `local` -> `./.prototools` (current directory)
 - `global` -> `~/.proto/.prototools`
 - `user` -> `~/.prototools`
+
+> Local is a bit of a misnomer as a `.prototools` file can theoretically exist in any directory, but
+> when reading/writing to a file, `local` refers to the current working directory.
+
+### Where to configure?
+
+With so many locations to store proto configuration, the question of where to store certain
+configurations become blurred, especially when [resolution](#resolution-mode) comes into play. We
+suggest the following locations:
+
+- Default/fallback [versions](#pinning-versions) of tools -> `global`
+- Project specific [versions](#pinning-versions) of tools -> `local`
+- Project specific [settings](#settings) -> `local`
+- Shared/developer [settings](#settings) -> `user`
+- Non-project related -> `user`
 
 ## Resolution mode<VersionLabel version="0.40.0" />
 
@@ -212,7 +227,9 @@ When defined and a tool is installed with the "latest" version, will automatical
 version to the configured location. Defaults to disabled or `PROTO_PIN_LATEST`.
 
 - `global` - Pins globally to `~/.proto/.prototools`.
-- `local` - Pins locally to `.prototools` in current directory.
+- `local` - Pins locally to `./.prototools` in current directory.
+- `user` - Pins to the user's `~/.prototools` in their home directory.
+  <VersionLabel version="0.41.0" />
 
 ```toml title=".prototools"
 [settings]
@@ -268,6 +285,42 @@ environment. Supports `pem` and `der` files.
 ```toml title=".prototools"
 [settings.http]
 root-cert = "/path/to/root/cert.pem"
+```
+
+### `[settings.offline]`<VersionLabel version="0.41.0" />
+
+Can be used to customize how we detect an internet connection for offline based logic. These
+settings are useful if you're behind a VPN or corporate proxy.
+
+#### `custom-hosts`
+
+A list of custom hosts to ping. Will be appended to our
+[default list of hosts](#override-default-hosts) and will be ran last.
+
+```toml title=".prototools"
+[settings.offline]
+custom-hosts = ["proxy.corp.domain.com:80"]
+```
+
+#### `override-default-hosts`
+
+If our default hosts are blocked or are too slow, you can disable pinging them by setting this
+option to true. Our default hosts are Google DNS, Cloudflare DNS, and then Google and Mozilla hosts.
+
+This should be used in parallel with [`custom-hosts`](#custom-hosts).
+
+```toml title=".prototools"
+[settings.offline]
+override-default-hosts = true
+```
+
+#### `timeout`
+
+The timeout in milliseconds to wait for a ping against a host to resolve. Default timeout is 750ms.
+
+```toml title=".prototools"
+[settings.offline]
+timeout = 500
 ```
 
 ### `[plugins]`

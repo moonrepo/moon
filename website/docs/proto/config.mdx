@@ -10,6 +10,15 @@ We support configuration at both the project-level and user-level using a
 tools, provide tool specific configuration, enable new tools via plugins, define proto settings, and
 more.
 
+## Locations<VersionLabel version="0.41.0" />
+
+The following pre-defined locations where a `.prototools` file can exist are available throughout
+the command line and proto's own settings.
+
+- `local` -> `./.prototools` (current directory)
+- `global` -> `~/.proto/.prototools`
+- `user` -> `~/.prototools`
+
 ## Resolution mode<VersionLabel version="0.40.0" />
 
 When a `proto` command or shim is ran, we must find and load all applicable `.prototools` files. We

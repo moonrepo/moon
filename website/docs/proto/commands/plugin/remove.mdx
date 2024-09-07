@@ -8,7 +8,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="0.23.0" header />
 
 The `proto plugin remove <id>` command will remove the provided tool ID from the `[plugins]` section
-of the local (`./.prototools`) or global (`~/.proto/.prototools`) config file.
+of the chosen (`.prototools`).
 
 ```shell
 $ proto plugin remove node
@@ -22,4 +22,7 @@ $ proto plugin remove node
 
 ### Options
 
-- `--global` - Remove from the global `~/.proto/.prototools` instead of the local `./.prototools`.
+- `--from` - [Location of `.prototools`](../../config#locations) to update.
+  <VersionLabel version="0.41.0" />
+- `--global` (deprecated) - Remove from the global `~/.proto/.prototools` instead of the local
+  `./.prototools`.

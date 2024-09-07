@@ -2,6 +2,8 @@
 title: unalias
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `proto unalias <tool> <alias>` (or `proto ua`) command will remove a custom alias for the
 provided tool.
 
@@ -9,12 +11,8 @@ provided tool.
 $ proto unalias node work
 ```
 
-By default this will update the local [`./.prototools`](../config) file. Pass `--global` to update
-the global [`~/.proto/.prototools`](../config) file instead.
-
-```shell
-$ proto unalias yarn berry --global
-```
+By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
+the location.
 
 ### Arguments
 
@@ -23,4 +21,7 @@ $ proto unalias yarn berry --global
 
 ## Options
 
-- `--global` - Remove from the global `~/.proto/.prototools` instead of the local `./.prototools`.
+- `--from` - [Location of `.prototools`](../config#locations) to update.
+  <VersionLabel version="0.41.0" />
+- `--global` (deprecated) - Remove from the global `~/.proto/.prototools` instead of the local
+  `./.prototools`.

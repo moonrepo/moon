@@ -144,12 +144,11 @@ impl ConsoleBuffer {
     pub fn write_line<T: AsRef<[u8]>>(&self, data: T) -> miette::Result<()> {
         let data = data.as_ref();
 
-        if data.is_empty() {
-            return Ok(());
-        }
-
         self.write_raw(|buffer| {
-            buffer.extend_from_slice(data);
+            if !data.is_empty() {
+                buffer.extend_from_slice(data);
+            }
+
             buffer.push(b'\n');
         })
     }

@@ -1,5 +1,9 @@
 # Changelog
 
+#### 🐞 Fixes
+
+- Fixed an issue where empty lines were being trimmed while streaming task console output.
+
 ## 1.28.1
 
 #### 🚀 Updates

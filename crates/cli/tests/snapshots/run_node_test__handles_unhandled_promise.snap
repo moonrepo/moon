@@ -1,5 +1,5 @@
 ---
-source: legacy/cli/tests/run_node_test.rs
+source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
@@ -10,9 +10,11 @@ stderr
 node:internal/process/promises:288
             triggerUncaughtException(err, true /* fromPromise */);
             ^
+
 [UnhandledPromiseRejection: This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). The promise rejected with the reason "Oops".] {
   code: 'ERR_UNHANDLED_REJECTION'
 }
+
 Node.js v18.0.0
 Error: task_runner::run_failed
 

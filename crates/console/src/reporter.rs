@@ -13,7 +13,7 @@ pub struct PipelineReportItem {
     pub summarize: bool,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct TaskReportItem {
     pub attempt_current: u8,
     pub attempt_total: u8,

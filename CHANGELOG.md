@@ -9,6 +9,10 @@
 #### 🐞 Fixes
 
 - Fixed an issue where empty lines were being trimmed while streaming task console output.
+- Fixed an issue where tasks that errored _before_ the command is executed, would swallow the error
+  in `moon ci`.
+  - It would also put the task in a non-failed state depending on the order of operations. This
+    should be correct now.
 
 ## 1.28.1
 

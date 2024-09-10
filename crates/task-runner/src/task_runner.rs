@@ -140,7 +140,7 @@ impl<'task> TaskRunner<'task> {
         self.cache.data.last_run_time = now_millis();
         self.cache.save()?;
 
-        let mut item = self.report_item.take().unwrap_or_else(|| {
+        let mut item = self.report_item.clone().unwrap_or_else(|| {
             // When the task is cached, we don't have the original report,
             // so create an empty one with necessary fields
             TaskReportItem {
@@ -167,6 +167,8 @@ impl<'task> TaskRunner<'task> {
                 })
             }
             Err(error) => {
+                self.inject_failed_task_execution(Some(&error))?;
+
                 self.app.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.operations,
@@ -618,6 +620,45 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
 
         Ok(true)
+    }
+
+    // If a task fails *before* the command is actually executed, say during the command
+    // build process, or the toolchain plugin layer, that error is not bubbled up as a
+    // failure, and the last operation is used instead (which is typically skipped).
+    // To handle this weird scenario, we inject a failed task execution at the end.
+    fn inject_failed_task_execution(
+        &mut self,
+        report: Option<&miette::Report>,
+    ) -> miette::Result<()> {
+        let has_exec = self
+            .operations
+            .iter()
+            .any(|operation| operation.meta.is_task_execution());
+
+        if has_exec {
+            return Ok(());
+        }
+
+        let mut operation = Operation::task_execution(&self.task.command);
+        let default_item = TaskReportItem::default();
+
+        if let (Some(output), Some(error)) = (operation.get_output_mut(), report) {
+            output.exit_code = Some(-1);
+            output.set_stderr(error.to_string());
+        }
+
+        operation.finish(ActionStatus::Aborted);
+
+        self.app.console.reporter.on_task_finished(
+            &self.task.target,
+            &operation,
+            self.report_item.as_ref().unwrap_or(&default_item),
+            report,
+        )?;
+
+        self.operations.push(operation);
+
+        Ok(())
     }
 
     fn load_logs(&self, operation: &mut Operation) -> miette::Result<()> {

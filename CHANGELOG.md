@@ -1,5 +1,11 @@
 # Changelog
 
+#### 🚀 Updates
+
+- Updated Bun/Yarn lockfile parsing to temporarily log a warning on parse failure instead of exiting
+  with an error. This change was made as there are currently no actionable or human-readable error
+  messages.
+
 #### 🐞 Fixes
 
 - Fixed an issue where empty lines were being trimmed while streaming task console output.

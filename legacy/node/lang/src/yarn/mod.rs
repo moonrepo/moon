@@ -1,17 +1,27 @@
 use cached::proc_macro::cached;
-use miette::IntoDiagnostic;
 use moon_lang::LockfileDependencyVersions;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::PathBuf;
+use tracing::warn;
 use yarn_lock_parser::{parse_str, Entry};
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
-    let yarn_lock_text = fs::read_file(path)?;
-    let entries: Vec<Entry> = parse_str(&yarn_lock_text).into_diagnostic()?;
+    let yarn_lock_text = fs::read_file(&path)?;
+    let entries: Vec<Entry> = match parse_str(&yarn_lock_text) {
+        Ok(data) => data,
+        Err(_) => {
+            warn!(
+              lockfile = ?path,
+              "Failed to parse yarn.lock. Resolved dependency matching will be disabled.",
+            );
+
+            return Ok(deps);
+        }
+    };
 
     for entry in entries {
         // All workspace dependencies have empty integrities, so we will skip them

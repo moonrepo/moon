@@ -9,6 +9,7 @@ moon_lang = { path = "../../core/lang" }
 cached = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+tracing = { workspace = true }
 yarn-lock-parser = "0.7.0"
 
 [lints]

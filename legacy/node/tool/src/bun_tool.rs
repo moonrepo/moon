@@ -233,6 +233,7 @@ impl DependencyManager<NodeTool> for BunTool {
 
         Ok(bun::load_lockfile_dependencies(
             self.load_lockfile(lockfile_path.parent().unwrap()).await?,
+            lockfile_path,
         )?)
     }
 

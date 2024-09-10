@@ -19,6 +19,7 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 serde_yaml = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true, features = ["json", "yaml"] }
+tracing = { workspace = true }
 yarn-lock-parser = "0.7.0"
 
 [dev-dependencies]

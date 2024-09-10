@@ -3135,6 +3135,7 @@ dependencies = [
  "miette",
  "moon_lang",
  "rustc-hash 2.0.0",
+ "tracing",
  "yarn-lock-parser",
 ]
 
@@ -3539,6 +3540,7 @@ dependencies = [
  "serde_yaml",
  "starbase_styles",
  "starbase_utils",
+ "tracing",
  "yarn-lock-parser",
 ]
 

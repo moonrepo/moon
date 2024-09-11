@@ -158,10 +158,10 @@ impl<'cmd> AsyncCommand<'cmd> {
             let mut captured_lines = vec![];
 
             while let Ok(Some(line)) = lines.next_line().await {
-                let _ = if stderr_prefix.is_empty() {
-                    stderr_stream.write_line(&line)
+                let _ = if let Some(prefix) = &*stderr_prefix {
+                    stderr_stream.write_line_with_prefix(&line, prefix)
                 } else {
-                    stderr_stream.write_line(format!("{stderr_prefix}{line}"))
+                    stderr_stream.write_line(&line)
                 };
 
                 captured_lines.push(line);
@@ -178,10 +178,10 @@ impl<'cmd> AsyncCommand<'cmd> {
             let mut captured_lines = vec![];
 
             while let Ok(Some(line)) = lines.next_line().await {
-                let _ = if stdout_prefix.is_empty() {
-                    stdout_stream.write_line(&line)
+                let _ = if let Some(prefix) = &*stdout_prefix {
+                    stdout_stream.write_line_with_prefix(&line, prefix)
                 } else {
-                    stdout_stream.write_line(format!("{stdout_prefix}{line}"))
+                    stdout_stream.write_line(&line)
                 };
 
                 captured_lines.push(line);

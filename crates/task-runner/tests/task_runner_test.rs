@@ -660,10 +660,8 @@ mod task_runner {
             let node = container.create_action_node("success");
             let context = ActionContext::default();
 
-            runner
-                .execute(&context, &node, Some("hash123"))
-                .await
-                .unwrap();
+            runner.report_item.hash = Some("hash123".into());
+            runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
                 context
@@ -684,7 +682,7 @@ mod task_runner {
             let node = container.create_action_node("success");
             let context = ActionContext::default();
 
-            runner.execute(&context, &node, None).await.unwrap();
+            runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
                 context
@@ -706,7 +704,8 @@ mod task_runner {
             let context = ActionContext::default();
 
             // Swallow panic so we can check operations
-            let _ = runner.execute(&context, &node, Some("hash123")).await;
+            runner.report_item.hash = Some("hash123".into());
+            let _ = runner.execute(&context, &node).await;
 
             assert_eq!(
                 context
@@ -727,10 +726,8 @@ mod task_runner {
             let node = container.create_action_node("success");
             let context = ActionContext::default();
 
-            runner
-                .execute(&context, &node, Some("hash123"))
-                .await
-                .unwrap();
+            runner.report_item.hash = Some("hash123".into());
+            runner.execute(&context, &node).await.unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -753,7 +750,8 @@ mod task_runner {
             let context = ActionContext::default();
 
             // Swallow panic so we can check operations
-            let _ = runner.execute(&context, &node, Some("hash123")).await;
+            runner.report_item.hash = Some("hash123".into());
+            let _ = runner.execute(&context, &node).await;
 
             let operation = runner.operations.last().unwrap();
 
@@ -774,10 +772,8 @@ mod task_runner {
             let node = container.create_action_node("success");
             let context = ActionContext::default();
 
-            runner
-                .execute(&context, &node, Some("hash123"))
-                .await
-                .unwrap();
+            runner.report_item.hash = Some("hash123".into());
+            runner.execute(&context, &node).await.unwrap();
 
             assert!(container
                 .sandbox
@@ -798,7 +794,8 @@ mod task_runner {
             let context = ActionContext::default();
 
             // Swallow panic so we can check operations
-            let _ = runner.execute(&context, &node, Some("hash123")).await;
+            runner.report_item.hash = Some("hash123".into());
+            let _ = runner.execute(&context, &node).await;
 
             let operation = runner
                 .operations
@@ -819,10 +816,8 @@ mod task_runner {
             let node = container.create_action_node("failure");
             let context = ActionContext::default();
 
-            runner
-                .execute(&context, &node, Some("hash123"))
-                .await
-                .unwrap();
+            runner.report_item.hash = Some("hash123".into());
+            runner.execute(&context, &node).await.unwrap();
         }
     }
 
@@ -871,7 +866,7 @@ mod task_runner {
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
-            runner.skip_no_op(&context, None).unwrap();
+            runner.skip_no_op(&context).unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -885,7 +880,7 @@ mod task_runner {
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
-            runner.skip_no_op(&context, None).unwrap();
+            runner.skip_no_op(&context).unwrap();
 
             assert_eq!(
                 context
@@ -902,7 +897,8 @@ mod task_runner {
             let mut runner = container.create_runner("base");
             let context = ActionContext::default();
 
-            runner.skip_no_op(&context, Some("hash123")).unwrap();
+            runner.report_item.hash = Some("hash123".into());
+            runner.skip_no_op(&context).unwrap();
 
             assert_eq!(
                 context

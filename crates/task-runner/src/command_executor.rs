@@ -21,7 +21,6 @@ fn is_ci_env() -> bool {
 pub struct CommandExecuteResult {
     pub attempts: OperationList,
     pub error: Option<miette::Report>,
-    pub report_item: TaskReportItem,
     pub run_state: TargetState,
 }
 
@@ -74,14 +73,12 @@ impl<'task> CommandExecutor<'task> {
     pub async fn execute(
         mut self,
         context: &ActionContext,
-        hash: Option<&str>,
+        report_item: &mut TaskReportItem,
     ) -> miette::Result<CommandExecuteResult> {
         // Prepare state for the executor, and each attempt
-        let mut report_item = self.prepate_state(context);
         let mut run_state = TargetState::Failed;
 
-        // Hash is empty if cache is disabled
-        report_item.hash = hash.map(|h| h.to_string());
+        self.prepate_state(context, report_item);
 
         // For long-running process, log a message on an interval to indicate it's still running
         self.start_monitoring();
@@ -148,7 +145,7 @@ impl<'task> CommandExecutor<'task> {
                             "Task was successful, proceeding to next step",
                         );
 
-                        run_state = TargetState::from_hash(hash);
+                        run_state = TargetState::from_hash(report_item.hash.as_deref());
                         break None;
                     }
                     // Unsuccessful execution (maybe flaky), attempt again
@@ -201,7 +198,6 @@ impl<'task> CommandExecutor<'task> {
         Ok(CommandExecuteResult {
             attempts: self.attempts.take(),
             error: execution_error,
-            report_item,
             run_state,
         })
     }
@@ -232,8 +228,9 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
-    fn prepate_state(&mut self, context: &ActionContext) -> TaskReportItem {
+    fn prepate_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
         let is_primary = context.is_primary_target(&self.task.target);
+        let mut output_prefix = None;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
@@ -251,27 +248,17 @@ impl<'task> CommandExecutor<'task> {
 
         // Transitive targets may run concurrently, so differentiate them with a prefix.
         if !is_primary || is_ci_env() || context.primary_targets.len() > 1 {
-            let prefix_max_width = if context.primary_targets.len() > 1 {
-                context
-                    .primary_targets
-                    .iter()
-                    .map(|target| target.id.len())
-                    .max()
-            } else {
-                None
-            };
+            let prefix = context.get_target_prefix(&self.task.target);
 
-            self.command
-                .set_prefix(&self.task.target.id, prefix_max_width);
+            self.command.set_prefix(&prefix);
+
+            output_prefix = Some(prefix);
         }
 
-        TaskReportItem {
-            attempt_current: self.attempt_index,
-            attempt_total: self.attempt_total,
-            hash: None,
-            output_streamed: self.stream,
-            output_style: self.task.options.output_style,
-        }
+        report_item.attempt_current = self.attempt_index;
+        report_item.attempt_total = self.attempt_total;
+        report_item.output_prefix = output_prefix;
+        report_item.output_streamed = self.stream;
     }
 
     fn get_command_line(&self, context: &ActionContext) -> String {

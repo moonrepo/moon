@@ -81,6 +81,15 @@ impl ActionContext {
         mutex
     }
 
+    pub fn get_target_prefix<T: AsRef<Target>>(&self, target: T) -> String {
+        target.as_ref().to_prefix(
+            self.primary_targets
+                .iter()
+                .map(|target| target.id.len())
+                .max(),
+        )
+    }
+
     pub fn get_target_states(&self) -> FxHashMap<Target, TargetState> {
         let mut map = FxHashMap::default();
         self.target_states.scan(|k, v| {

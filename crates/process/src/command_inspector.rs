@@ -151,8 +151,8 @@ impl<'cmd> CommandInspector<'cmd> {
             .get_or_init(|| CommandLine::new(self.command))
     }
 
-    pub fn get_prefix(&self) -> String {
-        self.command.prefix.clone().unwrap_or_default()
+    pub fn get_prefix(&self) -> Option<String> {
+        self.command.prefix.clone()
     }
 
     pub fn get_workspace_root(&self) -> PathBuf {

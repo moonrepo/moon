@@ -102,20 +102,26 @@ impl DefaultReporter {
         operation: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
-        let print_stdout = || -> miette::Result<()> {
+        let print = || -> miette::Result<()> {
             if let Some(output) = operation.get_output() {
                 if let Some(out) = &output.stdout {
-                    self.out.write_line(out.trim())?;
+                    if !out.is_empty() {
+                        if let Some(prefix) = &item.output_prefix {
+                            self.out.write_line_with_prefix(out.trim(), prefix)?;
+                        } else {
+                            self.out.write_line(out.trim())?;
+                        }
+                    }
                 }
-            }
 
-            Ok(())
-        };
-
-        let print_stderr = || -> miette::Result<()> {
-            if let Some(output) = operation.get_output() {
-                if let Some(out) = &output.stderr {
-                    self.err.write_line(out.trim())?;
+                if let Some(err) = &output.stderr {
+                    if !err.is_empty() {
+                        if let Some(prefix) = &item.output_prefix {
+                            self.err.write_line_with_prefix(err.trim(), prefix)?;
+                        } else {
+                            self.err.write_line(err.trim())?;
+                        }
+                    }
                 }
             }
 
@@ -126,8 +132,7 @@ impl DefaultReporter {
             // Only show output on failure
             Some(TaskOutputStyle::BufferOnlyFailure) => {
                 if operation.has_failed() {
-                    print_stdout()?;
-                    print_stderr()?;
+                    print()?;
                 }
             }
             // Only show the hash
@@ -141,8 +146,7 @@ impl DefaultReporter {
             Some(TaskOutputStyle::None) => {}
             // Show output on both success and failure
             _ => {
-                print_stdout()?;
-                print_stderr()?;
+                print()?;
             }
         };
 
@@ -157,26 +161,7 @@ impl DefaultReporter {
 
             if let Some(attempt) = action.operations.get_last_execution() {
                 if attempt.has_failed() {
-                    let mut has_stdout = false;
-
-                    if let Some(output) = attempt.get_output() {
-                        if let Some(stdout) = &output.stdout {
-                            if !stdout.is_empty() {
-                                has_stdout = true;
-                                self.out.write_line(stdout.trim())?;
-                            }
-                        }
-
-                        if let Some(stderr) = &output.stderr {
-                            if has_stdout {
-                                self.out.write_newline()?;
-                            }
-
-                            if !stderr.is_empty() {
-                                self.out.write_line(stderr.trim())?;
-                            }
-                        }
-                    }
+                    self.print_operation_output(attempt, &TaskReportItem::default())?;
                 }
             }
 
@@ -414,7 +399,6 @@ impl Reporter for DefaultReporter {
             // If cached, the finished event above is not fired,
             // so handle printing the captured logs here!
             if operation.is_cached() && operation.has_output() {
-                self.out.write_newline()?;
                 self.print_operation_output(operation, item)?;
             }
 

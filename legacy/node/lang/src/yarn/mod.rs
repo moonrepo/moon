@@ -16,7 +16,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDepen
         Err(_) => {
             warn!(
               lockfile = ?path,
-              "Failed to parse yarn.lock. Resolved dependency matching will be disabled.",
+              "Failed to parse yarn.lock. Task generated hashes will be different.",
             );
 
             return Ok(deps);

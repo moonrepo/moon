@@ -35,11 +35,11 @@ pub struct TaskRunner<'task> {
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
-    report_item: Option<TaskReportItem>,
 
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
+    pub report_item: TaskReportItem,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -72,8 +72,11 @@ impl<'task> TaskRunner<'task> {
             hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,
+            report_item: TaskReportItem {
+                output_style: task.options.output_style,
+                ..Default::default()
+            },
             task,
-            report_item: None,
             app,
             operations: OperationList::default(),
         })
@@ -104,13 +107,15 @@ impl<'task> TaskRunner<'task> {
 
             let hash = self.generate_hash(context, node).await?;
 
+            self.report_item.hash = Some(hash.clone());
+
             // Exit early if this build has already been cached/hashed
             if self.hydrate(context, &hash).await? {
                 return Ok(Some(hash));
             }
 
             // Otherwise build and execute the command as a child process
-            self.execute(context, node, Some(&hash)).await?;
+            self.execute(context, node).await?;
 
             // If we created outputs, archive them into the cache
             self.archive(&hash).await?;
@@ -124,7 +129,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Otherwise build and execute the command as a child process
-        self.execute(context, node, None).await?;
+        self.execute(context, node).await?;
 
         Ok(None)
     }
@@ -140,23 +145,14 @@ impl<'task> TaskRunner<'task> {
         self.cache.data.last_run_time = now_millis();
         self.cache.save()?;
 
-        let mut item = self.report_item.clone().unwrap_or_else(|| {
-            // When the task is cached, we don't have the original report,
-            // so create an empty one with necessary fields
-            TaskReportItem {
-                output_style: self.task.options.output_style,
-                ..Default::default()
-            }
-        });
-
         match result {
             Ok(maybe_hash) => {
-                item.hash = maybe_hash.clone();
+                self.report_item.hash = maybe_hash.clone();
 
                 self.app.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.operations,
-                    &item,
+                    &self.report_item,
                     None,
                 )?;
 
@@ -172,7 +168,7 @@ impl<'task> TaskRunner<'task> {
                 self.app.console.reporter.on_task_completed(
                     &self.task.target,
                     &self.operations,
-                    &item,
+                    &self.report_item,
                     Some(&error),
                 )?;
 
@@ -414,11 +410,10 @@ impl<'task> TaskRunner<'task> {
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
-        hash: Option<&str>,
     ) -> miette::Result<()> {
         // If the task is a no-operation, we should exit early
         if self.task.is_no_op() {
-            self.skip_no_op(context, hash)?;
+            self.skip_no_op(context)?;
 
             return Ok(());
         }
@@ -461,9 +456,9 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(context, hash).await?
+            executor.execute(context, &mut self.report_item).await?
         } else {
-            executor.execute(context, hash).await?
+            executor.execute(context, &mut self.report_item).await?
         };
 
         if let Some(last_attempt) = result.attempts.get_last_execution() {
@@ -472,7 +467,6 @@ impl<'task> TaskRunner<'task> {
 
         // Extract the attempts from the result
         self.operations.merge(result.attempts);
-        self.report_item = Some(result.report_item);
 
         // Update the action state based on the result
         context.set_target_state(&self.task.target, result.run_state);
@@ -516,11 +510,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     #[instrument(skip(self, context))]
-    pub fn skip_no_op(
-        &mut self,
-        context: &ActionContext,
-        hash: Option<&str>,
-    ) -> miette::Result<()> {
+    pub fn skip_no_op(&mut self, context: &ActionContext) -> miette::Result<()> {
         debug!(
             task = self.task.target.as_str(),
             "Skipping task as its a no-operation"
@@ -531,7 +521,10 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Passed,
         ));
 
-        context.set_target_state(&self.task.target, TargetState::from_hash(hash));
+        context.set_target_state(
+            &self.task.target,
+            TargetState::from_hash(self.report_item.hash.as_deref()),
+        );
 
         Ok(())
     }
@@ -608,6 +601,9 @@ impl<'task> TaskRunner<'task> {
             "Ran cache hydration operation"
         );
 
+        // Fill in these values since the command executor does not run!
+        self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
+
         self.load_logs(&mut operation)?;
 
         operation.finish(match from {
@@ -640,7 +636,6 @@ impl<'task> TaskRunner<'task> {
         }
 
         let mut operation = Operation::task_execution(&self.task.command);
-        let default_item = TaskReportItem::default();
 
         if let (Some(output), Some(error)) = (operation.get_output_mut(), report) {
             output.exit_code = Some(-1);
@@ -652,7 +647,7 @@ impl<'task> TaskRunner<'task> {
         self.app.console.reporter.on_task_finished(
             &self.task.target,
             &operation,
-            self.report_item.as_ref().unwrap_or(&default_item),
+            &self.report_item,
             report,
         )?;
 

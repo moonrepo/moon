@@ -18,6 +18,7 @@ pub struct TaskReportItem {
     pub attempt_current: u8,
     pub attempt_total: u8,
     pub hash: Option<String>,
+    pub output_prefix: Option<String>,
     pub output_streamed: bool,
     pub output_style: Option<TaskOutputStyle>,
 }

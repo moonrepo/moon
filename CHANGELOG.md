@@ -2,6 +2,7 @@
 
 #### 🚀 Updates
 
+- Updated cached task outputs to now be prefixed with the task target when printing to the console.
 - Updated Bun/Yarn lockfile parsing to temporarily log a warning on parse failure instead of exiting
   with an error. This change was made as there are currently no actionable or human-readable error
   messages.

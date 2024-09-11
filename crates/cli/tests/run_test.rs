@@ -192,7 +192,7 @@ fn disambiguates_same_tasks_with_diff_args_envs() {
 
     // The order changes so we can't snapshot it
     assert!(predicate::str::contains("taskDeps:base")
-        .count(8) // 4 start + 4 end
+        .count(11) // 4 start + 4 end + 3 output prefixes
         .eval(&output));
     assert!(predicate::str::contains("a b c").eval(&output));
     assert!(predicate::str::contains("TEST_VAR=value").eval(&output));

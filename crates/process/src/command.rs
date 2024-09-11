@@ -1,5 +1,5 @@
 use crate::{async_command::AsyncCommand, command_inspector::CommandInspector, shell::Shell};
-use moon_common::{color, is_test_env};
+use moon_common::color;
 use moon_console::Console;
 use rustc_hash::FxHashMap;
 use std::{
@@ -187,23 +187,8 @@ impl Command {
         self
     }
 
-    pub fn set_prefix(&mut self, prefix: &str, width: Option<usize>) -> &mut Command {
-        let label = if let Some(width) = width {
-            format!("{: >width$}", prefix, width = width)
-        } else {
-            prefix.to_owned()
-        };
-
-        if is_test_env() {
-            self.prefix = Some(format!("{label} | "));
-        } else {
-            self.prefix = Some(format!(
-                "{} {} ",
-                color::log_target(label),
-                color::muted("|")
-            ));
-        }
-
+    pub fn set_prefix(&mut self, prefix: &str) -> &mut Command {
+        self.prefix = Some(prefix.to_owned());
         self
     }
 

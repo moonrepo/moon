@@ -1,6 +1,6 @@
 use crate::target_error::TargetError;
 use crate::target_scope::TargetScope;
-use moon_common::{Id, ID_CHARS};
+use moon_common::{color, Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
@@ -110,6 +110,22 @@ impl Target {
 
     pub fn as_str(&self) -> &str {
         &self.id
+    }
+
+    pub fn to_prefix(&self, width: Option<usize>) -> String {
+        let prefix = self.as_str();
+
+        let label = if let Some(width) = width {
+            format!("{: >width$}", prefix, width = width)
+        } else {
+            prefix.to_owned()
+        };
+
+        if color::no_color() {
+            format!("{label} | ")
+        } else {
+            format!("{} {} ", color::log_target(label), color::muted("|"))
+        }
     }
 
     pub fn is_all_task(&self, task_id: &str) -> bool {

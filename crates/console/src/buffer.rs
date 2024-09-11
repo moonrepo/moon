@@ -153,6 +153,21 @@ impl ConsoleBuffer {
         })
     }
 
+    pub fn write_line_with_prefix<T: AsRef<str>>(
+        &self,
+        data: T,
+        prefix: &str,
+    ) -> miette::Result<()> {
+        let data = data.as_ref();
+        let lines = data
+            .lines()
+            .map(|line| format!("{prefix}{line}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        self.write_line(lines)
+    }
+
     pub fn write_newline(&self) -> miette::Result<()> {
         self.write("\n")
     }

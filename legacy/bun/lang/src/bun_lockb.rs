@@ -19,7 +19,7 @@ pub fn load_lockfile_dependencies(
         Err(_) => {
             warn!(
                 lockfile = ?path,
-                "Failed to parse bun.lockb (in Yarn format). Resolved dependency matching will be disabled.",
+                "Failed to parse bun.lockb (in Yarn format). Task generated hashes will be different.",
             );
 
             return Ok(deps);

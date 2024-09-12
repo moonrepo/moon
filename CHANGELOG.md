@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.28.2
+
 #### 🚀 Updates
 
 - Updated cached task outputs to now be prefixed with the task target when printing to the console.

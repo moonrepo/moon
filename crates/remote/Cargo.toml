@@ -1,0 +1,23 @@
+[package]
+name = "moon_remote"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+# moon_common = { path = "../common" }
+# moon_target = { path = "../target" }
+# clap = { workspace = true }
+# rustc-hash = { workspace = true }
+# scc = { workspace = true, features = ["serde"] }
+# serde = { workspace = true }
+bazel-remote-apis = "0.6.0"
+miette = { workspace = true }
+tokio = { workspace = true }
+tonic = { version = "0.12.2", default-features = false, features = [
+	"channel",
+	"tls-native-roots",
+] }
+
+[lints]
+workspace = true

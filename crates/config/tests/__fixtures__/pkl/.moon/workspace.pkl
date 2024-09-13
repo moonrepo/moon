@@ -2,14 +2,19 @@ codeowners {
 	globalPaths = new Mapping {
 		["*"] = List("@admins")
 	}
-	// orderBy = "project-name"
+	orderBy = "project-name"
 	requiredApprovals = 1
 	syncOnRun = true
 }
 
 constraints {
 	enforceProjectTypeRelationships = true
-	tagRelationships = new Mapping {
-		["a"] = List("b", "c")
+	tagRelationships = Map("a", List("b", "c"))
+}
+
+vcs {
+	remoteCandidates = new Listing {
+		"main"
+		"origin/main"
 	}
 }

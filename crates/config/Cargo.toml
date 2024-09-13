@@ -18,6 +18,7 @@ indexmap = { workspace = true }
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
+rpkl = "0.3.2"
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",

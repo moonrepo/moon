@@ -3236,6 +3236,7 @@ dependencies = [
  "once_cell",
  "proto_core",
  "regex",
+ "rpkl",
  "rustc-hash 2.0.0",
  "schematic",
  "semver",
@@ -5085,9 +5086,9 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93d11c8e6ebe4095fdbb13e88cee7c682588da98982ced7de67983e53b3b6844"
+checksum = "e9cb8a7d354e90a2daaf6f2a22b2792b9c3a10ec314a0408c5c9ed7884035412"
 dependencies = [
  "dunce",
  "rmp-serde",

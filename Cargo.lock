@@ -4110,6 +4110,9 @@ version = "0.0.1"
 dependencies = [
  "bazel-remote-apis",
  "miette",
+ "moon_config",
+ "moon_project",
+ "moon_task",
  "tokio",
  "tonic",
 ]
@@ -6779,6 +6782,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "bytes",
+ "flate2",
  "h2",
  "http 1.1.0",
  "http-body 1.0.1",

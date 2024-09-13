@@ -5,17 +5,15 @@ edition = "2021"
 publish = false
 
 [dependencies]
-# moon_common = { path = "../common" }
-# moon_target = { path = "../target" }
-# clap = { workspace = true }
-# rustc-hash = { workspace = true }
-# scc = { workspace = true, features = ["serde"] }
-# serde = { workspace = true }
+moon_config = { path = "../config" }
+moon_project = { path = "../project" }
+moon_task = { path = "../task" }
 bazel-remote-apis = "0.6.0"
 miette = { workspace = true }
 tokio = { workspace = true }
 tonic = { version = "0.12.2", default-features = false, features = [
 	"channel",
+	"gzip",
 	"tls-native-roots",
 ] }
 

@@ -10,6 +10,7 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 bazel-remote-apis = "0.6.0"
 miette = { workspace = true }
+starbase_utils = { workspace = true }
 tokio = { workspace = true }
 tonic = { version = "0.12.2", default-features = false, features = [
 	"channel",

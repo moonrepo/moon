@@ -69,7 +69,7 @@ impl TaskRunnerContainer {
 
         OutputArchiver {
             app: &self.app_context,
-            project_config: &self.project.config,
+            project: &self.project,
             task,
         }
     }

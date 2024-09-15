@@ -3923,6 +3923,7 @@ dependencies = [
  "moon_config",
  "moon_project",
  "moon_task",
+ "starbase_utils",
  "tokio",
  "tonic",
 ]
@@ -4106,6 +4107,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
+ "moon_remote",
  "moon_task",
  "moon_task_hasher",
  "moon_test_utils2",

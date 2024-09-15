@@ -65,11 +65,7 @@ impl<'task> TaskRunner<'task> {
 
         Ok(Self {
             cache,
-            archiver: OutputArchiver {
-                app,
-                project_config: &project.config,
-                task,
-            },
+            archiver: OutputArchiver { app, project, task },
             hydrater: OutputHydrater { app, task },
             platform_manager: PlatformManager::read(),
             project,

@@ -22,6 +22,7 @@ moon_console = { path = "../console" }
 moon_platform = { path = "../../legacy/core/platform" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
+moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }
 moon_time = { path = "../time" }

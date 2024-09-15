@@ -1,10 +1,10 @@
-use crate::asset_api::Asset;
+use crate::cache_api::Cache;
 use std::sync::{Arc, OnceLock};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
 pub struct RemoteService {
-    pub asset: Asset,
+    pub cache: Cache,
 }
 
 impl RemoteService {

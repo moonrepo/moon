@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use bazel_remote_apis::build::bazel::remote::asset::v1::fetch_client::FetchClient;
 use bazel_remote_apis::build::bazel::remote::asset::v1::push_client::PushClient;
 use bazel_remote_apis::build::bazel::remote::asset::v1::{PushBlobRequest, Qualifier};
@@ -8,14 +6,14 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::content_addressable_
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     compressor, digest_function, BatchUpdateBlobsRequest, Digest,
 };
-use miette::IntoDiagnostic;
 use moon_config::{RemoteCacheCompression, RemoteConfig};
 use moon_project::Project;
 use moon_task::Task;
 use starbase_utils::fs;
+use std::path::Path;
 use tokio::sync::RwLock;
 use tonic::codec::CompressionEncoding;
-use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint};
+use tonic::transport::Channel;
 
 const INSTANCE_NAME: &str = "moon_task_outputs";
 
@@ -26,22 +24,7 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub async fn new(config: &RemoteConfig) -> miette::Result<Self> {
-        let mut endpoint = Endpoint::from_static("http://[::1]:50051");
-
-        // Support TLS connections
-        if let Some(tls) = &config.tls {
-            // let pem = std::fs::read_to_string(data_dir.join("tls/ca.pem"))?;
-            // let ca = Certificate::from_pem(pem);
-
-            // let tls_config = ClientTlsConfig::new()
-            //     .ca_certificate(ca)
-            //     .domain_name("example.com")
-            //     .with_enabled_roots();
-        }
-
-        let channel = endpoint.connect().await.into_diagnostic()?;
-
+    pub async fn new(channel: Channel, config: &RemoteConfig) -> miette::Result<Self> {
         let mut cas_client = ContentAddressableStorageClient::new(channel.clone());
         let mut fetch_client = FetchClient::new(channel.clone());
         let mut push_client = PushClient::new(channel);
@@ -51,6 +34,10 @@ impl Cache {
             let encoding = match compression {
                 RemoteCacheCompression::Gzip => CompressionEncoding::Gzip,
             };
+
+            cas_client = cas_client
+                .accept_compressed(encoding)
+                .send_compressed(encoding);
 
             fetch_client = fetch_client
                 .accept_compressed(encoding)
@@ -109,7 +96,12 @@ impl Cache {
             .push_client
             .write()
             .await
-            .push_blob(self.create_push_blob_request(project, task, digest))
+            .push_blob(PushBlobRequest {
+                instance_name: INSTANCE_NAME.into(),
+                blob_digest: Some(digest),
+                qualifiers: self.create_qualifiers(task),
+                ..Default::default()
+            })
             .await
         {
             // TODO handle error
@@ -121,39 +113,16 @@ impl Cache {
         Ok(())
     }
 
-    pub fn create_push_blob_request(
-        &self,
-        project: &Project,
-        task: &Task,
-        digest: Digest,
-    ) -> PushBlobRequest {
-        let mut request = PushBlobRequest::default();
-        request.instance_name = INSTANCE_NAME.into();
-        request.uris = vec![]; // TODO
-        request.qualifiers = vec![
+    fn create_qualifiers(&self, task: &Task) -> Vec<Qualifier> {
+        vec![
             Qualifier {
                 name: "resource_type".into(),
                 value: "application/gzip".into(),
             },
             Qualifier {
-                name: "moon.project_id".into(),
-                value: project.id.to_string(),
-            },
-            Qualifier {
-                name: "moon.project_source".into(),
-                value: project.source.to_string(),
-            },
-            Qualifier {
-                name: "moon.task_id".into(),
-                value: task.id.to_string(),
-            },
-            Qualifier {
                 name: "moon.task_target".into(),
                 value: task.target.to_string(),
             },
-        ];
-        request.expire_at = None; // Add task option
-        request.blob_digest = Some(digest);
-        request
+        ]
     }
 }

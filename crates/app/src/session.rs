@@ -15,6 +15,7 @@ use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
 use moon_project_graph::ProjectGraph;
+use moon_remote::RemoteService;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
@@ -39,7 +40,6 @@ pub struct CliSession {
     // Components
     pub config_loader: ConfigLoader,
     pub console: Console,
-    pub moonbase: Option<Arc<Moonbase>>,
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
 
@@ -71,7 +71,6 @@ impl CliSession {
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet),
             extension_registry: OnceCell::new(),
-            moonbase: None,
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceCell::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
@@ -277,7 +276,11 @@ impl AppSession for CliSession {
         if !is_test_env() && is_ci() {
             let vcs = self.get_vcs_adapter()?;
 
-            self.moonbase = startup::signin_to_moonbase(&vcs).await?;
+            startup::signin_to_moonbase(&vcs).await?;
+        }
+
+        if let Some(remote_config) = &self.workspace_config.remote {
+            RemoteService::connect(remote_config).await?;
         }
 
         Ok(None)

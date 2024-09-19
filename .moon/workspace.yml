@@ -35,3 +35,6 @@ docker:
     include:
       - '*.config.js'
       - '*.json'
+
+unstable_remote:
+  host: 'http://moon:bazel-remote@0.0.0.0:8585'

@@ -3285,6 +3285,7 @@ dependencies = [
  "moon_python_platform",
  "moon_python_tool",
  "moon_query",
+ "moon_remote",
  "moon_rust_lang",
  "moon_rust_platform",
  "moon_rust_tool",

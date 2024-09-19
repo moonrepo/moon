@@ -1,9 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use miette::IntoDiagnostic;
 use moon_config::ToolConfig;
-use moon_plugin::{
-    serialize_config, MoonEnvironment, PluginId, PluginRegistry, PluginType, ProtoEnvironment,
-};
+use moon_plugin::{serialize_config, PluginHostData, PluginId, PluginRegistry, PluginType};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
 use std::ops::Deref;
@@ -18,14 +16,10 @@ pub struct ToolchainRegistry {
 }
 
 impl ToolchainRegistry {
-    pub fn new(moon_env: Arc<MoonEnvironment>, proto_env: Arc<ProtoEnvironment>) -> Self {
+    pub fn new(host_data: PluginHostData) -> Self {
         Self {
             configs: FxHashMap::default(),
-            registry: Arc::new(PluginRegistry::new(
-                PluginType::Toolchain,
-                moon_env,
-                proto_env,
-            )),
+            registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
         }
     }
 
@@ -56,7 +50,7 @@ impl ToolchainRegistry {
                             .config
                             .insert("moon_toolchain_config".to_owned(), value);
 
-                        inject_proto_manifest_config(&id, &registry.proto_env, manifest)?;
+                        inject_proto_manifest_config(&id, &registry.host_data.proto_env, manifest)?;
 
                         Ok(())
                     })

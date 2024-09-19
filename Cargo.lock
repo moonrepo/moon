@@ -3589,9 +3589,12 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "convert_case",
+ "extism",
  "miette",
+ "moon_common",
  "moon_env",
  "moon_pdk_api",
+ "moon_project_graph",
  "proto_core",
  "scc",
  "serde_json",

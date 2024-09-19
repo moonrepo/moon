@@ -1,8 +1,10 @@
 use async_trait::async_trait;
 use moon_env::MoonEnvironment;
 use moon_plugin::{
-    Plugin, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry, PluginType,
+    Plugin, PluginHostData, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry,
+    PluginType,
 };
+use moon_project_graph::ProjectGraph;
 use proto_core::{warpgate::FileLocator, ProtoEnvironment};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::fs;
@@ -26,8 +28,11 @@ impl Plugin for TestPlugin {
 fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
     let registry = PluginRegistry::new(
         PluginType::Extension,
-        Arc::new(MoonEnvironment::new_testing(sandbox)),
-        Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
+        PluginHostData {
+            moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
+            project_graph: Arc::new(ProjectGraph::default()),
+            proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
+        },
     );
 
     // These must exist or extism errors

@@ -7,6 +7,7 @@ use proto_core::ProtoEnvironment;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{instrument, trace};
+use warpgate::host::{create_host_functions as create_shared_host_functions, HostData};
 
 #[derive(Clone, Default)]
 pub struct PluginHostData {
@@ -14,9 +15,6 @@ pub struct PluginHostData {
     pub project_graph: Arc<ProjectGraph>,
     pub proto_env: Arc<ProtoEnvironment>,
 }
-
-unsafe impl Send for PluginHostData {}
-unsafe impl Sync for PluginHostData {}
 
 impl fmt::Debug for PluginHostData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -27,8 +25,10 @@ impl fmt::Debug for PluginHostData {
     }
 }
 
-pub fn create_moon_host_functions(data: PluginHostData) -> Vec<Function> {
-    vec![
+pub fn create_host_functions(data: PluginHostData, shared_data: HostData) -> Vec<Function> {
+    let mut functions = vec![];
+    functions.extend(create_shared_host_functions(shared_data));
+    functions.extend(vec![
         Function::new(
             "load_project",
             [ValType::I64],
@@ -43,14 +43,15 @@ pub fn create_moon_host_functions(data: PluginHostData) -> Vec<Function> {
             UserData::new(data),
             load_task,
         ),
-    ]
+    ]);
+    functions
 }
 
 fn map_error(error: miette::Report) -> Error {
     Error::msg(error.to_string())
 }
 
-// #[instrument(name = "host_load_project", skip_all)]
+#[instrument(name = "host_load_project", skip_all)]
 fn load_project(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],
@@ -84,7 +85,7 @@ fn load_project(
     Ok(())
 }
 
-// #[instrument(name = "host_load_task", skip_all)]
+#[instrument(name = "host_load_task", skip_all)]
 fn load_task(
     plugin: &mut CurrentPlugin,
     inputs: &[Val],

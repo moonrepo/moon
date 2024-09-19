@@ -12,8 +12,8 @@ use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
-    host::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer, PluginLoader,
-    PluginLocator, PluginManifest, Wasm,
+    host::HostData, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
+    PluginLoader, PluginLocator, PluginManifest, Wasm,
 };
 
 #[allow(dead_code)]
@@ -127,7 +127,7 @@ impl<T: Plugin> PluginRegistry<T> {
         self.plugins.contains(id)
     }
 
-    // #[instrument(skip(self, op))]
+    #[instrument(skip(self, op))]
     pub async fn load_with_config<I, L, F>(
         &self,
         id: I,
@@ -159,15 +159,14 @@ impl<T: Plugin> PluginRegistry<T> {
         let plugin_file = self.loader.load_plugin(id, locator).await?;
 
         // Create host functions (provided by warpgate)
-        let mut functions = vec![];
-
-        functions.extend(create_host_functions(HostData {
-            http_client: self.loader.get_client()?.clone(),
-            virtual_paths: self.virtual_paths.clone(),
-            working_dir: self.host_data.moon_env.working_dir.clone(),
-        }));
-
-        functions.extend(create_moon_host_functions(self.host_data.clone()));
+        let functions = create_host_functions(
+            self.host_data.clone(),
+            HostData {
+                http_client: self.loader.get_client()?.clone(),
+                virtual_paths: self.virtual_paths.clone(),
+                working_dir: self.host_data.moon_env.working_dir.clone(),
+            },
+        );
 
         // Create the manifest and let the consumer configure it
         let mut manifest = self.create_manifest(id, plugin_file)?;

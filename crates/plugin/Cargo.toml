@@ -13,6 +13,7 @@ moon_common = { path = "../common" }
 moon_env = { path = "../env" }
 moon_pdk_api = { version = "0.0.10", path = "../pdk-api" }
 moon_project_graph = { path = "../project-graph" }
+moon_target = { path = "../target" }
 async-trait = { workspace = true }
 convert_case = "0.6.0"
 extism = { workspace = true }
@@ -25,6 +26,12 @@ starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 warpgate = { workspace = true }
+
+# For extism/wastime
+regalloc2 = "=0.9.3"
+wasmtime = "23.0.0"
+wasi-common = "23.0.0"
+wiggle = "23.0.0"
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

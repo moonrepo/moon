@@ -82,9 +82,8 @@ impl<T: Plugin> PluginRegistry<T> {
         // Inherit moon and proto virtual paths.
         manifest = manifest.with_allowed_paths(
             self.virtual_paths
-                .clone()
-                .into_iter()
-                .map(|(key, value)| (key.to_string_lossy().to_string(), value)),
+                .iter()
+                .map(|(key, value)| (key.to_string_lossy().to_string(), value.to_owned())),
         );
 
         // Disable timeouts as some functions, like dependency installs,
@@ -128,7 +127,7 @@ impl<T: Plugin> PluginRegistry<T> {
         self.plugins.contains(id)
     }
 
-    #[instrument(skip(self, op))]
+    // #[instrument(skip(self, op))]
     pub async fn load_with_config<I, L, F>(
         &self,
         id: I,

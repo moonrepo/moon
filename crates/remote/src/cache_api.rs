@@ -17,6 +17,7 @@ use tonic::transport::Channel;
 
 const INSTANCE_NAME: &str = "moon_task_outputs";
 
+#[derive(Debug)]
 pub struct Cache {
     cas_client: RwLock<ContentAddressableStorageClient<Channel>>,
     fetch_client: RwLock<FetchClient<Channel>>,
@@ -71,6 +72,8 @@ impl Cache {
     ) -> miette::Result<()> {
         let digest = self.create_digest(hash, path)?;
 
+        dbg!(&task.target.id, hash, &digest);
+
         // Upload the blob to the CAS
         if let Err(error) = self
             .cas_client
@@ -87,6 +90,10 @@ impl Cache {
             })
             .await
         {
+            dbg!(&error);
+            dbg!(error.code());
+            dbg!(error.metadata());
+            dbg!(error.message());
             // TODO handle error
             panic!("{:?}", error);
         }

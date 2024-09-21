@@ -1,7 +1,16 @@
 # https://github.com/johnthagen/min-sized-rust
+# https://corrode.dev/blog/tips-for-faster-rust-compile-times/
+# https://davidlattimore.github.io/posts/2024/02/04/speeding-up-the-rust-edit-build-run-cycle.html
+# https://eisel.me/lld
 
 # [build]
 # rustflags = ["--cfg", "tokio_unstable"]
+
+[profile.dev]
+split-debuginfo = "unpacked"
+# Uncomment these 2 if using the debugger!
+debug = 0
+strip = "debuginfo"
 
 [profile.release]
 codegen-units = 1
@@ -9,6 +18,9 @@ lto = true
 opt-level = "z"
 panic = "abort"
 strip = "debuginfo"
+
+# [target.aarch64-apple-darwin]
+# rustflags = ["-C", "link-arg=-fuse-ld=/opt/homebrew/opt/llvm/bin/ld64.lld"]
 
 # [registries.crates-io]
 # protocol = "sparse"

@@ -12,7 +12,6 @@ on:
       - tests/**
       - Cargo.lock
       - Cargo.toml
-      - Makefile.toml
       - rust-toolchain.toml
 
 concurrency:

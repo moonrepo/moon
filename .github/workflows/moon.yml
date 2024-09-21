@@ -6,6 +6,7 @@ on:
       - master
   pull_request:
     paths:
+      - .cargo/config.toml
       - .github/workflows/moon.yml
       - .moon/*.yml
       - crates/**
@@ -14,6 +15,9 @@ on:
       - website/**
       - package.json
       - yarn.lock
+      - Cargo.lock
+      - Cargo.toml
+      - rust-toolchain.toml
 
 jobs:
   ci:
@@ -22,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node-version: [18, 20]
+        node-version: [18, 20, 22]
     steps:
       - uses: actions/checkout@v4
         with:

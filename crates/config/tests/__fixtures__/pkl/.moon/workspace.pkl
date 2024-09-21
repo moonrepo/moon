@@ -8,8 +8,26 @@ codeowners {
 }
 
 constraints {
-	enforceProjectTypeRelationships = true
+	enforceProjectTypeRelationships = false
 	tagRelationships = Map("a", List("b", "c"))
+}
+
+docker {
+	prune {
+		deleteVendorDirectories = false
+		installToolchainDeps = false
+	}
+	scaffold {
+		copyToolchainFiles = false
+		include = List("*.js")
+	}
+}
+
+generator {
+	templates = new Listing {
+		"/shared-templates"
+		"./templates"
+	}
 }
 
 vcs {

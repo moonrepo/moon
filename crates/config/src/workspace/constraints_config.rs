@@ -3,7 +3,7 @@ use rustc_hash::FxHashMap;
 use schematic::Config;
 
 /// Configures boundaries and constraints between projects.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct ConstraintsConfig {
     /// Enforces relationships between projects based on each project's
     /// `type` setting.

@@ -837,20 +837,65 @@ extensions:
 
     mod pkl {
         use super::*;
+        use indexmap::IndexMap;
+        use moon_config::*;
         use starbase_sandbox::locate_fixture;
+        use std::str::FromStr;
 
         #[test]
         fn loads_pkl() {
             moon_common::enable_pkl_configs();
 
             let config = test_config(locate_fixture("pkl"), |path| {
-                dbg!(&path);
                 WorkspaceConfig::load_from(path)
             });
 
             dbg!(&config);
 
-            assert!(false);
+            assert_eq!(
+                config.codeowners,
+                CodeownersConfig {
+                    global_paths: IndexMap::from_iter([(
+                        "*".to_owned(),
+                        vec!["@admins".to_owned()]
+                    )]),
+                    order_by: CodeownersOrderBy::ProjectName,
+                    required_approvals: Some(1),
+                    sync_on_run: true,
+                }
+            );
+            assert_eq!(
+                config.constraints,
+                ConstraintsConfig {
+                    enforce_project_type_relationships: false,
+                    tag_relationships: FxHashMap::from_iter([(
+                        Id::raw("a"),
+                        vec![Id::raw("b"), Id::raw("c")]
+                    )]),
+                }
+            );
+            assert_eq!(
+                config.docker,
+                DockerConfig {
+                    prune: DockerPruneConfig {
+                        delete_vendor_directories: false,
+                        install_toolchain_deps: false
+                    },
+                    scaffold: DockerScaffoldConfig {
+                        copy_toolchain_files: false,
+                        include: vec![GlobPath("*.js".into())]
+                    }
+                }
+            );
+            assert_eq!(
+                config.generator,
+                GeneratorConfig {
+                    templates: vec![
+                        TemplateLocator::from_str("/shared-templates").unwrap(),
+                        TemplateLocator::from_str("./templates").unwrap()
+                    ]
+                }
+            );
         }
     }
 }

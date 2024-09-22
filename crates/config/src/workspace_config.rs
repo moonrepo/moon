@@ -66,7 +66,7 @@ fn validate_projects<D, C>(
 }
 
 /// Configures projects in the workspace, using both globs and explicit source paths.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct WorkspaceProjectsConfig {
     /// A list of globs in which to locate project directories.
     /// Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects.
@@ -77,7 +77,7 @@ pub struct WorkspaceProjectsConfig {
 }
 
 /// Configures projects in the workspace.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 #[config(serde(
     untagged,
     expecting = "expected a list of globs, a map of projects, or both"

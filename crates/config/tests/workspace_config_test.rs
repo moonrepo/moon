@@ -839,6 +839,7 @@ extensions:
         use super::*;
         use indexmap::IndexMap;
         use moon_config::*;
+        use moon_target::Target;
         use starbase_sandbox::locate_fixture;
         use std::str::FromStr;
 
@@ -894,6 +895,61 @@ extensions:
                         TemplateLocator::from_str("/shared-templates").unwrap(),
                         TemplateLocator::from_str("./templates").unwrap()
                     ]
+                }
+            );
+            assert_eq!(
+                config.hasher,
+                HasherConfig {
+                    batch_size: 1000,
+                    ignore_patterns: vec![GlobPath("*.map".into())],
+                    ignore_missing_patterns: vec![GlobPath(".env".into())],
+                    optimization: HasherOptimization::Performance,
+                    walk_strategy: HasherWalkStrategy::Vcs,
+                    warn_on_missing_inputs: true
+                }
+            );
+            assert_eq!(
+                config.notifier,
+                NotifierConfig {
+                    webhook_url: Some("http://localhost".into())
+                }
+            );
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                    globs: vec!["apps/*".into(), "packages/*".into()],
+                    sources: FxHashMap::from_iter([(Id::raw("root"), ".".into())])
+                })
+            );
+            assert_eq!(
+                config.runner,
+                RunnerConfig {
+                    archivable_targets: vec![
+                        Target::parse(":build").unwrap(),
+                        Target::parse("app:lint").unwrap()
+                    ],
+                    auto_clean_cache: false,
+                    cache_lifetime: "1 day".into(),
+                    inherit_colors_for_piped_tasks: false,
+                    log_running_command: true
+                }
+            );
+            assert!(!config.telemetry);
+            assert_eq!(
+                config.vcs,
+                VcsConfig {
+                    default_branch: "main".into(),
+                    hooks: FxHashMap::from_iter([(
+                        "pre-commit".into(),
+                        vec![
+                            "moon check --all --affected".into(),
+                            "moon run :pre-commit".into()
+                        ]
+                    )]),
+                    manager: VcsManager::Git,
+                    provider: VcsProvider::GitLab,
+                    remote_candidates: vec!["main".into(), "origin/main".into()],
+                    sync_hooks: true
                 }
             );
         }

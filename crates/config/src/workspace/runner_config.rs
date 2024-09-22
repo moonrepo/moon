@@ -2,7 +2,7 @@ use moon_target::Target;
 use schematic::Config;
 
 /// Configures aspects of the task runner (also known as the action pipeline).
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct RunnerConfig {
     /// List of target's for tasks without outputs, that should be
     /// cached and persisted.

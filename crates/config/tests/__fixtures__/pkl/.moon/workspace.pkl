@@ -30,9 +30,48 @@ generator {
 	}
 }
 
+hasher {
+	batchSize = 1000
+	ignorePatterns = List("*.map")
+	ignoreMissingPatterns = Set(".env")
+	optimization = "performance"
+	walkStrategy = "vcs"
+	warnOnMissingInputs = true
+}
+
+notifier {
+	webhookUrl = "http://localhost"
+}
+
+projects {
+	globs = List("apps/*", "packages/*")
+	sources = new Mapping {
+		["root"] = "."
+	}
+}
+
+runner {
+	archivableTargets = List(":build", "app:lint")
+	autoCleanCache = false
+	cacheLifetime = "1 day"
+	inheritColorsForPipedTasks = false
+	logRunningCommand = true
+}
+
+telemetry = false
+
 vcs {
+	defaultBranch = "main"
+	hooks = new Mapping {
+		["pre-commit"] = List("moon check --all --affected", "moon run :pre-commit")
+	}
+	manager = "git"
+	provider = "gitlab"
 	remoteCandidates = new Listing {
 		"main"
 		"origin/main"
 	}
+	syncHooks = true
 }
+
+versionConstraint = ">=1.2.3"

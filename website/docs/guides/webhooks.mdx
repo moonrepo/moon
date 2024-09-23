@@ -380,16 +380,16 @@ Tools can be scoped with the `SetupToolchain(...)` labels.
 }
 ```
 
-### `target.running`
+### `task.running`
 
-<HeadingApiLink to="/api/types#PayloadTargetRunning" />
+<HeadingApiLink to="/api/types#PayloadTaskRunning" />
 
-Triggered when a [target](../concepts/target) has started to run (via
-[`moon run`](../commands/run)).
+Triggered when a [task](../concepts/task) has started to run (via
+[`moon run`](../commands/run) or similar command).
 
 ```json
 {
-  "type": "target.running",
+  "type": "task.running",
   "createdAt": "...",
   "environment": "...",
   "event": {
@@ -399,20 +399,20 @@ Triggered when a [target](../concepts/target) has started to run (via
 }
 ```
 
-### `target.ran`
+### `task.ran`
 
-<HeadingApiLink to="/api/types#PayloadTargetRan" />
+<HeadingApiLink to="/api/types#PayloadTaskRan" />
 
-Triggered when a [target](../concepts/target) has finished running. If the run failed, the `error`
+Triggered when a [task](../concepts/task) has finished running. If the run failed, the `error`
 field will be set with the error message.
 
 For more information about the action, refer to the [`action.finished`](#actionfinished) event. Ran
-targets can be scoped with the `RunTask(...)`, `RunInteractiveTask(...)`, and
+tasks can be scoped with the `RunTask(...)`, `RunInteractiveTask(...)`, and
 `RunPersistentTask(...)` labels.
 
 ```json
 {
-  "type": "target.ran",
+  "type": "task.ran",
   "createdAt": "...",
   "environment": "...",
   "event": {

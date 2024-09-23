@@ -210,6 +210,10 @@ impl Platform for NodePlatform {
             if let Some(peer_dependencies) = &package_json.data.peer_dependencies {
                 find_implicit_relations(peer_dependencies, &DependencyScope::Peer);
             }
+
+            if let Some(optional_dependencies) = &package_json.data.optional_dependencies {
+                find_implicit_relations(optional_dependencies, &DependencyScope::Build);
+            }
         }
 
         Ok(implicit_deps)
@@ -382,6 +386,10 @@ impl Platform for NodePlatform {
         if let Ok(Some(package)) = PackageJsonCache::read(manifest_path) {
             let name = package.data.name.unwrap_or_else(|| "unknown".into());
             let mut hash = DepsHash::new(name);
+
+            if let Some(optional_deps) = &package.data.optional_dependencies {
+                hash.add_deps(optional_deps);
+            }
 
             if let Some(peer_deps) = &package.data.peer_dependencies {
                 hash.add_deps(peer_deps);

@@ -42,6 +42,10 @@ impl NodeTargetHash {
             }
         };
 
+        if let Some(optional_deps) = &package.optional_dependencies {
+            copy_deps(optional_deps, &mut self.dependencies);
+        }
+
         if let Some(peer_deps) = &package.peer_dependencies {
             copy_deps(peer_deps, &mut self.dependencies);
         }

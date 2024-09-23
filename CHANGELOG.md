@@ -6,6 +6,8 @@
 
 - Fixed an issue where projects whose `id` was renamed in `moon.yml` wasn't being reflected when
   inheriting project dependencies through the toolchain/platform integration.
+- Fixed `optionalDependencies` not being considered a project relationship for Bun/Node implicit
+  `package.json` detection.
 
 ## 1.28.2
 

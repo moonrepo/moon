@@ -98,6 +98,10 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
             link_deps(deps, DependencyScope::Peer);
         }
 
+        if let Some(deps) = &package_json.data.optional_dependencies {
+            link_deps(deps, DependencyScope::Build);
+        }
+
         Ok(true)
     })?;
 

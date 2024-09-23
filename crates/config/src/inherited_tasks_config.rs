@@ -1,8 +1,8 @@
+use crate::config_finder::ConfigFinder;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
 use crate::shapes::InputPath;
-use crate::ConfigFinder;
 use moon_common::{cacheable, Id};
 use rustc_hash::{FxHashMap, FxHasher};
 use schematic::schema::indexmap::{IndexMap, IndexSet};

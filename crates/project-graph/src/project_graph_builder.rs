@@ -499,6 +499,9 @@ impl<'app> ProjectGraphBuilder<'app> {
             )?;
         }
 
+        // Load all config files first so that ID renaming occurs
+        self.preload_configs(&mut sources)?;
+
         // Extend graph from subscribers
         debug!("Extending project graph from subscribers");
 
@@ -510,9 +513,6 @@ impl<'app> ProjectGraphBuilder<'app> {
             })
             .await?
             .aliases;
-
-        // Load all config files
-        self.preload_configs(&mut sources)?;
 
         // Find the root project
         self.root_id = sources.iter().find_map(|(id, source)| {

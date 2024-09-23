@@ -135,7 +135,7 @@ impl CacheEngine {
         K: AsRef<OsStr>,
         T: Serialize,
         F: FnOnce() -> Fut,
-        Fut: Future<Output = miette::Result<()>> + Send,
+        Fut: Future<Output = miette::Result<bool>> + Send,
     {
         let path = self.resolve_path(path);
         let name = fs::file_name(&path);
@@ -144,12 +144,12 @@ impl CacheEngine {
         let hash = self.hash.save_manifest_without_hasher(&name, data)?;
 
         if hash != state.data.last_hash {
-            op().await?;
+            let result = op().await?;
 
             state.data.last_hash = hash;
             state.save()?;
 
-            return Ok(true);
+            return Ok(result);
         }
 
         Ok(false)

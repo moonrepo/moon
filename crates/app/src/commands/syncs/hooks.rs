@@ -48,10 +48,10 @@ pub async fn sync(session: CliSession, args: SyncHooksArgs) -> AppResult {
         unsync_vcs_hooks(&context).await?;
 
         done(format!("Successfully removed {} hooks", hook_names), true);
-    } else {
-        sync_vcs_hooks(&context, args.force).await?;
-
+    } else if sync_vcs_hooks(&context, args.force).await? {
         done(format!("Successfully created {} hooks", hook_names), true);
+    } else {
+        done("Did not sync hooks".into(), true);
     }
 
     Ok(())

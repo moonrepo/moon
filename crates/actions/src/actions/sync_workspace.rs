@@ -4,7 +4,7 @@ use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
-use moon_common::{color, is_docker};
+use moon_common::color;
 use moon_project_graph::ProjectGraph;
 use std::sync::Arc;
 use tokio::task;
@@ -22,12 +22,6 @@ pub async fn sync_workspace(
             "Skipping workspace sync because {} is set",
             color::symbol("MOON_SKIP_SYNC_WORKSPACE")
         );
-
-        return Ok(ActionStatus::Skipped);
-    }
-
-    if is_docker() {
-        debug!("Skipping workspace sync because we're in a Docker container or image");
 
         return Ok(ActionStatus::Skipped);
     }

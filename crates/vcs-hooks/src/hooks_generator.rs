@@ -4,7 +4,7 @@ use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 pub enum ShellType {
     Bash,
@@ -69,25 +69,31 @@ impl<'app> HooksGenerator<'app> {
     }
 
     #[instrument(skip_all)]
-    pub async fn generate(self) -> miette::Result<()> {
-        // When in Docker, we should avoid creating the hooks as they are:
-        // - Not particularly useful in this context.
-        // - It creates a `.git` folder, which in turn enables moon caching,
-        //   which we typically don't want in Docker.
-        if is_docker() || !self.vcs.is_enabled() {
-            debug!(
-                "In a Docker container/image, not generating {} hooks",
-                self.config.manager
-            );
+    pub async fn generate(self) -> miette::Result<bool> {
+        // Do not generate if there is no `.git` folder, otherwise this
+        // will create an invalid `.git` folder, which in turn enables moon caching
+        // and causes downstream issues!
+        if !self.vcs.is_enabled() {
+            if is_docker() {
+                warn!(
+                    "In a Docker container/image and .git does not exist, not generating {} hooks",
+                    self.config.manager
+                );
+            } else {
+                debug!(
+                    "Not generating {} hooks as .git does not exist",
+                    self.config.manager
+                );
+            }
 
-            return Ok(());
+            return Ok(false);
         }
 
         debug!("Generating {} hooks", self.config.manager);
 
         self.sync_to_vcs(self.create_hooks()?).await?;
 
-        Ok(())
+        Ok(true)
     }
 
     fn create_hooks(&self) -> miette::Result<FxHashMap<&'app String, PathBuf>> {

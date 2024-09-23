@@ -163,7 +163,7 @@ impl CodeownersGenerator {
         Ok(())
     }
 
-    pub fn generate(mut self) -> miette::Result<()> {
+    pub fn generate(mut self) -> miette::Result<bool> {
         debug!(file = ?self.file_path, "Generating and writing CODEOWNERS file");
 
         self.file.flush().map_err(|error| FsError::Create {
@@ -171,7 +171,7 @@ impl CodeownersGenerator {
             error: Box::new(error),
         })?;
 
-        Ok(())
+        Ok(true)
     }
 
     fn format_path(&self, path: PathBuf) -> String {

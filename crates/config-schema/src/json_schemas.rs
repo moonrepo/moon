@@ -49,7 +49,7 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
     generator.generate(out_dir.join("workspace.json"), create_jsonschema_renderer())
 }
 
-pub fn generate_json_schemas(out_dir: impl AsRef<Path>) -> miette::Result<()> {
+pub fn generate_json_schemas(out_dir: impl AsRef<Path>) -> miette::Result<bool> {
     let out_dir = out_dir.as_ref();
 
     generate_project(out_dir)?;
@@ -58,5 +58,5 @@ pub fn generate_json_schemas(out_dir: impl AsRef<Path>) -> miette::Result<()> {
     generate_toolchain(out_dir)?;
     generate_workspace(out_dir)?;
 
-    Ok(())
+    Ok(true)
 }

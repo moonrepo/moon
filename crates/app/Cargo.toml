@@ -10,6 +10,7 @@ moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline = { path = "../action-pipeline" }
 moon_actions = { path = "../actions" }
+moon_affected = { path = "../affected" }
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_cache = { path = "../cache" }

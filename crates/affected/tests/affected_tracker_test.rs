@@ -5,33 +5,31 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 fn create_state_from_file(file: &str) -> AffectedProjectState {
     let mut state = AffectedProjectState::default();
-    state.by_files.insert(file.into());
+    state.files.insert(file.into());
     state
 }
 
 fn create_state_from_dependency(id: &str) -> AffectedProjectState {
     let mut state = AffectedProjectState::default();
-    state.by_dependencies.insert(Id::raw(id));
+    state.upstream.insert(Id::raw(id));
     state
 }
 
 fn create_state_from_dependencies(ids: &[&str]) -> AffectedProjectState {
     let mut state = AffectedProjectState::default();
-    state
-        .by_dependencies
-        .extend(ids.iter().map(|id| Id::raw(id)));
+    state.upstream.extend(ids.iter().map(|id| Id::raw(id)));
     state
 }
 
 fn create_state_from_dependent(id: &str) -> AffectedProjectState {
     let mut state = AffectedProjectState::default();
-    state.by_dependents.insert(Id::raw(id));
+    state.downstream.insert(Id::raw(id));
     state
 }
 
 fn create_state_from_dependents(ids: &[&str]) -> AffectedProjectState {
     let mut state = AffectedProjectState::default();
-    state.by_dependents.extend(ids.iter().map(|id| Id::raw(id)));
+    state.downstream.extend(ids.iter().map(|id| Id::raw(id)));
     state
 }
 
@@ -45,7 +43,7 @@ mod affected_tracker {
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
         tracker.track_projects().unwrap();
-        let affected = tracker.build().unwrap();
+        let affected = tracker.build();
 
         assert!(affected.projects.is_empty());
     }
@@ -57,7 +55,7 @@ mod affected_tracker {
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
         tracker.track_projects().unwrap();
-        let affected = tracker.build().unwrap();
+        let affected = tracker.build();
 
         assert_eq!(
             affected.projects,
@@ -83,7 +81,7 @@ mod affected_tracker {
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
         tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
         tracker.track_projects().unwrap();
-        let affected = tracker.build().unwrap();
+        let affected = tracker.build();
 
         assert_eq!(
             affected.projects,
@@ -107,7 +105,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -126,7 +124,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -147,7 +145,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -166,7 +164,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -188,7 +186,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -211,7 +209,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -230,7 +228,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -251,7 +249,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -270,7 +268,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,
@@ -291,7 +289,7 @@ mod affected_tracker {
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
-            let affected = tracker.build().unwrap();
+            let affected = tracker.build();
 
             assert_eq!(
                 affected.projects,

@@ -8,6 +8,7 @@ pub use crate::queries::touched_files::{
 };
 use crate::session::CliSession;
 use clap::{Args, Subcommand};
+use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_vcs::TouchedStatus;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
@@ -190,12 +191,11 @@ pub struct QueryProjectsArgs {
 #[instrument(skip_all)]
 pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult {
     let console = &session.console;
-    let vcs = session.get_vcs_adapter()?;
     let project_graph = session.get_project_graph().await?;
 
-    let options = QueryProjectsOptions {
+    let mut options = QueryProjectsOptions {
         alias: args.alias,
-        affected: args.affected,
+        affected: None,
         dependents: args.dependents,
         id: args.id,
         json: args.json,
@@ -205,13 +205,23 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         source: args.source,
         tags: args.tags,
         tasks: args.tasks,
-        touched_files: if args.affected {
-            load_touched_files(&vcs).await?
-        } else {
-            FxHashSet::default()
-        },
         type_of: args.type_of,
     };
+
+    if args.affected {
+        let vcs = session.get_vcs_adapter()?;
+        let touched_files = load_touched_files(&vcs).await?;
+
+        let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
+
+        if args.dependents {
+            affected_tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::Direct);
+        }
+
+        affected_tracker.track_projects()?;
+
+        options.affected = Some(affected_tracker.build());
+    }
 
     let mut projects = query_projects(&project_graph, &options).await?;
     projects.sort_by(|a, d| a.id.cmp(&d.id));

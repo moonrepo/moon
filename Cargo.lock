@@ -3015,6 +3015,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils2",
  "rustc-hash 2.0.0",
+ "serde",
  "tokio",
 ]
 
@@ -3064,6 +3065,7 @@ dependencies = [
  "moon_action_graph",
  "moon_action_pipeline",
  "moon_actions",
+ "moon_affected",
  "moon_api",
  "moon_app_context",
  "moon_bun_platform",
@@ -3729,7 +3731,6 @@ dependencies = [
  "moon_config",
  "moon_file_group",
  "moon_task",
- "rustc-hash 2.0.0",
  "serde",
  "thiserror",
 ]

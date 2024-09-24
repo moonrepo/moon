@@ -16,6 +16,7 @@ moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils2 = { path = "../test-utils" }

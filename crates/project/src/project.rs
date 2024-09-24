@@ -6,7 +6,6 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_task::Task;
-use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -110,19 +109,6 @@ impl Project {
         }
 
         Ok(tasks)
-    }
-
-    /// Return true if this project is affected based on touched files.
-    /// Since the project is a folder, we check if a file starts with the root.
-    #[deprecated]
-    pub fn is_affected(&self, touched_files: &FxHashSet<WorkspaceRelativePathBuf>) -> bool {
-        if self.is_root_level() {
-            return !touched_files.is_empty();
-        }
-
-        touched_files
-            .iter()
-            .any(|file| file.starts_with(&self.source))
     }
 
     /// Return true if the root-level project.

@@ -2,6 +2,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_task::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
+use serde::Serialize;
 
 pub enum AffectedBy {
     AlwaysAffected,
@@ -31,11 +32,17 @@ pub enum UpstreamScope {
     Deep,
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct AffectedProjectState {
-    pub by_dependencies: FxHashSet<Id>,
-    pub by_dependents: FxHashSet<Id>,
-    pub by_files: FxHashSet<WorkspaceRelativePathBuf>,
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub files: FxHashSet<WorkspaceRelativePathBuf>,
+
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub upstream: FxHashSet<Id>,
+
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub downstream: FxHashSet<Id>,
 }
 
 impl AffectedProjectState {
@@ -45,13 +52,13 @@ impl AffectedProjectState {
         for by in list {
             match by {
                 AffectedBy::DownstreamProject(id) => {
-                    state.by_dependents.insert(id);
+                    state.downstream.insert(id);
                 }
                 AffectedBy::TouchedFile(file) => {
-                    state.by_files.insert(file);
+                    state.files.insert(file);
                 }
                 AffectedBy::UpstreamProject(id) => {
-                    state.by_dependencies.insert(id);
+                    state.upstream.insert(id);
                 }
                 _ => {}
             };
@@ -61,12 +68,20 @@ impl AffectedProjectState {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct AffectedTaskState {
-    pub by_dependencies: FxHashSet<Target>,
-    pub by_dependents: FxHashSet<Target>,
-    pub by_env: FxHashSet<String>,
-    pub by_files: FxHashSet<WorkspaceRelativePathBuf>,
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub env: FxHashSet<String>,
+
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub files: FxHashSet<WorkspaceRelativePathBuf>,
+
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub upstream: FxHashSet<Target>,
+
+    #[serde(skip_serializing_if = "FxHashSet::is_empty")]
+    pub downstream: FxHashSet<Target>,
 }
 
 impl AffectedTaskState {
@@ -76,16 +91,16 @@ impl AffectedTaskState {
         for by in list {
             match by {
                 AffectedBy::DownstreamTask(target) => {
-                    state.by_dependents.insert(target);
+                    state.downstream.insert(target);
                 }
                 AffectedBy::EnvironmentVariable(name) => {
-                    state.by_env.insert(name);
+                    state.env.insert(name);
                 }
                 AffectedBy::TouchedFile(file) => {
-                    state.by_files.insert(file);
+                    state.files.insert(file);
                 }
                 AffectedBy::UpstreamTask(target) => {
-                    state.by_dependencies.insert(target);
+                    state.upstream.insert(target);
                 }
                 _ => {}
             };
@@ -95,19 +110,24 @@ impl AffectedTaskState {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Affected {
+    #[serde(skip_serializing_if = "FxHashMap::is_empty")]
     pub projects: FxHashMap<Id, AffectedProjectState>,
+
     pub should_check: bool,
+
+    #[serde(skip_serializing_if = "FxHashMap::is_empty")]
     pub tasks: FxHashMap<Target, AffectedTaskState>,
 }
 
 impl Affected {
     pub fn is_project_affected(&self, id: &Id) -> bool {
-        self.projects.get(id).is_some()
+        self.should_check && self.projects.get(id).is_some()
     }
 
     pub fn is_task_affected(&self, target: &Target) -> bool {
-        self.tasks.get(target).is_some()
+        self.should_check && self.tasks.get(target).is_some()
     }
 }

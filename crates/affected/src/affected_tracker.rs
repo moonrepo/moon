@@ -37,7 +37,7 @@ impl<'app> AffectedTracker<'app> {
         }
     }
 
-    pub fn build(self) -> miette::Result<Affected> {
+    pub fn build(self) -> Affected {
         let mut affected = Affected::default();
 
         for (id, list) in self.projects {
@@ -51,45 +51,47 @@ impl<'app> AffectedTracker<'app> {
         }
 
         affected.should_check = !self.touched_files.is_empty();
-
-        Ok(affected)
+        affected
     }
 
     pub fn with_project_scopes(
         &mut self,
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
-    ) {
+    ) -> &mut Self {
         self.project_upstream = upstream_scope;
         self.project_downstream = downstream_scope;
+        self
     }
 
     pub fn with_task_scopes(
         &mut self,
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
-    ) {
+    ) -> &mut Self {
         self.task_upstream = upstream_scope;
         self.task_downstream = downstream_scope;
+        self
     }
 
     pub fn with_scopes(
         &mut self,
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
-    ) {
+    ) -> &mut Self {
         self.with_project_scopes(upstream_scope, downstream_scope);
         self.with_task_scopes(upstream_scope, downstream_scope);
+        self
     }
 
-    pub fn track_projects(&mut self) -> miette::Result<()> {
+    pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
         for project in self.project_graph.get_all()? {
             if let Some(affected) = self.is_project_affected(&project) {
                 self.mark_project_affected(&project, affected)?;
             }
         }
 
-        Ok(())
+        Ok(self)
     }
 
     fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {

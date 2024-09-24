@@ -1,11 +1,12 @@
 use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::Id;
+use moon_common::{color, Id};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetScope, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
+use tracing::{debug, trace};
 
 pub struct AffectedTracker<'app> {
     project_graph: &'app ProjectGraph,
@@ -25,6 +26,8 @@ impl<'app> AffectedTracker<'app> {
         project_graph: &'app ProjectGraph,
         touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
     ) -> Self {
+        debug!("Creating affected tracker");
+
         Self {
             project_graph,
             touched_files,
@@ -41,13 +44,30 @@ impl<'app> AffectedTracker<'app> {
         let mut affected = Affected::default();
 
         for (id, list) in self.projects {
-            affected
-                .projects
-                .insert(id, AffectedProjectState::from(list));
+            let state = AffectedProjectState::from(list);
+
+            debug!(
+                by_files = ?state.files.iter().collect::<Vec<_>>(),
+                by_upstream = ?state.upstream.iter().collect::<Vec<_>>(),
+                by_downstream = ?state.downstream.iter().collect::<Vec<_>>(),
+                "Project {} is affected", color::id(&id),
+            );
+
+            affected.projects.insert(id, state);
         }
 
         for (target, list) in self.tasks {
-            affected.tasks.insert(target, AffectedTaskState::from(list));
+            let state = AffectedTaskState::from(list);
+
+            debug!(
+                by_env = ?state.env.iter().collect::<Vec<_>>(),
+                by_files = ?state.files.iter().collect::<Vec<_>>(),
+                by_upstream = ?state.upstream.iter().collect::<Vec<_>>(),
+                by_downstream = ?state.downstream.iter().collect::<Vec<_>>(),
+                "Task {} is affected", color::label(&target),
+            );
+
+            affected.tasks.insert(target, state);
         }
 
         affected.should_check = !self.touched_files.is_empty();
@@ -59,6 +79,12 @@ impl<'app> AffectedTracker<'app> {
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
     ) -> &mut Self {
+        debug!(
+            upstream = ?upstream_scope,
+            downstream = ?downstream_scope,
+            "Setting project relationship scopes"
+        );
+
         self.project_upstream = upstream_scope;
         self.project_downstream = downstream_scope;
         self
@@ -69,6 +95,12 @@ impl<'app> AffectedTracker<'app> {
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
     ) -> &mut Self {
+        debug!(
+            upstream = ?upstream_scope,
+            downstream = ?downstream_scope,
+            "Setting task relationship scopes"
+        );
+
         self.task_upstream = upstream_scope;
         self.task_downstream = downstream_scope;
         self
@@ -85,6 +117,8 @@ impl<'app> AffectedTracker<'app> {
     }
 
     pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
+        debug!("Tracking projects and marking any affected");
+
         for project in self.project_graph.get_all()? {
             if let Some(affected) = self.is_project_affected(&project) {
                 self.mark_project_affected(&project, affected)?;
@@ -114,6 +148,11 @@ impl<'app> AffectedTracker<'app> {
         project: &Project,
         affected: AffectedBy,
     ) -> miette::Result<()> {
+        trace!(
+            project_id = project.id.as_str(),
+            "Marking project as affected"
+        );
+
         self.projects
             .entry(project.id.clone())
             .or_default()
@@ -127,7 +166,26 @@ impl<'app> AffectedTracker<'app> {
 
     fn track_project_dependencies(&mut self, project: &Project, depth: u16) -> miette::Result<()> {
         if self.project_upstream == UpstreamScope::None {
+            trace!(
+                project_id = project.id.as_str(),
+                "Not tracking dependencies as upstream scope is none"
+            );
+
             return Ok(());
+        }
+
+        if depth == 0 {
+            if self.project_upstream == UpstreamScope::Direct {
+                trace!(
+                    project_id = project.id.as_str(),
+                    "Tracking direct dependencies"
+                );
+            } else {
+                trace!(
+                    project_id = project.id.as_str(),
+                    "Tracking deep dependencies (entire family)"
+                );
+            }
         }
 
         for dep_id in self.project_graph.dependencies_of(project)? {
@@ -150,7 +208,26 @@ impl<'app> AffectedTracker<'app> {
 
     fn track_project_dependents(&mut self, project: &Project, depth: u16) -> miette::Result<()> {
         if self.project_downstream == DownstreamScope::None {
+            trace!(
+                project_id = project.id.as_str(),
+                "Not tracking dependents as downstream scope is none"
+            );
+
             return Ok(());
+        }
+
+        if depth == 0 {
+            if self.project_downstream == DownstreamScope::Direct {
+                trace!(
+                    project_id = project.id.as_str(),
+                    "Tracking direct dependents"
+                );
+            } else {
+                trace!(
+                    project_id = project.id.as_str(),
+                    "Tracking deep dependents (entire family)"
+                );
+            }
         }
 
         for dep_id in self.project_graph.dependents_of(project)? {
@@ -172,6 +249,8 @@ impl<'app> AffectedTracker<'app> {
     }
 
     pub fn track_tasks(&mut self) -> miette::Result<()> {
+        debug!("Tracking tasks and marking any affected");
+
         for project in self.project_graph.get_all()? {
             for task in project.get_tasks()? {
                 if let Some(affected) = self.is_task_affected(&task)? {
@@ -184,6 +263,8 @@ impl<'app> AffectedTracker<'app> {
     }
 
     pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
+        debug!(targets = ?targets, "Tracking tasks by target and marking any affected");
+
         let mut lookup = FxHashMap::<&Id, Vec<&Id>>::default();
 
         for target in targets {
@@ -232,6 +313,8 @@ impl<'app> AffectedTracker<'app> {
     }
 
     fn mark_task_affected(&mut self, task: &Task, affected: AffectedBy) -> miette::Result<()> {
+        trace!(target = task.target.as_str(), "Marking task as affected");
+
         self.tasks
             .entry(task.target.clone())
             .or_default()

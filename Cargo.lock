@@ -3017,6 +3017,7 @@ dependencies = [
  "rustc-hash 2.0.0",
  "serde",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

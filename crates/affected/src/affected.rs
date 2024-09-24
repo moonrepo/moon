@@ -15,7 +15,7 @@ pub enum AffectedBy {
 }
 
 // Dependents
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum DownstreamScope {
     #[default]
     None,
@@ -24,7 +24,7 @@ pub enum DownstreamScope {
 }
 
 // Dependencies
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum UpstreamScope {
     None,
     Direct,

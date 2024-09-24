@@ -15,19 +15,20 @@ pub struct AffectedTracker<'app> {
 }
 
 impl<'app> AffectedTracker<'app> {
-    pub fn with_project_scopes(
-        &mut self,
-        upstream_scope: UpstreamScope,
-        downstream_scope: DownstreamScope,
-    ) -> &mut Self {
-        self.project_upstream = upstream_scope;
-        self.project_downstream = downstream_scope;
-        self
+    pub fn new(
+        project_graph: &'app ProjectGraph,
+        touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
+    ) -> Self {
+        Self {
+            project_graph,
+            touched_files,
+            projects: FxHashMap::default(),
+            project_downstream: DownstreamScope::default(),
+            project_upstream: UpstreamScope::default(),
+        }
     }
 
-    pub fn track(mut self) -> miette::Result<Affected> {
-        self.track_projects()?;
-
+    pub fn build(self) -> miette::Result<Affected> {
         let mut affected = Affected::default();
 
         for (id, list) in self.projects {
@@ -39,7 +40,16 @@ impl<'app> AffectedTracker<'app> {
         Ok(affected)
     }
 
-    fn track_projects(&mut self) -> miette::Result<()> {
+    pub fn with_project_scopes(
+        &mut self,
+        upstream_scope: UpstreamScope,
+        downstream_scope: DownstreamScope,
+    ) {
+        self.project_upstream = upstream_scope;
+        self.project_downstream = downstream_scope;
+    }
+
+    pub fn track_projects(&mut self) -> miette::Result<()> {
         for project in self.project_graph.get_all()? {
             let affected = if project.is_root_level() {
                 // If at the root, any file affects it
@@ -74,21 +84,23 @@ impl<'app> AffectedTracker<'app> {
     }
 
     fn track_project_dependencies(&mut self, project: &Project, depth: u16) -> miette::Result<()> {
+        if self.project_upstream == UpstreamScope::None {
+            return Ok(());
+        }
+
         for dep_id in self.project_graph.dependencies_of(project)? {
             self.projects
                 .entry(dep_id.to_owned())
                 .or_default()
                 .push(AffectedBy::DownstreamProject(project.id.clone()));
 
-            if depth == 0 {
-                if self.project_upstream == UpstreamScope::Direct {
-                    continue;
-                } else {
-                    let dep_project = self.project_graph.get(dep_id)?;
-
-                    self.track_project_dependencies(&dep_project, depth + 1)?;
-                }
+            if depth == 0 && self.project_upstream == UpstreamScope::Direct {
+                continue;
             }
+
+            let dep_project = self.project_graph.get(dep_id)?;
+
+            self.track_project_dependencies(&dep_project, depth + 1)?;
         }
 
         Ok(())

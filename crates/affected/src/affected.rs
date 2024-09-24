@@ -9,21 +9,24 @@ pub enum AffectedBy {
 }
 
 // Dependents
-#[derive(PartialEq)]
+#[derive(Default, PartialEq)]
 pub enum DownstreamScope {
+    #[default]
     None,
     Direct,
     Deep,
 }
 
 // Dependencies
-#[derive(PartialEq)]
+#[derive(Default, PartialEq)]
 pub enum UpstreamScope {
+    None,
     Direct,
+    #[default]
     Deep,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct AffectedProjectState {
     pub by_dependencies: FxHashSet<Id>,
     pub by_dependents: FxHashSet<Id>,
@@ -52,7 +55,20 @@ impl AffectedProjectState {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Affected {
     pub projects: FxHashMap<Id, AffectedProjectState>,
+}
+
+impl Affected {
+    pub fn is_project_affected(&self, id: &Id) -> bool {
+        self.projects
+            .get(id)
+            .map(|state| {
+                !state.by_dependencies.is_empty()
+                    || !state.by_dependents.is_empty()
+                    || !state.by_files.is_empty()
+            })
+            .unwrap_or(false)
+    }
 }

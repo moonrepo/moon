@@ -15,7 +15,10 @@ moon_project_graph = { path = "../project-graph" }
 moon_target = { path = "../target" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-thiserror = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils2 = { path = "../test-utils" }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

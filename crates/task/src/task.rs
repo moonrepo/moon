@@ -125,6 +125,7 @@ impl Task {
 
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
+    #[deprecated]
     pub fn is_affected(
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,

@@ -3,7 +3,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_task::{Target, Task};
+use moon_task::{Target, TargetScope, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 
@@ -50,6 +50,8 @@ impl<'app> AffectedTracker<'app> {
             affected.tasks.insert(target, AffectedTaskState::from(list));
         }
 
+        affected.should_check = !self.touched_files.is_empty();
+
         Ok(affected)
     }
 
@@ -82,17 +84,9 @@ impl<'app> AffectedTracker<'app> {
 
     pub fn track_projects(&mut self) -> miette::Result<()> {
         for project in self.project_graph.get_all()? {
-            let Some(affected) = self.is_project_affected(&project) else {
-                continue;
-            };
-
-            self.projects
-                .entry(project.id.clone())
-                .or_default()
-                .push(affected);
-
-            self.track_project_dependencies(&project, 0)?;
-            self.track_project_dependents(&project, 0)?;
+            if let Some(affected) = self.is_project_affected(&project) {
+                self.mark_project_affected(&project, affected)?;
+            }
         }
 
         Ok(())
@@ -112,6 +106,23 @@ impl<'app> AffectedTracker<'app> {
                 .map(|file| AffectedBy::TouchedFile(file.to_owned()))
         }
     }
+
+    fn mark_project_affected(
+        &mut self,
+        project: &Project,
+        affected: AffectedBy,
+    ) -> miette::Result<()> {
+        self.projects
+            .entry(project.id.clone())
+            .or_default()
+            .push(affected);
+
+        self.track_project_dependencies(&project, 0)?;
+        self.track_project_dependents(&project, 0)?;
+
+        Ok(())
+    }
+
     fn track_project_dependencies(&mut self, project: &Project, depth: u16) -> miette::Result<()> {
         if self.project_upstream == UpstreamScope::None {
             return Ok(());
@@ -161,9 +172,33 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_tasks(&mut self) -> miette::Result<()> {
         for project in self.project_graph.get_all()? {
             for task in project.get_tasks()? {
-                let Some(affected) = self.is_task_affected(&task)? else {
-                    continue;
-                };
+                if let Some(affected) = self.is_task_affected(&task)? {
+                    self.mark_task_affected(task, affected)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
+        let mut lookup = FxHashMap::<&Id, Vec<&Id>>::default();
+
+        for target in targets {
+            if let TargetScope::Project(project_id) = &target.scope {
+                lookup.entry(project_id).or_default().push(&target.task_id);
+            }
+        }
+
+        for (project_id, task_ids) in lookup {
+            let project = self.project_graph.get(project_id)?;
+
+            for task_id in task_ids {
+                let task = project.get_task(task_id)?;
+
+                if let Some(affected) = self.is_task_affected(&task)? {
+                    self.mark_task_affected(task, affected)?;
+                }
             }
         }
 
@@ -192,5 +227,14 @@ impl<'app> AffectedTracker<'app> {
         }
 
         Ok(None)
+    }
+
+    fn mark_task_affected(&mut self, task: &Task, affected: AffectedBy) -> miette::Result<()> {
+        self.tasks
+            .entry(task.target.clone())
+            .or_default()
+            .push(affected);
+
+        Ok(())
     }
 }

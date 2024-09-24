@@ -98,6 +98,7 @@ impl AffectedTaskState {
 #[derive(Debug, Default)]
 pub struct Affected {
     pub projects: FxHashMap<Id, AffectedProjectState>,
+    pub should_check: bool,
     pub tasks: FxHashMap<Target, AffectedTaskState>,
 }
 

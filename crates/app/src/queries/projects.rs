@@ -9,7 +9,7 @@ use moon_project_graph::ProjectGraph;
 use moon_task::Task;
 use moon_vcs::BoxedVcs;
 use rustc_hash::{FxHashMap, FxHashSet};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::json;
 use std::{
@@ -20,6 +20,7 @@ use std::{
 use tracing::{debug, trace};
 
 #[derive(Default, Serialize)]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
 pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub affected: Option<Affected>,
@@ -37,12 +38,14 @@ pub struct QueryProjectsOptions {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
 pub struct QueryProjectsResult {
     pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
 }
 
 #[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
 pub struct QueryTasksResult {
     pub tasks: BTreeMap<Id, BTreeMap<Id, Task>>,
     pub options: QueryProjectsOptions,

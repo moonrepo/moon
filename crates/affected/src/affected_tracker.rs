@@ -80,8 +80,8 @@ impl<'app> AffectedTracker<'app> {
         downstream_scope: DownstreamScope,
     ) -> &mut Self {
         debug!(
-            upstream = ?upstream_scope,
-            downstream = ?downstream_scope,
+            upstream = %upstream_scope,
+            downstream = %downstream_scope,
             "Setting project relationship scopes"
         );
 
@@ -96,8 +96,8 @@ impl<'app> AffectedTracker<'app> {
         downstream_scope: DownstreamScope,
     ) -> &mut Self {
         debug!(
-            upstream = ?upstream_scope,
-            downstream = ?downstream_scope,
+            upstream = %upstream_scope,
+            downstream = %downstream_scope,
             "Setting task relationship scopes"
         );
 

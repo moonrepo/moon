@@ -1,8 +1,10 @@
+use clap::ValueEnum;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_task::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::fmt;
 
 pub enum AffectedBy {
     AlwaysAffected,
@@ -15,7 +17,7 @@ pub enum AffectedBy {
 }
 
 // Dependents
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ValueEnum)]
 pub enum DownstreamScope {
     #[default]
     None,
@@ -23,8 +25,22 @@ pub enum DownstreamScope {
     Deep,
 }
 
+impl fmt::Display for DownstreamScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::None => "none",
+                Self::Direct => "direct",
+                Self::Deep => "deep",
+            }
+        )
+    }
+}
+
 // Dependencies
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, ValueEnum)]
 pub enum UpstreamScope {
     None,
     Direct,
@@ -32,8 +48,23 @@ pub enum UpstreamScope {
     Deep,
 }
 
+impl fmt::Display for UpstreamScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::None => "none",
+                Self::Direct => "direct",
+                Self::Deep => "deep",
+            }
+        )
+    }
+}
+
 #[derive(Debug, Default, Serialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[serde(default)]
 pub struct AffectedProjectState {
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub files: FxHashSet<WorkspaceRelativePathBuf>,
@@ -69,7 +100,8 @@ impl AffectedProjectState {
 }
 
 #[derive(Debug, Default, Serialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[serde(default)]
 pub struct AffectedTaskState {
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub env: FxHashSet<String>,
@@ -111,7 +143,8 @@ impl AffectedTaskState {
 }
 
 #[derive(Debug, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[serde(default, rename_all = "camelCase")]
 pub struct Affected {
     #[serde(skip_serializing_if = "FxHashMap::is_empty")]
     pub projects: FxHashMap<Id, AffectedProjectState>,

@@ -15,7 +15,7 @@ use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
 use std::collections::BTreeMap;
-use tracing::instrument;
+use tracing::{instrument, warn};
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum QueryCommands {
@@ -147,6 +147,7 @@ pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResul
 }
 
 #[derive(Args, Clone, Debug)]
+#[group(id = "affected_group", multiple = true, requires = "affected")]
 pub struct QueryProjectsArgs {
     #[arg(help = "Filter projects using a query (takes precedence over options)")]
     query: Option<String>,
@@ -162,6 +163,13 @@ pub struct QueryProjectsArgs {
 
     #[arg(long, help = "Include direct dependents of queried projects")]
     dependents: bool,
+
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include downstream dependents of queried projects"
+    )]
+    downstream: DownstreamScope,
 
     #[arg(long, help = "Filter projects that match this ID")]
     id: Option<String>,
@@ -186,6 +194,13 @@ pub struct QueryProjectsArgs {
 
     #[arg(long = "type", help = "Filter projects of this type")]
     type_of: Option<String>,
+
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include upstream dependencies of queried projects"
+    )]
+    upstream: UpstreamScope,
 }
 
 #[instrument(skip_all)]
@@ -215,7 +230,11 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
 
         if args.dependents {
+            warn!("The --dependents option is deprecated, use --downstream instead!");
+
             affected_tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::Direct);
+        } else {
+            affected_tracker.with_project_scopes(args.upstream, args.downstream);
         }
 
         affected_tracker.track_projects()?;

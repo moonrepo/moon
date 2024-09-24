@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Implemented a new affected project and task detection/tracker that is more accurate and more
+  powerful.
+  - Can now control the depth of upstream (dependencies) and downstream (dependents).
+  - Affected information now logs more information and is included in reports/JSON.
+  - Added `--upstream` and `--downstream` options to `moon query projects`.
+
 ## 1.28.3
 
 #### 🐞 Fixes

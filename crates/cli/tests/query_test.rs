@@ -313,7 +313,7 @@ mod projects {
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "noConfig"]);
-        assert!(json.options.affected);
+        assert!(json.options.affected.is_some());
     }
 
     #[test]
@@ -377,7 +377,7 @@ mod projects {
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "basic", "noConfig"]);
-        assert!(json.options.affected);
+        assert!(json.options.affected.is_some());
         assert!(json.options.dependents);
     }
 
@@ -415,7 +415,7 @@ mod projects {
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "noConfig"]);
-        assert!(json.options.affected);
+        assert!(json.options.affected.is_some());
     }
 
     #[test]
@@ -661,7 +661,7 @@ mod projects {
             let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
             assert_eq!(ids, string_vec!["noConfig"]);
-            assert!(json.options.affected);
+            assert!(json.options.affected.is_some());
         }
     }
 }

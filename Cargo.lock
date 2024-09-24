@@ -3007,6 +3007,7 @@ dependencies = [
 name = "moon_affected"
 version = "0.0.1"
 dependencies = [
+ "clap",
  "miette",
  "moon_common",
  "moon_project",

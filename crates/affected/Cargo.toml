@@ -14,6 +14,7 @@ moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
+clap = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

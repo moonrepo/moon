@@ -25,6 +25,7 @@ moon_plugin = { path = "../plugin" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
+moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }

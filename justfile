@@ -72,3 +72,6 @@ moon-check:
 
 schemas:
 	cargo run -p moon_config_schema --features typescript
+
+bazel-remote:
+	./bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --http_address 0.0.0.0:8585 --htpasswd_file ./scripts/data/.htpasswd

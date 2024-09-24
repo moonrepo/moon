@@ -2,7 +2,8 @@ use crate::task_runner_error::TaskRunnerError;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_config::ProjectConfig;
+use moon_project::Project;
+use moon_remote::RemoteService;
 use moon_task::{TargetError, TargetScope, Task};
 use starbase_archive::tar::TarPacker;
 use starbase_archive::Archiver;
@@ -15,7 +16,7 @@ use tracing::{debug, instrument, warn};
 /// can be hydrated easily.
 pub struct OutputArchiver<'task> {
     pub app: &'task AppContext,
-    pub project_config: &'task ProjectConfig,
+    pub project: &'task Project,
     pub task: &'task Task,
 }
 
@@ -86,7 +87,7 @@ impl<'task> OutputArchiver<'task> {
                     }
                 }
                 TargetScope::Tag(tag_id) => {
-                    if self.project_config.tags.contains(tag_id) && is_matching_task {
+                    if self.project.config.tags.contains(tag_id) && is_matching_task {
                         return Ok(true);
                     }
                 }
@@ -182,7 +183,12 @@ impl<'task> OutputArchiver<'task> {
         hash: &str,
         archive_file: &Path,
     ) -> miette::Result<()> {
-        if let Some(moonbase) = Moonbase::session() {
+        if let Some(remote) = RemoteService::session() {
+            remote
+                .cache
+                .upload_artifact(self.project, self.task, hash, archive_file)
+                .await?;
+        } else if let Some(moonbase) = Moonbase::session() {
             moonbase
                 .upload_artifact_to_remote_storage(hash, archive_file, &self.task.target.id)
                 .await?;

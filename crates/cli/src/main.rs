@@ -30,7 +30,16 @@ fn get_version() -> String {
 }
 
 fn get_tracing_modules() -> Vec<String> {
-    let mut modules = string_vec!["moon", "proto", "schematic", "starbase", "warpgate"];
+    let mut modules = string_vec![
+        "moon",
+        "proto",
+        "schematic",
+        "starbase",
+        "warpgate",
+        "tonic",
+        "hyper",
+        "h2"
+    ];
 
     if env::var("MOON_DEBUG_WASM").is_ok() {
         modules.push("extism".into());

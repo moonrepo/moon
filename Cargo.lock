@@ -3012,6 +3012,7 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_target",
+ "moon_task",
  "moon_test_utils2",
  "rustc-hash 2.0.0",
  "tokio",

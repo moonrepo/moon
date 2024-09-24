@@ -13,6 +13,7 @@ moon_common = { path = "../common" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_target = { path = "../target" }
+moon_task = { path = "../task" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 

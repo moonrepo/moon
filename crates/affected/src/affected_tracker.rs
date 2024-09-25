@@ -43,13 +43,17 @@ impl<'app> AffectedTracker<'app> {
     pub fn build(self) -> Affected {
         let mut affected = Affected::default();
 
+        if self.projects.is_empty() && self.tasks.is_empty() {
+            debug!("No affected projects or tasks");
+        }
+
         for (id, list) in self.projects {
             let state = AffectedProjectState::from(list);
 
             debug!(
                 by_files = ?state.files.iter().collect::<Vec<_>>(),
-                by_upstream = ?state.upstream.iter().collect::<Vec<_>>(),
-                by_downstream = ?state.downstream.iter().collect::<Vec<_>>(),
+                by_upstream = ?state.upstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+                by_downstream = ?state.downstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
                 other = state.other,
                 "Project {} is affected", color::id(&id),
             );
@@ -63,8 +67,8 @@ impl<'app> AffectedTracker<'app> {
             debug!(
                 by_env = ?state.env.iter().collect::<Vec<_>>(),
                 by_files = ?state.files.iter().collect::<Vec<_>>(),
-                by_upstream = ?state.upstream.iter().collect::<Vec<_>>(),
-                by_downstream = ?state.downstream.iter().collect::<Vec<_>>(),
+                by_upstream = ?state.upstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+                by_downstream = ?state.downstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
                 other = state.other,
                 "Task {} is affected", color::label(&target),
             );
@@ -174,7 +178,7 @@ impl<'app> AffectedTracker<'app> {
         if self.project_upstream == UpstreamScope::None {
             trace!(
                 project_id = project.id.as_str(),
-                "Not tracking dependencies as upstream scope is none"
+                "Not tracking project dependencies as upstream scope is none"
             );
 
             return Ok(());
@@ -184,12 +188,12 @@ impl<'app> AffectedTracker<'app> {
             if self.project_upstream == UpstreamScope::Direct {
                 trace!(
                     project_id = project.id.as_str(),
-                    "Tracking direct dependencies"
+                    "Tracking direct project dependencies"
                 );
             } else {
                 trace!(
                     project_id = project.id.as_str(),
-                    "Tracking deep dependencies (entire family)"
+                    "Tracking deep project dependencies"
                 );
             }
         }
@@ -337,6 +341,53 @@ impl<'app> AffectedTracker<'app> {
             .entry(task.target.clone())
             .or_default()
             .push(affected);
+
+        self.track_task_dependencies(task, 0)?;
+
+        Ok(())
+    }
+
+    fn track_task_dependencies(&mut self, task: &Task, depth: u16) -> miette::Result<()> {
+        if self.task_upstream == UpstreamScope::None {
+            trace!(
+                target = task.target.as_str(),
+                "Not tracking task dependencies as upstream scope is none"
+            );
+
+            return Ok(());
+        }
+
+        if depth == 0 {
+            if self.task_upstream == UpstreamScope::Direct {
+                trace!(
+                    target = task.target.as_str(),
+                    "Tracking direct task dependencies"
+                );
+            } else {
+                trace!(
+                    target = task.target.as_str(),
+                    "Tracking deep task dependencies"
+                );
+            }
+        }
+
+        for dep_config in &task.deps {
+            self.tasks
+                .entry(dep_config.target.clone())
+                .or_default()
+                .push(AffectedBy::DownstreamTask(task.target.clone()));
+
+            if depth == 0 && self.task_upstream == UpstreamScope::Direct {
+                continue;
+            }
+
+            if let TargetScope::Project(project_id) = &dep_config.target.scope {
+                let dep_project = self.project_graph.get(project_id)?;
+                let dep_task = dep_project.get_task(&dep_config.target.task_id)?;
+
+                self.track_task_dependencies(dep_task, depth + 1)?;
+            }
+        }
 
         Ok(())
     }

@@ -24,7 +24,6 @@ use tracing::{debug, trace};
 pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub affected: Option<Affected>,
-    pub dependents: bool,
     pub id: Option<String>,
     pub json: bool,
     pub language: Option<String>,
@@ -225,23 +224,14 @@ pub async fn query_projects(
         load_with_regex(project_graph, options)?
     };
 
-    // Is there a better way to do this?
-    if options.dependents {
-        debug!("Including dependent projects");
+    if let Some(affected) = &options.affected {
+        debug!("Including affected projects");
 
-        let mut dependent_projects = FxHashMap::default();
-
-        for project in projects.values() {
-            for dep_id in project_graph.dependents_of(project)? {
-                if projects.contains_key(dep_id) {
-                    continue;
-                }
-
-                dependent_projects.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
+        for dep_id in affected.projects.keys() {
+            if !projects.contains_key(dep_id) {
+                projects.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
             }
         }
-
-        projects.extend(dependent_projects);
     }
 
     Ok(projects.into_values().collect::<Vec<_>>())

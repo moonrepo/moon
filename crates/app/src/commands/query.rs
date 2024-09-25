@@ -17,6 +17,9 @@ use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::{instrument, warn};
 
+const HEADING_AFFECTED: &str = "Affected";
+const HEADING_FILTERS: &str = "Filters";
+
 #[derive(Clone, Debug, Subcommand)]
 pub enum QueryCommands {
     #[command(
@@ -147,58 +150,72 @@ pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResul
 }
 
 #[derive(Args, Clone, Debug)]
-#[group(id = "affected_group", multiple = true, requires = "affected")]
+// #[group(
+//     id = "affected_group",
+//     args = ["downstream", "upstream"],
+//     multiple = true,
+//     requires = "affected",
+// )]
 pub struct QueryProjectsArgs {
     #[arg(help = "Filter projects using a query (takes precedence over options)")]
     query: Option<String>,
 
-    #[arg(long, help = "Filter projects that match this alias")]
+    #[arg(long, help = "Filter projects that match this alias", help_heading = HEADING_FILTERS)]
     alias: Option<String>,
 
     #[arg(
         long,
-        help = "Filter projects that are affected based on touched files"
+        help = "Filter projects that are affected based on touched files",
+        help_heading = HEADING_AFFECTED
     )]
     affected: bool,
 
-    #[arg(long, help = "Include direct dependents of queried projects")]
+    #[deprecated]
+    #[arg(
+        long,
+        hide = true,
+        help = "Include direct dependents of queried projects",
+        help_heading = HEADING_AFFECTED
+    )]
     dependents: bool,
 
     #[arg(
         long,
         default_value_t,
-        help = "Include downstream dependents of queried projects"
+        help = "Include downstream dependents of queried projects",
+        help_heading = HEADING_AFFECTED
     )]
     downstream: DownstreamScope,
 
-    #[arg(long, help = "Filter projects that match this ID")]
+    #[arg(long, help = "Filter projects that match this ID", help_heading = HEADING_FILTERS)]
     id: Option<String>,
 
     #[arg(long, help = "Print the projects in JSON format")]
     json: bool,
 
-    #[arg(long, help = "Filter projects of this programming language")]
+    #[arg(long, help = "Filter projects of this programming language", help_heading = HEADING_FILTERS)]
     language: Option<String>,
 
-    #[arg(long, help = "Filter projects that match this source path")]
+    #[arg(long, help = "Filter projects that match this source path", help_heading = HEADING_FILTERS)]
     stack: Option<String>,
 
-    #[arg(long, help = "Filter projects of this tech stack")]
+    #[arg(long, help = "Filter projects of this tech stack", help_heading = HEADING_FILTERS)]
     source: Option<String>,
 
-    #[arg(long, help = "Filter projects that have the following tags")]
+    #[arg(long, help = "Filter projects that have the following tags", help_heading = HEADING_FILTERS)]
     tags: Option<String>,
 
-    #[arg(long, help = "Filter projects that have the following tasks")]
+    #[arg(long, help = "Filter projects that have the following tasks", help_heading = HEADING_FILTERS)]
     tasks: Option<String>,
 
-    #[arg(long = "type", help = "Filter projects of this type")]
+    #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
     type_of: Option<String>,
 
     #[arg(
         long,
         default_value_t,
-        help = "Include upstream dependencies of queried projects"
+        help = "Include upstream dependencies of queried projects",
+        help_heading = HEADING_AFFECTED
     )]
     upstream: UpstreamScope,
 }
@@ -211,7 +228,6 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
     let mut options = QueryProjectsOptions {
         alias: args.alias,
         affected: None,
-        dependents: args.dependents,
         id: args.id,
         json: args.json,
         language: args.language,
@@ -223,14 +239,17 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         type_of: args.type_of,
     };
 
+    // Filter down to affected projects only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
-
         let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
 
+        #[allow(deprecated)]
         if args.dependents {
-            warn!("The --dependents option is deprecated, use --downstream instead!");
+            if !args.json {
+                warn!("The --dependents option is deprecated, use --downstream instead!");
+            }
 
             affected_tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::Direct);
         } else {

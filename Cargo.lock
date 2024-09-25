@@ -2913,6 +2913,7 @@ name = "moon_action_context"
 version = "0.0.1"
 dependencies = [
  "clap",
+ "moon_affected",
  "moon_common",
  "moon_target",
  "rustc-hash 2.0.0",
@@ -2929,6 +2930,7 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
+ "moon_affected",
  "moon_common",
  "moon_config",
  "moon_platform",
@@ -4000,6 +4002,7 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
+ "moon_affected",
  "moon_api",
  "moon_app_context",
  "moon_cache",

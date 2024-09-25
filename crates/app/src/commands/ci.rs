@@ -6,6 +6,7 @@ use ci_env::CiOutput;
 use clap::Args;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
+use moon_affected::{Affected, AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
 use moon_project_graph::ProjectGraph;
@@ -153,33 +154,30 @@ async fn gather_touched_files(
     Ok(result.files)
 }
 
-/// Gather runnable targets.
-async fn gather_runnable_targets(
+/// Gather affected targets.
+async fn gather_affected_targets(
     console: &mut CiConsole,
     project_graph: &ProjectGraph,
+    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
     args: &CiArgs,
-) -> AppResult<TargetList> {
-    console.print_header("Gathering potential targets")?;
+) -> AppResult<Affected> {
+    console.print_header("Gathering affected tasks")?;
 
-    let mut targets = vec![];
-
-    // Required for dependents
-    let projects = project_graph.get_all()?;
+    let mut tracker = AffectedTracker::new(project_graph, touched_files);
+    tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
 
     if args.targets.is_empty() {
-        for project in projects {
-            for task in project.get_tasks()? {
-                targets.push(task.target.clone());
-            }
-        }
+        tracker.track_tasks()?;
     } else {
-        targets.extend(args.targets.clone());
+        tracker.track_tasks_by_target(&args.targets)?;
     }
 
-    console.print_targets(&targets)?;
+    let affected = tracker.build();
+
+    // console.print_targets(affected.tasks.keys())?;
     console.print_footer()?;
 
-    Ok(targets)
+    Ok(affected)
 }
 
 /// Distribute targets across jobs if parallelism is enabled.
@@ -224,11 +222,13 @@ async fn generate_action_graph(
     session: &CliSession,
     project_graph: &ProjectGraph,
     targets: &TargetList,
-    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
+    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
     let mut action_graph_builder = session.build_action_graph(project_graph).await?;
+    action_graph_builder.set_touched_files(touched_files);
+    action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
 
     // Run dependents to ensure consumers still work correctly
     action_graph_builder.run_from_requirements(RunRequirements {
@@ -240,7 +240,6 @@ async fn generate_action_graph(
                 .iter()
                 .map(|target| TargetLocator::Qualified(target.to_owned())),
         ),
-        touched_files: Some(touched_files),
         ..Default::default()
     })?;
 
@@ -267,21 +266,22 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
 
     let project_graph = generate_project_graph(&session).await?;
     let touched_files = gather_touched_files(&mut console, &session, &args).await?;
-    let targets = gather_runnable_targets(&mut console, &project_graph, &args).await?;
+    let affected =
+        gather_affected_targets(&mut console, &project_graph, &touched_files, &args).await?;
 
-    if targets.is_empty() {
-        console.write_line(color::invalid("No targets to run"))?;
+    if affected.tasks.is_empty() {
+        console.write_line(color::invalid("No tasks to run"))?;
 
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
-    let (action_graph, base_context) = generate_action_graph(
+    let targets = distribute_targets_across_jobs(&mut console, &args, vec![])?;
+    let (action_graph, action_context) = generate_action_graph(
         &mut console,
         &session,
         &project_graph,
         &targets,
-        &touched_files,
+        touched_files,
     )
     .await?;
 
@@ -294,15 +294,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     // Process all tasks in the graph
     console.print_header("Running targets")?;
 
-    let results = run_action_pipeline(
-        &session,
-        ActionContext {
-            touched_files,
-            ..base_context
-        },
-        action_graph,
-    )
-    .await?;
+    let results = run_action_pipeline(&session, action_context, action_graph).await?;
 
     console.print_footer()?;
 

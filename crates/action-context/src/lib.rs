@@ -1,4 +1,5 @@
 use clap::ValueEnum;
+use moon_affected::Affected;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -35,11 +36,11 @@ impl TargetState {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
-    /// Should only run affected targets (via `--affected`).
-    pub affected_only: bool,
+    /// Projects and tasks that are affected (via `--affected`).
+    pub affected: Option<Affected>,
 
     /// Initial target locators passed to `moon run`, `moon ci`, etc.
     pub initial_targets: FxHashSet<Target>,

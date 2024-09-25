@@ -73,7 +73,7 @@ pub async fn install_deps(
 
     // When running against affected files, avoid install as it interrupts the workflow,
     // especially when used with VSC hooks
-    if action_context.affected_only && !is_ci() {
+    if action_context.affected.is_some() && !is_ci() {
         debug!("Running against affected files, skipping dependency install");
 
         return Ok(ActionStatus::Skipped);

@@ -50,6 +50,7 @@ impl<'app> AffectedTracker<'app> {
                 by_files = ?state.files.iter().collect::<Vec<_>>(),
                 by_upstream = ?state.upstream.iter().collect::<Vec<_>>(),
                 by_downstream = ?state.downstream.iter().collect::<Vec<_>>(),
+                other = state.other,
                 "Project {} is affected", color::id(&id),
             );
 
@@ -64,6 +65,7 @@ impl<'app> AffectedTracker<'app> {
                 by_files = ?state.files.iter().collect::<Vec<_>>(),
                 by_upstream = ?state.upstream.iter().collect::<Vec<_>>(),
                 by_downstream = ?state.downstream.iter().collect::<Vec<_>>(),
+                other = state.other,
                 "Task {} is affected", color::label(&target),
             );
 
@@ -128,7 +130,7 @@ impl<'app> AffectedTracker<'app> {
         Ok(self)
     }
 
-    fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
+    pub fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
         if project.is_root_level() {
             // If at the root, any file affects it
             self.touched_files
@@ -143,11 +145,15 @@ impl<'app> AffectedTracker<'app> {
         }
     }
 
-    fn mark_project_affected(
+    pub fn mark_project_affected(
         &mut self,
         project: &Project,
         affected: AffectedBy,
     ) -> miette::Result<()> {
+        if affected == AffectedBy::AlreadyMarked {
+            return Ok(());
+        }
+
         trace!(
             project_id = project.id.as_str(),
             "Marking project as affected"
@@ -288,7 +294,11 @@ impl<'app> AffectedTracker<'app> {
         Ok(())
     }
 
-    fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
+    pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
+        if self.is_task_marked(task) {
+            return Ok(Some(AffectedBy::AlreadyMarked));
+        }
+
         if task.metadata.empty_inputs {
             return Ok(Some(AffectedBy::AlwaysAffected));
         }
@@ -312,7 +322,15 @@ impl<'app> AffectedTracker<'app> {
         Ok(None)
     }
 
-    fn mark_task_affected(&mut self, task: &Task, affected: AffectedBy) -> miette::Result<()> {
+    pub fn is_task_marked(&self, task: &Task) -> bool {
+        self.tasks.contains_key(&task.target)
+    }
+
+    pub fn mark_task_affected(&mut self, task: &Task, affected: AffectedBy) -> miette::Result<()> {
+        if affected == AffectedBy::AlreadyMarked {
+            return Ok(());
+        }
+
         trace!(target = task.target.as_str(), "Marking task as affected");
 
         self.tasks

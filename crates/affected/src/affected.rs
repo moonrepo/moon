@@ -6,11 +6,14 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+#[derive(PartialEq)]
 pub enum AffectedBy {
+    AlreadyMarked,
     AlwaysAffected,
     DownstreamProject(Id),
     DownstreamTask(Target),
     EnvironmentVariable(String),
+    Task(Target),
     TouchedFile(WorkspaceRelativePathBuf),
     UpstreamProject(Id),
     UpstreamTask(Target),
@@ -74,6 +77,8 @@ pub struct AffectedProjectState {
 
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub downstream: FxHashSet<Id>,
+
+    pub other: bool,
 }
 
 impl AffectedProjectState {
@@ -91,7 +96,9 @@ impl AffectedProjectState {
                 AffectedBy::UpstreamProject(id) => {
                     state.upstream.insert(id);
                 }
-                _ => {}
+                _ => {
+                    state.other = true;
+                }
             };
         }
 
@@ -114,6 +121,8 @@ pub struct AffectedTaskState {
 
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
     pub downstream: FxHashSet<Target>,
+
+    pub other: bool,
 }
 
 impl AffectedTaskState {
@@ -134,7 +143,9 @@ impl AffectedTaskState {
                 AffectedBy::UpstreamTask(target) => {
                     state.upstream.insert(target);
                 }
-                _ => {}
+                _ => {
+                    state.other = true;
+                }
             };
         }
 

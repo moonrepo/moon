@@ -56,7 +56,7 @@ fn create_rust_runtime() -> Runtime {
 
 fn topo(graph: ActionGraph) -> Vec<ActionNode> {
     let mut nodes = vec![];
-    let mut iter = graph.creater_iter(graph.sort_topological().unwrap());
+    let mut iter = graph.create_iter(graph.sort_topological().unwrap());
 
     while iter.has_pending() {
         if let Some(index) = iter.next() {

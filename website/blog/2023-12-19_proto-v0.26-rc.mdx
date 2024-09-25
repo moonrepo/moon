@@ -30,7 +30,7 @@ files were a bit better, but still not great.
 
 For the most part, executing a shim as-is and doing basic work was fine, but once you needed a
 complex scenario (like above), it broke down pretty quickly. It was also further exacerbated when
-dealing with nested shim exections, for example, `npm` calls `node` under the hood. The parent shim
+dealing with nested shim executions, for example, `npm` calls `node` under the hood. The parent shim
 may be executed with `.ps1` but the child may be `.cmd`, and these do not play well together.
 
 The other problem on Windows is that scripts are not true executables, and are not easily located on
@@ -43,7 +43,7 @@ We wrote our own Rust based executable, that will replace all of the custom shim
 properly handle all of the required scenarios. This new executable is named `proto-shim`
 (`proto-shim.exe` on Windows) and is published alongside the `proto` binary.
 
-This new executable solves all of the following problems (hopfully):
+This new executable solves all of the following problems (hopefully):
 
 - Locatable on `PATH` (is an `.exe` for Windows)
 - Can pipe/redirect data

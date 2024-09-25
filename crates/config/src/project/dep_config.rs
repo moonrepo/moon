@@ -37,7 +37,7 @@ cacheable!(
         /// Scope of the dependency relationship.
         pub scope: DependencyScope,
 
-        /// Source of where the dependeny came from.
+        /// Source of where the dependency came from.
         pub source: DependencySource,
 
         /// Metadata about the source.

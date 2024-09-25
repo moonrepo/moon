@@ -26,7 +26,7 @@ export interface DependencyConfig {
 	 */
 	scope: DependencyScope;
 	/**
-	 * Source of where the dependeny came from.
+	 * Source of where the dependency came from.
 	 *
 	 * @default 'explicit'
 	 * @type {'explicit' | 'implicit'}
@@ -255,7 +255,7 @@ export interface ProjectConfig {
 	 */
 	stack: StackType;
 	/**
-	 * A list of tags that this project blongs to, for categorizing,
+	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */
 	tags: string[];
@@ -285,7 +285,7 @@ export interface PartialDependencyConfig {
 	 */
 	scope?: DependencyScope | null;
 	/**
-	 * Source of where the dependeny came from.
+	 * Source of where the dependency came from.
 	 *
 	 * @default 'explicit'
 	 */
@@ -484,7 +484,7 @@ export interface PartialProjectConfig {
 	 */
 	stack?: StackType | null;
 	/**
-	 * A list of tags that this project blongs to, for categorizing,
+	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */
 	tags?: string[] | null;

@@ -147,7 +147,7 @@ cacheable!(
         /// The technology stack of the project, for categorizing.
         pub stack: StackType,
 
-        /// A list of tags that this project blongs to, for categorizing,
+        /// A list of tags that this project belongs to, for categorizing,
         /// boundary enforcement, and task inheritance.
         pub tags: Vec<Id>,
 

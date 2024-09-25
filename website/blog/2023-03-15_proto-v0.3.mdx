@@ -47,7 +47,7 @@ $ proto install go -- --no-gobin
 
 ## Better version requirement detection
 
-Previously when proto encounted a version requirement (`^`, `~`, `>=`, etc) during version
+Previously when proto encountered a version requirement (`^`, `~`, `>=`, etc) during version
 detection, we would attempt to resolve a version that satisfied the requirement based on versions
 available in the remote manifest (what's been officially released). While this worked, it would
 result in far too many local installs as that satisfied version constantly changed.

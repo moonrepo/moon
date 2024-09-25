@@ -12,7 +12,7 @@ export interface ProtoTool {
 	id: string;
 	author: string | { name: string; email?: string; url?: string };
 
-	// Availble global binaries/directories:
+	// Available global binaries/directories:
 	// https://moonrepo.dev/docs/proto/wasm-plugin#locating-binaries
 	bins?: string[];
 	globalsDirs?: string[];

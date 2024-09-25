@@ -222,13 +222,13 @@ async fn generate_action_graph(
     session: &CliSession,
     project_graph: &ProjectGraph,
     targets: &TargetList,
-    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
     let mut action_graph_builder = session.build_action_graph(project_graph).await?;
-    action_graph_builder.set_touched_files(touched_files);
-    action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+    action_graph_builder.set_touched_files(touched_files)?;
+    action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep)?;
 
     // Run dependents to ensure consumers still work correctly
     action_graph_builder.run_from_requirements(RunRequirements {
@@ -281,7 +281,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
         &session,
         &project_graph,
         &targets,
-        touched_files,
+        &touched_files,
     )
     .await?;
 

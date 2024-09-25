@@ -339,7 +339,8 @@ mod action_graph {
             task.platform = PlatformType::Node;
 
             // Empty set works fine, just needs to be some
-            builder.set_touched_files(&FxHashSet::default());
+            let touched_files = FxHashSet::default();
+            builder.set_touched_files(&touched_files).unwrap();
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())
@@ -364,7 +365,8 @@ mod action_graph {
             task.platform = PlatformType::Node;
             task.input_files.insert(file.clone());
 
-            builder.set_touched_files(&FxHashSet::from_iter([file]));
+            let touched_files = FxHashSet::from_iter([file]);
+            builder.set_touched_files(&touched_files).unwrap();
 
             builder
                 .run_task(&project, &task, &RunRequirements::default())
@@ -1125,9 +1127,10 @@ mod action_graph {
                 let task = project.get_task("ci1-dependency").unwrap();
 
                 // Must be affected to run the dependent
-                builder.set_touched_files(&FxHashSet::from_iter([WorkspaceRelativePathBuf::from(
-                    "ci/input.txt",
-                )]));
+                let touched_files =
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("ci/input.txt")]);
+
+                builder.set_touched_files(&touched_files).unwrap();
 
                 builder
                     .run_task(

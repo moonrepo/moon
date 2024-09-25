@@ -4,6 +4,7 @@ use crate::session::CliSession;
 use clap::Args;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
+use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env};
 use moon_task::TargetLocator;
@@ -150,7 +151,15 @@ pub async fn run_target(
     }
 
     if should_run_affected {
-        action_graph_builder.set_touched_files(touched_files);
+        action_graph_builder.set_touched_files(&touched_files)?;
+        action_graph_builder.set_affected_scopes(
+            UpstreamScope::Deep,
+            if args.dependents {
+                DownstreamScope::Deep
+            } else {
+                DownstreamScope::None
+            },
+        )?;
     }
 
     // Run targets, optionally based on affected files

@@ -43,7 +43,7 @@ pub struct ActionGraphBuilder<'app> {
 
     // Affected states
     affected: Option<AffectedTracker<'app>>,
-    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    touched_files: Option<&'app FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
     initial_targets: FxHashSet<Target>,
@@ -72,7 +72,7 @@ impl<'app> ActionGraphBuilder<'app> {
             platform_manager,
             primary_targets: FxHashSet::default(),
             project_graph,
-            touched_files: FxHashSet::default(),
+            touched_files: None,
         })
     }
 
@@ -99,7 +99,9 @@ impl<'app> ActionGraphBuilder<'app> {
             context.primary_targets = mem::take(&mut self.primary_targets);
         }
 
-        context.touched_files = mem::take(&mut self.touched_files);
+        if let Some(files) = self.touched_files.take() {
+            context.touched_files = files.to_owned();
+        }
 
         context
     }
@@ -128,11 +130,25 @@ impl<'app> ActionGraphBuilder<'app> {
         Runtime::system()
     }
 
-    pub fn set_affected_scopes(&mut self, upstream: UpstreamScope, downstream: DownstreamScope) {
+    pub fn set_affected_scopes(
+        &mut self,
+        upstream: UpstreamScope,
+        downstream: DownstreamScope,
+    ) -> miette::Result<()> {
+        // If we require dependents, then we must load all projects into the
+        // graph so that the edges are created!
+        if downstream != DownstreamScope::None {
+            debug!("Force loading all projects to determine downstream relationships");
+
+            self.project_graph.get_all()?;
+        }
+
         self.affected
             .as_mut()
             .expect("Affected tracker not set!")
             .with_scopes(upstream, downstream);
+
+        Ok(())
     }
 
     pub fn set_query(&mut self, input: &'app str) -> miette::Result<()> {
@@ -141,12 +157,14 @@ impl<'app> ActionGraphBuilder<'app> {
         Ok(())
     }
 
-    pub fn set_touched_files(&mut self, touched_files: FxHashSet<WorkspaceRelativePathBuf>) {
-        self.touched_files = touched_files;
-        // self.affected = Some(AffectedTracker::new(
-        //     &self.project_graph,
-        //     &self.touched_files,
-        // ));
+    pub fn set_touched_files(
+        &mut self,
+        touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
+    ) -> miette::Result<()> {
+        self.touched_files = Some(touched_files);
+        self.affected = Some(AffectedTracker::new(&self.project_graph, touched_files));
+
+        Ok(())
     }
 
     // ACTIONS

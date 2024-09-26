@@ -119,7 +119,7 @@
     },
     "tags": {
       "title": "tags",
-      "description": "A list of tags that this project blongs to, for categorizing, boundary enforcement, and task inheritance.",
+      "description": "A list of tags that this project belongs to, for categorizing, boundary enforcement, and task inheritance.",
       "type": "array",
       "items": {
         "type": "string"
@@ -190,7 +190,7 @@
         },
         "source": {
           "title": "source",
-          "description": "Source of where the dependeny came from.",
+          "description": "Source of where the dependency came from.",
           "default": "explicit",
           "allOf": [
             {

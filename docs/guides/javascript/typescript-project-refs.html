@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.bf930cae.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.01c0f906.js" defer="defer"></script>
 <script src="/assets/js/main.0e2fa488.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -68,7 +68,7 @@ Based on our extensive experience, we suggest the following architecture as a ba
 perfect and can most definitely be expanded upon or modified to fit your needs.</p>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="root-level">Root-level<a class="hash-link" aria-label="Direct link to Root-level" title="Direct link to Root-level" href="/docs/guides/javascript/typescript-project-refs#root-level">​</a></h3>
 <p>In a polyrepo, the root <code>tsconfig.json</code> is typically the only configuration file, as it defines
-common compiler options, and includes files to typecheck. In a monorepo, these responsibilites are
+common compiler options, and includes files to typecheck. In a monorepo, these responsibilities are
 now split across multiple configuration files.</p>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="tsconfigjson"><code>tsconfig.json</code><a class="hash-link" aria-label="Direct link to tsconfigjson" title="Direct link to tsconfigjson" href="/docs/guides/javascript/typescript-project-refs#tsconfigjson">​</a></h4>
 <p>To start, the root <code>tsconfig.json</code> file is nothing more than a list of <em>all</em> projects in the
@@ -365,7 +365,7 @@ respond to every tweet.</li>
 <h3 class="anchor anchorWithStickyNavbar_JmGV" id="do-i-have-to-use-project-references">Do I have to use project references?<a class="hash-link" aria-label="Direct link to Do I have to use project references?" title="Direct link to Do I have to use project references?" href="/docs/guides/javascript/typescript-project-refs#do-i-have-to-use-project-references">​</a></h3>
 <p>Short answer, no. If you have less than say 10 projects, references may be overkill. If your
 repository is primarily an application, but then has a handful of shared npm packages, references
-may also be unncessary here. In the end, it really depends on how many projects exist in the
+may also be unnecessary here. In the end, it really depends on how many projects exist in the
 monorepo, and what your team/company is comfortable with.</p>
 <p>However, we do suggest using project references for very large monorepos (think 100s of projects),
 or repositories with a large number of contributors, or if you merely want to reduce CI typechecking

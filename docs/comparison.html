@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.bf930cae.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.01c0f906.js" defer="defer"></script>
 <script src="/assets/js/main.0e2fa488.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -66,7 +66,7 @@ you&#x27;d prefer a more granular comparison, jump down to the <a href="/docs/co
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="projects">Projects<a class="hash-link" aria-label="Direct link to Projects" title="Direct link to Projects" href="/docs/comparison#projects">​</a></h4>
 <section class="grid grid-cols-4 mb-4"><div class="col-span-2 pr-2">Turborepo infers projects from `package.json` workspaces, and does not support non-JavaScript based projects.</div><div class="col-span-2 pl-2 border-0 border-l-2 border-solid border-slate-50">moon requires projects to be defined in `.moon/workspace.yml`, and supports any programming language<sup>2</sup>.</div></section>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="tasks">Tasks<a class="hash-link" aria-label="Direct link to Tasks" title="Direct link to Tasks" href="/docs/comparison#tasks">​</a></h4>
-<section class="grid grid-cols-4 mb-4"><div class="col-span-2 pr-2">Turborepo requires `package.json` scripts to be defined for every project. This results in the same scripts being repeated constantly.</div><div class="col-span-2 pl-2 border-0 border-l-2 border-solid border-slate-50">moon avoids this overhead by using [task inheritance](#unique-features). No more repitition.</div></section>
+<section class="grid grid-cols-4 mb-4"><div class="col-span-2 pr-2">Turborepo requires `package.json` scripts to be defined for every project. This results in the same scripts being repeated constantly.</div><div class="col-span-2 pl-2 border-0 border-l-2 border-solid border-slate-50">moon avoids this overhead by using [task inheritance](#unique-features). No more repetition.</div></section>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="ci">CI<a class="hash-link" aria-label="Direct link to CI" title="Direct link to CI" href="/docs/comparison#ci">​</a></h4>
 <section class="grid grid-cols-4 mb-4"><div class="col-span-2 pr-2">Each pipeline in `turbo.json` must be individually ran as a step in CI. Scripts not configured as pipeline tasks are never ran.</div><div class="col-span-2 pl-2 border-0 border-l-2 border-solid border-slate-50">moon runs every task automatically using `moon ci`, which also supports parallelism/sharding.</div></section>
 <h4 class="anchor anchorWithStickyNavbar_JmGV" id="long-term">Long-term<a class="hash-link" aria-label="Direct link to Long-term" title="Direct link to Long-term" href="/docs/comparison#long-term">​</a></h4>

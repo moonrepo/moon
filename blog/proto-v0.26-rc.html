@@ -13,7 +13,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.b38b7279.css">
-<script src="/assets/js/runtime~main.bf930cae.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.01c0f906.js" defer="defer"></script>
 <script src="/assets/js/main.0e2fa488.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -34,7 +34,7 @@ rely on other scripting languages. The <code>.cmd</code> files barely supported 
 files were a bit better, but still not great.</p>
 <p>For the most part, executing a shim as-is and doing basic work was fine, but once you needed a
 complex scenario (like above), it broke down pretty quickly. It was also further exacerbated when
-dealing with nested shim exections, for example, <code>npm</code> calls <code>node</code> under the hood. The parent shim
+dealing with nested shim executions, for example, <code>npm</code> calls <code>node</code> under the hood. The parent shim
 may be executed with <code>.ps1</code> but the child may be <code>.cmd</code>, and these do not play well together.</p>
 <p>The other problem on Windows is that scripts are not true executables, and are not easily located on
 <code>PATH</code> (excluding <code>.cmd</code> files).</p>
@@ -43,7 +43,7 @@ may be executed with <code>.ps1</code> but the child may be <code>.cmd</code>, a
 We wrote our own Rust based executable, that will replace all of the custom shim scripts, and can
 properly handle all of the required scenarios. This new executable is named <code>proto-shim</code>
 (<code>proto-shim.exe</code> on Windows) and is published alongside the <code>proto</code> binary.</p>
-<p>This new executable solves all of the following problems (hopfully):</p>
+<p>This new executable solves all of the following problems (hopefully):</p>
 <ul>
 <li>Locatable on <code>PATH</code> (is an <code>.exe</code> for Windows)</li>
 <li>Can pipe/redirect data</li>

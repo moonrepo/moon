@@ -189,7 +189,7 @@ may also have to unquarantine moon on your system. And lastly, we also suggest
 - Fixed an issue where a persistent task may not run or error with a missing dependency hash, if ran
   alongside many other persistent tasks.
 - Fixed an issue where "build" dependencies were being synced as project references.
-- Fixed an issue where the install depenencies action wouldn't run if the vendor directory
+- Fixed an issue where the install dependencies action wouldn't run if the vendor directory
   (node_modules) was missing, but our operation was previously cached.
 - Fixed an issue where token variables were not being replaced in task scripts.
 

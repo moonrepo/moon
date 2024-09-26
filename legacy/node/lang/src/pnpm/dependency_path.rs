@@ -181,7 +181,7 @@ mod tests {
     }
 
     #[test]
-    fn parses_from_custom_regsitry_with_peer_deps() {
+    fn parses_from_custom_registry_with_peer_deps() {
         assert_eq!(
             PnpmDependencyPath::parse("example.com/foo/1.0.0_bar@2.0.0"),
             PnpmDependencyPath {

@@ -530,12 +530,12 @@ impl<'app> ActionGraphBuilder<'app> {
             self.initial_targets.insert(target.clone());
 
             // Run the target
-            let (inserted_targets, inserted_indicies) = self.run_task_by_target(target, &reqs)?;
+            let (inserted_targets, inserted_indices) = self.run_task_by_target(target, &reqs)?;
 
             // Track the primary targets
             self.primary_targets.extend(inserted_targets);
 
-            inserted_nodes.extend(inserted_indicies);
+            inserted_nodes.extend(inserted_indices);
         }
 
         Ok(inserted_nodes)

@@ -78,7 +78,7 @@ impl<'task> CommandExecutor<'task> {
         // Prepare state for the executor, and each attempt
         let mut run_state = TargetState::Failed;
 
-        self.prepate_state(context, report_item);
+        self.prepare_state(context, report_item);
 
         // For long-running process, log a message on an interval to indicate it's still running
         self.start_monitoring();
@@ -228,7 +228,7 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
-    fn prepate_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
+    fn prepare_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
         let is_primary = context.is_primary_target(&self.task.target);
         let mut output_prefix = None;
 

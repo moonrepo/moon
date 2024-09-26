@@ -71,7 +71,7 @@ You may have noticed tokens above, like `{arch}`. These are special tokens that 
 dynamic value at runtime, based on the current host machine executing the code. The following tokens
 are available:
 
-- `{version}` - The currently resolved version, as a fully-qualifed semantic version:
+- `{version}` - The currently resolved version, as a fully-qualified semantic version:
   `major.minor.patch`.
 - `{arch}` - The architecture of the host machine, like `x86_64`. These values map to Rust's
   [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html), but can be
@@ -162,7 +162,7 @@ are stored.
 - `globals-lookup-dirs` - A list of directories where global binaries are stored. This setting
   supports interpolating environment variables via the syntax `$ENV_VAR`.
 - `globals-prefix` - A string that all package names are prefixed with. For example, Cargo/Rust
-  binaries are prefixed wih `cargo-`.
+  binaries are prefixed with `cargo-`.
 
 ```toml title="protostar.toml"
 # ...

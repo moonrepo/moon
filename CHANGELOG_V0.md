@@ -285,7 +285,7 @@ immediately see the benefits in your CI pipelines.
 
 - Fixed an issue where directories in task `inputs` not using `**/*` would crash git.
 - Fixed an issue where the project graph cache was not always resetting based on changes.
-- Fixed an issue where run report action durations were innacurate.
+- Fixed an issue where run report action durations were inaccurate.
 
 #### ⚙️ Internal
 

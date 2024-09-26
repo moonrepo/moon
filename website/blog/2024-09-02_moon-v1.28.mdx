@@ -85,7 +85,7 @@ benefit, as it required consumers to open up config files to discover this metad
 write custom abstractions/tooling. We want to improve the integration of this information within
 moon, so to start, we're introducing a new token function [`@meta(key)`](/docs/concepts/token#meta).
 
-The [`@meta(key)`](/docs/concepts/token#meta) token function can be used to access project metdata
+The [`@meta(key)`](/docs/concepts/token#meta) token function can be used to access project metadata
 from both the [`project`](/docs/config/project#project) and
 [`project.metadata`](/docs/config/project#metadata-1) settings. The former values will be used
 as-is, while the latter values will be JSON stringified (since consumers can define anything).
@@ -137,8 +137,8 @@ tasks:
 
 Because `build` is disabled, its outputs may not be created. Additionally, if `build` is affected by
 touched files, the `analyze` task will not run automatically unless it was also affected. We try our
-best to accomdate these scenarios and "detect" when things should run or not, but it's fallible, as
-there's many ways that tasks can relate to each other.
+best to accommodate these scenarios and "detect" when things should run or not, but it's fallible,
+as there's many ways that tasks can relate to each other.
 
 To try and remedy this going forward, we're introducing the new `disallowRunInCiMismatch` experiment
 that will _hard error_ if an invalid relationship is configured. We want to try and capture how

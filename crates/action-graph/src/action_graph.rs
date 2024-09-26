@@ -23,7 +23,7 @@ impl ActionGraph {
         ActionGraph { graph }
     }
 
-    pub fn creater_iter(&self, indices: Vec<NodeIndex>) -> ActionGraphIter {
+    pub fn create_iter(&self, indices: Vec<NodeIndex>) -> ActionGraphIter {
         ActionGraphIter::new(&self.graph, indices)
     }
 

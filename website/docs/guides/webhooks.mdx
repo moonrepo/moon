@@ -384,8 +384,8 @@ Tools can be scoped with the `SetupToolchain(...)` labels.
 
 <HeadingApiLink to="/api/types#PayloadTaskRunning" />
 
-Triggered when a [task](../concepts/task) has started to run (via
-[`moon run`](../commands/run) or similar command).
+Triggered when a [task](../concepts/task) has started to run (via [`moon run`](../commands/run) or
+similar command).
 
 ```json
 {
@@ -403,12 +403,12 @@ Triggered when a [task](../concepts/task) has started to run (via
 
 <HeadingApiLink to="/api/types#PayloadTaskRan" />
 
-Triggered when a [task](../concepts/task) has finished running. If the run failed, the `error`
-field will be set with the error message.
+Triggered when a [task](../concepts/task) has finished running. If the run failed, the `error` field
+will be set with the error message.
 
 For more information about the action, refer to the [`action.finished`](#actionfinished) event. Ran
-tasks can be scoped with the `RunTask(...)`, `RunInteractiveTask(...)`, and
-`RunPersistentTask(...)` labels.
+tasks can be scoped with the `RunTask(...)`, `RunInteractiveTask(...)`, and `RunPersistentTask(...)`
+labels.
 
 ```json
 {

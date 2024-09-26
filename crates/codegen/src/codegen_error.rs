@@ -41,7 +41,7 @@ pub enum CodegenError {
         .original.style(Style::Path),
         .current.style(Style::Path),
     )]
-    DulicateTemplate {
+    DuplicateTemplate {
         id: Id,
         original: PathBuf,
         current: PathBuf,

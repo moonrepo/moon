@@ -69,7 +69,7 @@ impl<'app> CodeGenerator<'app> {
                     Template::new(Id::clean(fs::file_name(&template_root))?, template_root)?;
 
                 if let Some(existing_template) = self.templates.get(&template.id) {
-                    return Err(CodegenError::DulicateTemplate {
+                    return Err(CodegenError::DuplicateTemplate {
                         id: template.id,
                         original: existing_template.root.clone(),
                         current: template.root,

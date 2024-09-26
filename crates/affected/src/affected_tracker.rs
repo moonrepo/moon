@@ -273,7 +273,10 @@ impl<'app> AffectedTracker<'app> {
     }
 
     pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
-        debug!(targets = ?targets, "Tracking tasks by target and marking any affected");
+        debug!(
+            targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+            "Tracking tasks by target and marking any affected",
+        );
 
         let mut lookup = FxHashMap::<&Id, Vec<&Id>>::default();
 

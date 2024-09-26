@@ -137,8 +137,8 @@ tasks:
 
 Because `build` is disabled, its outputs may not be created. Additionally, if `build` is affected by
 touched files, the `analyze` task will not run automatically unless it was also affected. We try our
-best to accommodate these scenarios and "detect" when things should run or not, but it's fallible, as
-there's many ways that tasks can relate to each other.
+best to accommodate these scenarios and "detect" when things should run or not, but it's fallible,
+as there's many ways that tasks can relate to each other.
 
 To try and remedy this going forward, we're introducing the new `disallowRunInCiMismatch` experiment
 that will _hard error_ if an invalid relationship is configured. We want to try and capture how

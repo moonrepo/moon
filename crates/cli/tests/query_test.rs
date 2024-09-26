@@ -347,7 +347,7 @@ mod projects {
 
         assert_eq!(
             assert.output(),
-            "advanced | advanced | frontend | application | typescript\nnoConfig | no-config | unknown | unknown | unknown\n\n"
+            "advanced | advanced | frontend | application | typescript | ...\nnoConfig | no-config | unknown | unknown | unknown | ...\n\n"
         );
     }
 

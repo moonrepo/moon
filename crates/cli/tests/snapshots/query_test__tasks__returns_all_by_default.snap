@@ -3,11 +3,11 @@ source: crates/cli/tests/query_test.rs
 expression: assert.output_standardized()
 ---
 metadata
-	:build | noop
-	:test | noop
+	build | noop | test | system | Builds the project!
+	test | noop | test | system | Runs the test runner!
 platforms
-	:node | node
-	:system | noop
+	node | node | test | node | ...
+	system | noop | test | system | ...
 tasks
-	:lint | eslint
-	:test | jest
+	lint | eslint | build | node | ...
+	test | jest | test | node | ...

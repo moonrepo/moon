@@ -1,6 +1,7 @@
 ---
 title: query tasks
 sidebar_label: tasks
+toc_max_heading_level: 6
 ---
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -19,14 +20,15 @@ $ moon query tasks "task~react"
 ```
 
 By default, this will output a list of projects, and tasks within the project being indented (with a
-tab) on their own line.
+tab) on their own line, in the format of `<id> | <command> | <type> | <platform> | <description>`.
+If no description is defined, "..." will be displayed instead.
 
 ```
 web
-	:lint | eslint
-	:test | jest
+	lint | eslint | test | node | ...
+	test | jest | test | node | ...
 app
-	:format | prettier
+	format | prettier | test | node | ...
 ```
 
 The tasks can also be output in JSON ([which contains all data](/api/types/interface/Task)) by
@@ -46,9 +48,11 @@ passing the `--json` flag. The output has the following structure:
 
 ### Options
 
-- `--affected` - Filter projects that have been affected by touched files. This will only filter
-  based on files, and _does not_ include upstream or downstream dependencies.
 - `--json` - Display the projects in JSON format.
+
+#### Affected
+
+- `--affected` - Filter projects that have been affected by touched files.
 
 #### Filters
 

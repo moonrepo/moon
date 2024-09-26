@@ -6,9 +6,13 @@
 
 - Implemented a new affected project and task detection/tracker that is more accurate and more
   powerful.
-  - Can now control the depth of upstream (dependencies) and downstream (dependents).
+  - Can now control the depth of upstream (dependencies) and downstream (dependents) for projects
+    (tasks coming soon).
   - Affected information now logs more information and is included in reports/JSON.
   - Added `--upstream` and `--downstream` options to `moon query projects`.
+- Updated `moon query projects` to include the project description as a trailing value.
+- Updated `moon query tasks` to include the task type and platform, and the task description as a
+  trailing value.
 
 ## 1.28.3
 

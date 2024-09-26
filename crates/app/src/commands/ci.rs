@@ -228,7 +228,7 @@ async fn generate_action_graph(
 
     let mut action_graph_builder = session.build_action_graph(project_graph).await?;
     action_graph_builder.set_touched_files(touched_files)?;
-    action_graph_builder.set_affected_scopes(UpstreamScope::Deep, DownstreamScope::Deep)?;
+    action_graph_builder.set_affected_scopes(UpstreamScope::Direct, DownstreamScope::Deep)?;
 
     // Run dependents to ensure consumers still work correctly
     action_graph_builder.run_from_requirements(RunRequirements {

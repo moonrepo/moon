@@ -153,9 +153,9 @@ pub async fn run_target(
     if should_run_affected {
         action_graph_builder.set_touched_files(&touched_files)?;
         action_graph_builder.set_affected_scopes(
-            UpstreamScope::Deep,
+            UpstreamScope::Direct,
             if args.dependents {
-                DownstreamScope::Deep
+                DownstreamScope::Direct
             } else {
                 DownstreamScope::None
             },

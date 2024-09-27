@@ -25,6 +25,7 @@ pub struct RunRequirements {
     pub ci_check: bool,   // Check the `runInCI` option
     pub dependents: bool, // Run dependent tasks as well
     pub interactive: bool,
+    pub skip_affected: bool, // Temporary until we support task dependents properly
     pub target_locators: FxHashSet<TargetLocator>,
 }
 
@@ -276,7 +277,9 @@ impl<'app> ActionGraphBuilder<'app> {
                         "But will run all dependent tasks if affected"
                     );
 
-                    if affected.is_task_marked(task) {
+                    if let Some(by) = affected.is_task_affected(task)? {
+                        affected.mark_task_affected(task, by)?;
+
                         self.run_task_dependents(task, reqs)?;
                     }
                 }
@@ -320,15 +323,19 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Compare against touched files if provided
-        if let Some(affected) = &mut self.affected {
-            match affected.is_task_affected(task)? {
-                Some(by) => {
-                    affected.mark_task_affected(task, by)?;
-                    affected
-                        .mark_project_affected(project, AffectedBy::Task(task.target.clone()))?;
-                }
-                None => return Ok(None),
-            };
+        if !reqs.skip_affected {
+            if let Some(affected) = &mut self.affected {
+                match affected.is_task_affected(task)? {
+                    Some(by) => {
+                        affected.mark_task_affected(task, by)?;
+                        affected.mark_project_affected(
+                            project,
+                            AffectedBy::Task(task.target.clone()),
+                        )?;
+                    }
+                    None => return Ok(None),
+                };
+            }
         }
 
         // We should install deps & sync projects *before* running targets
@@ -413,6 +420,7 @@ impl<'app> ActionGraphBuilder<'app> {
         let reqs = RunRequirements {
             ci: parent_reqs.ci,
             interactive: parent_reqs.interactive,
+            skip_affected: true,
             ..Default::default()
         };
 

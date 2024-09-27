@@ -154,30 +154,33 @@ async fn gather_touched_files(
     Ok(result.files)
 }
 
-/// Gather affected targets.
-async fn gather_affected_targets(
+/// Gather potential runnable targets.
+async fn gather_potential_targets(
     console: &mut CiConsole,
     project_graph: &ProjectGraph,
-    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
     args: &CiArgs,
-) -> AppResult<Affected> {
-    console.print_header("Gathering affected tasks")?;
+) -> AppResult<TargetList> {
+    console.print_header("Gathering potential targets")?;
 
-    let mut tracker = AffectedTracker::new(project_graph, touched_files);
-    tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+    let mut targets = vec![];
+
+    // Required for dependents
+    let projects = project_graph.get_all()?;
 
     if args.targets.is_empty() {
-        tracker.track_tasks()?;
+        for project in projects {
+            for task in project.get_tasks()? {
+                targets.push(task.target.clone());
+            }
+        }
     } else {
-        tracker.track_tasks_by_target(&args.targets)?;
+        targets.extend(args.targets.clone());
     }
 
-    let affected = tracker.build();
-
-    // console.print_targets(affected.tasks.keys())?;
+    console.print_targets(&targets)?;
     console.print_footer()?;
 
-    Ok(affected)
+    Ok(targets)
 }
 
 /// Distribute targets across jobs if parallelism is enabled.
@@ -266,16 +269,15 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
 
     let project_graph = generate_project_graph(&session).await?;
     let touched_files = gather_touched_files(&mut console, &session, &args).await?;
-    let affected =
-        gather_affected_targets(&mut console, &project_graph, &touched_files, &args).await?;
+    let targets = gather_potential_targets(&mut console, &project_graph, &args).await?;
 
-    if affected.tasks.is_empty() {
+    if targets.is_empty() {
         console.write_line(color::invalid("No tasks to run"))?;
 
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&mut console, &args, vec![])?;
+    let targets = distribute_targets_across_jobs(&mut console, &args, targets)?;
     let (action_graph, action_context) = generate_action_graph(
         &mut console,
         &session,
@@ -286,13 +288,13 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     .await?;
 
     if action_graph.is_empty() {
-        console.write_line(color::invalid("No targets to run based on touched files"))?;
+        console.write_line(color::invalid("No tasks affected based on touched files"))?;
 
         return Ok(());
     }
 
     // Process all tasks in the graph
-    console.print_header("Running targets")?;
+    console.print_header("Running tasks")?;
 
     let results = run_action_pipeline(&session, action_context, action_graph).await?;
 

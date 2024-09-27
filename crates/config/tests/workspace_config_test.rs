@@ -851,7 +851,6 @@ extensions:
                 WorkspaceConfig::load_from(path)
             });
 
-            dbg!(&config);
 
             assert_eq!(
                 config.codeowners,

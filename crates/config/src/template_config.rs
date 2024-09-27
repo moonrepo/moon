@@ -11,6 +11,7 @@ macro_rules! var_setting {
         #[derive(Clone, Config, Debug, Eq, PartialEq)]
         pub struct $name {
             /// The default value of the variable if none was provided.
+            #[setting(alias = "defaultValue")]
             pub default: $ty,
 
             /// Marks the variable as internal, and won't be overwritten via CLI arguments.
@@ -220,7 +221,7 @@ impl TemplateVariable {
 
 /// Configures a template and its files to be scaffolded.
 /// Docs: https://moonrepo.dev/docs/config/template
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct TemplateConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/template.json",

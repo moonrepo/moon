@@ -80,7 +80,7 @@ derive_enum!(
 );
 
 /// Options for Bun, when used as a package manager.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct BunpmConfig {
     /// List of arguments to append to `bun install` commands.
     pub install_args: Vec<String>,
@@ -94,7 +94,7 @@ pub struct BunpmConfig {
 }
 
 /// Options for npm, when used as a package manager.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct NpmConfig {
     /// List of arguments to append to `npm install` commands.
     #[setting(default = vec!["--no-audit".into(), "--no-fund".into()])]
@@ -109,7 +109,7 @@ pub struct NpmConfig {
 }
 
 /// Options for pnpm, when used as a package manager.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct PnpmConfig {
     /// List of arguments to append to `pnpm install` commands.
     pub install_args: Vec<String>,
@@ -123,7 +123,7 @@ pub struct PnpmConfig {
 }
 
 /// Options for Yarn, when used as a package manager.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct YarnConfig {
     /// List of arguments to append to `yarn install` commands.
     pub install_args: Vec<String>,
@@ -141,7 +141,7 @@ pub struct YarnConfig {
 
 /// Configures and enables the Node.js platform.
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct NodeConfig {
     /// When `version` is defined, syncs the version as a constraint to
     /// `package.json` engines.

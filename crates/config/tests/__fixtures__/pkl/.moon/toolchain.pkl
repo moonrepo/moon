@@ -1,0 +1,31 @@
+node {
+	addEnginesConstraint = false
+	binExecArgs = List("--profile")
+	bun = null
+	dedupeOnLockfileChange = false
+	dependencyVersionFormat = "workspace-caret"
+	inferTasksFromScripts = true
+	packageManager = "yarn"
+	pnpm = null
+	rootPackageOnly = true
+	syncPackageManagerField = false
+	syncProjectWorkspaceDependencies = false
+	syncVersionManagerConfig = "nvm"
+	version = "20.12"
+	yarn {
+		installArgs = List("--immutable")
+		version = "4"
+	}
+}
+
+typescript {
+	createMissingConfig = false
+	includeProjectReferenceSources = true
+	includeSharedTypes = true
+	projectConfigFileName = "tsconfig.app.json"
+	rootConfigFileName = "tsconfig.root.json"
+	rootOptionsConfigFileName = "tsconfig.opts.json"
+	routeOutDirToCache = true
+	syncProjectReferences = false
+	syncProjectReferencesToPaths = true
+}

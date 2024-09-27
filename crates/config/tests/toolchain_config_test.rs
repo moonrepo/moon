@@ -1342,4 +1342,64 @@ typescript:
             // assert_eq!(config.typescript.unwrap().version.unwrap(), "1.30.0");
         }
     }
+
+    mod pkl {
+        use super::*;
+        use moon_config::*;
+        use starbase_sandbox::locate_fixture;
+
+        #[test]
+        fn loads_pkl() {
+            moon_common::enable_pkl_configs();
+
+            let mut config = test_config(locate_fixture("pkl"), |path| {
+                let proto = ProtoConfig::default();
+                ToolchainConfig::load_from(path, &proto)
+            });
+
+            assert_eq!(
+                config.node.take().unwrap(),
+                NodeConfig {
+                    add_engines_constraint: false,
+                    bin_exec_args: vec!["--profile".into()],
+                    bun: None,
+                    dedupe_on_lockfile_change: false,
+                    dependency_version_format: NodeVersionFormat::WorkspaceCaret,
+                    infer_tasks_from_scripts: true,
+                    npm: NpmConfig::default(),
+                    package_manager: NodePackageManager::Yarn,
+                    packages_root: ".".into(),
+                    plugin: None,
+                    pnpm: None,
+                    root_package_only: true,
+                    sync_package_manager_field: false,
+                    sync_project_workspace_dependencies: false,
+                    sync_version_manager_config: Some(NodeVersionManager::Nvm),
+                    version: Some(UnresolvedVersionSpec::parse("20.12").unwrap()),
+                    yarn: Some(YarnConfig {
+                        install_args: vec!["--immutable".into()],
+                        plugin: None,
+                        plugins: vec![],
+                        version: Some(UnresolvedVersionSpec::parse("4").unwrap())
+                    })
+                }
+            );
+            assert_eq!(
+                config.typescript.take().unwrap(),
+                TypeScriptConfig {
+                    create_missing_config: false,
+                    include_project_reference_sources: true,
+                    include_shared_types: true,
+                    plugin: None,
+                    project_config_file_name: "tsconfig.app.json".into(),
+                    root: ".".into(),
+                    root_config_file_name: "tsconfig.root.json".into(),
+                    root_options_config_file_name: "tsconfig.opts.json".into(),
+                    route_out_dir_to_cache: true,
+                    sync_project_references: false,
+                    sync_project_references_to_paths: true
+                }
+            );
+        }
+    }
 }

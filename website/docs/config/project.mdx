@@ -1022,6 +1022,28 @@ tasks:
       cache: false
 ```
 
+#### `cacheLifetime`<VersionLabel version="1.29.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cacheLifetime" />
+
+The lifetime in which a [cached task](#cache) will live before being marked as stale and re-running.
+This applies to a task even if it does not produce [outputs](#outputs).
+
+The lifetime can be configured in a human-readable string format, for example, `1 day`, `3 hr`,
+`1m`, etc. If the lifetime is not defined, the cache will live forever, or until the task inputs are
+touched.
+
+```yaml title="moon.yml" {5}
+tasks:
+  build:
+    command: 'some-costly-build'
+    options:
+      cacheLifetime: '1 day'
+```
+
+> String formats are powered by the
+> [humantime](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html) crate.
+
 #### `envFile`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />

@@ -20,8 +20,8 @@ starbase_utils = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-# For extism/wastime
-extism = "1.6.0"
+# For extism/wastime (keep in sync with proto)
+extism = { workspace = true }
 regalloc2 = "=0.9.3"
 wasmtime = "23.0.0"
 wasi-common = "23.0.0"

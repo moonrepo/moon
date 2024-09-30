@@ -45,13 +45,13 @@ regex = { version = "1.11.0", default-features = false, features = [
 	"std",
 	"perf",
 ] }
-reqwest = { version = "0.12.7", default-features = false, features = [
+reqwest = { version = "0.12.8", default-features = false, features = [
 	"rustls-tls-native-roots",
 	# We don't use openssl but its required for musl builds
 	"native-tls-vendored",
 ] }
 rustc-hash = "2.0.0"
-scc = "2.1.17"
+scc = "2.2.0"
 schematic = { version = "0.17.4", default-features = false, features = [
 	"schema",
 ] }
@@ -60,16 +60,16 @@ semver = "1.0.23"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 serde_yaml = "0.9.34"
-starbase = { version = "0.8.3" }
-starbase_archive = { version = "0.8.5", default-features = false, features = [
+starbase = { version = "0.8.4" }
+starbase_archive = { version = "0.8.6", default-features = false, features = [
 	"miette",
 	"tar-gz",
 ] }
 starbase_events = "0.6.3"
-starbase_sandbox = "0.7.3"
+starbase_sandbox = "0.7.4"
 starbase_shell = "0.5.7"
 starbase_styles = { version = "0.4.3", features = ["relative-path"] }
-starbase_utils = { version = "0.8.8", default-features = false, features = [
+starbase_utils = { version = "0.8.9", default-features = false, features = [
 	"editor-config",
 	"miette",
 ] }
@@ -91,7 +91,7 @@ uuid = { version = "1.10.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.6.0"
 extism-pdk = "1.2.1"
-proto_core = "0.41.3"
+proto_core = "0.41.4"
 proto_installer = "0.7.0"
 system_env = "0.6.0"
 version_spec = "0.7.0"

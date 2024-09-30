@@ -83,7 +83,12 @@ impl<T: Plugin> PluginRegistry<T> {
         manifest = manifest.with_allowed_host("*");
 
         // Inherit moon and proto virtual paths.
-        manifest = manifest.with_allowed_paths(self.virtual_paths.clone().into_iter());
+        manifest = manifest.with_allowed_paths(
+            self.virtual_paths
+                .clone()
+                .into_iter()
+                .map(|(key, value)| (key.to_string_lossy().to_string(), value)),
+        );
 
         // Disable timeouts as some functions, like dependency installs,
         // may take multiple minutes to complete. We also can't account

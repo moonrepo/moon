@@ -2913,6 +2913,7 @@ name = "moon_action_context"
 version = "0.0.1"
 dependencies = [
  "clap",
+ "moon_affected",
  "moon_common",
  "moon_target",
  "rustc-hash 2.0.0",
@@ -2929,6 +2930,7 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
+ "moon_affected",
  "moon_common",
  "moon_config",
  "moon_platform",
@@ -3004,6 +3006,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_affected"
+version = "0.0.1"
+dependencies = [
+ "clap",
+ "miette",
+ "moon_common",
+ "moon_project",
+ "moon_project_graph",
+ "moon_target",
+ "moon_task",
+ "moon_test_utils2",
+ "rustc-hash 2.0.0",
+ "serde",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "moon_api"
 version = "0.0.1"
 dependencies = [
@@ -3049,6 +3069,7 @@ dependencies = [
  "moon_action_graph",
  "moon_action_pipeline",
  "moon_actions",
+ "moon_affected",
  "moon_api",
  "moon_app_context",
  "moon_bun_platform",
@@ -3714,7 +3735,6 @@ dependencies = [
  "moon_config",
  "moon_file_group",
  "moon_task",
- "rustc-hash 2.0.0",
  "serde",
  "thiserror",
 ]
@@ -3925,7 +3945,6 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
- "tracing",
 ]
 
 [[package]]
@@ -3956,6 +3975,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_task_graph"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_target",
+ "petgraph",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_task_hasher"
 version = "0.0.1"
 dependencies = [
@@ -3982,6 +4014,7 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
+ "moon_affected",
  "moon_api",
  "moon_app_context",
  "moon_cache",

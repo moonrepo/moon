@@ -4,8 +4,9 @@ use moon_action::{
     SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
-use moon_common::Id;
-use moon_common::{color, path::WorkspaceRelativePathBuf};
+use moon_affected::{AffectedBy, AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{color, Id};
 use moon_config::{PlatformType, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::{Project, ProjectError};
@@ -18,19 +19,17 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 use tracing::{debug, instrument, trace};
 
-type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
-
 #[derive(Default)]
-pub struct RunRequirements<'app> {
+pub struct RunRequirements {
     pub ci: bool,         // Are we in a CI environment
     pub ci_check: bool,   // Check the `runInCI` option
     pub dependents: bool, // Run dependent tasks as well
     pub interactive: bool,
+    pub skip_affected: bool, // Temporary until we support task dependents properly
     pub target_locators: FxHashSet<TargetLocator>,
-    pub touched_files: Option<&'app TouchedFilePaths>,
 }
 
-impl<'app> RunRequirements<'app> {
+impl RunRequirements {
     pub fn has_target(&self, target: &Target) -> bool {
         self.target_locators.iter().any(|loc| loc == target)
     }
@@ -42,6 +41,10 @@ pub struct ActionGraphBuilder<'app> {
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
     project_graph: &'app ProjectGraph,
+
+    // Affected states
+    affected: Option<AffectedTracker<'app>>,
+    touched_files: Option<&'app FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
     initial_targets: FxHashSet<Target>,
@@ -62,6 +65,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
         Ok(ActionGraphBuilder {
             all_query: None,
+            affected: None,
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
             initial_targets: FxHashSet::default(),
@@ -69,6 +73,7 @@ impl<'app> ActionGraphBuilder<'app> {
             platform_manager,
             primary_targets: FxHashSet::default(),
             project_graph,
+            touched_files: None,
         })
     }
 
@@ -77,7 +82,10 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn build_context(&mut self) -> ActionContext {
-        let mut context = ActionContext::default();
+        let mut context = ActionContext {
+            affected: self.affected.take().map(|affected| affected.build()),
+            ..ActionContext::default()
+        };
 
         if !self.initial_targets.is_empty() {
             context.initial_targets = mem::take(&mut self.initial_targets);
@@ -91,6 +99,10 @@ impl<'app> ActionGraphBuilder<'app> {
 
         if !self.primary_targets.is_empty() {
             context.primary_targets = mem::take(&mut self.primary_targets);
+        }
+
+        if let Some(files) = self.touched_files.take() {
+            context.touched_files = files.to_owned();
         }
 
         context
@@ -120,8 +132,39 @@ impl<'app> ActionGraphBuilder<'app> {
         Runtime::system()
     }
 
+    pub fn set_affected_scopes(
+        &mut self,
+        upstream: UpstreamScope,
+        downstream: DownstreamScope,
+    ) -> miette::Result<()> {
+        // If we require dependents, then we must load all projects into the
+        // graph so that the edges are created!
+        if downstream != DownstreamScope::None {
+            debug!("Force loading all projects to determine downstream relationships");
+
+            self.project_graph.get_all()?;
+        }
+
+        self.affected
+            .as_mut()
+            .expect("Affected tracker not set!")
+            .with_scopes(upstream, downstream);
+
+        Ok(())
+    }
+
     pub fn set_query(&mut self, input: &'app str) -> miette::Result<()> {
         self.all_query = Some(build_query(input)?);
+
+        Ok(())
+    }
+
+    pub fn set_touched_files(
+        &mut self,
+        touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
+    ) -> miette::Result<()> {
+        self.touched_files = Some(touched_files);
+        self.affected = Some(AffectedTracker::new(self.project_graph, touched_files));
 
         Ok(())
     }
@@ -200,7 +243,7 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         project: &Project,
         task: &Task,
-        reqs: &RunRequirements<'app>,
+        reqs: &RunRequirements,
     ) -> miette::Result<Option<NodeIndex>> {
         self.run_task_with_config(project, task, reqs, None)
     }
@@ -210,7 +253,7 @@ impl<'app> ActionGraphBuilder<'app> {
         &mut self,
         project: &Project,
         task: &Task,
-        reqs: &RunRequirements<'app>,
+        reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Only apply checks when requested. This applies to `moon ci`,
@@ -229,13 +272,15 @@ impl<'app> ActionGraphBuilder<'app> {
             // Dependents may still want to run though,
             // but only if this task was affected
             if reqs.dependents {
-                if let Some(touched) = &reqs.touched_files {
+                if let Some(affected) = &mut self.affected {
                     debug!(
                         task = task.target.as_str(),
                         "But will run all dependent tasks if affected"
                     );
 
-                    if task.is_affected(touched)? {
+                    if let Some(by) = affected.is_task_affected(task)? {
+                        affected.mark_task_affected(task, by)?;
+
                         self.run_task_dependents(task, reqs)?;
                     }
                 }
@@ -279,9 +324,18 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Compare against touched files if provided
-        if let Some(touched) = &reqs.touched_files {
-            if !task.is_affected(touched)? {
-                return Ok(None);
+        if !reqs.skip_affected {
+            if let Some(affected) = &mut self.affected {
+                match affected.is_task_affected(task)? {
+                    Some(by) => {
+                        affected.mark_task_affected(task, by)?;
+                        affected.mark_project_affected(
+                            project,
+                            AffectedBy::Task(task.target.clone()),
+                        )?;
+                    }
+                    None => return Ok(None),
+                };
             }
         }
 
@@ -358,7 +412,7 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_dependents(
         &mut self,
         task: &Task,
-        parent_reqs: &RunRequirements<'app>,
+        parent_reqs: &RunRequirements,
     ) -> miette::Result<Vec<NodeIndex>> {
         let mut indices = vec![];
 
@@ -367,6 +421,7 @@ impl<'app> ActionGraphBuilder<'app> {
         let reqs = RunRequirements {
             ci: parent_reqs.ci,
             interactive: parent_reqs.interactive,
+            skip_affected: true,
             ..Default::default()
         };
 
@@ -415,7 +470,7 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_by_target<T: AsRef<Target>>(
         &mut self,
         target: T,
-        reqs: &RunRequirements<'app>,
+        reqs: &RunRequirements,
     ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         self.run_task_by_target_with_config(target, reqs, None)
     }
@@ -423,7 +478,7 @@ impl<'app> ActionGraphBuilder<'app> {
     pub fn run_task_by_target_with_config<T: AsRef<Target>>(
         &mut self,
         target: T,
-        reqs: &RunRequirements<'app>,
+        reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
     ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         let target = target.as_ref();
@@ -514,7 +569,7 @@ impl<'app> ActionGraphBuilder<'app> {
     #[instrument(skip_all)]
     pub fn run_from_requirements(
         &mut self,
-        reqs: RunRequirements<'app>,
+        reqs: RunRequirements,
     ) -> miette::Result<Vec<NodeIndex>> {
         let mut inserted_nodes = vec![];
 
@@ -579,6 +634,13 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         cycle.insert(project.id.clone());
+
+        // Determine affected state
+        if let Some(affected) = &mut self.affected {
+            if let Some(by) = affected.is_project_affected(project) {
+                affected.mark_project_affected(project, by)?;
+            }
+        }
 
         // Syncing requires the language's tool to be installed
         let setup_tool_index = self.setup_toolchain(node.get_runtime());

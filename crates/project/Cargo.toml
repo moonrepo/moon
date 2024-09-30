@@ -13,7 +13,6 @@ moon_config = { path = "../config" }
 moon_file_group = { path = "../file-group" }
 moon_task = { path = "../task" }
 miette = { workspace = true }
-rustc-hash = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 

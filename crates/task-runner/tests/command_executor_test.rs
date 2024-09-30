@@ -12,8 +12,10 @@ mod command_executor {
     async fn returns_attempt_on_success() {
         let container = TaskRunnerContainer::new_os("runner").await;
         let context = ActionContext::default();
-        let mut item = TaskReportItem::default();
-        item.hash = Some("hash123".into());
+        let mut item = TaskReportItem {
+            hash: Some("hash123".into()),
+            ..TaskReportItem::default()
+        };
 
         let result = container
             .create_command_executor("success", &context)
@@ -45,8 +47,10 @@ mod command_executor {
     async fn returns_attempt_on_failure() {
         let container = TaskRunnerContainer::new_os("runner").await;
         let context = ActionContext::default();
-        let mut item = TaskReportItem::default();
-        item.hash = Some("hash123".into());
+        let mut item = TaskReportItem {
+            hash: Some("hash123".into()),
+            ..TaskReportItem::default()
+        };
 
         let result = container
             .create_command_executor("failure", &context)

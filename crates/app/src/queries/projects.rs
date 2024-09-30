@@ -2,6 +2,7 @@ use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use miette::IntoDiagnostic;
+use moon_affected::Affected;
 use moon_common::{is_ci, path::WorkspaceRelativePathBuf, Id};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -18,11 +19,11 @@ use std::{
 };
 use tracing::{debug, trace};
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Default, Serialize)]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
 pub struct QueryProjectsOptions {
     pub alias: Option<String>,
-    pub affected: bool,
-    pub dependents: bool,
+    pub affected: Option<Affected>,
     pub id: Option<String>,
     pub json: bool,
     pub language: Option<String>,
@@ -31,17 +32,19 @@ pub struct QueryProjectsOptions {
     pub source: Option<String>,
     pub tags: Option<String>,
     pub tasks: Option<String>,
-    pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    #[serde(rename = "type")]
     pub type_of: Option<String>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
 pub struct QueryProjectsResult {
     pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Serialize)]
+#[cfg_attr(debug_assertions, derive(Deserialize))]
 pub struct QueryTasksResult {
     pub tasks: BTreeMap<Id, BTreeMap<Id, Task>>,
     pub options: QueryProjectsOptions,
@@ -110,7 +113,11 @@ fn load_from_query(
         .query(moon_query::build_query(query)?)?
         .into_iter()
         .filter_map(|project| {
-            if options.affected && !project.is_affected(&options.touched_files) {
+            if options
+                .affected
+                .as_ref()
+                .is_some_and(|affected| !affected.is_project_affected(&project.id))
+            {
                 return None;
             }
 
@@ -134,7 +141,11 @@ fn load_with_regex(
     let mut projects = FxHashMap::default();
 
     for project in project_graph.get_all()? {
-        if options.affected && !project.is_affected(&options.touched_files) {
+        if options
+            .affected
+            .as_ref()
+            .is_some_and(|affected| !affected.is_project_affected(&project.id))
+        {
             continue;
         }
 
@@ -213,23 +224,14 @@ pub async fn query_projects(
         load_with_regex(project_graph, options)?
     };
 
-    // Is there a better way to do this?
-    if options.dependents {
-        debug!("Including dependent projects");
+    if let Some(affected) = &options.affected {
+        debug!("Including affected projects");
 
-        let mut dependent_projects = FxHashMap::default();
-
-        for project in projects.values() {
-            for dep_id in project_graph.dependents_of(project)? {
-                if projects.contains_key(dep_id) {
-                    continue;
-                }
-
-                dependent_projects.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
+        for dep_id in affected.projects.keys() {
+            if !projects.contains_key(dep_id) {
+                projects.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
             }
         }
-
-        projects.extend(dependent_projects);
     }
 
     Ok(projects.into_values().collect::<Vec<_>>())

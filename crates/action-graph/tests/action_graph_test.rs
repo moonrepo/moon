@@ -340,16 +340,10 @@ mod action_graph {
 
             // Empty set works fine, just needs to be some
             let touched_files = FxHashSet::default();
+            builder.set_touched_files(&touched_files).unwrap();
 
             builder
-                .run_task(
-                    &project,
-                    &task,
-                    &RunRequirements {
-                        touched_files: Some(&touched_files),
-                        ..Default::default()
-                    },
-                )
+                .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
             let graph = builder.build();
@@ -372,16 +366,10 @@ mod action_graph {
             task.input_files.insert(file.clone());
 
             let touched_files = FxHashSet::from_iter([file]);
+            builder.set_touched_files(&touched_files).unwrap();
 
             builder
-                .run_task(
-                    &project,
-                    &task,
-                    &RunRequirements {
-                        touched_files: Some(&touched_files),
-                        ..Default::default()
-                    },
-                )
+                .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
             let graph = builder.build();
@@ -1142,6 +1130,8 @@ mod action_graph {
                 let touched_files =
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("ci/input.txt")]);
 
+                builder.set_touched_files(&touched_files).unwrap();
+
                 builder
                     .run_task(
                         &project,
@@ -1150,7 +1140,6 @@ mod action_graph {
                             ci: true,
                             ci_check: true,
                             dependents: true,
-                            touched_files: Some(&touched_files),
                             ..RunRequirements::default()
                         },
                     )
@@ -1178,7 +1167,6 @@ mod action_graph {
                             ci: true,
                             ci_check: true,
                             dependents: true,
-                            touched_files: None,
                             ..RunRequirements::default()
                         },
                     )

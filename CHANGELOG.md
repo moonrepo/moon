@@ -16,6 +16,8 @@
 #### ⚙️ Internal
 
 - Updated identifiers and targets to use [compact strings](https://crates.io/crates/compact_str).
+- Updated proto to v0.41.2 (from 0.40.4).
+- Updated wasmtime to v23 (from v17).
 
 ## 1.28.3
 

@@ -44,7 +44,12 @@ pub fn create_plugin_container_with_config(
     let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
     manifest.timeout_ms = None;
     manifest = manifest.with_allowed_host("*");
-    manifest = manifest.with_allowed_paths(virtual_paths.clone().into_iter());
+    manifest = manifest.with_allowed_paths(
+        virtual_paths
+            .clone()
+            .into_iter()
+            .map(|(key, value)| (key.to_string_lossy().to_string(), value)),
+    );
 
     inject_default_manifest_config(&id, &sandbox.join(".home"), &mut manifest).unwrap();
 

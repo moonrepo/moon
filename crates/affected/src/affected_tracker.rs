@@ -168,8 +168,8 @@ impl<'app> AffectedTracker<'app> {
             .or_default()
             .push(affected);
 
-        self.track_project_dependencies(&project, 0)?;
-        self.track_project_dependents(&project, 0)?;
+        self.track_project_dependencies(project, 0)?;
+        self.track_project_dependents(project, 0)?;
 
         Ok(())
     }
@@ -263,7 +263,7 @@ impl<'app> AffectedTracker<'app> {
 
         for project in self.project_graph.get_all()? {
             for task in project.get_tasks()? {
-                if let Some(affected) = self.is_task_affected(&task)? {
+                if let Some(affected) = self.is_task_affected(task)? {
                     self.mark_task_affected(task, affected)?;
                 }
             }
@@ -292,7 +292,7 @@ impl<'app> AffectedTracker<'app> {
             for task_id in task_ids {
                 let task = project.get_task(task_id)?;
 
-                if let Some(affected) = self.is_task_affected(&task)? {
+                if let Some(affected) = self.is_task_affected(task)? {
                     self.mark_task_affected(task, affected)?;
                 }
             }

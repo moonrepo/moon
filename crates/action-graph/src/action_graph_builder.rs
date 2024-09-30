@@ -82,9 +82,10 @@ impl<'app> ActionGraphBuilder<'app> {
     }
 
     pub fn build_context(&mut self) -> ActionContext {
-        let mut context = ActionContext::default();
-
-        context.affected = self.affected.take().map(|affected| affected.build());
+        let mut context = ActionContext {
+            affected: self.affected.take().map(|affected| affected.build()),
+            ..ActionContext::default()
+        };
 
         if !self.initial_targets.is_empty() {
             context.initial_targets = mem::take(&mut self.initial_targets);
@@ -163,7 +164,7 @@ impl<'app> ActionGraphBuilder<'app> {
         touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<()> {
         self.touched_files = Some(touched_files);
-        self.affected = Some(AffectedTracker::new(&self.project_graph, touched_files));
+        self.affected = Some(AffectedTracker::new(self.project_graph, touched_files));
 
         Ok(())
     }

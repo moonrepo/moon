@@ -68,9 +68,9 @@ impl TaskGraph {
             &[Config::EdgeNoLabel, Config::NodeNoLabel],
             &|_, e| {
                 if e.source().index() == 0 {
-                    format!("arrowhead=none")
+                    "arrowhead=none".into()
                 } else {
-                    format!("arrowhead=box, arrowtail=box")
+                    "arrowhead=box, arrowtail=box".into()
                 }
             },
             &|_, n| {

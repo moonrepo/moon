@@ -6,7 +6,7 @@ use ci_env::CiOutput;
 use clap::Args;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, RunRequirements};
-use moon_affected::{Affected, AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
 use moon_project_graph::ProjectGraph;

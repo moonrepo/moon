@@ -168,10 +168,10 @@ pub struct Affected {
 
 impl Affected {
     pub fn is_project_affected(&self, id: &Id) -> bool {
-        self.should_check && self.projects.get(id).is_some()
+        self.should_check && self.projects.contains_key(id)
     }
 
     pub fn is_task_affected(&self, target: &Target) -> bool {
-        self.should_check && self.tasks.get(target).is_some()
+        self.should_check && self.tasks.contains_key(target)
     }
 }

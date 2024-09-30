@@ -206,12 +206,39 @@ impl<'task> TaskRunner<'task> {
             hash, "Checking if task has been cached using hash"
         );
 
+        // If a lifetime has been configured, we need to check the last run and the archive
+        // for staleness, and return a cache miss/skip
+        let cache_lifetime = match &self.task.options.cache_lifetime {
+            Some(lifetime) => Some(self.app.cache_engine.parse_lifetime(lifetime)?),
+            None => None,
+        };
+
+        let is_cache_stale = || {
+            if let Some(duration) = cache_lifetime {
+                if is_stale(self.cache.data.last_run_time, duration) {
+                    debug!(
+                        task = self.task.target.as_str(),
+                        hash,
+                        "Cache skip, a lifetime has been configured and the last run is stale, continuing run"
+                    );
+
+                    return true;
+                }
+            }
+
+            false
+        };
+
         // If hash is the same as the previous build, we can simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
         if self.cache.data.exit_code == 0
             && self.cache.data.hash == hash
             && self.archiver.has_outputs_been_created(true)?
         {
+            if is_cache_stale() {
+                return Ok(None);
+            }
+
             debug!(
                 task = self.task.target.as_str(),
                 hash, "Hash matches previous run, reusing existing outputs"
@@ -242,23 +269,9 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // If a lifetime has been configured, we need to check the last run and the archive
-        // for staleness, and return a cache miss/skip
-        let cache_lifetime = match &self.task.options.cache_lifetime {
-            Some(lifetime) => Some(self.app.cache_engine.parse_lifetime(lifetime)?),
-            None => None,
-        };
-
-        if let Some(duration) = cache_lifetime {
-            if is_stale(self.cache.data.last_run_time, duration) {
-                debug!(
-                    task = self.task.target.as_str(),
-                    hash,
-                    "Cache skip, a lifetime has been configured and the last run is stale, continuing run"
-                );
-
-                return Ok(None);
-            }
+        // Check if last run is stale
+        if is_cache_stale() {
+            return Ok(None);
         }
 
         // Check to see if a build with the provided hash has been cached locally.

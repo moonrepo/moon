@@ -1,0 +1,21 @@
+[package]
+name = "moon_task_graph"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Task graph for moon represented as a DAG."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_target = { path = "../target" }
+miette = { workspace = true }
+petgraph = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

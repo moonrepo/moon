@@ -1,0 +1,4 @@
+tasks:
+  # Downstream for other tasks
+  task:
+    deps: ['upstream:task']

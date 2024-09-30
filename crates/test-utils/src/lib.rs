@@ -7,3 +7,4 @@ pub use app_context::*;
 pub use platform_manager::*;
 pub use project_graph::*;
 pub use sandbox::*;
+pub use starbase_sandbox::{predicates, pretty_assertions};

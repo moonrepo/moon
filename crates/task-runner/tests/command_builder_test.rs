@@ -4,6 +4,7 @@ mod utils;
 
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
+use moon_affected::Affected;
 use moon_config::TaskOptionAffectedFiles;
 use moon_process::Command;
 use moon_task::Target;
@@ -289,7 +290,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder").await;
 
             let mut context = ActionContext::default();
-            context.affected_only = true;
+            context.affected = Some(Affected::default());
             context.touched_files.insert("project/file.txt".into());
 
             let command = container
@@ -306,7 +307,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder").await;
 
             let mut context = ActionContext::default();
-            context.affected_only = true;
+            context.affected = Some(Affected::default());
             context.touched_files.insert("project/other.txt".into());
 
             let command = container
@@ -323,7 +324,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder").await;
 
             let mut context = ActionContext::default();
-            context.affected_only = true;
+            context.affected = Some(Affected::default());
             context.touched_files.insert("project/file.txt".into());
 
             let command = container
@@ -343,7 +344,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder").await;
 
             let mut context = ActionContext::default();
-            context.affected_only = true;
+            context.affected = Some(Affected::default());
             context.touched_files.insert("project/other.txt".into());
 
             let command = container
@@ -373,7 +374,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder").await;
 
             let mut context = ActionContext::default();
-            context.affected_only = true;
+            context.affected = Some(Affected::default());
             context.touched_files.insert("project/file.txt".into());
             context.touched_files.insert("project/routes/*.ts".into());
             context

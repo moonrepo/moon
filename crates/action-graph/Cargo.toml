@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
+moon_affected = { path = "../affected" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 # TODO remove

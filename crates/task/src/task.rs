@@ -11,11 +11,7 @@ use moon_target::Target;
 use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
-use std::{
-    env,
-    path::{Path, PathBuf},
-};
-use tracing::debug;
+use std::path::{Path, PathBuf};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -121,60 +117,6 @@ impl Task {
         self.script
             .clone()
             .unwrap_or_else(|| format!("{} {}", self.command, self.args.join(" ")))
-    }
-
-    /// Return true if this task is affected based on touched files.
-    /// Will attempt to find any file that matches our list of inputs.
-    pub fn is_affected(
-        &self,
-        touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-    ) -> miette::Result<bool> {
-        if self.metadata.empty_inputs {
-            return Ok(true);
-        }
-
-        for var_name in &self.input_env {
-            if let Ok(var) = env::var(var_name) {
-                if !var.is_empty() {
-                    debug!(
-                        task = self.target.as_str(),
-                        env_key = var_name,
-                        env_val = var,
-                        "Affected by environment variable",
-                    );
-
-                    return Ok(true);
-                }
-            }
-        }
-
-        let globset = self.create_globset()?;
-
-        for file in touched_files {
-            if self.input_files.contains(file) {
-                debug!(
-                    task = self.target.as_str(),
-                    input = ?file,
-                    "Affected by input file",
-                );
-
-                return Ok(true);
-            }
-
-            if globset.matches(file.as_str()) {
-                debug!(
-                    task = self.target.as_str(),
-                    input = ?file,
-                    "Affected by input glob",
-                );
-
-                return Ok(true);
-            }
-        }
-
-        debug!(task = self.target.as_str(), "Not affected by touched files");
-
-        Ok(false)
     }
 
     /// Return a list of all workspace-relative input files.

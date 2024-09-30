@@ -1,6 +1,7 @@
 ---
 title: query projects
 sidebar_label: projects
+toc_max_heading_level: 6
 ---
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -23,10 +24,11 @@ $ moon query projects "task=[lint,build]"
 ```
 
 By default, this will output a list of projects in the format of
-`<id> | <source> | <stack> | <type> | <language>`, separated by new lines.
+`<id> | <source> | <stack> | <type> | <language> | <description>`, separated by new lines. If no
+description is defined, "..." will be displayed instead.
 
 ```
-web | apps/web | frontend | application | typescript
+web | apps/web | frontend | application | typescript | ...
 ```
 
 The projects can also be output in JSON ([which contains all data](/api/types/interface/Project)) by
@@ -59,10 +61,17 @@ $ moon query touched-files | moon query projects --affected
 
 ### Options
 
-- `--affected` - Filter projects that have been affected by touched files. This will only filter
-  based on files, and _does not_ include upstream or downstream dependencies.
-- `--dependents` - Include direct dependents of queried projects.
 - `--json` - Display the projects in JSON format.
+
+#### Affected
+
+- `--affected` - Filter projects that have been affected by touched files.
+- `--downstream` - Include downstream dependents of queried projects. Supports "none" (default),
+  "direct", "deep".
+  <VersionLabel version="1.29.0" />
+- `--upstream` - Include upstream dependencies of queried projects. Supports "none", "direct",
+  "deep" (default).
+  <VersionLabel version="1.29.0" />
 
 #### Filters
 

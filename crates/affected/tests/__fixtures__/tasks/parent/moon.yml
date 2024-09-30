@@ -1,0 +1,9 @@
+dependsOn:
+  - 'base'
+
+tasks:
+  child:
+    deps:
+      - '^:a'
+      # Self becomes a dependency project
+      - 'self:b'

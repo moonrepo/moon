@@ -1,0 +1,107 @@
+---
+slug: moon-v1.29
+title: moon v1.29 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.28.png
+---
+
+TODO
+
+<!--truncate-->
+
+## New affected projects tracker
+
+We've received a lot of feedback that our affected projects and tasks logic works differently across
+commands, or that it's hard to understand why something is affected or not affected. We wanted to
+add more clarity around affected projects (and tasks later on), so have implemented a new affected
+tracker.
+
+This new tracker includes a ton of new logging that we believe will answer the "why". For example,
+once the tracker has finished tracking, we'll log all affected projects and tasks, and what marked
+their affected state.
+
+```shell
+[DEBUG] moon_affected::affected_tracker  Project website is affected  by_files=["website/blog/2024-10-01_moon-v1.29.mdx"] by_upstream=[] by_downstream=[] other=false
+[DEBUG] moon_affected::affected_tracker  Project runtime is affected  by_files=[] by_upstream=[] by_downstream=["website"] other=false
+[DEBUG] moon_affected::affected_tracker  Project types is affected  by_files=[] by_upstream=[] by_downstream=["website", "runtime"] other=false
+[DEBUG] moon_affected::affected_tracker  Task runtime:build is affected  by_env=[] by_files=[] by_upstream=[] by_downstream=["website:start", "website:build"] other=false
+[DEBUG] moon_affected::affected_tracker  Task website:start is affected  by_env=[] by_files=["website/blog/2024-10-01_moon-v1.29.mdx"] by_upstream=[] by_downstream=[] other=false
+[DEBUG] moon_affected::affected_tracker  Task types:build is affected  by_env=[] by_files=[] by_upstream=[] by_downstream=["website:start", "runtime:build", "website:build"] other=false
+[DEBUG] moon_affected::affected_tracker  Task website:build is affected  by_env=[] by_files=["website/blog/2024-10-01_moon-v1.29.mdx"] by_upstream=[] by_downstream=[] other=false
+```
+
+What marks an affected state is based on one or many of the following:
+
+- By touched files
+- By environment variables (task only)
+- By upstream dependencies
+- By downstream dependents (project only)
+- And other minor internal logic
+
+This information is also included in the run report at `.moon/cache/runReport.json`, under the
+`context.affected` property. An example of this looks like:
+
+```json
+{
+  "projects": {
+    "website": {
+      "files": ["website/blog/2024-10-01_moon-v1.29.mdx"],
+      "other": true
+    },
+    "runtime": {
+      "downstream": ["website"],
+      "other": true
+    },
+    "types": {
+      "downstream": ["website", "runtime"],
+      "other": true
+    }
+  },
+  "tasks": {
+    "website:build": {
+      "files": ["website/blog/2024-10-01_moon-v1.29.mdx"],
+      "other": false
+    },
+    "types:build": {
+      "downstream": ["website:build"],
+      "other": false
+    },
+    "runtime:build": {
+      "downstream": ["website:build"],
+      "other": false
+    }
+  }
+}
+```
+
+### Control upstream / downstream depth
+
+With this new tracker, we now have the ability to control the traversal depth for upstream
+dependencies and downstream dependents in `moon query projects`, via the `--upstream` and
+`--downstream` options respectively (the `--dependents` option is now deprecated).
+
+These options support the following values:
+
+- `none` - Do not traverse deps.
+- `direct` - Traverse direct parent/child deps.
+- `deep` - Traverse full hierarchy deps.
+
+```shell
+$ moon query projects --affected --upstream none --downstream deep
+```
+
+### What about tasks?
+
+To support this enhancement for tasks, we need to support a task graph, which we currently do not.
+We only have a project graph (which has tasks), and an action graph (which has more than tasks). In
+a future release, we'll introduce a new task graph that will fill the gaps.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.29.0) for a full list
+of changes.
+
+- Updated `moon query projects` to include the project description as a trailing value.
+- Updated `moon query tasks` to include the task type and platform, and the task description as a
+  trailing value.

@@ -1,0 +1,28 @@
+[package]
+name = "moon_affected"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Tracks which tasks and projects are affected."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
+moon_target = { path = "../target" }
+moon_task = { path = "../task" }
+clap = { workspace = true }
+miette = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils2 = { path = "../test-utils" }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

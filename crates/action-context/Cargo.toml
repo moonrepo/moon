@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+moon_affected = { path = "../affected" }
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
 clap = { workspace = true }

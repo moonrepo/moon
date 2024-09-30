@@ -221,7 +221,7 @@ impl<'task> CommandBuilder<'task> {
         };
 
         // Only get files when `--affected` is passed
-        let mut files = if context.affected_only {
+        let mut files = if context.affected.is_some() {
             self.task
                 .get_affected_files(&context.touched_files, &self.project.source)?
         } else {

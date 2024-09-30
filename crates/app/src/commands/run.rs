@@ -4,6 +4,7 @@ use crate::session::CliSession;
 use clap::Args;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_graph::RunRequirements;
+use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env};
 use moon_task::TargetLocator;
@@ -149,17 +150,24 @@ pub async fn run_target(
         action_graph_builder.set_query(query_input)?;
     }
 
+    if should_run_affected {
+        action_graph_builder.set_touched_files(&touched_files)?;
+        action_graph_builder.set_affected_scopes(
+            UpstreamScope::Direct,
+            if args.dependents {
+                DownstreamScope::Direct
+            } else {
+                DownstreamScope::None
+            },
+        )?;
+    }
+
     // Run targets, optionally based on affected files
     let inserted_nodes = action_graph_builder.run_from_requirements(RunRequirements {
         ci: is_ci(),
         dependents: args.dependents,
         interactive: args.interactive,
         target_locators: FxHashSet::from_iter(target_locators.to_owned()),
-        touched_files: if should_run_affected {
-            Some(&touched_files)
-        } else {
-            None
-        },
         ..Default::default()
     })?;
 
@@ -203,10 +211,8 @@ pub async fn run_target(
     run_action_pipeline(
         session,
         ActionContext {
-            affected_only: should_run_affected,
             passthrough_args: args.passthrough.to_owned(),
             profile: args.profile.to_owned(),
-            touched_files: touched_files.clone(),
             ..action_graph_builder.build_context()
         },
         action_graph_builder.build(),

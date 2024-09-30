@@ -1,0 +1,9 @@
+tasks:
+  a: {}
+  b: {}
+  c: {}
+
+  # Affected by env vars
+  by-env:
+    inputs:
+      - '$ENV'

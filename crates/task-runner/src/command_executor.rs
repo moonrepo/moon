@@ -101,7 +101,7 @@ impl<'task> CommandExecutor<'task> {
             self.app
                 .console
                 .reporter
-                .on_task_started(&self.task.target, &attempt, &report_item)?;
+                .on_task_started(&self.task.target, &attempt, report_item)?;
 
             self.print_command_line(&command_line)?;
 
@@ -132,7 +132,7 @@ impl<'task> CommandExecutor<'task> {
                     self.app.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
-                        &report_item,
+                        report_item,
                         None,
                     )?;
 
@@ -182,7 +182,7 @@ impl<'task> CommandExecutor<'task> {
                     self.app.console.reporter.on_task_finished(
                         &self.task.target,
                         &attempt,
-                        &report_item,
+                        report_item,
                         Some(&error),
                     )?;
 

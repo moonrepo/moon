@@ -16,7 +16,7 @@ use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::{instrument, warn};
 
-const HEADING_AFFECTED: &str = "Affected";
+const HEADING_AFFECTED: &str = "Affected by";
 const HEADING_FILTERS: &str = "Filters";
 
 #[derive(Clone, Debug, Subcommand)]
@@ -42,7 +42,10 @@ pub enum QueryCommands {
     )]
     Projects(QueryProjectsArgs),
 
-    #[command(name = "tasks", about = "List all available projects & their tasks.")]
+    #[command(
+        name = "tasks",
+        about = "List all available tasks, grouped by project."
+    )]
     Tasks(QueryTasksArgs),
 
     #[command(
@@ -149,12 +152,6 @@ pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResul
 }
 
 #[derive(Args, Clone, Debug)]
-// #[group(
-//     id = "affected_group",
-//     args = ["downstream", "upstream"],
-//     multiple = true,
-//     requires = "affected",
-// )]
 pub struct QueryProjectsArgs {
     #[arg(help = "Filter projects using a query (takes precedence over options)")]
     query: Option<String>,
@@ -165,7 +162,8 @@ pub struct QueryProjectsArgs {
     #[arg(
         long,
         help = "Filter projects that are affected based on touched files",
-        help_heading = HEADING_AFFECTED
+        help_heading = HEADING_AFFECTED,
+        group = "affected-args"
     )]
     affected: bool,
 
@@ -174,7 +172,8 @@ pub struct QueryProjectsArgs {
         long,
         hide = true,
         help = "Include direct dependents of queried projects",
-        help_heading = HEADING_AFFECTED
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
     )]
     dependents: bool,
 
@@ -182,7 +181,8 @@ pub struct QueryProjectsArgs {
         long,
         default_value_t,
         help = "Include downstream dependents of queried projects",
-        help_heading = HEADING_AFFECTED
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
     )]
     downstream: DownstreamScope,
 
@@ -214,7 +214,8 @@ pub struct QueryProjectsArgs {
         long,
         default_value_t,
         help = "Include upstream dependencies of queried projects",
-        help_heading = HEADING_AFFECTED
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
     )]
     upstream: UpstreamScope,
 }

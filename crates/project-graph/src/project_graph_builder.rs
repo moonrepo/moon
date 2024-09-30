@@ -555,7 +555,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
 
             // Skip aliases that would override an ID
-            if self.sources.contains_key(&alias) {
+            if self.sources.contains_key(alias.as_str()) {
                 debug!(
                     "Skipping alias {} (for project {}) as it conflicts with the project {}",
                     color::label(&alias),

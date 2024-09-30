@@ -15,6 +15,7 @@
 
 #### ⚙️ Internal
 
+- Updated proto to v0.41.2 (from 0.40.4).
 - Updated identifiers and targets to use [compact strings](https://crates.io/crates/compact_str).
 
 ## 1.28.3

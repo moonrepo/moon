@@ -65,14 +65,15 @@ impl RustPlatform {
         }
     }
 
-    fn get_globals_dir(&self, tool: Option<&RustTool>) -> PathBuf {
-        let mut globals_dir = get_cargo_home().join("bin");
+    fn get_globals_dir(&self, _tool: Option<&RustTool>) -> PathBuf {
+        let globals_dir = get_cargo_home().join("bin");
 
-        if let Some(tool) = tool {
-            if let Some(new_globals_dir) = tool.tool.get_globals_dir() {
-                globals_dir = new_globals_dir.to_path_buf();
-            }
-        }
+        // TODO
+        // if let Some(tool) = tool {
+        //     if let Some(new_globals_dir) = tool.tool.get_globals_dir() {
+        //         globals_dir = new_globals_dir.to_path_buf();
+        //     }
+        // }
 
         globals_dir
     }

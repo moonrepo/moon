@@ -1,14 +1,12 @@
 use crate::target_error::TargetError;
 use crate::target_scope::TargetScope;
-use moon_common::{color, Id, ID_CHARS};
+use compact_str::CompactString;
+use moon_common::{color, Id, Style, Stylize, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::{
-    cmp::Ordering,
-    fmt::{self, Display},
-};
+use std::{cmp::Ordering, fmt};
 use tracing::instrument;
 
 // The @ is to support npm package scopes!
@@ -22,7 +20,7 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Target {
-    pub id: String,
+    pub id: CompactString,
     pub scope: TargetScope,
     pub task_id: Id,
 }
@@ -40,7 +38,7 @@ impl Target {
         let scope = TargetScope::Project(Id::new(scope_id).map_err(handle_error)?);
 
         Ok(Target {
-            id: Target::format(&scope, task_id),
+            id: CompactString::new(Target::format(&scope, task_id)),
             scope,
             task_id: Id::new(task_id).map_err(handle_error)?,
         })
@@ -53,7 +51,7 @@ impl Target {
         let task_id = task_id.as_ref();
 
         Ok(Target {
-            id: Target::format(TargetScope::OwnSelf, task_id),
+            id: CompactString::new(Target::format(TargetScope::OwnSelf, task_id)),
             scope: TargetScope::OwnSelf,
             task_id: Id::new(task_id)
                 .map_err(|_| TargetError::InvalidFormat(format!("~:{task_id}")))?,
@@ -102,7 +100,7 @@ impl Target {
             .map_err(|_| TargetError::InvalidFormat(target_id.to_owned()))?;
 
         Ok(Target {
-            id: target_id.to_owned(),
+            id: CompactString::new(target_id),
             scope,
             task_id,
         })
@@ -165,9 +163,15 @@ impl Default for Target {
     }
 }
 
-impl Display for Target {
+impl fmt::Display for Target {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.id)
+    }
+}
+
+impl Stylize for Target {
+    fn style(&self, style: Style) -> String {
+        self.to_string().style(style)
     }
 }
 

@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
+compact_str = { workspace = true }
 dirs = { workspace = true }
 miette = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }

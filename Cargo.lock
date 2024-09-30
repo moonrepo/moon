@@ -708,9 +708,9 @@ dependencies = [
 
 [[package]]
 name = "castaway"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a17ed5635fc8536268e5d4de1e22e81ac34419e5f052d4d51f4e01dcc263fcc"
+checksum = "0abae9be0aaf9ea96a3b1b8b1b55c602ca751eba1b1500220cea4ecbafe7c0d5"
 dependencies = [
  "rustversion",
 ]
@@ -935,6 +935,21 @@ dependencies = [
  "cfg-if",
  "itoa",
  "ryu",
+ "static_assertions",
+]
+
+[[package]]
+name = "compact_str"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6050c3a16ddab2e412160b31f2c871015704239bca62f72f6e5f0be631d3f644"
+dependencies = [
+ "castaway",
+ "cfg-if",
+ "itoa",
+ "rustversion",
+ "ryu",
+ "serde",
  "static_assertions",
 ]
 
@@ -1882,7 +1897,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a3233677ea1554a48235d81bb59d2a41654969a8e29a1316c48105fd1701693"
 dependencies = [
- "compact_str",
+ "compact_str 0.7.1",
  "garde_derive",
  "once_cell",
  "regex",
@@ -3312,6 +3327,7 @@ dependencies = [
 name = "moon_common"
 version = "0.0.8"
 dependencies = [
+ "compact_str 0.8.0",
  "dirs 5.0.1",
  "miette",
  "regex",
@@ -3922,6 +3938,7 @@ dependencies = [
 name = "moon_target"
 version = "0.0.7"
 dependencies = [
+ "compact_str 0.8.0",
  "miette",
  "moon_common",
  "once_cell",

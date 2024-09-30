@@ -58,7 +58,7 @@ impl TaskGraph {
 
     /// Get a labelled representation of the graph (which can be serialized easily).
     pub fn labeled_graph(&self) -> DiGraph<String, ()> {
-        self.graph.map(|_, n| n.id.clone(), |_, e| *e)
+        self.graph.map(|_, n| n.to_string(), |_, e| *e)
     }
 
     /// Format graph as a DOT string.

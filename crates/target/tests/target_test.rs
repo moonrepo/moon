@@ -1,3 +1,4 @@
+use compact_str::CompactString;
 use moon_common::Id;
 use moon_target::{Target, TargetScope};
 
@@ -71,7 +72,7 @@ fn parse_ids() {
     assert_eq!(
         Target::parse("foo:build").unwrap(),
         Target {
-            id: String::from("foo:build"),
+            id: CompactString::from("foo:build"),
             scope: TargetScope::Project(Id::raw("foo")),
             task_id: Id::raw("build"),
         }
@@ -83,7 +84,7 @@ fn parse_deps_scope() {
     assert_eq!(
         Target::parse("^:build").unwrap(),
         Target {
-            id: String::from("^:build"),
+            id: CompactString::from("^:build"),
             scope: TargetScope::Deps,
             task_id: Id::raw("build"),
         }
@@ -107,7 +108,7 @@ fn parse_self_scope() {
     assert_eq!(
         Target::parse("~:build").unwrap(),
         Target {
-            id: String::from("~:build"),
+            id: CompactString::from("~:build"),
             scope: TargetScope::OwnSelf,
             task_id: Id::raw("build"),
         }
@@ -119,7 +120,7 @@ fn parse_self_when_no_colon() {
     assert_eq!(
         Target::parse("build").unwrap(),
         Target {
-            id: String::from("~:build"),
+            id: CompactString::from("~:build"),
             scope: TargetScope::OwnSelf,
             task_id: Id::raw("build"),
         }
@@ -143,7 +144,7 @@ fn parse_all_scopes() {
     assert_eq!(
         Target::parse(":build").unwrap(),
         Target {
-            id: String::from(":build"),
+            id: CompactString::from(":build"),
             scope: TargetScope::All,
             task_id: Id::raw("build"),
         }
@@ -167,7 +168,7 @@ fn parse_node_package() {
     assert_eq!(
         Target::parse("@scope/foo:build").unwrap(),
         Target {
-            id: String::from("@scope/foo:build"),
+            id: CompactString::from("@scope/foo:build"),
             scope: TargetScope::Project(Id::raw("@scope/foo")),
             task_id: Id::raw("build"),
         }
@@ -179,7 +180,7 @@ fn parse_slashes() {
     assert_eq!(
         Target::parse("foo/sub:build/esm").unwrap(),
         Target {
-            id: String::from("foo/sub:build/esm"),
+            id: CompactString::from("foo/sub:build/esm"),
             scope: TargetScope::Project(Id::raw("foo/sub")),
             task_id: Id::raw("build/esm"),
         }

@@ -13,6 +13,10 @@
 - Updated `moon query tasks` to include the task type and platform, and the task description as a
   trailing value.
 
+#### ⚙️ Internal
+
+- Updated identifiers and targets to use [compact strings](https://crates.io/crates/compact_str).
+
 ## 1.28.3
 
 #### 🐞 Fixes

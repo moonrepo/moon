@@ -28,6 +28,9 @@ clap = { version = "4.5.16", default-features = false, features = [
 	"error-context",
 ] }
 clap_complete = "4.5.24"
+compact_str = { version = "0.8.0", default-features = false, features = [
+	"serde",
+] }
 console = "0.15.8"
 dirs = "5.0.1"
 indexmap = "2.5.0"

@@ -1,6 +1,7 @@
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
 use moon_process::ProcessError;
+use moon_task::Target;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -11,7 +12,7 @@ pub enum TaskRunnerError {
         .target.style(Style::Label),
     )]
     RunFailed {
-        target: String,
+        target: Target,
         #[source]
         error: Box<ProcessError>,
     },
@@ -22,12 +23,12 @@ pub enum TaskRunnerError {
         .dep_target.style(Style::Label),
         .target.style(Style::Label),
     )]
-    MissingDependencyHash { dep_target: String, target: String },
+    MissingDependencyHash { dep_target: Target, target: Target },
 
     #[diagnostic(code(task_runner::missing_outputs))]
     #[error(
         "Task {} defines outputs but after being ran, either none or not all of them exist.\nIf you require optional outputs, try using glob patterns instead.",
         .target.style(Style::Label)
     )]
-    MissingOutputs { target: String },
+    MissingOutputs { target: Target },
 }

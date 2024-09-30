@@ -306,8 +306,8 @@ impl<'task> TaskRunner<'task> {
                 return Ok(false);
             } else {
                 return Err(TaskRunnerError::MissingDependencyHash {
-                    dep_target: dep.target.id.to_owned(),
-                    target: self.task.target.id.to_owned(),
+                    dep_target: dep.target.clone(),
+                    target: self.task.target.clone(),
                 }
                 .into());
             }
@@ -482,7 +482,7 @@ impl<'task> TaskRunner<'task> {
         if let Some(last_attempt) = self.operations.get_last_execution() {
             if last_attempt.has_failed() {
                 return Err(TaskRunnerError::RunFailed {
-                    target: self.task.target.to_string(),
+                    target: self.task.target.clone(),
                     error: Box::new(ProcessError::ExitNonZero {
                         bin: self.task.command.clone(),
                         status: last_attempt.get_output_status(),

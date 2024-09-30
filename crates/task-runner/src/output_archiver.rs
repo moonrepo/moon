@@ -29,7 +29,7 @@ impl<'task> OutputArchiver<'task> {
         // Check that outputs actually exist
         if !self.has_outputs_been_created(false)? {
             return Err(TaskRunnerError::MissingOutputs {
-                target: self.task.target.to_string(),
+                target: self.task.target.clone(),
             }
             .into());
         }

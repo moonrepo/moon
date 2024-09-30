@@ -745,7 +745,7 @@ impl<'proj> TasksBuilder<'proj> {
             .filter(|dep| !filters.exclude.contains(&dep.target.task_id))
             .map(|mut dep| {
                 if let Some(new_task_id) = filters.rename.get(&dep.target.task_id) {
-                    dep.target.id = Target::format(&dep.target.scope, new_task_id);
+                    dep.target.id = Target::format(&dep.target.scope, new_task_id).into();
                     dep.target.task_id = new_task_id.to_owned();
                 }
 

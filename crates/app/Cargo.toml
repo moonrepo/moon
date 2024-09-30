@@ -32,7 +32,7 @@ moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.7.1"
+bytes = "1.7.2"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",

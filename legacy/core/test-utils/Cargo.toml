@@ -10,9 +10,9 @@ moon_config = { path = "../../../crates/config" }
 assert_cmd = "2.0.16"
 assert_fs = "1.1.2"
 clean-path = "0.2.1"
-insta = "1.39.0"
+insta = "1.40.0"
 predicates = "3.1.2"
-pretty_assertions = "1.4.0"
+pretty_assertions = "1.4.1"
 rustc-hash = { workspace = true }
 serde_yaml = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }

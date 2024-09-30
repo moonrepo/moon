@@ -12,8 +12,8 @@ publish = false
 moon_common = { path = "../common" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }
-git-url-parse = "0.4.4"
-ignore = "0.4.22"
+git-url-parse = "0.4.5"
+ignore = "0.4.23"
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }

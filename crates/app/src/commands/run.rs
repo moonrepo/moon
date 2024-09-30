@@ -15,7 +15,7 @@ use starbase_styles::color;
 use std::string::ToString;
 use tracing::instrument;
 
-const HEADING_AFFECTED: &str = "Affected by changes";
+const HEADING_AFFECTED: &str = "Affected by";
 const HEADING_DEBUGGING: &str = "Debugging";
 
 #[derive(Args, Clone, Debug, Default)]
@@ -65,7 +65,7 @@ pub struct RunArgs {
     // Affected
     #[arg(
         long,
-        help = "Only run target if affected by touched files",
+        help = "Only run target if affected by touched files or the environment",
         help_heading = HEADING_AFFECTED,
         group = "affected-args"
     )]

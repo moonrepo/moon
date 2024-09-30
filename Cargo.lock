@@ -3938,6 +3938,7 @@ dependencies = [
 name = "moon_target"
 version = "0.0.7"
 dependencies = [
+ "compact_str 0.8.0",
  "miette",
  "moon_common",
  "once_cell",

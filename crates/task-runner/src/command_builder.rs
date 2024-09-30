@@ -150,7 +150,7 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("MOON_PROJECT_ROOT", &self.project.root);
         self.command
             .env("MOON_PROJECT_SOURCE", self.project.source.as_str());
-        self.command.env("MOON_TARGET", &self.task.target.id);
+        self.command.env("MOON_TARGET", self.task.target.as_str());
         self.command
             .env("MOON_WORKSPACE_ROOT", &self.app.workspace_root);
         self.command.env("MOON_WORKING_DIR", &self.app.working_dir);

@@ -101,7 +101,11 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         }
 
-        self.replace_variables(task, &command)
+        Ok(substitute_env_var(
+            "",
+            &self.replace_variables(task, &command)?,
+            &task.env,
+        ))
     }
 
     #[instrument(skip_all)]
@@ -132,7 +136,11 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         }
 
-        self.replace_variables(task, &script)
+        Ok(substitute_env_var(
+            "",
+            &self.replace_variables(task, &script)?,
+            &task.env,
+        ))
     }
 
     #[instrument(skip_all)]
@@ -267,14 +275,10 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     );
                 }
                 InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
-                    let file = WorkspaceRelativePathBuf::from(
-                        self.replace_variables(
-                            task,
-                            input
-                                .to_workspace_relative(&self.context.project.source)
-                                .as_str(),
-                        )?,
-                    );
+                    let file = self.create_path_for_task(
+                        task,
+                        input.to_workspace_relative(&self.context.project.source),
+                    )?;
                     let abs_file = file.to_path(self.context.workspace_root);
 
                     // This is a special case that converts "foo" to "foo/**/*",
@@ -286,14 +290,12 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     }
                 }
                 InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
-                    let glob = self.replace_variables(
+                    let glob = self.create_path_for_task(
                         task,
-                        input
-                            .to_workspace_relative(&self.context.project.source)
-                            .as_str(),
+                        input.to_workspace_relative(&self.context.project.source),
                     )?;
 
-                    result.globs.push(WorkspaceRelativePathBuf::from(glob));
+                    result.globs.push(glob);
                 }
             };
         }
@@ -316,16 +318,21 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     result.globs.extend(inner_result.globs);
                     result.value = inner_result.value;
                 }
-                _ => {
-                    let path = WorkspaceRelativePathBuf::from(
-                        self.replace_variables(
-                            task,
-                            output
-                                .to_workspace_relative(&self.context.project.source)
-                                .unwrap()
-                                .as_str(),
-                        )?,
+                OutputPath::TokenVar(var) => {
+                    result.files.push(
+                        self.context
+                            .project
+                            .source
+                            .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
+                }
+                _ => {
+                    let path = self.create_path_for_task(
+                        task,
+                        output
+                            .to_workspace_relative(&self.context.project.source)
+                            .unwrap(),
+                    )?;
 
                     if output.is_glob() {
                         result.globs.push(path);
@@ -421,14 +428,16 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
                 match input {
                     InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
-                        result
-                            .files
-                            .push(input.to_workspace_relative(&self.context.project.source));
+                        result.files.push(self.create_path_for_task(
+                            task,
+                            input.to_workspace_relative(&self.context.project.source),
+                        )?);
                     }
                     InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
-                        result
-                            .globs
-                            .push(input.to_workspace_relative(&self.context.project.source));
+                        result.globs.push(self.create_path_for_task(
+                            task,
+                            input.to_workspace_relative(&self.context.project.source),
+                        )?);
                     }
                     InputPath::TokenFunc(func) => {
                         let inner_result = self.replace_function(task, func)?;
@@ -460,22 +469,35 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 match output {
                     OutputPath::ProjectFile(_) | OutputPath::WorkspaceFile(_) => {
                         result.files.push(
-                            output
-                                .to_workspace_relative(&self.context.project.source)
-                                .unwrap(),
+                            self.create_path_for_task(
+                                task,
+                                output
+                                    .to_workspace_relative(&self.context.project.source)
+                                    .unwrap(),
+                            )?,
                         );
                     }
                     OutputPath::ProjectGlob(_) | OutputPath::WorkspaceGlob(_) => {
                         result.globs.push(
-                            output
-                                .to_workspace_relative(&self.context.project.source)
-                                .unwrap(),
+                            self.create_path_for_task(
+                                task,
+                                output
+                                    .to_workspace_relative(&self.context.project.source)
+                                    .unwrap(),
+                            )?,
                         );
                     }
                     OutputPath::TokenFunc(func) => {
                         let inner_result = self.replace_function(task, func)?;
                         result.files.extend(inner_result.files);
                         result.globs.extend(inner_result.globs);
+                    }
+                    _ => {
+                        return Err(TokenExpanderError::InvalidTokenIndexReference {
+                            target: task.target.to_string(),
+                            token: token.to_owned(),
+                        }
+                        .into())
                     }
                 };
             }
@@ -622,6 +644,18 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                 token: token.to_owned(),
                 index: value.to_owned(),
             })?)
+    }
+
+    fn create_path_for_task(
+        &self,
+        task: &Task,
+        path: WorkspaceRelativePathBuf,
+    ) -> miette::Result<WorkspaceRelativePathBuf> {
+        Ok(WorkspaceRelativePathBuf::from(substitute_env_var(
+            "",
+            &self.replace_variables(task, path.as_str())?,
+            &task.env,
+        )))
     }
 
     fn resolve_path_for_task(

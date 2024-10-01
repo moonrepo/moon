@@ -30,13 +30,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             "Expanding tokens and variables in command"
         );
 
-        // Token variables
-        let command = self.token.expand_command(task)?;
-
-        // Environment variables
-        let command = substitute_env_var("", &command, &task.env);
-
-        task.command = command;
+        task.command = self.token.expand_command(task)?;
 
         Ok(())
     }
@@ -49,13 +43,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             "Expanding tokens and variables in script"
         );
 
-        // Token variables
-        let script = self.token.expand_script(task)?;
-
-        // Environment variables
-        let script = substitute_env_var("", &script, &task.env);
-
-        task.script = Some(script);
+        task.script = Some(self.token.expand_script(task)?);
 
         Ok(())
     }
@@ -362,19 +350,14 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             // Outputs must *not* be considered an input,
             // so if there's an input that matches an output,
             // remove it! Is there a better way to do this?
-            if task.input_files.contains(&file) {
-                task.input_files.remove(&file);
-            }
-
+            task.input_files.remove(&file);
             task.output_files.insert(file);
         }
 
         // Aggregate globs second so we can match against the paths
         for glob in result.globs {
-            if task.input_globs.contains(&glob) {
-                task.input_globs.remove(&glob);
-            }
-
+            // Same treatment here!
+            task.input_globs.remove(&glob);
             task.output_globs.insert(glob);
         }
 

@@ -257,7 +257,7 @@ tasks:
 
 ### `@in`
 
-> Usable in `args` only.
+> Usable in `script` and `args` only.
 
 The `@in(index)` token will be replaced with a single path, derived from
 [`inputs`](../config/project#inputs) by numerical index. If a glob pattern is referenced by index,
@@ -293,7 +293,7 @@ tasks:
 
 ### `@out`
 
-> Usable in `args` only.
+> Usable in `script` and `args` only.
 
 The `@out(index)` token will be replaced with a single path, derived from
 [`outputs`](../config/project#outputs) by numerical index.
@@ -326,7 +326,7 @@ tasks:
 
 ### `@meta`<VersionLabel version="1.28.0" />
 
-> Usable in `command`, `script`, `args`, and `env` only.
+> Usable in `command`, `script`, `args`, `env`, `inputs`, and `outputs` only.
 
 The `@meta(key)` token can be used to access project metadata and will be replaced with a value
 derived from [`project`](../config/project#project) in [`moon.yml`](../config/project).

@@ -310,7 +310,7 @@ outputs:
         }
 
         #[test]
-        #[should_panic(expected = "token and environment variables are not supported")]
+        #[should_panic(expected = "environment variable is not supported by itself")]
         fn errors_on_env_var() {
             test_parse_config(
                 r"

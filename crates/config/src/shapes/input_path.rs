@@ -6,7 +6,7 @@ use crate::validate::validate_child_relative_path;
 use moon_common::path::{
     expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
 };
-use schematic::{derive_enum, Schema, SchemaBuilder, Schematic, ValidateError};
+use schematic::{derive_enum, ParseError, Schema, SchemaBuilder, Schematic};
 use std::str::FromStr;
 
 derive_enum!(
@@ -27,21 +27,21 @@ derive_enum!(
 impl InputPath {
     pub fn as_str(&self) -> &str {
         match self {
-            InputPath::EnvVar(value)
-            | InputPath::EnvVarGlob(value)
-            | InputPath::ProjectFile(value)
-            | InputPath::ProjectGlob(value)
-            | InputPath::TokenFunc(value)
-            | InputPath::TokenVar(value)
-            | InputPath::WorkspaceFile(value)
-            | InputPath::WorkspaceGlob(value) => value,
+            Self::EnvVar(value)
+            | Self::EnvVarGlob(value)
+            | Self::ProjectFile(value)
+            | Self::ProjectGlob(value)
+            | Self::TokenFunc(value)
+            | Self::TokenVar(value)
+            | Self::WorkspaceFile(value)
+            | Self::WorkspaceGlob(value) => value,
         }
     }
 
     pub fn is_glob(&self) -> bool {
         matches!(
             self,
-            InputPath::EnvVarGlob(_) | InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_)
+            Self::EnvVarGlob(_) | Self::ProjectGlob(_) | Self::WorkspaceGlob(_)
         )
     }
 
@@ -50,16 +50,13 @@ impl InputPath {
         project_source: impl AsRef<str>,
     ) -> WorkspaceRelativePathBuf {
         match self {
-            InputPath::EnvVar(_)
-            | InputPath::EnvVarGlob(_)
-            | InputPath::TokenFunc(_)
-            | InputPath::TokenVar(_) => {
+            Self::EnvVar(_) | Self::EnvVarGlob(_) | Self::TokenFunc(_) | Self::TokenVar(_) => {
                 unreachable!()
             }
-            InputPath::ProjectFile(path) | InputPath::ProjectGlob(path) => {
+            Self::ProjectFile(path) | Self::ProjectGlob(path) => {
                 expand_to_workspace_relative(RelativeFrom::Project(project_source.as_ref()), path)
             }
-            InputPath::WorkspaceFile(path) | InputPath::WorkspaceGlob(path) => {
+            Self::WorkspaceFile(path) | Self::WorkspaceGlob(path) => {
                 expand_to_workspace_relative(RelativeFrom::Workspace, path)
             }
         }
@@ -73,22 +70,22 @@ impl AsRef<str> for InputPath {
 }
 
 impl FromStr for InputPath {
-    type Err = ValidateError;
+    type Err = ParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
         if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
-            return Ok(InputPath::TokenFunc(value.to_owned()));
+            return Ok(Self::TokenFunc(value.to_owned()));
         }
 
         // Token/env var
         if let Some(var) = value.strip_prefix('$') {
             if patterns::ENV_VAR_DISTINCT.is_match(value) {
-                return Ok(InputPath::EnvVar(var.to_owned()));
+                return Ok(Self::EnvVar(var.to_owned()));
             } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
-                return Ok(InputPath::EnvVarGlob(var.to_owned()));
+                return Ok(Self::EnvVarGlob(var.to_owned()));
             } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
-                return Ok(InputPath::TokenVar(value.to_owned()));
+                return Ok(Self::TokenVar(value.to_owned()));
             }
         }
 
@@ -96,51 +93,52 @@ impl FromStr for InputPath {
 
         // Workspace negated glob
         if value.starts_with("/!") || value.starts_with("!/") {
-            return Ok(InputPath::WorkspaceGlob(format!("!{}", &value[2..])));
+            return Ok(Self::WorkspaceGlob(format!("!{}", &value[2..])));
         }
 
         // Workspace-relative
         if let Some(workspace_path) = value.strip_prefix('/') {
-            validate_child_relative_path(workspace_path)?;
+            validate_child_relative_path(workspace_path)
+                .map_err(|error| ParseError::new(error.to_string()))?;
 
             return Ok(if is_glob_like(workspace_path) {
-                InputPath::WorkspaceGlob(workspace_path.to_owned())
+                Self::WorkspaceGlob(workspace_path.to_owned())
             } else {
-                InputPath::WorkspaceFile(workspace_path.to_owned())
+                Self::WorkspaceFile(workspace_path.to_owned())
             });
         }
 
         // Project-relative
-        validate_child_relative_path(&value)?;
+        validate_child_relative_path(&value).map_err(|error| ParseError::new(error.to_string()))?;
 
         let project_path = value.trim_start_matches("./");
 
         Ok(if is_glob_like(project_path) {
-            InputPath::ProjectGlob(project_path.to_owned())
+            Self::ProjectGlob(project_path.to_owned())
         } else {
-            InputPath::ProjectFile(project_path.to_owned())
+            Self::ProjectFile(project_path.to_owned())
         })
     }
 }
 
 impl TryFrom<String> for InputPath {
-    type Error = ValidateError;
+    type Error = ParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        InputPath::from_str(&value)
+        Self::from_str(&value)
     }
 }
 
 impl Into<String> for InputPath {
     fn into(self) -> String {
         match self {
-            InputPath::EnvVar(var) | InputPath::EnvVarGlob(var) => format!("${var}"),
-            InputPath::ProjectFile(value)
-            | InputPath::ProjectGlob(value)
-            | InputPath::TokenFunc(value)
-            | InputPath::TokenVar(value) => value,
-            InputPath::WorkspaceFile(path) => format!("/{path}"),
-            InputPath::WorkspaceGlob(path) => {
+            Self::EnvVar(var) | Self::EnvVarGlob(var) => format!("${var}"),
+            Self::ProjectFile(value)
+            | Self::ProjectGlob(value)
+            | Self::TokenFunc(value)
+            | Self::TokenVar(value) => value,
+            Self::WorkspaceFile(path) => format!("/{path}"),
+            Self::WorkspaceGlob(path) => {
                 if let Some(suffix) = path.strip_prefix('!') {
                     format!("!/{suffix}")
                 } else {

@@ -14,7 +14,6 @@ derive_enum!(
     /// The different patterns a task output can be defined.
     #[serde(untagged, into = "String", try_from = "String")]
     pub enum OutputPath {
-        EnvVar(String),
         ProjectFile(String),
         ProjectGlob(String),
         TokenFunc(String),
@@ -27,8 +26,7 @@ derive_enum!(
 impl OutputPath {
     pub fn as_str(&self) -> &str {
         match self {
-            Self::EnvVar(value)
-            | Self::ProjectFile(value)
+            Self::ProjectFile(value)
             | Self::ProjectGlob(value)
             | Self::TokenFunc(value)
             | Self::TokenVar(value)
@@ -91,9 +89,11 @@ impl FromStr for OutputPath {
         }
 
         // Token/env var
-        if let Some(var) = value.strip_prefix('$') {
+        if value.starts_with('$') {
             if patterns::ENV_VAR_DISTINCT.is_match(value) {
-                return Ok(Self::EnvVar(var.to_owned()));
+                return Err(ParseError::new(
+                    "environment variable is not supported by itself",
+                ));
             } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
                 return Err(ParseError::new(
                     "environment variable globs are not supported",
@@ -146,7 +146,6 @@ impl TryFrom<String> for OutputPath {
 impl Into<String> for OutputPath {
     fn into(self) -> String {
         match self {
-            Self::EnvVar(var) => format!("${var}"),
             Self::ProjectFile(value)
             | Self::ProjectGlob(value)
             | Self::TokenFunc(value)
@@ -168,11 +167,6 @@ mod tests {
 
     #[test]
     fn parses_correctly() {
-        assert_eq!(
-            OutputPath::from_str("$VAR").unwrap(),
-            OutputPath::EnvVar("VAR".into())
-        );
-
         // Project relative
         assert_eq!(
             OutputPath::from_str("file.rs").unwrap(),

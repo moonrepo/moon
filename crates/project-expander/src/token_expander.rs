@@ -309,9 +309,6 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
         for output in &task.outputs {
             match output {
-                OutputPath::EnvVar(var) => {
-                    result.env.push(var.to_owned());
-                }
                 OutputPath::TokenFunc(func) => {
                     let inner_result = self.replace_function(task, func)?;
 

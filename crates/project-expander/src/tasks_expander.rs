@@ -2,12 +2,12 @@ use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::{is_glob_like, TaskArgs, TaskDependencyConfig};
+use moon_common::path::WorkspaceRelativePathBuf;
+use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
-use std::env;
 use tracing::{instrument, trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
@@ -356,44 +356,27 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         );
 
         // Expand outputs to file system paths
-        let mut result = self.token.expand_outputs(task)?;
-
-        for name in result.env {
-            if let Ok(value) = env::var(&name) {
-                let value = substitute_env_var(&name, &value, &task.env);
-
-                if value.is_empty() {
-                    continue;
-                }
-
-                // Add back to the original result so that the
-                // branches below are executed
-                if is_glob_like(&value) {
-                    result.globs.push(value.into());
-                } else {
-                    result.files.push(value.into());
-                }
-            }
-        }
+        let result = self.token.expand_outputs(task)?;
 
         // Aggregate paths first before globbing, as they are literal
         for file in result.files {
+            let file =
+                WorkspaceRelativePathBuf::from(substitute_env_var("", file.as_str(), &task.env));
+
             // Outputs must *not* be considered an input,
             // so if there's an input that matches an output,
             // remove it! Is there a better way to do this?
-            if task.input_files.contains(&file) {
-                task.input_files.remove(&file);
-            }
-
+            task.input_files.remove(&file);
             task.output_files.insert(file);
         }
 
         // Aggregate globs second so we can match against the paths
         for glob in result.globs {
-            if task.input_globs.contains(&glob) {
-                task.input_globs.remove(&glob);
-            }
+            let glob =
+                WorkspaceRelativePathBuf::from(substitute_env_var("", glob.as_str(), &task.env));
 
+            // Same treatment here!
+            task.input_globs.remove(&glob);
             task.output_globs.insert(glob);
         }
 

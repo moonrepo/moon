@@ -2,11 +2,12 @@ use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::{TaskArgs, TaskDependencyConfig};
+use moon_config::{is_glob_like, TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
+use std::env;
 use tracing::{instrument, trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
@@ -355,7 +356,25 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         );
 
         // Expand outputs to file system paths
-        let result = self.token.expand_outputs(task)?;
+        let mut result = self.token.expand_outputs(task)?;
+
+        for name in result.env {
+            if let Ok(value) = env::var(&name) {
+                let value = substitute_env_var(&name, &value, &task.env);
+
+                if value.is_empty() {
+                    continue;
+                }
+
+                // Add back to the original result so that the
+                // branches below are executed
+                if is_glob_like(&value) {
+                    result.globs.push(value.into());
+                } else {
+                    result.files.push(value.into());
+                }
+            }
+        }
 
         // Aggregate paths first before globbing, as they are literal
         for file in result.files {

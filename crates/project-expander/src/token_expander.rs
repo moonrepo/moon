@@ -309,12 +309,23 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
 
         for output in &task.outputs {
             match output {
+                OutputPath::EnvVar(var) => {
+                    result.env.push(var.to_owned());
+                }
                 OutputPath::TokenFunc(func) => {
                     let inner_result = self.replace_function(task, func)?;
 
                     result.files.extend(inner_result.files);
                     result.globs.extend(inner_result.globs);
                     result.value = inner_result.value;
+                }
+                OutputPath::TokenVar(var) => {
+                    result.files.push(
+                        self.context
+                            .project
+                            .source
+                            .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
+                    );
                 }
                 _ => {
                     let path = WorkspaceRelativePathBuf::from(
@@ -476,6 +487,13 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                         let inner_result = self.replace_function(task, func)?;
                         result.files.extend(inner_result.files);
                         result.globs.extend(inner_result.globs);
+                    }
+                    _ => {
+                        return Err(TokenExpanderError::InvalidTokenIndexReference {
+                            target: task.target.to_string(),
+                            token: token.to_owned(),
+                        }
+                        .into())
                     }
                 };
             }

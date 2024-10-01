@@ -2,7 +2,6 @@ use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
@@ -31,13 +30,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             "Expanding tokens and variables in command"
         );
 
-        // Token variables
-        let command = self.token.expand_command(task)?;
-
-        // Environment variables
-        let command = substitute_env_var("", &command, &task.env);
-
-        task.command = command;
+        task.command = self.token.expand_command(task)?;
 
         Ok(())
     }
@@ -50,13 +43,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             "Expanding tokens and variables in script"
         );
 
-        // Token variables
-        let script = self.token.expand_script(task)?;
-
-        // Environment variables
-        let script = substitute_env_var("", &script, &task.env);
-
-        task.script = Some(script);
+        task.script = Some(self.token.expand_script(task)?);
 
         Ok(())
     }
@@ -360,9 +347,6 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Aggregate paths first before globbing, as they are literal
         for file in result.files {
-            let file =
-                WorkspaceRelativePathBuf::from(substitute_env_var("", file.as_str(), &task.env));
-
             // Outputs must *not* be considered an input,
             // so if there's an input that matches an output,
             // remove it! Is there a better way to do this?
@@ -372,9 +356,6 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Aggregate globs second so we can match against the paths
         for glob in result.globs {
-            let glob =
-                WorkspaceRelativePathBuf::from(substitute_env_var("", glob.as_str(), &task.env));
-
             // Same treatment here!
             task.input_globs.remove(&glob);
             task.output_globs.insert(glob);

@@ -1325,6 +1325,41 @@ mod token_expander {
                 }
             );
         }
+
+        #[test]
+        fn converts_env_variables() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("FOO".into(), "foo".into());
+            task.env.insert("BAR".into(), "bar".into());
+
+            task.outputs = vec![
+                OutputPath::ProjectFile("$FOO/file.txt".into()),
+                OutputPath::ProjectGlob("${BAR}/files/**/*".into()),
+                OutputPath::WorkspaceFile("cache/$FOO/file.txt".into()),
+                OutputPath::WorkspaceGlob("cache/${BAR}/files/**/*".into()),
+            ];
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_outputs(&task).unwrap(),
+                ExpandedResult {
+                    files: vec![
+                        WorkspaceRelativePathBuf::from("project/source/foo/file.txt"),
+                        WorkspaceRelativePathBuf::from("cache/foo/file.txt"),
+                    ],
+                    globs: vec![
+                        WorkspaceRelativePathBuf::from("project/source/bar/files/**/*"),
+                        WorkspaceRelativePathBuf::from("cache/bar/files/**/*"),
+                    ],
+                    ..ExpandedResult::default()
+                }
+            );
+        }
     }
 
     mod script {

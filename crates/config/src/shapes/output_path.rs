@@ -14,9 +14,11 @@ derive_enum!(
     /// The different patterns a task output can be defined.
     #[serde(untagged, into = "String", try_from = "String")]
     pub enum OutputPath {
+        EnvVar(String),
         ProjectFile(String),
         ProjectGlob(String),
         TokenFunc(String),
+        TokenVar(String),
         WorkspaceFile(String),
         WorkspaceGlob(String),
     }
@@ -25,19 +27,18 @@ derive_enum!(
 impl OutputPath {
     pub fn as_str(&self) -> &str {
         match self {
-            OutputPath::ProjectFile(value)
-            | OutputPath::ProjectGlob(value)
-            | OutputPath::TokenFunc(value)
-            | OutputPath::WorkspaceFile(value)
-            | OutputPath::WorkspaceGlob(value) => value,
+            Self::EnvVar(value)
+            | Self::ProjectFile(value)
+            | Self::ProjectGlob(value)
+            | Self::TokenFunc(value)
+            | Self::TokenVar(value)
+            | Self::WorkspaceFile(value)
+            | Self::WorkspaceGlob(value) => value,
         }
     }
 
     pub fn is_glob(&self) -> bool {
-        matches!(
-            self,
-            OutputPath::ProjectGlob(_) | OutputPath::WorkspaceGlob(_)
-        )
+        matches!(self, Self::ProjectGlob(_) | Self::WorkspaceGlob(_))
     }
 
     pub fn to_workspace_relative(
@@ -45,13 +46,13 @@ impl OutputPath {
         project_source: impl AsRef<str>,
     ) -> Option<WorkspaceRelativePathBuf> {
         match self {
-            OutputPath::TokenFunc(_) => None,
-            OutputPath::ProjectFile(path) | OutputPath::ProjectGlob(path) => Some(
+            Self::ProjectFile(path) | Self::ProjectGlob(path) => Some(
                 expand_to_workspace_relative(RelativeFrom::Project(project_source.as_ref()), path),
             ),
-            OutputPath::WorkspaceFile(path) | OutputPath::WorkspaceGlob(path) => {
+            Self::WorkspaceFile(path) | Self::WorkspaceGlob(path) => {
                 Some(expand_to_workspace_relative(RelativeFrom::Workspace, path))
             }
+            _ => None,
         }
     }
 }
@@ -86,21 +87,27 @@ impl FromStr for OutputPath {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
         if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
-            return Ok(OutputPath::TokenFunc(value.to_owned()));
+            return Ok(Self::TokenFunc(value.to_owned()));
         }
 
         // Token/env var
-        if value.starts_with('$') {
-            return Err(ParseError::new(
-                "token and environment variables are not supported",
-            ));
+        if let Some(var) = value.strip_prefix('$') {
+            if patterns::ENV_VAR_DISTINCT.is_match(value) {
+                return Ok(Self::EnvVar(var.to_owned()));
+            } else if patterns::ENV_VAR_GLOB_DISTINCT.is_match(value) {
+                return Err(ParseError::new(
+                    "environment variable globs are not supported",
+                ));
+            } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
+                return Ok(Self::TokenVar(value.to_owned()));
+            }
         }
 
         let value = standardize_separators(value);
 
         // Workspace negated glob
         if value.starts_with("/!") || value.starts_with("!/") {
-            return Ok(OutputPath::WorkspaceGlob(format!("!{}", &value[2..])));
+            return Ok(Self::WorkspaceGlob(format!("!{}", &value[2..])));
         }
 
         // Workspace-relative
@@ -109,9 +116,9 @@ impl FromStr for OutputPath {
                 .map_err(|error| ParseError::new(error.to_string()))?;
 
             return Ok(if is_glob_like(workspace_path) {
-                OutputPath::WorkspaceGlob(workspace_path.to_owned())
+                Self::WorkspaceGlob(workspace_path.to_owned())
             } else {
-                OutputPath::WorkspaceFile(workspace_path.to_owned())
+                Self::WorkspaceFile(workspace_path.to_owned())
             });
         }
 
@@ -121,9 +128,9 @@ impl FromStr for OutputPath {
         let project_path = value.trim_start_matches("./");
 
         Ok(if is_glob_like(project_path) {
-            OutputPath::ProjectGlob(project_path.to_owned())
+            Self::ProjectGlob(project_path.to_owned())
         } else {
-            OutputPath::ProjectFile(project_path.to_owned())
+            Self::ProjectFile(project_path.to_owned())
         })
     }
 }
@@ -132,17 +139,19 @@ impl TryFrom<String> for OutputPath {
     type Error = ParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        OutputPath::from_str(&value)
+        Self::from_str(&value)
     }
 }
 
 impl Into<String> for OutputPath {
     fn into(self) -> String {
         match self {
-            OutputPath::ProjectFile(value)
-            | OutputPath::ProjectGlob(value)
-            | OutputPath::TokenFunc(value) => value,
-            OutputPath::WorkspaceFile(path) | OutputPath::WorkspaceGlob(path) => format!("/{path}"),
+            Self::EnvVar(var) => format!("${var}"),
+            Self::ProjectFile(value)
+            | Self::ProjectGlob(value)
+            | Self::TokenFunc(value)
+            | Self::TokenVar(value) => value,
+            Self::WorkspaceFile(path) | Self::WorkspaceGlob(path) => format!("/{path}"),
         }
     }
 }
@@ -159,6 +168,11 @@ mod tests {
 
     #[test]
     fn parses_correctly() {
+        assert_eq!(
+            OutputPath::from_str("$VAR").unwrap(),
+            OutputPath::EnvVar("VAR".into())
+        );
+
         // Project relative
         assert_eq!(
             OutputPath::from_str("file.rs").unwrap(),
@@ -235,18 +249,22 @@ mod tests {
             OutputPath::from_str("@root(name)").unwrap(),
             OutputPath::TokenFunc("@root(name)".into())
         );
+
+        // Vars
+        assert_eq!(
+            OutputPath::from_str("$workspaceRoot").unwrap(),
+            OutputPath::TokenVar("$workspaceRoot".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("$projectType").unwrap(),
+            OutputPath::TokenVar("$projectType".into())
+        );
     }
 
     #[test]
-    #[should_panic(expected = "token and environment variables are not supported")]
-    fn errors_for_env_vars() {
-        OutputPath::from_str("$VAR").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "token and environment variables are not supported")]
-    fn errors_for_token_vars() {
-        OutputPath::from_str("$workspaceRoot").unwrap();
+    #[should_panic(expected = "environment variable globs are not supported")]
+    fn errors_for_env_globs() {
+        OutputPath::from_str("$VAR_*").unwrap();
     }
 
     #[test]

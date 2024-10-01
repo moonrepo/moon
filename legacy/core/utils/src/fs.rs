@@ -1,7 +1,8 @@
+use crate::time::{is_stale, to_millis};
 use moon_common::consts::CONFIG_DIRNAME;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 pub mod temp {
     use super::*;
@@ -24,12 +25,10 @@ pub mod temp {
             return Ok(None);
         }
 
-        // Temp files only last for 4 hours (half a workday)
-        let threshold = SystemTime::now() - Duration::from_secs(60 * 60 * 4);
-
         if let Ok(metadata) = file.metadata() {
             if let Ok(filetime) = metadata.created() {
-                if filetime > threshold {
+                // Temp files only last for 4 hours (half a workday)
+                if is_stale(to_millis(filetime), Duration::from_secs(60 * 60 * 4)) {
                     fs::remove_file(file)?;
 
                     return Ok(None);

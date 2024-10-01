@@ -215,6 +215,10 @@ cacheable!(
         /// Caches the `outputs` of the task
         pub cache: Option<bool>,
 
+        /// Lifetime to cache the task itself, in the format of "1h", "30m", etc.
+        /// If not defined, caches live forever, or until inputs change.
+        pub cache_lifetime: Option<String>,
+
         /// Loads and sets environment variables from the `.env` file when
         /// running the task.
         pub env_file: Option<TaskOptionEnvFile>,

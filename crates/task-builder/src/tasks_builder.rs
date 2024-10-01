@@ -538,6 +538,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.cache = *cache;
             }
 
+            if let Some(cache_lifetime) = &config.cache_lifetime {
+                options.cache_lifetime = Some(cache_lifetime.to_owned());
+            }
+
             if let Some(env_file) = &config.env_file {
                 options.env_files = env_file.to_input_paths();
             }
@@ -571,7 +575,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(mutex) = &config.mutex {
-                options.mutex = Some(mutex.clone());
+                options.mutex = Some(mutex.to_owned());
             }
 
             if let Some(os) = &config.os {

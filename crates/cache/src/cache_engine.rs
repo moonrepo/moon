@@ -11,6 +11,7 @@ use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
+use std::time::Duration;
 use tracing::{debug, instrument};
 
 pub struct CacheEngine {
@@ -78,8 +79,7 @@ impl CacheEngine {
 
     #[instrument(skip(self))]
     pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
-        let duration = parse_duration(lifetime)
-            .map_err(|error| miette::miette!("Invalid lifetime: {error}"))?;
+        let duration = self.parse_lifetime(lifetime)?;
 
         debug!(
             "Cleaning up and deleting stale cached artifacts older than \"{}\"",
@@ -153,6 +153,10 @@ impl CacheEngine {
         }
 
         Ok(false)
+    }
+
+    pub fn parse_lifetime(&self, lifetime: &str) -> miette::Result<Duration> {
+        parse_duration(lifetime).map_err(|error| miette::miette!("Invalid lifetime: {error}"))
     }
 
     pub fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {

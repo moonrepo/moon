@@ -60,6 +60,11 @@ export interface TaskOptionsConfig {
 	/** Caches the `outputs` of the task */
 	cache: boolean | null;
 	/**
+	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
+	 * If not defined, caches live forever, or until inputs change.
+	 */
+	cacheLifetime: string | null;
+	/**
 	 * Loads and sets environment variables from the `.env` file when
 	 * running the task.
 	 */
@@ -298,6 +303,11 @@ export interface PartialTaskOptionsConfig {
 	allowFailure?: boolean | null;
 	/** Caches the `outputs` of the task */
 	cache?: boolean | null;
+	/**
+	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
+	 * If not defined, caches live forever, or until inputs change.
+	 */
+	cacheLifetime?: string | null;
 	/**
 	 * Loads and sets environment variables from the `.env` file when
 	 * running the task.

@@ -15,9 +15,10 @@ use moon_process::ProcessError;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::TaskHasher;
-use moon_time::now_millis;
+use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::collections::BTreeMap;
+use std::time::SystemTime;
 use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
@@ -205,12 +206,39 @@ impl<'task> TaskRunner<'task> {
             hash, "Checking if task has been cached using hash"
         );
 
+        // If a lifetime has been configured, we need to check the last run and the archive
+        // for staleness, and return a cache miss/skip
+        let cache_lifetime = match &self.task.options.cache_lifetime {
+            Some(lifetime) => Some(self.app.cache_engine.parse_lifetime(lifetime)?),
+            None => None,
+        };
+
+        let is_cache_stale = || {
+            if let Some(duration) = cache_lifetime {
+                if is_stale(self.cache.data.last_run_time, duration) {
+                    debug!(
+                        task = self.task.target.as_str(),
+                        hash,
+                        "Cache skip, a lifetime has been configured and the last run is stale, continuing run"
+                    );
+
+                    return true;
+                }
+            }
+
+            false
+        };
+
         // If hash is the same as the previous build, we can simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
         if self.cache.data.exit_code == 0
             && self.cache.data.hash == hash
             && self.archiver.has_outputs_been_created(true)?
         {
+            if is_cache_stale() {
+                return Ok(None);
+            }
+
             debug!(
                 task = self.task.target.as_str(),
                 hash, "Hash matches previous run, reusing existing outputs"
@@ -241,11 +269,30 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
+        // Check if last run is stale
+        if is_cache_stale() {
+            return Ok(None);
+        }
+
         // Check to see if a build with the provided hash has been cached locally.
         // We only check for the archive, as the manifest is purely for local debugging!
         let archive_file = cache_engine.hash.get_archive_path(hash);
 
         if archive_file.exists() {
+            // Also check if the archive itself is stale
+            if let Some(duration) = cache_lifetime {
+                if fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some() {
+                    debug!(
+                        task = self.task.target.as_str(),
+                        hash,
+                        archive_file = ?archive_file,
+                        "Cache skip in local cache, a lifetime has been configured and the archive is stale, continuing run"
+                    );
+
+                    return Ok(None);
+                }
+            }
+
             debug!(
                 task = self.task.target.as_str(),
                 hash,

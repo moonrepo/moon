@@ -6,6 +6,7 @@ use moon_cache::CacheMode;
 use moon_task::Target;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_task_runner::TaskRunner;
+use moon_time::now_millis;
 use std::env;
 use utils::*;
 
@@ -500,6 +501,53 @@ mod task_runner {
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
                 env::remove_var("MOON_CACHE");
+            }
+        }
+
+        mod lifetime {
+            use super::*;
+            use std::time::Duration;
+
+            #[tokio::test]
+            async fn returns_if_within_the_ttl() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("cache-lifetime");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.last_run_time = now_millis();
+
+                assert_eq!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                );
+            }
+
+            #[tokio::test]
+            async fn misses_if_passed_the_ttl() {
+                let container = TaskRunnerContainer::new("runner").await;
+                let mut runner = container.create_runner("cache-lifetime");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.last_run_time = now_millis();
+
+                assert_eq!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                );
+
+                tokio::time::sleep(Duration::from_secs(3)).await;
+
+                assert_eq!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                );
+
+                tokio::time::sleep(Duration::from_secs(3)).await;
+
+                // lifetime is 5 seconds
+                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
         }
     }

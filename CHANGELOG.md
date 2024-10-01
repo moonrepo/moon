@@ -9,6 +9,7 @@
   - Affected information now logs more information and is included in reports/JSON.
   - Added `--upstream` and `--downstream` options to `moon query projects`.
   - Coming soon for affected tasks as well!
+- Added a new task option, `cacheLifetime`, that controls how long a task will be cached for.
 - Updated `moon query projects` to include the project description as a trailing value.
 - Updated `moon query tasks` to include the task type and platform, and the task description as a
   trailing value.

@@ -83,6 +83,9 @@ one of the following strategy values.
 - `prepend` - Values found in the local task are merged _before_ the values found in the global
   task. For example, this strategy is useful for applying option arguments that must come before
   positional arguments.
+- `preserve` - Preserve the original global task values. This should rarely be used, but exists for
+  situations where an inheritance chain is super long and complex, but we simply want to the base
+  values.
 - `replace` - Values found in the local task entirely _replaces_ the values in the global task. This
   strategy is useful when you need full control.
 

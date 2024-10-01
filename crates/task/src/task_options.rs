@@ -15,6 +15,8 @@ cacheable!(
 
         pub cache: bool,
 
+        pub cache_lifetime: Option<String>,
+
         pub env_files: Option<Vec<InputPath>>,
 
         pub internal: bool,
@@ -65,6 +67,7 @@ impl Default for TaskOptions {
             affected_pass_inputs: false,
             allow_failure: false,
             cache: true,
+            cache_lifetime: None,
             env_files: None,
             internal: false,
             interactive: false,

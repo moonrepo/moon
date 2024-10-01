@@ -1150,6 +1150,18 @@
           ],
           "markdownDescription": "Caches the `outputs` of the task"
         },
+        "cacheLifetime": {
+          "title": "cacheLifetime",
+          "description": "Lifetime to cache the task itself, in the format of \"1h\", \"30m\", etc. If not defined, caches live forever, or until inputs change.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "envFile": {
           "title": "envFile",
           "description": "Loads and sets environment variables from the .env file when running the task.",

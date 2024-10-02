@@ -1,6 +1,6 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use miette::IntoDiagnostic;
-use moon_config::ToolConfig;
+use moon_config::ToolchainPluginConfig;
 use moon_plugin::{serialize_config, PluginHostData, PluginId, PluginRegistry, PluginType};
 use proto_core::inject_proto_manifest_config;
 use rustc_hash::FxHashMap;
@@ -11,7 +11,7 @@ use tracing::{debug, trace};
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {
-    pub configs: FxHashMap<PluginId, ToolConfig>,
+    pub configs: FxHashMap<PluginId, ToolchainPluginConfig>,
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 

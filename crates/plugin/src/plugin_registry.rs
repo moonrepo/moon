@@ -4,10 +4,8 @@ use crate::plugin_error::PluginError;
 use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
 use scc::hash_map::OccupiedEntry;
-use scc::HashMap;
 use starbase_utils::fs;
 use std::fmt;
-use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
@@ -21,7 +19,7 @@ pub struct PluginRegistry<T: Plugin> {
     pub host_data: PluginHostData,
 
     loader: PluginLoader,
-    plugins: Arc<HashMap<Id, T>>,
+    plugins: Arc<scc::HashMap<Id, T>>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
@@ -45,7 +43,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
         Self {
             loader,
-            plugins: Arc::new(HashMap::default()),
+            plugins: Arc::new(scc::HashMap::default()),
             host_data,
             type_of,
             virtual_paths: paths,
@@ -103,7 +101,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<HashMap<Id, T>> {
+    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, T>> {
         Arc::clone(&self.plugins)
     }
 
@@ -135,8 +133,8 @@ impl<T: Plugin> PluginRegistry<T> {
         mut op: F,
     ) -> miette::Result<()>
     where
-        I: AsRef<Id> + Debug,
-        L: AsRef<PluginLocator> + Debug,
+        I: AsRef<Id> + fmt::Debug,
+        L: AsRef<PluginLocator> + fmt::Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
         let id = id.as_ref();
@@ -196,8 +194,8 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
-        I: AsRef<Id> + Debug,
-        L: AsRef<PluginLocator> + Debug,
+        I: AsRef<Id> + fmt::Debug,
+        L: AsRef<PluginLocator> + fmt::Debug,
     {
         self.load_with_config(id, locator, |_| Ok(())).await
     }

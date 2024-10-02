@@ -27,6 +27,10 @@ pub struct RunRequirements {
     pub interactive: bool,
     pub skip_affected: bool, // Temporary until we support task dependents properly
     pub target_locators: FxHashSet<TargetLocator>,
+
+    // Used to mark affected states
+    pub upstream_target: Option<Target>,
+    pub downstream_target: Option<Target>,
 }
 
 impl RunRequirements {
@@ -273,7 +277,7 @@ impl<'app> ActionGraphBuilder<'app> {
             // but only if this task was affected
             if reqs.dependents {
                 if let Some(affected) = &mut self.affected {
-                    debug!(
+                    trace!(
                         task = task.target.as_str(),
                         "But will run all dependent tasks if affected"
                     );
@@ -324,8 +328,17 @@ impl<'app> ActionGraphBuilder<'app> {
         }
 
         // Compare against touched files if provided
-        if !reqs.skip_affected {
-            if let Some(affected) = &mut self.affected {
+        if let Some(affected) = &mut self.affected {
+            if let Some(downstream) = &reqs.downstream_target {
+                affected
+                    .mark_task_affected(task, AffectedBy::DownstreamTask(downstream.to_owned()))?;
+            }
+
+            if let Some(upstream) = &reqs.upstream_target {
+                affected.mark_task_affected(task, AffectedBy::UpstreamTask(upstream.to_owned()))?;
+            }
+
+            if !reqs.skip_affected {
                 match affected.is_task_affected(task)? {
                     Some(by) => {
                         affected.mark_task_affected(task, by)?;
@@ -376,7 +389,14 @@ impl<'app> ActionGraphBuilder<'app> {
     #[instrument(skip_all)]
     pub fn run_task_dependencies(&mut self, task: &Task) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
-        let reqs = RunRequirements::default();
+        let reqs = RunRequirements {
+            downstream_target: if self.affected.is_some() {
+                Some(task.target.clone())
+            } else {
+                None
+            },
+            ..Default::default()
+        };
         let mut indices = vec![];
         let mut previous_target_index = None;
 
@@ -422,6 +442,11 @@ impl<'app> ActionGraphBuilder<'app> {
             ci: parent_reqs.ci,
             interactive: parent_reqs.interactive,
             skip_affected: true,
+            upstream_target: if self.affected.is_some() {
+                Some(task.target.clone())
+            } else {
+                None
+            },
             ..Default::default()
         };
 

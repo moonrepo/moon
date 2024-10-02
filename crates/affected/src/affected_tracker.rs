@@ -51,11 +51,11 @@ impl<'app> AffectedTracker<'app> {
             let state = AffectedProjectState::from(list);
 
             debug!(
-                by_files = ?state.files.iter().collect::<Vec<_>>(),
-                by_upstream = ?state.upstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
-                by_downstream = ?state.downstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+                files = ?state.files.iter().collect::<Vec<_>>(),
+                upstream = ?state.upstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+                downstream = ?state.downstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
                 other = state.other,
-                "Project {} is affected", color::id(&id),
+                "Project {} is affected by", color::id(&id),
             );
 
             affected.projects.insert(id, state);
@@ -65,12 +65,12 @@ impl<'app> AffectedTracker<'app> {
             let state = AffectedTaskState::from(list);
 
             debug!(
-                by_env = ?state.env.iter().collect::<Vec<_>>(),
-                by_files = ?state.files.iter().collect::<Vec<_>>(),
-                by_upstream = ?state.upstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
-                by_downstream = ?state.downstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+                env = ?state.env.iter().collect::<Vec<_>>(),
+                files = ?state.files.iter().collect::<Vec<_>>(),
+                upstream = ?state.upstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+                downstream = ?state.downstream.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
                 other = state.other,
-                "Task {} is affected", color::label(&target),
+                "Task {} is affected by", color::label(&target),
             );
 
             affected.tasks.insert(target, state);

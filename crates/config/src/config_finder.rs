@@ -1,7 +1,6 @@
-use crate::validate::check_yml_extension;
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::supports_pkl_configs;
-use schematic::{Config, ConfigError, ConfigLoader};
+use schematic::ConfigError;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -19,11 +18,14 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
-    pub fn prepare_loader<T: Config>(
+    #[cfg(feature = "loader")]
+    pub fn prepare_loader<T: schematic::Config>(
         &self,
-        loader: &mut ConfigLoader<T>,
+        loader: &mut schematic::ConfigLoader<T>,
         files: Vec<PathBuf>,
     ) -> miette::Result<()> {
+        use crate::validate::check_yml_extension;
+
         for file in files {
             if file
                 .extension()

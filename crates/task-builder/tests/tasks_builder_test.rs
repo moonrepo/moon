@@ -47,6 +47,8 @@ async fn build_tasks_with_config(
         Some(&local_config.workspace.inherited_tasks),
     );
 
+    dbg!(&builder);
+
     builder.build().await.unwrap()
 }
 
@@ -1094,6 +1096,50 @@ mod tasks_builder {
             let task = tasks.get("outputs").unwrap();
 
             assert!(task.outputs.is_empty());
+        }
+
+        #[tokio::test]
+        async fn preserve() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "merge-preserve/moon.yml").await;
+
+            let task = tasks.get("args").unwrap();
+
+            assert_eq!(task.args, vec!["a", "b", "c"]);
+
+            let task = tasks.get("deps").unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig::new(
+                    Target::parse("global:build").unwrap()
+                )]
+            );
+
+            let task = tasks.get("env").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("KEY1".into(), "value1".into()),
+                    ("KEY2".into(), "value2".into()),
+                ])
+            );
+
+            let task = tasks.get("inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("global".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile("global/tasks/tag-merge.yml".into()),
+                ]
+            );
+
+            let task = tasks.get("outputs").unwrap();
+
+            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("global".into())]);
         }
     }
 

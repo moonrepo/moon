@@ -1,0 +1,61 @@
+fileGroups {
+	["sources"] = new Listing {
+		"src/**/*"
+	}
+	["tests"] = new Listing  {
+		"*.test.ts"
+		"*.test.tsx"
+	}
+}
+
+implicitDeps = new Listing {
+	"project:task-a"
+	new {
+		target = "project:task-b"
+		optional = true
+	}
+	"project:task-c"
+	new {
+		target = "project:task-d"
+		args = "--foo --bar"
+		env {
+			["KEY"] = "value"
+		}
+	}
+}
+
+implicitInputs = new Listing {
+	"$ENV"
+	"$ENV_*"
+	"file.txt"
+	"file.*"
+	"/file.txt"
+	"/file.*"
+}
+
+taskOptions {
+	affectedFiles = "args"
+	affectedPassInputs = true
+	allowFailure = true
+	cache = false
+	envFile = ".env"
+	interactive = false
+	internal = true
+	mergeArgs = "append"
+	mergeDeps = "prepend"
+	mergeEnv = "replace"
+	mergeInputs = "preserve"
+	mergeOutputs = null
+	mutex = "lock"
+	os = List("linux", "macos")
+	outputStyle = "stream"
+	persistent = true
+	retryCount = 3
+	runDepsInParallel = false
+	runInCI = true
+	runFromWorkspaceRoot = false
+	shell = false
+	timeout = 60
+	unixShell = "zsh"
+	windowsShell = "pwsh"
+}

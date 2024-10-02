@@ -1065,4 +1065,93 @@ mod task_manager {
             assert_eq!(options.merge_args, Some(TaskMergeStrategy::Prepend));
         }
     }
+
+    mod pkl {
+        use super::*;
+        use moon_common::Id;
+        use moon_config::*;
+        use starbase_sandbox::locate_fixture;
+        use starbase_sandbox::pretty_assertions::assert_eq;
+
+        #[test]
+        fn loads_pkl() {
+            moon_common::enable_pkl_configs();
+
+            let config = test_config(locate_fixture("pkl"), |path| {
+                InheritedTasksConfig::load(path.join(".moon/tasks.pkl"))
+            });
+
+            assert_eq!(
+                config,
+                InheritedTasksConfig {
+                    file_groups: FxHashMap::from_iter([
+                        (
+                            Id::raw("sources"),
+                            vec![InputPath::ProjectGlob("src/**/*".into())]
+                        ),
+                        (
+                            Id::raw("tests"),
+                            vec![
+                                InputPath::ProjectGlob("*.test.ts".into()),
+                                InputPath::ProjectGlob("*.test.tsx".into())
+                            ]
+                        ),
+                    ]),
+                    implicit_deps: vec![
+                        TaskDependency::Target(Target::parse("project:task-a").unwrap()),
+                        TaskDependency::Config(TaskDependencyConfig {
+                            target: Target::parse("project:task-b").unwrap(),
+                            optional: Some(true),
+                            ..Default::default()
+                        }),
+                        TaskDependency::Target(Target::parse("project:task-c").unwrap()),
+                        TaskDependency::Config(TaskDependencyConfig {
+                            args: TaskArgs::String("--foo --bar".into()),
+                            env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
+                            target: Target::parse("project:task-d").unwrap(),
+                            ..Default::default()
+                        }),
+                    ],
+                    implicit_inputs: vec![
+                        InputPath::EnvVar("ENV".into()),
+                        InputPath::EnvVarGlob("ENV_*".into()),
+                        InputPath::ProjectFile("file.txt".into()),
+                        InputPath::ProjectGlob("file.*".into()),
+                        InputPath::WorkspaceFile("file.txt".into()),
+                        InputPath::WorkspaceGlob("file.*".into()),
+                    ],
+                    task_options: Some(TaskOptionsConfig {
+                        affected_files: Some(TaskOptionAffectedFiles::Args),
+                        affected_pass_inputs: Some(true),
+                        allow_failure: Some(true),
+                        cache: Some(false),
+                        env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
+                        interactive: Some(false),
+                        internal: Some(true),
+                        merge_args: Some(TaskMergeStrategy::Append),
+                        merge_deps: Some(TaskMergeStrategy::Prepend),
+                        merge_env: Some(TaskMergeStrategy::Replace),
+                        merge_inputs: Some(TaskMergeStrategy::Preserve),
+                        merge_outputs: None,
+                        mutex: Some("lock".into()),
+                        os: Some(OneOrMany::Many(vec![
+                            TaskOperatingSystem::Linux,
+                            TaskOperatingSystem::Macos
+                        ])),
+                        output_style: Some(TaskOutputStyle::Stream),
+                        persistent: Some(true),
+                        retry_count: Some(3),
+                        run_deps_in_parallel: Some(false),
+                        run_in_ci: Some(true),
+                        run_from_workspace_root: Some(false),
+                        shell: Some(false),
+                        timeout: Some(60),
+                        unix_shell: Some(TaskUnixShell::Zsh),
+                        windows_shell: Some(TaskWindowsShell::Pwsh)
+                    }),
+                    ..Default::default()
+                }
+            );
+        }
+    }
 }

@@ -60,11 +60,13 @@ fn extract_config<'builder, 'proj>(
     Ok(stack)
 }
 
+#[derive(Debug)]
 pub struct TasksBuilderContext<'proj> {
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
 }
 
+#[derive(Debug)]
 pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
 
@@ -300,8 +302,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
-        for args in args_sets {
-            task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
+        for (index, args) in args_sets.into_iter().enumerate() {
+            task.args = self.merge_vec(task.args, args, task.options.merge_args, index, false);
         }
 
         task.env = self.build_env(&target)?;
@@ -310,7 +312,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut configured_inputs = 0;
         let mut has_configured_inputs = false;
 
-        for link in &chain {
+        for (index, link) in chain.iter().enumerate() {
             let config = link.config;
             let deps = config
                 .deps
@@ -331,10 +333,16 @@ impl<'proj> TasksBuilder<'proj> {
                     deps
                 },
                 task.options.merge_deps,
+                index,
                 true,
             );
 
-            task.env = self.merge_map(task.env, config.env.to_owned(), task.options.merge_env);
+            task.env = self.merge_map(
+                task.env,
+                config.env.to_owned(),
+                task.options.merge_env,
+                index,
+            );
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
             if !config.global_inputs.is_empty() {
@@ -357,6 +365,7 @@ impl<'proj> TasksBuilder<'proj> {
                     task.inputs,
                     inputs.to_owned(),
                     task.options.merge_inputs,
+                    index,
                     true,
                 );
             }
@@ -366,6 +375,7 @@ impl<'proj> TasksBuilder<'proj> {
                     task.outputs,
                     outputs.to_owned(),
                     task.options.merge_outputs,
+                    index,
                     true,
                 );
             }
@@ -427,12 +437,23 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if !global_deps.is_empty() {
-            task.deps = self.merge_vec(task.deps, global_deps, TaskMergeStrategy::Append, true);
+            task.deps = self.merge_vec(
+                task.deps,
+                global_deps,
+                TaskMergeStrategy::Append,
+                1000,
+                true,
+            );
         }
 
         if !global_inputs.is_empty() {
-            task.inputs =
-                self.merge_vec(task.inputs, global_inputs, TaskMergeStrategy::Append, true);
+            task.inputs = self.merge_vec(
+                task.inputs,
+                global_inputs,
+                TaskMergeStrategy::Append,
+                1000,
+                true,
+            );
         }
 
         if task.platform.is_unknown() {
@@ -767,6 +788,7 @@ impl<'proj> TasksBuilder<'proj> {
         base: FxHashMap<K, V>,
         next: FxHashMap<K, V>,
         strategy: TaskMergeStrategy,
+        index: usize,
     ) -> FxHashMap<K, V>
     where
         K: Eq + Hash,
@@ -792,15 +814,23 @@ impl<'proj> TasksBuilder<'proj> {
                 map.extend(base);
                 map
             }
+            TaskMergeStrategy::Preserve => {
+                if index == 0 {
+                    next
+                } else {
+                    base
+                }
+            }
             TaskMergeStrategy::Replace => next,
         }
     }
 
-    fn merge_vec<T: Eq>(
+    fn merge_vec<T: Eq + std::fmt::Debug>(
         &self,
         base: Vec<T>,
         next: Vec<T>,
         strategy: TaskMergeStrategy,
+        index: usize,
         dedupe: bool,
     ) -> Vec<T> {
         let mut list: Vec<T> = vec![];
@@ -832,6 +862,13 @@ impl<'proj> TasksBuilder<'proj> {
 
                 append(next, true);
                 append(base, false);
+            }
+            TaskMergeStrategy::Preserve => {
+                if index == 0 {
+                    list.extend(next);
+                } else {
+                    list.extend(base);
+                }
             }
             TaskMergeStrategy::Replace => {
                 list.extend(next);

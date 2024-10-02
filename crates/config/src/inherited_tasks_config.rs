@@ -36,7 +36,7 @@ cacheable!(
     /// Configures tasks and task related settings that'll be inherited by all
     /// matching projects.
     /// Docs: https://moonrepo.dev/docs/config/tasks
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct InheritedTasksConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/tasks.json",

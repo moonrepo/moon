@@ -1,5 +1,5 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
-use moon_common::{color, Id};
+use moon_common::{color, serde::*, Id};
 use moon_env::MoonEnvironment;
 use moon_project_graph::ProjectGraph;
 use moon_target::{Target, TargetScope};
@@ -80,7 +80,11 @@ fn load_project(
         color::label("load_project"),
     );
 
+    enable_wasm_bridge();
+
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&project)?)?;
+
+    disable_wasm_bridge();
 
     Ok(())
 }
@@ -111,7 +115,7 @@ fn load_task(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let project = data.project_graph.get(&project_id).map_err(map_error)?;
+    let project = data.project_graph.get(project_id).map_err(map_error)?;
     let task = project.get_task(&target.task_id).map_err(map_error)?;
 
     trace!(
@@ -121,7 +125,11 @@ fn load_task(
         color::label("load_task"),
     );
 
+    enable_wasm_bridge();
+
     plugin.memory_set_val(&mut outputs[0], serde_json::to_string(task)?)?;
+
+    disable_wasm_bridge();
 
     Ok(())
 }

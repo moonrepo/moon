@@ -1,5 +1,5 @@
 use crate::project_error::ProjectError;
-use moon_common::{cacheable, path::WorkspaceRelativePathBuf, Id};
+use moon_common::{cacheable, path::WorkspaceRelativePathBuf, serde::is_wasm_bridge, Id};
 use moon_config::{
     DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
     StackType,
@@ -11,12 +11,15 @@ use std::path::PathBuf;
 
 cacheable!(
     #[derive(Clone, Debug, Default)]
+    #[serde(default)]
     pub struct Project {
         /// Unique alias of the project, alongside its official ID.
         /// This is typically for language specific semantics, like `name` from `package.json`.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub alias: Option<String>,
 
         /// Project configuration loaded from "moon.yml", if it exists.
+        #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub config: ProjectConfig,
 
         /// List of other projects this project depends on.
@@ -29,6 +32,7 @@ cacheable!(
         pub id: Id,
 
         /// Task configuration that was inherited from ".moon/tasks".
+        #[serde(skip_serializing_if = "is_wasm_bridge")]
         pub inherited: Option<InheritedTasksResult>,
 
         /// Primary programming language of the project.

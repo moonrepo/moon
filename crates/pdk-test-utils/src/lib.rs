@@ -46,9 +46,8 @@ pub fn create_plugin_container_with_config(
     manifest = manifest.with_allowed_host("*");
     manifest = manifest.with_allowed_paths(
         virtual_paths
-            .clone()
-            .into_iter()
-            .map(|(key, value)| (key.to_string_lossy().to_string(), value)),
+            .iter()
+            .map(|(key, value)| (key.to_string_lossy().to_string(), value.to_owned())),
     );
 
     inject_default_manifest_config(&id, &sandbox.join(".home"), &mut manifest).unwrap();

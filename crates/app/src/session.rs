@@ -13,7 +13,7 @@ use moon_console::Console;
 use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
-use moon_plugin::PluginId;
+use moon_plugin::{PluginHostData, PluginId};
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
@@ -116,10 +116,15 @@ impl CliSession {
         Ok(Arc::new(self.console.clone()))
     }
 
-    pub fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
+    pub async fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
+        let project_graph = self.get_project_graph().await?;
+
         let item = self.extension_registry.get_or_init(|| {
-            let mut registry =
-                ExtensionRegistry::new(Arc::clone(&self.moon_env), Arc::clone(&self.proto_env));
+            let mut registry = ExtensionRegistry::new(PluginHostData {
+                moon_env: Arc::clone(&self.moon_env),
+                project_graph,
+                proto_env: Arc::clone(&self.proto_env),
+            });
 
             // Convert moon IDs to plugin IDs
             for (id, config) in self.workspace_config.extensions.clone() {
@@ -147,10 +152,15 @@ impl CliSession {
         Ok(graph)
     }
 
-    pub fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
+    pub async fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
+        let project_graph = self.get_project_graph().await?;
+
         let item = self.toolchain_registry.get_or_init(|| {
-            let mut registry =
-                ToolchainRegistry::new(Arc::clone(&self.moon_env), Arc::clone(&self.proto_env));
+            let mut registry = ToolchainRegistry::new(PluginHostData {
+                moon_env: Arc::clone(&self.moon_env),
+                project_graph,
+                proto_env: Arc::clone(&self.proto_env),
+            });
 
             // Convert moon IDs to plugin IDs
             for (id, config) in self.toolchain_config.toolchains.clone() {
@@ -269,7 +279,7 @@ impl AppSession for CliSession {
             .await?;
 
             if self.requires_toolchain_installed() {
-                analyze::load_toolchain(self.get_toolchain_registry()?).await?;
+                analyze::load_toolchain(self.get_toolchain_registry().await?).await?;
             }
         }
 

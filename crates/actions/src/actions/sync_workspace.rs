@@ -1,4 +1,6 @@
-use crate::operations::{sync_codeowners, sync_config_schemas, sync_vcs_hooks};
+use crate::operations::{
+    run_plugin_operation, sync_codeowners, sync_config_schemas, sync_vcs_hooks,
+};
 use crate::utils::should_skip_action;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus, Operation};
@@ -6,6 +8,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_project_graph::ProjectGraph;
+use moon_toolchain_plugin::ToolchainRegistry;
 use std::sync::Arc;
 use tokio::task;
 use tracing::{debug, instrument};
@@ -16,6 +19,7 @@ pub async fn sync_workspace(
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     project_graph: Arc<ProjectGraph>,
+    toolchain_registry: Arc<ToolchainRegistry>,
 ) -> miette::Result<ActionStatus> {
     if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
         debug!(
@@ -29,20 +33,22 @@ pub async fn sync_workspace(
     debug!("Syncing workspace");
 
     // Run operations in parallel
-    let mut futures = vec![];
+    let mut operation_futures: Vec<task::JoinHandle<miette::Result<Vec<Operation>>>> = vec![];
 
     {
         debug!("Syncing config schemas");
 
         let app_context = Arc::clone(&app_context);
 
-        futures.push(task::spawn(async move {
-            Operation::sync_operation("Config schemas")
+        operation_futures.push(task::spawn(async move {
+            let op = Operation::sync_operation("Config schemas")
                 .track_async_with_check(
                     || sync_config_schemas(&app_context, false),
                     |result| result,
                 )
-                .await
+                .await?;
+
+            Ok(vec![op])
         }));
     }
 
@@ -55,13 +61,15 @@ pub async fn sync_workspace(
         let app_context = Arc::clone(&app_context);
         let project_graph = Arc::clone(&project_graph);
 
-        futures.push(task::spawn(async move {
-            Operation::sync_operation("Codeowners")
+        operation_futures.push(task::spawn(async move {
+            let op = Operation::sync_operation("Codeowners")
                 .track_async_with_check(
                     || sync_codeowners(&app_context, &project_graph, false),
                     |result| result.is_some(),
                 )
-                .await
+                .await?;
+
+            Ok(vec![op])
         }));
     }
 
@@ -74,15 +82,47 @@ pub async fn sync_workspace(
 
         let app_context = Arc::clone(&app_context);
 
-        futures.push(task::spawn(async move {
-            Operation::sync_operation("VCS hooks")
+        operation_futures.push(task::spawn(async move {
+            let op = Operation::sync_operation("VCS hooks")
                 .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
-                .await
+                .await?;
+
+            Ok(vec![op])
         }));
     }
 
-    for future in futures {
-        action.operations.push(future.await.into_diagnostic()??);
+    if toolchain_registry.has_plugins() {
+        debug!("Syncing operations from toolchains");
+
+        let mut sync_results = vec![];
+        let sync_context = toolchain_registry.create_context();
+
+        for plugin_id in toolchain_registry.get_plugin_ids() {
+            if let Some(result) = toolchain_registry
+                .load(plugin_id)
+                .await?
+                .sync_workspace(sync_context.clone())
+                .await?
+            {
+                sync_results.push(result);
+            }
+        }
+
+        for result in sync_results {
+            operation_futures.push(task::spawn(async move {
+                let mut ops = vec![];
+
+                for op in result.operations {
+                    ops.push(run_plugin_operation(op).await?);
+                }
+
+                Ok(ops)
+            }));
+        }
+    }
+
+    for future in operation_futures {
+        action.operations.extend(future.await.into_diagnostic()??);
     }
 
     Ok(ActionStatus::Passed)

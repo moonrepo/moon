@@ -14,10 +14,13 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_config_schema = { path = "../config-schema" }
 moon_hash = { path = "../hash" }
+moon_pdk_api = { path = "../pdk-api" }
+moon_process = { path = "../process" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs_hooks = { path = "../vcs-hooks" }
 miette = { workspace = true }
 proto_core = { workspace = true }

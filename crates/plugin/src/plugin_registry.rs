@@ -1,58 +1,50 @@
+use crate::host::*;
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
-use moon_env::MoonEnvironment;
 use moon_pdk_api::MoonContext;
-use proto_core::{is_offline, ProtoEnvironment};
+use proto_core::is_offline;
 use scc::hash_map::OccupiedEntry;
-use scc::HashMap;
 use starbase_utils::fs;
 use std::fmt;
-use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 use tracing::{debug, instrument};
 use warpgate::{
-    host::*, inject_default_manifest_config, to_virtual_path, Id, PluginContainer, PluginLoader,
-    PluginLocator, PluginManifest, Wasm,
+    host::HostData, inject_default_manifest_config, to_virtual_path, Id, PluginContainer,
+    PluginLoader, PluginLocator, PluginManifest, Wasm,
 };
 
 #[allow(dead_code)]
 pub struct PluginRegistry<T: Plugin> {
-    pub moon_env: Arc<MoonEnvironment>,
-    pub proto_env: Arc<ProtoEnvironment>,
+    pub host_data: PluginHostData,
 
     loader: PluginLoader,
-    plugins: Arc<HashMap<Id, T>>,
+    plugins: Arc<scc::HashMap<Id, T>>,
     type_of: PluginType,
     virtual_paths: BTreeMap<PathBuf, PathBuf>,
 }
 
 impl<T: Plugin> PluginRegistry<T> {
-    pub fn new(
-        type_of: PluginType,
-        moon_env: Arc<MoonEnvironment>,
-        proto_env: Arc<ProtoEnvironment>,
-    ) -> Self {
+    pub fn new(type_of: PluginType, host_data: PluginHostData) -> Self {
         debug!(plugin = type_of.get_label(), "Creating plugin registry");
 
         // Create the loader
         let mut loader = PluginLoader::new(
-            moon_env.plugins_dir.join(type_of.get_dir_name()),
-            &moon_env.temp_dir,
+            host_data.moon_env.plugins_dir.join(type_of.get_dir_name()),
+            &host_data.moon_env.temp_dir,
         );
 
         loader.set_offline_checker(is_offline);
 
         // Merge proto and moon virtual paths
         let mut paths = BTreeMap::new();
-        paths.extend(proto_env.get_virtual_paths());
-        paths.extend(moon_env.get_virtual_paths());
+        paths.extend(host_data.proto_env.get_virtual_paths());
+        paths.extend(host_data.moon_env.get_virtual_paths());
 
         Self {
             loader,
-            plugins: Arc::new(HashMap::default()),
-            moon_env,
-            proto_env,
+            plugins: Arc::new(scc::HashMap::default()),
+            host_data,
             type_of,
             virtual_paths: paths,
         }
@@ -60,10 +52,13 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub fn create_context(&self) -> MoonContext {
         MoonContext {
-            working_dir: to_virtual_path(self.get_virtual_paths(), &self.moon_env.working_dir),
+            working_dir: to_virtual_path(
+                self.get_virtual_paths(),
+                &self.host_data.moon_env.working_dir,
+            ),
             workspace_root: to_virtual_path(
                 self.get_virtual_paths(),
-                &self.moon_env.workspace_root,
+                &self.host_data.moon_env.workspace_root,
             ),
         }
     }
@@ -85,9 +80,8 @@ impl<T: Plugin> PluginRegistry<T> {
         // Inherit moon and proto virtual paths.
         manifest = manifest.with_allowed_paths(
             self.virtual_paths
-                .clone()
-                .into_iter()
-                .map(|(key, value)| (key.to_string_lossy().to_string(), value)),
+                .iter()
+                .map(|(key, value)| (key.to_string_lossy().to_string(), value.to_owned())),
         );
 
         // Disable timeouts as some functions, like dependency installs,
@@ -96,7 +90,7 @@ impl<T: Plugin> PluginRegistry<T> {
         manifest.timeout_ms = None;
 
         // Inherit default configs, like host environment and ID.
-        inject_default_manifest_config(id, &self.moon_env.home, &mut manifest)?;
+        inject_default_manifest_config(id, &self.host_data.moon_env.home, &mut manifest)?;
 
         // Ensure virtual host paths exist, otherwise WASI (via extism)
         // will throw a cryptic file/directory not found error.
@@ -107,7 +101,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<HashMap<Id, T>> {
+    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, T>> {
         Arc::clone(&self.plugins)
     }
 
@@ -131,6 +125,23 @@ impl<T: Plugin> PluginRegistry<T> {
         self.plugins.contains(id)
     }
 
+    pub async fn load<I>(&self, id: I) -> miette::Result<PluginInstance<T>>
+    where
+        I: AsRef<Id> + fmt::Debug,
+    {
+        let id = id.as_ref();
+
+        if self.is_registered(id) {
+            return self.get_instance(id).await;
+        }
+
+        Err(PluginError::UnknownId {
+            id: id.to_string(),
+            ty: self.type_of,
+        }
+        .into())
+    }
+
     #[instrument(skip(self, op))]
     pub async fn load_with_config<I, L, F>(
         &self,
@@ -139,8 +150,8 @@ impl<T: Plugin> PluginRegistry<T> {
         mut op: F,
     ) -> miette::Result<()>
     where
-        I: AsRef<Id> + Debug,
-        L: AsRef<PluginLocator> + Debug,
+        I: AsRef<Id> + fmt::Debug,
+        L: AsRef<PluginLocator> + fmt::Debug,
         F: FnMut(&mut PluginManifest) -> miette::Result<()>,
     {
         let id = id.as_ref();
@@ -163,11 +174,14 @@ impl<T: Plugin> PluginRegistry<T> {
         let plugin_file = self.loader.load_plugin(id, locator).await?;
 
         // Create host functions (provided by warpgate)
-        let functions = create_host_functions(HostData {
-            http_client: self.loader.get_client()?.clone(),
-            virtual_paths: self.virtual_paths.clone(),
-            working_dir: self.moon_env.working_dir.clone(),
-        });
+        let functions = create_host_functions(
+            self.host_data.clone(),
+            HostData {
+                http_client: self.loader.get_client()?.clone(),
+                virtual_paths: self.virtual_paths.clone(),
+                working_dir: self.host_data.moon_env.working_dir.clone(),
+            },
+        );
 
         // Create the manifest and let the consumer configure it
         let mut manifest = self.create_manifest(id, plugin_file)?;
@@ -186,8 +200,8 @@ impl<T: Plugin> PluginRegistry<T> {
             T::new(PluginRegistration {
                 container: PluginContainer::new(id.to_owned(), manifest, functions)?,
                 id: id.to_owned(),
-                moon_env: Arc::clone(&self.moon_env),
-                proto_env: Arc::clone(&self.proto_env),
+                moon_env: Arc::clone(&self.host_data.moon_env),
+                proto_env: Arc::clone(&self.host_data.proto_env),
             })
             .await?,
         );
@@ -197,8 +211,8 @@ impl<T: Plugin> PluginRegistry<T> {
 
     pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<()>
     where
-        I: AsRef<Id> + Debug,
-        L: AsRef<PluginLocator> + Debug,
+        I: AsRef<Id> + fmt::Debug,
+        L: AsRef<PluginLocator> + fmt::Debug,
     {
         self.load_with_config(id, locator, |_| Ok(())).await
     }
@@ -217,14 +231,14 @@ impl<T: Plugin> PluginRegistry<T> {
 impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PluginRegistry")
-            .field("moon_env", &self.moon_env)
-            .field("proto_env", &self.proto_env)
+            .field("host_data", &self.host_data)
             .field("plugins", &self.plugins)
             .field("type_of", &self.type_of)
             .field("virtual_paths", &self.virtual_paths)
             .finish()
     }
 }
+
 pub struct PluginInstance<'l, T: Plugin> {
     entry: OccupiedEntry<'l, Id, T>,
 }

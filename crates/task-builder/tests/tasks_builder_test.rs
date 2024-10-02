@@ -47,8 +47,6 @@ async fn build_tasks_with_config(
         Some(&local_config.workspace.inherited_tasks),
     );
 
-    dbg!(&builder);
-
     builder.build().await.unwrap()
 }
 

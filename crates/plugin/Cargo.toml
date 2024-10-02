@@ -27,12 +27,6 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 warpgate = { workspace = true }
 
-# For extism/wastime
-regalloc2 = "=0.9.3"
-wasmtime = "23.0.0"
-wasi-common = "23.0.0"
-wiggle = "23.0.0"
-
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }

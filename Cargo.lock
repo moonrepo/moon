@@ -3597,7 +3597,6 @@ dependencies = [
  "moon_project_graph",
  "moon_target",
  "proto_core",
- "regalloc2",
  "scc",
  "serde_json",
  "starbase_sandbox",
@@ -3607,9 +3606,6 @@ dependencies = [
  "tokio",
  "tracing",
  "warpgate",
- "wasi-common",
- "wasmtime",
- "wiggle",
 ]
 
 [[package]]

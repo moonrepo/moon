@@ -23,7 +23,7 @@ pub async fn ext(session: CliSession, args: ExtArgs) -> AppResult {
     }
 
     let id = PluginId::raw(&args.id);
-    let extensions = session.get_extension_registry()?;
+    let extensions = session.get_extension_registry().await?;
 
     // Load the plugin
     let plugin = extensions.load(&id).await?;

@@ -20,6 +20,7 @@ moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
 moon_toolchain = { path = "../toolchain" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 num_cpus = "1.16.0"

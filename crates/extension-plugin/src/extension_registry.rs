@@ -1,8 +1,8 @@
 use crate::extension_plugin::ExtensionPlugin;
 use moon_config::ExtensionConfig;
 use moon_plugin::{
-    serialize_config, MoonEnvironment, PluginError, PluginId, PluginInstance, PluginRegistry,
-    PluginType, ProtoEnvironment,
+    serialize_config, PluginError, PluginHostData, PluginId, PluginInstance, PluginRegistry,
+    PluginType,
 };
 use rustc_hash::FxHashMap;
 use std::ops::Deref;
@@ -16,14 +16,10 @@ pub struct ExtensionRegistry {
 }
 
 impl ExtensionRegistry {
-    pub fn new(moon_env: Arc<MoonEnvironment>, proto_env: Arc<ProtoEnvironment>) -> Self {
+    pub fn new(host_data: PluginHostData) -> Self {
         Self {
             configs: FxHashMap::default(),
-            registry: Arc::new(PluginRegistry::new(
-                PluginType::Extension,
-                moon_env,
-                proto_env,
-            )),
+            registry: Arc::new(PluginRegistry::new(PluginType::Extension, host_data)),
         }
     }
 

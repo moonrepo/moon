@@ -14,6 +14,7 @@ use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
 use moon_project_graph::ProjectGraph;
+use moon_toolchain_plugin::ToolchainRegistry;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 use std::sync::Arc;
@@ -39,10 +40,15 @@ pub struct ActionPipeline {
     action_context: Arc<ActionContext>,
     emitter: Arc<EventEmitter>,
     project_graph: Arc<ProjectGraph>,
+    toolchain_registry: Arc<ToolchainRegistry>,
 }
 
 impl ActionPipeline {
-    pub fn new(app_context: Arc<AppContext>, project_graph: Arc<ProjectGraph>) -> Self {
+    pub fn new(
+        app_context: Arc<AppContext>,
+        project_graph: Arc<ProjectGraph>,
+        toolchain_registry: Arc<ToolchainRegistry>,
+    ) -> Self {
         debug!("Creating pipeline to run actions");
 
         Self {
@@ -57,6 +63,7 @@ impl ActionPipeline {
             project_graph,
             report_name: "runReport.json".into(),
             summarize: false,
+            toolchain_registry,
         }
     }
 
@@ -145,6 +152,7 @@ impl ActionPipeline {
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
+            toolchain_registry: Arc::clone(&self.toolchain_registry),
         };
 
         // Monitor signals and ctrl+c

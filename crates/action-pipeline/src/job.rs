@@ -73,6 +73,7 @@ impl Job {
                 self.action_context,
                 self.app_context,
                 self.context.project_graph.clone(),
+                self.context.toolchain_registry.clone(),
                 self.context.emitter.clone(),
             ) => {},
         };

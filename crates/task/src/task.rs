@@ -32,6 +32,7 @@ cacheable!(
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
     pub struct Task {
         pub args: Vec<String>,
 
@@ -39,6 +40,7 @@ cacheable!(
 
         pub deps: Vec<TaskDependencyConfig>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         pub env: FxHashMap<String, String>,
@@ -47,10 +49,13 @@ cacheable!(
 
         pub inputs: Vec<InputPath>,
 
+        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_env: FxHashSet<String>,
 
+        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_files: FxHashSet<WorkspaceRelativePathBuf>,
 
+        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub metadata: TaskMetadata,
@@ -59,14 +64,18 @@ cacheable!(
 
         pub outputs: Vec<OutputPath>,
 
+        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub output_files: FxHashSet<WorkspaceRelativePathBuf>,
 
+        #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub platform: PlatformType,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub preset: Option<TaskPreset>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub script: Option<String>,
 
         pub target: Target,

@@ -9,10 +9,14 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 moon_env = { path = "../env" }
 moon_pdk_api = { version = "0.0.10", path = "../pdk-api" }
+moon_project_graph = { path = "../project-graph" }
+moon_target = { path = "../target" }
 async-trait = { workspace = true }
 convert_case = "0.6.0"
+extism = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 scc = { workspace = true }

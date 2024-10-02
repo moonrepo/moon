@@ -1,7 +1,9 @@
+mod host;
 mod plugin;
 mod plugin_error;
 mod plugin_registry;
 
+pub use host::*;
 pub use moon_env::MoonEnvironment;
 pub use plugin::*;
 pub use plugin_error::*;

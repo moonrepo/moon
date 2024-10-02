@@ -18,7 +18,7 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     .unwrap()
 });
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Target {
     pub id: CompactString,
     pub scope: TargetScope,
@@ -160,6 +160,12 @@ impl Default for Target {
             scope: TargetScope::OwnSelf,
             task_id: Id::raw("unknown"),
         }
+    }
+}
+
+impl fmt::Debug for Target {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.id)
     }
 }
 

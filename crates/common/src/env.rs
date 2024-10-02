@@ -52,7 +52,6 @@ pub fn is_wsl() -> bool {
     })
 }
 
-#[inline]
 pub fn is_test_env() -> bool {
     static TEST_CACHE: OnceLock<bool> = OnceLock::new();
 

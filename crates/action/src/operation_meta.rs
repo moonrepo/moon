@@ -56,6 +56,7 @@ pub enum OperationMeta {
     #[default]
     NoOperation,
     OutputHydration(Box<OperationMetaOutput>),
+    ProcessExecution(Box<OperationMetaOutput>),
     SyncOperation(Box<OperationMetaLabel>),
     TaskExecution(Box<OperationMetaOutput>),
 
@@ -84,6 +85,10 @@ impl OperationMeta {
 
     pub fn is_output_hydration(&self) -> bool {
         matches!(self, Self::OutputHydration(_))
+    }
+
+    pub fn is_process_execution(&self) -> bool {
+        matches!(self, Self::ProcessExecution(_))
     }
 
     pub fn is_sync_operation(&self) -> bool {

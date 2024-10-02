@@ -6,7 +6,9 @@ use moon_config::{
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
+    #[serde(default)]
     pub struct TaskOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
         pub affected_pass_inputs: bool,
@@ -15,8 +17,10 @@ cacheable!(
 
         pub cache: bool,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub cache_lifetime: Option<String>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub env_files: Option<Vec<InputPath>>,
 
         pub internal: bool,
@@ -33,10 +37,13 @@ cacheable!(
 
         pub merge_outputs: TaskMergeStrategy,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub os: Option<Vec<TaskOperatingSystem>>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub output_style: Option<TaskOutputStyle>,
 
         pub persistent: bool,
@@ -50,12 +57,16 @@ cacheable!(
 
         pub run_from_workspace_root: bool,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub shell: Option<bool>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub unix_shell: Option<TaskUnixShell>,
 
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub windows_shell: Option<TaskWindowsShell>,
     }
 );

@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use moon_pdk_api::{
-    MoonContext, SyncWorkspaceInput, ToolchainMetadataInput, ToolchainMetadataOutput,
+    MoonContext, SyncWorkspaceInput, SyncWorkspaceOutput, ToolchainMetadataInput,
+    ToolchainMetadataOutput,
 };
 use moon_plugin::{Plugin, PluginContainer, PluginId, PluginRegistration, PluginType};
 use proto_core::Tool;
@@ -20,18 +21,22 @@ pub struct ToolchainPlugin {
 
 impl ToolchainPlugin {
     #[instrument(skip_all)]
-    pub async fn sync_workspace(&self, context: MoonContext) -> miette::Result<()> {
+    pub async fn sync_workspace(
+        &self,
+        context: MoonContext,
+    ) -> miette::Result<Option<SyncWorkspaceOutput>> {
         if !self.plugin.has_func("sync_workspace").await {
-            return Ok(());
+            return Ok(None);
         }
 
         debug!(toolchain = self.id.as_str(), "Syncing workspace");
 
-        self.plugin
-            .call_func_without_output("sync_workspace", SyncWorkspaceInput { context })
+        let output: SyncWorkspaceOutput = self
+            .plugin
+            .call_func_with("sync_workspace", SyncWorkspaceInput { context })
             .await?;
 
-        Ok(())
+        Ok(Some(output))
     }
 
     // #[instrument(skip_all)]

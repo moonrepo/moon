@@ -10,6 +10,8 @@
   - Added `--upstream` and `--downstream` options to `moon query projects`.
   - Coming soon for affected tasks as well!
 - Added a new task option, `cacheLifetime`, that controls how long a task will be cached for.
+- Added "sync workspace action" support to toolchain plugins. This is our first step in supporting
+  toolchains via WASM plugins.
 - Updated task `outputs` to support token and environment variables.
 - Updated `moon query projects` to include the project description as a trailing value.
 - Updated `moon query tasks` to include the task type and platform, and the task description as a

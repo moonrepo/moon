@@ -125,6 +125,23 @@ impl<T: Plugin> PluginRegistry<T> {
         self.plugins.contains(id)
     }
 
+    pub async fn load<I>(&self, id: I) -> miette::Result<PluginInstance<T>>
+    where
+        I: AsRef<Id> + fmt::Debug,
+    {
+        let id = id.as_ref();
+
+        if self.is_registered(id) {
+            return self.get_instance(id).await;
+        }
+
+        Err(PluginError::UnknownId {
+            id: id.to_string(),
+            ty: self.type_of,
+        }
+        .into())
+    }
+
     #[instrument(skip(self, op))]
     pub async fn load_with_config<I, L, F>(
         &self,

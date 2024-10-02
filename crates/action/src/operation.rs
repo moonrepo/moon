@@ -51,18 +51,18 @@ impl Operation {
 
     pub fn get_output(&self) -> Option<&OperationMetaOutput> {
         match &self.meta {
-            OperationMeta::OutputHydration(output) | OperationMeta::TaskExecution(output) => {
-                Some(output)
-            }
+            OperationMeta::OutputHydration(output)
+            | OperationMeta::ProcessExecution(output)
+            | OperationMeta::TaskExecution(output) => Some(output),
             _ => None,
         }
     }
 
     pub fn get_output_mut(&mut self) -> Option<&mut OperationMetaOutput> {
         match &mut self.meta {
-            OperationMeta::OutputHydration(output) | OperationMeta::TaskExecution(output) => {
-                Some(output)
-            }
+            OperationMeta::OutputHydration(output)
+            | OperationMeta::ProcessExecution(output)
+            | OperationMeta::TaskExecution(output) => Some(output),
             _ => None,
         }
     }
@@ -214,6 +214,15 @@ impl Operation {
 
     pub fn output_hydration() -> Self {
         Self::new(OperationMeta::OutputHydration(Default::default()))
+    }
+
+    pub fn process_execution(command: impl AsRef<str>) -> Self {
+        Self::new(OperationMeta::ProcessExecution(Box::new(
+            OperationMetaOutput {
+                command: Some(command.as_ref().to_owned()),
+                ..Default::default()
+            },
+        )))
     }
 
     pub fn sync_operation(label: impl AsRef<str>) -> Self {

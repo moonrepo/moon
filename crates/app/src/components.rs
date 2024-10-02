@@ -19,7 +19,12 @@ pub async fn run_action_pipeline(
     action_graph: ActionGraph,
 ) -> miette::Result<Vec<Action>> {
     let project_graph = session.get_project_graph().await?;
-    let mut pipeline = ActionPipeline::new(session.get_app_context()?, project_graph);
+    let toolchain_registry = session.get_toolchain_registry().await?;
+    let mut pipeline = ActionPipeline::new(
+        session.get_app_context()?,
+        project_graph,
+        toolchain_registry,
+    );
 
     if let Some(concurrency) = &session.cli.concurrency {
         pipeline.concurrency = *concurrency;

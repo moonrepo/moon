@@ -23,8 +23,16 @@ impl ToolchainRegistry {
         }
     }
 
+    pub fn get_plugin_ids(&self) -> Vec<&PluginId> {
+        self.configs.keys().collect()
+    }
+
+    pub fn has_plugins(&self) -> bool {
+        !self.configs.is_empty()
+    }
+
     pub async fn load_all(&self) -> miette::Result<()> {
-        if self.configs.is_empty() {
+        if !self.has_plugins() {
             return Ok(());
         }
 

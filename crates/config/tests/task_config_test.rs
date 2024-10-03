@@ -15,20 +15,13 @@ use utils::*;
 
 fn load_config_from_code(code: &str) -> miette::Result<TaskConfig> {
     Ok(BaseLoader::<TaskConfig>::new()
-        .code(code, Format::Yaml)
-        .unwrap()
-        .load()
-        .unwrap()
+        .code(code, Format::Yaml)?
+        .load()?
         .config)
 }
 
 fn load_config_from_file(path: &Path) -> miette::Result<TaskConfig> {
-    Ok(BaseLoader::<TaskConfig>::new()
-        .file(path)
-        .unwrap()
-        .load()
-        .unwrap()
-        .config)
+    Ok(BaseLoader::<TaskConfig>::new().file(path)?.load()?.config)
 }
 
 mod task_config {
@@ -682,7 +675,6 @@ options:
         use super::*;
         use moon_config::*;
         use starbase_sandbox::locate_fixture;
-        use starbase_sandbox::pretty_assertions::assert_eq;
 
         #[test]
         fn loads_pkl() {

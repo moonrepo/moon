@@ -794,8 +794,6 @@ mod task_manager {
 
         #[test]
         fn creates_js_config_via_bun() {
-            use starbase_sandbox::pretty_assertions::assert_eq;
-
             let sandbox = create_sandbox("inheritance/files");
             let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
@@ -1082,6 +1080,7 @@ mod task_manager {
         use moon_common::Id;
         use moon_config::*;
         use starbase_sandbox::locate_fixture;
+        use starbase_sandbox::pretty_assertions::assert_eq;
 
         #[test]
         fn loads_pkl() {
@@ -1158,6 +1157,67 @@ mod task_manager {
                         unix_shell: Some(TaskUnixShell::Zsh),
                         windows_shell: Some(TaskWindowsShell::Pwsh)
                     }),
+                    tasks: BTreeMap::from_iter([
+                        (
+                            Id::raw("build-linux"),
+                            TaskConfig {
+                                command: TaskArgs::String("cargo".into()),
+                                args: TaskArgs::List(vec![
+                                    "--target".into(),
+                                    "x86_64-unknown-linux-gnu".into(),
+                                    "--verbose".into(),
+                                ]),
+                                options: TaskOptionsConfig {
+                                    os: Some(OneOrMany::One(TaskOperatingSystem::Linux)),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("build-macos"),
+                            TaskConfig {
+                                command: TaskArgs::String("cargo".into()),
+                                args: TaskArgs::List(vec![
+                                    "--target".into(),
+                                    "x86_64-apple-darwin".into(),
+                                    "--verbose".into(),
+                                ]),
+                                options: TaskOptionsConfig {
+                                    os: Some(OneOrMany::One(TaskOperatingSystem::Macos)),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("build-windows"),
+                            TaskConfig {
+                                command: TaskArgs::String("cargo".into()),
+                                args: TaskArgs::List(vec![
+                                    "--target".into(),
+                                    "i686-pc-windows-msvc".into(),
+                                    "--verbose".into(),
+                                ]),
+                                options: TaskOptionsConfig {
+                                    os: Some(OneOrMany::One(TaskOperatingSystem::Windows)),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("example"),
+                            TaskConfig {
+                                options: TaskOptionsConfig {
+                                    cache: Some(true),
+                                    cache_lifetime: Some("1 hour".into()),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                    ]),
                     ..Default::default()
                 }
             );

@@ -59,3 +59,34 @@ taskOptions {
 	unixShell = "zsh"
 	windowsShell = "pwsh"
 }
+
+local _someCondition = true
+
+tasks {
+	["example"] {
+		options {
+			when (_someCondition) {
+				cache = true
+				cacheLifetime = "1 hour"
+			} else {
+				cache = false
+			}
+		}
+	}
+
+	for (_os in List("linux", "macos", "windows")) {
+		["build-\(_os)"] {
+			command = "cargo"
+			args = List(
+				"--target",
+				if (_os == "linux") "x86_64-unknown-linux-gnu"
+					else if (_os == "macos") "x86_64-apple-darwin"
+					else "i686-pc-windows-msvc",
+				"--verbose"
+			)
+			options {
+				os = _os
+			}
+		}
+	}
+}

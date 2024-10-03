@@ -1,14 +1,20 @@
 mod utils;
 
+use std::path::Path;
+
 use moon_common::Id;
 use moon_config::{
-    DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
+    ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths,
+    PlatformType, ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use schematic::schema::IndexMap;
 use utils::*;
+
+fn load_config_from_root(root: &Path, source: &str) -> miette::Result<ProjectConfig> {
+    ConfigLoader::default().load_project_config_from_source(root, source)
+}
 
 mod project_config {
     use super::*;
@@ -19,13 +25,13 @@ mod project_config {
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {
-            ProjectConfig::load_from(path, ".")
+            load_config_from_root(path, ".")
         });
     }
 
     #[test]
     fn loads_defaults() {
-        let config = test_load_config("moon.yml", "{}", |path| ProjectConfig::load_from(path, "."));
+        let config = test_load_config("moon.yml", "{}", |path| load_config_from_root(path, "."));
 
         assert_eq!(config.language, LanguageType::Unknown);
         assert_eq!(config.type_of, ProjectType::Unknown);
@@ -45,7 +51,7 @@ tasks:
     <<: *webpack
     args: 'serve'
 ",
-            |path| ProjectConfig::load_from(path, "."),
+            |path| load_config_from_root(path, "."),
         );
 
         let build = config.tasks.get("build").unwrap();
@@ -85,7 +91,7 @@ tasks:
     <<: *webpack
     args: 'serve'
 ",
-            |path| ProjectConfig::load_from(path, "."),
+            |path| load_config_from_root(path, "."),
         );
 
         let build = config.tasks.get("build").unwrap();
@@ -113,7 +119,7 @@ tasks:
         #[test]
         fn supports_list_of_strings() {
             let config = test_load_config("moon.yml", "dependsOn: ['a', 'b', 'c']", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(
@@ -136,7 +142,7 @@ dependsOn:
     scope: 'development'
   - id: 'b'
     scope: 'production'",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -165,7 +171,7 @@ dependsOn:
   - 'a'
   - id: 'b'
     scope: 'production'",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -191,7 +197,7 @@ dependsOn:
   - id: 'a'
     scope: 'invalid'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
     }
@@ -214,7 +220,7 @@ fileGroups:
     - proj/**/*
     - '!proj/**/*'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -247,7 +253,7 @@ fileGroups:
         #[test]
         fn supports_variant() {
             let config = test_load_config("moon.yml", "language: rust", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.language, LanguageType::Rust);
@@ -256,7 +262,7 @@ fileGroups:
         #[test]
         fn unsupported_variant_becomes_other() {
             let config = test_load_config("moon.yml", "language: dotnet", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.language, LanguageType::Other(Id::raw("dotnet")));
@@ -269,7 +275,7 @@ fileGroups:
         #[test]
         fn supports_variant() {
             let config = test_load_config("moon.yml", "platform: rust", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.platform, Some(PlatformType::Rust));
@@ -281,7 +287,7 @@ fileGroups:
         )]
         fn errors_on_invalid_variant() {
             test_load_config("moon.yml", "platform: perl", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
         }
     }
@@ -292,7 +298,7 @@ fileGroups:
         #[test]
         fn loads_defaults() {
             let config = test_load_config("moon.yml", "owners: {}", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.owners.custom_groups, FxHashMap::default());
@@ -315,7 +321,7 @@ owners:
   optional: true
   requiredApprovals: 2
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -341,7 +347,7 @@ owners:
     - file.txt
     - dir/**/*
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -360,7 +366,7 @@ owners:
     'file.txt': [a, b]
     'dir/**/*': [c, d]
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -383,7 +389,7 @@ owners:
     - file.txt
     - dir/**/*
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
 
@@ -399,7 +405,7 @@ owners:
   paths:
     'file.txt': []
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
     }
@@ -412,7 +418,7 @@ owners:
         #[should_panic(expected = "must not be empty")]
         fn errors_if_empty() {
             test_load_config("moon.yml", "project: {}", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
         }
 
@@ -424,7 +430,7 @@ owners:
 project:
   description: 'Text'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             let meta = config.project.unwrap();
@@ -444,7 +450,7 @@ project:
   maintainers: [a, b, c]
   channel: '#abc'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             let meta = config.project.unwrap();
@@ -467,7 +473,7 @@ project:
     bool: true
     string: 'abc'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             let meta = config.project.unwrap();
@@ -491,7 +497,7 @@ project:
   description: Description
   channel: abc
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
     }
@@ -512,7 +518,7 @@ tags:
   - dot.case
   - slash/case
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -532,7 +538,7 @@ tags:
         #[should_panic(expected = "Invalid format for foo bar")]
         fn errors_on_invalid_format() {
             test_load_config("moon.yml", "tags: ['foo bar']", |path| {
-                ProjectConfig::load_from(path, ".")
+                load_config_from_root(path, ".")
             });
         }
     }
@@ -559,7 +565,7 @@ tasks:
   slash/case:
     command: 'f'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert!(config.tasks.contains_key("normal"));
@@ -582,7 +588,7 @@ tasks:
     extends: 'base'
     args: '--more'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert!(config.tasks.contains_key("base"));
@@ -605,7 +611,7 @@ toolchain:
     disabled: false
     routeOutDirToCache: true
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert!(config.toolchain.node.is_some());
@@ -638,7 +644,7 @@ workspace:
     rename:
       c: d
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(config.workspace.inherited_tasks.exclude, vec![Id::raw("a")]);

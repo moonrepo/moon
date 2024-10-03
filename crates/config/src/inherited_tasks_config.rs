@@ -1,4 +1,3 @@
-use crate::config_finder::ConfigFinder;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig, TaskDependency, TaskOptionsConfig};
 use crate::project_config::{ProjectType, StackType};
@@ -94,7 +93,8 @@ pub struct InheritedTasksEntry {
 pub struct InheritedTasksManager {
     #[cfg(feature = "loader")]
     cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
-    config_finder: ConfigFinder,
+    #[cfg(feature = "loader")]
+    config_finder: crate::config_finder::ConfigFinder,
 
     pub configs: FxHashMap<String, InheritedTasksEntry>,
 }

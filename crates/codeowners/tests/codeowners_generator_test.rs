@@ -1,10 +1,11 @@
 use moon_codeowners::CodeownersGenerator;
-use moon_config::{ProjectConfig, VcsProvider, WorkspaceConfig};
+use moon_config::{ConfigLoader, VcsProvider};
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox, locate_fixture, Sandbox};
 use std::fs;
 
 fn load_generator(provider: VcsProvider) -> Sandbox {
     let sandbox = create_empty_sandbox();
+    let config_loader = ConfigLoader::default();
 
     sandbox.create_file(
         ".moon/workspace.yml",
@@ -12,7 +13,7 @@ fn load_generator(provider: VcsProvider) -> Sandbox {
     );
 
     let mut generator = CodeownersGenerator::new(sandbox.path(), provider).unwrap();
-    let workspace_config = WorkspaceConfig::load_from(sandbox.path()).unwrap();
+    let workspace_config = config_loader.load_workspace_config(sandbox.path()).unwrap();
 
     generator
         .add_workspace_entries(&workspace_config.codeowners)
@@ -24,7 +25,9 @@ fn load_generator(provider: VcsProvider) -> Sandbox {
             fs::read_to_string(locate_fixture(project_fixture).join("moon.yml")).unwrap(),
         );
 
-        let project_config = ProjectConfig::load_from(sandbox.path(), project_fixture).unwrap();
+        let project_config = config_loader
+            .load_project_config_from_source(sandbox.path(), project_fixture)
+            .unwrap();
 
         generator
             .add_project_entry(

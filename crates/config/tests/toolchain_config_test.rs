@@ -1,14 +1,31 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_config::{BinConfig, BinEntry, NodePackageManager, NodeVersionFormat, ToolchainConfig};
+use moon_config::{
+    BinConfig, BinEntry, ConfigLoader, NodePackageManager, NodeVersionFormat, ToolchainConfig,
+};
 use proto_core::{warpgate::UrlLocator, Id, PluginLocator, ProtoConfig, UnresolvedVersionSpec};
+use schematic::ConfigLoader as BaseLoader;
 use serial_test::serial;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
+use std::path::Path;
 use utils::*;
 
 const FILENAME: &str = ".moon/toolchain.yml";
+
+fn load_config_from_file(path: &Path) -> ToolchainConfig {
+    BaseLoader::<ToolchainConfig>::new()
+        .file(path)
+        .unwrap()
+        .load()
+        .unwrap()
+        .config
+}
+
+fn load_config_from_root(root: &Path, proto: &ProtoConfig) -> miette::Result<ToolchainConfig> {
+    ConfigLoader::default().load_toolchain_config(root, proto)
+}
 
 mod toolchain_config {
     use super::*;
@@ -19,14 +36,14 @@ mod toolchain_config {
     // )]
     // fn error_unknown_field() {
     //     test_load_config(FILENAME, "unknown: 123", |path| {
-    //         ToolchainConfig::load_from(path, &ProtoConfig::default())
+    //         load_config_from_root(path, &ProtoConfig::default())
     //     });
     // }
 
     #[test]
     fn loads_defaults() {
         let config = test_load_config(FILENAME, "{}", |path| {
-            ToolchainConfig::load_from(path, &ProtoConfig::default())
+            load_config_from_root(path, &ProtoConfig::default())
         });
 
         assert!(config.deno.is_none());
@@ -46,10 +63,7 @@ node: {}";
         fn recursive_merges() {
             let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
-                Ok(ToolchainConfig::create_loader(sandbox.path())?
-                    .file(path)?
-                    .load()?
-                    .config)
+                Ok(load_config_from_file(path))
             });
 
             let node = config.node.unwrap();
@@ -74,10 +88,7 @@ node: {}";
         fn recursive_merges_typescript() {
             let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("typescript-2.yml"), |path| {
-                Ok(ToolchainConfig::create_loader(sandbox.path())?
-                    .file(path)?
-                    .load()?
-                    .config)
+                Ok(load_config_from_file(path))
             });
 
             let typescript = config.typescript.unwrap();
@@ -111,10 +122,7 @@ deno: {{}}
             );
 
             let config = test_config(sandbox.path().join("toolchain.yml"), |path| {
-                Ok(ToolchainConfig::create_loader(sandbox.path())?
-                    .file(path)?
-                    .load()?
-                    .config)
+                Ok(load_config_from_file(path))
             });
 
             assert!(config.bun.is_some());
@@ -140,10 +148,7 @@ deno: {{}}
             assert!(!temp_dir.exists());
 
             test_config(sandbox.path().join("toolchain.yml"), |path| {
-                Ok(ToolchainConfig::create_loader(sandbox.path())?
-                    .file(path)?
-                    .load()?
-                    .config)
+                Ok(load_config_from_file(path))
             });
 
             assert!(temp_dir.exists());
@@ -156,7 +161,7 @@ deno: {{}}
         // #[test]
         // fn uses_defaults() {
         //     let config = test_load_config(FILENAME, "bun: {}", |path| {
-        //         ToolchainConfig::load_from(path, &ProtoConfig::default())
+        //         load_config_from_root(path, &ProtoConfig::default())
         //     });
 
         //     let cfg = config.bun.unwrap();
@@ -173,7 +178,7 @@ deno: {{}}
                     UnresolvedVersionSpec::parse("1.0.0").unwrap(),
                 );
 
-                ToolchainConfig::load_from(path, &proto)
+                load_config_from_root(path, &proto)
             });
 
             assert!(config.bun.is_some());
@@ -189,7 +194,7 @@ deno: {{}}
                 let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
-                ToolchainConfig::load_from(path, &tools)
+                load_config_from_root(path, &tools)
             });
 
             assert_eq!(
@@ -216,7 +221,7 @@ bun:
                         UnresolvedVersionSpec::parse("2.0.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -245,7 +250,7 @@ bun:
                         UnresolvedVersionSpec::parse("2.0.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -268,7 +273,7 @@ node:
   bun:
     version: 1.0.0
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             assert_eq!(
@@ -294,7 +299,7 @@ node:
     version: 1.0.0
     installArgs: [--frozen]
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             assert_eq!(config.bun.unwrap().install_args, vec!["--frozen"]);
@@ -312,7 +317,7 @@ node:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "deno: {}", |path| {
-                ToolchainConfig::load_from(path, &ProtoConfig::default())
+                load_config_from_root(path, &ProtoConfig::default())
             });
 
             let cfg = config.deno.unwrap();
@@ -330,7 +335,7 @@ deno:
   depsFile: dependencies.ts
   lockfile: true
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             let cfg = config.deno.unwrap();
@@ -351,7 +356,7 @@ deno:
       name: 'fs'
       force: true
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             let cfg = config.deno.unwrap();
@@ -379,7 +384,7 @@ deno:
                     UnresolvedVersionSpec::parse("1.30.0").unwrap(),
                 );
 
-                ToolchainConfig::load_from(path, &proto)
+                load_config_from_root(path, &proto)
             });
 
             assert!(config.deno.is_some());
@@ -392,7 +397,7 @@ deno:
                 let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
-                ToolchainConfig::load_from(path, &tools)
+                load_config_from_root(path, &tools)
             });
 
             assert_eq!(
@@ -419,7 +424,7 @@ deno:
                         UnresolvedVersionSpec::parse("1.40.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -448,7 +453,7 @@ deno:
                         UnresolvedVersionSpec::parse("1.40.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -467,7 +472,7 @@ deno:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "node: {}", |path| {
-                ToolchainConfig::load_from(path, &ProtoConfig::default())
+                load_config_from_root(path, &ProtoConfig::default())
             });
 
             let cfg = config.node.unwrap();
@@ -485,7 +490,7 @@ node:
   dedupeOnLockfileChange: false
   inferTasksFromScripts: true
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             let cfg = config.node.unwrap();
@@ -503,7 +508,7 @@ node:
                     UnresolvedVersionSpec::parse("18.0.0").unwrap(),
                 );
 
-                ToolchainConfig::load_from(path, &proto)
+                load_config_from_root(path, &proto)
             });
 
             assert!(config.node.is_some());
@@ -519,7 +524,7 @@ node:
                 let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
-                ToolchainConfig::load_from(path, &tools)
+                load_config_from_root(path, &tools)
             });
 
             assert_eq!(
@@ -546,7 +551,7 @@ node:
                         UnresolvedVersionSpec::parse("18.0.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -575,7 +580,7 @@ node:
                         UnresolvedVersionSpec::parse("18.0.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -607,7 +612,7 @@ node:
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -623,7 +628,7 @@ node:
                     let mut tools = ProtoConfig::default();
                     tools.inherit_builtin_plugins();
 
-                    ToolchainConfig::load_from(path, &tools)
+                    load_config_from_root(path, &tools)
                 });
 
                 assert_eq!(
@@ -653,7 +658,7 @@ node:
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -674,7 +679,7 @@ node:
   packageManager: npm
   dependencyVersionFormat: workspace
 ",
-                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                    |path| load_config_from_root(path, &ProtoConfig::default()),
                 );
 
                 let cfg = config.node.unwrap();
@@ -689,13 +694,13 @@ node:
             #[test]
             fn enables_when_defined() {
                 let config = test_load_config(FILENAME, "node: {}", |path| {
-                    ToolchainConfig::load_from(path, &ProtoConfig::default())
+                    load_config_from_root(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().pnpm.is_none());
 
                 let config = test_load_config(FILENAME, "node:\n  pnpm: {}", |path| {
-                    ToolchainConfig::load_from(path, &ProtoConfig::default())
+                    load_config_from_root(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().pnpm.is_some());
@@ -714,7 +719,7 @@ node:
                         let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
-                        ToolchainConfig::load_from(path, &tools)
+                        load_config_from_root(path, &tools)
                     },
                 );
 
@@ -738,7 +743,7 @@ node:
                         let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
-                        ToolchainConfig::load_from(path, &tools)
+                        load_config_from_root(path, &tools)
                     },
                 );
 
@@ -767,7 +772,7 @@ node:
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -796,7 +801,7 @@ node:
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -815,13 +820,13 @@ node:
             #[test]
             fn enables_when_defined() {
                 let config = test_load_config(FILENAME, "node: {}", |path| {
-                    ToolchainConfig::load_from(path, &ProtoConfig::default())
+                    load_config_from_root(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().yarn.is_none());
 
                 let config = test_load_config(FILENAME, "node:\n  yarn: {}", |path| {
-                    ToolchainConfig::load_from(path, &ProtoConfig::default())
+                    load_config_from_root(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().yarn.is_some());
@@ -840,7 +845,7 @@ node:
                         let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
-                        ToolchainConfig::load_from(path, &tools)
+                        load_config_from_root(path, &tools)
                     },
                 );
 
@@ -864,7 +869,7 @@ node:
                         let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
-                        ToolchainConfig::load_from(path, &tools)
+                        load_config_from_root(path, &tools)
                     },
                 );
 
@@ -893,7 +898,7 @@ node:
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -922,7 +927,7 @@ node:
                             UnresolvedVersionSpec::parse("8.0.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -941,13 +946,13 @@ node:
             #[test]
             fn enables_when_defined() {
                 let config = test_load_config(FILENAME, "node: {}", |path| {
-                    ToolchainConfig::load_from(path, &ProtoConfig::default())
+                    load_config_from_root(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().bun.is_none());
 
                 let config = test_load_config(FILENAME, "node:\n  bun: {}", |path| {
-                    ToolchainConfig::load_from(path, &ProtoConfig::default())
+                    load_config_from_root(path, &ProtoConfig::default())
                 });
 
                 assert!(config.node.unwrap().bun.is_some());
@@ -966,7 +971,7 @@ node:
                         let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
-                        ToolchainConfig::load_from(path, &tools)
+                        load_config_from_root(path, &tools)
                     },
                 );
 
@@ -990,7 +995,7 @@ node:
                         let mut tools = ProtoConfig::default();
                         tools.inherit_builtin_plugins();
 
-                        ToolchainConfig::load_from(path, &tools)
+                        load_config_from_root(path, &tools)
                     },
                 );
 
@@ -1019,7 +1024,7 @@ node:
                             UnresolvedVersionSpec::parse("0.0.1").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -1048,7 +1053,7 @@ node:
                             UnresolvedVersionSpec::parse("0.1.0").unwrap(),
                         );
 
-                        ToolchainConfig::load_from(path, &proto)
+                        load_config_from_root(path, &proto)
                     },
                 );
 
@@ -1071,7 +1076,7 @@ bun:
 node:
   packageManager: bun
 ",
-                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                    |path| load_config_from_root(path, &ProtoConfig::default()),
                 );
 
                 assert_eq!(
@@ -1098,7 +1103,7 @@ bun:
 node:
   packageManager: bun
 ",
-                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                    |path| load_config_from_root(path, &ProtoConfig::default()),
                 );
 
                 assert_eq!(config.bun.unwrap().install_args, vec!["--frozen"]);
@@ -1118,7 +1123,7 @@ node:
   packageManager: bun
   dependencyVersionFormat: workspace-tilde
 ",
-                    |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                    |path| load_config_from_root(path, &ProtoConfig::default()),
                 );
 
                 let cfg = config.node.unwrap();
@@ -1134,7 +1139,7 @@ node:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "rust: {}", |path| {
-                ToolchainConfig::load_from(path, &ProtoConfig::default())
+                load_config_from_root(path, &ProtoConfig::default())
             });
 
             let cfg = config.rust.unwrap();
@@ -1152,7 +1157,7 @@ rust:
   bins: [cargo-make]
   syncToolchainConfig: true
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             let cfg = config.rust.unwrap();
@@ -1175,7 +1180,7 @@ rust:
       local: true
   syncToolchainConfig: true
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             let cfg = config.rust.unwrap();
@@ -1208,7 +1213,7 @@ rust:
                     UnresolvedVersionSpec::parse("1.69.0").unwrap(),
                 );
 
-                ToolchainConfig::load_from(path, &proto)
+                load_config_from_root(path, &proto)
             });
 
             assert!(config.rust.is_some());
@@ -1224,7 +1229,7 @@ rust:
                 let mut tools = ProtoConfig::default();
                 tools.inherit_builtin_plugins();
 
-                ToolchainConfig::load_from(path, &tools)
+                load_config_from_root(path, &tools)
             });
 
             assert_eq!(
@@ -1251,7 +1256,7 @@ rust:
                         UnresolvedVersionSpec::parse("1.69.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -1280,7 +1285,7 @@ rust:
                         UnresolvedVersionSpec::parse("1.65.0").unwrap(),
                     );
 
-                    ToolchainConfig::load_from(path, &proto)
+                    load_config_from_root(path, &proto)
                 },
             );
 
@@ -1299,7 +1304,7 @@ rust:
         #[test]
         fn uses_defaults() {
             let config = test_load_config(FILENAME, "typescript: {}", |path| {
-                ToolchainConfig::load_from(path, &ProtoConfig::default())
+                load_config_from_root(path, &ProtoConfig::default())
             });
 
             let cfg = config.typescript.unwrap();
@@ -1317,7 +1322,7 @@ typescript:
   projectConfigFileName: tsconf.json
   syncProjectReferences: false
 ",
-                |path| ToolchainConfig::load_from(path, &ProtoConfig::default()),
+                |path| load_config_from_root(path, &ProtoConfig::default()),
             );
 
             let cfg = config.typescript.unwrap();
@@ -1335,7 +1340,7 @@ typescript:
                     UnresolvedVersionSpec::parse("5.0.0").unwrap(),
                 );
 
-                ToolchainConfig::load_from(path, &proto)
+                load_config_from_root(path, &proto)
             });
 
             assert!(config.typescript.is_some());
@@ -1354,7 +1359,7 @@ typescript:
 
             let mut config = test_config(locate_fixture("pkl"), |path| {
                 let proto = ProtoConfig::default();
-                ToolchainConfig::load_from(path, &proto)
+                load_config_from_root(path, &proto)
             });
 
             assert_eq!(

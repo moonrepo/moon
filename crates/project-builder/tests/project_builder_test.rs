@@ -1,8 +1,8 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
-    ConfigFinder, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
-    LanguageType, NodeConfig, PlatformType, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
+    ConfigLoader, DependencyConfig, DependencyScope, DependencySource, LanguageType, NodeConfig,
+    PlatformType, RustConfig, TaskArgs, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 // We need some top-level struct to hold the data used for lifetime refs.
 struct Stub {
-    config_finder: ConfigFinder,
+    config_loader: ConfigLoader,
     toolchain_config: ToolchainConfig,
     workspace_root: PathBuf,
     id: Id,
@@ -30,7 +30,7 @@ impl Stub {
         };
 
         Self {
-            config_finder: ConfigFinder::default(),
+            config_loader: ConfigLoader::default(),
             toolchain_config,
             workspace_root: root.to_path_buf(),
             id: Id::raw(id),
@@ -43,7 +43,7 @@ impl Stub {
             &self.id,
             &self.source,
             ProjectBuilderContext {
-                config_finder: &self.config_finder,
+                config_loader: &self.config_loader,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
                 workspace_root: &self.workspace_root,
@@ -56,7 +56,9 @@ impl Stub {
 async fn build_project(id: &str, root: &Path) -> Project {
     let stub = Stub::new(id, root);
 
-    let manager = InheritedTasksManager::load(root, root.join("global")).unwrap();
+    let manager = ConfigLoader::default()
+        .load_tasks_manager_from(root, root.join("global"))
+        .unwrap();
 
     let mut builder = stub.create_builder().await;
     builder.load_local_config().await.unwrap();

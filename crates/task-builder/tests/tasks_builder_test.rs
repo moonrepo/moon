@@ -29,8 +29,9 @@ async fn build_tasks_with_config(
 
     builder.load_local_tasks(&local_config);
 
-    let global_manager =
-        InheritedTasksManager::load(root, root.join(global_name.unwrap_or("global"))).unwrap();
+    let global_manager = ConfigLoader::default()
+        .load_tasks_manager_from(root, root.join(global_name.unwrap_or("global")))
+        .unwrap();
 
     let global_config = global_manager
         .get_inherited_config(
@@ -60,11 +61,9 @@ async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
     build_tasks_with_config(
         root,
         &source,
-        ProjectConfig::create_loader(root.join(&source))
-            .unwrap()
-            .load()
-            .unwrap()
-            .config,
+        ConfigLoader::default()
+            .load_project_config_from_source(root, &source)
+            .unwrap(),
         ToolchainConfig::default(),
         None,
     )
@@ -81,11 +80,9 @@ async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<
     build_tasks_with_config(
         root,
         &source,
-        ProjectConfig::create_loader(root.join(&source))
-            .unwrap()
-            .load()
-            .unwrap()
-            .config,
+        ConfigLoader::default()
+            .load_project_config_from_source(root, &source)
+            .unwrap(),
         ToolchainConfig {
             bun: Some(BunConfig::default()),
             deno: Some(DenoConfig::default()),
@@ -1629,7 +1626,9 @@ mod tasks_builder {
             let tasks = build_tasks_with_config(
                 sandbox.path(),
                 "extends-interweave",
-                ProjectConfig::load_from(sandbox.path(), "extends-interweave").unwrap(),
+                ConfigLoader::default()
+                    .load_project_config_from_source(sandbox.path(), "extends-interweave")
+                    .unwrap(),
                 ToolchainConfig::default(),
                 Some("global-interweave"),
             )

@@ -219,6 +219,7 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
+    #[cfg(feature = "proto")]
     pub fn load_toolchain_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,

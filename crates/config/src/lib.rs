@@ -1,6 +1,5 @@
 #[cfg(feature = "loader")]
 mod config_cache;
-#[cfg(feature = "loader")]
 mod config_finder;
 #[cfg(feature = "loader")]
 mod config_loader;
@@ -22,7 +21,6 @@ mod validate;
 mod workspace;
 mod workspace_config;
 
-#[cfg(feature = "loader")]
 pub use config_finder::*;
 #[cfg(feature = "loader")]
 pub use config_loader::*;

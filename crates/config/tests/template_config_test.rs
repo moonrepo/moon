@@ -1,8 +1,13 @@
 mod utils;
 
-use moon_config::{TemplateConfig, TemplateVariableEnumDefault};
+use moon_config::{ConfigLoader, TemplateConfig, TemplateVariableEnumDefault};
 use rustc_hash::FxHashMap;
+use std::path::Path;
 use utils::*;
+
+fn load_config_from_root(root: &Path) -> miette::Result<TemplateConfig> {
+    ConfigLoader::default().load_template_config(root)
+}
 
 mod template_config {
     use super::*;
@@ -13,7 +18,7 @@ mod template_config {
     )]
     fn error_unknown_field() {
         test_load_config("template.yml", "unknown: 123", |path| {
-            TemplateConfig::load_from(path)
+            load_config_from_root(path)
         });
     }
 
@@ -22,7 +27,7 @@ mod template_config {
         let config = test_load_config(
             "template.yml",
             "title: title\ndescription: description",
-            |path| TemplateConfig::load_from(path),
+            load_config_from_root,
         );
 
         assert_eq!(config.title, "title");
@@ -37,7 +42,7 @@ mod template_config {
         #[should_panic(expected = "invalid type: integer `123`, expected a string")]
         fn invalid_type() {
             test_load_config("template.yml", "title: 123", |path| {
-                TemplateConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
 
@@ -45,7 +50,7 @@ mod template_config {
         #[should_panic(expected = "title: must not be empty")]
         fn not_empty() {
             test_load_config("template.yml", "title: ''\ndescription: 'asd'", |path| {
-                TemplateConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
     }
@@ -57,7 +62,7 @@ mod template_config {
         #[should_panic(expected = "invalid type: integer `123`, expected a string")]
         fn invalid_type() {
             test_load_config("template.yml", "description: 123", |path| {
-                TemplateConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
 
@@ -65,7 +70,7 @@ mod template_config {
         #[should_panic(expected = "description: must not be empty")]
         fn not_empty() {
             test_load_config("template.yml", "title: 'asd'\ndescription: ''", |path| {
-                TemplateConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
     }
@@ -92,7 +97,7 @@ variables:
   unknown:
     type: array
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -110,7 +115,7 @@ variables:
     prompt: prompt
     required: true
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -138,7 +143,7 @@ variables:
     type: boolean
     default: 123
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -156,7 +161,7 @@ variables:
     prompt: prompt
     required: false
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -184,7 +189,7 @@ variables:
     type: number
     default: true
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -200,7 +205,7 @@ variables:
     type: string
     default: abc
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -228,7 +233,7 @@ variables:
     type: string
     default: 123
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -250,7 +255,7 @@ variables:
         value: c
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -294,7 +299,7 @@ variables:
     multiple: true
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -332,7 +337,7 @@ variables:
     values: [1, 2, 3]
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -351,7 +356,7 @@ variables:
     values: [a, b, c]
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -372,7 +377,7 @@ variables:
     values: [a, b, c]
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -387,9 +392,7 @@ variables:
         fn loads_pkl() {
             moon_common::enable_pkl_configs();
 
-            let config = test_config(locate_fixture("pkl"), |path| {
-                TemplateConfig::load_from(path)
-            });
+            let config = test_config(locate_fixture("pkl"), load_config_from_root);
 
             assert_eq!(
                 config,

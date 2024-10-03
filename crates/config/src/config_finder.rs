@@ -33,14 +33,14 @@ impl ConfigFinder {
         self.get_file_names("moon")
     }
 
-    pub fn get_scoped_tasks_files(&self, workspace_root: &Path) -> miette::Result<Vec<PathBuf>> {
-        self.get_from_dir(workspace_root.join(CONFIG_DIRNAME).join("tasks"))
+    pub fn get_scoped_tasks_files(&self, moon_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+        self.get_from_dir(moon_dir.join("tasks"))
     }
 
-    pub fn get_tasks_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
+    pub fn get_tasks_files(&self, moon_dir: &Path) -> Vec<PathBuf> {
         self.get_tasks_file_names()
             .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
+            .map(|name| moon_dir.join(name))
             .collect()
     }
 

@@ -47,7 +47,7 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
     let project = project_graph.get(&args.id)?;
     let mut partial_config = session
         .config_loader
-        .load_partial_project_config(&project.root)?;
+        .load_project_partial_config(&project.root)?;
 
     let mut link_deps = |deps: &DependenciesMap<String>, scope: DependencyScope| {
         for package_name in deps.keys() {

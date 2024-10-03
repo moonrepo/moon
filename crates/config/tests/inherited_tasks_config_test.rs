@@ -269,7 +269,7 @@ fileGroups:
             test_config(sandbox.path().join("tasks.yml"), |path| {
                 // Use load_partial instead of load since this caches!
                 let partial = ConfigLoader::default()
-                    .load_partial_tasks_config_from_path(sandbox.path(), path)
+                    .load_tasks_partial_config_from_path(sandbox.path(), path)
                     .unwrap();
 
                 Ok(InheritedTasksConfig::from_partial(partial))

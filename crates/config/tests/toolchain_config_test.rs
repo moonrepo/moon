@@ -143,12 +143,12 @@ deno: {{}}
             let temp_dir = sandbox.path().join(".moon/cache/temp");
             let url = server.url("/config.yml");
 
-            sandbox.create_file("toolchain.yml", format!(r"extends: '{url}'"));
+            sandbox.create_file(".moon/toolchain.yml", format!(r"extends: '{url}'"));
 
             assert!(!temp_dir.exists());
 
-            test_config(sandbox.path().join("toolchain.yml"), |path| {
-                Ok(load_config_from_file(path))
+            test_config(sandbox.path(), |root| {
+                load_config_from_root(root, &ProtoConfig::default())
             });
 
             assert!(temp_dir.exists());

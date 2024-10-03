@@ -122,7 +122,7 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    pub fn load_partial_project_config<P: AsRef<Path>>(
+    pub fn load_project_partial_config<P: AsRef<Path>>(
         &self,
         project_root: P,
     ) -> miette::Result<PartialProjectConfig> {
@@ -161,7 +161,7 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    pub fn load_partial_tasks_config_from_path<T: AsRef<Path>, P: AsRef<Path>>(
+    pub fn load_tasks_partial_config_from_path<T: AsRef<Path>, P: AsRef<Path>>(
         &self,
         workspace_root: T,
         path: P,
@@ -192,17 +192,17 @@ impl ConfigLoader {
         let mut files = vec![];
 
         // tasks.*
-        files.extend(self.finder.get_tasks_files(workspace_root));
+        files.extend(self.finder.get_tasks_files(moon_dir));
 
         // tasks/**/*.*
-        files.extend(self.finder.get_from_dir(moon_dir.join("tasks"))?);
+        files.extend(self.finder.get_scoped_tasks_files(moon_dir)?);
 
         for file in files {
             if file.exists() {
                 manager.add_config(
                     workspace_root,
                     &file,
-                    self.load_partial_tasks_config_from_path(workspace_root, &file)?,
+                    self.load_tasks_partial_config_from_path(workspace_root, &file)?,
                 );
             }
         }

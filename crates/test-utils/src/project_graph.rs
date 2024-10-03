@@ -31,7 +31,7 @@ impl ProjectGraphContainer {
         let proto_config = ProtoConfig::default();
         let config_loader = ConfigLoader::default();
         let mut graph = Self {
-            inherited_tasks: InheritedTasksManager::load_from(root).unwrap(),
+            inherited_tasks: config_loader.load_tasks_manager(root).unwrap(),
             toolchain_config: config_loader
                 .load_toolchain_config(root, &proto_config)
                 .unwrap(),

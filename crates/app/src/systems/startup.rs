@@ -163,7 +163,7 @@ pub async fn load_tasks_configs(
     );
 
     let root = workspace_root.to_owned();
-    let manager = load_config_blocking(move || InheritedTasksManager::load_from(root))
+    let manager = load_config_blocking(move || config_loader.load_tasks_manager(root))
         .await
         .into_diagnostic()??;
 

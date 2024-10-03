@@ -12,7 +12,6 @@ pub struct ConfigCache {
 }
 
 impl ConfigCache {
-    #[cfg(feature = "loader")]
     pub fn new(workspace_root: &std::path::Path) -> Self {
         Self {
             memory: FxHashMap::default(),

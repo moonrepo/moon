@@ -74,39 +74,6 @@ cacheable!(
     }
 );
 
-#[cfg(feature = "loader")]
-impl InheritedTasksConfig {
-    /// Only used in testing!
-    pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
-        use schematic::ConfigLoader;
-
-        let result = ConfigLoader::<InheritedTasksConfig>::new()
-            .file_optional(path.as_ref())?
-            .load()?;
-
-        Ok(result.config)
-    }
-
-    pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(
-        workspace_root: T,
-        path: F,
-    ) -> miette::Result<PartialInheritedTasksConfig> {
-        use crate::config_cache::ConfigCache;
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let root = workspace_root.as_ref();
-
-        Ok(ConfigLoader::<InheritedTasksConfig>::new()
-            .set_cacher(ConfigCache::new(root))
-            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
-            .set_root(root)
-            .file_optional(check_yml_extension(path.as_ref()))?
-            .load_partial(&())?)
-    }
-}
-
 cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
@@ -172,42 +139,6 @@ impl InheritedTasksManager {
 
 #[cfg(feature = "loader")]
 impl InheritedTasksManager {
-    pub fn load<T: AsRef<Path>, D: AsRef<Path>>(
-        workspace_root: T,
-        moon_dir: D,
-    ) -> miette::Result<InheritedTasksManager> {
-        let workspace_root = workspace_root.as_ref();
-        let moon_dir = moon_dir.as_ref();
-        let mut manager = InheritedTasksManager::default();
-        let mut files = vec![];
-
-        // tasks.*
-        files.extend(manager.config_finder.get_tasks_files(workspace_root));
-
-        // tasks/**/*.*
-        files.extend(manager.config_finder.get_from_dir(moon_dir.join("tasks"))?);
-
-        for file in files {
-            if file.exists() {
-                manager.add_config(
-                    workspace_root,
-                    &file,
-                    InheritedTasksConfig::load_partial(workspace_root, &file)?,
-                );
-            }
-        }
-
-        Ok(manager)
-    }
-
-    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
-        use moon_common::consts;
-
-        let workspace_root = workspace_root.as_ref();
-
-        Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
-    }
-
     pub fn add_config(
         &mut self,
         workspace_root: &Path,

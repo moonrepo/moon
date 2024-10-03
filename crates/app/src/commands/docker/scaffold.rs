@@ -94,8 +94,8 @@ async fn scaffold_workspace(
     let copy_from_dir = |source: &Path, dest: &Path, project_lang: LanguageType| -> AppResult {
         let mut files_to_create: Vec<String> = vec![];
         let mut files_to_copy: Vec<String> = vec![".gitignore".into(), ".prototools".into()];
-        files_to_copy.extend(session.config_finder.get_project_file_names());
-        files_to_copy.extend(session.config_finder.get_template_file_names());
+        files_to_copy.extend(session.config_loader.get_project_file_names());
+        files_to_copy.extend(session.config_loader.get_template_file_names());
 
         if session
             .workspace_config

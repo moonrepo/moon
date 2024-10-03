@@ -18,6 +18,10 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
+    pub fn with_pkl() -> Self {
+        Self { pkl: true }
+    }
+
     pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
         self.get_project_file_names()
             .into_iter()

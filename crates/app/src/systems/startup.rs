@@ -2,7 +2,7 @@ use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_api::Moonbase;
 use moon_common::consts::*;
-use moon_config::{ConfigFinder, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
@@ -99,23 +99,23 @@ pub fn detect_proto_environment(
 
 /// Load the workspace configuration file from the `.moon` directory in the workspace root.
 /// This file is required to exist, so error if not found.
-#[instrument(skip(config_finder))]
+#[instrument(skip(config_loader))]
 pub async fn load_workspace_config(
-    config_finder: &ConfigFinder,
+    config_loader: ConfigLoader,
     workspace_root: &Path,
 ) -> AppResult<Arc<WorkspaceConfig>> {
-    let config_name = config_finder.get_debug_label("workspace", true);
+    let config_name = config_loader.get_debug_label("workspace", true);
 
     debug!("Loading {} (required)", color::file(&config_name));
 
-    let config_files = config_finder.get_workspace_files(workspace_root);
+    let config_files = config_loader.get_workspace_files(workspace_root);
 
     if config_files.iter().all(|file| !file.exists()) {
         return Err(AppError::MissingConfigFile(config_name).into());
     }
 
     let root = workspace_root.to_owned();
-    let config = load_config_blocking(move || WorkspaceConfig::load_from(root))
+    let config = load_config_blocking(move || config_loader.load_workspace_config(root))
         .await
         .into_diagnostic()??;
 
@@ -123,22 +123,22 @@ pub async fn load_workspace_config(
 }
 
 /// Load the toolchain configuration file from the `.moon` directory if it exists.
-#[instrument(skip(config_finder, proto_env))]
+#[instrument(skip(config_loader, proto_env))]
 pub async fn load_toolchain_config(
-    config_finder: &ConfigFinder,
+    config_loader: ConfigLoader,
+    proto_env: Arc<ProtoEnvironment>,
     workspace_root: &Path,
     working_dir: &Path,
-    proto_env: Arc<ProtoEnvironment>,
 ) -> AppResult<Arc<ToolchainConfig>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(config_finder.get_debug_label("toolchain", true))
+        color::file(config_loader.get_debug_label("toolchain", true))
     );
 
     let root = workspace_root.to_owned();
     let cwd = working_dir.to_owned();
     let config = load_config_blocking(move || {
-        ToolchainConfig::load_from(
+        config_loader.load_toolchain_config(
             root,
             proto_env.load_config_manager()?.get_local_config(&cwd)?,
         )
@@ -151,15 +151,15 @@ pub async fn load_toolchain_config(
 
 /// Load the tasks configuration file from the `.moon` directory if it exists.
 /// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
-#[instrument(skip(config_finder))]
+#[instrument(skip(config_loader))]
 pub async fn load_tasks_configs(
-    config_finder: &ConfigFinder,
+    config_loader: ConfigLoader,
     workspace_root: &Path,
 ) -> AppResult<Arc<InheritedTasksManager>> {
     debug!(
         "Attempting to load {} and {} (optional)",
-        color::file(config_finder.get_debug_label("tasks", true)),
-        color::file(config_finder.get_debug_label("tasks/**/*", true)),
+        color::file(config_loader.get_debug_label("tasks", true)),
+        color::file(config_loader.get_debug_label("tasks/**/*", true)),
     );
 
     let root = workspace_root.to_owned();

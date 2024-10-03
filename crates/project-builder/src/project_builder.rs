@@ -1,7 +1,7 @@
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::{color, Id};
 use moon_config::{
-    ConfigFinder, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
+    ConfigLoader, DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
     InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig,
     ToolchainConfig,
 };
@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
-    pub config_finder: &'app ConfigFinder,
+    pub config_loader: &'app ConfigLoader,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
     pub workspace_root: &'app Path,
@@ -164,11 +164,14 @@ impl<'app> ProjectBuilder<'app> {
             "Attempting to load {} (optional)",
             color::file(
                 self.source
-                    .join(self.context.config_finder.get_debug_label("moon", false))
+                    .join(self.context.config_loader.get_debug_label("moon", false))
             )
         );
 
-        let config = ProjectConfig::load_from(self.context.workspace_root, self.source)?;
+        let config = self
+            .context
+            .config_loader
+            .load_project_config(&self.project_root)?;
 
         self.inherit_local_config(config).await?;
 

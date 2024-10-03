@@ -7,14 +7,21 @@ use crate::validate::check_yml_extension;
 use crate::workspace_config::WorkspaceConfig;
 use moon_common::color;
 use schematic::{Config, ConfigLoader as Loader};
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct ConfigLoader {
     pub finder: ConfigFinder,
 }
 
 impl ConfigLoader {
+    pub fn with_pkl() -> Self {
+        Self {
+            finder: ConfigFinder::with_pkl(),
+        }
+    }
+
     pub fn create_project_loader<P: AsRef<Path>>(
         &self,
         project_root: P,
@@ -168,5 +175,13 @@ impl ConfigLoader {
         }
 
         Ok(())
+    }
+}
+
+impl Deref for ConfigLoader {
+    type Target = ConfigFinder;
+
+    fn deref(&self) -> &Self::Target {
+        &self.finder
     }
 }

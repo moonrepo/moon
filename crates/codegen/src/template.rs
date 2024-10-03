@@ -4,7 +4,7 @@ use crate::{filters, funcs, CodegenError};
 use miette::IntoDiagnostic;
 use moon_common::path::{to_virtual_string, RelativePathBuf};
 use moon_common::Id;
-use moon_config::{ConfigFinder, TemplateConfig};
+use moon_config::{ConfigLoader, TemplateConfig};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use starbase_utils::{fs, json, yaml};
@@ -45,7 +45,7 @@ impl Template {
         engine.register_filter("path_relative", filters::path_relative);
         engine.register_function("variables", funcs::variables);
 
-        let config = TemplateConfig::load_from(&root)?;
+        let config = ConfigLoader::default().load_template_config(&root)?;
 
         Ok(Template {
             id: config.id.clone().unwrap_or(id),
@@ -106,7 +106,7 @@ impl Template {
         self.load_extended_files(dest, context)?;
 
         let mut files = vec![];
-        let filenames = ConfigFinder::default().get_template_file_names();
+        let filenames = ConfigLoader::default().get_template_file_names();
 
         debug!(
             template = self.id.as_str(),

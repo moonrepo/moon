@@ -150,7 +150,7 @@ pub async fn init_tool(
         InitTool::TypeScript => init_typescript(dest_dir, options, theme, console).await?,
     };
 
-    let toolchain_config_path = &session.config_finder.get_toolchain_files(dest_dir)[0];
+    let toolchain_config_path = &session.config_loader.get_toolchain_files(dest_dir)[0];
 
     if !toolchain_config_path.exists() {
         fs::write_file(
@@ -220,7 +220,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Create workspace file
     fs::write_file(
-        &session.config_finder.get_workspace_files(&dest_dir)[0],
+        &session.config_loader.get_workspace_files(&dest_dir)[0],
         render_workspace_template(&context)?,
     )?;
 

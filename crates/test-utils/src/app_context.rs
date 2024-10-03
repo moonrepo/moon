@@ -1,6 +1,6 @@
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
-use moon_config::{ToolchainConfig, Version, WorkspaceConfig};
+use moon_config::{ConfigLoader, Version};
 use moon_console::Console;
 use moon_vcs::Git;
 use proto_core::ProtoConfig;
@@ -13,8 +13,11 @@ pub fn generate_app_context(fixture: &str) -> AppContext {
 }
 
 pub fn generate_app_context_from_sandbox(root: &Path) -> AppContext {
-    let toolchain_config = ToolchainConfig::load_from(root, &ProtoConfig::default()).unwrap();
-    let workspace_config = WorkspaceConfig::load_from(root).unwrap();
+    let config_loader = ConfigLoader::default();
+    let toolchain_config = config_loader
+        .load_toolchain_config(root, &ProtoConfig::default())
+        .unwrap();
+    let workspace_config = config_loader.load_workspace_config(root).unwrap();
     let vcs = Git::load(
         root,
         &workspace_config.vcs.default_branch,

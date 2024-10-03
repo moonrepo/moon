@@ -18,28 +18,6 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
-    #[cfg(feature = "loader")]
-    pub fn prepare_loader<T: schematic::Config>(
-        &self,
-        loader: &mut schematic::ConfigLoader<T>,
-        files: Vec<PathBuf>,
-    ) -> miette::Result<()> {
-        use crate::validate::check_yml_extension;
-
-        for file in files {
-            if file
-                .extension()
-                .is_some_and(|ext| ext == "yml" || ext == "yaml")
-            {
-                loader.file_optional(check_yml_extension(&file))?;
-            } else {
-                loader.file_optional(file)?;
-            }
-        }
-
-        Ok(())
-    }
-
     pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
         self.get_project_file_names()
             .into_iter()

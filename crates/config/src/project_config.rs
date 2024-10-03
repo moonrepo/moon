@@ -6,9 +6,6 @@ use rustc_hash::FxHashMap;
 use schematic::{derive_enum, validate, Config, ConfigEnum, ValidateError};
 use std::collections::BTreeMap;
 
-#[cfg(feature = "loader")]
-use std::path::Path;
-
 fn validate_channel<D, C>(
     value: &str,
     _data: &D,
@@ -166,44 +163,3 @@ cacheable!(
         pub workspace: ProjectWorkspaceConfig,
     }
 );
-
-#[cfg(feature = "loader")]
-impl ProjectConfig {
-    pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
-        workspace_root: R,
-        project_source: P,
-    ) -> miette::Result<ProjectConfig> {
-        let workspace_root = workspace_root.as_ref();
-        let project_root = workspace_root.join(project_source.as_ref());
-
-        let result = Self::create_loader(project_root)?
-            .set_root(workspace_root)
-            .load()?;
-
-        Ok(result.config)
-    }
-
-    pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
-        Ok(Self::create_loader(project_root)?.load_partial(&())?)
-    }
-
-    pub fn create_loader<P: AsRef<Path>>(
-        project_root: P,
-    ) -> miette::Result<schematic::ConfigLoader<ProjectConfig>> {
-        use crate::config_finder::ConfigFinder;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let project_root = project_root.as_ref();
-        let finder = ConfigFinder::default();
-        let mut loader = ConfigLoader::<ProjectConfig>::new();
-
-        loader.set_help(color::muted_light(
-            "https://moonrepo.dev/docs/config/project",
-        ));
-
-        finder.prepare_loader(&mut loader, finder.get_project_files(project_root))?;
-
-        Ok(loader)
-    }
-}

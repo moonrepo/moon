@@ -5,9 +5,6 @@ use rustc_hash::FxHashMap;
 use schematic::{validate, Config, PathSegment, ValidateError};
 use semver::VersionReq;
 
-#[cfg(feature = "loader")]
-use std::path::Path;
-
 // We can't use serde based types in the enum below to handle validation,
 // as serde fails to parse correctly. So we must manually validate here.
 fn validate_projects<D, C>(
@@ -169,33 +166,5 @@ impl WorkspaceConfig {
         for (id, extension) in default_extensions() {
             self.extensions.entry(id).or_insert(extension);
         }
-    }
-}
-
-#[cfg(feature = "loader")]
-impl WorkspaceConfig {
-    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
-        use crate::config_cache::ConfigCache;
-        use crate::config_finder::ConfigFinder;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let workspace_root = workspace_root.as_ref();
-        let finder = ConfigFinder::default();
-        let mut loader = ConfigLoader::<WorkspaceConfig>::new();
-
-        loader
-            .set_cacher(ConfigCache::new(workspace_root))
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/workspace",
-            ))
-            .set_root(workspace_root);
-
-        finder.prepare_loader(&mut loader, finder.get_workspace_files(workspace_root))?;
-
-        let mut result = loader.load()?;
-        result.config.inherit_default_plugins();
-
-        Ok(result.config)
     }
 }

@@ -1,6 +1,8 @@
 #[cfg(feature = "loader")]
 mod config_cache;
 mod config_finder;
+#[cfg(feature = "loader")]
+mod config_loader;
 mod inherited_tasks_config;
 mod language_platform;
 pub mod patterns;

@@ -7,9 +7,6 @@ use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
 #[cfg(feature = "proto")]
-use std::path::Path;
-
-#[cfg(feature = "proto")]
 use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
 
 /// Configures an individual toolchain.
@@ -216,40 +213,5 @@ impl ToolchainConfig {
         }
 
         Ok(())
-    }
-
-    pub fn load_from<R: AsRef<Path>>(
-        workspace_root: R,
-        proto_config: &proto_core::ProtoConfig,
-    ) -> miette::Result<ToolchainConfig> {
-        let mut result = Self::create_loader(workspace_root)?.load()?;
-
-        result.config.inherit_proto(proto_config)?;
-
-        Ok(result.config)
-    }
-
-    pub fn create_loader<R: AsRef<Path>>(
-        workspace_root: R,
-    ) -> miette::Result<schematic::ConfigLoader<ToolchainConfig>> {
-        use crate::config_cache::ConfigCache;
-        use crate::config_finder::ConfigFinder;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let workspace_root = workspace_root.as_ref();
-        let finder = ConfigFinder::default();
-        let mut loader = ConfigLoader::<ToolchainConfig>::new();
-
-        loader
-            .set_cacher(ConfigCache::new(workspace_root))
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/toolchain",
-            ))
-            .set_root(workspace_root);
-
-        finder.prepare_loader(&mut loader, finder.get_toolchain_files(workspace_root))?;
-
-        Ok(loader)
     }
 }

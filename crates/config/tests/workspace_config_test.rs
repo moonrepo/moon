@@ -851,7 +851,6 @@ extensions:
                 WorkspaceConfig::load_from(path)
             });
 
-
             assert_eq!(
                 config.codeowners,
                 CodeownersConfig {

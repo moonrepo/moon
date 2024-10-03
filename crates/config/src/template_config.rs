@@ -2,9 +2,6 @@ use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ValidateError};
 
-#[cfg(feature = "loader")]
-use std::path::Path;
-
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
         /// Configuration for a template variable.
@@ -251,27 +248,4 @@ pub struct TemplateConfig {
     /// Variables can also be populated by passing command line arguments.
     #[setting(nested)]
     pub variables: FxHashMap<String, TemplateVariable>,
-}
-
-#[cfg(feature = "loader")]
-impl TemplateConfig {
-    pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
-        use crate::config_finder::ConfigFinder;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let template_root = template_root.as_ref();
-        let finder = ConfigFinder::default();
-        let mut loader = ConfigLoader::<TemplateConfig>::new();
-
-        loader.set_help(color::muted_light(
-            "https://moonrepo.dev/docs/config/template",
-        ));
-
-        finder.prepare_loader(&mut loader, finder.get_template_files(template_root))?;
-
-        let result = loader.load()?;
-
-        Ok(result.config)
-    }
 }

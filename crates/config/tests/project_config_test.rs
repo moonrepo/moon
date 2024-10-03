@@ -658,4 +658,100 @@ workspace:
             );
         }
     }
+
+    mod pkl {
+        use std::collections::BTreeMap;
+
+        use super::*;
+        use moon_common::Id;
+        use moon_config::*;
+        use starbase_sandbox::locate_fixture;
+
+        #[test]
+        fn loads_pkl() {
+            let config = test_config(locate_fixture("pkl"), |path| {
+                ConfigLoader::with_pkl().load_project_config(path)
+            });
+
+            assert_eq!(
+                config,
+                ProjectConfig {
+                    depends_on: vec![
+                        ProjectDependsOn::String(Id::raw("a")),
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: Id::raw("b"),
+                            scope: DependencyScope::Build,
+                            source: DependencySource::Implicit,
+                            via: None
+                        })
+                    ],
+                    docker: ProjectDockerConfig {
+                        file: ProjectDockerFileConfig {
+                            build_task: Some(Id::raw("build")),
+                            image: Some("node:latest".into()),
+                            start_task: Some(Id::raw("start")),
+                        },
+                        scaffold: ProjectDockerScaffoldConfig {
+                            include: vec![GlobPath("*.js".into())]
+                        }
+                    },
+                    env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
+                    file_groups: FxHashMap::from_iter([
+                        (
+                            Id::raw("sources"),
+                            vec![InputPath::ProjectGlob("src/**/*".into())]
+                        ),
+                        (
+                            Id::raw("tests"),
+                            vec![InputPath::WorkspaceGlob("**/*.test.*".into())]
+                        )
+                    ]),
+                    id: Some(Id::raw("custom-id")),
+                    language: LanguageType::Rust,
+                    owners: OwnersConfig {
+                        custom_groups: FxHashMap::default(),
+                        default_owner: Some("owner".into()),
+                        optional: true,
+                        paths: OwnersPaths::List(vec!["dir/".into(), "file.txt".into()]),
+                        required_approvals: Some(5)
+                    },
+                    platform: Some(PlatformType::Node),
+                    project: Some(ProjectMetadataConfig {
+                        name: Some("Name".into()),
+                        description: "Does something".into(),
+                        owner: Some("team".into()),
+                        maintainers: vec![],
+                        channel: Some("#team".into()),
+                        metadata: FxHashMap::from_iter([
+                            ("bool".into(), serde_json::Value::Bool(true)),
+                            ("string".into(), serde_json::Value::String("abc".into()))
+                        ]),
+                    }),
+                    stack: StackType::Frontend,
+                    tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
+                    tasks: BTreeMap::default(),
+                    toolchain: ProjectToolchainConfig {
+                        deno: Some(ProjectToolchainCommonToolConfig {
+                            version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
+                        }),
+                        typescript: Some(ProjectToolchainTypeScriptConfig {
+                            disabled: true,
+                            include_shared_types: Some(true),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                    type_of: ProjectType::Library,
+                    workspace: ProjectWorkspaceConfig {
+                        inherited_tasks: ProjectWorkspaceInheritedTasksConfig {
+                            exclude: vec![Id::raw("build")],
+                            include: Some(vec![Id::raw("test")]),
+                            rename: FxHashMap::from_iter([(Id::raw("old"), Id::raw("new"))])
+                        }
+                    },
+                    ..Default::default()
+                }
+            );
+        }
+    }
 }

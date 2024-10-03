@@ -93,6 +93,9 @@ jobs:
           proto-version: '0.41.3' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.5
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
+      - uses: pkl-community/setup-pkl@v0
+        with:
+          pkl-version: 0.26.3
       - name: Checking coverage status
         id: coverage
         shell: bash

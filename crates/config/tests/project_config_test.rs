@@ -660,12 +660,11 @@ workspace:
     }
 
     mod pkl {
-        use std::collections::BTreeMap;
-
         use super::*;
         use moon_common::Id;
         use moon_config::*;
         use starbase_sandbox::locate_fixture;
+        use std::collections::BTreeMap;
 
         #[test]
         fn loads_pkl() {

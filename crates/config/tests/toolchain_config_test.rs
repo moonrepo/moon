@@ -1355,11 +1355,9 @@ typescript:
 
         #[test]
         fn loads_pkl() {
-            moon_common::enable_pkl_configs();
-
             let mut config = test_config(locate_fixture("pkl"), |path| {
                 let proto = ProtoConfig::default();
-                load_config_from_root(path, &proto)
+                ConfigLoader::with_pkl().load_toolchain_config(path, &proto)
             });
 
             assert_eq!(

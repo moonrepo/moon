@@ -390,9 +390,9 @@ variables:
 
         #[test]
         fn loads_pkl() {
-            moon_common::enable_pkl_configs();
-
-            let config = test_config(locate_fixture("pkl"), load_config_from_root);
+            let config = test_config(locate_fixture("pkl"), |path| {
+                ConfigLoader::with_pkl().load_template_config(path)
+            });
 
             assert_eq!(
                 config,

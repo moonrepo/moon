@@ -1,7 +1,5 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
-export MOON_EXPERIMENT_PKL_CONFIG := "true"
-
 init:
 	cargo install cargo-binstall
 	cargo binstall cargo-insta cargo-nextest cargo-llvm-cov

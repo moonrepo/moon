@@ -111,7 +111,7 @@ node: {}";
             let url = server.url("/config.yml");
 
             sandbox.create_file(
-                "toolchain.yml",
+                ".moon/toolchain.yml",
                 format!(
                     r"
 extends: '{url}'
@@ -121,8 +121,8 @@ deno: {{}}
                 ),
             );
 
-            let config = test_config(sandbox.path().join("toolchain.yml"), |path| {
-                Ok(load_config_from_file(path))
+            let config = test_config(sandbox.path(), |root| {
+                load_config_from_root(root, &ProtoConfig::default())
             });
 
             assert!(config.bun.is_some());

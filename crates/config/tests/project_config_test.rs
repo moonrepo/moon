@@ -1,14 +1,20 @@
 mod utils;
 
-use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
+use std::path::Path;
+
+use moon_common::Id;
 use moon_config::{
-    DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
+    ConfigLoader, DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths,
+    PlatformType, ProjectConfig, ProjectDependsOn, ProjectType, TaskArgs,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use schematic::schema::IndexMap;
 use utils::*;
+
+fn load_config_from_root(root: &Path, source: &str) -> miette::Result<ProjectConfig> {
+    ConfigLoader::default().load_project_config_from_source(root, source)
+}
 
 mod project_config {
     use super::*;
@@ -18,16 +24,14 @@ mod project_config {
         expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `owners`, `platform`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `type`, `workspace`"
     )]
     fn error_unknown_field() {
-        test_load_config(CONFIG_PROJECT_FILENAME, "unknown: 123", |path| {
-            ProjectConfig::load_from(path, ".")
+        test_load_config("moon.yml", "unknown: 123", |path| {
+            load_config_from_root(path, ".")
         });
     }
 
     #[test]
     fn loads_defaults() {
-        let config = test_load_config(CONFIG_PROJECT_FILENAME, "{}", |path| {
-            ProjectConfig::load_from(path, ".")
-        });
+        let config = test_load_config("moon.yml", "{}", |path| load_config_from_root(path, "."));
 
         assert_eq!(config.language, LanguageType::Unknown);
         assert_eq!(config.type_of, ProjectType::Unknown);
@@ -36,7 +40,7 @@ mod project_config {
     #[test]
     fn can_use_references() {
         let config = test_load_config(
-            CONFIG_PROJECT_FILENAME,
+            "moon.yml",
             r"
 tasks:
   build: &webpack
@@ -47,7 +51,7 @@ tasks:
     <<: *webpack
     args: 'serve'
 ",
-            |path| ProjectConfig::load_from(path, "."),
+            |path| load_config_from_root(path, "."),
         );
 
         let build = config.tasks.get("build").unwrap();
@@ -74,7 +78,7 @@ tasks:
     #[should_panic(expected = "unknown field `_webpack`")]
     fn can_use_references_from_root() {
         let config = test_load_config(
-            CONFIG_PROJECT_FILENAME,
+            "moon.yml",
             r"
 _webpack: &webpack
     command: 'webpack'
@@ -87,7 +91,7 @@ tasks:
     <<: *webpack
     args: 'serve'
 ",
-            |path| ProjectConfig::load_from(path, "."),
+            |path| load_config_from_root(path, "."),
         );
 
         let build = config.tasks.get("build").unwrap();
@@ -114,11 +118,9 @@ tasks:
 
         #[test]
         fn supports_list_of_strings() {
-            let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
-                "dependsOn: ['a', 'b', 'c']",
-                |path| ProjectConfig::load_from(path, "."),
-            );
+            let config = test_load_config("moon.yml", "dependsOn: ['a', 'b', 'c']", |path| {
+                load_config_from_root(path, ".")
+            });
 
             assert_eq!(
                 config.depends_on,
@@ -133,14 +135,14 @@ tasks:
         #[test]
         fn supports_list_of_objects() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 dependsOn:
   - id: 'a'
     scope: 'development'
   - id: 'b'
     scope: 'production'",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -163,13 +165,13 @@ dependsOn:
         #[test]
         fn supports_list_of_strings_and_objects() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 dependsOn:
   - 'a'
   - id: 'b'
     scope: 'production'",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -189,13 +191,13 @@ dependsOn:
         #[should_panic(expected = "expected a project name or dependency config object")]
         fn errors_on_invalid_object_scope() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 dependsOn:
   - id: 'a'
     scope: 'invalid'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
     }
@@ -206,7 +208,7 @@ dependsOn:
         #[test]
         fn groups_into_correct_enums() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 fileGroups:
   files:
@@ -218,7 +220,7 @@ fileGroups:
     - proj/**/*
     - '!proj/**/*'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -250,8 +252,8 @@ fileGroups:
 
         #[test]
         fn supports_variant() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "language: rust", |path| {
-                ProjectConfig::load_from(path, ".")
+            let config = test_load_config("moon.yml", "language: rust", |path| {
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.language, LanguageType::Rust);
@@ -259,8 +261,8 @@ fileGroups:
 
         #[test]
         fn unsupported_variant_becomes_other() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "language: dotnet", |path| {
-                ProjectConfig::load_from(path, ".")
+            let config = test_load_config("moon.yml", "language: dotnet", |path| {
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.language, LanguageType::Other(Id::raw("dotnet")));
@@ -272,8 +274,8 @@ fileGroups:
 
         #[test]
         fn supports_variant() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "platform: rust", |path| {
-                ProjectConfig::load_from(path, ".")
+            let config = test_load_config("moon.yml", "platform: rust", |path| {
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.platform, Some(PlatformType::Rust));
@@ -284,8 +286,8 @@ fileGroups:
             expected = "unknown variant `perl`, expected one of `bun`, `deno`, `node`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "platform: perl", |path| {
-                ProjectConfig::load_from(path, ".")
+            test_load_config("moon.yml", "platform: perl", |path| {
+                load_config_from_root(path, ".")
             });
         }
     }
@@ -295,8 +297,8 @@ fileGroups:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(CONFIG_PROJECT_FILENAME, "owners: {}", |path| {
-                ProjectConfig::load_from(path, ".")
+            let config = test_load_config("moon.yml", "owners: {}", |path| {
+                load_config_from_root(path, ".")
             });
 
             assert_eq!(config.owners.custom_groups, FxHashMap::default());
@@ -309,7 +311,7 @@ fileGroups:
         #[test]
         fn can_set_values() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 owners:
   customGroups:
@@ -319,7 +321,7 @@ owners:
   optional: true
   requiredApprovals: 2
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -337,7 +339,7 @@ owners:
         #[test]
         fn can_set_paths_as_list() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 owners:
   defaultOwner: x
@@ -345,7 +347,7 @@ owners:
     - file.txt
     - dir/**/*
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -357,14 +359,14 @@ owners:
         #[test]
         fn can_set_paths_as_map() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 owners:
   paths:
     'file.txt': [a, b]
     'dir/**/*': [c, d]
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -380,14 +382,14 @@ owners:
         #[should_panic(expected = "a default owner is required when defining a list of paths")]
         fn errors_on_paths_list_empty_owner() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 owners:
   paths:
     - file.txt
     - dir/**/*
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
 
@@ -397,13 +399,13 @@ owners:
         )]
         fn errors_on_paths_map_empty_owner() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 owners:
   paths:
     'file.txt': []
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
     }
@@ -415,20 +417,20 @@ owners:
         #[test]
         #[should_panic(expected = "must not be empty")]
         fn errors_if_empty() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "project: {}", |path| {
-                ProjectConfig::load_from(path, ".")
+            test_load_config("moon.yml", "project: {}", |path| {
+                load_config_from_root(path, ".")
             });
         }
 
         #[test]
         fn can_set_only_description() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 project:
   description: 'Text'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             let meta = config.project.unwrap();
@@ -439,7 +441,7 @@ project:
         #[test]
         fn can_set_all() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 project:
   name: Name
@@ -448,7 +450,7 @@ project:
   maintainers: [a, b, c]
   channel: '#abc'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             let meta = config.project.unwrap();
@@ -463,7 +465,7 @@ project:
         #[test]
         fn can_set_custom_fields() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 project:
   description: 'Test'
@@ -471,7 +473,7 @@ project:
     bool: true
     string: 'abc'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             let meta = config.project.unwrap();
@@ -489,13 +491,13 @@ project:
         #[should_panic(expected = "must start with a `#`")]
         fn errors_if_channel_no_hash() {
             test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 project:
   description: Description
   channel: abc
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
         }
     }
@@ -506,7 +508,7 @@ project:
         #[test]
         fn can_set_tags() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 tags:
   - normal
@@ -516,7 +518,7 @@ tags:
   - dot.case
   - slash/case
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
@@ -535,8 +537,8 @@ tags:
         #[test]
         #[should_panic(expected = "Invalid format for foo bar")]
         fn errors_on_invalid_format() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "tags: ['foo bar']", |path| {
-                ProjectConfig::load_from(path, ".")
+            test_load_config("moon.yml", "tags: ['foo bar']", |path| {
+                load_config_from_root(path, ".")
             });
         }
     }
@@ -547,7 +549,7 @@ tags:
         #[test]
         fn supports_id_patterns() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 tasks:
   normal:
@@ -563,7 +565,7 @@ tasks:
   slash/case:
     command: 'f'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert!(config.tasks.contains_key("normal"));
@@ -577,7 +579,7 @@ tasks:
         #[test]
         fn can_extend_siblings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 tasks:
   base:
@@ -586,7 +588,7 @@ tasks:
     extends: 'base'
     args: '--more'
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert!(config.tasks.contains_key("base"));
@@ -600,7 +602,7 @@ tasks:
         #[test]
         fn can_set_settings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 toolchain:
   node:
@@ -609,7 +611,7 @@ toolchain:
     disabled: false
     routeOutDirToCache: true
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert!(config.toolchain.node.is_some());
@@ -633,7 +635,7 @@ toolchain:
         #[test]
         fn can_set_settings() {
             let config = test_load_config(
-                CONFIG_PROJECT_FILENAME,
+                "moon.yml",
                 r"
 workspace:
   inheritedTasks:
@@ -642,7 +644,7 @@ workspace:
     rename:
       c: d
 ",
-                |path| ProjectConfig::load_from(path, "."),
+                |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(config.workspace.inherited_tasks.exclude, vec![Id::raw("a")]);
@@ -653,6 +655,101 @@ workspace:
             assert_eq!(
                 config.workspace.inherited_tasks.rename,
                 FxHashMap::from_iter([(Id::raw("c"), Id::raw("d"))])
+            );
+        }
+    }
+
+    mod pkl {
+        use super::*;
+        use moon_common::Id;
+        use moon_config::*;
+        use starbase_sandbox::locate_fixture;
+        use std::collections::BTreeMap;
+
+        #[test]
+        fn loads_pkl() {
+            let config = test_config(locate_fixture("pkl"), |path| {
+                ConfigLoader::with_pkl().load_project_config(path)
+            });
+
+            assert_eq!(
+                config,
+                ProjectConfig {
+                    depends_on: vec![
+                        ProjectDependsOn::String(Id::raw("a")),
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: Id::raw("b"),
+                            scope: DependencyScope::Build,
+                            source: DependencySource::Implicit,
+                            via: None
+                        })
+                    ],
+                    docker: ProjectDockerConfig {
+                        file: ProjectDockerFileConfig {
+                            build_task: Some(Id::raw("build")),
+                            image: Some("node:latest".into()),
+                            start_task: Some(Id::raw("start")),
+                        },
+                        scaffold: ProjectDockerScaffoldConfig {
+                            include: vec![GlobPath("*.js".into())]
+                        }
+                    },
+                    env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
+                    file_groups: FxHashMap::from_iter([
+                        (
+                            Id::raw("sources"),
+                            vec![InputPath::ProjectGlob("src/**/*".into())]
+                        ),
+                        (
+                            Id::raw("tests"),
+                            vec![InputPath::WorkspaceGlob("**/*.test.*".into())]
+                        )
+                    ]),
+                    id: Some(Id::raw("custom-id")),
+                    language: LanguageType::Rust,
+                    owners: OwnersConfig {
+                        custom_groups: FxHashMap::default(),
+                        default_owner: Some("owner".into()),
+                        optional: true,
+                        paths: OwnersPaths::List(vec!["dir/".into(), "file.txt".into()]),
+                        required_approvals: Some(5)
+                    },
+                    platform: Some(PlatformType::Node),
+                    project: Some(ProjectMetadataConfig {
+                        name: Some("Name".into()),
+                        description: "Does something".into(),
+                        owner: Some("team".into()),
+                        maintainers: vec![],
+                        channel: Some("#team".into()),
+                        metadata: FxHashMap::from_iter([
+                            ("bool".into(), serde_json::Value::Bool(true)),
+                            ("string".into(), serde_json::Value::String("abc".into()))
+                        ]),
+                    }),
+                    stack: StackType::Frontend,
+                    tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
+                    tasks: BTreeMap::default(),
+                    toolchain: ProjectToolchainConfig {
+                        deno: Some(ProjectToolchainCommonToolConfig {
+                            version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
+                        }),
+                        typescript: Some(ProjectToolchainTypeScriptConfig {
+                            disabled: true,
+                            include_shared_types: Some(true),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                    type_of: ProjectType::Library,
+                    workspace: ProjectWorkspaceConfig {
+                        inherited_tasks: ProjectWorkspaceInheritedTasksConfig {
+                            exclude: vec![Id::raw("build")],
+                            include: Some(vec![Id::raw("test")]),
+                            rename: FxHashMap::from_iter([(Id::raw("old"), Id::raw("new"))])
+                        }
+                    },
+                    ..Default::default()
+                }
             );
         }
     }

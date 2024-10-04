@@ -12,7 +12,6 @@ pub struct ConfigCache {
 }
 
 impl ConfigCache {
-    #[cfg(feature = "loader")]
     pub fn new(workspace_root: &std::path::Path) -> Self {
         Self {
             memory: FxHashMap::default(),
@@ -21,11 +20,19 @@ impl ConfigCache {
     }
 
     pub fn get_temp_path(&self, url: &str) -> PathBuf {
+        let ext = if url.ends_with(".pkl") {
+            ".pkl"
+        } else if url.ends_with(".yaml") || url.ends_with(".yml") {
+            ".yml"
+        } else {
+            ""
+        };
+
         self.workspace_root
             .join(CONFIG_DIRNAME)
             .join("cache")
             .join("temp")
-            .join(format!("{}.yml", hash_component(url)))
+            .join(format!("{}{ext}", hash_component(url)))
     }
 }
 

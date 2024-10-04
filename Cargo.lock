@@ -3016,6 +3016,7 @@ dependencies = [
  "starbase_shell",
  "starbase_styles",
  "starbase_utils",
+ "system_env",
  "tera",
  "thiserror",
  "tiny_http",
@@ -3231,10 +3232,12 @@ dependencies = [
  "indexmap",
  "miette",
  "moon_common",
+ "moon_config",
  "moon_target",
  "once_cell",
  "proto_core",
  "regex",
+ "rpkl",
  "rustc-hash 2.0.0",
  "schematic",
  "semver",
@@ -5073,6 +5076,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmpv"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e0e0214a4a2b444ecce41a4025792fc31f77c7bb89c46d253953ea8c65701ec"
+dependencies = [
+ "num-traits",
+ "rmp",
+]
+
+[[package]]
+name = "rpkl"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9754abab9cd9d22aea487ebee4a7c671af7617454850c68cd84a0d5c92ae1746"
+dependencies = [
+ "dunce",
+ "rmp-serde",
+ "rmpv",
+ "serde",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5225,15 +5250,16 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.17.4"
+version = "0.17.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "414b8235f6cf6a13ed2a42df1a5f69006280ca860b2a0762afb4de8c4367db70"
+checksum = "9803bd9e6cccb1cc9cec6943f34ba93aa6cf7b6f183ee20a43457934dbc2b686"
 dependencies = [
  "garde",
  "indexmap",
  "markdown",
  "miette",
  "reqwest",
+ "rpkl",
  "schemars",
  "schematic_macros",
  "schematic_types",
@@ -5267,6 +5293,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baae6c4555fd2a9cad6b1675fde90c8c3eff3772a1053b251d6ff0d547852e1f"
 dependencies = [
  "indexmap",
+ "rpkl",
  "semver",
  "serde",
  "serde_json",

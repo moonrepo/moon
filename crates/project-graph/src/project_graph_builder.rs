@@ -8,8 +8,8 @@ use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList,
+    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -29,6 +29,7 @@ use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct ProjectGraphBuilderContext<'app> {
+    pub config_loader: &'app ConfigLoader,
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
@@ -47,7 +48,7 @@ pub struct ProjectGraphBuilder<'app> {
     /// Mapping of project IDs to project aliases.
     aliases: FxHashMap<Id, String>,
 
-    /// Loaded project configuration (`moon.yml`) files.
+    /// Loaded project configuration files.
     #[serde(skip)]
     configs: FxHashMap<Id, ProjectConfig>,
 
@@ -320,6 +321,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             &id,
             &source,
             ProjectBuilderContext {
+                config_loader: context.config_loader,
                 root_project_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,
@@ -420,22 +422,20 @@ impl<'app> ProjectGraphBuilder<'app> {
         &self,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let context = self.context();
+        let config_names = context.config_loader.get_project_file_names();
         let mut configs = vec![];
 
         // Hash all project-level config files
         for source in self.sources.values() {
-            configs.push(
-                source
-                    .join(consts::CONFIG_PROJECT_FILENAME)
-                    .as_str()
-                    .to_owned(),
-            );
+            for name in &config_names {
+                configs.push(source.join(name).as_str().to_owned());
+            }
         }
 
         // Hash all workspace-level config files
         for file in glob::walk(
             context.workspace_root.join(consts::CONFIG_DIRNAME),
-            ["*.yml", "tasks/**/*.yml"],
+            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
         )? {
             configs.push(to_virtual_string(
                 file.strip_prefix(context.workspace_root).unwrap(),
@@ -491,12 +491,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            locate_projects_with_globs(
-                context.workspace_root,
-                &globs,
-                &mut sources,
-                context.vcs.as_deref(),
-            )?;
+            locate_projects_with_globs(&context, &globs, &mut sources)?;
         }
 
         // Load all config files first so that ID renaming occurs
@@ -595,17 +590,15 @@ impl<'app> ProjectGraphBuilder<'app> {
         let mut renamed_ids = FxHashMap::default();
 
         for (id, source) in sources {
-            let config_name = source.join(consts::CONFIG_PROJECT_FILENAME);
-            let config_path = config_name.to_path(context.workspace_root);
-
             debug!(
                 id = id.as_str(),
-                file = ?config_path,
                 "Attempting to load {} (optional)",
-                color::file(config_name.as_str())
+                color::file(source.join(context.config_loader.get_debug_label("moon", false)))
             );
 
-            let config = ProjectConfig::load(context.workspace_root, config_path)?;
+            let config = context
+                .config_loader
+                .load_project_config_from_source(context.workspace_root, source)?;
 
             // Track ID renames
             if let Some(new_id) = &config.id {

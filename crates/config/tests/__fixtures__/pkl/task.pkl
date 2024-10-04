@@ -1,0 +1,55 @@
+description = "I do something"
+
+command = "cmd --arg"
+
+args = List("-c", "-b", "arg")
+
+deps = new Listing {
+	"proj:task"
+	new {
+		target = "^:build"
+		optional = true
+	}
+	new {
+		target = "~:build"
+		args = "--minify"
+		env {
+			["DEBUG"] = "1"
+		}
+	}
+}
+
+env {
+	["ENV"] = "development"
+}
+
+inputs = new Listing {
+	"$ENV"
+	"$ENV_*"
+	"file.txt"
+	"file.*"
+	"/file.txt"
+	"/file.*"
+	"@dirs(name)"
+}
+
+`local` = true
+
+outputs = new Listing {
+	"$workspaceRoot"
+	"file.txt"
+	"file.*"
+	"/file.txt"
+	"/file.*"
+}
+
+options {
+	cache = false
+	retryCount = 3
+}
+
+platform = "bun"
+
+preset = "server"
+
+type = "build"

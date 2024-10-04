@@ -8,7 +8,7 @@ on:
     paths:
       - .cargo/config.toml
       - .github/workflows/moon.yml
-      - .moon/*.yml
+      - .moon/*
       - crates/**
       - legacy/**
       - packages/**

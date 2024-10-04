@@ -1,0 +1,102 @@
+fileGroups {
+	["sources"] = new Listing {
+		"src/**/*"
+	}
+	["tests"] = new Listing  {
+		"*.test.ts"
+		"*.test.tsx"
+	}
+}
+
+implicitDeps = new Listing {
+	"project:task-a"
+	new {
+		target = "project:task-b"
+		optional = true
+	}
+	"project:task-c"
+	new {
+		target = "project:task-d"
+		args = "--foo --bar"
+		env {
+			["KEY"] = "value"
+		}
+	}
+}
+
+implicitInputs = new Listing {
+	"$ENV"
+	"$ENV_*"
+	"file.txt"
+	"file.*"
+	"/file.txt"
+	"/file.*"
+}
+
+taskOptions {
+	affectedFiles = "args"
+	affectedPassInputs = true
+	allowFailure = true
+	cache = false
+	envFile = ".env"
+	interactive = false
+	internal = true
+	mergeArgs = "append"
+	mergeDeps = "prepend"
+	mergeEnv = "replace"
+	mergeInputs = "preserve"
+	mergeOutputs = null
+	mutex = "lock"
+	os = List("linux", "macos")
+	outputStyle = "stream"
+	persistent = true
+	retryCount = 3
+	runDepsInParallel = false
+	runInCI = true
+	runFromWorkspaceRoot = false
+	shell = false
+	timeout = 60
+	unixShell = "zsh"
+	windowsShell = "pwsh"
+}
+
+local _someCondition = true
+
+local _sharedInputs = List("src/**/*")
+
+tasks {
+	["example"] {
+		options {
+			when (_someCondition) {
+				cache = true
+				cacheLifetime = "1 hour"
+			} else {
+				cache = false
+			}
+		}
+	}
+
+	["test"] {
+		inputs = _sharedInputs + List("tests/**/*")
+	}
+
+	["lint"] {
+		inputs = List("**/*.graphql") + _sharedInputs
+	}
+
+	for (_os in List("linux", "macos", "windows")) {
+		["build-\(_os)"] {
+			command = "cargo"
+			args = List(
+				"--target",
+				if (_os == "linux") "x86_64-unknown-linux-gnu"
+					else if (_os == "macos") "x86_64-apple-darwin"
+					else "i686-pc-windows-msvc",
+				"--verbose"
+			)
+			options {
+				os = _os
+			}
+		}
+	}
+}

@@ -16,7 +16,7 @@ derive_enum!(
 
 cacheable!(
     /// Configures code ownership rules for generating a `CODEOWNERS` file.
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct CodeownersConfig {
         /// Paths that are applied globally to all projects. Can be relative
         /// from the workspace root, or a wildcard match for any depth.

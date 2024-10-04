@@ -52,6 +52,14 @@ pub enum AppError {
     #[error("Unable to determine your current working directory.")]
     MissingWorkingDir,
 
+    #[diagnostic(code(app::pkl_required))]
+    #[error(
+        "Pkl configuration requires the {} binary to be installed and available.\nLearn more: {}",
+        "pkl".style(Style::Shell),
+        "https://pkl-lang.org/main/current/pkl-cli/index.html".style(Style::Url)
+    )]
+    PklRequired,
+
     #[diagnostic(code(app::extensions::unknown_id))]
     #[error(
         "The extension {} does not exist. Configure the {} setting in {} and try again.",

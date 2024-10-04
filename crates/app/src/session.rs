@@ -8,7 +8,7 @@ use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{is_ci, is_test_env};
-use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_console::Console;
 use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
@@ -34,6 +34,7 @@ pub struct CliSession {
     pub cli_version: Version,
 
     // Components
+    pub config_loader: ConfigLoader,
     pub console: Console,
     pub moonbase: Option<Arc<Moonbase>>,
     pub moon_env: Arc<MoonEnvironment>,
@@ -63,6 +64,7 @@ impl CliSession {
         Self {
             cache_engine: OnceCell::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
+            config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet),
             extension_registry: OnceCell::new(),
             moonbase: None,
@@ -234,12 +236,13 @@ impl AppSession for CliSession {
 
         if self.requires_workspace_setup() {
             let (workspace_config, tasks_config, toolchain_config) = try_join!(
-                startup::load_workspace_config(&self.workspace_root),
-                startup::load_tasks_configs(&self.workspace_root),
+                startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),
+                startup::load_tasks_configs(self.config_loader.clone(), &self.workspace_root),
                 startup::load_toolchain_config(
+                    self.config_loader.clone(),
+                    self.proto_env.clone(),
                     &self.workspace_root,
                     &self.working_dir,
-                    self.proto_env.clone(),
                 ),
             )?;
 
@@ -264,6 +267,8 @@ impl AppSession for CliSession {
         if let Some(constraint) = &self.workspace_config.version_constraint {
             analyze::validate_version_constraint(constraint, &self.cli_version)?;
         }
+
+        analyze::check_pkl_install()?;
 
         if self.requires_workspace_setup() {
             self.get_cache_engine()?;

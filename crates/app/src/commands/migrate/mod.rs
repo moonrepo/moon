@@ -14,7 +14,7 @@ use starbase_styles::color;
 pub enum MigrateCommands {
     #[command(
         name = "from-package-json",
-        about = "Migrate `package.json` scripts and dependencies to `moon.yml`."
+        about = "Migrate `package.json` scripts and dependencies to `moon.*`."
     )]
     FromPackageJson(FromPackageJsonArgs),
 

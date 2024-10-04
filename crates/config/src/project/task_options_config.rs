@@ -123,6 +123,7 @@ derive_enum!(
         #[default]
         Append,
         Prepend,
+        Preserve,
         Replace,
     }
 );
@@ -223,14 +224,14 @@ cacheable!(
         /// running the task.
         pub env_file: Option<TaskOptionEnvFile>,
 
-        /// Marks the task as internal, which disables it from begin ran
-        /// from the command line, but can be depended on.
-        pub internal: Option<bool>,
-
         /// Marks the task as interactive, so that it will run in isolation,
         /// and have direct access to stdin.
         #[setting(validate = validate_interactive)]
         pub interactive: Option<bool>,
+
+        /// Marks the task as internal, which disables it from begin ran
+        /// from the command line, but can be depended on.
+        pub internal: Option<bool>,
 
         /// The strategy to use when merging `args` with an inherited task.
         pub merge_args: Option<TaskMergeStrategy>,

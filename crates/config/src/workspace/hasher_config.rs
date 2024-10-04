@@ -26,7 +26,7 @@ derive_enum!(
 );
 
 /// Configures aspects of the content hashing engine.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct HasherConfig {
     /// The number of files to include in each hash operation.
     #[setting(default = 2500)]

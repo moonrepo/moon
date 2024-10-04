@@ -1,11 +1,6 @@
-// template.yml
-
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ValidateError};
-
-#[cfg(feature = "loader")]
-use std::path::Path;
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
@@ -13,6 +8,7 @@ macro_rules! var_setting {
         #[derive(Clone, Config, Debug, Eq, PartialEq)]
         pub struct $name {
             /// The default value of the variable if none was provided.
+            #[setting(alias = "defaultValue")]
             pub default: $ty,
 
             /// Marks the variable as internal, and won't be overwritten via CLI arguments.
@@ -222,7 +218,7 @@ impl TemplateVariable {
 
 /// Configures a template and its files to be scaffolded.
 /// Docs: https://moonrepo.dev/docs/config/template
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct TemplateConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/template.json",
@@ -252,32 +248,4 @@ pub struct TemplateConfig {
     /// Variables can also be populated by passing command line arguments.
     #[setting(nested)]
     pub variables: FxHashMap<String, TemplateVariable>,
-}
-
-#[cfg(feature = "loader")]
-impl TemplateConfig {
-    pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let result = ConfigLoader::<TemplateConfig>::new()
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/template",
-            ))
-            .file(check_yml_extension(path.as_ref()))?
-            .load()?;
-
-        Ok(result.config)
-    }
-
-    pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
-        use moon_common::consts;
-
-        Self::load(
-            template_root
-                .as_ref()
-                .join(consts::CONFIG_TEMPLATE_FILENAME),
-        )
-    }
 }

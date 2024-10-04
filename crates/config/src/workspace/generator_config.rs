@@ -9,7 +9,7 @@ fn default_templates<C>(_ctx: &C) -> DefaultValueResult<Vec<TemplateLocator>> {
 }
 
 /// Configures the generator for scaffolding from templates.
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct GeneratorConfig {
     /// The list of file paths, relative from the workspace root,
     /// in which to locate templates.

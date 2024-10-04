@@ -243,8 +243,10 @@ tasks {
 ```
 
 Pretty awesome right? This is just a taste of what Pkl has to offer! We highly suggest reading the
-[language reference](https://pkl-lang.org/main/current/language-reference/index.html) and the
-[standard library](https://pkl-lang.org/main/current/standard-library.html).
+[language reference](https://pkl-lang.org/main/current/language-reference/index.html), the
+[standard library](https://pkl-lang.org/main/current/standard-library.html), or looking at our
+[example configurations](https://github.com/moonrepo/moon/tree/master/crates/config/tests/__fixtures__/pkl)
+while testing Pkl.
 
 > In the future, if Pkl seems like the right fit, we plan to take full advantage of what it has to
 > offer, by creating our own Pkl projects, modules, and types!
@@ -294,7 +296,9 @@ interested in trying out Pkl, you can with the following:
 
 - [Install `pkl` onto `PATH`](https://pkl-lang.org/main/current/pkl-cli/index.html#installation).
   Pkl uses a client-server communication model.
-- Use the `.pkl` file extension.
+  - Can also be installed with proto:
+    `proto plugin add https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml`
+- Use the `.pkl` file extension instead of `.yml`.
 - Pass the `--experimentPklConfig` CLI option, or set the `MOON_EXPERIMENT_PKL_CONFIG` environment
   variable.
 

@@ -93,11 +93,6 @@ jobs:
           proto-version: '0.41.3' # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.5
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
-      - if: ${{ runner.os == 'Windows' }}
-        run: Get-Command pkl
-        shell: pwsh
-      - if: ${{ runner.os == 'Windows' }}
-        run: pkl --version && pkl eval .\crates\config\tests\__fixtures__\pkl\task.pkl
       - name: Checking coverage status
         id: coverage
         shell: bash

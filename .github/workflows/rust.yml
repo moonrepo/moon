@@ -96,6 +96,11 @@ jobs:
       - uses: pkl-community/setup-pkl@v0
         with:
           pkl-version: 0.26.3
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-Command pkl
+        shell: pwsh
+      - if: ${{ runner.os == 'Windows' }}
+        run: pkl --version && pkl eval .\crates\config\tests\__fixtures__\pkl\task.pkl
       - name: Checking coverage status
         id: coverage
         shell: bash

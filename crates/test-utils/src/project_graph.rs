@@ -1,7 +1,7 @@
 use moon_config::{
-    InheritedTasksEntry, InheritedTasksManager, NodeConfig, PartialInheritedTasksConfig,
-    PartialTaskConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-    WorkspaceProjectsConfig,
+    ConfigLoader, InheritedTasksEntry, InheritedTasksManager, NodeConfig,
+    PartialInheritedTasksConfig, PartialTaskConfig, ToolchainConfig, WorkspaceConfig,
+    WorkspaceProjects, WorkspaceProjectsConfig,
 };
 use moon_project_graph::{
     ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphBuilder, ProjectGraphBuilderContext,
@@ -18,6 +18,7 @@ pub use moon_project_graph::ProjectGraph;
 
 #[derive(Default)]
 pub struct ProjectGraphContainer {
+    pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
     pub toolchain_config: ToolchainConfig,
     pub workspace_config: WorkspaceConfig,
@@ -28,10 +29,14 @@ pub struct ProjectGraphContainer {
 impl ProjectGraphContainer {
     pub fn new(root: &Path) -> Self {
         let proto_config = ProtoConfig::default();
+        let config_loader = ConfigLoader::default();
         let mut graph = Self {
-            inherited_tasks: InheritedTasksManager::load_from(root).unwrap(),
-            toolchain_config: ToolchainConfig::load_from(root, &proto_config).unwrap(),
+            inherited_tasks: config_loader.load_tasks_manager(root).unwrap(),
+            toolchain_config: config_loader
+                .load_toolchain_config(root, &proto_config)
+                .unwrap(),
             workspace_root: root.to_path_buf(),
+            config_loader,
             ..Default::default()
         };
 
@@ -57,7 +62,7 @@ impl ProjectGraphContainer {
 
         // Use folders as project names
         if root.join(".moon/workspace.yml").exists() {
-            graph.workspace_config = WorkspaceConfig::load_from(root).unwrap();
+            graph.workspace_config = graph.config_loader.load_workspace_config(root).unwrap();
         } else {
             let mut projects = WorkspaceProjectsConfig {
                 globs: vec![
@@ -89,6 +94,7 @@ impl ProjectGraphContainer {
 
     pub fn create_context(&self) -> ProjectGraphBuilderContext {
         ProjectGraphBuilderContext {
+            config_loader: &self.config_loader,
             extend_project: Emitter::<ExtendProjectEvent>::new(),
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,

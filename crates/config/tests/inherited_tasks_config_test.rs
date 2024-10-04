@@ -3,18 +3,27 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
-    ProjectType, StackType, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig,
-    TaskMergeStrategy, TaskOptionsConfig,
+    ConfigLoader, InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType,
+    PlatformType, ProjectType, StackType, TaskArgs, TaskConfig, TaskDependency,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
+use std::path::Path;
 use utils::*;
 
 const FILENAME: &str = "tasks.yml";
+
+fn load_config_from_file(path: &Path) -> miette::Result<InheritedTasksConfig> {
+    ConfigLoader::default().load_tasks_config_from_path(path)
+}
+
+fn load_manager_from_root(root: &Path, moon_dir: &Path) -> miette::Result<InheritedTasksManager> {
+    ConfigLoader::default().load_tasks_manager_from(root, moon_dir)
+}
 
 mod tasks_config {
     use super::*;
@@ -101,7 +110,7 @@ tasks:
         fn recursive_merges() {
             let sandbox = create_sandbox("extends/tasks");
             let config = test_config(sandbox.path().join("global-2.yml"), |path| {
-                InheritedTasksConfig::load(path)
+                load_config_from_file(path)
             });
 
             assert_eq!(
@@ -164,7 +173,7 @@ fileGroups:
             );
 
             let config = test_config(sandbox.path().join("tasks.yml"), |path| {
-                InheritedTasksConfig::load(path)
+                load_config_from_file(path)
             });
 
             assert_eq!(
@@ -216,7 +225,7 @@ fileGroups:
             );
 
             let config = test_config(sandbox.path().join("tasks.yml"), |path| {
-                InheritedTasksConfig::load(path)
+                load_config_from_file(path)
             });
 
             assert_eq!(
@@ -259,7 +268,9 @@ fileGroups:
 
             test_config(sandbox.path().join("tasks.yml"), |path| {
                 // Use load_partial instead of load since this caches!
-                let partial = InheritedTasksConfig::load_partial(sandbox.path(), path).unwrap();
+                let partial = ConfigLoader::default()
+                    .load_tasks_partial_config_from_path(sandbox.path(), path)
+                    .unwrap();
 
                 Ok(InheritedTasksConfig::from_partial(partial))
             });
@@ -286,7 +297,7 @@ fileGroups:
     - proj/**/*
     - '!proj/**/*'
 ",
-                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+                |path| load_config_from_file(&path.join(FILENAME)),
             );
 
             assert_eq!(
@@ -327,7 +338,7 @@ implicitDeps:
   - ^:task
   - ~:task
 ",
-                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+                |path| load_config_from_file(&path.join(FILENAME)),
             );
 
             assert_eq!(
@@ -361,7 +372,7 @@ implicitDeps:
       FOO: abc
     target: ~:task
 ",
-                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+                |path| load_config_from_file(&path.join(FILENAME)),
             );
 
             assert_eq!(
@@ -394,7 +405,7 @@ implicitDeps:
         #[should_panic(expected = "expected a valid target or dependency config object")]
         fn errors_on_invalid_format() {
             test_load_config(FILENAME, "implicitDeps: ['bad target']", |path| {
-                InheritedTasksConfig::load(path.join(FILENAME))
+                load_config_from_file(&path.join(FILENAME))
             });
         }
 
@@ -402,7 +413,7 @@ implicitDeps:
         #[should_panic(expected = "target scope not supported as a task dependency")]
         fn errors_on_all_scope() {
             test_load_config(FILENAME, "implicitDeps: [':task']", |path| {
-                InheritedTasksConfig::load(path.join(FILENAME))
+                load_config_from_file(&path.join(FILENAME))
             });
         }
 
@@ -415,7 +426,7 @@ implicitDeps:
 implicitDeps:
   - args: a b c
 ",
-                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+                |path| load_config_from_file(&path.join(FILENAME)),
             );
         }
     }
@@ -436,7 +447,7 @@ implicitInputs:
   - 'proj/glob/{a,b,c}'
   - '!proj/glob/{a,b,c}'
 ",
-                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+                |path| load_config_from_file(&path.join(FILENAME)),
             );
 
             assert_eq!(
@@ -461,7 +472,7 @@ implicitInputs:
   - $FOO_BAR
   - file/path
 ",
-                |path| InheritedTasksConfig::load(path.join(FILENAME)),
+                |path| load_config_from_file(&path.join(FILENAME)),
             );
 
             assert_eq!(
@@ -497,7 +508,7 @@ mod task_manager {
     #[test]
     fn loads_all_task_configs_into_manager() {
         let sandbox = create_sandbox("inheritance/files");
-        let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+        let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
         let mut keys = manager.configs.keys().collect::<Vec<_>>();
         keys.sort();
@@ -528,7 +539,7 @@ mod task_manager {
     #[test]
     fn can_nest_configs_in_folders() {
         let sandbox = create_sandbox("inheritance/nested");
-        let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+        let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
         let mut keys = manager.configs.keys().collect::<Vec<_>>();
         keys.sort();
@@ -739,7 +750,7 @@ mod task_manager {
         #[test]
         fn creates_js_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -783,10 +794,8 @@ mod task_manager {
 
         #[test]
         fn creates_js_config_via_bun() {
-            use starbase_sandbox::pretty_assertions::assert_eq;
-
             let sandbox = create_sandbox("inheritance/files");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -822,7 +831,7 @@ mod task_manager {
         #[test]
         fn creates_ts_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -858,7 +867,7 @@ mod task_manager {
         #[test]
         fn creates_rust_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -890,7 +899,7 @@ mod task_manager {
         #[test]
         fn creates_config_with_tags() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -936,7 +945,7 @@ mod task_manager {
         #[test]
         fn creates_other_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -972,7 +981,7 @@ mod task_manager {
         #[test]
         fn entirely_overrides_task_of_same_name() {
             let sandbox = create_sandbox("inheritance/override");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("node-library", PlatformType::Node);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
@@ -996,7 +1005,7 @@ mod task_manager {
         #[test]
         fn entirely_overrides_task_of_same_name_for_other_lang() {
             let sandbox = create_sandbox("inheritance/override");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("dotnet-application", PlatformType::System);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
@@ -1024,7 +1033,7 @@ mod task_manager {
         #[test]
         fn uses_defaults() {
             let sandbox = create_sandbox("inheritance/options");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -1046,7 +1055,7 @@ mod task_manager {
         #[test]
         fn merges_all_options() {
             let sandbox = create_sandbox("inheritance/options");
-            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -1063,6 +1072,175 @@ mod task_manager {
             assert_eq!(options.cache, Some(false));
             assert_eq!(options.shell, Some(true));
             assert_eq!(options.merge_args, Some(TaskMergeStrategy::Prepend));
+        }
+    }
+
+    mod pkl {
+        use super::*;
+        use moon_common::Id;
+        use moon_config::*;
+        use starbase_sandbox::locate_fixture;
+        use starbase_sandbox::pretty_assertions::assert_eq;
+
+        #[test]
+        fn loads_pkl() {
+            let config = test_config(locate_fixture("pkl"), |path| {
+                ConfigLoader::with_pkl().load_tasks_config_from_path(path.join(".moon/tasks.pkl"))
+            });
+
+            assert_eq!(
+                config,
+                InheritedTasksConfig {
+                    file_groups: FxHashMap::from_iter([
+                        (
+                            Id::raw("sources"),
+                            vec![InputPath::ProjectGlob("src/**/*".into())]
+                        ),
+                        (
+                            Id::raw("tests"),
+                            vec![
+                                InputPath::ProjectGlob("*.test.ts".into()),
+                                InputPath::ProjectGlob("*.test.tsx".into())
+                            ]
+                        ),
+                    ]),
+                    implicit_deps: vec![
+                        TaskDependency::Target(Target::parse("project:task-a").unwrap()),
+                        TaskDependency::Config(TaskDependencyConfig {
+                            target: Target::parse("project:task-b").unwrap(),
+                            optional: Some(true),
+                            ..Default::default()
+                        }),
+                        TaskDependency::Target(Target::parse("project:task-c").unwrap()),
+                        TaskDependency::Config(TaskDependencyConfig {
+                            args: TaskArgs::String("--foo --bar".into()),
+                            env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
+                            target: Target::parse("project:task-d").unwrap(),
+                            ..Default::default()
+                        }),
+                    ],
+                    implicit_inputs: vec![
+                        InputPath::EnvVar("ENV".into()),
+                        InputPath::EnvVarGlob("ENV_*".into()),
+                        InputPath::ProjectFile("file.txt".into()),
+                        InputPath::ProjectGlob("file.*".into()),
+                        InputPath::WorkspaceFile("file.txt".into()),
+                        InputPath::WorkspaceGlob("file.*".into()),
+                    ],
+                    task_options: Some(TaskOptionsConfig {
+                        affected_files: Some(TaskOptionAffectedFiles::Args),
+                        affected_pass_inputs: Some(true),
+                        allow_failure: Some(true),
+                        cache: Some(false),
+                        cache_lifetime: None,
+                        env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
+                        interactive: Some(false),
+                        internal: Some(true),
+                        merge_args: Some(TaskMergeStrategy::Append),
+                        merge_deps: Some(TaskMergeStrategy::Prepend),
+                        merge_env: Some(TaskMergeStrategy::Replace),
+                        merge_inputs: Some(TaskMergeStrategy::Preserve),
+                        merge_outputs: None,
+                        mutex: Some("lock".into()),
+                        os: Some(OneOrMany::Many(vec![
+                            TaskOperatingSystem::Linux,
+                            TaskOperatingSystem::Macos
+                        ])),
+                        output_style: Some(TaskOutputStyle::Stream),
+                        persistent: Some(true),
+                        retry_count: Some(3),
+                        run_deps_in_parallel: Some(false),
+                        run_in_ci: Some(true),
+                        run_from_workspace_root: Some(false),
+                        shell: Some(false),
+                        timeout: Some(60),
+                        unix_shell: Some(TaskUnixShell::Zsh),
+                        windows_shell: Some(TaskWindowsShell::Pwsh)
+                    }),
+                    tasks: BTreeMap::from_iter([
+                        (
+                            Id::raw("build-linux"),
+                            TaskConfig {
+                                command: TaskArgs::String("cargo".into()),
+                                args: TaskArgs::List(vec![
+                                    "--target".into(),
+                                    "x86_64-unknown-linux-gnu".into(),
+                                    "--verbose".into(),
+                                ]),
+                                options: TaskOptionsConfig {
+                                    os: Some(OneOrMany::One(TaskOperatingSystem::Linux)),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("build-macos"),
+                            TaskConfig {
+                                command: TaskArgs::String("cargo".into()),
+                                args: TaskArgs::List(vec![
+                                    "--target".into(),
+                                    "x86_64-apple-darwin".into(),
+                                    "--verbose".into(),
+                                ]),
+                                options: TaskOptionsConfig {
+                                    os: Some(OneOrMany::One(TaskOperatingSystem::Macos)),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("build-windows"),
+                            TaskConfig {
+                                command: TaskArgs::String("cargo".into()),
+                                args: TaskArgs::List(vec![
+                                    "--target".into(),
+                                    "i686-pc-windows-msvc".into(),
+                                    "--verbose".into(),
+                                ]),
+                                options: TaskOptionsConfig {
+                                    os: Some(OneOrMany::One(TaskOperatingSystem::Windows)),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("example"),
+                            TaskConfig {
+                                options: TaskOptionsConfig {
+                                    cache: Some(true),
+                                    cache_lifetime: Some("1 hour".into()),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("lint"),
+                            TaskConfig {
+                                inputs: Some(vec![
+                                    InputPath::ProjectGlob("**/*.graphql".into()),
+                                    InputPath::ProjectGlob("src/**/*".into()),
+                                ]),
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("test"),
+                            TaskConfig {
+                                inputs: Some(vec![
+                                    InputPath::ProjectGlob("src/**/*".into()),
+                                    InputPath::ProjectGlob("tests/**/*".into()),
+                                ]),
+                                ..Default::default()
+                            }
+                        ),
+                    ]),
+                    ..Default::default()
+                }
+            );
         }
     }
 }

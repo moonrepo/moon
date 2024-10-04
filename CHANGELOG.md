@@ -9,7 +9,10 @@
   - Affected information now logs more information and is included in reports/JSON.
   - Added `--upstream` and `--downstream` options to `moon query projects`.
   - Coming soon for affected tasks as well!
+- Implemented experimental support for a new configuration language, [Pkl](https://pkl-lang.org)!
+  - Pkl is programmable, allowing for variables, loops, conditionals, and more.
 - Added a new task option, `cacheLifetime`, that controls how long a task will be cached for.
+- Added a new task merge strategy, `preserve`, that preserves the original inherited value.
 - Added "sync workspace action" support to toolchain plugins. This is our first step in supporting
   toolchains via WASM plugins.
 - Updated task `outputs` to support token and environment variables.

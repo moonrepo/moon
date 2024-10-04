@@ -1,0 +1,37 @@
+title = "Title"
+description = "Description"
+destination = "./out"
+id = "template-name"
+variables {
+	["boolean"] {
+		type = "boolean"
+		defaultValue = false
+		prompt = "Why?"
+		required = true
+	}
+	["enum"] {
+		type = "enum"
+		multiple = true
+		order = 4
+		values = new Listing {
+			"a"
+			new {
+				label = "B"
+				value = "b"
+			}
+			"c"
+		}
+	}
+	["number"] {
+		type = "number"
+		defaultValue = 123
+		prompt = "Why?"
+		order = 1
+	}
+	["string"] {
+		type = "string"
+		defaultValue = "abc"
+		internal = true
+		prompt = "Why?"
+	}
+}

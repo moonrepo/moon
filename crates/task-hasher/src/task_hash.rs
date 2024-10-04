@@ -32,7 +32,7 @@ hash_content!(
         // Task `platform`
         pub platform: &'task PlatformType,
 
-        // `moon.yml` `dependsOn`
+        // Project `dependsOn`
         pub project_deps: Vec<&'task Id>,
 
         // Task `script`

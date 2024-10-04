@@ -2,7 +2,7 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::CliSession;
 use async_recursion::async_recursion;
 use clap::Args;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TEMPLATE_FILENAME};
+use moon_common::consts::*;
 use moon_common::{path, Id};
 use moon_config::LanguageType;
 use moon_project_graph::ProjectGraph;
@@ -92,13 +92,10 @@ async fn scaffold_workspace(
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
     let copy_from_dir = |source: &Path, dest: &Path, project_lang: LanguageType| -> AppResult {
-        let mut files_to_copy: Vec<String> = vec![
-            ".gitignore".into(),
-            ".prototools".into(),
-            CONFIG_PROJECT_FILENAME.into(),
-            CONFIG_TEMPLATE_FILENAME.into(),
-        ];
         let mut files_to_create: Vec<String> = vec![];
+        let mut files_to_copy: Vec<String> = vec![".gitignore".into(), ".prototools".into()];
+        files_to_copy.extend(session.config_loader.get_project_file_names());
+        files_to_copy.extend(session.config_loader.get_template_file_names());
 
         if session
             .workspace_config
@@ -247,7 +244,10 @@ async fn scaffold_workspace(
     );
 
     copy_files_from_paths(
-        glob::walk_files(moon_dir, ["*.yml", "tasks/**/*.yml"])?,
+        glob::walk_files(
+            moon_dir,
+            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
+        )?,
         &session.workspace_root,
         &docker_workspace_root,
     )?;

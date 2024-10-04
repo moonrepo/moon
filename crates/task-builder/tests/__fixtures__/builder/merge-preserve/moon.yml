@@ -1,0 +1,29 @@
+tags: [merge]
+
+tasks:
+  args:
+    args: 'x y z'
+    options:
+      mergeArgs: preserve
+
+  deps:
+    deps: ['local:build']
+    options:
+      mergeDeps: preserve
+
+  env:
+    env:
+      KEY1: 'overwrite'
+      LOCAL: 'true'
+    options:
+      mergeEnv: preserve
+
+  inputs:
+    inputs: ['local']
+    options:
+      mergeInputs: preserve
+
+  outputs:
+    outputs: ['local']
+    options:
+      mergeOutputs: preserve

@@ -1,6 +1,7 @@
 use crate::app_error::AppError;
 use moon_actions::utils::should_skip_action;
 use moon_bun_platform::BunPlatform;
+use moon_common::supports_pkl_configs;
 use moon_common::{consts::PROTO_CLI_VERSION, is_test_env, path::exe_name};
 use moon_config::{PlatformType, ToolchainConfig};
 use moon_console::{Checkpoint, Console};
@@ -27,6 +28,15 @@ pub fn validate_version_constraint(constraint: &VersionReq, version: &Version) -
             expected: constraint.to_string(),
         }
         .into());
+    }
+
+    Ok(())
+}
+
+#[instrument]
+pub fn check_pkl_install() -> AppResult {
+    if supports_pkl_configs() && system_env::find_command_on_path("pkl").is_none() {
+        return Err(AppError::PklRequired.into());
     }
 
     Ok(())

@@ -1,0 +1,83 @@
+dependsOn = new Listing {
+	"a"
+	new {
+		id = "b"
+		scope = "build"
+		source = "implicit"
+	}
+}
+
+docker {
+	file {
+		buildTask = "build"
+		image = "node:latest"
+		startTask = "start"
+	}
+	scaffold {
+		include = List("*.js")
+	}
+}
+
+env {
+	["KEY"] = "value"
+}
+
+fileGroups {
+	["sources"] = List("src/**/*")
+	["tests"] = new Listing {
+		"/**/*.test.*"
+	}
+}
+
+id = "custom-id"
+
+language = "rust"
+
+owners {
+	customGroups {}
+	defaultOwner = "owner"
+	optional = true
+	paths = List("dir/", "file.txt")
+	requiredApprovals = 5
+}
+
+platform = "node"
+
+project {
+	name = "Name"
+	description = "Does something"
+	owner = "team"
+	channel = "#team"
+	metadata {
+		["bool"] = true
+		["string"] = "abc"
+	}
+}
+
+stack = "frontend"
+
+tags = List("a", "b", "c")
+
+tasks {}
+
+toolchain {
+	deno {
+		version = "1.2.3"
+	}
+	typescript {
+		disabled = true
+		includeSharedTypes = true
+	}
+}
+
+type = "library"
+
+workspace {
+	inheritedTasks {
+		exclude = List("build")
+		include = List("test")
+		rename {
+			["old"] = "new"
+		}
+	}
+}

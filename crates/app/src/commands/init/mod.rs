@@ -12,10 +12,9 @@ use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::is_test_env;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
-use moon_console::Console;
 use moon_vcs::{Git, Vcs};
 use node::init_node;
 use rust::init_rust;
@@ -131,21 +130,17 @@ pub async fn init_tool(
     tool: &InitTool,
     options: &InitOptions,
     theme: &ColorfulTheme,
-    console: &Console,
+    session: &CliSession,
 ) -> AppResult {
-    if !is_test_env() {
-        let workspace_config_path = dest_dir
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_WORKSPACE_FILENAME);
+    let console = &session.console;
 
-        if !workspace_config_path.exists() {
-            console.err.write_line(format!(
-                "moon has not been initialized! Try running {} first?",
-                color::shell("moon init")
-            ))?;
+    if !is_test_env() && !dest_dir.join(CONFIG_DIRNAME).exists() {
+        console.err.write_line(format!(
+            "moon has not been initialized! Try running {} first?",
+            color::shell("moon init")
+        ))?;
 
-            return Err(ExitCode(1).into());
-        }
+        return Err(ExitCode(1).into());
     }
 
     let tool_config = match tool {
@@ -155,13 +150,11 @@ pub async fn init_tool(
         InitTool::TypeScript => init_typescript(dest_dir, options, theme, console).await?,
     };
 
-    let toolchain_config_path = dest_dir
-        .join(CONFIG_DIRNAME)
-        .join(CONFIG_TOOLCHAIN_FILENAME);
+    let toolchain_config_path = &session.config_loader.get_toolchain_files(dest_dir)[0];
 
     if !toolchain_config_path.exists() {
         fs::write_file(
-            &toolchain_config_path,
+            toolchain_config_path,
             render_toolchain_template(&Context::new())?.trim(),
         )?;
     }
@@ -197,18 +190,19 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Initialize a specific tool and exit early
     if let Some(tool) = &args.tool {
-        init_tool(&dest_dir, tool, &options, &theme, &session.console).await?;
+        init_tool(&dest_dir, tool, &options, &theme, &session).await?;
 
         return Ok(());
     }
 
     // Extract template variables
-    let Some(moon_dir) = verify_dest_dir(&dest_dir, &options, &theme)? else {
+    if verify_dest_dir(&dest_dir, &options, &theme)?.is_none() {
         return Ok(());
-    };
-    let mut context = create_default_context();
+    }
 
     let git = Git::load(&dest_dir, "master", &[])?;
+
+    let mut context = create_default_context();
     context.insert("vcs_manager", "git");
     context.insert(
         "vcs_provider",
@@ -226,7 +220,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 
     // Create workspace file
     fs::write_file(
-        moon_dir.join(CONFIG_WORKSPACE_FILENAME),
+        &session.config_loader.get_workspace_files(&dest_dir)[0],
         render_workspace_template(&context)?,
     )?;
 

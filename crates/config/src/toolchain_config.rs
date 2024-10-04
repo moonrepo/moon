@@ -1,5 +1,3 @@
-// .moon/toolchain.yml
-
 use crate::language_platform::*;
 use crate::toolchain::*;
 use moon_common::Id;
@@ -7,9 +5,6 @@ use rustc_hash::FxHashMap;
 use schematic::{validate, Config};
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
-
-#[cfg(feature = "proto")]
-use std::path::Path;
 
 #[cfg(feature = "proto")]
 use crate::{inherit_tool, inherit_tool_without_version, is_using_tool_version};
@@ -218,48 +213,5 @@ impl ToolchainConfig {
         }
 
         Ok(())
-    }
-
-    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
-        workspace_root: R,
-        path: P,
-        proto_config: &proto_core::ProtoConfig,
-    ) -> miette::Result<ToolchainConfig> {
-        use crate::config_cache::ConfigCache;
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let root = workspace_root.as_ref();
-
-        let mut result = ConfigLoader::<ToolchainConfig>::new()
-            .set_cacher(ConfigCache::new(root))
-            .set_help(color::muted_light(
-                "https://moonrepo.dev/docs/config/toolchain",
-            ))
-            .set_root(root)
-            .file_optional(check_yml_extension(path.as_ref()))?
-            .load()?;
-
-        result.config.inherit_proto(proto_config)?;
-
-        Ok(result.config)
-    }
-
-    pub fn load_from<R: AsRef<Path>>(
-        workspace_root: R,
-        proto_config: &proto_core::ProtoConfig,
-    ) -> miette::Result<ToolchainConfig> {
-        use moon_common::consts;
-
-        let workspace_root = workspace_root.as_ref();
-
-        Self::load(
-            workspace_root,
-            workspace_root
-                .join(consts::CONFIG_DIRNAME)
-                .join(consts::CONFIG_TOOLCHAIN_FILENAME),
-            proto_config,
-        )
     }
 }

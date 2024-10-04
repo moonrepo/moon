@@ -1,7 +1,7 @@
 use moon_common::{path::WorkspaceRelativePathBuf, Id};
 use moon_config::{
-    DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager,
-    TaskDependencyConfig, WorkspaceProjects, WorkspaceProjectsConfig,
+    DependencyConfig, DependencyScope, DependencySource, TaskDependencyConfig, WorkspaceProjects,
+    WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
 use moon_project_graph::{
@@ -442,9 +442,10 @@ mod project_graph {
             let sandbox = create_sandbox(fixture);
 
             generate_project_graph_with_changes(sandbox.path(), |container| {
-                container.inherited_tasks =
-                    InheritedTasksManager::load(sandbox.path(), sandbox.path().join(".moon"))
-                        .unwrap();
+                container.inherited_tasks = container
+                    .config_loader
+                    .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
+                    .unwrap();
             })
             .await
         }

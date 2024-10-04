@@ -1,11 +1,9 @@
 use super::check_dirty_repo;
 use crate::session::CliSession;
 use clap::Args;
-use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
     DependencyScope, NodePackageManager, PartialDependencyConfig, PartialProjectDependsOn,
-    ProjectConfig,
 };
 use moon_node_lang::package_json::DependenciesMap;
 use moon_node_lang::PackageJsonCache;
@@ -45,9 +43,11 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
         }
     }
 
-    // Create or update the local `moon.yml`
+    // Create or update the local `moon.*`
     let project = project_graph.get(&args.id)?;
-    let mut partial_config = ProjectConfig::load_partial(&project.root)?;
+    let mut partial_config = session
+        .config_loader
+        .load_project_partial_config(&project.root)?;
 
     let mut link_deps = |deps: &DependenciesMap<String>, scope: DependencyScope| {
         for package_name in deps.keys() {
@@ -105,7 +105,9 @@ pub async fn from_package_json(session: CliSession, args: FromPackageJsonArgs) -
         Ok(true)
     })?;
 
-    yaml::write_file_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
+    let config_names = session.config_loader.get_project_file_names();
+
+    yaml::write_file_with_config(project.root.join(&config_names[0]), &partial_config)?;
 
     Ok(())
 }

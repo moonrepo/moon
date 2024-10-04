@@ -35,7 +35,7 @@ cacheable!(
     /// Configures tasks and task related settings that'll be inherited by all
     /// matching projects.
     /// Docs: https://moonrepo.dev/docs/config/tasks
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, PartialEq)]
     pub struct InheritedTasksConfig {
         #[setting(
             default = "https://moonrepo.dev/schemas/tasks.json",
@@ -73,39 +73,6 @@ cacheable!(
     }
 );
 
-#[cfg(feature = "loader")]
-impl InheritedTasksConfig {
-    /// Only used in testing!
-    pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
-        use schematic::ConfigLoader;
-
-        let result = ConfigLoader::<InheritedTasksConfig>::new()
-            .file_optional(path.as_ref())?
-            .load()?;
-
-        Ok(result.config)
-    }
-
-    pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(
-        workspace_root: T,
-        path: F,
-    ) -> miette::Result<PartialInheritedTasksConfig> {
-        use crate::config_cache::ConfigCache;
-        use crate::validate::check_yml_extension;
-        use moon_common::color;
-        use schematic::ConfigLoader;
-
-        let root = workspace_root.as_ref();
-
-        Ok(ConfigLoader::<InheritedTasksConfig>::new()
-            .set_cacher(ConfigCache::new(root))
-            .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
-            .set_root(root)
-            .file_optional(check_yml_extension(path.as_ref()))?
-            .load_partial(&())?)
-    }
-}
-
 cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
@@ -126,6 +93,8 @@ pub struct InheritedTasksEntry {
 pub struct InheritedTasksManager {
     #[cfg(feature = "loader")]
     cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
+    #[cfg(feature = "loader")]
+    config_finder: crate::config_finder::ConfigFinder,
 
     pub configs: FxHashMap<String, InheritedTasksEntry>,
 }
@@ -170,62 +139,24 @@ impl InheritedTasksManager {
 
 #[cfg(feature = "loader")]
 impl InheritedTasksManager {
-    pub fn load<T: AsRef<Path>, D: AsRef<Path>>(
-        workspace_root: T,
-        moon_dir: D,
-    ) -> miette::Result<InheritedTasksManager> {
-        use moon_common::consts;
-
-        let mut manager = InheritedTasksManager::default();
-        let workspace_root = workspace_root.as_ref();
-        let moon_dir = moon_dir.as_ref();
-
-        // tasks.yml
-        let tasks_file = moon_dir.join(consts::CONFIG_TASKS_FILENAME);
-
-        if tasks_file.exists() {
-            manager.add_config(
-                workspace_root,
-                &tasks_file,
-                InheritedTasksConfig::load_partial(workspace_root, &tasks_file)?,
-            );
-        }
-
-        // tasks/**/*.yml
-        let tasks_dir = moon_dir.join("tasks");
-
-        if tasks_dir.exists() {
-            load_dir(&mut manager, workspace_root, &tasks_dir)?;
-        }
-
-        Ok(manager)
-    }
-
-    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
-        use moon_common::consts;
-
-        let workspace_root = workspace_root.as_ref();
-
-        Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
-    }
-
     pub fn add_config(
         &mut self,
         workspace_root: &Path,
         path: &Path,
         config: PartialInheritedTasksConfig,
     ) {
-        use moon_common::consts;
-
+        let valid_names = self.config_finder.get_tasks_file_names();
         let name = path
             .file_name()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
 
-        let name = if name == consts::CONFIG_TASKS_FILENAME {
+        let name = if valid_names.iter().any(|n| n == name) {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
+            stripped_name
+        } else if let Some(stripped_name) = name.strip_suffix(".pkl") {
             stripped_name
         } else {
             return;
@@ -277,7 +208,7 @@ impl InheritedTasksManager {
                     standardize_separators(format!("{}", config_entry.input.display()));
                 let mut managed_config = config_entry.config.clone();
 
-                // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
+                // Only modify tasks for `tasks/*.*` files instead of `tasks.*`,
                 // as the latter will be globbed alongside toolchain/workspace configs.
                 // We also don't know what platform each of the tasks should be yet.
                 if let Some(tasks) = &mut managed_config.tasks {
@@ -341,49 +272,4 @@ impl InheritedTasksManager {
 
         Ok(result)
     }
-}
-
-#[cfg(feature = "loader")]
-fn load_dir(
-    manager: &mut InheritedTasksManager,
-    workspace_root: &Path,
-    dir: &Path,
-) -> miette::Result<()> {
-    use schematic::ConfigError;
-    use std::fs;
-
-    for entry in fs::read_dir(dir)
-        .map_err(|error| ConfigError::ReadFileFailed {
-            path: dir.to_path_buf(),
-            error: Box::new(error),
-        })?
-        .flatten()
-    {
-        let path = entry.path();
-        let file_type = entry
-            .file_type()
-            .map_err(|error| ConfigError::ReadFileFailed {
-                path: path.to_path_buf(),
-                error: Box::new(error),
-            })?;
-
-        if file_type.is_file() {
-            // Non-yaml files may be located in these folders,
-            // so avoid failing when trying to parse it as a config
-            if path
-                .extension()
-                .is_some_and(|ext| ext == "yml" || ext == "yaml")
-            {
-                manager.add_config(
-                    workspace_root,
-                    &path,
-                    InheritedTasksConfig::load_partial(workspace_root, &path)?,
-                );
-            }
-        } else if file_type.is_dir() {
-            load_dir(manager, workspace_root, &path)?;
-        }
-    }
-
-    Ok(())
 }

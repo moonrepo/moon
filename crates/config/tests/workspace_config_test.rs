@@ -3,15 +3,31 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, ExtensionConfig, FilePath, TemplateLocator, VcsProvider, WorkspaceConfig,
+    WorkspaceProjects,
 };
 use proto_core::warpgate::UrlLocator;
 use rustc_hash::FxHashMap;
+use schematic::ConfigLoader as BaseLoader;
 use semver::Version;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
+use std::path::Path;
 use utils::*;
 
 const FILENAME: &str = ".moon/workspace.yml";
+
+fn load_config_from_file(path: &Path) -> WorkspaceConfig {
+    BaseLoader::<WorkspaceConfig>::new()
+        .file(path)
+        .unwrap()
+        .load()
+        .unwrap()
+        .config
+}
+
+fn load_config_from_root(root: &Path) -> miette::Result<WorkspaceConfig> {
+    ConfigLoader::default().load_workspace_config(root)
+}
 
 mod workspace_config {
     use super::*;
@@ -19,14 +35,12 @@ mod workspace_config {
     #[test]
     #[should_panic(expected = "unknown field `unknown`, expected one of `$schema`")]
     fn error_unknown_field() {
-        test_load_config(FILENAME, "unknown: 123", |path| {
-            WorkspaceConfig::load_from(path)
-        });
+        test_load_config(FILENAME, "unknown: 123", load_config_from_root);
     }
 
     #[test]
     fn loads_defaults() {
-        let config = test_load_config(FILENAME, "{}", |path| WorkspaceConfig::load_from(path));
+        let config = test_load_config(FILENAME, "{}", load_config_from_root);
 
         assert!(config.telemetry);
         assert!(config.version_constraint.is_none());
@@ -44,7 +58,7 @@ projects:
         fn recursive_merges() {
             let sandbox = create_sandbox("extends/workspace");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
-                WorkspaceConfig::load(sandbox.path(), path)
+                Ok(load_config_from_file(path))
             });
 
             assert_eq!(config.runner.cache_lifetime, "3 hours");
@@ -56,7 +70,7 @@ projects:
         #[should_panic(expected = "only file paths and URLs can be extended")]
         fn not_a_url_or_file() {
             test_load_config(FILENAME, "extends: 'random value'", |path| {
-                WorkspaceConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
 
@@ -66,7 +80,7 @@ projects:
             test_load_config(
                 FILENAME,
                 "extends: 'http://domain.com/config.yml'",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -74,7 +88,7 @@ projects:
         #[should_panic(expected = "invalid format, try a supported extension")]
         fn not_a_yaml_file() {
             test_load_config(FILENAME, "extends: './file.txt'", |path| {
-                WorkspaceConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
 
@@ -84,7 +98,7 @@ projects:
             test_load_config(
                 FILENAME,
                 "extends: 'https://domain.com/config.txt'",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -112,7 +126,7 @@ telemetry: false
             );
 
             let config = test_config(sandbox.path().join("workspace.yml"), |path| {
-                WorkspaceConfig::load(sandbox.path(), path)
+                Ok(load_config_from_file(path))
             });
 
             if let WorkspaceProjects::Globs(globs) = config.projects {
@@ -122,30 +136,6 @@ telemetry: false
             }
 
             assert!(!config.telemetry);
-        }
-
-        #[test]
-        fn loads_from_url_and_saves_temp_file() {
-            let sandbox = create_empty_sandbox();
-            let server = MockServer::start();
-
-            server.mock(|when, then| {
-                when.method(GET).path("/config.yml");
-                then.status(200).body(SHARED_WORKSPACE);
-            });
-
-            let temp_dir = sandbox.path().join(".moon/cache/temp");
-            let url = server.url("/config.yml");
-
-            sandbox.create_file("workspace.yml", format!(r"extends: '{url}'"));
-
-            assert!(!temp_dir.exists());
-
-            test_config(sandbox.path().join("workspace.yml"), |path| {
-                WorkspaceConfig::load(sandbox.path(), path)
-            });
-
-            assert!(temp_dir.exists());
         }
     }
 
@@ -165,7 +155,7 @@ projects:
   qux.dot: packages/qux
   wat/slash: ./packages/wat
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             match config.projects {
@@ -195,7 +185,7 @@ projects:
 projects:
   app: /apps/app
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -208,7 +198,7 @@ projects:
 projects:
   app: ../apps/app
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -221,7 +211,7 @@ projects:
 projects:
   app: apps/app/*
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -235,7 +225,7 @@ projects:
   - packages/*
   - internal
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             match config.projects {
@@ -262,7 +252,7 @@ projects:
 projects:
   - /apps/*
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -275,7 +265,7 @@ projects:
 projects:
   - ../apps/*
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -290,7 +280,7 @@ projects:
   globs:
     - packages/*
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             match config.projects {
@@ -312,7 +302,7 @@ projects:
         #[test]
         fn loads_defaults() {
             let config = test_load_config(FILENAME, "constraints: {}", |path| {
-                WorkspaceConfig::load_from(path)
+                load_config_from_root(path)
             });
 
             assert!(config.constraints.enforce_project_type_relationships);
@@ -328,7 +318,7 @@ constraints:
   tagRelationships:
     id: ['other']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert!(config.constraints.enforce_project_type_relationships);
@@ -344,7 +334,7 @@ constraints:
         )]
         fn errors_on_invalid_type() {
             test_load_config(FILENAME, "constraints: 123", |path| {
-                WorkspaceConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
 
@@ -357,7 +347,7 @@ constraints:
 constraints:
   enforceProjectTypeRelationships: abc
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -371,7 +361,7 @@ constraints:
   tagRelationships:
     id: ['bad id']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -382,7 +372,7 @@ constraints:
         #[test]
         fn loads_defaults() {
             let config = test_load_config(FILENAME, "generator: {}", |path| {
-                WorkspaceConfig::load_from(path)
+                load_config_from_root(path)
             });
 
             assert_eq!(
@@ -405,7 +395,7 @@ generator:
     - ../parent/path
     - /abs/path
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -438,7 +428,7 @@ generator:
     - git://gitlab.com/org/repo#main
     - git://ghe.self.hosted.com/some/org/repo#v1.2.3
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -470,7 +460,7 @@ generator:
     - npm://package-name#1.2.3
     - npm://@scope/package#4.5.6
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -499,7 +489,7 @@ generator:
 generator:
   templates: ['git://github.com/org/repo']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -514,7 +504,7 @@ generator:
 generator:
   templates: ['npm://@scope/package']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -527,7 +517,7 @@ generator:
 generator:
   templates: ['glob/**/*']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -537,9 +527,7 @@ generator:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "hasher: {}", |path| {
-                WorkspaceConfig::load_from(path)
-            });
+            let config = test_load_config(FILENAME, "hasher: {}", load_config_from_root);
 
             assert_eq!(config.hasher.batch_size, 2500);
             assert!(config.hasher.warn_on_missing_inputs);
@@ -554,7 +542,7 @@ hasher:
   batchSize: 1000
   warnOnMissingInputs: false
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(config.hasher.batch_size, 1000);
@@ -570,7 +558,7 @@ hasher:
 hasher:
   walkStrategy: unknown
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -580,9 +568,7 @@ hasher:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "notifier: {}", |path| {
-                WorkspaceConfig::load_from(path)
-            });
+            let config = test_load_config(FILENAME, "notifier: {}", load_config_from_root);
 
             assert!(config.notifier.webhook_url.is_none());
         }
@@ -595,7 +581,7 @@ hasher:
 notifier:
   webhookUrl: 'https://domain.com/some/url'
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -613,7 +599,7 @@ notifier:
 notifier:
   webhookUrl: 'invalid value'
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -626,7 +612,7 @@ notifier:
 notifier:
   webhookUrl: 'http://domain.com/some/url'
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -637,9 +623,7 @@ notifier:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "runner: {}", |path| {
-                WorkspaceConfig::load_from(path)
-            });
+            let config = test_load_config(FILENAME, "runner: {}", load_config_from_root);
 
             assert_eq!(config.runner.cache_lifetime, "7 days");
             assert!(config.runner.inherit_colors_for_piped_tasks);
@@ -654,7 +638,7 @@ runner:
   cacheLifetime: 10 hours
   inheritColorsForPipedTasks: false
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(config.runner.cache_lifetime, "10 hours");
@@ -669,7 +653,7 @@ runner:
 runner:
   archivableTargets: ['scope:task']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -687,7 +671,7 @@ runner:
 runner:
   archivableTargets: ['bad target']
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -697,8 +681,7 @@ runner:
 
         #[test]
         fn loads_defaults() {
-            let config =
-                test_load_config(FILENAME, "vcs: {}", |path| WorkspaceConfig::load_from(path));
+            let config = test_load_config(FILENAME, "vcs: {}", load_config_from_root);
 
             assert_eq!(config.vcs.default_branch, "master");
             assert_eq!(
@@ -716,7 +699,7 @@ vcs:
   defaultBranch: main
   remoteCandidates: [next]
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(config.vcs.default_branch, "main");
@@ -732,7 +715,7 @@ vcs:
 vcs:
   manager: mercurial
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
     }
@@ -744,7 +727,7 @@ vcs:
         #[should_panic(expected = "unexpected character '@' while parsing major version number")]
         fn errors_on_invalid_req() {
             test_load_config(FILENAME, "versionConstraint: '@1.0.0'", |path| {
-                WorkspaceConfig::load_from(path)
+                load_config_from_root(path)
             });
         }
     }
@@ -764,7 +747,7 @@ vcs:
         // extensions:
         //     bad.id: 'https://domain.com'
         // ",
-        //                 |path| WorkspaceConfig::load_from(path),
+        //                 |path| load_config_from_root(path),
         //             );
         //         }
 
@@ -778,7 +761,7 @@ extensions:
     id:
         plugin: 'missing-scope'
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -792,7 +775,7 @@ extensions:
     id:
         foo: 'bar'
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
         }
 
@@ -805,7 +788,7 @@ extensions:
     test-id:
         plugin: 'https://domain.com'
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -830,7 +813,7 @@ extensions:
         fooBar: 'abc'
         bar-baz: true
 ",
-                |path| WorkspaceConfig::load_from(path),
+                load_config_from_root,
             );
 
             assert_eq!(
@@ -843,6 +826,122 @@ extensions:
                     plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
                         url: "https://domain.com".into()
                     }))),
+                }
+            );
+        }
+    }
+
+    mod pkl {
+        use super::*;
+        use indexmap::IndexMap;
+        use moon_config::*;
+        use moon_target::Target;
+        use starbase_sandbox::locate_fixture;
+        use std::str::FromStr;
+
+        #[test]
+        fn loads_pkl() {
+            let config = test_config(locate_fixture("pkl"), |path| {
+                ConfigLoader::with_pkl().load_workspace_config(path)
+            });
+
+            assert_eq!(
+                config.codeowners,
+                CodeownersConfig {
+                    global_paths: IndexMap::from_iter([(
+                        "*".to_owned(),
+                        vec!["@admins".to_owned()]
+                    )]),
+                    order_by: CodeownersOrderBy::ProjectName,
+                    required_approvals: Some(1),
+                    sync_on_run: true,
+                }
+            );
+            assert_eq!(
+                config.constraints,
+                ConstraintsConfig {
+                    enforce_project_type_relationships: false,
+                    tag_relationships: FxHashMap::from_iter([(
+                        Id::raw("a"),
+                        vec![Id::raw("b"), Id::raw("c")]
+                    )]),
+                }
+            );
+            assert_eq!(
+                config.docker,
+                DockerConfig {
+                    prune: DockerPruneConfig {
+                        delete_vendor_directories: false,
+                        install_toolchain_deps: false
+                    },
+                    scaffold: DockerScaffoldConfig {
+                        copy_toolchain_files: false,
+                        include: vec![GlobPath("*.js".into())]
+                    }
+                }
+            );
+            assert_eq!(
+                config.generator,
+                GeneratorConfig {
+                    templates: vec![
+                        TemplateLocator::from_str("/shared-templates").unwrap(),
+                        TemplateLocator::from_str("./templates").unwrap()
+                    ]
+                }
+            );
+            assert_eq!(
+                config.hasher,
+                HasherConfig {
+                    batch_size: 1000,
+                    ignore_patterns: vec![GlobPath("*.map".into())],
+                    ignore_missing_patterns: vec![GlobPath(".env".into())],
+                    optimization: HasherOptimization::Performance,
+                    walk_strategy: HasherWalkStrategy::Vcs,
+                    warn_on_missing_inputs: true
+                }
+            );
+            assert_eq!(
+                config.notifier,
+                NotifierConfig {
+                    webhook_url: Some("http://localhost".into())
+                }
+            );
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                    globs: vec!["apps/*".into(), "packages/*".into()],
+                    sources: FxHashMap::from_iter([(Id::raw("root"), ".".into())])
+                })
+            );
+            assert_eq!(
+                config.runner,
+                RunnerConfig {
+                    archivable_targets: vec![
+                        Target::parse(":build").unwrap(),
+                        Target::parse("app:lint").unwrap()
+                    ],
+                    auto_clean_cache: false,
+                    cache_lifetime: "1 day".into(),
+                    inherit_colors_for_piped_tasks: false,
+                    log_running_command: true
+                }
+            );
+            assert!(!config.telemetry);
+            assert_eq!(
+                config.vcs,
+                VcsConfig {
+                    default_branch: "main".into(),
+                    hooks: FxHashMap::from_iter([(
+                        "pre-commit".into(),
+                        vec![
+                            "moon check --all --affected".into(),
+                            "moon run :pre-commit".into()
+                        ]
+                    )]),
+                    manager: VcsManager::Git,
+                    provider: VcsProvider::GitLab,
+                    remote_candidates: vec!["main".into(), "origin/main".into()],
+                    sync_hooks: true
                 }
             );
         }

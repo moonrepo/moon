@@ -29,7 +29,7 @@ derive_enum!(
 );
 
 /// Configures the version control system (VCS).
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, PartialEq)]
 pub struct VcsConfig {
     /// The default branch / base.
     #[setting(default = "master")]

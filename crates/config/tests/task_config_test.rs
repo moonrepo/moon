@@ -1,3 +1,5 @@
+#![allow(deprecated)] // For local
+
 mod utils;
 
 use moon_common::Id;
@@ -7,7 +9,20 @@ use moon_config::{
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
+use schematic::{ConfigLoader as BaseLoader, Format};
+use std::path::Path;
 use utils::*;
+
+fn load_config_from_code(code: &str) -> miette::Result<TaskConfig> {
+    Ok(BaseLoader::<TaskConfig>::new()
+        .code(code, Format::Yaml)?
+        .load()?
+        .config)
+}
+
+fn load_config_from_file(path: &Path) -> miette::Result<TaskConfig> {
+    Ok(BaseLoader::<TaskConfig>::new().file(path)?.load()?.config)
+}
 
 mod task_config {
     use super::*;
@@ -17,12 +32,12 @@ mod task_config {
         expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `preset`, `script`, `type`"
     )]
     fn error_unknown_field() {
-        test_parse_config("unknown: 123", |code| TaskConfig::parse(code));
+        test_parse_config("unknown: 123", load_config_from_code);
     }
 
     #[test]
     fn loads_defaults() {
-        let config = test_parse_config("{}", |code| TaskConfig::parse(code));
+        let config = test_parse_config("{}", load_config_from_code);
 
         assert_eq!(config.command, TaskArgs::None);
         assert_eq!(config.args, TaskArgs::None);
@@ -31,7 +46,7 @@ mod task_config {
 
     #[test]
     fn can_extend() {
-        let config = test_parse_config("extends: id", |code| TaskConfig::parse(code));
+        let config = test_parse_config("extends: id", load_config_from_code);
 
         assert_eq!(config.extends, Some(Id::raw("id")));
     }
@@ -42,37 +57,37 @@ mod task_config {
         #[test]
         #[should_panic(expected = "expected a string or a list of strings")]
         fn errors_on_invalid_type() {
-            test_parse_config("command: 123", |code| TaskConfig::parse(code));
+            test_parse_config("command: 123", load_config_from_code);
         }
 
         #[test]
         #[should_panic(expected = "a command is required; use \"noop\" otherwise")]
         fn errors_for_empty_string() {
-            test_parse_config("command: ''", |code| TaskConfig::parse(code));
+            test_parse_config("command: ''", load_config_from_code);
         }
 
         #[test]
         #[should_panic(expected = "a command is required; use \"noop\" otherwise")]
         fn errors_for_empty_list() {
-            test_parse_config("command: []", |code| TaskConfig::parse(code));
+            test_parse_config("command: []", load_config_from_code);
         }
 
         #[test]
         #[should_panic(expected = "a command is required; use \"noop\" otherwise")]
         fn errors_for_empty_list_arg() {
-            test_parse_config("command: ['']", |code| TaskConfig::parse(code));
+            test_parse_config("command: ['']", load_config_from_code);
         }
 
         #[test]
         fn parses_string() {
-            let config = test_parse_config("command: bin", |code| TaskConfig::parse(code));
+            let config = test_parse_config("command: bin", load_config_from_code);
 
             assert_eq!(config.command, TaskArgs::String("bin".into()));
         }
 
         #[test]
         fn parses_list() {
-            let config = test_parse_config("command: [bin]", |code| TaskConfig::parse(code));
+            let config = test_parse_config("command: [bin]", load_config_from_code);
 
             assert_eq!(config.command, TaskArgs::List(vec!["bin".into()]));
         }
@@ -83,14 +98,14 @@ mod task_config {
 
         #[test]
         fn parses_string() {
-            let config = test_parse_config("args: bin", |code| TaskConfig::parse(code));
+            let config = test_parse_config("args: bin", load_config_from_code);
 
             assert_eq!(config.args, TaskArgs::String("bin".into()));
         }
 
         #[test]
         fn parses_list() {
-            let config = test_parse_config("args: [bin]", |code| TaskConfig::parse(code));
+            let config = test_parse_config("args: [bin]", load_config_from_code);
 
             assert_eq!(config.args, TaskArgs::List(vec!["bin".into()]));
         }
@@ -107,7 +122,7 @@ args:
   - value
   - 'quoted arg'
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
 
             assert_eq!(
@@ -137,7 +152,7 @@ deps:
   - ^:task
   - ~:task
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
 
             assert_eq!(
@@ -170,7 +185,7 @@ deps:
       FOO: abc
     target: ~:task
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
 
             assert_eq!(
@@ -202,13 +217,13 @@ deps:
         #[test]
         #[should_panic(expected = "expected a valid target or dependency config object")]
         fn errors_on_invalid_format() {
-            test_parse_config("deps: ['bad target']", |code| TaskConfig::parse(code));
+            test_parse_config("deps: ['bad target']", load_config_from_code);
         }
 
         #[test]
         #[should_panic(expected = "target scope not supported as a task dependency")]
         fn errors_on_all_scope() {
-            test_parse_config("deps: [':task']", |code| TaskConfig::parse(code));
+            test_parse_config("deps: [':task']", load_config_from_code);
         }
 
         #[test]
@@ -219,7 +234,7 @@ deps:
 deps:
   - args: a b c
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
         }
     }
@@ -239,7 +254,7 @@ inputs:
   - 'proj/glob/{a,b,c}'
   - '!proj/glob/{a,b,c}'
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
 
             assert_eq!(
@@ -264,7 +279,7 @@ inputs:
   - $FOO_*
   - file/path
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
 
             assert_eq!(
@@ -293,7 +308,7 @@ outputs:
   - 'proj/glob/{a,b,c}'
   # - '!proj/glob/{a,b,c}'
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
 
             assert_eq!(
@@ -318,7 +333,7 @@ outputs:
   - $FOO_BAR
   - file/path
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
         }
     }
@@ -328,7 +343,7 @@ outputs:
 
         #[test]
         fn supports_variant() {
-            let config = test_parse_config("platform: rust", |code| TaskConfig::parse(code));
+            let config = test_parse_config("platform: rust", load_config_from_code);
 
             assert_eq!(config.platform, PlatformType::Rust);
         }
@@ -338,7 +353,7 @@ outputs:
             expected = "unknown variant `perl`, expected one of `bun`, `deno`, `node`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
-            test_parse_config("platform: perl", |code| TaskConfig::parse(code));
+            test_parse_config("platform: perl", load_config_from_code);
         }
     }
 
@@ -347,7 +362,7 @@ outputs:
 
         #[test]
         fn supports_variant() {
-            let config = test_parse_config("type: build", |code| TaskConfig::parse(code));
+            let config = test_parse_config("type: build", load_config_from_code);
 
             assert_eq!(config.type_of, Some(TaskType::Build));
         }
@@ -357,7 +372,7 @@ outputs:
             expected = "unknown variant `cache`, expected one of `build`, `run`, `test`"
         )]
         fn errors_on_invalid_variant() {
-            test_parse_config("type: cache", |code| TaskConfig::parse(code));
+            test_parse_config("type: cache", load_config_from_code);
         }
     }
 
@@ -366,7 +381,7 @@ outputs:
 
         #[test]
         fn loads_defaults() {
-            let config = test_parse_config("{}", |code| TaskConfig::parse(code));
+            let config = test_parse_config("{}", load_config_from_code);
             let opts = config.options;
 
             assert_eq!(opts.affected_files, None);
@@ -383,7 +398,7 @@ options:
   mergeDeps: replace
   outputStyle: stream
 ",
-                |code| TaskConfig::parse(code),
+                load_config_from_code,
             );
             let opts = config.options;
 
@@ -404,7 +419,7 @@ options:
 options:
   affectedFiles: true
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -420,7 +435,7 @@ options:
 options:
   affectedFiles: false
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -436,7 +451,7 @@ options:
 options:
   affectedFiles: args
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -452,7 +467,7 @@ options:
 options:
   affectedFiles: env
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -469,7 +484,7 @@ options:
 options:
   affectedFiles: other
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
             }
         }
@@ -485,7 +500,7 @@ options:
 options:
   envFile: true
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -501,7 +516,7 @@ options:
 options:
   envFile: false
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -517,7 +532,7 @@ options:
 options:
   envFile: .env.file
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -533,7 +548,7 @@ options:
 options:
   envFile: /.env.file
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -549,7 +564,7 @@ options:
 options:
   envFile: [.env.file, /.env.shared]
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -569,7 +584,7 @@ options:
 options:
   envFile: .env.*
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
             }
 
@@ -581,7 +596,7 @@ options:
             // options:
             //   envFile: $ENV_VAR
             // ",
-            //                     |code| TaskConfig::parse(code),
+            //                     load_config_from_code,
             //                 );
             //             }
         }
@@ -598,7 +613,7 @@ options:
   interactive: true
   persistent: true
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
             }
         }
@@ -614,7 +629,7 @@ options:
 options:
   os: windows
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -630,7 +645,7 @@ options:
 options:
   os: [linux, macos]
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
 
                 assert_eq!(
@@ -650,9 +665,73 @@ options:
 options:
   os: unknown
 ",
-                    |code| TaskConfig::parse(code),
+                    load_config_from_code,
                 );
             }
+        }
+    }
+
+    mod pkl {
+        use super::*;
+        use moon_config::*;
+        use starbase_sandbox::locate_fixture;
+
+        #[test]
+        fn loads_pkl() {
+            let config = test_config(locate_fixture("pkl"), |root| {
+                load_config_from_file(&root.join("task.pkl"))
+            });
+
+            assert_eq!(
+                config,
+                TaskConfig {
+                    description: Some("I do something".into()),
+                    command: TaskArgs::String("cmd --arg".into()),
+                    args: TaskArgs::List(vec!["-c".into(), "-b".into(), "arg".into()]),
+                    deps: vec![
+                        TaskDependency::Target(Target::parse("proj:task").unwrap()),
+                        TaskDependency::Config(TaskDependencyConfig {
+                            args: TaskArgs::None,
+                            env: FxHashMap::default(),
+                            target: Target::parse("^:build").unwrap(),
+                            optional: Some(true)
+                        }),
+                        TaskDependency::Config(TaskDependencyConfig {
+                            args: TaskArgs::String("--minify".into()),
+                            env: FxHashMap::from_iter([("DEBUG".into(), "1".into())]),
+                            target: Target::parse("~:build").unwrap(),
+                            optional: None
+                        }),
+                    ],
+                    env: FxHashMap::from_iter([("ENV".into(), "development".into())]),
+                    inputs: Some(vec![
+                        InputPath::EnvVar("ENV".into()),
+                        InputPath::EnvVarGlob("ENV_*".into()),
+                        InputPath::ProjectFile("file.txt".into()),
+                        InputPath::ProjectGlob("file.*".into()),
+                        InputPath::WorkspaceFile("file.txt".into()),
+                        InputPath::WorkspaceGlob("file.*".into()),
+                        InputPath::TokenFunc("@dirs(name)".into())
+                    ]),
+                    local: Some(true),
+                    outputs: Some(vec![
+                        OutputPath::TokenVar("$workspaceRoot".into()),
+                        OutputPath::ProjectFile("file.txt".into()),
+                        OutputPath::ProjectGlob("file.*".into()),
+                        OutputPath::WorkspaceFile("file.txt".into()),
+                        OutputPath::WorkspaceGlob("file.*".into()),
+                    ]),
+                    options: TaskOptionsConfig {
+                        cache: Some(false),
+                        retry_count: Some(3),
+                        ..Default::default()
+                    },
+                    platform: PlatformType::Bun,
+                    preset: Some(TaskPreset::Server),
+                    type_of: Some(TaskType::Build),
+                    ..Default::default()
+                }
+            );
         }
     }
 }

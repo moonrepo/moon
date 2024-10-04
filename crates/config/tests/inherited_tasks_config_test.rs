@@ -1217,6 +1217,26 @@ mod task_manager {
                                 ..Default::default()
                             }
                         ),
+                        (
+                            Id::raw("lint"),
+                            TaskConfig {
+                                inputs: Some(vec![
+                                    InputPath::ProjectGlob("**/*.graphql".into()),
+                                    InputPath::ProjectGlob("src/**/*".into()),
+                                ]),
+                                ..Default::default()
+                            }
+                        ),
+                        (
+                            Id::raw("test"),
+                            TaskConfig {
+                                inputs: Some(vec![
+                                    InputPath::ProjectGlob("src/**/*".into()),
+                                    InputPath::ProjectGlob("tests/**/*".into()),
+                                ]),
+                                ..Default::default()
+                            }
+                        ),
                     ]),
                     ..Default::default()
                 }

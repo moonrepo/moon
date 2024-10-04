@@ -62,6 +62,8 @@ taskOptions {
 
 local _someCondition = true
 
+local _sharedInputs = List("src/**/*")
+
 tasks {
 	["example"] {
 		options {
@@ -72,6 +74,14 @@ tasks {
 				cache = false
 			}
 		}
+	}
+
+	["test"] {
+		inputs = _sharedInputs + List("tests/**/*")
+	}
+
+	["lint"] {
+		inputs = List("**/*.graphql") + _sharedInputs
 	}
 
 	for (_os in List("linux", "macos", "windows")) {

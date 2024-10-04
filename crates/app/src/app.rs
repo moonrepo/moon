@@ -286,7 +286,7 @@ pub struct Cli {
     pub dump: bool,
 
     #[arg(
-        long = "experimentalPklConfig",
+        long = "experimentPklConfig",
         global = true,
         env = "MOON_EXPERIMENT_PKL_CONFIG",
         help = "Enable support for the Pkl (.pkl) configuration format",

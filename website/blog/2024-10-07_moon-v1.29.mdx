@@ -3,13 +3,14 @@ slug: moon-v1.29
 title: moon v1.29 - Improved affected tracking, experimental Pkl configuration, and more
 authors: [milesj]
 tags: [affected, detection, tracker, project, task, config, pkl]
-# image: ./img/moon/v1.28.png
+image: ./img/moon/v1.29.png
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-In this release, we're excited to introduce a new (but experimental) configuration format!
+In this release, we're excited to introduce an improved affected tracker and a new (but
+experimental) configuration format!
 
 <!--truncate-->
 
@@ -317,8 +318,8 @@ isn't moon experimenting with those? The answer is, we may! Just so long as they
 requirements. With that said, we do have some opinions below:
 
 - [Starlark/Skylark](https://github.com/bazelbuild/starlark/) - On our list to evaluate.
-- [Nickel](https://nickel-lang.org), [Jsonnet](https://jsonnet.org) - On our list to evaluate in the
-  future, but not a fan of the JSON-like syntax.
+- [Nickel](https://nickel-lang.org), [Jsonnet](https://jsonnet.org) - On our list to evaluate, but
+  not a fan of the JSON-like syntax.
 - [Dhall](https://dhall-lang.org) - While this meets most of our requirements, the syntax isn't as
   readable or user-friendly as we'd like.
 - [CUE](https://cuelang.org/) - No Rust support, so unlikely. It also works quite differently than

@@ -65,8 +65,7 @@ impl fmt::Display for UpstreamScope {
     }
 }
 
-#[derive(Debug, Default, Serialize, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 pub struct AffectedProjectState {
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
@@ -106,8 +105,7 @@ impl AffectedProjectState {
     }
 }
 
-#[derive(Debug, Default, Serialize, PartialEq)]
-#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 pub struct AffectedTaskState {
     #[serde(skip_serializing_if = "FxHashSet::is_empty")]
@@ -153,8 +151,7 @@ impl AffectedTaskState {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
-#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Affected {
     #[serde(skip_serializing_if = "FxHashMap::is_empty")]

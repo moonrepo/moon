@@ -19,8 +19,7 @@ use std::{
 };
 use tracing::{debug, trace};
 
-#[derive(Default, Serialize)]
-#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[derive(Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub affected: Option<Affected>,
@@ -36,15 +35,13 @@ pub struct QueryProjectsOptions {
     pub type_of: Option<String>,
 }
 
-#[derive(Serialize)]
-#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[derive(Deserialize, Serialize)]
 pub struct QueryProjectsResult {
     pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
 }
 
-#[derive(Serialize)]
-#[cfg_attr(debug_assertions, derive(Deserialize))]
+#[derive(Deserialize, Serialize)]
 pub struct QueryTasksResult {
     pub tasks: BTreeMap<Id, BTreeMap<Id, Task>>,
     pub options: QueryProjectsOptions,

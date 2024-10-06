@@ -1,5 +1,5 @@
 use crate::project_graph_builder::ProjectGraphBuilderContext;
-use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
+use moon_common::path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use starbase_utils::{fs, glob};
@@ -41,7 +41,9 @@ where
     V: AsRef<str> + 'glob,
 {
     let mut locate_globs = vec![];
-    let mut has_root_level = sources.iter().any(|(_, source)| source == ".");
+    let mut has_root_level = sources
+        .iter()
+        .any(|(_, source)| is_root_level_source(source));
 
     // Root-level project has special handling
     for glob in globs.into_iter() {

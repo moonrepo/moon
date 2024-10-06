@@ -2,6 +2,7 @@ use crate::actions;
 use crate::infer_tasks_from_scripts;
 use moon_action::Operation;
 use moon_action_context::ActionContext;
+use moon_common::path::is_root_level_source;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig, PlatformType,
@@ -127,9 +128,7 @@ impl Platform for NodePlatform {
         }
 
         // Root package is always considered within the workspace
-        if (project_source.is_empty() || project_source == ".")
-            && self.packages_root == self.workspace_root
-        {
+        if is_root_level_source(project_source) && self.packages_root == self.workspace_root {
             return Ok(true);
         }
 

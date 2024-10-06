@@ -44,6 +44,7 @@ impl Stub {
             &self.source,
             ProjectBuilderContext {
                 config_loader: &self.config_loader,
+                monorepo: true,
                 root_project_id: None,
                 toolchain_config: &self.toolchain_config,
                 workspace_root: &self.workspace_root,

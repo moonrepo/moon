@@ -20,6 +20,10 @@
 - Updated `moon query tasks` to include the task type and platform, and the task description as a
   trailing value.
 
+#### 🐞 Fixes
+
+- Fixed an issue where a root project in a polyrepo would not default to `**/*` inputs for tasks.
+
 #### ⚙️ Internal
 
 - Updated identifiers and targets to use [compact strings](https://crates.io/crates/compact_str).

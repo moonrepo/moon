@@ -23,7 +23,7 @@ export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 export type TaskOptionEnvFile = boolean | string | string[];
 
 /** The strategy in which to merge a specific task option. */
-export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
+export type TaskMergeStrategy = 'append' | 'prepend' | 'preserve' | 'replace';
 
 /** The operating system in which to only run this task on. */
 export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';

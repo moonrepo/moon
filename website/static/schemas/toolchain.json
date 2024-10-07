@@ -73,7 +73,7 @@
       "description": "All configured toolchains by unique ID.",
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/definitions/ToolConfig"
+        "$ref": "#/definitions/ToolchainPluginConfig"
       },
       "propertyNames": {
         "type": "string"
@@ -648,8 +648,8 @@
       },
       "additionalProperties": false
     },
-    "ToolConfig": {
-      "description": "Configures an individual platform.",
+    "ToolchainPluginConfig": {
+      "description": "Configures an individual toolchain.",
       "type": "object",
       "properties": {
         "config": {
@@ -684,7 +684,7 @@
         },
         "version": {
           "title": "version",
-          "description": "The version to download, install, and run tasks with.",
+          "description": "The version of the toolchain to download and install.",
           "anyOf": [
             {
               "$ref": "#/definitions/UnresolvedVersionSpec"

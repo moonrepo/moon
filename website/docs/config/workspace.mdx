@@ -613,6 +613,21 @@ If running `moon` commands directly, the `moon` binary must be installed globall
 
 :::
 
+### `hookFormat`<VersionLabel version="1.29.0" />
+
+<HeadingApiLink to="/api/types/interface/VcsConfig#hookFormat" />
+
+The shell and file type in which generated hook files are formatted with. Supports the following:
+
+- `native` (default) - The format native to the current operating system. Bash on Unix, and
+  PowerShell on Windows.
+- `bash` - Forces the format to Bash for all operating systems.
+
+```yaml title=".moon/workspace.yml" {2}
+vcs:
+  hookFormat: 'bash'
+```
+
 ### `manager`
 
 <HeadingApiLink to="/api/types/interface/VcsConfig#manager" />

@@ -531,6 +531,16 @@
           "default": "master",
           "type": "string"
         },
+        "hookFormat": {
+          "title": "hookFormat",
+          "description": "The format to use for generated VCS hook files.",
+          "default": "native",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsHookFormat"
+            }
+          ]
+        },
         "hooks": {
           "title": "hooks",
           "description": "A mapping of hooks to commands to run when the hook is triggered.",
@@ -581,6 +591,14 @@
         }
       },
       "additionalProperties": false
+    },
+    "VcsHookFormat": {
+      "description": "The format to use for generated VCS hook files.",
+      "type": "string",
+      "enum": [
+        "bash",
+        "native"
+      ]
     },
     "VcsManager": {
       "description": "The VCS being utilized by the repository.",

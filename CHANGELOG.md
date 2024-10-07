@@ -13,12 +13,20 @@
   - Pkl is programmable, allowing for variables, loops, conditionals, and more.
 - Added a new task option, `cacheLifetime`, that controls how long a task will be cached for.
 - Added a new task merge strategy, `preserve`, that preserves the original inherited value.
+- Added a new setting `vcs.hookFormat` to `.moon/workspace.yml`, that can customize the shell/file
+  format for hooks.
 - Added "sync workspace action" support to toolchain plugins. This is our first step in supporting
   toolchains via WASM plugins.
 - Updated task `outputs` to support token and environment variables.
 - Updated `moon query projects` to include the project description as a trailing value.
 - Updated `moon query tasks` to include the task type and platform, and the task description as a
   trailing value.
+
+#### 🐞 Fixes
+
+- Fixed an issue where a root project in a polyrepo would not default to `**/*` inputs for tasks.
+- Potential fix for an issue that occurs when multiple toolchains of the same type (2 different
+  Node.js versions for example) would fail in weird ways when installing in parallel.
 
 #### ⚙️ Internal
 

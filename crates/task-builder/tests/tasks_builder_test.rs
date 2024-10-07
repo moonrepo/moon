@@ -14,6 +14,7 @@ async fn build_tasks_with_config(
     local_config: ProjectConfig,
     toolchain_config: ToolchainConfig,
     global_name: Option<&str>,
+    monorepo: bool,
 ) -> BTreeMap<Id, Task> {
     let platform = local_config.platform.unwrap_or_default();
 
@@ -22,6 +23,7 @@ async fn build_tasks_with_config(
         source,
         &platform,
         TasksBuilderContext {
+            monorepo,
             toolchain_config: &toolchain_config,
             workspace_root: root,
         },
@@ -51,7 +53,11 @@ async fn build_tasks_with_config(
     builder.build().await.unwrap()
 }
 
-async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+async fn build_tasks_for_repo(
+    root: &Path,
+    config_path: &str,
+    monorepo: bool,
+) -> BTreeMap<Id, Task> {
     let source = if config_path == "moon.yml" {
         ".".into()
     } else {
@@ -66,8 +72,13 @@ async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
             .unwrap(),
         ToolchainConfig::default(),
         None,
+        monorepo,
     )
     .await
+}
+
+async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+    build_tasks_for_repo(root, config_path, true).await
 }
 
 async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
@@ -91,6 +102,7 @@ async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<
             ..ToolchainConfig::default()
         },
         None,
+        true,
     )
     .await
 }
@@ -875,6 +887,45 @@ mod tasks_builder {
         }
 
         #[tokio::test]
+        async fn handles_different_inputs_for_root_tasks_when_a_polyrepo() {
+            let sandbox = create_sandbox("builder-poly");
+            let tasks = build_tasks_for_repo(sandbox.path(), "moon.yml", false).await;
+
+            let task = tasks.get("no-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("**/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                ]
+            );
+            assert!(!task.metadata.empty_inputs);
+            assert!(task.metadata.root_level);
+
+            let task = tasks.get("empty-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert!(task.metadata.empty_inputs);
+            assert!(task.metadata.root_level);
+
+            let task = tasks.get("with-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("local/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                ]
+            );
+            assert!(!task.metadata.empty_inputs);
+            assert!(task.metadata.root_level);
+        }
+
+        #[tokio::test]
         async fn merges_with_global_tasks() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks(sandbox.path(), "inputs/moon.yml").await;
@@ -1200,6 +1251,7 @@ mod tasks_builder {
                 ProjectConfig::default(),
                 ToolchainConfig::default(),
                 None,
+                true,
             )
             .await;
 
@@ -1221,6 +1273,7 @@ mod tasks_builder {
                 }),
                 ToolchainConfig::default(),
                 None,
+                true,
             )
             .await;
 
@@ -1239,6 +1292,7 @@ mod tasks_builder {
                 }),
                 ToolchainConfig::default(),
                 None,
+                true,
             )
             .await;
 
@@ -1260,6 +1314,7 @@ mod tasks_builder {
                 }),
                 ToolchainConfig::default(),
                 None,
+                true,
             )
             .await;
 
@@ -1282,6 +1337,7 @@ mod tasks_builder {
                 }),
                 ToolchainConfig::default(),
                 None,
+                true,
             )
             .await;
 
@@ -1307,6 +1363,7 @@ mod tasks_builder {
                 }),
                 ToolchainConfig::default(),
                 None,
+                true,
             )
             .await;
 
@@ -1348,6 +1405,7 @@ mod tasks_builder {
                 project_config,
                 ToolchainConfig::default(),
                 Some("global-overrides"),
+                true,
             )
             .await;
 
@@ -1631,6 +1689,7 @@ mod tasks_builder {
                     .unwrap(),
                 ToolchainConfig::default(),
                 Some("global-interweave"),
+                true,
             )
             .await;
             let task = tasks.get("child").unwrap();

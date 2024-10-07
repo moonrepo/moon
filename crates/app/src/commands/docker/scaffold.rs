@@ -173,7 +173,7 @@ async fn scaffold_workspace(
     let mut has_root_project = false;
 
     for project in projects {
-        if project.source.as_str() == "." {
+        if path::is_root_level_source(&project.source) {
             has_root_project = true;
         }
 

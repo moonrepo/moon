@@ -23,6 +23,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where a root project in a polyrepo would not default to `**/*` inputs for tasks.
+- Potential fix for an issue that occurs when multiple toolchains of the same type (2 different
+  Node.js versions for example) would fail in weird ways when installing in parallel.
 
 #### ⚙️ Internal
 

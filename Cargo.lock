@@ -2899,6 +2899,7 @@ dependencies = [
  "moon_vcs_hooks",
  "proto_core",
  "rustc-hash 2.0.0",
+ "scc",
  "serde",
  "starbase_utils",
  "tokio",

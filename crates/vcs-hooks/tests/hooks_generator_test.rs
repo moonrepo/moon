@@ -1,4 +1,4 @@
-use moon_config::VcsConfig;
+use moon_config::{VcsConfig, VcsHookFormat};
 use moon_vcs::{BoxedVcs, Git};
 use moon_vcs_hooks::HooksGenerator;
 use rustc_hash::FxHashMap;
@@ -228,6 +228,29 @@ mod windows {
 
         let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.ps1");
         let post_push = sandbox.path().join(".moon/hooks/post-push.ps1");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
+        assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
+    }
+
+    #[tokio::test]
+    async fn creates_local_hook_files_as_bash() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        let mut config = create_config();
+        config.hook_format = VcsHookFormat::Bash;
+
+        HooksGenerator::new(&load_git(sandbox.path()), &config, sandbox.path())
+            .generate()
+            .await
+            .unwrap();
+
+        let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.sh");
+        let post_push = sandbox.path().join(".moon/hooks/post-push.sh");
 
         assert!(pre_commit.exists());
         assert!(post_push.exists());

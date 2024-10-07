@@ -5,7 +5,7 @@ use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use moon_cache::CacheEngine;
-use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
+use moon_common::path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{
     ConfigLoader, DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList,
@@ -55,6 +55,9 @@ pub struct ProjectGraphBuilder<'app> {
     /// The DAG instance.
     graph: GraphType,
 
+    /// Is this a monorepo or polyrepo.
+    monorepo: bool,
+
     /// Nodes (projects) inserted into the graph.
     nodes: FxHashMap<Id, NodeIndex>,
 
@@ -62,7 +65,7 @@ pub struct ProjectGraphBuilder<'app> {
     /// Maps original ID to renamed ID.
     renamed_ids: FxHashMap<Id, Id>,
 
-    /// The root project ID.
+    /// The root project ID (only if a monorepo).
     root_id: Option<Id>,
 
     /// Mapping of project IDs to file system sources,
@@ -83,6 +86,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             configs: FxHashMap::default(),
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
+            monorepo: false,
             nodes: FxHashMap::default(),
             renamed_ids: FxHashMap::default(),
             root_id: None,
@@ -322,6 +326,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             &source,
             ProjectBuilderContext {
                 config_loader: context.config_loader,
+                monorepo: self.monorepo,
                 root_project_id: self.root_id.as_ref(),
                 toolchain_config: context.toolchain_config,
                 workspace_root: context.workspace_root,
@@ -509,14 +514,27 @@ impl<'app> ProjectGraphBuilder<'app> {
             .await?
             .aliases;
 
+        // Determine if a polyrepo or monorepo
+        let polyrepo = sources.len() == 1
+            && sources
+                .first()
+                .map(|(_, source)| is_root_level_source(source))
+                .unwrap_or_default();
+
+        self.monorepo = !polyrepo;
+
         // Find the root project
-        self.root_id = sources.iter().find_map(|(id, source)| {
-            if source.as_str().is_empty() || source.as_str() == "." {
-                Some(id.to_owned())
-            } else {
-                None
-            }
-        });
+        self.root_id = if self.monorepo {
+            sources.iter().find_map(|(id, source)| {
+                if is_root_level_source(source) {
+                    Some(id.to_owned())
+                } else {
+                    None
+                }
+            })
+        } else {
+            None
+        };
 
         // Set our data and warn/error against problems
         for (id, source) in sources {

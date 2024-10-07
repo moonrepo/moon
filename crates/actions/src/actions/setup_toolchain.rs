@@ -9,8 +9,13 @@ use moon_config::UnresolvedVersionSpec;
 use moon_platform::PlatformManager;
 use moon_time::now_millis;
 use rustc_hash::FxHashMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+use tokio::sync::Mutex;
 use tracing::{debug, instrument};
+
+// Avoid the same tool running in parallel causing issues,
+// so use a global lock keyed by tool ID.
+static LOCKS: OnceLock<scc::HashMap<String, Mutex<()>>> = OnceLock::new();
 
 cache_item!(
     pub struct ToolCacheState {
@@ -50,6 +55,11 @@ pub async fn setup_toolchain(
         encode_component(node.runtime.id()),
         hash_component(node.runtime.requirement.to_string()),
     ))?;
+
+    // Acquire a lock for the toolchain ID
+    let locks = LOCKS.get_or_init(|| scc::HashMap::default());
+    let entry = locks.entry(node.runtime.id()).or_default();
+    let _lock = entry.lock().await;
 
     // Install and setup the specific tool + version in the toolchain!
     let installed_count = PlatformManager::write()

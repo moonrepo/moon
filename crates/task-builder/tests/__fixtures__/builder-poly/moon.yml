@@ -1,0 +1,10 @@
+tasks:
+  no-inputs:
+    command: 'no-inputs'
+  empty-inputs:
+    command: 'empty-inputs'
+    inputs: []
+  with-inputs:
+    command: 'with-inputs'
+    inputs:
+      - 'local/*'

@@ -266,13 +266,13 @@ export interface RustConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
-/** Configures an individual platform. */
-export interface ToolConfig {
+/** Configures an individual toolchain. */
+export interface ToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config: Record<string, unknown>;
 	/** Location of the WASM plugin to use. */
 	plugin: PluginLocator | null;
-	/** The version to download, install, and run tasks with. */
+	/** The version of the toolchain to download and install. */
 	version: UnresolvedVersionSpec | null;
 }
 
@@ -361,7 +361,7 @@ export interface ToolchainConfig {
 	/** Configures and enables the Rust platform. */
 	rust: RustConfig | null;
 	/** All configured toolchains by unique ID. */
-	toolchains: Record<string, ToolConfig>;
+	toolchains: Record<string, ToolchainPluginConfig>;
 	/** Configures and enables the TypeScript platform. */
 	typescript: TypeScriptConfig | null;
 }
@@ -605,13 +605,13 @@ export interface PartialRustConfig {
 	version?: UnresolvedVersionSpec | null;
 }
 
-/** Configures an individual platform. */
-export interface PartialToolConfig {
+/** Configures an individual toolchain. */
+export interface PartialToolchainPluginConfig {
 	/** Arbitrary configuration that'll be passed to the WASM plugin. */
 	config?: Record<string, unknown> | null;
 	/** Location of the WASM plugin to use. */
 	plugin?: PluginLocator | null;
-	/** The version to download, install, and run tasks with. */
+	/** The version of the toolchain to download and install. */
 	version?: UnresolvedVersionSpec | null;
 }
 
@@ -700,7 +700,7 @@ export interface PartialToolchainConfig {
 	/** Configures and enables the Rust platform. */
 	rust?: PartialRustConfig | null;
 	/** All configured toolchains by unique ID. */
-	toolchains?: Record<string, PartialToolConfig> | null;
+	toolchains?: Record<string, PartialToolchainPluginConfig> | null;
 	/** Configures and enables the TypeScript platform. */
 	typescript?: PartialTypeScriptConfig | null;
 }

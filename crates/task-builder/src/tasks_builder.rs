@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
+use moon_common::path::is_root_level_source;
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
@@ -62,6 +63,7 @@ fn extract_config<'builder, 'proj>(
 
 #[derive(Debug)]
 pub struct TasksBuilderContext<'proj> {
+    pub monorepo: bool,
     pub toolchain_config: &'proj ToolchainConfig,
     pub workspace_root: &'proj Path,
 }
@@ -293,7 +295,7 @@ impl<'proj> TasksBuilder<'proj> {
         task.preset = preset;
         task.options = self.build_task_options(id, preset)?;
         task.metadata.local_only = is_local;
-        task.metadata.root_level = self.project_source == ".";
+        task.metadata.root_level = is_root_level_source(self.project_source);
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -399,10 +401,10 @@ impl<'proj> TasksBuilder<'proj> {
                 );
 
                 task.metadata.empty_inputs = true;
-            } else if task.metadata.root_level {
+            } else if self.context.monorepo && task.metadata.root_level {
                 trace!(
                     target = target.as_str(),
-                    "Task is in a root-level project, defaulting to no inputs",
+                    "Task is a root-level project in a monorepo, defaulting to no inputs",
                 );
 
                 task.metadata.empty_inputs = true;

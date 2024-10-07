@@ -1,5 +1,10 @@
 use crate::project_error::ProjectError;
-use moon_common::{cacheable, path::WorkspaceRelativePathBuf, serde::is_wasm_bridge, Id};
+use moon_common::{
+    cacheable,
+    path::{is_root_level_source, WorkspaceRelativePathBuf},
+    serde::is_wasm_bridge,
+    Id,
+};
 use moon_config::{
     DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
     StackType,
@@ -117,7 +122,7 @@ impl Project {
 
     /// Return true if the root-level project.
     pub fn is_root_level(&self) -> bool {
-        self.source.as_str().is_empty() || self.source.as_str() == "."
+        is_root_level_source(&self.source)
     }
 
     /// Return true if the provided locator string (an ID or alias) matches the

@@ -10,6 +10,12 @@ pub type ProjectRelativePathBuf = RelativePathBuf;
 pub type WorkspaceRelativePath = RelativePath;
 pub type WorkspaceRelativePathBuf = RelativePathBuf;
 
+#[inline]
+pub fn is_root_level_source<T: AsRef<str>>(source: T) -> bool {
+    let source = source.as_ref();
+    source.is_empty() || source == "."
+}
+
 #[cfg(unix)]
 #[inline]
 pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
@@ -41,7 +47,7 @@ pub fn expand_to_workspace_relative<P: AsRef<str>>(
     match from_format {
         RelativeFrom::Project(source) => {
             // Root-level project
-            if source.is_empty() || source == "." {
+            if is_root_level_source(source) {
                 WorkspaceRelativePathBuf::from(path)
 
                 // Project-level, prefix with source path

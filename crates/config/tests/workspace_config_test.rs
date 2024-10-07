@@ -938,10 +938,11 @@ extensions:
                             "moon run :pre-commit".into()
                         ]
                     )]),
+                    hook_format: VcsHookFormat::Native,
                     manager: VcsManager::Git,
                     provider: VcsProvider::GitLab,
                     remote_candidates: vec!["main".into(), "origin/main".into()],
-                    sync_hooks: true
+                    sync_hooks: true,
                 }
             );
         }

@@ -18,6 +18,7 @@ use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
+    pub monorepo: bool,
     pub root_project_id: Option<&'app Id>,
     pub toolchain_config: &'app ToolchainConfig,
     pub workspace_root: &'app Path,
@@ -367,6 +368,7 @@ impl<'app> ProjectBuilder<'app> {
             self.source.as_str(),
             &self.platform,
             TasksBuilderContext {
+                monorepo: self.context.monorepo,
                 toolchain_config: self.context.toolchain_config,
                 workspace_root: self.context.workspace_root,
             },

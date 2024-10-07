@@ -531,6 +531,16 @@
           "default": "master",
           "type": "string"
         },
+        "hookFormat": {
+          "title": "hookFormat",
+          "description": "The format to use for generated VCS hook files.",
+          "default": "native",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsHookFormat"
+            }
+          ]
+        },
         "hooks": {
           "title": "hooks",
           "description": "A mapping of hooks to commands to run when the hook is triggered.",
@@ -582,6 +592,14 @@
       },
       "additionalProperties": false
     },
+    "VcsHookFormat": {
+      "description": "The format to use for generated VCS hook files.",
+      "type": "string",
+      "enum": [
+        "bash",
+        "native"
+      ]
+    },
     "VcsManager": {
       "description": "The VCS being utilized by the repository.",
       "type": "string",
@@ -628,12 +646,12 @@
       "properties": {
         "globs": {
           "title": "globs",
-          "description": "A list of globs in which to locate project directories. Can be suffixed with moon.yml to only find distinct projects.",
+          "description": "A list of globs in which to locate project directories. Can be suffixed with moon.yml or moon.pkl to only find distinct projects.",
           "type": "array",
           "items": {
             "type": "string"
           },
-          "markdownDescription": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` to only find distinct projects."
+          "markdownDescription": "A list of globs in which to locate project directories. Can be suffixed with `moon.yml` or `moon.pkl` to only find distinct projects."
         },
         "sources": {
           "title": "sources",

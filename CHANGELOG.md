@@ -13,6 +13,8 @@
   - Pkl is programmable, allowing for variables, loops, conditionals, and more.
 - Added a new task option, `cacheLifetime`, that controls how long a task will be cached for.
 - Added a new task merge strategy, `preserve`, that preserves the original inherited value.
+- Added a new setting `vcs.hookFormat` to `.moon/workspace.yml`, that can customize the shell/file
+  format for hooks.
 - Added "sync workspace action" support to toolchain plugins. This is our first step in supporting
   toolchains via WASM plugins.
 - Updated task `outputs` to support token and environment variables.

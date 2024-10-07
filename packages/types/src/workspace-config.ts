@@ -234,6 +234,9 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
+/** The format to use for generated VCS hook files. */
+export type VcsHookFormat = 'bash' | 'native';
+
 /** The VCS being utilized by the repository. */
 export type VcsManager = 'git';
 
@@ -251,6 +254,13 @@ export interface VcsConfig {
 	 * @default 'master'
 	 */
 	defaultBranch?: string;
+	/**
+	 * The format to use for generated VCS hook files.
+	 *
+	 * @default 'native'
+	 * @type {'bash' | 'native'}
+	 */
+	hookFormat: VcsHookFormat;
 	/** A mapping of hooks to commands to run when the hook is triggered. */
 	hooks: Record<string, string[]>;
 	/**
@@ -551,6 +561,12 @@ export interface PartialVcsConfig {
 	 * @default 'master'
 	 */
 	defaultBranch?: string | null;
+	/**
+	 * The format to use for generated VCS hook files.
+	 *
+	 * @default 'native'
+	 */
+	hookFormat?: VcsHookFormat | null;
 	/** A mapping of hooks to commands to run when the hook is triggered. */
 	hooks?: Record<string, string[]> | null;
 	/**

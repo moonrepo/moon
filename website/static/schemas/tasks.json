@@ -336,6 +336,7 @@
       "enum": [
         "append",
         "prepend",
+        "preserve",
         "replace"
       ]
     },

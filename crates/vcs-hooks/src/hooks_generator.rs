@@ -1,5 +1,5 @@
 use moon_common::{color, consts, is_docker};
-use moon_config::VcsConfig;
+use moon_config::{VcsConfig, VcsHookFormat};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
@@ -104,13 +104,11 @@ impl<'app> HooksGenerator<'app> {
                 continue;
             }
 
-            let hook_path = self
-                .output_dir
-                .join(if matches!(self.shell, ShellType::Bash) {
-                    format!("{}.sh", hook_name)
-                } else {
-                    format!("{}.ps1", hook_name)
-                });
+            let hook_path = self.output_dir.join(if self.is_bash_format() {
+                format!("{}.sh", hook_name)
+            } else {
+                format!("{}.ps1", hook_name)
+            });
 
             debug!(file = ?hook_path, "Creating {} hook", color::file(hook_name));
 
@@ -142,11 +140,20 @@ impl<'app> HooksGenerator<'app> {
                 self.config.manager,
             );
 
+            // On Unix or a system that supports Bash, we can use the hook file
+            // itself and run Bash commands within it.
+            if self.is_bash_format() || cfg!(not(windows)) {
+                // pre-commit
+                self.create_hook_file(
+                    &external_path,
+                    &[format!("{} $1 $2 $3", external_command.display())],
+                    false,
+                )?;
+            }
             // On Windows, the hook file itself is extensionless, which means we can't use PowerShell.
             // Instead we will execute our .ps1 script through PowerShell.
             // https://stackoverflow.com/questions/5629261/running-powershell-scripts-as-git-hooks
-            #[cfg(windows)]
-            {
+            else {
                 let powershell_exe = if matches!(self.shell, ShellType::Pwsh) {
                     "pwsh.exe"
                 } else {
@@ -160,17 +167,6 @@ impl<'app> HooksGenerator<'app> {
                         "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{}\" $1 $2 $3",
                         powershell_exe, external_command.display()
                     ),
-                )?;
-            }
-
-            // On Unix, we can use the hook file itself and run Bash commands within it.
-            #[cfg(not(windows))]
-            {
-                // pre-commit
-                self.create_hook_file(
-                    &external_path,
-                    &[format!("{} $1 $2 $3", external_command.display())],
-                    false,
                 )?;
             }
         }
@@ -193,7 +189,7 @@ impl<'app> HooksGenerator<'app> {
     ) -> miette::Result<()> {
         let mut contents = vec![];
 
-        if matches!(self.shell, ShellType::Bash) {
+        if self.is_bash_format() {
             contents.extend(["#!/usr/bin/env bash", "set -eo pipefail", ""]);
         } else {
             contents.extend([
@@ -223,5 +219,9 @@ impl<'app> HooksGenerator<'app> {
         self.create_file(file_path, contents.join("\n"))?;
 
         Ok(())
+    }
+
+    fn is_bash_format(&self) -> bool {
+        self.config.hook_format == VcsHookFormat::Bash || matches!(self.shell, ShellType::Bash)
     }
 }

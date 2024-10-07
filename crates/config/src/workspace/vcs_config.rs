@@ -28,6 +28,16 @@ derive_enum!(
     }
 );
 
+derive_enum!(
+    /// The format to use for generated VCS hook files.
+    #[derive(ConfigEnum, Copy, Default)]
+    pub enum VcsHookFormat {
+        Bash,
+        #[default]
+        Native,
+    }
+);
+
 /// Configures the version control system (VCS).
 #[derive(Clone, Config, Debug, PartialEq)]
 pub struct VcsConfig {
@@ -37,6 +47,9 @@ pub struct VcsConfig {
 
     /// A mapping of hooks to commands to run when the hook is triggered.
     pub hooks: FxHashMap<String, Vec<String>>,
+
+    /// The format to use for generated VCS hook files.
+    pub hook_format: VcsHookFormat,
 
     /// The VCS client being utilized by the repository.
     pub manager: VcsManager,

@@ -11,12 +11,13 @@ pub async fn check_for_new_version(
     console: &Console,
     moon_env: &MoonEnvironment,
     cache_engine: &CacheEngine,
+    manifest_url: &str,
 ) -> AppResult {
     if is_test_env() || is_formatted_output() {
         return Ok(());
     }
 
-    match Launchpad::check_version(cache_engine, moon_env, false).await {
+    match Launchpad::check_version(cache_engine, moon_env, false, manifest_url).await {
         Ok(Some(result)) => {
             if !result.update_available {
                 return Ok(());

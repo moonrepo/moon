@@ -13,7 +13,6 @@ use std::time::Duration;
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
-const CURRENT_VERSION_URL: &str = "https://launch.moonrepo.app/versions/cli/current";
 const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(43200); // 12 hours
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -67,6 +66,7 @@ impl Launchpad {
         cache_engine: &CacheEngine,
         moon_env: &MoonEnvironment,
         bypass_cache: bool,
+        manifest_url: &str,
     ) -> miette::Result<Option<VersionCheck>> {
         let mut state = cache_engine
             .state
@@ -79,7 +79,7 @@ impl Launchpad {
             }
         }
 
-        if let Some(result) = Self::check_version_without_cache(moon_env).await? {
+        if let Some(result) = Self::check_version_without_cache(moon_env, manifest_url).await? {
             state.data.last_check_time = Some(now);
             state.data.local_version = Some(result.local_version.clone());
             state.data.remote_version = Some(result.remote_version.clone());
@@ -93,6 +93,7 @@ impl Launchpad {
 
     pub async fn check_version_without_cache(
         moon_env: &MoonEnvironment,
+        manifest_url: &str,
     ) -> miette::Result<Option<VersionCheck>> {
         if is_test_env() || proto_core::is_offline() {
             return Ok(None);
@@ -102,11 +103,12 @@ impl Launchpad {
 
         debug!(
             current_version = &version,
+            manifest_url = manifest_url,
             "Checking for a new version of moon"
         );
 
         let mut client = reqwest::Client::new()
-            .get(CURRENT_VERSION_URL)
+            .get(manifest_url)
             .header("X-Moon-OS", consts::OS.to_owned())
             .header("X-Moon-Arch", consts::ARCH.to_owned())
             .header("X-Moon-Version", &version)

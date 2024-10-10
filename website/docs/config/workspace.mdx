@@ -568,6 +568,33 @@ team. This data is used to improve the quality and reliability of the tool. Defa
 telemetry: false
 ```
 
+## `update`
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#update" />
+
+Configures how moon will receive information about latest release and download location.
+
+### `manifestUrl`
+
+<HeadingApiLink to="/api/types/interface/UpdateConfig#manifestUrl" />
+
+Defines an HTTPS URL where to current version information from. Defaults to "https://launch.moonrepo.app/versions/cli/current"
+
+```yaml title=".moon/workspace.yml" {2-4}
+update:
+  manifestUrl: "https://launch.moonrepo.app/versions/cli/current"
+```
+
+### `downloadUrl`
+
+<HeadingApiLink to="/api/types/interface/UpdateConfig#downloadUrl" />
+
+Defines an HTTPS URL where the moon binary shall be downloaded from. Default to "https://github.com/moonrepo/moon/releases/latest/download"
+```yaml title=".moon/workspace.yml" {2}
+update:
+  downloadUrl: "https://github.com/moonrepo/moon/releases/latest/download"
+```
+
 ## `vcs`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#vcs" />

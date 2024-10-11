@@ -1,4 +1,4 @@
-use moon_config::{VcsConfig, VcsHookFormat};
+use moon_config::VcsConfig;
 use moon_vcs::{BoxedVcs, Git};
 use moon_vcs_hooks::HooksGenerator;
 use rustc_hash::FxHashMap;
@@ -99,7 +99,7 @@ async fn cleans_up_hooks() {
     assert!(!local_hooks.exists());
 }
 
-#[cfg(not(windows))]
+#[cfg(unix)]
 mod unix {
     use super::*;
     use std::path::PathBuf;
@@ -137,6 +137,19 @@ mod unix {
 
         assert_snapshot!(fs::read_to_string(pre_commit).unwrap());
         assert_snapshot!(fs::read_to_string(post_push).unwrap());
+
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        assert!(fs::read_to_string(pre_commit)
+            .unwrap()
+            .contains("./.moon/hooks/pre-commit.sh $1 $2 $3"));
+        assert!(fs::read_to_string(post_push)
+            .unwrap()
+            .contains("./.moon/hooks/post-push.sh $1 $2 $3"));
     }
 
     #[tokio::test]
@@ -213,6 +226,7 @@ mod unix {
 #[cfg(windows)]
 mod windows {
     use super::*;
+    use moon_config::VcsHookFormat;
 
     // Standardize snapshots across machines with different powershell versions
     fn clean_powershell(content: String) -> String {
@@ -234,6 +248,19 @@ mod windows {
 
         assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
         assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
+
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        assert!(fs::read_to_string(pre_commit)
+            .unwrap()
+            .contains(".\\.moon\\hooks\\pre-commit.ps1"));
+        assert!(fs::read_to_string(post_push)
+            .unwrap()
+            .contains(".\\.moon\\hooks\\post-push.ps1"));
     }
 
     #[tokio::test]
@@ -257,6 +284,19 @@ mod windows {
 
         assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
         assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
+
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        assert!(fs::read_to_string(pre_commit)
+            .unwrap()
+            .contains("./.moon/hooks/pre-commit.sh $1 $2 $3"));
+        assert!(fs::read_to_string(post_push)
+            .unwrap()
+            .contains("./.moon/hooks/post-push.sh $1 $2 $3"));
     }
 
     #[tokio::test]

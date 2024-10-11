@@ -181,11 +181,11 @@ cacheable!(
         /// before this task is ran. Can depend on sibling tasks, or tasks in
         /// other projects, using targets.
         #[setting(nested, validate = validate_deps)]
-        pub deps: Vec<TaskDependency>,
+        pub deps: Option<Vec<TaskDependency>>,
 
         /// A mapping of environment variables that will be set when the
         /// task is ran.
-        pub env: FxHashMap<String, String>,
+        pub env: Option<FxHashMap<String, String>>,
 
         #[setting(skip, merge = merge::append_vec)]
         pub global_inputs: Vec<InputPath>,

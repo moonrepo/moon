@@ -316,35 +316,34 @@ impl<'proj> TasksBuilder<'proj> {
 
         for (index, link) in chain.iter().enumerate() {
             let config = link.config;
-            let deps = config
-                .deps
-                .iter()
-                .cloned()
-                .map(|dep| dep.into_config())
-                .collect::<Vec<_>>();
 
             if config.script.is_some() {
                 task.script = config.script.clone();
             }
 
-            task.deps = self.merge_vec(
-                task.deps,
-                if link.inherited {
-                    self.apply_filters_to_deps(deps)
-                } else {
-                    deps
-                },
-                task.options.merge_deps,
-                index,
-                true,
-            );
+            if let Some(deps) = &config.deps {
+                let deps = deps
+                    .iter()
+                    .cloned()
+                    .map(|dep| dep.into_config())
+                    .collect::<Vec<_>>();
 
-            task.env = self.merge_map(
-                task.env,
-                config.env.to_owned(),
-                task.options.merge_env,
-                index,
-            );
+                task.deps = self.merge_vec(
+                    task.deps,
+                    if link.inherited {
+                        self.apply_filters_to_deps(deps)
+                    } else {
+                        deps
+                    },
+                    task.options.merge_deps,
+                    index,
+                    true,
+                );
+            }
+
+            if let Some(env) = &config.env {
+                task.env = self.merge_map(task.env, env.to_owned(), task.options.merge_env, index);
+            }
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
             if !config.global_inputs.is_empty() {

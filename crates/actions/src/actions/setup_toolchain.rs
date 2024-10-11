@@ -57,7 +57,7 @@ pub async fn setup_toolchain(
     ))?;
 
     // Acquire a lock for the toolchain ID
-    let locks = LOCKS.get_or_init(|| scc::HashMap::default());
+    let locks = LOCKS.get_or_init(scc::HashMap::default);
     let entry = locks.entry(node.runtime.id()).or_default();
     let _lock = entry.lock().await;
 

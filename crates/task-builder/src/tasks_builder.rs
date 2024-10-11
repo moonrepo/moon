@@ -579,6 +579,14 @@ impl<'proj> TasksBuilder<'proj> {
                 options.interactive = *interactive;
             }
 
+            if let Some(merge) = &config.merge {
+                options.merge_args = *merge;
+                options.merge_deps = *merge;
+                options.merge_env = *merge;
+                options.merge_inputs = *merge;
+                options.merge_outputs = *merge;
+            }
+
             if let Some(merge_args) = &config.merge_args {
                 options.merge_args = *merge_args;
             }

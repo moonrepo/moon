@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new task option `merge`, that defines the same strategy for all applicable fields. Can be
+  overridden with `mergeX` task options.
+
 #### 🐞 Fixes
 
 - Fixed Bash-based hooks being generated with the wrong path separators on Windows.

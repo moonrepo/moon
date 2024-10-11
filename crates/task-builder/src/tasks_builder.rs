@@ -5,8 +5,9 @@ use moon_common::path::is_root_level_source;
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskConfig, TaskDependency, TaskDependencyConfig,
-    TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskType, ToolchainConfig,
+    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle, TaskPreset,
+    TaskType, ToolchainConfig,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
@@ -270,14 +271,16 @@ impl<'proj> TasksBuilder<'proj> {
                 is_local = local;
             }
 
-            if let Some((command, base_args)) = self.get_command_and_args(link.config)? {
-                if let Some(command) = command {
-                    task.command = command;
-                }
+            let (command, base_args) = self.get_command_and_args(link.config)?;
 
-                // Add to task later after we have a merge strategy
+            if let Some(command) = command {
+                task.command = command;
+            }
+
+            // Add to task later after we have a merge strategy
+            if let Some(base_args) = base_args {
                 args_sets.push(base_args);
-            };
+            }
         }
 
         if is_local {
@@ -726,23 +729,34 @@ impl<'proj> TasksBuilder<'proj> {
     fn get_command_and_args(
         &self,
         config: &TaskConfig,
-    ) -> miette::Result<Option<(Option<String>, Vec<String>)>> {
+    ) -> miette::Result<(Option<String>, Option<Vec<String>>)> {
         if config.script.is_some() {
-            return Ok(None);
+            return Ok((None, None));
         }
 
         let mut command = None;
-        let mut args = vec![];
+        let mut args = None;
         let mut cmd_list = parse_task_args(&config.command)?;
 
         if !cmd_list.is_empty() {
             command = Some(cmd_list.remove(0));
-            args.extend(cmd_list);
+
+            if !cmd_list.is_empty() {
+                args = Some(cmd_list);
+            }
         }
 
-        args.extend(parse_task_args(&config.args)?);
+        if config.args != TaskArgs::None {
+            let arg_list = parse_task_args(&config.args)?;
 
-        Ok(Some((command, args)))
+            if let Some(inner) = &mut args {
+                inner.extend(arg_list);
+            } else {
+                args = Some(arg_list);
+            }
+        }
+
+        Ok((command, args))
     }
 
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain>> {

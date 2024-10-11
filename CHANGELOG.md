@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed Bash-based hooks being generated with the wrong path separators on Windows.
+
 ## 1.29.0
 
 #### 🚀 Updates

@@ -1,6 +1,15 @@
 tags: [merge]
 
 tasks:
+  all:
+    args: []
+    deps: []
+    env: {}
+    inputs: []
+    outputs: []
+    options:
+      merge: replace
+
   args:
     args: []
     options:

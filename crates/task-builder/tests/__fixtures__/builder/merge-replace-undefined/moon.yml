@@ -1,6 +1,10 @@
 tags: [merge]
 
 tasks:
+  all:
+    options:
+      merge: replace
+
   args:
     options:
       mergeArgs: replace

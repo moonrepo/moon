@@ -304,7 +304,7 @@ impl AppSession for CliSession {
                 &self.console,
                 &self.moon_env,
                 &cache_engine,
-                &self.workspace_config.update.manifest_url,
+                &self.toolchain_config.moon.manifest_url,
             )
             .await?;
         }

@@ -120,15 +120,6 @@
       "default": true,
       "type": "boolean"
     },
-    "update": {
-      "title": "update",
-      "description": "Configures update configuration.",
-      "allOf": [
-        {
-          "$ref": "#/definitions/UpdateConfig"
-        }
-      ]
-    },
     "vcs": {
       "title": "vcs",
       "description": "Configures the version control system (VCS).",
@@ -526,25 +517,6 @@
           "title": "logRunningCommand",
           "description": "Logs the task's command and arguments when running the task.",
           "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "UpdateConfig": {
-      "description": "Configures how and where updates will be received.",
-      "type": "object",
-      "properties": {
-        "downloadUrl": {
-          "title": "downloadUrl",
-          "description": "A secure URL for downloading moon binary.",
-          "default": "https://github.com/moonrepo/moon/releases/latest/download",
-          "type": "string"
-        },
-        "manifestUrl": {
-          "title": "manifestUrl",
-          "description": "A secure URL for lookup latest version.",
-          "default": "https://launch.moonrepo.app/versions/cli/current",
-          "type": "string"
         }
       },
       "additionalProperties": false

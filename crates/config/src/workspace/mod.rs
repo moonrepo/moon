@@ -7,7 +7,6 @@ mod hasher_config;
 mod notifier_config;
 mod plugins_config;
 mod runner_config;
-mod update_config;
 mod vcs_config;
 
 pub use codeowners_config::*;
@@ -19,5 +18,4 @@ pub use hasher_config::*;
 pub use notifier_config::*;
 pub use plugins_config::*;
 pub use runner_config::*;
-pub use update_config::*;
 pub use vcs_config::*;

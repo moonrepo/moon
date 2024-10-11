@@ -234,22 +234,6 @@ export interface RunnerConfig {
 	logRunningCommand: boolean;
 }
 
-/** Configures how and where updates will be received. */
-export interface UpdateConfig {
-	/**
-	 * A secure URL for downloading moon binary.
-	 *
-	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
-	 */
-	downloadUrl?: string;
-	/**
-	 * A secure URL for lookup latest version.
-	 *
-	 * @default 'https://launch.moonrepo.app/versions/cli/current'
-	 */
-	manifestUrl?: string;
-}
-
 /** The format to use for generated VCS hook files. */
 export type VcsHookFormat = 'bash' | 'native';
 
@@ -342,8 +326,6 @@ export interface WorkspaceConfig {
 	 * @default true
 	 */
 	telemetry?: boolean;
-	/** Configures update configuration. */
-	update: UpdateConfig;
 	/** Configures the version control system (VCS). */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
@@ -537,7 +519,10 @@ export interface PartialWorkspaceProjectsConfig {
 	sources?: Record<string, string> | null;
 }
 
-export type PartialWorkspaceProjects = PartialWorkspaceProjectsConfig | string[] | Record<string, string>;
+export type PartialWorkspaceProjects =
+	| PartialWorkspaceProjectsConfig
+	| string[]
+	| Record<string, string>;
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PartialRunnerConfig {
@@ -566,22 +551,6 @@ export interface PartialRunnerConfig {
 	inheritColorsForPipedTasks?: boolean | null;
 	/** Logs the task's command and arguments when running the task. */
 	logRunningCommand?: boolean | null;
-}
-
-/** Configures how and where updates will be received. */
-export interface PartialUpdateConfig {
-	/**
-	 * A secure URL for downloading moon binary.
-	 *
-	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
-	 */
-	downloadUrl?: string | null;
-	/**
-	 * A secure URL for lookup latest version.
-	 *
-	 * @default 'https://launch.moonrepo.app/versions/cli/current'
-	 */
-	manifestUrl?: string | null;
 }
 
 /** Configures the version control system (VCS). */
@@ -661,8 +630,6 @@ export interface PartialWorkspaceConfig {
 	 * @default true
 	 */
 	telemetry?: boolean | null;
-	/** Configures update configuration. */
-	update?: PartialUpdateConfig | null;
 	/** Configures the version control system (VCS). */
 	vcs?: PartialVcsConfig | null;
 	/** Requires a specific version of the `moon` binary. */

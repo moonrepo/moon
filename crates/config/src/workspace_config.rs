@@ -149,10 +149,6 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub runner: RunnerConfig,
 
-    /// Configures update configuration.
-    #[setting(nested)]
-    pub update: UpdateConfig,
-
     /// Collects anonymous usage information, and checks for new moon versions.
     #[setting(default = true)]
     pub telemetry: bool,

@@ -31,7 +31,7 @@ pub async fn upgrade(session: CliSession) -> AppResult {
 
     let remote_version = match Launchpad::check_version_without_cache(
         &session.moon_env,
-        &session.workspace_config.update.manifest_url,
+        &session.toolchain_config.moon.manifest_url,
     )
     .await
     {
@@ -101,14 +101,14 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         file.set_permissions(perms).into_diagnostic()?;
     }
 
-    let download_url = &session.workspace_config.update.download_url;
+    let download_url = &session.toolchain_config.moon.download_url;
 
     debug!(
         download_url = &download_url,
         target = target,
         "Download new version of moon"
     );
-    
+
     let new_bin = reqwest::get(format!("{download_url}/{target}"))
         .await
         .into_diagnostic()?

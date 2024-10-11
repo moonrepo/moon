@@ -3,7 +3,16 @@
 /* eslint-disable */
 
 /** Formats that a `package.json` version dependency can be. */
-export type NodeVersionFormat = 'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde';
+export type NodeVersionFormat =
+		| 'file'
+		| 'link'
+		| 'star'
+		| 'version'
+		| 'version-caret'
+		| 'version-tilde'
+		| 'workspace'
+		| 'workspace-caret'
+		| 'workspace-tilde';
 
 export type PluginLocator = string;
 
@@ -85,6 +94,22 @@ export interface DenoConfig {
 	 * @envvar MOON_DENO_VERSION
 	 */
 	version: UnresolvedVersionSpec | null;
+}
+
+/** Configures how and where updates will be received. */
+export interface MoonConfig {
+	/**
+	 * A secure URL for downloading the moon binary.
+	 *
+	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
+	 */
+	downloadUrl?: string;
+	/**
+	 * A secure URL to lookup the latest version.
+	 *
+	 * @default 'https://launch.moonrepo.app/versions/cli/current'
+	 */
+	manifestUrl?: string;
 }
 
 /** Options for Bun, when used as a package manager. */
@@ -347,6 +372,8 @@ export interface ToolchainConfig {
 	 * file path or a secure URL.
 	 */
 	extends: string | null;
+	/** Configures update moon configuration. */
+	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
 	/** Configures and enables the Rust platform. */
@@ -432,6 +459,22 @@ export interface PartialDenoConfig {
 	 * @envvar MOON_DENO_VERSION
 	 */
 	version?: UnresolvedVersionSpec | null;
+}
+
+/** Configures how and where updates will be received. */
+export interface PartialMoonConfig {
+	/**
+	 * A secure URL for downloading the moon binary.
+	 *
+	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
+	 */
+	downloadUrl?: string | null;
+	/**
+	 * A secure URL to lookup the latest version.
+	 *
+	 * @default 'https://launch.moonrepo.app/versions/cli/current'
+	 */
+	manifestUrl?: string | null;
 }
 
 /** Options for Bun, when used as a package manager. */
@@ -686,6 +729,8 @@ export interface PartialToolchainConfig {
 	 * file path or a secure URL.
 	 */
 	extends?: string | null;
+	/** Configures update moon configuration. */
+	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
 	/** Configures and enables the Rust platform. */

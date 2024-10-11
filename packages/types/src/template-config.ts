@@ -92,7 +92,11 @@ export interface TemplateVariableStringSetting {
 	type: 'string';
 }
 
-export type TemplateVariable = TemplateVariableBoolSetting | TemplateVariableEnumSetting | TemplateVariableNumberSetting | TemplateVariableStringSetting;
+export type TemplateVariable =
+	| TemplateVariableBoolSetting
+	| TemplateVariableEnumSetting
+	| TemplateVariableNumberSetting
+	| TemplateVariableStringSetting;
 
 /**
  * Configures a template and its files to be scaffolded.
@@ -193,7 +197,11 @@ export interface PartialTemplateVariableStringSetting {
 	type?: 'string' | null;
 }
 
-export type PartialTemplateVariable = PartialTemplateVariableBoolSetting | PartialTemplateVariableEnumSetting | PartialTemplateVariableNumberSetting | PartialTemplateVariableStringSetting;
+export type PartialTemplateVariable =
+	| PartialTemplateVariableBoolSetting
+	| PartialTemplateVariableEnumSetting
+	| PartialTemplateVariableNumberSetting
+	| PartialTemplateVariableStringSetting;
 
 /**
  * Configures a template and its files to be scaffolded.

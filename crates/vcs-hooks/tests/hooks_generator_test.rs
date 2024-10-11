@@ -255,8 +255,8 @@ mod windows {
         assert!(pre_commit.exists());
         assert!(post_push.exists());
 
-        dbg!(fs::read_to_string(pre_commit).unwrap());
-        dbg!(fs::read_to_string(post_push).unwrap());
+        dbg!(fs::read_to_string(&pre_commit).unwrap());
+        dbg!(fs::read_to_string(&post_push).unwrap());
 
         assert!(fs::read_to_string(pre_commit)
             .unwrap()

@@ -4,15 +4,15 @@
 
 /** Formats that a `package.json` version dependency can be. */
 export type NodeVersionFormat =
-		| 'file'
-		| 'link'
-		| 'star'
-		| 'version'
-		| 'version-caret'
-		| 'version-tilde'
-		| 'workspace'
-		| 'workspace-caret'
-		| 'workspace-tilde';
+	| 'file'
+	| 'link'
+	| 'star'
+	| 'version'
+	| 'version-caret'
+	| 'version-tilde'
+	| 'workspace'
+	| 'workspace-caret'
+	| 'workspace-tilde';
 
 export type PluginLocator = string;
 

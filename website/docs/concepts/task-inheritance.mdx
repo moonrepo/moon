@@ -73,10 +73,10 @@ name exist, they are merged into a single task. To accomplish this, one of many
 Merging is applied to the parameters [`args`](../config/project#args),
 [`deps`](../config/project#deps), [`env`](../config/project#env-1),
 [`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs), using the
-[`mergeArgs`](../config/project#mergeargs), [`mergeDeps`](../config/project#mergedeps),
-[`mergeEnv`](../config/project#mergeenv), [`mergeInputs`](../config/project#mergeinputs) and
-[`mergeOutputs`](../config/project#mergeoutputs) options respectively. Each of these options support
-one of the following strategy values.
+[`merge`](../config/project#merge), [`mergeArgs`](../config/project#mergeargs),
+[`mergeDeps`](../config/project#mergedeps), [`mergeEnv`](../config/project#mergeenv),
+[`mergeInputs`](../config/project#mergeinputs) and [`mergeOutputs`](../config/project#mergeoutputs)
+options respectively. Each of these options support one of the following strategy values.
 
 - `append` (default) - Values found in the local task are merged _after_ the values found in the
   global task. For example, this strategy is useful for toggling flag arguments.

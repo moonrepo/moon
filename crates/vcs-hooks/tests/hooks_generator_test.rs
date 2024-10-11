@@ -257,10 +257,10 @@ mod windows {
 
         assert!(fs::read_to_string(pre_commit)
             .unwrap()
-            .contains(".\\.moon\\hooks\\pre-commit.sh $1 $2 $3"));
+            .contains(".\\.moon\\hooks\\pre-commit.ps1 $1 $2 $3"));
         assert!(fs::read_to_string(post_push)
             .unwrap()
-            .contains(".\\.moon\\hooks\\post-push.sh $1 $2 $3"));
+            .contains(".\\.moon\\hooks\\post-push.ps1 $1 $2 $3"));
     }
 
     #[tokio::test]

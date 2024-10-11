@@ -1,4 +1,4 @@
-use moon_common::{color, consts, is_docker};
+use moon_common::{color, consts, is_docker, path};
 use moon_config::{VcsConfig, VcsHookFormat};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
@@ -146,7 +146,10 @@ impl<'app> HooksGenerator<'app> {
                 // pre-commit
                 self.create_hook_file(
                     &external_path,
-                    &[format!("{} $1 $2 $3", external_command.display())],
+                    &[format!(
+                        "{} $1 $2 $3",
+                        path::to_virtual_string(external_command)?
+                    )],
                     false,
                 )?;
             }

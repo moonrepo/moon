@@ -103,8 +103,12 @@ pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<Workspace
     Ok(result.files)
 }
 
-fn filter_with_regex(
-    projects: Vec<Arc<Project>>,
+fn load_with_query(project_graph: &ProjectGraph, query: &str) -> miette::Result<Vec<Arc<Project>>> {
+    project_graph.query(moon_query::build_query(query)?)
+}
+
+fn load_with_regex(
+    project_graph: &ProjectGraph,
     options: &QueryProjectsOptions,
 ) -> miette::Result<Vec<Arc<Project>>> {
     let alias_regex = convert_to_regex("alias", &options.alias)?;
@@ -117,7 +121,7 @@ fn filter_with_regex(
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
-    for project in projects {
+    for project in project_graph.get_all()? {
         if let Some(regex) = &id_regex {
             if !regex.is_match(&project.id) {
                 continue;
@@ -188,9 +192,9 @@ pub async fn query_projects(
     debug!("Querying for projects");
 
     let mut projects = if let Some(query) = &options.query {
-        project_graph.query(moon_query::build_query(query)?)?
+        load_with_query(project_graph, query)?
     } else {
-        project_graph.get_all()?
+        load_with_regex(project_graph, options)?
     };
 
     if let Some(affected) = &options.affected {
@@ -206,12 +210,6 @@ pub async fn query_projects(
                 }
             })
             .collect::<Vec<_>>();
-    }
-
-    if options.query.is_none() {
-        debug!("Filtering with regex patterns");
-
-        projects = filter_with_regex(projects, &options)?;
     }
 
     Ok(projects)

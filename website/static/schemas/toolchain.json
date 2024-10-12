@@ -56,6 +56,18 @@
         }
       ]
     },
+    "python": {
+      "title": "python",
+      "description": "Configures and enables the Python platform.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PythonConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "rust": {
       "title": "rust",
       "description": "Configures and enables the Rust platform.",
@@ -540,6 +552,41 @@
       },
       "additionalProperties": false
     },
+    "PipConfig": {
+      "type": "object",
+      "properties": {
+        "installArgs": {
+          "title": "installArgs",
+          "description": "List of arguments to append to pip install commands.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "List of arguments to append to `pip install` commands."
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of pip to download, install, and run pip tasks with.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The version of pip to download, install, and run `pip` tasks with."
+        }
+      },
+      "additionalProperties": false
+    },
     "PluginLocator": {
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
@@ -581,6 +628,49 @@
             }
           ],
           "markdownDescription": "The version of pnpm to download, install, and run `pnpm` tasks with."
+        }
+      },
+      "additionalProperties": false
+    },
+    "PythonConfig": {
+      "type": "object",
+      "properties": {
+        "pip": {
+          "title": "pip",
+          "description": "Options for pnpm, when used as a package manager.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PipConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use for Python support.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of Python to download, install, and run python tasks with.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The version of Python to download, install, and run `python` tasks with."
         }
       },
       "additionalProperties": false

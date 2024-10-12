@@ -376,6 +376,7 @@
         "bun",
         "deno",
         "node",
+        "python",
         "rust",
         "system",
         "unknown"
@@ -615,6 +616,19 @@
             }
           ],
           "markdownDescription": "Overrides `node` settings."
+        },
+        "python": {
+          "title": "python",
+          "description": "Overrides python settings.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Overrides `python` settings."
         },
         "rust": {
           "title": "rust",

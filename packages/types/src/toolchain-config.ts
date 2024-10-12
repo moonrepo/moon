@@ -3,16 +3,7 @@
 /* eslint-disable */
 
 /** Formats that a `package.json` version dependency can be. */
-export type NodeVersionFormat =
-	| 'file'
-	| 'link'
-	| 'star'
-	| 'version'
-	| 'version-caret'
-	| 'version-tilde'
-	| 'workspace'
-	| 'workspace-caret'
-	| 'workspace-tilde';
+export type NodeVersionFormat = 'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde';
 
 export type PluginLocator = string;
 
@@ -243,6 +234,26 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+export interface PipConfig {
+	/** List of arguments to append to `pip install` commands. */
+	installArgs: string[] | null;
+	/** The version of pip to download, install, and run `pip` tasks with. */
+	version: UnresolvedVersionSpec | null;
+}
+
+export interface PythonConfig {
+	/** Options for pnpm, when used as a package manager. */
+	pip: PipConfig | null;
+	/** Location of the WASM plugin to use for Python support. */
+	plugin: PluginLocator | null;
+	/**
+	 * The version of Python to download, install, and run `python` tasks with.
+	 *
+	 * @envvar MOON_PYTHON_VERSION
+	 */
+	version: UnresolvedVersionSpec | null;
+}
+
 /**
  * Configures and enables the Rust platform.
  * Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -358,6 +369,8 @@ export interface ToolchainConfig {
 	extends: string | null;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
+	/** Configures and enables the Python platform. */
+	python: PythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust: RustConfig | null;
 	/** All configured toolchains by unique ID. */
@@ -582,6 +595,26 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
+export interface PartialPipConfig {
+	/** List of arguments to append to `pip install` commands. */
+	installArgs?: string[] | null;
+	/** The version of pip to download, install, and run `pip` tasks with. */
+	version?: UnresolvedVersionSpec | null;
+}
+
+export interface PartialPythonConfig {
+	/** Options for pnpm, when used as a package manager. */
+	pip?: PartialPipConfig | null;
+	/** Location of the WASM plugin to use for Python support. */
+	plugin?: PluginLocator | null;
+	/**
+	 * The version of Python to download, install, and run `python` tasks with.
+	 *
+	 * @envvar MOON_PYTHON_VERSION
+	 */
+	version?: UnresolvedVersionSpec | null;
+}
+
 /**
  * Configures and enables the Rust platform.
  * Docs: https://moonrepo.dev/docs/config/toolchain#rust
@@ -697,6 +730,8 @@ export interface PartialToolchainConfig {
 	extends?: string | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
+	/** Configures and enables the Python platform. */
+	python?: PartialPythonConfig | null;
 	/** Configures and enables the Rust platform. */
 	rust?: PartialRustConfig | null;
 	/** All configured toolchains by unique ID. */

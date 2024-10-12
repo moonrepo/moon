@@ -2,6 +2,7 @@ mod bin_config;
 mod bun_config;
 mod deno_config;
 mod node_config;
+mod python_config;
 mod rust_config;
 mod typescript_config;
 
@@ -9,6 +10,7 @@ pub use bin_config::*;
 pub use bun_config::*;
 pub use deno_config::*;
 pub use node_config::*;
+pub use python_config::*;
 pub use rust_config::*;
 pub use typescript_config::*;
 

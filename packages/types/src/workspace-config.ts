@@ -519,10 +519,7 @@ export interface PartialWorkspaceProjectsConfig {
 	sources?: Record<string, string> | null;
 }
 
-export type PartialWorkspaceProjects =
-	| PartialWorkspaceProjectsConfig
-	| string[]
-	| Record<string, string>;
+export type PartialWorkspaceProjects = PartialWorkspaceProjectsConfig | string[] | Record<string, string>;
 
 /** Configures aspects of the task runner (also known as the action pipeline). */
 export interface PartialRunnerConfig {

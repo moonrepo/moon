@@ -32,16 +32,7 @@ export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
 /** A list of available shells on Unix. */
-export type TaskUnixShell =
-	| 'bash'
-	| 'elvish'
-	| 'fish'
-	| 'ion'
-	| 'murex'
-	| 'nu'
-	| 'pwsh'
-	| 'xonsh'
-	| 'zsh';
+export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'ion' | 'murex' | 'nu' | 'pwsh' | 'xonsh' | 'zsh';
 
 /** A list of available shells on Windows. */
 export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pwsh' | 'xonsh';
@@ -157,7 +148,7 @@ export interface TaskOptionsConfig {
 }
 
 /** Platforms that each programming language can belong to. */
-export type PlatformType = 'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown';
+export type PlatformType = 'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown';
 
 /** Preset options to inherit. */
 export type TaskPreset = 'server' | 'watcher';
@@ -220,7 +211,7 @@ export interface TaskConfig {
 	 * be automatically detected.
 	 *
 	 * @default 'unknown'
-	 * @type {'bun' | 'deno' | 'node' | 'rust' | 'system' | 'unknown'}
+	 * @type {'bun' | 'deno' | 'node' | 'python' | 'rust' | 'system' | 'unknown'}
 	 */
 	platform: PlatformType;
 	/** The preset to apply for the task. Will inherit default options. */

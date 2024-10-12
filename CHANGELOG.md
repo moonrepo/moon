@@ -11,6 +11,7 @@
 
 - Fixed `moon query projects` including dependency projects by default. Can be controlled with
   `--upstream`.
+- Fixed `moon query projects` regex patterns not working when used in conjunction with affected.
 - Fixed Bash-based hooks being generated with the wrong path separators on Windows.
 - Fixed an issue where an inherited task with merge strategy "replace" will accidentally remove task
   args, deps, and env in inheriting tasks.

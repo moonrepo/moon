@@ -8,7 +8,7 @@ use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::Task;
 use moon_vcs::BoxedVcs;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::json;
@@ -57,7 +57,9 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<reg
             );
 
             // case-insensitive by default
-            Ok(Some(regex::Regex::new(&format!("(?i){pattern}")).unwrap()))
+            let pat = regex::Regex::new(&format!("(?i){pattern}")).into_diagnostic()?;
+
+            Ok(Some(pat))
         }
         None => Ok(None),
     }
@@ -101,32 +103,14 @@ pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<Workspace
     Ok(result.files)
 }
 
-fn load_from_query(
-    project_graph: &ProjectGraph,
-    query: &str,
-    options: &QueryProjectsOptions,
-) -> miette::Result<FxHashMap<Id, Arc<Project>>> {
-    Ok(project_graph
-        .query(moon_query::build_query(query)?)?
-        .into_iter()
-        .filter_map(|project| {
-            if options
-                .affected
-                .as_ref()
-                .is_some_and(|affected| !affected.is_project_affected(&project.id))
-            {
-                return None;
-            }
-
-            Some((project.id.clone(), project.to_owned()))
-        })
-        .collect::<FxHashMap<_, _>>())
+fn load_with_query(project_graph: &ProjectGraph, query: &str) -> miette::Result<Vec<Arc<Project>>> {
+    project_graph.query(moon_query::build_query(query)?)
 }
 
 fn load_with_regex(
     project_graph: &ProjectGraph,
     options: &QueryProjectsOptions,
-) -> miette::Result<FxHashMap<Id, Arc<Project>>> {
+) -> miette::Result<Vec<Arc<Project>>> {
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
@@ -135,17 +119,9 @@ fn load_with_regex(
     let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
-    let mut projects = FxHashMap::default();
+    let mut filtered = vec![];
 
     for project in project_graph.get_all()? {
-        if options
-            .affected
-            .as_ref()
-            .is_some_and(|affected| !affected.is_project_affected(&project.id))
-        {
-            continue;
-        }
-
         if let Some(regex) = &id_regex {
             if !regex.is_match(&project.id) {
                 continue;
@@ -203,10 +179,10 @@ fn load_with_regex(
             }
         }
 
-        projects.insert(project.id.clone(), project.to_owned());
+        filtered.push(project);
     }
 
-    Ok(projects)
+    Ok(filtered)
 }
 
 pub async fn query_projects(
@@ -216,20 +192,25 @@ pub async fn query_projects(
     debug!("Querying for projects");
 
     let mut projects = if let Some(query) = &options.query {
-        load_from_query(project_graph, query, options)?
+        load_with_query(project_graph, query)?
     } else {
         load_with_regex(project_graph, options)?
     };
 
     if let Some(affected) = &options.affected {
-        debug!("Including affected projects");
+        debug!("Filtering based on affected");
 
-        for dep_id in affected.projects.keys() {
-            if !projects.contains_key(dep_id) {
-                projects.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
-            }
-        }
+        projects = projects
+            .into_iter()
+            .filter_map(|project| {
+                if affected.is_project_affected(&project.id) {
+                    Some(project)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
     }
 
-    Ok(projects.into_values().collect::<Vec<_>>())
+    Ok(projects)
 }

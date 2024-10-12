@@ -45,9 +45,9 @@ impl fmt::Display for DownstreamScope {
 // Dependencies
 #[derive(Clone, Copy, Debug, Default, PartialEq, ValueEnum)]
 pub enum UpstreamScope {
+    #[default]
     None,
     Direct,
-    #[default]
     Deep,
 }
 

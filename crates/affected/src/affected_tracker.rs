@@ -33,7 +33,7 @@ impl<'app> AffectedTracker<'app> {
             touched_files,
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
-            project_upstream: UpstreamScope::None,
+            project_upstream: UpstreamScope::Deep,
             tasks: FxHashMap::default(),
             task_downstream: DownstreamScope::None,
             task_upstream: UpstreamScope::Deep,

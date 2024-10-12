@@ -6,6 +6,8 @@
 
 - Added a new task option `merge`, that defines the same strategy for all applicable fields. Can be
   overridden with `mergeX` task options.
+- Added a `moon` setting to `.moon/toolchain.yml`, which can be used to customize the update check
+  process.
 
 #### 🐞 Fixes
 

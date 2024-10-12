@@ -157,12 +157,12 @@ deps:
 
             assert_eq!(
                 config.deps,
-                vec![
+                Some(vec![
                     TaskDependency::Target(Target::parse("task").unwrap()),
                     TaskDependency::Target(Target::parse("project:task").unwrap()),
                     TaskDependency::Target(Target::parse("^:task").unwrap()),
                     TaskDependency::Target(Target::parse("~:task").unwrap()),
-                ]
+                ])
             );
         }
 
@@ -190,7 +190,7 @@ deps:
 
             assert_eq!(
                 config.deps,
-                vec![
+                Some(vec![
                     TaskDependency::Config(TaskDependencyConfig::new(
                         Target::parse("task").unwrap()
                     )),
@@ -210,7 +210,7 @@ deps:
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
                     }),
-                ]
+                ])
             );
         }
 
@@ -688,7 +688,7 @@ options:
                     description: Some("I do something".into()),
                     command: TaskArgs::String("cmd --arg".into()),
                     args: TaskArgs::List(vec!["-c".into(), "-b".into(), "arg".into()]),
-                    deps: vec![
+                    deps: Some(vec![
                         TaskDependency::Target(Target::parse("proj:task").unwrap()),
                         TaskDependency::Config(TaskDependencyConfig {
                             args: TaskArgs::None,
@@ -702,8 +702,8 @@ options:
                             target: Target::parse("~:build").unwrap(),
                             optional: None
                         }),
-                    ],
-                    env: FxHashMap::from_iter([("ENV".into(), "development".into())]),
+                    ]),
+                    env: Some(FxHashMap::from_iter([("ENV".into(), "development".into())])),
                     inputs: Some(vec![
                         InputPath::EnvVar("ENV".into()),
                         InputPath::EnvVarGlob("ENV_*".into()),

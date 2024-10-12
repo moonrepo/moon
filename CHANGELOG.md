@@ -2,9 +2,16 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new task option `merge`, that defines the same strategy for all applicable fields. Can be
+  overridden with `mergeX` task options.
+
 #### 🐞 Fixes
 
 - Fixed Bash-based hooks being generated with the wrong path separators on Windows.
+- Fixed an issue where an inherited task with merge strategy "replace" will accidentally remove task
+  args, deps, and env in inheriting tasks.
 
 ## 1.29.0
 

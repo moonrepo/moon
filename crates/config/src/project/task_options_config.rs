@@ -233,6 +233,11 @@ cacheable!(
         /// from the command line, but can be depended on.
         pub internal: Option<bool>,
 
+        /// The default strategy to use when merging `args`, `deps`, `env`,
+        /// `inputs`, or `outputs` with an inherited task. Can be overridden
+        /// with the other field-specific merge options.
+        pub merge: Option<TaskMergeStrategy>,
+
         /// The strategy to use when merging `args` with an inherited task.
         pub merge_args: Option<TaskMergeStrategy>,
 

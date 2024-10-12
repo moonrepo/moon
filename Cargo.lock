@@ -3016,6 +3016,9 @@ dependencies = [
  "moon_plugin",
  "moon_project",
  "moon_project_graph",
+ "moon_python_lang",
+ "moon_python_platform",
+ "moon_python_tool",
  "moon_query",
  "moon_rust_lang",
  "moon_rust_platform",
@@ -3750,6 +3753,74 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_python_lang"
+version = "0.0.1"
+dependencies = [
+ "cached",
+ "cargo-lock",
+ "cargo_toml",
+ "miette",
+ "moon_lang",
+ "moon_logger",
+ "moon_test_utils",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_styles",
+ "starbase_utils",
+]
+
+[[package]]
+name = "moon_python_platform"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_action",
+ "moon_action_context",
+ "moon_common",
+ "moon_config",
+ "moon_console",
+ "moon_hash",
+ "moon_logger",
+ "moon_platform",
+ "moon_process",
+ "moon_project",
+ "moon_python_lang",
+ "moon_python_tool",
+ "moon_task",
+ "moon_test_utils",
+ "moon_tool",
+ "moon_utils",
+ "proto_core",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_styles",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_python_tool"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_console",
+ "moon_logger",
+ "moon_process",
+ "moon_python_lang",
+ "moon_tool",
+ "moon_toolchain",
+ "moon_utils",
+ "proto_core",
+ "rustc-hash 2.0.0",
+ "starbase_styles",
+ "starbase_utils",
  "tracing",
 ]
 

@@ -157,6 +157,33 @@ deno:
   lockfile: true
 ```
 
+## `moon`
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#moon" />
+
+Configures how moon will receive information about latest release and download location.
+
+### `manifestUrl`
+
+<HeadingApiLink to="/api/types/interface/MoonConfig#manifestUrl" />
+
+Defines an HTTPS URL where to current version information from. Defaults to "https://launch.moonrepo.app/versions/cli/current"
+
+```yaml title=".moon/workspace.yml" {2-4}
+update:
+  manifestUrl: "https://launch.moonrepo.app/versions/cli/current"
+```
+
+### `downloadUrl`
+
+<HeadingApiLink to="/api/types/interface/MoonConfig#downloadUrl" />
+
+Defines an HTTPS URL where the moon binary shall be downloaded from. Default to "https://github.com/moonrepo/moon/releases/latest/download"
+```yaml title=".moon/workspace.yml" {2}
+update:
+  downloadUrl: "https://github.com/moonrepo/moon/releases/latest/download"
+```
+
 ## `node`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#node" />

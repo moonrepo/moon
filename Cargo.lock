@@ -2934,6 +2934,7 @@ dependencies = [
  "miette",
  "moon_cache",
  "moon_common",
+ "moon_config",
  "moon_env",
  "moon_time",
  "proto_core",

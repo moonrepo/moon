@@ -13,7 +13,7 @@ use std::{
     io::copy,
     path::{Component, PathBuf},
 };
-use tracing::{error, instrument};
+use tracing::{debug, error, instrument};
 
 pub fn is_musl() -> bool {
     let Ok(output) = std::process::Command::new("ldd").arg("--version").output() else {
@@ -29,7 +29,12 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         return Err(AppError::UpgradeRequiresInternet.into());
     }
 
-    let remote_version = match Launchpad::check_version_without_cache(&session.moon_env).await {
+    let remote_version = match Launchpad::check_version_without_cache(
+        &session.moon_env,
+        &session.toolchain_config.moon.manifest_url,
+    )
+    .await
+    {
         Ok(Some(result)) if result.update_available => result.remote_version,
         Ok(_) => {
             println!("You're already on the latest version of moon!");
@@ -96,14 +101,20 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         file.set_permissions(perms).into_diagnostic()?;
     }
 
-    let new_bin = reqwest::get(format!(
-        "https://github.com/moonrepo/moon/releases/latest/download/{target}"
-    ))
-    .await
-    .into_diagnostic()?
-    .bytes()
-    .await
-    .into_diagnostic()?;
+    let download_url = &session.toolchain_config.moon.download_url;
+
+    debug!(
+        download_url = &download_url,
+        target = target,
+        "Download new version of moon"
+    );
+
+    let new_bin = reqwest::get(format!("{download_url}/{target}"))
+        .await
+        .into_diagnostic()?
+        .bytes()
+        .await
+        .into_diagnostic()?;
 
     copy(&mut new_bin.reader(), &mut file).into_diagnostic()?;
 

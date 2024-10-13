@@ -109,12 +109,15 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         "Download new version of moon"
     );
 
-    let new_bin = reqwest::get(format!("{download_url}/{target}"))
-        .await
-        .into_diagnostic()?
-        .bytes()
-        .await
-        .into_diagnostic()?;
+    let new_bin = reqwest::get(format!(
+        "{download_url}{}{target}",
+        if download_url.ends_with('/') { "" } else { "/" }
+    ))
+    .await
+    .into_diagnostic()?
+    .bytes()
+    .await
+    .into_diagnostic()?;
 
     copy(&mut new_bin.reader(), &mut file).into_diagnostic()?;
 

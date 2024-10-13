@@ -49,7 +49,7 @@ pub struct ToolchainConfig {
     #[setting(nested)]
     pub deno: Option<DenoConfig>,
 
-    /// Configures update moon configuration.
+    /// Configures moon itself.
     #[setting(nested)]
     pub moon: MoonConfig,
 

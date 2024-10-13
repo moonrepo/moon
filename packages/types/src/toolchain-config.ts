@@ -372,7 +372,7 @@ export interface ToolchainConfig {
 	 * file path or a secure URL.
 	 */
 	extends: string | null;
-	/** Configures update moon configuration. */
+	/** Configures moon itself. */
 	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
@@ -729,7 +729,7 @@ export interface PartialToolchainConfig {
 	 * file path or a secure URL.
 	 */
 	extends?: string | null;
-	/** Configures update moon configuration. */
+	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;

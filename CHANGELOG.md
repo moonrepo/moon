@@ -17,6 +17,8 @@
 - Fixed Bash-based hooks being generated with the wrong path separators on Windows.
 - Fixed an issue where an inherited task with merge strategy "replace" will accidentally remove task
   args, deps, and env in inheriting tasks.
+- Fixed an issue where token variables and environment variables used within task args together
+  would not be replaced correctly.
 
 ## 1.29.0
 

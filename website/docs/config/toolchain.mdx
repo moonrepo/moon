@@ -157,31 +157,35 @@ deno:
   lockfile: true
 ```
 
-## `moon`
+## `moon`<VersionLabel version="1.29.0" />
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#moon" />
 
-Configures how moon will receive information about latest release and download location.
+Configures how moon will receive information about latest releases and download locations.
 
 ### `manifestUrl`
 
 <HeadingApiLink to="/api/types/interface/MoonConfig#manifestUrl" />
 
-Defines an HTTPS URL where to current version information from. Defaults to "https://launch.moonrepo.app/versions/cli/current"
+Defines an HTTPS URL in which to fetch the current version information from.
 
-```yaml title=".moon/workspace.yml" {2-4}
-update:
-  manifestUrl: "https://launch.moonrepo.app/versions/cli/current"
+```yaml title=".moon/toolchain.yml" {2}
+moon:
+  manifestUrl: 'https://proxy.corp.net/moon/version'
 ```
 
 ### `downloadUrl`
 
 <HeadingApiLink to="/api/types/interface/MoonConfig#downloadUrl" />
 
-Defines an HTTPS URL where the moon binary shall be downloaded from. Default to "https://github.com/moonrepo/moon/releases/latest/download"
-```yaml title=".moon/workspace.yml" {2}
-update:
-  downloadUrl: "https://github.com/moonrepo/moon/releases/latest/download"
+Defines an HTTPS URL in which the moon binary can be downloaded from. The download file name is
+hard-coded and will be appended to the provided URL.
+
+Defaults to downloading from GitHub: https://github.com/moonrepo/moon/releases
+
+```yaml title=".moon/toolchain.yml" {2}
+moon:
+  downloadUrl: 'https://github.com/moonrepo/moon/releases/latest/download'
 ```
 
 ## `node`

@@ -46,7 +46,7 @@
     },
     "moon": {
       "title": "moon",
-      "description": "Configures update moon configuration.",
+      "description": "Configures moon itself.",
       "allOf": [
         {
           "$ref": "#/definitions/MoonConfig"

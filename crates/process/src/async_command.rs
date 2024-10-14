@@ -1,7 +1,7 @@
 use crate::command_inspector::CommandInspector;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
-use moon_console::Console;
+use moon_console::{Console, PipelineConsole, PipelineReporter};
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -9,7 +9,7 @@ use tokio::process::{Child, Command};
 use tokio::task;
 
 pub struct AsyncCommand<'cmd> {
-    pub console: Option<Arc<Console>>,
+    pub console: Option<Arc<PipelineConsole>>,
     pub inner: Command,
     pub inspector: CommandInspector<'cmd>,
 

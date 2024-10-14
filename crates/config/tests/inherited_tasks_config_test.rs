@@ -1136,6 +1136,7 @@ mod task_manager {
                         env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
                         interactive: Some(false),
                         internal: Some(true),
+                        merge: None,
                         merge_args: Some(TaskMergeStrategy::Append),
                         merge_deps: Some(TaskMergeStrategy::Prepend),
                         merge_env: Some(TaskMergeStrategy::Replace),

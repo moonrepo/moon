@@ -659,7 +659,7 @@ mod projects {
             let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
             let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
-            assert_eq!(ids, string_vec!["advanced", "noConfig"]);
+            assert_eq!(ids, string_vec!["noConfig"]);
             assert!(json.options.affected.is_some());
         }
     }

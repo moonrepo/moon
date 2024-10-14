@@ -543,6 +543,21 @@ mod token_expander {
 
             assert_eq!(expander.expand_args(&task).unwrap(), vec!["name"]);
         }
+
+        #[test]
+        fn can_use_env_and_token_vars_together() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("FOO".into(), "bar".into());
+            task.args.push("$FOO/$project".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(expander.expand_args(&task).unwrap(), vec!["bar/project"]);
+        }
     }
 
     mod envs {

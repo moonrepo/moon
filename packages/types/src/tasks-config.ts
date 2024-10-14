@@ -71,6 +71,14 @@ export interface TaskOptionsConfig {
 	 */
 	internal: boolean | null;
 	/**
+	 * The default strategy to use when merging `args`, `deps`, `env`,
+	 * `inputs`, or `outputs` with an inherited task. Can be overridden
+	 * with the other field-specific merge options.
+	 *
+	 * @default 'append'
+	 */
+	merge: TaskMergeStrategy | null;
+	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *
 	 * @default 'append'
@@ -174,14 +182,14 @@ export interface TaskConfig {
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
 	 * other projects, using targets.
 	 */
-	deps: TaskDependency[];
+	deps: TaskDependency[] | null;
 	/** A human-readable description about the task. */
 	description: string | null;
 	/**
 	 * A mapping of environment variables that will be set when the
 	 * task is ran.
 	 */
-	env: Record<string, string>;
+	env: Record<string, string> | null;
 	/** Extends settings from a sibling task by ID. */
 	extends: string | null;
 	/**
@@ -314,6 +322,14 @@ export interface PartialTaskOptionsConfig {
 	 * from the command line, but can be depended on.
 	 */
 	internal?: boolean | null;
+	/**
+	 * The default strategy to use when merging `args`, `deps`, `env`,
+	 * `inputs`, or `outputs` with an inherited task. Can be overridden
+	 * with the other field-specific merge options.
+	 *
+	 * @default 'append'
+	 */
+	merge?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *

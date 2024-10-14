@@ -131,10 +131,17 @@
         "deps": {
           "title": "deps",
           "description": "Other tasks that this task depends on, and must run to completion before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TaskDependency"
-          }
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskDependency"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "description": {
           "title": "description",
@@ -151,13 +158,20 @@
         "env": {
           "title": "env",
           "description": "A mapping of environment variables that will be set when the task is ran.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "extends": {
           "title": "extends",
@@ -482,6 +496,20 @@
               "type": "null"
             }
           ]
+        },
+        "merge": {
+          "title": "merge",
+          "description": "The default strategy to use when merging args, deps, env, inputs, or outputs with an inherited task. Can be overridden with the other field-specific merge options.",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The default strategy to use when merging `args`, `deps`, `env`, `inputs`, or `outputs` with an inherited task. Can be overridden with the other field-specific merge options."
         },
         "mergeArgs": {
           "title": "mergeArgs",

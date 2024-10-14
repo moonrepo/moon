@@ -101,11 +101,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         }
 
-        Ok(substitute_env_var(
-            "",
-            &self.replace_variables(task, &command)?,
-            &task.env,
-        ))
+        self.replace_all_variables(task, command.as_str())
     }
 
     #[instrument(skip_all)]
@@ -136,11 +132,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             }
         }
 
-        Ok(substitute_env_var(
-            "",
-            &self.replace_variables(task, &script)?,
-            &task.env,
-        ))
+        self.replace_all_variables(task, script.as_str())
     }
 
     #[instrument(skip_all)]
@@ -174,17 +166,9 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
                     args.push(value);
                 }
 
-            // Token variables
-            } else if self.has_token_variable(arg) {
-                args.push(self.replace_variables(task, arg)?);
-
-            // Environment variables
-            } else if patterns::ENV_VAR_SUBSTITUTE.is_match(arg) {
-                args.push(substitute_env_var("", arg, &task.env));
-
-            // Normal arg
+                // Everything else
             } else {
-                args.push(arg.to_owned());
+                args.push(self.replace_all_variables(task, arg)?);
             }
         }
 
@@ -651,11 +635,21 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         task: &Task,
         path: WorkspaceRelativePathBuf,
     ) -> miette::Result<WorkspaceRelativePathBuf> {
-        Ok(WorkspaceRelativePathBuf::from(substitute_env_var(
+        Ok(WorkspaceRelativePathBuf::from(
+            self.replace_all_variables(task, path.as_str())?,
+        ))
+    }
+
+    fn replace_all_variables<T: AsRef<str>>(
+        &self,
+        task: &Task,
+        value: T,
+    ) -> miette::Result<String> {
+        Ok(substitute_env_var(
             "",
-            &self.replace_variables(task, path.as_str())?,
+            &self.replace_variables(task, value.as_ref())?,
             &task.env,
-        )))
+        ))
     }
 
     fn resolve_path_for_task(

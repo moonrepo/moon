@@ -197,7 +197,7 @@ impl CliSession {
     pub fn requires_workspace_setup(&self) -> bool {
         !matches!(
             self.cli.command,
-            Commands::Completions(_) | Commands::Init(_) | Commands::Setup | Commands::Upgrade
+            Commands::Completions(_) | Commands::Init(_) | Commands::Setup
         )
     }
 
@@ -300,7 +300,13 @@ impl AppSession for CliSession {
         {
             let cache_engine = self.get_cache_engine()?;
 
-            execute::check_for_new_version(&self.console, &self.moon_env, &cache_engine).await?;
+            execute::check_for_new_version(
+                &self.console,
+                &self.moon_env,
+                &cache_engine,
+                &self.toolchain_config.moon.manifest_url,
+            )
+            .await?;
         }
 
         Ok(())

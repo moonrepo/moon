@@ -87,6 +87,22 @@ export interface DenoConfig {
 	version: UnresolvedVersionSpec | null;
 }
 
+/** Configures how and where updates will be received. */
+export interface MoonConfig {
+	/**
+	 * A secure URL for downloading the moon binary.
+	 *
+	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
+	 */
+	downloadUrl?: string;
+	/**
+	 * A secure URL to lookup the latest version.
+	 *
+	 * @default 'https://launch.moonrepo.app/versions/cli/current'
+	 */
+	manifestUrl?: string;
+}
+
 /** Options for Bun, when used as a package manager. */
 export interface BunpmConfig {
 	/** List of arguments to append to `bun install` commands. */
@@ -367,6 +383,8 @@ export interface ToolchainConfig {
 	 * file path or a secure URL.
 	 */
 	extends: string | null;
+	/** Configures moon itself. */
+	moon: MoonConfig;
 	/** Configures and enables the Node.js platform. */
 	node: NodeConfig | null;
 	/** Configures and enables the Python platform. */
@@ -454,6 +472,22 @@ export interface PartialDenoConfig {
 	 * @envvar MOON_DENO_VERSION
 	 */
 	version?: UnresolvedVersionSpec | null;
+}
+
+/** Configures how and where updates will be received. */
+export interface PartialMoonConfig {
+	/**
+	 * A secure URL for downloading the moon binary.
+	 *
+	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
+	 */
+	downloadUrl?: string | null;
+	/**
+	 * A secure URL to lookup the latest version.
+	 *
+	 * @default 'https://launch.moonrepo.app/versions/cli/current'
+	 */
+	manifestUrl?: string | null;
 }
 
 /** Options for Bun, when used as a package manager. */
@@ -728,6 +762,8 @@ export interface PartialToolchainConfig {
 	 * file path or a secure URL.
 	 */
 	extends?: string | null;
+	/** Configures moon itself. */
+	moon?: PartialMoonConfig | null;
 	/** Configures and enables the Node.js platform. */
 	node?: PartialNodeConfig | null;
 	/** Configures and enables the Python platform. */

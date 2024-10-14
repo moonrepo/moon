@@ -44,6 +44,15 @@
         }
       ]
     },
+    "moon": {
+      "title": "moon",
+      "description": "Configures moon itself.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/MoonConfig"
+        }
+      ]
+    },
     "node": {
       "title": "node",
       "description": "Configures and enables the Node.js platform.",
@@ -314,6 +323,25 @@
             }
           ],
           "markdownDescription": "The version of Deno to download, install, and run `deno` tasks with."
+        }
+      },
+      "additionalProperties": false
+    },
+    "MoonConfig": {
+      "description": "Configures how and where updates will be received.",
+      "type": "object",
+      "properties": {
+        "downloadUrl": {
+          "title": "downloadUrl",
+          "description": "A secure URL for downloading the moon binary.",
+          "default": "https://github.com/moonrepo/moon/releases/latest/download",
+          "type": "string"
+        },
+        "manifestUrl": {
+          "title": "manifestUrl",
+          "description": "A secure URL to lookup the latest version.",
+          "default": "https://launch.moonrepo.app/versions/cli/current",
+          "type": "string"
         }
       },
       "additionalProperties": false

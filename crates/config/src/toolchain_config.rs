@@ -49,6 +49,10 @@ pub struct ToolchainConfig {
     #[setting(nested)]
     pub deno: Option<DenoConfig>,
 
+    /// Configures moon itself.
+    #[setting(nested)]
+    pub moon: MoonConfig,
+
     /// Configures and enables the Node.js platform.
     #[setting(nested)]
     pub node: Option<NodeConfig>,

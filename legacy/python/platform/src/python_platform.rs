@@ -1,6 +1,4 @@
-use crate::{
-    actions, find_requirements_txt, toolchain_hash::PythonToolchainHash
-};
+use crate::{actions, find_requirements_txt, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
 use moon_common::Id;
@@ -22,7 +20,9 @@ use moon_utils::{async_trait, get_workspace_root};
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use std::{
-    collections::BTreeMap, path::{Path, PathBuf}, sync::Arc
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+    sync::Arc,
 };
 use tracing::instrument;
 
@@ -101,7 +101,6 @@ impl Platform for PythonPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, _project_source: &str) -> miette::Result<bool> {
-
         Ok(false)
     }
 
@@ -139,7 +138,10 @@ impl Platform for PythonPlatform {
     }
 
     fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
-        Ok(Some(("requirements.txt".to_owned(), "requirements.txt".to_owned())))
+        Ok(Some((
+            "requirements.txt".to_owned(),
+            "requirements.txt".to_owned(),
+        )))
     }
 
     async fn setup_toolchain(&mut self) -> miette::Result<()> {
@@ -162,8 +164,6 @@ impl Platform for PythonPlatform {
                 .await?,
             );
         }
-
-        
 
         self.toolchain.setup(&req, &mut last_versions).await?;
 
@@ -192,10 +192,6 @@ impl Platform for PythonPlatform {
     ) -> miette::Result<u8> {
         let req = &runtime.requirement;
 
-        
-
-
-
         if !self.toolchain.has(req) {
             self.toolchain.register(
                 req,
@@ -207,7 +203,7 @@ impl Platform for PythonPlatform {
                 )
                 .await?,
             );
-        }        
+        }
         Ok(self.toolchain.setup(req, last_versions).await?)
     }
 
@@ -239,7 +235,6 @@ impl Platform for PythonPlatform {
         Ok(mutated_files)
     }
 
-
     // #  Lockfile or manifests have not changed since last run, skipping dependency install
     #[instrument(skip_all)]
     async fn hash_manifest_deps(
@@ -248,14 +243,15 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-
         if let Some(python_version) = &self.config.version {
             let mut deps = BTreeMap::new();
-            if let Some(pip_requirements) = find_requirements_txt(&get_workspace_root(), &get_workspace_root()) {
+            if let Some(pip_requirements) =
+                find_requirements_txt(&get_workspace_root(), &get_workspace_root())
+            {
                 deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
             }
-            
-            hasher.hash_content(PythonToolchainHash {            
+
+            hasher.hash_content(PythonToolchainHash {
                 version: python_version.clone(),
                 dependencies: deps,
             })?;
@@ -272,20 +268,19 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-
         if let Some(python_version) = &self.config.version {
             let mut deps = BTreeMap::new();
-            if let Some(pip_requirements) = find_requirements_txt(&get_workspace_root(), &get_workspace_root()) {
+            if let Some(pip_requirements) =
+                find_requirements_txt(&get_workspace_root(), &get_workspace_root())
+            {
                 deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
             }
-            
-            hasher.hash_content(PythonToolchainHash {            
+
+            hasher.hash_content(PythonToolchainHash {
                 version: python_version.clone(),
                 dependencies: deps,
             })?;
         }
-
-        
 
         Ok(())
     }
@@ -299,19 +294,15 @@ impl Platform for PythonPlatform {
         runtime: &Runtime,
         _working_dir: &Path,
     ) -> miette::Result<Command> {
-
         let mut command = Command::new(&task.command);
         command.with_console(self.console.clone());
         command.args(&task.args);
-        command.envs(&task.env);        
+        command.envs(&task.env);
 
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {
                 command.env("PROTO_PYTHON_VERSION", version);
-                command.env(
-                    "PATH",
-                    prepend_path_env_var(get_python_tool_paths(&python)),
-                );
+                command.env("PATH", prepend_path_env_var(get_python_tool_paths(&python)));
             }
         }
 

@@ -4,7 +4,6 @@ use serde::Serialize;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
-
 #[derive(Clone, Config, Debug, PartialEq, Serialize)]
 pub struct PipConfig {
     /// List of arguments to append to `pip install` commands.
@@ -14,7 +13,6 @@ pub struct PipConfig {
     pub version: Option<UnresolvedVersionSpec>,
 }
 
-
 #[derive(Clone, Config, Debug, PartialEq)]
 pub struct PythonConfig {
     /// Location of the WASM plugin to use for Python support.
@@ -23,7 +21,7 @@ pub struct PythonConfig {
     /// Options for pnpm, when used as a package manager.
     #[setting(nested)]
     pub pip: Option<PipConfig>,
-    
+
     /// The relative root of the virtual environment workspace. Default to moon's
     /// workspace root
     #[setting(default = ".", skip)]

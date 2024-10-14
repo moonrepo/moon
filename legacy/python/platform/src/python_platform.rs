@@ -1,5 +1,5 @@
 use crate::{
-    actions, find_requirements_txt, target_hash::PythonTargetHash, toolchain_hash::PythonToolchainHash
+    actions, find_requirements_txt, toolchain_hash::PythonToolchainHash
 };
 use moon_action::Operation;
 use moon_action_context::ActionContext;
@@ -8,13 +8,13 @@ use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     PythonConfig, UnresolvedVersionSpec,
 };
-use moon_console::{Checkpoint, Console};
+use moon_console::Console;
 use moon_hash::ContentHasher;
-use moon_logger::debug;
+// use moon_logger::debug;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
-use moon_python_lang::pip_requirements::{self, load_lockfile_dependencies};
+use moon_python_lang::pip_requirements::load_lockfile_dependencies;
 use moon_python_tool::{get_python_tool_paths, PythonTool};
 use moon_task::Task;
 use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
@@ -26,7 +26,7 @@ use std::{
 };
 use tracing::instrument;
 
-const LOG_TARGET: &str = "moon:python-platform";
+// const LOG_TARGET: &str = "moon:python-platform";
 
 pub struct PythonPlatform {
     pub config: PythonConfig,
@@ -267,7 +267,7 @@ impl Platform for PythonPlatform {
     #[instrument(skip_all)]
     async fn hash_run_target(
         &self,
-        project: &Project,
+        _project: &Project,
         _runtime: &Runtime,
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,

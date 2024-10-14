@@ -8,11 +8,11 @@ hash_content!(
     }
 );
 
-impl PythonTargetHash {
-    pub fn new(python_version: Option<String>) -> Self {
-        PythonTargetHash {
-            python_version: python_version.unwrap_or_else(|| "unknown".into()),
-            locked_dependencies: BTreeMap::new(),
-        }
-    }
-}
+// impl PythonTargetHash {
+//     pub fn new(python_version: Option<String>) -> Self {
+//         PythonTargetHash {
+//             python_version: python_version.unwrap_or_else(|| "unknown".into()),
+//             locked_dependencies: BTreeMap::new(),
+//         }
+//     }
+// }

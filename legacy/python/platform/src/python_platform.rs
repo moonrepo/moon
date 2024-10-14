@@ -14,7 +14,7 @@ use moon_logger::debug;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
-use moon_python_lang::pip_requirements::load_lockfile_dependencies;
+use moon_python_lang::pip_requirements::{self, load_lockfile_dependencies};
 use moon_python_tool::{get_python_tool_paths, PythonTool};
 use moon_task::Task;
 use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
@@ -248,11 +248,18 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        hasher.hash_content(PythonToolchainHash {
-            pip: Some(self.config.pip).expect("S"),
-            version: Some(self.config.version).expect("S"),
-            requirements_dependencies: "".into(),
-        })?;
+
+        if let Some(python_version) = &self.config.version {
+            let mut deps = BTreeMap::new();
+            if let Some(pip_requirements) = find_requirements_txt(&get_workspace_root(), &get_workspace_root()) {
+                deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
+            }
+            
+            hasher.hash_content(PythonToolchainHash {            
+                version: python_version.clone(),
+                dependencies: deps,
+            })?;
+        }
 
         Ok(())
     }
@@ -265,27 +272,20 @@ impl Platform for PythonPlatform {
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let lockfile_path = project.root.join("requirements.txt");
 
-
-        debug!(
-            target: LOG_TARGET,
-            "{} does not exist, installing",
-            lockfile_path.display()
-        );
-
-        // Not running in the Cargo workspace root, not sure how to handle!
-        if !lockfile_path.exists() {
-            return Ok(());
+        if let Some(python_version) = &self.config.version {
+            let mut deps = BTreeMap::new();
+            if let Some(pip_requirements) = find_requirements_txt(&get_workspace_root(), &get_workspace_root()) {
+                deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
+            }
+            
+            hasher.hash_content(PythonToolchainHash {            
+                version: python_version.clone(),
+                dependencies: deps,
+            })?;
         }
 
-        let mut hash = PythonTargetHash::new(None);
-
-        // Use the resolved dependencies from the lockfile directly,
-        // since it also takes into account features and workspace members.
-        hash.locked_dependencies = BTreeMap::from_iter(load_lockfile_dependencies(lockfile_path)?);
-
-        hasher.hash_content(hash)?;
+        
 
         Ok(())
     }

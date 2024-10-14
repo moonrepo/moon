@@ -6,8 +6,7 @@ use moon_console::{Checkpoint, Console};
 use moon_utils::get_workspace_root;
 use moon_process::Command;
 use moon_tool::{
-    async_trait, get_proto_paths, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path,
-    Tool, get_proto_version_env, get_proto_env_vars, DependencyManager
+    async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin, prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool
 };
 use moon_toolchain::RuntimeReq;
 use proto_core::flow::install::InstallOptions;
@@ -29,19 +28,47 @@ pub fn get_python_tool_paths(python_tool: &PythonTool) -> Vec<PathBuf> {
     // let mut paths = get_proto_paths(proto_env);
     // let mut paths:Vec<PathBuf> = [];
 
-    let paths = python_tool.tool.get_globals_dirs()
-        .iter()
-        .cloned()                
-        .collect::<Vec<PathBuf>>();
+    // let mut python_command = "python";
 
-    paths
-}
-
-pub fn get_python_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
-    let paths = get_proto_paths(proto_env);
+    let venv_python = &get_workspace_root().join(python_tool.config.venv_name.clone());
     
+    let paths;
+
+    if venv_python.exists() {
+        paths = vec![venv_python.join("Scripts").clone()];
+    } else {
+        // paths = python_tool.tool.get_globals_dirs()
+        //     .iter()
+        //     .cloned()                
+        //     .collect::<Vec<PathBuf>>();
+        paths = get_proto_paths(&python_tool.proto_env);
+    }
+
+    // for p in python_tool.tool.get_globals_dirs().iter() {
+    //     debug!(
+    //         target: LOG_TARGET,
+    //         "Proto Env {} ",
+    //         p.clone().display(),        
+    //     );
+    // }
+    
+
+    
+
+
+    debug!(
+        target: LOG_TARGET,
+        "Proto Env {} ",
+        map_list(&paths, |c| color::label(c.display().to_string())),        
+    );
     paths
 }
+
+// pub fn get_python_env_paths(proto_env: &ProtoEnvironment) -> Vec<PathBuf> {
+//     let paths = get_proto_paths(proto_env);
+    
+//     paths
+// }
 
 pub struct PythonTool {
     pub config: PythonConfig,
@@ -91,12 +118,18 @@ impl PythonTool {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
+        
+        // Check if venv is already created.
+        
+
+
+
         Command::new("python")
             .args(args)
             .envs(get_proto_env_vars())
             .env(
                 "PATH",
-                prepend_path_env_var(get_python_env_paths(&self.proto_env)),
+                prepend_path_env_var(get_python_tool_paths(&self)),
             )            
             .cwd(working_dir)
             .with_console(self.console.clone())
@@ -195,7 +228,7 @@ impl DependencyManager<PythonTool> for PythonTool {
         if !self.global {
             cmd.env(
                 "PATH",
-                prepend_path_env_var(get_python_env_paths(&self.proto_env)),
+                prepend_path_env_var(get_python_tool_paths(&self)),
             );
         }
 

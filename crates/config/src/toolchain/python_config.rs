@@ -29,6 +29,9 @@ pub struct PythonConfig {
     #[setting(default = ".", skip)]
     pub venv_root: String,
 
+    #[setting(default = ".venv", skip)]
+    pub venv_name: String,
+
     /// The version of Python to download, install, and run `python` tasks with.
     #[setting(env = "MOON_PYTHON_VERSION")]
     pub version: Option<UnresolvedVersionSpec>,

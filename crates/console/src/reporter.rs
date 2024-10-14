@@ -23,11 +23,16 @@ pub struct TaskReportItem {
     pub output_style: Option<TaskOutputStyle>,
 }
 
-pub trait Reporter: Send + Sync {
+pub trait Reporter: Default + Send + Sync {
     fn inherit_streams(&mut self, _err: Arc<ConsoleBuffer>, _out: Arc<ConsoleBuffer>) {}
 
     fn inherit_theme(&mut self, _theme: Arc<ConsoleTheme>) {}
+}
 
+pub trait PipelineReporter: Reporter
+where
+    Self: Sized,
+{
     fn on_pipeline_started(&self, _nodes: &[&ActionNode]) -> miette::Result<()> {
         Ok(())
     }
@@ -94,6 +99,7 @@ pub trait Reporter: Send + Sync {
 
 pub type BoxedReporter = Box<dyn Reporter>;
 
+#[derive(Default)]
 pub struct EmptyReporter;
 
 impl Reporter for EmptyReporter {}

@@ -3,6 +3,7 @@ use crate::prompts::create_theme;
 use crate::reporter::*;
 use inquire::ui::RenderConfig;
 use moon_common::is_formatted_output;
+use std::ops::Deref;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -10,20 +11,32 @@ use tracing::trace;
 
 pub type ConsoleTheme = RenderConfig<'static>;
 
-pub struct Console {
+// pub struct PipelineConsole(Box<Console<dyn PipelineReporter>>);
+
+// impl Deref for PipelineConsole {
+//     type Target = Console<dyn PipelineReporter>;
+
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
+
+pub type PipelineConsole = Console<Box<dyn PipelineReporter>>;
+
+pub struct Console<R: Reporter> {
     pub err: Arc<ConsoleBuffer>,
     err_handle: Option<JoinHandle<()>>,
 
     pub out: Arc<ConsoleBuffer>,
     out_handle: Option<JoinHandle<()>>,
 
-    pub reporter: Arc<BoxedReporter>,
+    pub reporter: Arc<Box<R>>,
 
     quiet: Arc<AtomicBool>,
     theme: Arc<ConsoleTheme>,
 }
 
-impl Console {
+impl<R: Reporter> Console<R> {
     pub fn new(quiet: bool) -> Self {
         trace!("Creating buffered console");
 
@@ -41,7 +54,7 @@ impl Console {
             out_handle: out.handle.take(),
             out: Arc::new(out),
             quiet,
-            reporter: Arc::new(Box::new(EmptyReporter)),
+            reporter: Arc::new(Box::new(R::default())),
             theme: Arc::new(create_theme()),
         }
     }
@@ -53,7 +66,7 @@ impl Console {
             out: Arc::new(ConsoleBuffer::new_testing(ConsoleStream::Stdout)),
             out_handle: None,
             quiet: Arc::new(AtomicBool::new(false)),
-            reporter: Arc::new(Box::new(EmptyReporter)),
+            reporter: Arc::new(Box::new(R::default())),
             theme: Arc::new(ConsoleTheme::empty()),
         }
     }
@@ -91,7 +104,7 @@ impl Console {
         Arc::clone(&self.theme)
     }
 
-    pub fn set_reporter(&mut self, mut reporter: impl Reporter + 'static) {
+    pub fn set_reporter(&mut self, mut reporter: R) {
         reporter.inherit_streams(self.stderr(), self.stdout());
         reporter.inherit_theme(self.theme());
 
@@ -99,7 +112,7 @@ impl Console {
     }
 }
 
-impl Clone for Console {
+impl<R: Reporter> Clone for Console<R> {
     fn clone(&self) -> Self {
         Self {
             err: self.err.clone(),

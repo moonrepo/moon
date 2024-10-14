@@ -1,4 +1,5 @@
 use crate::console::Console;
+use crate::reporter::Reporter;
 use inquire::error::InquireResult;
 use inquire::ui::{
     Attributes, Color as UiColor, ErrorMessageRenderConfig, RenderConfig, StyleSheet, Styled,
@@ -15,7 +16,7 @@ pub use inquire::*;
 //
 // It also allows us to apply styles to all prompts from here instead
 // of each callsite, which is super nice!
-impl Console {
+impl<R: Reporter> Console<R> {
     fn handle_prompt<T>(&self, result: InquireResult<T>) -> miette::Result<T> {
         result.map_err(|error| miette::miette!(code = "console::prompt", "{}", error.to_string()))
     }

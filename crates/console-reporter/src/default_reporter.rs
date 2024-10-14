@@ -310,7 +310,9 @@ impl Reporter for DefaultReporter {
         self.err = err;
         self.out = out;
     }
+}
 
+impl PipelineReporter for DefaultReporter {
     fn on_pipeline_completed(
         &self,
         actions: &[Action],

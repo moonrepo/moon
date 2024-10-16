@@ -57,7 +57,43 @@ pub async fn install_deps(
             );
         }
 
-        if let Some(req) = find_requirements_txt(working_dir, &get_workspace_root()) {
+        let requirements_path = find_requirements_txt(working_dir, &get_workspace_root());
+
+        if let Some(install_args) = &pip_config.install_args {
+            if install_args.iter().any(|x| !x.starts_with("-")) {
+                if let Some(_) = requirements_path {
+                    console.out.print_checkpoint(
+                        Checkpoint::Setup,
+                        "Skip installation via install args, found requirements.txt additional.",
+                    )?;
+                } else {
+                    console.out.print_checkpoint(
+                        Checkpoint::Setup,
+                        "pip dependencies from install args",
+                    )?;
+
+                    let mut args = vec!["-m", "pip", "install"];
+                    if pip_config.install_args.is_some() {
+                        args.extend(
+                            pip_config
+                                .install_args
+                                .as_ref()
+                                .unwrap()
+                                .iter()
+                                .map(|c| c.as_str()),
+                        );
+                    }
+
+                    operations.push(
+                        Operation::task_execution(format!(" {}", args.join(" ")))
+                            .track_async(|| python.exec_python(args, working_dir))
+                            .await?,
+                    );
+                }
+            }
+        }
+
+        if let Some(req) = requirements_path {
             console.out.print_checkpoint(
                 Checkpoint::Setup,
                 format!(

@@ -3019,6 +3019,7 @@ dependencies = [
  "serde",
  "serial_test",
  "starbase",
+ "starbase_archive",
  "starbase_events",
  "starbase_sandbox",
  "starbase_shell",

@@ -5,7 +5,7 @@ mod rust;
 mod typescript;
 
 use crate::app_error::ExitCode;
-use crate::helpers::create_theme;
+use crate::helpers::{create_progress_bar, create_theme};
 use crate::session::CliSession;
 use bun::init_bun;
 use clap::{Args, ValueEnum};
@@ -19,8 +19,9 @@ use moon_vcs::{Git, Vcs};
 use node::init_node;
 use rust::init_rust;
 use starbase::AppResult;
+use starbase_archive::Archiver;
 use starbase_styles::color;
-use starbase_utils::fs;
+use starbase_utils::{fs, net};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -53,6 +54,9 @@ pub struct InitArgs {
 
     #[arg(long, help = "Initialize with minimal configuration and prompts")]
     minimal: bool,
+
+    #[arg(long, help = "Initialize with remote template")]
+    remote: String,
 
     #[arg(long, help = "Skip prompts and use default values")]
     yes: bool,
@@ -90,6 +94,7 @@ pub struct InitOptions {
     pub force: bool,
     pub minimal: bool,
     pub yes: bool,
+    pub remote: String,
 }
 
 /// Verify the destination and return a path to the `.moon` folder
@@ -175,6 +180,7 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
     let options = InitOptions {
         force: args.force,
         minimal: args.minimal,
+        remote: args.remote,
         yes: args.yes,
     };
 
@@ -218,11 +224,35 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
         .as_str(),
     );
 
-    // Create workspace file
-    fs::write_file(
-        &session.config_loader.get_workspace_files(&dest_dir)[0],
-        render_workspace_template(&context)?,
-    )?;
+    let stdout = session.console.stdout();
+
+    if !options.remote.is_empty() {
+        stdout.write_newline()?;
+
+        stdout.write_line(format!(
+            "Initializing moon with {}!",
+            color::path(&options.remote),
+        ))?;
+
+        let done = create_progress_bar("Downloading and installing template...");
+
+        let temp_file = &session.moon_env.temp_dir.join(format!("archive.zip"));
+
+        net::download_from_url(&options.remote, &temp_file).await?;
+
+        Archiver::new(&dest_dir, &temp_file)
+            .set_prefix("package")
+            .unpack_from_ext()?;
+
+        fs::remove_file(temp_file)?;
+        done("Init complete", true);
+    } else {
+        // Create workspace file
+        fs::write_file(
+            &session.config_loader.get_workspace_files(&dest_dir)[0],
+            render_workspace_template(&context)?,
+        )?;
+    }
 
     // Append to ignore file
     fs::append_file(
@@ -233,8 +263,6 @@ pub async fn init(session: CliSession, args: InitArgs) -> AppResult {
 .moon/docker
 "#,
     )?;
-
-    let stdout = session.console.stdout();
 
     stdout.write_newline()?;
 

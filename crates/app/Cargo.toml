@@ -57,6 +57,7 @@ schematic = { workspace = true, features = ["config"] }
 semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
+starbase_archive = { workspace = true }
 starbase_events = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }

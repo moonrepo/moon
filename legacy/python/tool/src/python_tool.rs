@@ -35,7 +35,10 @@ pub fn get_python_tool_paths(python_tool: &PythonTool) -> Vec<PathBuf> {
     let paths;
 
     if venv_python.exists() {
-        paths = vec![venv_python.join("Scripts").clone()];
+        paths = vec![
+            venv_python.join("Scripts").clone(),
+            venv_python.join("bin").clone(),
+        ];
     } else {
         // paths = python_tool.tool.get_globals_dirs()
         //     .iter()

@@ -101,7 +101,8 @@ impl Platform for PythonPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, _project_source: &str) -> miette::Result<bool> {
-        Ok(false)
+        // Single version policy / only a root package.json
+        Ok(true)
     }
 
     #[instrument(skip_all)]

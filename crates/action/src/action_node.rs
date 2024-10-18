@@ -30,7 +30,6 @@ pub struct RunTaskNode {
     pub persistent: bool,  // Never terminates
     pub runtime: Runtime,
     pub target: Target,
-    pub timeout: Option<u64>,
     pub id: Option<u32>, // For action graph states
 }
 
@@ -43,7 +42,6 @@ impl RunTaskNode {
             persistent: false,
             runtime,
             target,
-            timeout: None,
             id: None,
         }
     }

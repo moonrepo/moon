@@ -28,6 +28,13 @@ pub fn detect_project_platform(
                 PlatformType::System
             }
         }
+        LanguageType::Python => {
+            if enabled_platforms.contains(&PlatformType::Python) {
+                PlatformType::Python
+            } else {
+                PlatformType::System
+            }
+        }
         LanguageType::Rust => {
             if enabled_platforms.contains(&PlatformType::Rust) {
                 PlatformType::Rust

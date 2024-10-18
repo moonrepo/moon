@@ -8,6 +8,7 @@ use moon_console::{Checkpoint, Console};
 use moon_deno_platform::DenoPlatform;
 use moon_node_platform::NodePlatform;
 use moon_platform::PlatformManager;
+use moon_python_platform::PythonPlatform;
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_toolchain_plugin::ToolchainRegistry;
@@ -165,6 +166,18 @@ pub async fn register_platforms(
             Box::new(NodePlatform::new(
                 node_config,
                 &toolchain_config.typescript,
+                workspace_root,
+                Arc::clone(proto_env),
+                Arc::clone(&console),
+            )),
+        );
+    }
+
+    if let Some(python_config) = &toolchain_config.python {
+        registry.register(
+            PlatformType::Python,
+            Box::new(PythonPlatform::new(
+                python_config,
                 workspace_root,
                 Arc::clone(proto_env),
                 Arc::clone(&console),

@@ -70,6 +70,7 @@ derive_enum!(
         Bun,
         Deno,
         Node,
+        Python,
         Rust,
         System,
         #[default]

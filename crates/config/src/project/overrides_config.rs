@@ -49,6 +49,10 @@ cacheable!(
         #[setting(nested)]
         pub deno: Option<ProjectToolchainCommonToolConfig>,
 
+        /// Overrides `python` settings.
+        #[setting(nested)]
+        pub python: Option<ProjectToolchainCommonToolConfig>,
+
         /// Overrides `node` settings.
         #[setting(nested)]
         pub node: Option<ProjectToolchainCommonToolConfig>,

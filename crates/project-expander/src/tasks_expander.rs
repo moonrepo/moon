@@ -1,7 +1,6 @@
 use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
-use moon_common::color;
 use moon_config::{TaskArgs, TaskDependencyConfig};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
@@ -291,15 +290,6 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             // Don't override task-level variables
             for (key, val) in merged_env_vars {
                 env.entry(key).or_insert(val);
-            }
-
-            if !missing_paths.is_empty() {
-                warn!(
-                    target = task.target.as_str(),
-                    env_files = ?missing_paths,
-                    "Setting {} is enabled but file(s) don't exist, skipping as this may be intentional",
-                    color::property("options.envFile"),
-                );
             }
         }
 

@@ -4,10 +4,6 @@ use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use std::sync::Arc;
-use std::time::Duration;
-use tokio::task::JoinHandle;
-use tokio::time::{sleep, timeout};
-use tokio_util::sync::CancellationToken;
 use tracing::{instrument, trace};
 
 pub struct Job {
@@ -18,17 +14,11 @@ pub struct Job {
     pub context: JobContext,
     pub app_context: Arc<AppContext>,
     pub action_context: Arc<ActionContext>,
-
-    /// Maximum seconds to run before it's cancelled
-    pub timeout: Option<u64>,
 }
 
 impl Job {
     #[instrument(skip_all)]
     pub async fn dispatch(self) {
-        let timeout_token = CancellationToken::new();
-        let timeout_handle = self.monitor_timeout(self.timeout, timeout_token.clone());
-
         let mut action = Action::new(self.node);
         action.node_index = self.node_index;
 
@@ -56,17 +46,6 @@ impl Job {
                 action.finish(ActionStatus::Skipped);
             }
 
-            // Cancel if we have timed out
-            _ = timeout_token.cancelled() => {
-                trace!(
-                    index = self.node_index,
-                    timeout = self.timeout,
-                    "Job timed out",
-                );
-
-                action.finish(ActionStatus::TimedOut);
-            }
-
             // Or run the job to completion
             _ = run_action(
                 &mut action,
@@ -78,32 +57,7 @@ impl Job {
             ) => {},
         };
 
-        // Cleanup before sending the result
-        if let Some(handle) = timeout_handle {
-            handle.abort();
-        }
-
         // Send the result back to the pipeline
         self.context.send_result(action).await;
-    }
-
-    fn monitor_timeout(
-        &self,
-        duration: Option<u64>,
-        timeout_token: CancellationToken,
-    ) -> Option<JoinHandle<()>> {
-        duration.map(|duration| {
-            tokio::spawn(async move {
-                if timeout(
-                    Duration::from_secs(duration),
-                    sleep(Duration::from_secs(86400)), // 1 day
-                )
-                .await
-                .is_err()
-                {
-                    timeout_token.cancel();
-                }
-            })
-        })
     }
 }

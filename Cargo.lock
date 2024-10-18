@@ -3951,6 +3951,7 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tokio",
+ "tokio-util",
  "tracing",
 ]
 

@@ -137,7 +137,7 @@ impl<'task> CommandExecutor<'task> {
                     self.command.create_async(),
                     self.stream,
                     self.interactive,
-                ) => result.map(|res| Some(res)),
+                ) => result.map(Some),
             };
 
             // Cleanup before sending the result

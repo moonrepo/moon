@@ -129,7 +129,7 @@ impl<'task> CommandExecutor<'task> {
 
                 // Cancel if we have timed out
                 _ = timeout_token.cancelled() => {
-                    unimplemented!()
+                    Ok(None)
                 }
 
                 // Or run the job to completion
@@ -137,7 +137,7 @@ impl<'task> CommandExecutor<'task> {
                     self.command.create_async(),
                     self.stream,
                     self.interactive,
-                ) => result,
+                ) => result.map(|res| Some(res)),
             };
 
             // Cleanup before sending the result
@@ -148,17 +148,29 @@ impl<'task> CommandExecutor<'task> {
             // Handle the execution result
             match attempt_result {
                 // Zero and non-zero exit codes
-                Ok(output) => {
-                    let is_success = output.status.success();
+                Ok(maybe_output) => {
+                    let mut is_success = false;
 
-                    debug!(
-                        task = self.task.target.as_str(),
-                        command = self.command.bin.to_str(),
-                        exit_code = output.status.code(),
-                        "Ran task, checking conditions",
-                    );
+                    if let Some(output) = maybe_output {
+                        is_success = output.status.success();
 
-                    attempt.finish_from_output(output);
+                        debug!(
+                            task = self.task.target.as_str(),
+                            command = self.command.bin.to_str(),
+                            exit_code = output.status.code(),
+                            "Ran task, checking conditions",
+                        );
+
+                        attempt.finish_from_output(output);
+                    } else {
+                        debug!(
+                            task = self.task.target.as_str(),
+                            command = self.command.bin.to_str(),
+                            "Task timed out",
+                        );
+
+                        attempt.finish(ActionStatus::TimedOut);
+                    }
 
                     self.app.console.reporter.on_task_finished(
                         &self.task.target,
@@ -193,7 +205,7 @@ impl<'task> CommandExecutor<'task> {
                     else {
                         debug!(
                             task = self.task.target.as_str(),
-                            "Task was unsuccessful, failing early as we hit our max attempts",
+                            "Task was unsuccessful, failing as we hit our max attempts",
                         );
 
                         break None;

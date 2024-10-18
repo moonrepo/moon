@@ -31,6 +31,7 @@ starbase_archive = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

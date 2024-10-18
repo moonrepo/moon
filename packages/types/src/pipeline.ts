@@ -167,7 +167,6 @@ export interface ActionNodeRunTask {
 		persistent: boolean;
 		runtime: Runtime;
 		target: string;
-		timeout: number | null;
 		id: number | null;
 	};
 }

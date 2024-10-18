@@ -4,13 +4,14 @@ use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::args::join_args;
-use moon_process::Command;
+use moon_process::{args::join_args, AsyncCommand, Command};
 use moon_project::Project;
 use moon_task::Task;
+use std::process::Output;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
-use tokio::time::sleep;
+use tokio::time::{sleep, timeout};
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument};
 
 fn is_ci_env() -> bool {
@@ -81,7 +82,7 @@ impl<'task> CommandExecutor<'task> {
         self.prepare_state(context, report_item);
 
         // For long-running process, log a message on an interval to indicate it's still running
-        self.start_monitoring();
+        self.monitor_running_status();
 
         // Execute the command on a loop as an attempt for every retry count we have
         let command_line = self.get_command_line(context);
@@ -106,28 +107,70 @@ impl<'task> CommandExecutor<'task> {
             self.print_command_line(&command_line)?;
 
             // Attempt to execute command
-            let mut command = self.command.create_async();
+            async fn execute_command(
+                mut command: AsyncCommand<'_>,
+                stream: bool,
+                interactive: bool,
+            ) -> miette::Result<Output> {
+                match (stream, interactive) {
+                    (true, true) | (false, true) => command.exec_stream_output().await,
+                    (true, false) => command.exec_stream_and_capture_output().await,
+                    _ => command.exec_capture_output().await,
+                }
+            }
 
-            let attempt_result = match (self.stream, self.interactive) {
-                (true, true) | (false, true) => command.exec_stream_output().await,
-                (true, false) => command.exec_stream_and_capture_output().await,
-                _ => command.exec_capture_output().await,
+            let timeout_token = CancellationToken::new();
+            let timeout_handle =
+                self.monitor_timeout(self.task.options.timeout, timeout_token.clone());
+
+            let attempt_result = tokio::select! {
+                // Run conditions in order!
+                biased;
+
+                // Cancel if we have timed out
+                _ = timeout_token.cancelled() => {
+                    Ok(None)
+                }
+
+                // Or run the job to completion
+                result = execute_command(
+                    self.command.create_async(),
+                    self.stream,
+                    self.interactive,
+                ) => result.map(Some),
             };
+
+            // Cleanup before sending the result
+            if let Some(handle) = timeout_handle {
+                handle.abort();
+            }
 
             // Handle the execution result
             match attempt_result {
                 // Zero and non-zero exit codes
-                Ok(output) => {
-                    let is_success = output.status.success();
+                Ok(maybe_output) => {
+                    let mut is_success = false;
 
-                    debug!(
-                        task = self.task.target.as_str(),
-                        command = self.command.bin.to_str(),
-                        exit_code = output.status.code(),
-                        "Ran task, checking conditions",
-                    );
+                    if let Some(output) = maybe_output {
+                        is_success = output.status.success();
 
-                    attempt.finish_from_output(output);
+                        debug!(
+                            task = self.task.target.as_str(),
+                            command = self.command.bin.to_str(),
+                            exit_code = output.status.code(),
+                            "Ran task, checking conditions",
+                        );
+
+                        attempt.finish_from_output(output);
+                    } else {
+                        debug!(
+                            task = self.task.target.as_str(),
+                            command = self.command.bin.to_str(),
+                            "Task timed out",
+                        );
+
+                        attempt.finish(ActionStatus::TimedOut);
+                    }
 
                     self.app.console.reporter.on_task_finished(
                         &self.task.target,
@@ -162,7 +205,7 @@ impl<'task> CommandExecutor<'task> {
                     else {
                         debug!(
                             task = self.task.target.as_str(),
-                            "Task was unsuccessful, failing early as we hit our max attempts",
+                            "Task was unsuccessful, failing as we hit our max attempts",
                         );
 
                         break None;
@@ -202,7 +245,7 @@ impl<'task> CommandExecutor<'task> {
         })
     }
 
-    fn start_monitoring(&mut self) {
+    fn monitor_running_status(&mut self) {
         if self.persistent || self.interactive {
             return;
         }
@@ -220,6 +263,26 @@ impl<'task> CommandExecutor<'task> {
                 let _ = console.reporter.on_task_running(&target, secs);
             }
         }));
+    }
+
+    fn monitor_timeout(
+        &self,
+        duration: Option<u64>,
+        timeout_token: CancellationToken,
+    ) -> Option<JoinHandle<()>> {
+        duration.map(|duration| {
+            tokio::spawn(async move {
+                if timeout(
+                    Duration::from_secs(duration),
+                    sleep(Duration::from_secs(86400)), // 1 day
+                )
+                .await
+                .is_err()
+                {
+                    timeout_token.cancel();
+                }
+            })
+        })
     }
 
     fn stop_monitoring(&mut self) {

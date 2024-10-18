@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Removed the warning around `.env` files not existing in certain environments.
+
+#### 🐞 Fixes
+
+- Fixed an issue where the task option `timeout` would apply to the overall run, and not for each
+  attempt when using the `retryCount` option.
+
 ## 1.29.1
 
 #### 🚀 Updates

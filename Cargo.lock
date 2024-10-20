@@ -4142,6 +4142,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_workspace"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_project_graph",
+ "moon_vcs",
+ "petgraph",
+ "rustc-hash 2.0.0",
+ "starbase_events",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -19,12 +19,12 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
-pub type GraphType = DiGraph<Project, DependencyScope>;
+pub type ProjectGraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
 
 #[derive(Serialize)]
 pub struct ProjectGraphCache<'graph> {
-    graph: &'graph GraphType,
+    graph: &'graph ProjectGraphType,
     projects: &'graph ProjectsCache,
 }
 
@@ -51,7 +51,7 @@ pub struct ProjectGraph {
     fs_cache: HashMap<PathBuf, Arc<String>>,
 
     /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
-    graph: GraphType,
+    graph: ProjectGraphType,
 
     /// Graph node information, mapped by project ID.
     nodes: FxHashMap<Id, ProjectNode>,
@@ -70,7 +70,11 @@ pub struct ProjectGraph {
 }
 
 impl ProjectGraph {
-    pub fn new(graph: GraphType, nodes: FxHashMap<Id, ProjectNode>, workspace_root: &Path) -> Self {
+    pub fn new(
+        graph: ProjectGraphType,
+        nodes: FxHashMap<Id, ProjectNode>,
+        workspace_root: &Path,
+    ) -> Self {
         debug!("Creating project graph");
 
         Self {

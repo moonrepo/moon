@@ -57,11 +57,11 @@ pub struct WorkspaceBuilder<'app> {
     /// The project DAG.
     project_graph: ProjectGraphType,
 
-    /// Projects that have explicitly renamed themselves.
+    /// Projects that have explicitly renamed themselves with the `id` setting.
     /// Maps original ID to renamed ID.
     renamed_project_ids: FxHashMap<Id, Id>,
 
-    /// The type of repo: mono or poly.
+    /// The type of repository: monorepo or polyrepo.
     repo_type: RepoType,
 
     /// The root project ID (only if a monorepo).
@@ -69,8 +69,6 @@ pub struct WorkspaceBuilder<'app> {
 }
 
 impl<'app> WorkspaceBuilder<'app> {
-    /// Create a new project graph instance without reading from the
-    /// cache, and preloading all project sources and aliases.
     pub async fn new(
         context: WorkspaceBuilderContext<'app>,
     ) -> miette::Result<WorkspaceBuilder<'app>> {
@@ -85,7 +83,7 @@ impl<'app> WorkspaceBuilder<'app> {
             root_project_id: None,
         };
 
-        graph.preload().await?;
+        graph.preload_build_data().await?;
         graph.determine_repo_type()?;
 
         Ok(graph)
@@ -123,6 +121,8 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(WorkspaceBuildResult { project_graph })
     }
 
+    /// Determine the repository type/structure based on the number of project
+    /// sources, and where the point to.
     fn determine_repo_type(&mut self) -> miette::Result<()> {
         let single_project = self.project_data.len() == 1;
         let mut has_root_project = false;
@@ -137,7 +137,7 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         self.repo_type = match (single_project, has_root_project) {
-            (true, true) | (true, false) => RepoType::Polyrepo,
+            (true, _) => RepoType::Polyrepo,
             (false, true) => RepoType::MonorepoWithRoot,
             (false, false) => RepoType::Monorepo,
         };
@@ -202,7 +202,7 @@ impl<'app> WorkspaceBuilder<'app> {
     /// Preload the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
     /// Then extend the graph with aliases, derived from all event subscribers.
-    async fn preload(&mut self) -> miette::Result<()> {
+    async fn preload_build_data(&mut self) -> miette::Result<()> {
         let context = self.context.clone();
         let mut globs = vec![];
         let mut sources = vec![];
@@ -243,35 +243,16 @@ impl<'app> WorkspaceBuilder<'app> {
             locate_projects_with_globs(&context, &globs, &mut sources)?;
         }
 
-        // Load all configs first so that project ID renaming occurs
-        self.load_configs_and_data(&mut sources)?;
+        // Load projects first
+        self.load_project_build_data(sources)?;
 
-        // Set our project sources and warn/error against problems
-        for (id, source) in sources {
-            let build_data = self
-                .project_data
-                .get_mut(&id)
-                .expect("Project build data not found!");
-
-            if build_data.source.as_str().is_empty() {
-                build_data.source = source;
-            } else if build_data.source != source {
-                return Err(WorkspaceBuilderError::DuplicateProjectId {
-                    id: id.clone(),
-                    old_source: build_data.source.to_string(),
-                    new_source: source.to_string(),
-                }
-                .into());
-            }
-        }
-
-        // Load aliases and extend projects
-        self.load_aliases().await?;
+        // Then load aliases and extend projects
+        self.load_project_aliases().await?;
 
         Ok(())
     }
 
-    async fn load_aliases(&mut self) -> miette::Result<()> {
+    async fn load_project_aliases(&mut self) -> miette::Result<()> {
         let context = &self.context;
 
         debug!("Extending project graph with aliases");
@@ -338,15 +319,15 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn load_configs_and_data(&mut self, sources: &mut ProjectsSourcesList) -> miette::Result<()> {
+    fn load_project_build_data(&mut self, sources: ProjectsSourcesList) -> miette::Result<()> {
         let context = &self.context;
         let config_label = context.config_loader.get_debug_label("moon", false);
-        let mut project_data = FxHashMap::default();
+        let mut project_data: FxHashMap<Id, ProjectBuildData> = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();
 
-        debug!("Loading project configs");
+        debug!("Loading projects");
 
-        for (id, source) in sources {
+        for (mut id, source) in sources {
             trace!(
                 id = id.as_str(),
                 "Attempting to load {} (optional)",
@@ -356,27 +337,34 @@ impl<'app> WorkspaceBuilder<'app> {
             let mut build_data = ProjectBuildData {
                 config: context
                     .config_loader
-                    .load_project_config_from_source(context.workspace_root, source)?,
+                    .load_project_config_from_source(context.workspace_root, &source)?,
+                source,
                 ..Default::default()
             };
 
             // Track ID renames
             if let Some(new_id) = &build_data.config.id {
-                if new_id != id {
-                    build_data.original_id = Some(id.to_owned());
-                    renamed_ids.insert(id.to_owned(), new_id.to_owned());
-                    *id = new_id.to_owned();
+                if new_id != &id {
+                    build_data.original_id = Some(id.clone());
+                    renamed_ids.insert(id.clone(), new_id.to_owned());
+                    id = new_id.to_owned();
                 }
             }
 
-            project_data.insert(
-                build_data
-                    .config
-                    .id
-                    .clone()
-                    .unwrap_or_else(|| id.to_owned()),
-                build_data,
-            );
+            // Check for duplicate IDs
+            if let Some(existing_data) = project_data.get(&id) {
+                if existing_data.source != build_data.source {
+                    return Err(WorkspaceBuilderError::DuplicateProjectId {
+                        id: id.clone(),
+                        old_source: existing_data.source.to_string(),
+                        new_source: build_data.source.to_string(),
+                    }
+                    .into());
+                }
+            }
+
+            // Otherwise persist the build data
+            project_data.insert(id, build_data);
         }
 
         debug!("Loaded {} projects", project_data.len());

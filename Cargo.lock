@@ -3006,6 +3006,7 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_typescript_lang",
  "moon_vcs",
+ "moon_workspace",
  "once_cell",
  "open",
  "petgraph",

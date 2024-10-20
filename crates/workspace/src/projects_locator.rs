@@ -3,7 +3,6 @@ use moon_common::path::{is_root_level_source, to_virtual_string, WorkspaceRelati
 use moon_common::{color, consts, Id};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use starbase_utils::{fs, glob};
-use std::path::Path;
 use tracing::{debug, instrument, warn};
 
 /// Infer a project name from a source path, by using the name of

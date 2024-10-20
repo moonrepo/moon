@@ -4,16 +4,21 @@ use crate::workspace_builder_error::WorkspaceBuilderError;
 use moon_common::path::is_root_level_source;
 use moon_common::{color, path::WorkspaceRelativePathBuf, Id};
 use moon_config::{
-    ConfigLoader, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList,
+    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
-use moon_project_graph::{ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphType};
+use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
+use moon_project_graph::{
+    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphType, ProjectNode,
+};
 use moon_vcs::BoxedVcs;
+use petgraph::prelude::*;
+use petgraph::visit::IntoNodeReferences;
 use rustc_hash::FxHashMap;
 use starbase_events::Emitter;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 #[derive(Default)]
 pub struct ProjectBuildData {
@@ -33,6 +38,10 @@ pub struct WorkspaceBuilderContext<'app> {
     pub working_dir: &'app Path,
     pub workspace_config: &'app WorkspaceConfig,
     pub workspace_root: &'app Path,
+}
+
+pub struct WorkspaceBuildResult {
+    pub project_graph: ProjectGraph,
 }
 
 pub struct WorkspaceBuilder<'app> {
@@ -82,6 +91,38 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(graph)
     }
 
+    /// Build the project graph and return a new structure.
+    #[instrument(name = "build_workspace_graph", skip_all)]
+    pub async fn build(self) -> miette::Result<WorkspaceBuildResult> {
+        self.enforce_constraints()?;
+
+        let project_nodes = self
+            .project_data
+            .into_iter()
+            .map(|(id, data)| {
+                (
+                    id,
+                    ProjectNode {
+                        alias: data.alias,
+                        index: NodeIndex::default(), // TODO
+                        original_id: data.original_id,
+                        source: data.source,
+                    },
+                )
+            })
+            .collect::<FxHashMap<_, _>>();
+
+        let mut project_graph = ProjectGraph::new(
+            self.project_graph,
+            project_nodes,
+            self.context.workspace_root,
+        );
+
+        project_graph.working_dir = self.context.working_dir.to_owned();
+
+        Ok(WorkspaceBuildResult { project_graph })
+    }
+
     fn determine_repo_type(&mut self) -> miette::Result<()> {
         let single_project = self.project_data.len() == 1;
         let mut has_root_project = false;
@@ -103,6 +144,56 @@ impl<'app> WorkspaceBuilder<'app> {
 
         if self.repo_type == RepoType::MonorepoWithRoot {
             self.root_project_id = root_project_id;
+        }
+
+        Ok(())
+    }
+
+    /// Enforce project constraints and boundaries after all nodes have been inserted.
+    #[instrument(skip_all)]
+    fn enforce_constraints(&self) -> miette::Result<()> {
+        debug!("Enforcing project constraints");
+
+        let context = &self.context;
+        let type_relationships = context
+            .workspace_config
+            .constraints
+            .enforce_project_type_relationships;
+        let tag_relationships = &context.workspace_config.constraints.tag_relationships;
+
+        if !type_relationships && tag_relationships.is_empty() {
+            return Ok(());
+        }
+
+        let default_scope = DependencyScope::Build;
+
+        for (project_index, project) in self.project_graph.node_references() {
+            let deps: Vec<_> = self
+                .project_graph
+                .neighbors_directed(project_index, Direction::Outgoing)
+                .flat_map(|dep_index| {
+                    self.project_graph.node_weight(dep_index).map(|dep| {
+                        (
+                            dep,
+                            // Is this safe?
+                            self.project_graph
+                                .find_edge(project_index, dep_index)
+                                .and_then(|ei| self.project_graph.edge_weight(ei))
+                                .unwrap_or(&default_scope),
+                        )
+                    })
+                })
+                .collect();
+
+            for (dep, dep_scope) in deps {
+                if type_relationships {
+                    enforce_project_type_relationships(project, dep, dep_scope)?;
+                }
+
+                for (source_tag, required_tags) in tag_relationships {
+                    enforce_tag_relationships(project, source_tag, dep, required_tags)?;
+                }
+            }
         }
 
         Ok(())

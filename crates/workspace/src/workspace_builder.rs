@@ -1,3 +1,4 @@
+use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use moon_common::path::is_root_level_source;
@@ -6,9 +7,7 @@ use moon_config::{
     ConfigLoader, InheritedTasksManager, ProjectConfig, ProjectsSourcesList, ToolchainConfig,
     WorkspaceConfig, WorkspaceProjects,
 };
-use moon_project_graph::{
-    locate_projects_with_globs, ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphType,
-};
+use moon_project_graph::{ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraphType};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_events::Emitter;
@@ -150,8 +149,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            // TODO
-            // locate_projects_with_globs(&context, &globs, &mut sources)?;
+            locate_projects_with_globs(&context, &globs, &mut sources)?;
         }
 
         // Load all configs first so that project ID renaming occurs

@@ -1,3 +1,4 @@
+mod projects_locator;
 mod repo_type;
 mod workspace_builder;
 mod workspace_builder_error;

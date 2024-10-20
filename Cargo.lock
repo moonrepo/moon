@@ -4153,6 +4153,7 @@ dependencies = [
  "petgraph",
  "rustc-hash 2.0.0",
  "starbase_events",
+ "starbase_utils",
  "thiserror",
  "tracing",
 ]

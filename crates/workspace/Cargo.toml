@@ -18,6 +18,7 @@ miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_events = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

@@ -48,7 +48,7 @@ impl<'app> ProjectBuilder<'app> {
         context: ProjectBuilderContext<'app>,
     ) -> miette::Result<Self> {
         trace!(
-            id = id.as_str(),
+            project_id = id.as_str(),
             source = source.as_str(),
             "Building project {} from source",
             color::id(id)
@@ -87,7 +87,7 @@ impl<'app> ProjectBuilder<'app> {
         )?;
 
         trace!(
-            id = self.id.as_str(),
+            project_id = self.id.as_str(),
             lookup = ?global_config.order,
             "Inheriting global file groups and tasks",
         );
@@ -109,7 +109,7 @@ impl<'app> ProjectBuilder<'app> {
             }
 
             trace!(
-                id = self.id.as_str(),
+                project_id = self.id.as_str(),
                 language = ?language,
                 "Unknown project language, detecting from environment",
             );
@@ -128,7 +128,7 @@ impl<'app> ProjectBuilder<'app> {
             );
 
             trace!(
-                id = self.id.as_str(),
+                project_id = self.id.as_str(),
                 language = ?self.language,
                 platform = ?self.platform,
                 "Unknown tasks platform, inferring from language and toolchain",
@@ -161,7 +161,7 @@ impl<'app> ProjectBuilder<'app> {
     #[instrument(skip_all)]
     pub async fn load_local_config(&mut self) -> miette::Result<()> {
         debug!(
-            id = self.id.as_str(),
+            project_id = self.id.as_str(),
             "Attempting to load {} (optional)",
             color::file(
                 self.source
@@ -278,7 +278,7 @@ impl<'app> ProjectBuilder<'app> {
                     }
 
                     trace!(
-                        id = self.id.as_str(),
+                        project_id = self.id.as_str(),
                         dep = dep_id.as_str(),
                         task = task_config.target.as_str(),
                         "Marking arbitrary project as an implicit dependency because of a task dependency"
@@ -303,7 +303,7 @@ impl<'app> ProjectBuilder<'app> {
 
         if !deps.is_empty() {
             trace!(
-                id = self.id.as_str(),
+                project_id = self.id.as_str(),
                 deps = ?deps.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Depends on {} projects",
                 deps.len(),
@@ -323,7 +323,7 @@ impl<'app> ProjectBuilder<'app> {
         // Inherit global first
         if let Some(global) = &self.global_config {
             trace!(
-                id = self.id.as_str(),
+                project_id = self.id.as_str(),
                 groups = ?global.config.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Inheriting global file groups",
             );
@@ -336,7 +336,7 @@ impl<'app> ProjectBuilder<'app> {
         // Override with local second
         if let Some(local) = &self.local_config {
             trace!(
-                id = self.id.as_str(),
+                project_id = self.id.as_str(),
                 groups = ?local.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Using local file groups",
             );

@@ -300,7 +300,7 @@ async fn scaffold_sources_project(
     }
 
     debug!(
-        id = project_id.as_str(),
+        project_id = project_id.as_str(),
         globs = ?include_globs,
         "Copying sources from project {}",
         color::id(project_id),
@@ -318,7 +318,7 @@ async fn scaffold_sources_project(
         // they can be explicit in config or on the command line!
         if !dep_cfg.is_root_scope() {
             debug!(
-                id = project_id.as_str(),
+                project_id = project_id.as_str(),
                 dep_id = dep_cfg.id.as_str(),
                 "Including dependency project"
             );

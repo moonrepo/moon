@@ -240,7 +240,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
             trace!(
-                id = id.as_str(),
+                project_id = id.as_str(),
                 "Project already exists in the project graph, skipping load",
             );
 
@@ -249,7 +249,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Check that the project ID is configured
         trace!(
-            id = id.as_str(),
+            project_id = id.as_str(),
             "Project does not exist in the project graph, attempting to load",
         );
 
@@ -269,7 +269,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         for dep_config in &mut project.dependencies {
             let loaded_dep_id = if cycle.contains(&dep_config.id) {
                 debug!(
-                    id = id.as_str(),
+                    project_id = id.as_str(),
                     dependency_id = dep_config.id.as_str(),
                     "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
                 );
@@ -609,7 +609,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         for (id, source) in sources {
             debug!(
-                id = id.as_str(),
+                project_id = id.as_str(),
                 "Attempting to load {} (optional)",
                 color::file(source.join(context.config_loader.get_debug_label("moon", false)))
             );

@@ -127,7 +127,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Check the current state and cache
         let mut state = cache_engine
             .state
-            .load_state::<WorkspaceProjectsCacheState>("projects.json")?;
+            .load_state::<WorkspaceProjectsCacheState>("projectsBuildData.json")?;
         let cache_path = cache_engine.state.resolve_path("workspaceGraph.json");
 
         if hash == state.data.last_hash && cache_path.exists() {
@@ -598,7 +598,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         for (mut id, source) in sources {
             trace!(
-                id = id.as_str(),
+                project_id = id.as_str(),
                 "Attempting to load {} (optional)",
                 color::file(source.join(&config_label))
             );

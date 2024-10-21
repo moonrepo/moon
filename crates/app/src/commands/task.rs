@@ -22,10 +22,7 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
         return Err(AppError::ProjectIdRequired.into());
     };
 
-    let mut project_graph_builder = session.build_project_graph().await?;
-    project_graph_builder.load(project_locator).await?;
-
-    let project_graph = project_graph_builder.build().await?;
+    let project_graph = session.get_project_graph().await?;
     let project = project_graph.get(project_locator)?;
     let task = project.get_task(&args.target.task_id)?;
 

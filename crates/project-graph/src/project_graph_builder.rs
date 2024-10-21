@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::project_events::{ExtendProjectEvent, ExtendProjectGraphEvent};
 use crate::project_graph::{ProjectGraph, ProjectGraphType, ProjectNode};
 use crate::project_graph_cache::ProjectsCacheState;
@@ -28,6 +30,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
+#[deprecated]
 pub struct ProjectGraphBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub extend_project: Emitter<ExtendProjectEvent>,
@@ -40,6 +43,7 @@ pub struct ProjectGraphBuilderContext<'app> {
     pub workspace_root: &'app Path,
 }
 
+#[deprecated]
 #[derive(Deserialize, Serialize)]
 pub struct ProjectGraphBuilder<'app> {
     #[serde(skip)]

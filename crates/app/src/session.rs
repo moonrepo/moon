@@ -14,7 +14,7 @@ use moon_console_reporter::DefaultReporter;
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
-use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
+use moon_project_graph::ProjectGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
@@ -88,11 +88,6 @@ impl CliSession {
         project_graph: &'graph ProjectGraph,
     ) -> AppResult<ActionGraphBuilder<'graph>> {
         ActionGraphBuilder::new(project_graph)
-    }
-
-    #[deprecated]
-    pub async fn build_project_graph(&self) -> AppResult<ProjectGraphBuilder> {
-        ProjectGraphBuilder::new(create_project_graph_context(self).await?).await
     }
 
     pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {

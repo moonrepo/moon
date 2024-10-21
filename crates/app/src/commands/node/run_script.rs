@@ -44,10 +44,9 @@ pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
 
         // Otherwise try and find the project in the graph
     } else if let Some(project_id) = &args.project {
-        let mut project_graph = session.build_project_graph().await?;
-        project_graph.load(project_id).await?;
+        let project_graph = session.get_project_graph().await?;
 
-        command.cwd(&project_graph.build().await?.get(project_id)?.root);
+        command.cwd(&project_graph.get(project_id)?.root);
 
         // This should rarely happen...
     } else {

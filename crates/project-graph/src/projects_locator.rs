@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use crate::project_graph_builder::ProjectGraphBuilderContext;
 use moon_common::path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};

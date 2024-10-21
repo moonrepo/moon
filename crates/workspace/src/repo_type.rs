@@ -6,3 +6,9 @@ pub enum RepoType {
     MonorepoWithRoot,
     Polyrepo,
 }
+
+impl RepoType {
+    pub fn is_monorepo(&self) -> bool {
+        matches!(self, Self::Monorepo | Self::MonorepoWithRoot)
+    }
+}

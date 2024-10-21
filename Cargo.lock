@@ -4149,6 +4149,8 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
+ "moon_project",
+ "moon_project_builder",
  "moon_project_constraints",
  "moon_project_graph",
  "moon_vcs",

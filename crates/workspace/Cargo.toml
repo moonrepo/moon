@@ -12,6 +12,8 @@ publish = false
 # moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_project = { path = "../project" }
+moon_project_builder = { path = "../project-builder" }
 moon_project_constraints = { path = "../project-constraints" }
 moon_project_graph = { path = "../project-graph" }
 moon_vcs = { path = "../vcs" }

@@ -127,13 +127,13 @@ impl ProjectGraph {
     /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     #[instrument(name = "get_project", skip(self))]
-    pub fn get(&self, project_locator: &str) -> miette::Result<Arc<Project>> {
-        self.internal_get(project_locator)
+    pub fn get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
+        self.internal_get(id_or_alias)
     }
 
     /// Return an unexpanded project with the provided name or alias from the graph.
-    pub fn get_unexpanded(&self, project_locator: &str) -> miette::Result<&Project> {
-        let id = self.resolve_id(project_locator);
+    pub fn get_unexpanded(&self, id_or_alias: &str) -> miette::Result<&Project> {
+        let id = self.resolve_id(id_or_alias);
 
         let node = self
             .nodes
@@ -220,12 +220,8 @@ impl ProjectGraph {
             .collect()
     }
 
-    pub fn into_focused(
-        &self,
-        project_locator: &Id,
-        with_dependents: bool,
-    ) -> miette::Result<Self> {
-        let project = self.get(project_locator)?;
+    pub fn into_focused(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
+        let project = self.get(id_or_alias)?;
         let upstream = self.dependencies_of(&project)?;
         let downstream = self.dependents_of(&project)?;
         let mut nodes = FxHashMap::default();
@@ -442,23 +438,23 @@ impl ProjectGraph {
         Ok(id)
     }
 
-    fn resolve_id(&self, alias_or_id: &str) -> Id {
-        Id::raw(if self.nodes.contains_key(alias_or_id) {
-            alias_or_id
+    fn resolve_id(&self, id_or_alias: &str) -> Id {
+        Id::raw(if self.nodes.contains_key(id_or_alias) {
+            id_or_alias
         } else {
             self.nodes
                 .iter()
                 .find(|(_, node)| {
                     node.alias
                         .as_ref()
-                        .is_some_and(|alias| alias == alias_or_id)
+                        .is_some_and(|alias| alias == id_or_alias)
                         || node
                             .original_id
                             .as_ref()
-                            .is_some_and(|id| id == alias_or_id)
+                            .is_some_and(|id| id == id_or_alias)
                 })
                 .map(|(id, _)| id.as_str())
-                .unwrap_or(alias_or_id)
+                .unwrap_or(id_or_alias)
         })
     }
 

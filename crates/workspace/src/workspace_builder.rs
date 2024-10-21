@@ -7,6 +7,8 @@ use moon_config::{
     ConfigLoader, DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList,
     ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
+use moon_project::Project;
+use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_project_graph::{
     ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphType, ProjectNode,
@@ -14,7 +16,7 @@ use moon_project_graph::{
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::Emitter;
 use std::path::Path;
 use std::sync::Arc;
@@ -23,7 +25,8 @@ use tracing::{debug, instrument, trace};
 #[derive(Default)]
 pub struct ProjectBuildData {
     alias: Option<String>,
-    config: ProjectConfig,
+    config: Option<ProjectConfig>,
+    node_index: Option<NodeIndex>,
     original_id: Option<Id>,
     source: WorkspaceRelativePathBuf,
 }
@@ -102,7 +105,7 @@ impl<'app> WorkspaceBuilder<'app> {
                     id,
                     ProjectNode {
                         alias: data.alias,
-                        index: NodeIndex::default(), // TODO
+                        index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
                         source: data.source,
                     },
@@ -119,6 +122,171 @@ impl<'app> WorkspaceBuilder<'app> {
         project_graph.working_dir = self.context.working_dir.to_owned();
 
         Ok(WorkspaceBuildResult { project_graph })
+    }
+
+    /// Load a single project by ID or alias into the graph.
+    pub async fn load_project(&mut self, id_or_alias: &str) -> miette::Result<()> {
+        self.internal_load_project(id_or_alias, &mut FxHashSet::default())
+            .await?;
+
+        Ok(())
+    }
+
+    /// Load all projects into the graph, as configured in the workspace.
+    pub async fn load_projects(&mut self) -> miette::Result<()> {
+        let ids = self.project_data.keys().cloned().collect::<Vec<_>>();
+
+        for id in ids {
+            self.internal_load_project(&id, &mut FxHashSet::default())
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    #[instrument(name = "load_project", skip(self, cycle))]
+    async fn internal_load_project(
+        &mut self,
+        id_or_alias: &str,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<(Id, NodeIndex)> {
+        let id = self.resolve_project_id(id_or_alias);
+
+        {
+            let Some(build_data) = self.project_data.get(&id) else {
+                return Err(WorkspaceBuilderError::UnconfiguredProjectID(id).into());
+            };
+
+            // Already loaded, exit early with existing index
+            if let Some(index) = &build_data.node_index {
+                trace!(
+                    project_id = id.as_str(),
+                    "Project already exists in the project graph, skipping load",
+                );
+
+                return Ok((id, *index));
+            }
+        }
+
+        // Not loaded, build the project
+        trace!(
+            project_id = id.as_str(),
+            "Project does not exist in the project graph, attempting to load",
+        );
+
+        let mut project = self.build_project(&id).await?;
+
+        cycle.insert(id.clone());
+
+        // Then build dependency projects
+        let mut edges = vec![];
+
+        for dep_config in &mut project.dependencies {
+            if cycle.contains(&dep_config.id) {
+                debug!(
+                    project_id = id.as_str(),
+                    dependency_id = dep_config.id.as_str(),
+                    "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
+                );
+
+                continue;
+            }
+
+            let dep = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await?;
+            let dep_id = dep.0;
+
+            // Don't link the root project to any project, but still load it
+            if !dep_config.is_root_scope() {
+                edges.push((dep.1, dep_config.scope));
+            }
+
+            // TODO is this needed?
+            if dep_id != dep_config.id {
+                dep_config.id = dep_id;
+            }
+        }
+
+        // And finally add to the graph
+        let index = self.project_graph.add_node(project);
+
+        for edge in edges {
+            self.project_graph.add_edge(index, edge.0, edge.1);
+        }
+
+        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
+
+        cycle.clear();
+
+        Ok((id, index))
+    }
+
+    /// Create and build the project with the provided ID and source.
+    #[instrument(skip(self))]
+    async fn build_project(&mut self, id: &Id) -> miette::Result<Project> {
+        debug!(
+            project_id = id.as_str(),
+            "Building project {}",
+            color::id(id)
+        );
+
+        let context = &self.context;
+        let build_data = self.project_data.get(id).unwrap();
+
+        if !build_data.source.to_path(context.workspace_root).exists() {
+            return Err(WorkspaceBuilderError::MissingProjectAtSource(
+                build_data.source.to_string(),
+            )
+            .into());
+        }
+
+        let mut builder = ProjectBuilder::new(
+            id,
+            &build_data.source,
+            ProjectBuilderContext {
+                config_loader: context.config_loader,
+                monorepo: self.repo_type.is_monorepo(),
+                root_project_id: self.root_project_id.as_ref(),
+                toolchain_config: context.toolchain_config,
+                workspace_root: context.workspace_root,
+            },
+        )?;
+
+        if let Some(config) = &build_data.config {
+            builder.inherit_local_config(config).await?;
+        } else {
+            builder.load_local_config().await?;
+        }
+
+        builder.inherit_global_config(context.inherited_tasks)?;
+
+        let extended_data = context
+            .extend_project
+            .emit(ExtendProjectEvent {
+                project_id: id.to_owned(),
+                project_source: build_data.source.to_owned(),
+                workspace_root: context.workspace_root.to_owned(),
+            })
+            .await?;
+
+        // Inherit implicit dependencies
+        for dep_config in extended_data.dependencies {
+            builder.extend_with_dependency(dep_config);
+        }
+
+        // Inherit inferred tasks
+        for (task_id, task_config) in extended_data.tasks {
+            builder.extend_with_task(task_id, task_config);
+        }
+
+        // Inherit alias before building in case the project
+        // references itself in tasks or dependencies
+        if let Some(alias) = &build_data.alias {
+            builder.set_alias(alias);
+        }
+
+        let project = builder.build().await?;
+
+        Ok(project)
     }
 
     /// Determine the repository type/structure based on the number of project
@@ -334,16 +502,17 @@ impl<'app> WorkspaceBuilder<'app> {
                 color::file(source.join(&config_label))
             );
 
+            let config = context
+                .config_loader
+                .load_project_config_from_source(context.workspace_root, &source)?;
+
             let mut build_data = ProjectBuildData {
-                config: context
-                    .config_loader
-                    .load_project_config_from_source(context.workspace_root, &source)?,
                 source,
                 ..Default::default()
             };
 
             // Track ID renames
-            if let Some(new_id) = &build_data.config.id {
+            if let Some(new_id) = &config.id {
                 if new_id != &id {
                     build_data.original_id = Some(id.clone());
                     renamed_ids.insert(id.clone(), new_id.to_owned());
@@ -364,6 +533,7 @@ impl<'app> WorkspaceBuilder<'app> {
             }
 
             // Otherwise persist the build data
+            build_data.config = Some(config);
             project_data.insert(id, build_data);
         }
 
@@ -373,5 +543,31 @@ impl<'app> WorkspaceBuilder<'app> {
         self.renamed_project_ids.extend(renamed_ids);
 
         Ok(())
+    }
+
+    fn resolve_project_id(&self, id_or_alias: &str) -> Id {
+        let id = if self.project_data.contains_key(id_or_alias) {
+            Id::raw(id_or_alias)
+        } else {
+            match self.project_data.iter().find_map(|(id, build_data)| {
+                if build_data
+                    .alias
+                    .as_ref()
+                    .is_some_and(|alias| alias == id_or_alias)
+                {
+                    Some(id)
+                } else {
+                    None
+                }
+            }) {
+                Some(project_id) => project_id.to_owned(),
+                None => Id::raw(id_or_alias),
+            }
+        };
+
+        match self.renamed_project_ids.get(&id) {
+            Some(new_id) => new_id.to_owned(),
+            None => id,
+        }
     }
 }

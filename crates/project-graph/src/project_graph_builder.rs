@@ -333,7 +333,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             },
         )?;
 
-        if let Some(config) = self.configs.remove(&id) {
+        if let Some(config) = self.configs.get(&id) {
             builder.inherit_local_config(config).await?;
         } else {
             builder.load_local_config().await?;
@@ -459,180 +459,180 @@ impl<'app> ProjectGraphBuilder<'app> {
     /// If globs are provided, walk the file system and gather sources.
     /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload(&mut self) -> miette::Result<()> {
-        // let context = self.context();
-        // let mut globs = vec![];
-        // let mut sources = vec![];
+        let context = self.context();
+        let mut globs = vec![];
+        let mut sources = vec![];
 
-        // // Locate all project sources
-        // let mut add_sources = |map: &FxHashMap<Id, String>| {
-        //     for (id, source) in map {
-        //         sources.push((id.to_owned(), WorkspaceRelativePathBuf::from(source)));
-        //     }
-        // };
+        // Locate all project sources
+        let mut add_sources = |map: &FxHashMap<Id, String>| {
+            for (id, source) in map {
+                sources.push((id.to_owned(), WorkspaceRelativePathBuf::from(source)));
+            }
+        };
 
-        // match &context.workspace_config.projects {
-        //     WorkspaceProjects::Sources(map) => {
-        //         add_sources(map);
-        //     }
-        //     WorkspaceProjects::Globs(list) => {
-        //         globs.extend(list);
-        //     }
-        //     WorkspaceProjects::Both(cfg) => {
-        //         globs.extend(&cfg.globs);
-        //         add_sources(&cfg.sources);
-        //     }
-        // };
+        match &context.workspace_config.projects {
+            WorkspaceProjects::Sources(map) => {
+                add_sources(map);
+            }
+            WorkspaceProjects::Globs(list) => {
+                globs.extend(list);
+            }
+            WorkspaceProjects::Both(cfg) => {
+                globs.extend(&cfg.globs);
+                add_sources(&cfg.sources);
+            }
+        };
 
-        // if !sources.is_empty() {
-        //     debug!(
-        //         sources = ?sources,
-        //         "Using configured project sources",
-        //     );
-        // }
+        if !sources.is_empty() {
+            debug!(
+                sources = ?sources,
+                "Using configured project sources",
+            );
+        }
 
-        // if !globs.is_empty() {
-        //     debug!(
-        //         globs = ?globs,
-        //         "Locating projects with globs",
-        //     );
+        if !globs.is_empty() {
+            debug!(
+                globs = ?globs,
+                "Locating projects with globs",
+            );
 
-        //     locate_projects_with_globs(&context, &globs, &mut sources)?;
-        // }
+            locate_projects_with_globs(&context, &globs, &mut sources)?;
+        }
 
-        // // Load all config files first so that ID renaming occurs
-        // self.preload_configs(&mut sources)?;
+        // Load all config files first so that ID renaming occurs
+        self.preload_configs(&mut sources)?;
 
-        // // Extend graph from subscribers
-        // debug!("Extending project graph from subscribers");
+        // Extend graph from subscribers
+        debug!("Extending project graph from subscribers");
 
-        // let aliases = context
-        //     .extend_project_graph
-        //     .emit(ExtendProjectGraphEvent {
-        //         sources: sources.clone(),
-        //         workspace_root: context.workspace_root.to_owned(),
-        //     })
-        //     .await?
-        //     .aliases;
+        let aliases = context
+            .extend_project_graph
+            .emit(ExtendProjectGraphEvent {
+                sources: sources.clone(),
+                workspace_root: context.workspace_root.to_owned(),
+            })
+            .await?
+            .aliases;
 
         // Determine if a polyrepo or monorepo
-        // let polyrepo = sources.len() == 1
-        //     && sources
-        //         .first()
-        //         .map(|(_, source)| is_root_level_source(source))
-        //         .unwrap_or_default();
+        let polyrepo = sources.len() == 1
+            && sources
+                .first()
+                .map(|(_, source)| is_root_level_source(source))
+                .unwrap_or_default();
 
-        // self.monorepo = !polyrepo;
+        self.monorepo = !polyrepo;
 
-        // // Find the root project
-        // self.root_id = if self.monorepo {
-        //     sources.iter().find_map(|(id, source)| {
-        //         if is_root_level_source(source) {
-        //             Some(id.to_owned())
-        //         } else {
-        //             None
-        //         }
-        //     })
-        // } else {
-        //     None
-        // };
+        // Find the root project
+        self.root_id = if self.monorepo {
+            sources.iter().find_map(|(id, source)| {
+                if is_root_level_source(source) {
+                    Some(id.to_owned())
+                } else {
+                    None
+                }
+            })
+        } else {
+            None
+        };
 
         // Set our data and warn/error against problems
-        // for (id, source) in sources {
-        //     if let Some(existing_source) = self.sources.get(&id) {
-        //         if existing_source == &source {
-        //             continue;
-        //         }
+        for (id, source) in sources {
+            if let Some(existing_source) = self.sources.get(&id) {
+                if existing_source == &source {
+                    continue;
+                }
 
-        //         return Err(ProjectGraphError::DuplicateId {
-        //             id: id.clone(),
-        //             old_source: existing_source.to_string(),
-        //             new_source: source.to_string(),
-        //         }
-        //         .into());
-        //     } else {
-        //         self.sources.insert(id, source);
-        //     }
-        // }
+                return Err(ProjectGraphError::DuplicateId {
+                    id: id.clone(),
+                    old_source: existing_source.to_string(),
+                    new_source: source.to_string(),
+                }
+                .into());
+            } else {
+                self.sources.insert(id, source);
+            }
+        }
 
-        // let mut dupe_aliases = FxHashMap::<String, Id>::default();
+        let mut dupe_aliases = FxHashMap::<String, Id>::default();
 
-        // for (id, alias) in aliases {
-        //     let id = match self.renamed_ids.get(&id) {
-        //         Some(new_id) => new_id,
-        //         None => &id,
-        //     };
+        for (id, alias) in aliases {
+            let id = match self.renamed_ids.get(&id) {
+                Some(new_id) => new_id,
+                None => &id,
+            };
 
-        //     // Skip aliases that match its own ID
-        //     if id == &alias {
-        //         continue;
-        //     }
+            // Skip aliases that match its own ID
+            if id == &alias {
+                continue;
+            }
 
-        //     // Skip aliases that would override an ID
-        //     if self.sources.contains_key(alias.as_str()) {
-        //         debug!(
-        //             "Skipping alias {} (for project {}) as it conflicts with the project {}",
-        //             color::label(&alias),
-        //             color::id(id),
-        //             color::id(&alias),
-        //         );
+            // Skip aliases that would override an ID
+            if self.sources.contains_key(alias.as_str()) {
+                debug!(
+                    "Skipping alias {} (for project {}) as it conflicts with the project {}",
+                    color::label(&alias),
+                    color::id(id),
+                    color::id(&alias),
+                );
 
-        //         continue;
-        //     }
+                continue;
+            }
 
-        //     if let Some(existing_id) = dupe_aliases.get(&alias) {
-        //         // Skip if the existing ID is already for this ID.
-        //         // This scenario is possible when multiple platforms
-        //         // extract the same aliases (Bun vs Node, etc).
-        //         if existing_id == id {
-        //             continue;
-        //         }
+            if let Some(existing_id) = dupe_aliases.get(&alias) {
+                // Skip if the existing ID is already for this ID.
+                // This scenario is possible when multiple platforms
+                // extract the same aliases (Bun vs Node, etc).
+                if existing_id == id {
+                    continue;
+                }
 
-        //         return Err(ProjectGraphError::DuplicateAlias {
-        //             alias: alias.clone(),
-        //             old_id: existing_id.to_owned(),
-        //             new_id: id.clone(),
-        //         }
-        //         .into());
-        //     }
+                return Err(ProjectGraphError::DuplicateAlias {
+                    alias: alias.clone(),
+                    old_id: existing_id.to_owned(),
+                    new_id: id.clone(),
+                }
+                .into());
+            }
 
-        //     dupe_aliases.insert(alias.clone(), id.to_owned());
-        //     self.aliases.insert(id.to_owned(), alias);
-        // }
+            dupe_aliases.insert(alias.clone(), id.to_owned());
+            self.aliases.insert(id.to_owned(), alias);
+        }
 
         Ok(())
     }
 
     fn preload_configs(&mut self, sources: &mut ProjectsSourcesList) -> miette::Result<()> {
-        // let context = self.context();
-        // let mut configs = FxHashMap::default();
-        // let mut renamed_ids = FxHashMap::default();
+        let context = self.context();
+        let mut configs = FxHashMap::default();
+        let mut renamed_ids = FxHashMap::default();
 
-        // for (id, source) in sources {
-        //     debug!(
-        //         id = id.as_str(),
-        //         "Attempting to load {} (optional)",
-        //         color::file(source.join(context.config_loader.get_debug_label("moon", false)))
-        //     );
+        for (id, source) in sources {
+            debug!(
+                id = id.as_str(),
+                "Attempting to load {} (optional)",
+                color::file(source.join(context.config_loader.get_debug_label("moon", false)))
+            );
 
-        //     let config = context
-        //         .config_loader
-        //         .load_project_config_from_source(context.workspace_root, source)?;
+            let config = context
+                .config_loader
+                .load_project_config_from_source(context.workspace_root, source)?;
 
-        //     // Track ID renames
-        //     if let Some(new_id) = &config.id {
-        //         if new_id != id {
-        //             renamed_ids.insert(id.to_owned(), new_id.to_owned());
-        //             *id = new_id.to_owned();
-        //         }
-        //     }
+            // Track ID renames
+            if let Some(new_id) = &config.id {
+                if new_id != id {
+                    renamed_ids.insert(id.to_owned(), new_id.to_owned());
+                    *id = new_id.to_owned();
+                }
+            }
 
-        //     configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
-        // }
+            configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
+        }
 
-        // debug!("Loaded {} project configs", configs.len());
+        debug!("Loaded {} project configs", configs.len());
 
-        // self.configs.extend(configs);
-        // self.renamed_ids.extend(renamed_ids);
+        self.configs.extend(configs);
+        self.renamed_ids.extend(renamed_ids);
 
         Ok(())
     }

@@ -99,7 +99,7 @@ impl<'app> ProjectBuilder<'app> {
 
     /// Inherit the local config and then detect applicable language and platform fields.
     #[instrument(skip_all)]
-    pub async fn inherit_local_config(&mut self, config: ProjectConfig) -> miette::Result<()> {
+    pub async fn inherit_local_config(&mut self, config: &ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
             let mut language = detect_project_language(&self.project_root);
@@ -152,7 +152,7 @@ impl<'app> ProjectBuilder<'app> {
             }
         }
 
-        self.local_config = Some(config);
+        self.local_config = Some(config.to_owned());
 
         Ok(())
     }
@@ -174,7 +174,7 @@ impl<'app> ProjectBuilder<'app> {
             .config_loader
             .load_project_config(&self.project_root)?;
 
-        self.inherit_local_config(config).await?;
+        self.inherit_local_config(&config).await?;
 
         Ok(())
     }

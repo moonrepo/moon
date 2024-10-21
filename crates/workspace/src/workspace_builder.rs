@@ -1,11 +1,16 @@
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
 use crate::workspace_builder_error::WorkspaceBuilderError;
-use moon_common::path::is_root_level_source;
-use moon_common::{color, path::WorkspaceRelativePathBuf, Id};
+use crate::workspace_cache::*;
+use moon_cache::CacheEngine;
+use moon_common::{
+    color, consts,
+    path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf},
+    Id,
+};
 use moon_config::{
-    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectConfig, ProjectsSourcesList,
-    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectsSourcesList, ToolchainConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -17,19 +22,12 @@ use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
+use serde::{Deserialize, Serialize};
 use starbase_events::Emitter;
-use std::path::Path;
+use starbase_utils::{glob, json};
 use std::sync::Arc;
+use std::{collections::BTreeMap, path::Path};
 use tracing::{debug, instrument, trace};
-
-#[derive(Default)]
-pub struct ProjectBuildData {
-    alias: Option<String>,
-    config: Option<ProjectConfig>,
-    node_index: Option<NodeIndex>,
-    original_id: Option<Id>,
-    source: WorkspaceRelativePathBuf,
-}
 
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
@@ -47,8 +45,10 @@ pub struct WorkspaceBuildResult {
     pub project_graph: ProjectGraph,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilder<'app> {
-    context: Arc<WorkspaceBuilderContext<'app>>,
+    #[serde(skip)]
+    context: Option<Arc<WorkspaceBuilderContext<'app>>>,
 
     /// Mapping of project IDs to associated data required for building
     /// the project itself. Currently we track the following:
@@ -72,13 +72,14 @@ pub struct WorkspaceBuilder<'app> {
 }
 
 impl<'app> WorkspaceBuilder<'app> {
+    #[instrument(skip_all)]
     pub async fn new(
         context: WorkspaceBuilderContext<'app>,
     ) -> miette::Result<WorkspaceBuilder<'app>> {
-        debug!("Building project and task graphs");
+        debug!("Building workspace graph (project and task graphs)");
 
         let mut graph = WorkspaceBuilder {
-            context: Arc::new(context),
+            context: Some(Arc::new(context)),
             project_data: FxHashMap::default(),
             project_graph: ProjectGraphType::default(),
             renamed_project_ids: FxHashMap::default(),
@@ -92,10 +93,79 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(graph)
     }
 
+    #[instrument(skip_all)]
+    pub async fn new_with_cache(
+        context: WorkspaceBuilderContext<'app>,
+        cache_engine: &CacheEngine,
+    ) -> miette::Result<WorkspaceBuilder<'app>> {
+        let is_vcs_enabled = context
+            .vcs
+            .as_ref()
+            .expect("VCS is required for project graph caching!")
+            .is_enabled();
+        let mut graph = Self::new(context).await?;
+
+        // No VCS to hash with, so abort caching
+        if !is_vcs_enabled {
+            graph.load_projects().await?;
+
+            return Ok(graph);
+        }
+
+        // Hash the project graph based on the preloaded state
+        let mut graph_contents = WorkspaceGraphHash::new();
+        graph_contents.add_projects(&graph.project_data);
+        graph_contents.add_configs(graph.hash_required_configs().await?);
+        graph_contents.gather_env();
+
+        let hash = cache_engine
+            .hash
+            .save_manifest_without_hasher("Workspace graph", &graph_contents)?;
+
+        debug!(hash, "Generated hash for workspace graph");
+
+        // Check the current state and cache
+        let mut state = cache_engine
+            .state
+            .load_state::<WorkspaceProjectsCacheState>("projects.json")?;
+        let cache_path = cache_engine.state.resolve_path("workspaceGraph.json");
+
+        if hash == state.data.last_hash && cache_path.exists() {
+            debug!(
+                cache = ?cache_path,
+                "Loading workspace graph with {} projects from cache",
+                graph.project_data.len(),
+            );
+
+            let mut cache: WorkspaceBuilder = json::read_file(cache_path)?;
+            cache.context = graph.context;
+
+            return Ok(cache);
+        }
+
+        // Build the graph, update the state, and save the cache
+        debug!(
+            "Preparing workspace graph with {} projects",
+            graph.project_data.len(),
+        );
+
+        graph.load_projects().await?;
+
+        state.data.last_hash = hash;
+        state.data.projects = graph.project_data.clone();
+        state.save()?;
+
+        json::write_file(cache_path, &graph, false)?;
+
+        Ok(graph)
+    }
+
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
     pub async fn build(self) -> miette::Result<WorkspaceBuildResult> {
         self.enforce_constraints()?;
+
+        let context = self.context();
 
         let project_nodes = self
             .project_data
@@ -113,13 +183,10 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let mut project_graph = ProjectGraph::new(
-            self.project_graph,
-            project_nodes,
-            self.context.workspace_root,
-        );
+        let mut project_graph =
+            ProjectGraph::new(self.project_graph, project_nodes, context.workspace_root);
 
-        project_graph.working_dir = self.context.working_dir.to_owned();
+        project_graph.working_dir = context.working_dir.to_owned();
 
         Ok(WorkspaceBuildResult { project_graph })
     }
@@ -229,7 +296,7 @@ impl<'app> WorkspaceBuilder<'app> {
             color::id(id)
         );
 
-        let context = &self.context;
+        let context = self.context();
         let build_data = self.project_data.get(id).unwrap();
 
         if !build_data.source.to_path(context.workspace_root).exists() {
@@ -322,7 +389,7 @@ impl<'app> WorkspaceBuilder<'app> {
     fn enforce_constraints(&self) -> miette::Result<()> {
         debug!("Enforcing project constraints");
 
-        let context = &self.context;
+        let context = self.context();
         let type_relationships = context
             .workspace_config
             .constraints
@@ -367,11 +434,45 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
+    /// When caching the graph, we must hash all project and workspace
+    /// config files that are required to invalidate the cache.
+    async fn hash_required_configs(
+        &self,
+    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
+        let context = self.context();
+        let config_names = context.config_loader.get_project_file_names();
+        let mut configs = vec![];
+
+        // Hash all project-level config files
+        for build_data in self.project_data.values() {
+            for name in &config_names {
+                configs.push(build_data.source.join(name).to_string());
+            }
+        }
+
+        // Hash all workspace-level config files
+        for file in glob::walk(
+            context.workspace_root.join(consts::CONFIG_DIRNAME),
+            ["*.pkl", "tasks/**/*.pkl", "*.yml", "tasks/**/*.yml"],
+        )? {
+            configs.push(to_virtual_string(
+                file.strip_prefix(context.workspace_root).unwrap(),
+            )?);
+        }
+
+        context
+            .vcs
+            .as_ref()
+            .expect("VCS required!")
+            .get_file_hashes(&configs, true, 500)
+            .await
+    }
+
     /// Preload the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
     /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload_build_data(&mut self) -> miette::Result<()> {
-        let context = self.context.clone();
+        let context = self.context();
         let mut globs = vec![];
         let mut sources = vec![];
 
@@ -421,7 +522,7 @@ impl<'app> WorkspaceBuilder<'app> {
     }
 
     async fn load_project_aliases(&mut self) -> miette::Result<()> {
-        let context = &self.context;
+        let context = self.context();
 
         debug!("Extending project graph with aliases");
 
@@ -488,7 +589,7 @@ impl<'app> WorkspaceBuilder<'app> {
     }
 
     fn load_project_build_data(&mut self, sources: ProjectsSourcesList) -> miette::Result<()> {
-        let context = &self.context;
+        let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon", false);
         let mut project_data: FxHashMap<Id, ProjectBuildData> = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();
@@ -569,5 +670,13 @@ impl<'app> WorkspaceBuilder<'app> {
             Some(new_id) => new_id.to_owned(),
             None => id,
         }
+    }
+
+    fn context(&self) -> Arc<WorkspaceBuilderContext<'app>> {
+        Arc::clone(
+            self.context
+                .as_ref()
+                .expect("Missing workspace builder context!"),
+        )
     }
 }

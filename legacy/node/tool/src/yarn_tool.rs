@@ -213,12 +213,8 @@ impl DependencyManager<NodeTool> for YarnTool {
         } else {
             // Will error if the lockfile does not exist!
             if working_dir.join(self.get_lock_filename()).exists() {
-                node.exec_package(
-                    "yarn-deduplicate",
-                    &["yarn-deduplicate", "yarn.lock"],
-                    working_dir,
-                )
-                .await?;
+                node.exec_package("yarn-deduplicate", &["yarn.lock"], working_dir)
+                    .await?;
             }
         }
 

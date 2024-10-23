@@ -183,7 +183,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
 
                 return Ok(());
             } else {
-                node.exec_package("pnpm-deduplicate", &[], working_dir)
+                node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
                     .await?;
             }
         }

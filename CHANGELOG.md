@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue running `npx` commands (primarily through lockfile deduping).
+
 ## 1.29.2
 
 #### 🚀 Updates

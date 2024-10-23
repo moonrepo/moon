@@ -137,7 +137,7 @@ impl NodeTool {
             _ => {
                 let mut cmd = Command::new(self.get_npx_path()?);
                 cmd.with_console(self.console.clone());
-                cmd.args(["--silent", "--", package]);
+                cmd.args(["--quiet", "--package", package, "--"]);
                 cmd.envs(get_proto_env_vars());
 
                 if let Some(version) = get_proto_version_env(&self.tool) {

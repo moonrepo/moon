@@ -14,7 +14,7 @@ use moon_config::{
     ConfigLoader, DependencyScope, InheritedTasksManager, ProjectsSourcesList, ToolchainConfig,
     WorkspaceConfig, WorkspaceProjects,
 };
-use moon_project::Project;
+use moon_project::{Project, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectNode};
@@ -304,18 +304,67 @@ impl<'app> WorkspaceBuilder<'app> {
             }
         }
 
-        // And finally add to the graph
-        let index = self.project_graph.add_node(project);
+        // Create task relationships
+        for task in project.tasks.values() {
+            let task_index = self.internal_load_task(&task.target)?;
 
-        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
+            for dep_config in &task.deps {
+                let dep_task_index = self.internal_load_task(&dep_config.target)?;
+
+                self.task_graph.add_edge(task_index, dep_task_index, ());
+            }
+        }
+
+        // And finally add to the graph
+        let project_index = self.project_graph.add_node(project);
+
+        self.project_data.get_mut(&id).unwrap().node_index = Some(project_index);
 
         for edge in edges {
-            self.project_graph.add_edge(index, edge.0, edge.1);
+            self.project_graph.add_edge(project_index, edge.0, edge.1);
         }
 
         cycle.clear();
 
-        Ok((id, index))
+        Ok((id, project_index))
+    }
+
+    fn internal_load_task(&mut self, target: &Target) -> miette::Result<NodeIndex> {
+        {
+            let Some(build_data) = self.task_data.get(target) else {
+                return Err(ProjectError::UnknownTask {
+                    task_id: target.task_id.clone(),
+                    project_id: target
+                        .get_project_id()
+                        .expect("Missing project scope for task target!")
+                        .to_owned(),
+                }
+                .into());
+            };
+
+            // Already loaded, exit early with existing index
+            if let Some(index) = &build_data.node_index {
+                trace!(
+                    target = target.as_str(),
+                    "Task already exists in the task graph, skipping load",
+                );
+
+                return Ok(*index);
+            }
+        }
+
+        // Not loaded, build the project
+        trace!(
+            target = target.as_str(),
+            "Task does not exist in the task graph, attempting to load",
+        );
+
+        // And finally add to the graph
+        let index = self.task_graph.add_node(target.to_owned());
+
+        self.task_data.get_mut(target).unwrap().node_index = Some(index);
+
+        Ok(index)
     }
 
     /// Create and build the project with the provided ID and source.
@@ -383,6 +432,15 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         let project = builder.build().await?;
+
+        // Create task build data
+        let mut task_data = FxHashMap::default();
+
+        for task in project.tasks.values() {
+            task_data.insert(task.target.clone(), TaskBuildData::default());
+        }
+
+        self.task_data.extend(task_data);
 
         Ok(project)
     }

@@ -17,10 +17,10 @@ pub struct ProjectArgs {
 
 #[instrument(skip_all)]
 pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
-    let mut project_graph_builder = session.build_project_graph().await?;
-    project_graph_builder.load(&args.id).await?;
-
-    let project_graph = project_graph_builder.build().await?;
+    let project_graph = session
+        .get_project_graph()
+        .await?
+        .into_focused(&args.id, false)?;
     let project = project_graph.get(&args.id)?;
     let config = &project.config;
 

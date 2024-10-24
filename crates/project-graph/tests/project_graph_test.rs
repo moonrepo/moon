@@ -4,13 +4,15 @@ use moon_config::{
     WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
-use moon_project_graph::{
-    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    ProjectGraph, ProjectGraphBuilder,
-};
+use moon_project_graph::ProjectGraph;
 use moon_query::build_query;
 use moon_task::Target;
 use moon_test_utils2::*;
+use moon_workspace::{
+    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
+    WorkspaceProjectsCacheState,
+};
+use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::EventState;
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
@@ -51,7 +53,7 @@ mod project_graph {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the name or alias z")]
+    #[should_panic(expected = "No project has been configured with the identifier or alias z")]
     async fn errors_unknown_id() {
         let graph = generate_project_graph("dependencies").await;
 
@@ -84,7 +86,7 @@ mod project_graph {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "A project already exists with the name id")]
+    #[should_panic(expected = "A project already exists with the identifier id")]
     async fn errors_duplicate_ids() {
         generate_project_graph("dupe-folder-conflict").await;
     }
@@ -110,12 +112,11 @@ mod project_graph {
             // Move files so that we can infer a compatible root project name
             fs::copy_dir_all(sandbox.path(), sandbox.path(), &root).unwrap();
 
-            let mut container = ProjectGraphContainer::new(&root);
+            let mut mock = create_project_graph_mocker(&root);
 
-            container.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*", "."]);
+            mock.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*", "."]);
 
-            let context = container.create_context();
-            let graph = container.build_graph(context).await;
+            let graph = mock.build_project_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_all().unwrap()),
@@ -126,13 +127,11 @@ mod project_graph {
         #[tokio::test]
         async fn globs_with_config() {
             let sandbox = create_sandbox("locate-configs");
-            let mut container = ProjectGraphContainer::new(sandbox.path());
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            container.workspace_config.projects =
-                WorkspaceProjects::Globs(string_vec!["*/moon.yml"]);
+            mock.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*/moon.yml"]);
 
-            let context = container.create_context();
-            let graph = container.build_graph(context).await;
+            let graph = mock.build_project_graph().await;
 
             assert_eq!(get_ids_from_projects(graph.get_all().unwrap()), ["a", "c"]);
         }
@@ -140,16 +139,14 @@ mod project_graph {
         #[tokio::test]
         async fn paths() {
             let sandbox = create_sandbox("dependencies");
-            let mut container = ProjectGraphContainer::new(sandbox.path());
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            container.workspace_config.projects =
-                WorkspaceProjects::Sources(FxHashMap::from_iter([
-                    (Id::raw("c"), "c".into()),
-                    (Id::raw("b"), "b".into()),
-                ]));
+            mock.workspace_config.projects = WorkspaceProjects::Sources(FxHashMap::from_iter([
+                (Id::raw("c"), "c".into()),
+                (Id::raw("b"), "b".into()),
+            ]));
 
-            let context = container.create_context();
-            let graph = container.build_graph(context).await;
+            let graph = mock.build_project_graph().await;
 
             assert_eq!(get_ids_from_projects(graph.get_all().unwrap()), ["b", "c"]);
         }
@@ -157,19 +154,17 @@ mod project_graph {
         #[tokio::test]
         async fn paths_and_globs() {
             let sandbox = create_sandbox("dependencies");
-            let mut container = ProjectGraphContainer::new(sandbox.path());
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            container.workspace_config.projects =
-                WorkspaceProjects::Both(WorkspaceProjectsConfig {
-                    globs: string_vec!["{a,c}"],
-                    sources: FxHashMap::from_iter([
-                        (Id::raw("b"), "b".into()),
-                        (Id::raw("root"), ".".into()),
-                    ]),
-                });
+            mock.workspace_config.projects = WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                globs: string_vec!["{a,c}"],
+                sources: FxHashMap::from_iter([
+                    (Id::raw("b"), "b".into()),
+                    (Id::raw("root"), ".".into()),
+                ]),
+            });
 
-            let context = container.create_context();
-            let graph = container.build_graph(context).await;
+            let graph = mock.build_project_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_all().unwrap()),
@@ -212,9 +207,10 @@ mod project_graph {
             sandbox.enable_git();
             sandbox.create_file(".gitignore", "*-other");
 
-            let container = ProjectGraphContainer::with_vcs(sandbox.path());
-            let context = container.create_context();
-            let graph = container.build_graph(context).await;
+            let mut mock = create_project_graph_mocker(sandbox.path());
+            mock.with_vcs();
+
+            let graph = mock.build_project_graph().await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_all().unwrap()),
@@ -243,24 +239,22 @@ mod project_graph {
     mod cache {
         use super::*;
         use moon_cache::CacheEngine;
-        use moon_project_graph::ProjectsCacheState;
+        use moon_workspace::ProjectBuildData;
 
-        const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
-        const STATE_PATH: &str = ".moon/cache/states/projects.json";
+        const CACHE_PATH: &str = ".moon/cache/states/workspaceGraph.json";
+        const STATE_PATH: &str = ".moon/cache/states/projectsBuildData.json";
 
         async fn do_generate(root: &Path) -> ProjectGraph {
             let cache_engine = CacheEngine::new(root).unwrap();
-            let container = ProjectGraphContainer::with_vcs(root);
-            let context = container.create_context();
 
-            let mut builder = ProjectGraphBuilder::generate(context, &cache_engine)
-                .await
-                .unwrap();
-            builder.load_all().await.unwrap();
+            let mut mock = create_project_graph_mocker(root);
+            mock.with_vcs();
 
-            let graph = builder.build().await.unwrap();
-            graph.get_all().unwrap();
-            graph
+            mock.build_project_graph_with_options(ProjectGraphMockOptions {
+                cache: Some(cache_engine),
+                ..Default::default()
+            })
+            .await
         }
 
         async fn generate_cached_project_graph(
@@ -310,16 +304,44 @@ mod project_graph {
             })
             .await;
 
-            let state: ProjectsCacheState =
+            let state: WorkspaceProjectsCacheState =
                 json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
             assert_eq!(
                 state.projects,
                 FxHashMap::from_iter([
-                    (Id::raw("a"), "a".into()),
-                    (Id::raw("b"), "b".into()),
-                    (Id::raw("c"), "c".into()),
-                    (Id::raw("d"), "d".into()),
+                    (
+                        Id::raw("a"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(2)),
+                            source: "a".into(),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        Id::raw("b"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(1)),
+                            source: "b".into(),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        Id::raw("c"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(0)),
+                            source: "c".into(),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        Id::raw("d"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(3)),
+                            source: "d".into(),
+                            ..Default::default()
+                        }
+                    ),
                 ])
             );
 
@@ -339,13 +361,13 @@ mod project_graph {
                 })
                 .await;
 
-                let state1: ProjectsCacheState =
+                let state1: WorkspaceProjectsCacheState =
                     json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 func(&sandbox);
                 do_generate(sandbox.path()).await;
 
-                let state2: ProjectsCacheState =
+                let state2: WorkspaceProjectsCacheState =
                     json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 assert_ne!(state1.last_hash, state2.last_hash);
@@ -440,14 +462,14 @@ mod project_graph {
 
         async fn generate_inheritance_project_graph(fixture: &str) -> ProjectGraph {
             let sandbox = create_sandbox(fixture);
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            generate_project_graph_with_changes(sandbox.path(), |container| {
-                container.inherited_tasks = container
-                    .config_loader
-                    .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
-                    .unwrap();
-            })
-            .await
+            mock.inherited_tasks = mock
+                .config_loader
+                .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
+                .unwrap();
+
+            mock.build_project_graph().await
         }
 
         #[tokio::test]
@@ -710,9 +732,9 @@ mod project_graph {
             #[tokio::test]
             async fn no_depends_on() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = ProjectGraphContainer::new(sandbox.path());
-                let context = container.create_context();
-                let graph = container.build_graph_for(context, &["no-depends-on"]).await;
+                let mock = create_project_graph_mocker(sandbox.path());
+
+                let graph = mock.build_project_graph_for(&["no-depends-on"]).await;
 
                 assert_eq!(map_ids(graph.ids()), ["no-depends-on"]);
             }
@@ -720,11 +742,9 @@ mod project_graph {
             #[tokio::test]
             async fn some_depends_on() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = ProjectGraphContainer::new(sandbox.path());
-                let context = container.create_context();
-                let graph = container
-                    .build_graph_for(context, &["some-depends-on"])
-                    .await;
+                let mock = create_project_graph_mocker(sandbox.path());
+
+                let graph = mock.build_project_graph_for(&["some-depends-on"]).await;
 
                 assert_eq!(map_ids(graph.ids()), ["a", "c", "some-depends-on"]);
             }
@@ -732,11 +752,9 @@ mod project_graph {
             #[tokio::test]
             async fn from_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = ProjectGraphContainer::new(sandbox.path());
-                let context = container.create_context();
-                let graph = container
-                    .build_graph_for(context, &["from-task-deps"])
-                    .await;
+                let mock = create_project_graph_mocker(sandbox.path());
+
+                let graph = mock.build_project_graph_for(&["from-task-deps"]).await;
 
                 assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
 
@@ -749,11 +767,9 @@ mod project_graph {
             #[tokio::test]
             async fn from_root_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = ProjectGraphContainer::new(sandbox.path());
-                let context = container.create_context();
-                let graph = container
-                    .build_graph_for(context, &["from-root-task-deps"])
-                    .await;
+                let mock = create_project_graph_mocker(sandbox.path());
+
+                let graph = mock.build_project_graph_for(&["from-root-task-deps"]).await;
 
                 assert_eq!(map_ids(graph.ids()), ["root", "from-root-task-deps"]);
 
@@ -765,11 +781,9 @@ mod project_graph {
             #[tokio::test]
             async fn self_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
-                let container = ProjectGraphContainer::new(sandbox.path());
-                let context = container.create_context();
-                let graph = container
-                    .build_graph_for(context, &["self-task-deps"])
-                    .await;
+                let mock = create_project_graph_mocker(sandbox.path());
+
+                let graph = mock.build_project_graph_for(&["self-task-deps"]).await;
 
                 assert_eq!(map_ids(graph.ids()), ["self-task-deps"]);
             }
@@ -785,8 +799,8 @@ mod project_graph {
 
         async fn generate_aliases_project_graph_for_fixture(fixture: &str) -> ProjectGraph {
             let sandbox = create_sandbox(fixture);
-            let container = ProjectGraphContainer::new(sandbox.path());
-            let context = container.create_context();
+            let mock = create_project_graph_mocker(sandbox.path());
+            let context = mock.create_context();
 
             // Set aliases for projects
             context
@@ -841,7 +855,11 @@ mod project_graph {
                 )
                 .await;
 
-            container.build_graph(context).await
+            mock.build_project_graph_with_options(ProjectGraphMockOptions {
+                context: Some(context),
+                ..Default::default()
+            })
+            .await
         }
 
         #[tokio::test]
@@ -970,7 +988,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Project one is already using the alias @test")]
+        #[should_panic(expected = "Project two is already using the alias @test")]
         async fn errors_duplicate_aliases() {
             generate_aliases_project_graph_for_fixture("aliases-conflict").await;
         }
@@ -978,8 +996,8 @@ mod project_graph {
         #[tokio::test]
         async fn ignores_duplicate_aliases_if_ids_match() {
             let sandbox = create_sandbox("aliases-conflict");
-            let container = ProjectGraphContainer::new(sandbox.path());
-            let context = container.create_context();
+            let mock = create_project_graph_mocker(sandbox.path());
+            let context = mock.create_context();
 
             context
                 .extend_project_graph
@@ -999,7 +1017,12 @@ mod project_graph {
                 )
                 .await;
 
-            let graph = container.build_graph(context).await;
+            let graph = mock
+                .build_project_graph_with_options(ProjectGraphMockOptions {
+                    context: Some(context),
+                    ..Default::default()
+                })
+                .await;
 
             assert!(graph.get("@one").is_ok());
             assert!(graph.get("@two").is_ok());
@@ -1016,16 +1039,13 @@ mod project_graph {
 
             func(&sandbox);
 
-            let mut container = ProjectGraphContainer::new(sandbox.path());
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            container
-                .workspace_config
+            mock.workspace_config
                 .constraints
                 .enforce_project_type_relationships = true;
 
-            let context = container.create_context();
-
-            container.build_graph(context).await
+            mock.build_project_graph().await
         }
 
         #[tokio::test]
@@ -1152,29 +1172,19 @@ mod project_graph {
 
             func(&sandbox);
 
-            let mut container = ProjectGraphContainer::new(sandbox.path());
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            container
-                .workspace_config
-                .constraints
-                .tag_relationships
-                .insert(
-                    Id::raw("warrior"),
-                    vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
-                );
+            mock.workspace_config.constraints.tag_relationships.insert(
+                Id::raw("warrior"),
+                vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
+            );
 
-            container
-                .workspace_config
-                .constraints
-                .tag_relationships
-                .insert(
-                    Id::raw("mage"),
-                    vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
-                );
+            mock.workspace_config.constraints.tag_relationships.insert(
+                Id::raw("mage"),
+                vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
+            );
 
-            let context = container.create_context();
-
-            container.build_graph(context).await
+            mock.build_project_graph().await
         }
 
         #[tokio::test]
@@ -1428,9 +1438,9 @@ mod project_graph {
         #[tokio::test]
         async fn renders_partial() {
             let sandbox = create_sandbox("dependencies");
-            let container = ProjectGraphContainer::new(sandbox.path());
-            let context = container.create_context();
-            let graph = container.build_graph_for(context, &["b"]).await;
+            let mock = create_project_graph_mocker(sandbox.path());
+
+            let graph = mock.build_project_graph_for(&["b"]).await;
 
             assert_snapshot!(graph.to_dot());
         }
@@ -1475,7 +1485,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "A project already exists with the name foo")]
+        #[should_panic(expected = "A project already exists with the identifier foo")]
         async fn errors_duplicate_ids_from_rename() {
             generate_project_graph("custom-id-conflict").await;
         }

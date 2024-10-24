@@ -135,7 +135,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            id = self.project_id,
+            project_id = self.project_id,
             tasks = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Filtering global tasks",
         );
@@ -214,7 +214,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            id = self.project_id,
+            project_id = self.project_id,
             tasks = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Loading local tasks",
         );

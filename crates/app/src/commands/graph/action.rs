@@ -25,8 +25,10 @@ pub struct ActionGraphArgs {
 
 #[instrument]
 pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResult {
-    let project_graph = session.get_project_graph().await?;
-    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
+    let (project_graph, task_graph) = session.get_graphs().await?;
+    let mut action_graph_builder = session
+        .build_action_graph(&project_graph, &task_graph)
+        .await?;
 
     let requirements = RunRequirements {
         dependents: args.dependents,

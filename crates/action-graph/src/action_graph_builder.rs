@@ -14,6 +14,7 @@ use moon_project_graph::ProjectGraph;
 use moon_query::{build_query, Criteria};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
+use moon_task_graph::TaskGraph;
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -45,6 +46,7 @@ pub struct ActionGraphBuilder<'app> {
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
     project_graph: &'app ProjectGraph,
+    task_graph: &'app TaskGraph,
 
     // Affected states
     affected: Option<AffectedTracker<'app>>,
@@ -57,13 +59,17 @@ pub struct ActionGraphBuilder<'app> {
 }
 
 impl<'app> ActionGraphBuilder<'app> {
-    pub fn new(project_graph: &'app ProjectGraph) -> miette::Result<Self> {
-        ActionGraphBuilder::with_platforms(PlatformManager::read(), project_graph)
+    pub fn new(
+        project_graph: &'app ProjectGraph,
+        task_graph: &'app TaskGraph,
+    ) -> miette::Result<Self> {
+        ActionGraphBuilder::with_platforms(PlatformManager::read(), project_graph, task_graph)
     }
 
     pub fn with_platforms(
         platform_manager: &'app PlatformManager,
         project_graph: &'app ProjectGraph,
+        task_graph: &'app TaskGraph,
     ) -> miette::Result<Self> {
         debug!("Building action graph");
 
@@ -77,6 +83,7 @@ impl<'app> ActionGraphBuilder<'app> {
             platform_manager,
             primary_targets: FxHashSet::default(),
             project_graph,
+            task_graph,
             touched_files: None,
         })
     }
@@ -168,7 +175,11 @@ impl<'app> ActionGraphBuilder<'app> {
         touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<()> {
         self.touched_files = Some(touched_files);
-        self.affected = Some(AffectedTracker::new(self.project_graph, touched_files));
+        self.affected = Some(AffectedTracker::new(
+            self.project_graph,
+            self.task_graph,
+            touched_files,
+        ));
 
         Ok(())
     }

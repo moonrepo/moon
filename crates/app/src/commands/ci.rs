@@ -229,7 +229,11 @@ async fn generate_action_graph(
 ) -> AppResult<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
-    let mut action_graph_builder = session.build_action_graph(project_graph).await?;
+    let task_graph = session.get_task_graph().await?;
+
+    let mut action_graph_builder = session
+        .build_action_graph(project_graph, &task_graph)
+        .await?;
     action_graph_builder.set_touched_files(touched_files)?;
     action_graph_builder.set_affected_scopes(UpstreamScope::Direct, DownstreamScope::Deep)?;
 

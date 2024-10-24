@@ -4,12 +4,14 @@ use moon_common::{color, Id};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetScope, Task};
+use moon_task_graph::TaskGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker<'app> {
     project_graph: &'app ProjectGraph,
+    task_graph: &'app TaskGraph,
     touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
 
     projects: FxHashMap<Id, Vec<AffectedBy>>,
@@ -24,12 +26,14 @@ pub struct AffectedTracker<'app> {
 impl<'app> AffectedTracker<'app> {
     pub fn new(
         project_graph: &'app ProjectGraph,
+        task_graph: &'app TaskGraph,
         touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
     ) -> Self {
         debug!("Creating affected tracker");
 
         Self {
             project_graph,
+            task_graph,
             touched_files,
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,

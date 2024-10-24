@@ -242,8 +242,10 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
     // Filter down to affected projects only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
+        let task_graph = session.get_task_graph().await?;
         let touched_files = load_touched_files(&vcs).await?;
-        let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
+        let mut affected_tracker =
+            AffectedTracker::new(&project_graph, &task_graph, &touched_files);
 
         #[allow(deprecated)]
         if args.dependents {
@@ -375,9 +377,11 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     // Filter down to affected tasks only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
+        let task_graph = session.get_task_graph().await?;
         let touched_files = load_touched_files(&vcs).await?;
 
-        let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
+        let mut affected_tracker =
+            AffectedTracker::new(&project_graph, &task_graph, &touched_files);
         affected_tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
         affected_tracker.track_tasks_by_target(&targets_list)?;
 

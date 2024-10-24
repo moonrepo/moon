@@ -110,7 +110,7 @@ pub async fn run_target(
 ) -> AppResult {
     let console = &session.console;
     let cache_engine = session.get_cache_engine()?;
-    let project_graph = session.get_project_graph().await?;
+    let (project_graph, task_graph) = session.get_graphs().await?;
     let vcs = session.get_vcs_adapter()?;
 
     // Force cache to update using write-only mode
@@ -144,7 +144,9 @@ pub async fn run_target(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
+    let mut action_graph_builder = session
+        .build_action_graph(&project_graph, &task_graph)
+        .await?;
 
     if let Some(query_input) = &args.query {
         action_graph_builder.set_query(query_input)?;

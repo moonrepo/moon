@@ -8,9 +8,11 @@ use tracing::instrument;
 pub async fn sync(session: CliSession) -> AppResult {
     let done = create_progress_bar("Syncing projects...");
 
-    let project_graph = session.get_project_graph().await?;
+    let (project_graph, task_graph) = session.get_graphs().await?;
     let mut project_count = 0;
-    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
+    let mut action_graph_builder = session
+        .build_action_graph(&project_graph, &task_graph)
+        .await?;
 
     for project in project_graph.get_all_unexpanded() {
         action_graph_builder.sync_project(project)?;

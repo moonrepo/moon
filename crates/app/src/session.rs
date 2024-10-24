@@ -89,8 +89,9 @@ impl CliSession {
     pub async fn build_action_graph<'graph>(
         &self,
         project_graph: &'graph ProjectGraph,
+        task_graph: &'graph TaskGraph,
     ) -> AppResult<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(project_graph)
+        ActionGraphBuilder::new(project_graph, task_graph)
     }
 
     pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {
@@ -137,6 +138,13 @@ impl CliSession {
         });
 
         Ok(Arc::clone(item))
+    }
+
+    pub async fn get_graphs(&self) -> AppResult<(Arc<ProjectGraph>, Arc<TaskGraph>)> {
+        Ok((
+            self.get_project_graph().await?,
+            self.get_task_graph().await?,
+        ))
     }
 
     pub async fn get_project_graph(&self) -> AppResult<Arc<ProjectGraph>> {

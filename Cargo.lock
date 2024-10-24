@@ -3989,6 +3989,7 @@ dependencies = [
  "moon_rust_platform",
  "moon_system_platform",
  "moon_vcs",
+ "moon_workspace",
  "proto_core",
  "starbase_events",
  "starbase_sandbox",

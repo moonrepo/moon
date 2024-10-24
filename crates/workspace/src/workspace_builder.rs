@@ -161,10 +161,10 @@ impl<'app> WorkspaceBuilder<'app> {
 
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
-    pub async fn build(self) -> miette::Result<WorkspaceBuildResult> {
+    pub async fn build(mut self) -> miette::Result<WorkspaceBuildResult> {
         self.enforce_constraints()?;
 
-        let context = self.context();
+        let context = self.context.take().unwrap();
 
         let project_nodes = self
             .project_data
@@ -275,11 +275,11 @@ impl<'app> WorkspaceBuilder<'app> {
         // And finally add to the graph
         let index = self.project_graph.add_node(project);
 
+        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
+
         for edge in edges {
             self.project_graph.add_edge(index, edge.0, edge.1);
         }
-
-        self.project_data.get_mut(&id).unwrap().node_index = Some(index);
 
         cycle.clear();
 
@@ -371,9 +371,9 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         self.repo_type = match (single_project, has_root_project) {
-            (true, _) => RepoType::Polyrepo,
+            (true, true) => RepoType::Polyrepo,
             (false, true) => RepoType::MonorepoWithRoot,
-            (false, false) => RepoType::Monorepo,
+            (false, false) | (true, false) => RepoType::Monorepo,
         };
 
         if self.repo_type == RepoType::MonorepoWithRoot {
@@ -511,7 +511,7 @@ impl<'app> WorkspaceBuilder<'app> {
             locate_projects_with_globs(&context, &globs, &mut sources)?;
         }
 
-        // Load projects first
+        // Load projects and configs first
         self.load_project_build_data(sources)?;
 
         // Then load aliases and extend projects

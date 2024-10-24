@@ -12,6 +12,7 @@ use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
     WorkspaceProjectsCacheState,
 };
+use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::EventState;
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
@@ -85,7 +86,7 @@ mod project_graph {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "A project already exists with the name id")]
+    #[should_panic(expected = "A project already exists with the identifier id")]
     async fn errors_duplicate_ids() {
         generate_project_graph("dupe-folder-conflict").await;
     }
@@ -240,8 +241,8 @@ mod project_graph {
         use moon_cache::CacheEngine;
         use moon_workspace::ProjectBuildData;
 
-        const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
-        const STATE_PATH: &str = ".moon/cache/states/projects.json";
+        const CACHE_PATH: &str = ".moon/cache/states/workspaceGraph.json";
+        const STATE_PATH: &str = ".moon/cache/states/projectsBuildData.json";
 
         async fn do_generate(root: &Path) -> ProjectGraph {
             let cache_engine = CacheEngine::new(root).unwrap();
@@ -309,10 +310,38 @@ mod project_graph {
             assert_eq!(
                 state.projects,
                 FxHashMap::from_iter([
-                    (Id::raw("a"), ProjectBuildData::from_source("a")),
-                    (Id::raw("b"), ProjectBuildData::from_source("b")),
-                    (Id::raw("c"), ProjectBuildData::from_source("c")),
-                    (Id::raw("d"), ProjectBuildData::from_source("d")),
+                    (
+                        Id::raw("a"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(2)),
+                            source: "a".into(),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        Id::raw("b"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(1)),
+                            source: "b".into(),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        Id::raw("c"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(0)),
+                            source: "c".into(),
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        Id::raw("d"),
+                        ProjectBuildData {
+                            node_index: Some(NodeIndex::from(3)),
+                            source: "d".into(),
+                            ..Default::default()
+                        }
+                    ),
                 ])
             );
 
@@ -959,7 +988,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Project one is already using the alias @test")]
+        #[should_panic(expected = "Project two is already using the alias @test")]
         async fn errors_duplicate_aliases() {
             generate_aliases_project_graph_for_fixture("aliases-conflict").await;
         }
@@ -1456,7 +1485,7 @@ mod project_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "A project already exists with the name foo")]
+        #[should_panic(expected = "A project already exists with the identifier foo")]
         async fn errors_duplicate_ids_from_rename() {
             generate_project_graph("custom-id-conflict").await;
         }

@@ -27,15 +27,6 @@ pub struct ProjectBuildData {
     pub source: WorkspaceRelativePathBuf,
 }
 
-impl ProjectBuildData {
-    pub fn from_source(source: &str) -> Self {
-        Self {
-            source: source.into(),
-            ..Default::default()
-        }
-    }
-}
-
 // Extend the project graph with additional information.
 
 #[derive(Debug)]

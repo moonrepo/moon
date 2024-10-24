@@ -1,7 +1,7 @@
 use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task_hasher::{TaskHash, TaskHasher};
-use moon_test_utils2::{ProjectGraph, ProjectGraphContainer};
+use moon_test_utils2::{create_project_graph_mocker, ProjectGraph};
 use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
 use std::fs;
@@ -32,13 +32,13 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
 }
 
 async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, Arc<BoxedVcs>) {
-    let mut graph_builder = ProjectGraphContainer::with_vcs(workspace_root);
-    let context = graph_builder.create_context();
+    let mut mock = create_project_graph_mocker(workspace_root);
+    mock.with_vcs();
 
     create_out_files(workspace_root);
 
-    let graph = graph_builder.build_graph(context).await;
-    let vcs = graph_builder.vcs.take().unwrap();
+    let graph = mock.build_project_graph().await;
+    let vcs = mock.vcs.take().unwrap();
 
     (graph, vcs)
 }

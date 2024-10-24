@@ -1,3 +1,5 @@
+use crate::project_build_data::ProjectBuildData;
+use moon_cache::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{is_docker, Id};
 use moon_hash::hash_content;
@@ -5,11 +7,17 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::env;
 
+cache_item!(
+    pub struct WorkspaceProjectsCacheState {
+        pub last_hash: String,
+        pub projects: FxHashMap<Id, ProjectBuildData>,
+    }
+);
+
 hash_content!(
-    pub struct ProjectGraphHash<'graph> {
-        // Data derived from the project graph builder.
-        aliases: BTreeMap<&'graph Id, &'graph String>,
-        sources: BTreeMap<&'graph Id, &'graph WorkspaceRelativePathBuf>,
+    pub struct WorkspaceGraphHash<'graph> {
+        // Data derived from the workspace graph builder.
+        projects: BTreeMap<&'graph Id, &'graph ProjectBuildData>,
 
         // Project and workspace configs required for cache invalidation.
         configs: BTreeMap<WorkspaceRelativePathBuf, String>,
@@ -17,7 +25,7 @@ hash_content!(
         // Environment variables required for cache invalidation.
         env: BTreeMap<String, String>,
 
-        // The project graph stores absolute file paths, which breaks moon when
+        // The graph stores absolute file paths, which breaks moon when
         // running tasks inside and outside of a container at the same time.
         // This flag helps to continuously bust the cache.
         in_docker: bool,
@@ -30,28 +38,25 @@ hash_content!(
     }
 );
 
-impl<'cfg> ProjectGraphHash<'cfg> {
-    pub fn new() -> Self {
-        ProjectGraphHash {
-            aliases: BTreeMap::default(),
-            sources: BTreeMap::default(),
+impl<'graph> Default for WorkspaceGraphHash<'graph> {
+    fn default() -> Self {
+        WorkspaceGraphHash {
+            projects: BTreeMap::default(),
             configs: BTreeMap::default(),
             env: BTreeMap::default(),
             in_docker: is_docker(),
             version: env::var("MOON_VERSION").unwrap_or_default(),
         }
     }
+}
 
-    pub fn add_aliases(&mut self, aliases: &'cfg FxHashMap<Id, String>) {
-        self.aliases.extend(aliases.iter());
+impl<'graph> WorkspaceGraphHash<'graph> {
+    pub fn add_projects(&mut self, projects: &'graph FxHashMap<Id, ProjectBuildData>) {
+        self.projects.extend(projects.iter());
     }
 
     pub fn add_configs(&mut self, configs: BTreeMap<WorkspaceRelativePathBuf, String>) {
         self.configs.extend(configs);
-    }
-
-    pub fn add_sources(&mut self, sources: &'cfg FxHashMap<Id, WorkspaceRelativePathBuf>) {
-        self.sources.extend(sources.iter());
     }
 
     pub fn gather_env(&mut self) {

@@ -311,7 +311,8 @@ impl<'app> WorkspaceBuilder<'app> {
             for dep_config in &task.deps {
                 let dep_task_index = self.internal_load_task(&dep_config.target)?;
 
-                self.task_graph.add_edge(task_index, dep_task_index, ());
+                self.task_graph
+                    .add_edge(task_index, dep_task_index, dep_config.get_type());
             }
         }
 

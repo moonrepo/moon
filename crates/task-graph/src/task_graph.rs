@@ -1,3 +1,4 @@
+use moon_config::DependencyType;
 use moon_target::Target;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -8,7 +9,7 @@ use serde::Serialize;
 use starbase_utils::json;
 use tracing::debug;
 
-pub type TaskGraphType = DiGraph<Target, ()>;
+pub type TaskGraphType = DiGraph<Target, DependencyType>;
 
 #[derive(Serialize)]
 pub struct TaskGraphCache<'graph> {
@@ -64,7 +65,7 @@ impl TaskGraph {
     }
 
     /// Get a labelled representation of the graph (which can be serialized easily).
-    pub fn labeled_graph(&self) -> DiGraph<String, ()> {
+    pub fn labeled_graph(&self) -> DiGraph<String, DependencyType> {
         self.graph.map(|_, n| n.to_string(), |_, e| *e)
     }
 

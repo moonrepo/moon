@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_config = { path = "../config" }
 moon_target = { path = "../target" }
 miette = { workspace = true }
 petgraph = { workspace = true }

@@ -1,4 +1,5 @@
 use crate::language_platform::PlatformType;
+use crate::project::dep_config::DependencyType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
 use moon_common::{cacheable, Id};
@@ -126,6 +127,14 @@ impl TaskDependencyConfig {
         Self {
             target,
             ..Default::default()
+        }
+    }
+
+    pub fn get_type(&self) -> DependencyType {
+        if self.optional.is_some_and(|v| v) {
+            DependencyType::Optional
+        } else {
+            DependencyType::Required
         }
     }
 }

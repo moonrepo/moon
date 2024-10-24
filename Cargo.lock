@@ -3917,6 +3917,7 @@ name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_config",
  "moon_target",
  "petgraph",
  "rustc-hash 2.0.0",

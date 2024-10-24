@@ -3,6 +3,7 @@ use moon_config::*;
 use moon_project_graph::ProjectGraph;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
+use proto_core::ProtoConfig;
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -26,14 +27,24 @@ impl WorkspaceMocker {
         }
     }
 
+    pub fn with_default_configs(&mut self) -> &mut Self {
+        let root = &self.workspace_root;
+
+        self.inherited_tasks = self.config_loader.load_tasks_manager(root).unwrap();
+
+        self.toolchain_config = self
+            .config_loader
+            .load_toolchain_config(root, &ProtoConfig::default())
+            .unwrap();
+
+        self.workspace_config = self.config_loader.load_workspace_config(root).unwrap();
+
+        self
+    }
+
     pub fn with_default_projects(&mut self) -> &mut Self {
-        // Use folders as project names
-        if self.workspace_root.join(".moon/workspace.yml").exists() {
-            self.workspace_config = self
-                .config_loader
-                .load_workspace_config(&self.workspace_root)
-                .unwrap();
-        } else {
+        if !self.workspace_root.join(".moon/workspace.yml").exists() {
+            // Use folders as project names
             let mut projects = WorkspaceProjectsConfig {
                 globs: vec![
                     "*".into(),
@@ -44,6 +55,7 @@ impl WorkspaceMocker {
                 ..WorkspaceProjectsConfig::default()
             };
 
+            // Include a root project conditionally
             if self.workspace_root.join("moon.yml").exists() {
                 projects
                     .sources
@@ -78,6 +90,7 @@ impl WorkspaceMocker {
                 },
             },
         );
+
         self
     }
 
@@ -85,6 +98,7 @@ impl WorkspaceMocker {
         self.vcs = Some(Arc::new(Box::new(
             Git::load(&self.workspace_root, "master", &[]).unwrap(),
         )));
+
         self
     }
 

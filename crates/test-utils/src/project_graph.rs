@@ -7,7 +7,8 @@ pub use moon_project_graph::ProjectGraph;
 pub fn create_project_graph_mocker(root: &Path) -> WorkspaceMocker {
     let mut mock = WorkspaceMocker::new(root);
 
-    mock.with_default_projects()
+    mock.with_default_configs()
+        .with_default_projects()
         .with_default_toolchain()
         .with_global_tasks();
 
@@ -19,16 +20,7 @@ pub async fn generate_project_graph(fixture: &str) -> ProjectGraph {
 }
 
 pub async fn generate_project_graph_from_sandbox(root: &Path) -> ProjectGraph {
-    generate_project_graph_with_changes(root, |_| {}).await
-}
-
-pub async fn generate_project_graph_with_changes<F>(root: &Path, mut op: F) -> ProjectGraph
-where
-    F: FnMut(&mut WorkspaceMocker),
-{
-    let mut mock = create_project_graph_mocker(root);
-
-    op(&mut mock);
-
-    mock.build_project_graph().await
+    create_project_graph_mocker(root)
+        .build_project_graph()
+        .await
 }

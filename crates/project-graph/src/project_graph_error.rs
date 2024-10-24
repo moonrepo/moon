@@ -9,7 +9,7 @@ pub enum ProjectGraphError {
     #[error("No project could be located starting from path {}.", .0.style(Style::Path))]
     MissingFromPath(PathBuf),
 
-    #[diagnostic(code(project_graph::unknown_project))]
+    #[diagnostic(code(project_graph::unknown_id))]
     #[error("No project has been configured with the identifier or alias {}.", .0.style(Style::Id))]
     UnconfiguredID(Id),
 }

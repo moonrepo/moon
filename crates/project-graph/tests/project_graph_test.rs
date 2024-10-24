@@ -52,7 +52,7 @@ mod project_graph {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the name or alias z")]
+    #[should_panic(expected = "No project has been configured with the identifier or alias z")]
     async fn errors_unknown_id() {
         let graph = generate_project_graph("dependencies").await;
 
@@ -433,14 +433,14 @@ mod project_graph {
 
         async fn generate_inheritance_project_graph(fixture: &str) -> ProjectGraph {
             let sandbox = create_sandbox(fixture);
+            let mut mock = create_project_graph_mocker(sandbox.path());
 
-            generate_project_graph_with_changes(sandbox.path(), |mock| {
-                mock.inherited_tasks = mock
-                    .config_loader
-                    .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
-                    .unwrap();
-            })
-            .await
+            mock.inherited_tasks = mock
+                .config_loader
+                .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
+                .unwrap();
+
+            mock.build_project_graph().await
         }
 
         #[tokio::test]

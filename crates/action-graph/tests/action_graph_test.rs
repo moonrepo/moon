@@ -1472,7 +1472,7 @@ mod action_graph {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "No project has been configured with the name or alias unknown.")]
+        #[should_panic(expected = "No project has been configured with the identifier or alias unknown.")]
         async fn errors_for_unknown_project() {
             let sandbox = create_sandbox("tasks");
             let container = ActionGraphContainer::new(sandbox.path()).await;

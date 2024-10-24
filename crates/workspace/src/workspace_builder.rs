@@ -16,7 +16,7 @@ use moon_config::{
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphType, ProjectNode};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectNode};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -220,7 +220,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
-                return Err(WorkspaceBuilderError::UnconfiguredProjectID(id).into());
+                return Err(ProjectGraphError::UnconfiguredID(id).into());
             };
 
             // Already loaded, exit early with existing index

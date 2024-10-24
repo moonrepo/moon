@@ -6,7 +6,7 @@ use thiserror::Error;
 pub enum WorkspaceBuilderError {
     #[diagnostic(code(project_graph::duplicate_alias))]
     #[error(
-        "Project {} is already using the alias {}, unable to set the alias for project {}.\nTry changing the alias to something unique to move forward.",
+        "Project {} is already using the alias {}, unable to use the alias for project {}.\nTry changing the alias to something unique to move forward.",
         .old_id.style(Style::Id),
         .alias.style(Style::Label),
         .new_id.style(Style::Id),
@@ -35,8 +35,4 @@ pub enum WorkspaceBuilderError {
     #[diagnostic(code(project_graph::missing_source))]
     #[error("No project exists at source path {}.", .0.style(Style::File))]
     MissingProjectAtSource(String),
-
-    #[diagnostic(code(project_graph::unknown_id))]
-    #[error("No project has been configured with the identifier or alias {}.", .0.style(Style::Id))]
-    UnconfiguredProjectID(Id),
 }

@@ -33,6 +33,7 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
 
 async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, Arc<BoxedVcs>) {
     let mut mock = create_project_graph_mocker(workspace_root);
+    mock.with_vcs();
 
     create_out_files(workspace_root);
 

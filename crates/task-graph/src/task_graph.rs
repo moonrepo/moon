@@ -97,4 +97,43 @@ impl TaskGraph {
     pub fn to_json(&self) -> miette::Result<String> {
         Ok(json::format(&TaskGraphCache { graph: &self.graph }, true)?)
     }
+
+    pub fn into_focused(&self, target: &Target, with_dependents: bool) -> miette::Result<Self> {
+        let upstream = self.dependencies_of(&target)?;
+        let downstream = self.dependents_of(&target)?;
+        let mut nodes = FxHashMap::default();
+
+        // Create a new graph
+        let graph = self.graph.filter_map(
+            |_, node_target| {
+                if
+                // Self
+                node_target == target ||
+                    // Dependencies
+                    upstream.contains(&node_target) ||
+                    // Dependents
+                    with_dependents && downstream.contains(&node_target)
+                {
+                    Some(node_target.clone())
+                } else {
+                    None
+                }
+            },
+            |_, edge| Some(*edge),
+        );
+
+        // Copy over nodes
+        for new_index in graph.node_indices() {
+            let new_target = &graph[new_index];
+
+            if let Some(old_node) = self.nodes.get(new_target) {
+                let mut new_node = old_node.to_owned();
+                new_node.index = new_index;
+
+                nodes.insert(new_target.to_owned(), new_node);
+            }
+        }
+
+        Ok(Self { graph, nodes })
+    }
 }

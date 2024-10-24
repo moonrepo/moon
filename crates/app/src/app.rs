@@ -8,6 +8,7 @@ use crate::commands::ext::ExtArgs;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::action::ActionGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
+use crate::commands::graph::task::TaskGraphArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::migrate::MigrateCommands;
 use crate::commands::node::NodeCommands;
@@ -122,6 +123,14 @@ pub enum Commands {
         alias = "t"
     )]
     Task(TaskArgs),
+
+    // moon task-graph [target]
+    #[command(
+        alias = "th",
+        name = "task-graph",
+        about = "Display an interactive dependency graph of all tasks."
+    )]
+    TaskGraph(TaskGraphArgs),
 
     // GENERATOR
 

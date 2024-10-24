@@ -185,6 +185,7 @@ async fn main() -> MainResult {
                     None => commands::sync::sync(session).await,
                 },
                 Commands::Task(args) => commands::task::task(session, args).await,
+                Commands::TaskGraph(args) => commands::graph::task::task_graph(session, args).await,
                 Commands::Teardown => commands::teardown::teardown().await,
                 Commands::Templates => commands::templates::templates(session).await,
                 Commands::Upgrade => commands::upgrade::upgrade(session).await,

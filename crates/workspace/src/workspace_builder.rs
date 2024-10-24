@@ -331,6 +331,8 @@ impl<'app> WorkspaceBuilder<'app> {
     }
 
     fn internal_load_task(&mut self, target: &Target) -> miette::Result<NodeIndex> {
+        dbg!(&target);
+
         {
             let Some(build_data) = self.task_data.get(target) else {
                 return Err(ProjectError::UnknownTask {

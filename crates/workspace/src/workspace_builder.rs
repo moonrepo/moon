@@ -1,6 +1,7 @@
 use crate::project_build_data::*;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
+use crate::task_build_data::*;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::*;
 use moon_cache::CacheEngine;
@@ -17,6 +18,8 @@ use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectNode};
+use moon_task::Target;
+use moon_task_graph::{TaskGraph, TaskGraphType, TaskNode};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -43,6 +46,7 @@ pub struct WorkspaceBuilderContext<'app> {
 
 pub struct WorkspaceBuildResult {
     pub project_graph: ProjectGraph,
+    pub task_graph: TaskGraph,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -69,6 +73,13 @@ pub struct WorkspaceBuilder<'app> {
 
     /// The root project ID (only if a monorepo).
     root_project_id: Option<Id>,
+
+    /// Mapping of task targets to associated data required for building
+    /// the task itself.
+    task_data: FxHashMap<Target, TaskBuildData>,
+
+    /// The task DAG.
+    task_graph: TaskGraphType,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -85,6 +96,8 @@ impl<'app> WorkspaceBuilder<'app> {
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
+            task_data: FxHashMap::default(),
+            task_graph: TaskGraphType::default(),
         };
 
         graph.preload_build_data().await?;
@@ -188,7 +201,25 @@ impl<'app> WorkspaceBuilder<'app> {
 
         project_graph.working_dir = context.working_dir.to_owned();
 
-        Ok(WorkspaceBuildResult { project_graph })
+        let task_nodes = self
+            .task_data
+            .into_iter()
+            .map(|(id, data)| {
+                (
+                    id,
+                    TaskNode {
+                        index: data.node_index.unwrap_or_default(),
+                    },
+                )
+            })
+            .collect::<FxHashMap<_, _>>();
+
+        let task_graph = TaskGraph::new(self.task_graph, task_nodes);
+
+        Ok(WorkspaceBuildResult {
+            project_graph,
+            task_graph,
+        })
     }
 
     /// Load a single project by ID or alias into the graph.

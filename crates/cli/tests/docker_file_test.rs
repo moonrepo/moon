@@ -14,7 +14,7 @@ mod dockerfile {
         });
 
         assert.inner.stderr(predicate::str::contains(
-            "No project has been configured with the name or alias missing.",
+            "No project has been configured with the identifier or alias missing.",
         ));
     }
 

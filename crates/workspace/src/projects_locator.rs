@@ -1,24 +1,13 @@
-use crate::project_graph_builder::ProjectGraphBuilderContext;
+use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{is_root_level_source, to_virtual_string, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
 use starbase_utils::{fs, glob};
-use std::path::Path;
 use tracing::{debug, instrument, warn};
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-fn infer_project_id_and_source(
-    path: &str,
-    workspace_root: &Path,
-) -> miette::Result<ProjectSourceEntry> {
-    if path.is_empty() {
-        return Ok((
-            Id::clean(fs::file_name(workspace_root))?,
-            WorkspaceRelativePathBuf::from("."),
-        ));
-    }
-
+fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry> {
     let (id, source) = if path.contains('/') {
         (path.split('/').last().unwrap().to_owned(), path)
     } else {
@@ -32,7 +21,7 @@ fn infer_project_id_and_source(
 /// for potential projects, and infer their name and source.
 #[instrument(skip_all)]
 pub fn locate_projects_with_globs<'glob, I, V>(
-    context: &ProjectGraphBuilderContext,
+    context: &WorkspaceBuilderContext,
     globs: I,
     sources: &mut ProjectsSourcesList,
 ) -> miette::Result<()>
@@ -55,7 +44,10 @@ where
             }
 
             has_root_level = true;
-            sources.push(infer_project_id_and_source("", context.workspace_root)?);
+            sources.push((
+                Id::clean(fs::file_name(context.workspace_root))?,
+                WorkspaceRelativePathBuf::from("."),
+            ));
         } else {
             locate_globs.push(glob);
         }
@@ -80,7 +72,8 @@ where
                 // Don't warn on dotfiles
                 if project_root
                     .file_name()
-                    .map(|name| !name.to_string_lossy().starts_with('.'))
+                    .and_then(|name| name.to_str())
+                    .map(|name| !name.starts_with('.'))
                     .unwrap_or_default()
                 {
                     warn!(
@@ -115,8 +108,7 @@ where
                 }
             }
 
-            let (id, source) =
-                infer_project_id_and_source(&project_source, context.workspace_root)?;
+            let (id, source) = infer_project_id_and_source(&project_source)?;
 
             if id.starts_with(".") {
                 debug!(

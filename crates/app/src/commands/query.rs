@@ -37,14 +37,15 @@ pub enum QueryCommands {
 
     #[command(
         name = "projects",
-        about = "Query for projects within the project graph.",
-        long_about = "Query for projects within the project graph. All options support regex patterns."
+        about = "Query for projects within the graph.",
+        long_about = "Query for projects within the graph. All options support regex patterns."
     )]
     Projects(QueryProjectsArgs),
 
     #[command(
         name = "tasks",
-        about = "List all available tasks, grouped by project."
+        about = "Query for tasks within the graph.",
+        long_about = "Query for tasks within the graph. All options support regex patterns."
     )]
     Tasks(QueryTasksArgs),
 
@@ -310,9 +311,19 @@ pub struct QueryTasksArgs {
     #[arg(
         long,
         help = "Filter tasks that are affected based on touched files",
-        help_heading = HEADING_AFFECTED
+        help_heading = HEADING_AFFECTED,
+        group = "affected-args"
     )]
     affected: bool,
+
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include downstream dependents of queried tasks",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    downstream: DownstreamScope,
 
     #[arg(long, help = "Filter projects that match this ID", help_heading = HEADING_FILTERS)]
     id: Option<String>,
@@ -331,6 +342,15 @@ pub struct QueryTasksArgs {
 
     #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
     type_of: Option<String>,
+
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include upstream dependencies of queried projects",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    upstream: UpstreamScope,
 }
 
 #[instrument(skip_all)]
@@ -382,7 +402,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
 
         let mut affected_tracker =
             AffectedTracker::new(&project_graph, &task_graph, &touched_files);
-        affected_tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+        affected_tracker.with_task_scopes(args.upstream, args.downstream);
         affected_tracker.track_tasks_by_target(&targets_list)?;
 
         let affected = affected_tracker.build();

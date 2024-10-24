@@ -8,43 +8,50 @@ use serde::Serialize;
 use starbase_utils::json;
 use tracing::debug;
 
-pub type GraphType = DiGraph<Target, ()>;
+pub type TaskGraphType = DiGraph<Target, ()>;
 
 #[derive(Serialize)]
 pub struct TaskGraphCache<'graph> {
-    graph: &'graph GraphType,
+    graph: &'graph TaskGraphType,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct TaskNode {
+    pub index: NodeIndex,
 }
 
 #[derive(Default)]
 pub struct TaskGraph {
     /// Directed-acyclic graph (DAG) of targets and their relationships.
-    graph: GraphType,
+    graph: TaskGraphType,
 
     /// Mapping of task targets to graph node indices.
-    nodes: FxHashMap<Target, NodeIndex>,
+    nodes: FxHashMap<Target, TaskNode>,
 }
 
 impl TaskGraph {
-    pub fn new(graph: GraphType, nodes: FxHashMap<Target, NodeIndex>) -> Self {
+    pub fn new(graph: TaskGraphType, nodes: FxHashMap<Target, TaskNode>) -> Self {
         debug!("Creating task graph");
 
         Self { graph, nodes }
     }
 
+    /// Return a list of targets that the provided target depends on.
     pub fn dependencies_of(&self, target: &Target) -> miette::Result<Vec<&Target>> {
         let deps = self
             .graph
-            .neighbors_directed(*self.nodes.get(target).unwrap(), Direction::Outgoing)
+            .neighbors_directed(self.nodes.get(target).unwrap().index, Direction::Outgoing)
             .map(|idx| self.graph.node_weight(idx).unwrap())
             .collect();
 
         Ok(deps)
     }
 
+    /// Return a list of targets that require the provided target.
     pub fn dependents_of(&self, target: &Target) -> miette::Result<Vec<&Target>> {
         let deps = self
             .graph
-            .neighbors_directed(*self.nodes.get(target).unwrap(), Direction::Incoming)
+            .neighbors_directed(self.nodes.get(target).unwrap().index, Direction::Incoming)
             .map(|idx| self.graph.node_weight(idx).unwrap())
             .collect();
 

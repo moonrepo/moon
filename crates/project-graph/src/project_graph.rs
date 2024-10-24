@@ -96,7 +96,7 @@ impl ProjectGraph {
             .collect()
     }
 
-    /// Return a list of project IDs that the provide project depends on.
+    /// Return a list of project IDs that the provided project depends on.
     pub fn dependencies_of(&self, project: &Project) -> miette::Result<Vec<&Id>> {
         let deps = self
             .graph

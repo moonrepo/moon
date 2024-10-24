@@ -1,3 +1,4 @@
+use crate::project_build_data::*;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
 use crate::workspace_builder_error::WorkspaceBuilderError;
@@ -15,9 +16,7 @@ use moon_config::{
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_project_graph::{
-    ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphType, ProjectNode,
-};
+use moon_project_graph::{ProjectGraph, ProjectGraphType, ProjectNode};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -113,7 +112,7 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         // Hash the project graph based on the preloaded state
-        let mut graph_contents = WorkspaceGraphHash::new();
+        let mut graph_contents = WorkspaceGraphHash::default();
         graph_contents.add_projects(&graph.project_data);
         graph_contents.add_configs(graph.hash_required_configs().await?);
         graph_contents.gather_env();

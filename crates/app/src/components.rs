@@ -5,10 +5,10 @@ use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
 use moon_platform::PlatformManager;
-use moon_project_graph::{
+use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
+    WorkspaceBuilderContext,
 };
-use moon_workspace::WorkspaceBuilderContext;
 use starbase_events::{Emitter, EventState};
 use std::sync::Arc;
 use tokio::sync::RwLock;

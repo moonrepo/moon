@@ -1,6 +1,6 @@
 use moon_cache::CacheEngine;
 use moon_config::*;
-use moon_project_graph::{ExtendProjectEvent, ExtendProjectGraphEvent, ProjectGraph};
+use moon_project_graph::ProjectGraph;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
 use starbase_events::Emitter;

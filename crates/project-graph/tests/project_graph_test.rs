@@ -4,13 +4,14 @@ use moon_config::{
     WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
-use moon_project_graph::{
-    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    ProjectGraph,
-};
+use moon_project_graph::ProjectGraph;
 use moon_query::build_query;
 use moon_task::Target;
 use moon_test_utils2::*;
+use moon_workspace::{
+    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
+    WorkspaceProjectsCacheState,
+};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::EventState;
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
@@ -237,7 +238,7 @@ mod project_graph {
     mod cache {
         use super::*;
         use moon_cache::CacheEngine;
-        use moon_project_graph::ProjectsCacheState;
+        use moon_workspace::ProjectBuildData;
 
         const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
         const STATE_PATH: &str = ".moon/cache/states/projects.json";
@@ -302,16 +303,16 @@ mod project_graph {
             })
             .await;
 
-            let state: ProjectsCacheState =
+            let state: WorkspaceProjectsCacheState =
                 json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
             assert_eq!(
                 state.projects,
                 FxHashMap::from_iter([
-                    (Id::raw("a"), "a".into()),
-                    (Id::raw("b"), "b".into()),
-                    (Id::raw("c"), "c".into()),
-                    (Id::raw("d"), "d".into()),
+                    (Id::raw("a"), ProjectBuildData::from_source("a")),
+                    (Id::raw("b"), ProjectBuildData::from_source("b")),
+                    (Id::raw("c"), ProjectBuildData::from_source("c")),
+                    (Id::raw("d"), ProjectBuildData::from_source("d")),
                 ])
             );
 
@@ -331,13 +332,13 @@ mod project_graph {
                 })
                 .await;
 
-                let state1: ProjectsCacheState =
+                let state1: WorkspaceProjectsCacheState =
                     json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 func(&sandbox);
                 do_generate(sandbox.path()).await;
 
-                let state2: ProjectsCacheState =
+                let state2: WorkspaceProjectsCacheState =
                     json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 assert_ne!(state1.last_hash, state2.last_hash);

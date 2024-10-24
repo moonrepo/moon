@@ -9,29 +9,26 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
-moon_hash = { path = "../hash" }
 moon_project = { path = "../project" }
-moon_project_builder = { path = "../project-builder" }
-moon_project_constraints = { path = "../project-constraints" }
 moon_project_expander = { path = "../project-expander" }
 moon_query = { path = "../query" }
 moon_task = { path = "../task" }
-moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
 serde = { workspace = true, features = ["rc"] }
-starbase_events = { workspace = true }
-starbase_utils = { workspace = true, features = ["glob", "json"] }
+starbase_utils = { workspace = true, features = ["json"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_cache = { path = "../cache" }
 moon_test_utils2 = { path = "../test-utils" }
+moon_workspace = { path = "../workspace" }
+starbase_events = { workspace = true }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

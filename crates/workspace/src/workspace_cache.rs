@@ -1,23 +1,11 @@
+use crate::project_build_data::ProjectBuildData;
 use moon_cache::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{is_docker, Id};
-use moon_config::ProjectConfig;
 use moon_hash::hash_content;
-use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::env;
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct ProjectBuildData {
-    pub alias: Option<String>,
-    #[serde(skip)]
-    pub config: Option<ProjectConfig>,
-    pub node_index: Option<NodeIndex>,
-    pub original_id: Option<Id>,
-    pub source: WorkspaceRelativePathBuf,
-}
 
 cache_item!(
     pub struct WorkspaceProjectsCacheState {
@@ -50,8 +38,8 @@ hash_content!(
     }
 );
 
-impl<'graph> WorkspaceGraphHash<'graph> {
-    pub fn new() -> Self {
+impl<'graph> Default for WorkspaceGraphHash<'graph> {
+    fn default() -> Self {
         WorkspaceGraphHash {
             projects: BTreeMap::default(),
             configs: BTreeMap::default(),
@@ -60,7 +48,9 @@ impl<'graph> WorkspaceGraphHash<'graph> {
             version: env::var("MOON_VERSION").unwrap_or_default(),
         }
     }
+}
 
+impl<'graph> WorkspaceGraphHash<'graph> {
     pub fn add_projects(&mut self, projects: &'graph FxHashMap<Id, ProjectBuildData>) {
         self.projects.extend(projects.iter());
     }

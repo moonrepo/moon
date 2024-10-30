@@ -258,7 +258,7 @@ export interface PipConfig {
 }
 
 export interface PythonConfig {
-	/** Options for pnpm, when used as a package manager. */
+	/** Options for pip, when used as a package manager. */
 	pip: PipConfig | null;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin: PluginLocator | null;
@@ -637,7 +637,7 @@ export interface PartialPipConfig {
 }
 
 export interface PartialPythonConfig {
-	/** Options for pnpm, when used as a package manager. */
+	/** Options for pip, when used as a package manager. */
 	pip?: PartialPipConfig | null;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin?: PluginLocator | null;

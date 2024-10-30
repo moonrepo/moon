@@ -48,6 +48,7 @@ mod toolchain_config {
 
         assert!(config.deno.is_none());
         assert!(config.node.is_none());
+        assert!(config.python.is_none());
         assert!(config.rust.is_none());
         assert!(config.typescript.is_none());
     }

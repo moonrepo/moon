@@ -1,13 +1,10 @@
 use moon_config::PythonConfig;
 use moon_console::{Checkpoint, Console};
-use moon_python_lang::pip_requirements::load_lockfile_dependencies;
-use moon_python_lang::LockfileDependencyVersions;
-// use moon_logger::debug;
 use moon_logger::{debug, map_list};
 use moon_process::Command;
 use moon_tool::{
-    async_trait, get_proto_env_vars, get_proto_paths, get_proto_version_env, load_tool_plugin,
-    prepend_path_env_var, use_global_tool_on_path, DependencyManager, Tool,
+    async_trait, get_proto_env_vars, get_proto_paths, load_tool_plugin, prepend_path_env_var,
+    use_global_tool_on_path, Tool,
 };
 use moon_toolchain::RuntimeReq;
 use moon_utils::get_workspace_root;
@@ -15,8 +12,6 @@ use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::fs;
-use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{ffi::OsStr, path::Path};
@@ -171,109 +166,6 @@ impl Tool for PythonTool {
 
     async fn teardown(&mut self) -> miette::Result<()> {
         self.tool.teardown().await?;
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl DependencyManager<PythonTool> for PythonTool {
-    fn create_command(&self, python: &PythonTool) -> miette::Result<Command> {
-        let mut cmd = Command::new("python");
-        cmd.with_console(self.console.clone());
-        cmd.envs(get_proto_env_vars());
-        if !self.global {
-            cmd.env("PATH", prepend_path_env_var(get_python_tool_paths(&self)));
-        }
-
-        if let Some(version) = get_proto_version_env(&self.tool) {
-            cmd.env("PROTO_PYTHON_VERSION", version);
-        }
-
-        if let Some(version) = get_proto_version_env(&python.tool) {
-            cmd.env("PROTO_PYTHON_VERSION", version);
-        }
-
-        Ok(cmd)
-    }
-
-    #[instrument(skip_all)]
-    async fn dedupe_dependencies(
-        &self,
-        _python: &PythonTool,
-        _working_dir: &Path,
-        _log: bool,
-    ) -> miette::Result<()> {
-        // Not supported!
-
-        Ok(())
-    }
-
-    fn get_lock_filename(&self) -> String {
-        String::from("requirements.txt")
-    }
-
-    fn get_manifest_filename(&self) -> String {
-        String::from("requirements.txt")
-    }
-
-    #[instrument(skip_all)]
-    async fn get_resolved_dependencies(
-        &self,
-        project_root: &Path,
-    ) -> miette::Result<LockfileDependencyVersions> {
-        let Some(lockfile_path) =
-            fs::find_upwards_until("requirements.txt", project_root, get_workspace_root())
-        else {
-            return Ok(FxHashMap::default());
-        };
-
-        Ok(load_lockfile_dependencies(lockfile_path)?)
-    }
-    #[instrument(skip_all)]
-    async fn install_dependencies(
-        &self,
-        python: &PythonTool,
-        working_dir: &Path,
-        log: bool,
-    ) -> miette::Result<()> {
-        let mut cmd = self.create_command(python)?;
-
-        if let Some(pip_config) = &self.config.pip {
-            cmd.args(["install"])
-                .cwd(working_dir)
-                .set_print_command(log);
-
-            //TODO: only read from root, but ready for sub virtual environments
-            if let Some(requirements_path) = fs::find_upwards_until(
-                "requirements.txt",
-                get_workspace_root(),
-                get_workspace_root(),
-            ) {
-                cmd.args(["-r", &requirements_path.as_os_str().to_str().unwrap()]);
-            }
-            if let Some(install_args) = &pip_config.install_args {
-                cmd.args(install_args);
-            }
-
-            let mut cmd = cmd.create_async();
-            if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
-                cmd.exec_capture_output().await?;
-            } else {
-                cmd.exec_stream_output().await?;
-            }
-        }
-
-        Ok(())
-    }
-
-    #[instrument(skip_all)]
-    async fn install_focused_dependencies(
-        &self,
-        _python: &PythonTool,
-        _packages: &[String],
-        _production_only: bool,
-    ) -> miette::Result<()> {
-        // TODO: Implement for docker purposes
         Ok(())
     }
 }

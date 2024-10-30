@@ -665,7 +665,7 @@
       "properties": {
         "pip": {
           "title": "pip",
-          "description": "Options for pnpm, when used as a package manager.",
+          "description": "Options for pip, when used as a package manager.",
           "anyOf": [
             {
               "$ref": "#/definitions/PipConfig"

@@ -104,6 +104,7 @@ mod tests {
         assert_eq!(LanguageType::Go.to_string(), "go");
         assert_eq!(LanguageType::JavaScript.to_string(), "javascript");
         assert_eq!(LanguageType::Ruby.to_string(), "ruby");
+        assert_eq!(LanguageType::Python.to_string(), "python");
         assert_eq!(LanguageType::Unknown.to_string(), "unknown");
         assert_eq!(LanguageType::Other(Id::raw("dotnet")).to_string(), "dotnet");
     }

@@ -9,6 +9,21 @@
   - Added a `toolchain.python` setting to `moon.yml`.
   - Updated `moon bin` and `moon docker` commands to support Python.
 
+## 1.29.2
+
+#### 🚀 Updates
+
+- Removed the warning around `.env` files not existing in certain environments.
+
+#### 🐞 Fixes
+
+- Fixed an issue where the task option `timeout` would apply to the overall run, and not for each
+  attempt when using the `retryCount` option.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.82.
+
 ## 1.29.1
 
 #### 🚀 Updates

@@ -5,9 +5,9 @@ use moon_action_context::ActionContext;
 use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
 use moon_platform::PlatformManager;
-use moon_project_graph::{
+use moon_workspace::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    ProjectGraphBuilderContext,
+    WorkspaceBuilderContext,
 };
 use starbase_events::{Emitter, EventState};
 use std::sync::Arc;
@@ -53,10 +53,10 @@ pub async fn run_action_pipeline(
     Ok(results)
 }
 
-pub async fn create_project_graph_context(
+pub async fn create_workspace_graph_context(
     session: &CliSession,
-) -> miette::Result<ProjectGraphBuilderContext> {
-    let context = ProjectGraphBuilderContext {
+) -> miette::Result<WorkspaceBuilderContext> {
+    let context = WorkspaceBuilderContext {
         config_loader: &session.config_loader,
         extend_project: Emitter::<ExtendProjectEvent>::new(),
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),

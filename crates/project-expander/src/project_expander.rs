@@ -23,7 +23,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
         let mut project = self.context.project.to_owned();
 
         debug!(
-            id = project.id.as_str(),
+            project_id = project.id.as_str(),
             "Expanding project {}",
             color::id(&project.id)
         );

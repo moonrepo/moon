@@ -412,10 +412,6 @@ async fn dispatch_job(
     action_context: Arc<ActionContext>,
 ) {
     let job = Job {
-        timeout: match &node {
-            ActionNode::RunTask(inner) => inner.timeout,
-            _ => None,
-        },
         node,
         node_index,
         context: job_context,

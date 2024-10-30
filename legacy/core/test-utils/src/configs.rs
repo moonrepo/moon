@@ -490,9 +490,10 @@ pub fn get_python_fixture_configs() -> (
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("python".try_into().unwrap(), "base".to_owned()),
-        ]))),
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
+            "python".try_into().unwrap(),
+            "base".to_owned(),
+        )]))),
         ..PartialWorkspaceConfig::default()
     };
 

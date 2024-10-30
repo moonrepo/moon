@@ -524,6 +524,7 @@ mod task_manager {
                 "javascript-tool",
                 "kotlin",
                 "node",
+                "python",
                 "node-application",
                 "node-library",
                 "rust",
@@ -789,6 +790,38 @@ mod task_manager {
                     "tasks/javascript.yml",
                     "tasks/node-application.yml",
                 ]
+            );
+        }
+
+        #[test]
+        fn creates_python_config() {
+            let sandbox = create_sandbox("inheritance/files");
+            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Python,
+                    &StackType::Frontend,
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
+
+            assert_eq!(
+                config.config.tasks,
+                BTreeMap::from_iter([
+                    (
+                        Id::raw("global"),
+                        stub_task("global", PlatformType::Unknown)
+                    ),
+                    (Id::raw("python"), stub_task("python", PlatformType::System)),
+                ]),
+            );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec!["tasks.yml", "tasks/python.yml",]
             );
         }
 

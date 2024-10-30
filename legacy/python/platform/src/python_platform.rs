@@ -8,7 +8,7 @@ use moon_config::{
 };
 use moon_console::Console;
 use moon_hash::ContentHasher;
-// use moon_logger::debug;
+use moon_logger::info;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
@@ -25,8 +25,6 @@ use std::{
     sync::Arc,
 };
 use tracing::instrument;
-
-// const LOG_TARGET: &str = "moon:python-platform";
 
 pub struct PythonPlatform {
     pub config: PythonConfig,
@@ -101,7 +99,7 @@ impl Platform for PythonPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, _project_source: &str) -> miette::Result<bool> {
-        // Single version policy / only a root package.json
+        // Single version policy / only a root requirements.txt
         Ok(true)
     }
 
@@ -111,12 +109,7 @@ impl Platform for PythonPlatform {
         _projects_list: &ProjectsSourcesList,
         _aliases_list: &mut ProjectsAliasesList,
     ) -> miette::Result<()> {
-        // Extract the alias from the Cargo project relative to the lockfile
-        // for (id, source) in projects_list {
-        //     let project_root = source.to_path(&self.workspace_root);
-
-        // }
-
+        // Not supported
         Ok(())
     }
 
@@ -168,11 +161,6 @@ impl Platform for PythonPlatform {
 
         self.toolchain.setup(&req, &mut last_versions).await?;
 
-        // info!(
-        //     target: LOG_TARGET,
-        //     "Setup toolchain"
-        // );
-
         Ok(())
     }
 
@@ -205,7 +193,12 @@ impl Platform for PythonPlatform {
                 .await?,
             );
         }
-        Ok(self.toolchain.setup(req, last_versions).await?)
+
+        let installed = self.toolchain.setup(req, last_versions).await?;
+
+        actions::setup_tool(self.toolchain.get_for_version(req)?, &self.workspace_root).await?;
+
+        Ok(installed)
     }
 
     #[instrument(skip_all)]

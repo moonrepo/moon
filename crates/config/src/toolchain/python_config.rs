@@ -9,7 +9,7 @@ pub struct PipConfig {
     /// List of arguments to append to `pip install` commands.
     pub install_args: Option<Vec<String>>,
 
-    /// The version of pip to download, install, and run `pip` tasks with.    
+    /// The version of pip to download, install, and run `pip` tasks with.
     pub version: Option<UnresolvedVersionSpec>,
 }
 
@@ -18,14 +18,9 @@ pub struct PythonConfig {
     /// Location of the WASM plugin to use for Python support.
     pub plugin: Option<PluginLocator>,
 
-    /// Options for pnpm, when used as a package manager.
+    /// Options for pip, when used as a package manager.
     #[setting(nested)]
     pub pip: Option<PipConfig>,
-
-    /// The relative root of the virtual environment workspace. Default to moon's
-    /// workspace root
-    #[setting(default = ".", skip)]
-    pub venv_root: String,
 
     #[setting(default = ".venv", skip)]
     pub venv_name: String,

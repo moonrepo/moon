@@ -39,7 +39,7 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
 The following fields are available on the
 [context object](https://docs.rs/proto_pdk/latest/proto_pdk/struct.ToolContext.html):
 
-- `proto_version` - The version of proto executing the plugin. Note that this version is for the
+- `proto_version` - The version of proto executing the plugin. Note that this version may be for the
   [`proto_core` crate](https://crates.io/crates/proto_core), and not the CLI. Patch numbers will
   drift, but major and minor numbers should be in sync.
 - `tool_dir` - A virtual path to the tool's directory for the current version.
@@ -102,7 +102,8 @@ pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
     Ok(Json(ToolMetadataOutput {
         name: "Node.js".into(),
         type_of: PluginType::Language,
-        plugin_version: Some(env!("CARGO_PKG_VERSION").into()),
+        minimum_proto_version: Some(Version::new(0, 42, 0)),
+        plugin_version: Version::parse(env!("CARGO_PKG_VERSION")).ok(),
         ..ToolMetadataOutput::default()
     }))
 }
@@ -229,8 +230,8 @@ pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
 ### Locating executables
 
 Even though a tool has been installed, we must inform proto of where to find executables. This can
-be achieved with the required `locate_executables` function. The `primary` field defines the
-location of the executable, relative from the installation directory.
+be achieved with the required `locate_executables` function. The `exes` field defines the location
+of the executables, relative from the installation directory.
 
 ```rust
 #[plugin_fn]
@@ -240,16 +241,30 @@ pub fn locate_executables(
     let env = get_host_environment()?;
 
     Ok(Json(LocateExecutablesOutput {
-         primary: Some(ExecutableConfig::new(
-            // Helper that chooses between distinct Unix or Windows values
-            env.os.for_native("bin/node", "node.exe"),
-            // Or the same value with optional Windows extension
-            // env.os.get_file_name("node", "exe")
-        )),
+        exes: HashMap::from_iter([
+            // Primary
+            (
+                "node".into(),
+                ExecutableConfig::new_primary(
+                    // Helper that chooses between distinct Unix or Windows values
+                    env.os.for_native("bin/node", "node.exe"),
+                    // Or the same value with optional Windows extension
+                    // env.os.get_file_name("node", "exe")
+                )
+            ),
+            // Secondary
+            (
+                "corepack".into(),
+                ExecutableConfig::new(env.os.for_native("bin/corepack", "corepack.exe"))
+            ),
+        ]),
         ..LocateExecutablesOutput::default()
     }))
 }
 ```
+
+> The main executable of the tool must be marked as primary, either with
+> `ExecutableConfig::new_primary`, or setting the `ExecutableConfig.primary` field to true.
 
 Furthermore, the `locate_executables` function can define a list of lookups for the globals
 installation directory. proto will loop through each lookup, and return the first directory that
@@ -486,16 +501,11 @@ plugin ID, the dependency to install, and an optional environment variable to th
 generate_globals_test!("id", "dependency", "GLOBAL_INSTALL_ROOT");
 ```
 
-And lastly, to test shims, use `generate_shims_test!`. This requires a plugin ID, but also supports
-additional arguments when creating more than 1 shim. This macro generates snapshots using
-[Insta](https://insta.rs/).
+And lastly, to test shims, use `generate_shims_test!`. This requires a plugin ID and a list of shim
+file names. This macro generates snapshots using [Insta](https://insta.rs/).
 
 ```rust
-// Only the single binary
-generate_shims_test!("id");
-
-// When creating alternate/additional globals
-generate_shims_test!("id", ["other", "another"]);
+generate_shims_test!("id", ["primary", "secondary"]);
 ```
 
 ## Building and publishing

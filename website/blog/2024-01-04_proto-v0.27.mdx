@@ -48,8 +48,8 @@ This is extremely useful in resetting to a clean state.
 
 ## Better version parsing for TOML plugins
 
-When our [TOML plugin](/docs/proto/toml-plugin) receives a version, we attempt to parse it into a
-valid semantic version. However, not all tools follow semver, as they may release without patch or
+When our [TOML plugin](/docs/proto/non-wasm-plugin) receives a version, we attempt to parse it into
+a valid semantic version. However, not all tools follow semver, as they may release without patch or
 minor versions, or use a different pre/build pattern.
 
 To remedy this, we've updated our regex to be more flexible, and to utilize named capture groups.
@@ -68,7 +68,7 @@ git-tag-pattern = "^@protostar/cli@((\\d+)\\.(\\d+)\\.(\\d+))"
 version-pattern = "^@protostar/cli@((?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+))"
 ```
 
-> Jump to the [official documentation](/docs/proto/toml-plugin#version-patterns) for more
+> Jump to the [official documentation](/docs/proto/non-wasm-plugin#version-patterns) for more
 > information!
 
 ## Other changes

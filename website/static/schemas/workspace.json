@@ -326,6 +326,11 @@
           "deprecated": true,
           "type": "boolean"
         },
+        "strictProjectIds": {
+          "title": "strictProjectIds",
+          "description": "Disallow referencing the original ID of a renamed project when building the project graph.",
+          "type": "boolean"
+        },
         "taskOutputBoundaries": {
           "title": "taskOutputBoundaries",
           "default": true,

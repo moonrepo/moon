@@ -301,6 +301,21 @@ docker:
 
 Enable or disable experiments that alter core functionality.
 
+### `strictProjectIds`<VersionLabel version="1.29.4" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#strictProjectIds" />
+
+When building the project graph, disallows referencing the original ID of a project (inferred from
+the folder name) when the project has been renamed to a new ID using the [`id`](./project#id)
+setting.
+
+Defaults to `false` but will be enabled to `true` in the future.
+
+```yaml title=".moon/workspace.yml" {1,2}
+experiments:
+  strictProjectIds: true
+```
+
 ## `extensions`<VersionLabel version="1.20.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />

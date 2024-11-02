@@ -33,6 +33,7 @@ pub struct ProjectGraphBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
+    pub strict_project_ids: bool,
     pub toolchain_config: &'app ToolchainConfig,
     pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
@@ -606,6 +607,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         let context = self.context();
         let mut configs = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();
+        let mut dupe_original_ids = FxHashSet::default();
 
         for (id, source) in sources {
             debug!(
@@ -621,12 +623,28 @@ impl<'app> ProjectGraphBuilder<'app> {
             // Track ID renames
             if let Some(new_id) = &config.id {
                 if new_id != id {
-                    renamed_ids.insert(id.to_owned(), new_id.to_owned());
+                    if renamed_ids.contains_key(id) {
+                        dupe_original_ids.insert(id.to_owned());
+                    } else {
+                        renamed_ids.insert(id.to_owned(), new_id.to_owned());
+                    }
+
                     *id = new_id.to_owned();
                 }
             }
 
             configs.insert(config.id.clone().unwrap_or(id.to_owned()), config);
+        }
+
+        if !dupe_original_ids.is_empty() {
+            trace!(
+                original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
+                "Found multiple projects with the same original ID before being renamed to a custom ID; will ignore these IDs within lookups"
+            );
+
+            for dupe_id in dupe_original_ids {
+                renamed_ids.remove(&dupe_id);
+            }
         }
 
         debug!("Loaded {} project configs", configs.len());
@@ -656,6 +674,14 @@ impl<'app> ProjectGraphBuilder<'app> {
                 None => Id::raw(project_locator),
             }
         };
+
+        if self
+            .context
+            .as_ref()
+            .is_some_and(|ctx| ctx.strict_project_ids)
+        {
+            return id;
+        }
 
         match self.renamed_ids.get(&id) {
             Some(new_id) => new_id.to_owned(),

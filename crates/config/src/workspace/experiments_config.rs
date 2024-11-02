@@ -17,6 +17,11 @@ cacheable!(
         #[setting(default = true)]
         pub strict_project_aliases: bool,
 
+        /// Disallow referencing the original ID of a renamed project when
+        /// building the project graph.
+        // #[setting(default = true)]
+        pub strict_project_ids: bool,
+
         /// Disallow task relationships with different `runInCI` options.
         #[setting(default = true)]
         pub disallow_run_in_ci_mismatch: bool,

@@ -115,6 +115,11 @@ export interface ExperimentsConfig {
 	 */
 	strictProjectAliases?: boolean;
 	/**
+	 * Disallow referencing the original ID of a renamed project when
+	 * building the project graph.
+	 */
+	strictProjectIds: boolean;
+	/**
 	 * @default true
 	 * @deprecated
 	 */
@@ -438,6 +443,11 @@ export interface PartialExperimentsConfig {
 	 * @deprecated
 	 */
 	strictProjectAliases?: boolean | null;
+	/**
+	 * Disallow referencing the original ID of a renamed project when
+	 * building the project graph.
+	 */
+	strictProjectIds?: boolean | null;
 	/**
 	 * @default true
 	 * @deprecated

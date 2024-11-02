@@ -16,6 +16,7 @@
 
 #### ⚙️ Internal
 
+- Updated dependencies.
 - Updated proto to v0.42.0 (from 0.41.3).
 
 ## 1.29.3

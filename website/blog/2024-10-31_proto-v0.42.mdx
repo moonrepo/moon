@@ -1,0 +1,107 @@
+---
+slug: proto-v0.42
+title: proto v0.42 - New bin linking, JSON/YAML plugins, and more
+authors: [milesj]
+tags: [bin, link, strategy, json, yaml, plugin]
+image: ./img/proto/v0.42.png
+---
+
+import NonWasmTabs from '@site/src/components/NonWasmTabs';
+
+Happy Halloween 🎃! In this release, we have a new bin linking strategy, and more schema plugin
+formats.
+
+<!--truncate-->
+
+## New bin linking strategy
+
+Early on in proto's development, we added `~/.proto/bin` symlink support for installed tools, but
+chose to base it on the versions globally pinned in `~/.proto/.prototools`. We opted for this
+approach as there wasn't a better solution at the time, and we merely wanted an alternative to
+shims. Since then, bin linking has become an after-thought.
+
+However, a suggestion from [@meop](https://github.com/meop) sparked a great idea for the future of
+bin linking. Instead of symlinking bins based on versions pinned in `~/.proto/.prototools`, bins are
+now symlinked based on all of the versions installed, but grouped according to version ranges. The
+main binary will always point to the highest installed version, while we also create binaries for
+the highest major, and highest major + minor combinations.
+
+For example, for Node.js (`node`), we may have the following:
+
+- `~/.proto/bin/node` - Points to the highest version.
+- `~/.proto/bin/node-<major>` - Points to the highest version within that major range (`~major`). Is
+  created for each separate major version, for example: `node-20`, `node-22`.
+- `~/.proto/bin/node-<major>.<minor>` - Points to the highest version within that major + minor
+  range (`~major.minor`). Is created for each separate major + minor version, for example:
+  `node-20.1`, `node-22.4`.
+- `~/.proto/bin/node-canary` - Points to a canary install, if it exists.
+
+Thanks to this approach, you could easily execute commands with specific versions of a tool,
+_without_ having to set environment variables, update configurations, or force overrides. Just
+execute the binary directly!
+
+```shell
+$ node --version && which node
+23.1.0
+~/.proto/bin/node -> ~/.proto/tools/node/23.1.0/bin/node
+
+$ node-22 --version && which node-22
+22.5.1
+~/.proto/bin/node-22 -> ~/.proto/tools/node/22.5.1/bin/node
+```
+
+> This change is not retroactive and will slowly be applied tool-by-tool when it is installed. To
+> force relinking of all binaries, you can use `proto regen --bin` after upgrading.
+
+## Support for JSON and YAML based plugins
+
+Support for TOML based plugins, an alternative to WASM based plugins, was integrated in proto v0.7;
+which is 35 versions ago! Since then, we've had great success with TOML plugins, as they represent
+about 97% of all plugins in the registry. The other 3% is WASM of course.
+
+However, TOML is a configuration format that is quite unknown outside of the Rust ecosystem, and has
+a bit of a learning curve for new users. To ease the plugin authoring process, we now support JSON
+and YAML based plugins! To demonstrate this, here's our official moon plugin in all 3 formats:
+
+<NonWasmTabs
+  title="moon"
+  data={{
+    name: 'moon',
+    type: 'cli',
+    platform: {
+      linux: {
+        downloadFile: 'moon-{arch}-unknown-linux-{libc}',
+      },
+      macos: {
+        downloadFile: 'moon-{arch}-apple-darwin',
+      },
+      windows: {
+        downloadFile: 'moon-{arch}-pc-windows-msvc.exe',
+      },
+    },
+    install: {
+      downloadUrl: 'https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}',
+      downloadUrlCanary:
+        'https://github.com/moonrepo/moon/releases/download/canary/{download_file}',
+    },
+    resolve: {
+      gitUrl: 'https://github.com/moonrepo/moon',
+    },
+    metadata: {
+      selfUpgradeCommands: ['upgrade'],
+    },
+  }}
+/>
+
+> JSON and YAML use camelCase keys, while TOML uses kebab-case.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.42.0) for a full list
+of changes.
+
+- Each tool's primary executable file name is no longer based on the plugin's identifier, and is now
+  based on what's configured in the new `LocateExecutablesOutput.exes` setting.
+- We now cache all text-based HTTP requests made from WASM plugins for 12 hours. This should greatly
+  reduce the overhead cost of making requests, and will help for situations where an internet
+  connection is lost.

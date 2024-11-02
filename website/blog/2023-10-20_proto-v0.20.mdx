@@ -63,8 +63,8 @@ used by popular tools like [Zig](https://ziglang.org/).
 
 If you're building a plugin for a tool that uses minisign, you can use the new
 [`checksum_public_key`](/docs/proto/wasm-plugin#downloading-pre-builts) (WASM) or
-[`install.checksum-public-key`](/docs/proto/toml-plugin#downloading-and-installing) (TOML) field to
-provide the public key for use in verification.
+[`install.checksum-public-key`](/docs/proto/non-wasm-plugin#downloading-and-installing) (TOML) field
+to provide the public key for use in verification.
 
 When the checksum URL ends in a `.minisig` extension, proto will automatically use minisign for
 checksum verification!

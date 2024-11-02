@@ -42,6 +42,11 @@ tasks:
       - '/.prettierignore'
       - '/prettier.config.js'
 
+  format-write:
+    extends: 'format'
+    args: '--write'
+    local: true
+
   lint:
     command: 'eslint'
     args:

@@ -282,7 +282,7 @@ const sidebars: SidebarsConfig = {
 			type: 'category',
 			label: 'Plugins',
 			link: { type: 'doc', id: 'proto/plugins' },
-			items: ['proto/toml-plugin', 'proto/wasm-plugin'],
+			items: ['proto/wasm-plugin', 'proto/non-wasm-plugin'],
 		},
 		{
 			type: 'category',

@@ -1,0 +1,301 @@
+---
+title: Non-WASM plugin
+sidebar_label: Non-WASM
+toc_max_heading_level: 5
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+import NonWasmTabs from '@site/src/components/NonWasmTabs';
+
+The non-WASM plugin is by design, very simple. It's a JSON, TOML, or YAML file that describes a
+schema for the tool, how it should be installed, and how it should be invoked. Since this is a
+static configuration file, it does not support any logic or complex behavior, and is merely for
+simple and common use cases, like CLIs.
+
+:::info
+
+JSON and YAML support was added in proto v0.42.
+
+:::
+
+## Create a plugin
+
+Let's start by creating a new plugin, and defining the `name` and `type` fields. The type can either
+be `language`, `dependency-manager`, `package-manager`, or `cli`. For this example, we'll create a
+plugin for our fake product called Protostar, a CLI tool.
+
+<NonWasmTabs title="protostar" data={{ name: 'Protostar', type: 'cli' }} />
+
+### Platform variations
+
+Native tools are often platform specific, and proto supports this by allowing you to define
+variations based on operating system using the `[platform]` section. For non-native tools, this
+section can typically be skipped.
+
+This section requires a mapping of Rust
+[`OS` strings](https://doc.rust-lang.org/std/env/consts/constant.OS.html) to platform settings. The
+following settings are available:
+
+- `archs` - A list of architectures supported for this platform. If not provided, supports all
+  archs.
+- `archive-prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
+  the direct folder within the archive that contains the tool, and will be removed when unpacking
+  the archive. If there is no prefix folder within the archive, this setting can be omitted.
+- `exes-dir` - A relative path to a directory that contains pre-installed executables.
+- `exe-path` - The path to the main executable binary within the archive (without the prefix). If
+  the tool is distributed as a single binary, this setting can be typically omitted.
+- `checksum-file` - Name of the checksum file to verify the downloaded file with. If the tool does
+  not support checksum verification, this setting can be omitted.
+- `download-file` (required) - Name of the file to download.
+  [Learn more about downloading](#downloading-and-installing).
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    platform: {
+      linux: {
+        archivePrefix: 'protostar-linux',
+        exePath: 'bin/protostar',
+        checksumFile: 'protostar-{arch}-unknown-linux-{libc}.sha256',
+        downloadFile: 'protostar-{arch}-unknown-linux-{libc}.tar.gz',
+      },
+      macos: {
+        archivePrefix: 'protostar-macos',
+        exePath: 'bin/protostar',
+        checksumFile: 'protostar-{arch}-apple-darwin.sha256',
+        downloadFile: 'protostar-{arch}-apple-darwin.tar.xz',
+      },
+      windows: {
+        archivePrefix: 'protostar-windows',
+        exePath: 'bin/protostar.exe',
+        checksumFile: 'protostar-{arch}-pc-windows-msvc.sha256',
+        downloadFile: 'protostar-{arch}-pc-windows-msvc.zip',
+      },
+    },
+  }}
+/>
+
+You may have noticed tokens above, like `{arch}`. These are special tokens that are replaced with a
+dynamic value at runtime, based on the current host machine executing the code. The following tokens
+are available:
+
+- `{version}` - The currently resolved version, as a fully-qualified semantic or calendar version.
+- `{versionMajor}` / `{versionYear}` - Only the major version. <VersionLabel version="0.41.4" />
+- `{versionMajorMinor}` / `{versionYearMonth}` - Only the major + minor versions.
+  <VersionLabel version="0.41.4" />
+- `{versionPrerelease}` - The prerelease identifier, if applicable. Returns an empty string
+  otherwise. <VersionLabel version="0.41.4" />
+- `{versionBuild}` - The build identifier, if applicable. Returns an empty string otherwise.
+  <VersionLabel version="0.41.4" />
+- `{arch}` - The architecture of the host machine, like `x86_64`. These values map to Rust's
+  [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html), but can be
+  customized with [`install.arch`](#downloading-and-installing).
+- `{os}` - The operating system of the host machine, like `windows`. These values map to Rust's
+  [`OS` constant](https://doc.rust-lang.org/std/env/consts/constant.OS.html).
+- `{libc}` - For Linux machines, this is the current libc implementation, either `gnu` or `musl`.
+  <VersionLabel version="0.31.2" />
+
+### Downloading and installing
+
+A non-WASM plugin _only_ supports downloading pre-built tools, typically as an archive, and does
+_not_ support building from source. The `[install]` section can be used to configure how the tool
+should be downloaded and installed into the toolchain. The following settings are available:
+
+- `arch` - A mapping of Rust
+  [`ARCH` strings](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html) to custom values for
+  the `{arch}` token. This is useful if the tool has different terminology.
+- `libc` - A mapping of custom values for the `{libc}` token.
+- `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
+  support checksum verification, this setting can be omitted.
+- `checksum-url-canary` - A URL for canary releases.
+- `checksum-public-key` - Public key used for verifying checksums. Only used for `.minisig` files.
+- `download-url` (required) - A secure URL to download the tool/archive.
+- `download-url-canary` - A URL for canary releases.
+- `primary` - Configures the primary executable.
+- `secondary` - Configures secondary executables.
+
+The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
+the values from the `[platform]` section.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    install: {
+      checksumUrl:
+        'https://github.com/moonrepo/protostar/releases/download/v{version}/{checksum_file}',
+      downloadUrl:
+        'https://github.com/moonrepo/protostar/releases/download/v{version}/{download_file}',
+      arch: {
+        aarch64: 'arm64',
+        x86_64: 'x64',
+      },
+    },
+  }}
+/>
+
+#### Executables
+
+The available executables (bins and shims) can be customized with the `[install.exes]` section,
+which is required. This setting requires a map, where the key is the executable file name, and the
+value is an object of the following options:
+
+- `exe-path` - The file to execute, relative from the tool directory. On Windows, the `.exe`
+  extension will automatically be appended. If you need more control over platform variance, use
+  `[platform.*.exe-path]` instead.
+- `no-bin` - Do not symlink a binary in `~/.proto/bin`.
+- `no-shim`- Do not generate a shim in `~/.proto/shims`.
+- `parent-exe-name` - Name of a parent executable required to execute the executable path. For
+  example, `node` is required for `.js` files.
+- `primary` - Is the main executable in the tool. There can only be 1 primary!
+  <VersionLabel version="0.42.0" />
+- `shim-before-args` - Custom args to prepend to user-provided args within the generated shim.
+- `shim-after-args` - Custom args to append to user-provided args within the generated shim.
+- `shim-env-vars` - Custom environment variables to set when executing the shim.
+
+This field supports both the required primary executable, and optional secondary executables. The
+primary executable must be marked with `primary = true`.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    install: {
+      exes: {
+        protostar: {
+          exePath: 'bins/protostar',
+          primary: true,
+          shimBeforeArgs: ['--verbose'],
+        },
+        'protostar-debug': {
+          exePath: 'bins/protostar-debug',
+          noShim: true,
+        },
+      },
+    },
+  }}
+/>
+
+#### Global packages
+
+The `[packages]` sections can be configured that provides information about where global packages
+are stored.
+
+- `globals-lookup-dirs` - A list of directories where global binaries are stored. This setting
+  supports interpolating environment variables via the syntax `$ENV_VAR`.
+- `globals-prefix` - A string that all package names are prefixed with. For example, Cargo/Rust
+  binaries are prefixed with `cargo-`.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    packages: {
+      globalsLookupDirs: ['$PROTOSTAR_HOME/bin', '$HOME/.protostar/bin'],
+    },
+  }}
+/>
+
+### Resolving versions
+
+Now that the tool can be downloaded and installed, we must configure how to resolve available
+versions. Resolving is configured through the `[resolve]` section, which supports 2 patterns to
+resolve with: Git tags or a JSON manifest.
+
+#### Git tags
+
+To resolve a list of available versions using Git tags, the following settings are available:
+
+- `git-url` (required) - The remote URL to fetch tags from.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    resolve: {
+      gitUrl: 'https://github.com/moonrepo/protostar',
+    },
+  }}
+/>
+
+#### JSON manifest
+
+To resolve a list of available versions using a JSON manifest, the following settings are available:
+
+- `manifest-url` (required) - A URL that returns a JSON response of all versions. This response
+  _must be_ an array of strings, or an array of objects.
+- `manifest-version-key` - If the response is an array of objects, this is the key to extract the
+  version from. If the response is an array of strings, this setting can be omitted. Defaults to
+  `version`.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    resolve: {
+      manifestUrl: 'https://someregistry.com/protostar/versions.json',
+      manifestVersionKey: 'latest_version',
+    },
+  }}
+/>
+
+#### Versions and aliases<VersionLabel version="0.36.0" />
+
+As an alternative, we also support a static configuration of explicit versions and aliases. This is
+useful if you have an internal tool that is relatively stable, or does not provide a means in which
+to extract version information.
+
+- `versions` - A list of versions.
+- `aliases` - A mapping of alias names to versions.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    resolve: {
+      versions: ['1.2.3', '1.2.4', '1.2.5'],
+      aliases: {
+        stable: '1.2.4',
+      },
+    },
+  }}
+/>
+
+#### Version patterns
+
+When a version is found, either from a git tag or manifest key, we attempt to parse it into a
+[valid version](./version-spec) using a Rust based regex pattern and the `version-pattern` setting.
+
+This pattern uses named regex capture groups (`(?<name>...)`) to build the version, and to support
+found versions that are not fully-qualified (they may be missing patch or minor versions). The
+following groups are supported:
+
+- `major` / `year` - The major version number. Defaults to `0` if missing.
+- `minor` / `month` - The minor version number. Defaults to `0` if missing.
+- `patch` / `day` - The patch version number. Defaults to `0` if missing.
+- `pre` - The pre-release identifier, like "rc.0" or "alpha.0". Supports an optional leading `-`.
+  Does nothing if missing.
+- `build` - The build metadata, like a timestamp. Supports an optional leading `+`. Does nothing if
+  missing.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    resolve: {
+      versionPattern: '^@protostar/cli@((?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+))',
+    },
+  }}
+/>
+
+> If no named capture groups are found, the match at index `1` is used as the version.
+
+### Detecting versions
+
+And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
+the `[detect]` setting. At this time, we only support 1 setting:
+
+- `version-files` - A list of version files to extract from. The contents of these files can _only_
+  be the version string itself.
+
+<NonWasmTabs
+  title="protostar"
+  data={{
+    detect: {
+      versionFiles: ['.protostar-version', '.protostarrc'],
+    },
+  }}
+/>

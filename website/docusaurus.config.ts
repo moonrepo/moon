@@ -238,6 +238,10 @@ const config: Config = {
 						from: '/docs/guides/git-hooks',
 						to: '/docs/guides/vcs-hooks',
 					},
+					{
+						from: '/docs/proto/toml-plugin',
+						to: '/docs/proto/non-wasm-plugin',
+					},
 				],
 			},
 		],

@@ -1,5 +1,5 @@
 # A TOML plugin for proto:
-# https://moonrepo.dev/docs/proto/toml-plugin
+# https://moonrepo.dev/docs/proto/non-wasm-plugin
 
 name = "moon"
 type = "cli"

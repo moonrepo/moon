@@ -231,7 +231,7 @@ pub struct TemplateConfig {
     pub description: String,
 
     /// A pre-populated destination to scaffold to, relative from the
-    /// workspace root.
+    /// workspace root when leading with `/`, otherwise the working directory.
     pub destination: Option<String>,
 
     /// Extends one or many other templates.

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated codegen/template `destination` to be relative from the workspace root if prefixed with
+  `/`, otherwise the current working directory.
+
+#### 🐞 Fixes
+
+- Fixed an issue where `[working_dir]` and `[workspace_root]` variables were not working in the
+  `template.yml` `destination` setting.
+
 ## 1.29.3
 
 #### 🐞 Fixes

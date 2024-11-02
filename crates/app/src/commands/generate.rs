@@ -59,9 +59,11 @@ pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
 
     // Gather variables
     let mut context = gather_variables(&args, &template, &session.console)?;
+    context.insert("working_dir", &session.working_dir);
+    context.insert("workspace_root", &session.workspace_root);
 
     // Determine the destination path
-    let relative_dest = PathBuf::from(match &args.dest {
+    let relative_dest = match &args.dest {
         Some(dest) => dest.to_owned(),
         None => {
             if let Some(dest) = &template.config.destination {
@@ -78,17 +80,20 @@ pub async fn generate(session: CliSession, args: GenerateArgs) -> AppResult {
                     .into_diagnostic()?
             }
         }
+    };
+    let relative_from_root = relative_dest.starts_with('/');
+    let relative_dest = template.interpolate_path(&PathBuf::from(relative_dest), &context)?;
+    let dest = relative_dest.to_logical_path(if relative_from_root {
+        &session.workspace_root
+    } else {
+        &session.working_dir
     });
-    let relative_dest = template.interpolate_path(&relative_dest, &context)?;
-    let dest = relative_dest.to_logical_path(&session.working_dir);
 
     debug!(dest = ?dest, "Destination path set");
 
     // Inject built-in context variables
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
-    context.insert("working_dir", &session.working_dir);
-    context.insert("workspace_root", &session.workspace_root);
 
     // Load template files and determine when to overwrite
     template.load_files(&dest, &context)?;

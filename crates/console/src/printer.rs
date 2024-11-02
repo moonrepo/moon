@@ -8,7 +8,7 @@ const PASSED_COLORS: [u8; 4] = [35, 42, 49, 86]; // green
 const FAILED_COLORS: [u8; 4] = [124, 125, 126, 127]; // red
 const MUTED_COLORS: [u8; 4] = [240, 242, 244, 246]; // gray
 const SETUP_COLORS: [u8; 4] = [198, 205, 212, 219]; // pink
-const ANNOUNCEMENT_COLORS: [u8; 4] = [200, 214, 220, 226]; // yellow
+const ANNOUNCEMENT_COLORS: [u8; 4] = [208, 214, 220, 226]; // yellow
 
 #[derive(Clone, Copy)]
 pub enum Checkpoint {

@@ -241,7 +241,7 @@ const config: Config = {
 					{
 						from: '/docs/proto/toml-plugin',
 						to: '/docs/proto/non-wasm-plugin',
-					}
+					},
 				],
 			},
 		],

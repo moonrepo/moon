@@ -11,17 +11,18 @@ function convertToKebabCase(data: object, parentKey?: string): object {
 	Object.entries(data).forEach(([key, value]) => {
 		const childKey = parentKey === 'arch' || parentKey === 'exes' ? key : kebabCase(key);
 
-		result[childKey] = value && typeof value === 'object' && !Array.isArray(value)
-			? convertToKebabCase(value as object, key)
-			: value;
+		result[childKey] =
+			value && typeof value === 'object' && !Array.isArray(value)
+				? convertToKebabCase(value as object, key)
+				: value;
 	});
 
 	return result;
 }
 
 export interface NonWasmTabsProps {
-	data: object,
-	title?: string,
+	data: object;
+	title?: string;
 }
 
 export default function NonWasmTabs({ data = {}, title }: NonWasmTabsProps) {

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.29.4
 
 #### 🚀 Updates
 

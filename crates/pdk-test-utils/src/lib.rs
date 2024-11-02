@@ -55,6 +55,7 @@ pub fn create_plugin_container_with_config(
     manifest.config.extend(config);
 
     let funcs = create_host_functions(HostData {
+        cache_dir: sandbox.join(".moon/cache"),
         http_client: loader.get_client().unwrap().clone(),
         virtual_paths,
         working_dir: sandbox.to_path_buf(),

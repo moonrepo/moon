@@ -7,6 +7,7 @@ use tracing::debug;
 #[derive(Debug, Default, Clone)]
 pub struct MoonEnvironment {
     pub id_file: PathBuf,
+    pub cache_dir: PathBuf,
     pub plugins_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub templates_dir: PathBuf,
@@ -31,6 +32,7 @@ impl MoonEnvironment {
 
         Ok(MoonEnvironment {
             id_file: store_root.join("id"),
+            cache_dir: store_root.join("cache"),
             plugins_dir: store_root.join("plugins"),
             temp_dir: store_root.join("temp"),
             templates_dir: store_root.join("templates"),

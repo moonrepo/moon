@@ -9,8 +9,14 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where moon would attempt to execute a folder if it has the same name as the current
+  shell.
 - Fixed an issue where `[working_dir]` and `[workspace_root]` variables were not working in the
   `template.yml` `destination` setting.
+
+#### ⚙️ Internal
+
+- Updated proto to v0.42.0 (from 0.41.3).
 
 ## 1.29.3
 

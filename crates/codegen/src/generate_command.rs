@@ -20,7 +20,7 @@ pub struct GenerateArgs {
     #[arg(help = "Name of template to generate")]
     pub name: String,
 
-    #[arg(help = "Destination path, relative from the current working directory")]
+    #[arg(help = "Destination path, relative from workspace root or working directory")]
     pub dest: Option<String>,
 
     #[arg(

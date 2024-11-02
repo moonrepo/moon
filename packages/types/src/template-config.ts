@@ -109,7 +109,7 @@ export interface TemplateConfig {
 	description: string;
 	/**
 	 * A pre-populated destination to scaffold to, relative from the
-	 * workspace root.
+	 * workspace root when leading with `/`, otherwise the working directory.
 	 */
 	destination: string | null;
 	/** Extends one or many other templates. */
@@ -214,7 +214,7 @@ export interface PartialTemplateConfig {
 	description?: string | null;
 	/**
 	 * A pre-populated destination to scaffold to, relative from the
-	 * workspace root.
+	 * workspace root when leading with `/`, otherwise the working directory.
 	 */
 	destination?: string | null;
 	/** Extends one or many other templates. */

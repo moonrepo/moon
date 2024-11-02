@@ -55,6 +55,40 @@ fn generates_files_into_default_dest() {
 }
 
 #[test]
+fn generates_files_into_workspace_relative_dest() {
+    let sandbox = generate_sandbox();
+    sandbox.create_file("sub/dir/file.txt", "");
+
+    sandbox
+        .run_moon(|cmd| {
+            cmd.arg("generate")
+                .arg("dest")
+                .arg("/custom/dest")
+                .current_dir(sandbox.path().join("sub/dir"));
+        })
+        .success();
+
+    assert!(sandbox.path().join("custom/dest/file.txt").exists());
+}
+
+#[test]
+fn generates_files_into_cwd_relative_dest() {
+    let sandbox = generate_sandbox();
+    sandbox.create_file("sub/dir/file.txt", "");
+
+    sandbox
+        .run_moon(|cmd| {
+            cmd.arg("generate")
+                .arg("dest")
+                .arg("custom/dest")
+                .current_dir(sandbox.path().join("sub/dir"));
+        })
+        .success();
+
+    assert!(sandbox.path().join("sub/dir/custom/dest/file.txt").exists());
+}
+
+#[test]
 fn doesnt_generate_files_when_dryrun() {
     let sandbox = generate_sandbox();
 

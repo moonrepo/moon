@@ -53,9 +53,12 @@ description: |
 
 <HeadingApiLink to="/api/types/interface/TemplateConfig#destination" />
 
-An optional file path, relative from the workspace root, in which this template should be generated
-into. This provides a mechanism for standardizing a destination location, and avoids having to
-manually pass a destination to [`moon generate`](../commands/generate).
+An optional file path in which this template should be generated into. This provides a mechanism for
+standardizing a destination location, and avoids having to manually pass a destination to
+[`moon generate`](../commands/generate).
+
+If the destination is prefixed with `/`, it will be relative from the workspace root, otherwise it
+is relative from the current working directory.
 
 ```yaml title="template.yml"
 destination: 'packages/[name]'

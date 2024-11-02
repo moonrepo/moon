@@ -15,7 +15,7 @@
     },
     "destination": {
       "title": "destination",
-      "description": "A pre-populated destination to scaffold to, relative from the workspace root.",
+      "description": "A pre-populated destination to scaffold to, relative from the workspace root when leading with /, otherwise the working directory.",
       "anyOf": [
         {
           "type": "string"
@@ -24,7 +24,7 @@
           "type": "null"
         }
       ],
-      "markdownDescription": "A pre-populated destination to scaffold to, relative from the workspace root."
+      "markdownDescription": "A pre-populated destination to scaffold to, relative from the workspace root when leading with `/`, otherwise the working directory."
     },
     "extends": {
       "title": "extends",

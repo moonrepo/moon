@@ -177,6 +177,7 @@ impl<T: Plugin> PluginRegistry<T> {
         let functions = create_host_functions(
             self.host_data.clone(),
             HostData {
+                cache_dir: self.host_data.moon_env.cache_dir.clone(),
                 http_client: self.loader.get_client()?.clone(),
                 virtual_paths: self.virtual_paths.clone(),
                 working_dir: self.host_data.moon_env.working_dir.clone(),

@@ -4,6 +4,9 @@
 
 #### 🚀 Updates
 
+- Added an `experiments.strictProjectIds` setting to `.moon/workspace.yml`. When enabled, will
+  disallow using original IDs for renamed projects (via the `id` setting) when building the project
+  graph.
 - Updated codegen/template `destination` to be relative from the workspace root if prefixed with
   `/`, otherwise the current working directory.
 

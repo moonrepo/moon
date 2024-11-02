@@ -39,7 +39,7 @@ can be ignored.
 
 Alternatively, we also support a non-shim based approach, which creates symlinks to a versioned
 tool's primary and secondary executables. For each tool installed in proto, a symlink will exist at
-`~/.proto/bin` for the globally pinned version (configured in [`~/.proto/.prototools`](./config)).
+`~/.proto/bin`.
 
 ```shell
 $ node --version
@@ -49,10 +49,26 @@ $ which node
 ~/.proto/bin/node -> ~/.proto/tools/node/20.0.0/bin/node
 ```
 
-The version of a tool that's symlinked _is not_ dynamic and is manually linked by pinning the chosen
-version with [`proto install --pin=global`](./commands/install) or
-[`proto pin --global`](./commands/pin). This also happens automatically the first time a tool is
-installed.
+When a tool is installed into proto, we symlink many binaries based on all the versions that are
+installed in the toolchain. The primary binary will always point to the highest installed version,
+while we also create binaries for the highest major, and highest major + minor combinations. For
+example:
+
+- `~/.proto/bin/node` - Points to the highest version.
+- `~/.proto/bin/node-<major>` - Points to the highest version within that major range (`~major`). Is
+  created for each separate major version, for example: `node-20`, `node-22`.
+- `~/.proto/bin/node-<major>.<minor>` - Points to the highest version within that major + minor
+  range (`~major.minor`). Is created for each separate major + minor version, for example:
+  `node-20.1`, `node-22.4`.
+- `~/.proto/bin/node-canary` - Points to a canary install, if it exists.
+
+```shell
+$ node-22 --version
+22.5.1
+
+$ which node
+~/.proto/bin/node-22 -> ~/.proto/tools/node/22.5.1/bin/node
+```
 
 :::warning
 
@@ -119,7 +135,7 @@ comparison table outlining the features each workflow supports.
 |                                | Shims                  | Bins | Activate                       |
 | ------------------------------ | ---------------------- | ---- | ------------------------------ |
 | Runtime version detection      | 🟢                     | 🔴   | 🟠 only when the hook triggers |
-| Supports multiple versions     | 🟢                     | 🔴   | 🟢                             |
+| Supports multiple versions     | 🟢                     | 🟢   | 🟢                             |
 | Fixed to a single version      | 🟠 with arg or env var | 🟢   | 🟠 if not using shims          |
 | Includes all tool executables  | 🔴                     | 🔴   | 🟢                             |
 | Includes tool globals/packages | 🔴                     | 🔴   | 🟢                             |

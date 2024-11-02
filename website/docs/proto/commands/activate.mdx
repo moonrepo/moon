@@ -52,6 +52,14 @@ Learn more about
 The following activation steps should be added _after_ all environment variable and `PATH`
 modifications have happened in your shell, typically at the end of your shell profile.
 
+:::warning
+
+Any `PATH` modifications _after_ `proto activate` will be lost when activation triggers. This
+happens because we take a snapshot of `PATH` when executed from your shell, and reset `PATH` on each
+activation to the snapshot. To avoid this problem, modify `PATH` before `proto activate`.
+
+:::
+
 #### Bash
 
 Add the following line to the end of your `~/.bashrc` or `~/.bash_profile`.

@@ -24,7 +24,7 @@ pub async fn install_deps(
                     "Install pip dependencies from install args",
                 )?;
 
-                let mut args = vec!["-m", "pip", "install", "--quiet"];
+                let mut args = vec!["-m", "pip", "install"];
                 if pip_config.install_args.is_some() {
                     args.extend(
                         pip_config
@@ -50,7 +50,7 @@ pub async fn install_deps(
                 format!("Install pip dependencies from {}", color::path(&req)),
             )?;
 
-            let mut args = vec!["-m", "pip", "install", "--quiet"];
+            let mut args = vec!["-m", "pip", "install"];
             if pip_config.install_args.is_some() {
                 args.extend(
                     pip_config

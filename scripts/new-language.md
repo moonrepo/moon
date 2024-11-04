@@ -17,9 +17,9 @@ enum LanguageType {
 }
 ```
 
-- [ ] Updated enum
-- [ ] Verified all `match` callsites handle the new variant
-- [ ] Ran `just schemas` and updated the JSON schemas/types
+- [Done ] Updated enum
+- [Done ] Verified all `match` callsites handle the new variant
+- [Done ] Ran `just schemas` and updated the JSON schemas/types
 
 ### Create language crate
 
@@ -47,9 +47,9 @@ can be used as a reference.
 moon implements a lot of inference, detection, and automation, to avoid explicit configuration from
 the developer. The `moon_toolchain` handles this, and must be updated to support the new language.
 
-- [ ] Updated `languages.rs`
-- [ ] Updated `detect_language_files`
-- [ ] Updated `detect_project_language`
+- [done ] Updated `languages.rs`
+- [done ] Updated `detect_language_files`
+- [done ] Updated `detect_project_language`
 
 > The `detect_task_platform` and `detect_project_platform` can be skipped as it's required for
 > tier 2.
@@ -58,10 +58,10 @@ the developer. The `moon_toolchain` handles this, and must be updated to support
 
 Of course this should all be tested.
 
-- [ ] Added fixture to `crates/config/tests/__fixtures__/inheritance`
-- [ ] Added fixture to `crates/project-builder/tests/__fixtures__/langs`
-- [ ] Added fixture to `crates/task-builder/tests/__fixtures__/builder/platforms`
-- [ ] Updated `crates/config/tests/inherited_tasks_config_test.rs`
+- [Done ] Added fixture to `crates/config/tests/__fixtures__/inheritance`
+- [Done ] Added fixture to `crates/project-builder/tests/__fixtures__/langs`
+- [Done ] Added fixture to `crates/task-builder/tests/__fixtures__/builder/platforms`
+- [Done ] Updated `crates/config/tests/inherited_tasks_config_test.rs`
 
 ### Create a pull request
 
@@ -101,11 +101,11 @@ pub struct ToolchainConfig {
 }
 ```
 
-- [ ] Created language struct
-- [ ] Created config template file
-- [ ] Updated `ToolchainConfig` struct
-- [ ] Ran `just schemas`
-- [ ] Add `.prototools` support in `crates/config/src/toolchain_config.rs`
+- [Done ] Created language struct
+- [Done ] Created config template file
+- [Done ] Updated `ToolchainConfig` struct
+- [Done ] Ran `just schemas`
+- [Done ] Add `.prototools` support in `crates/config/src/toolchain_config.rs`
 - [ ] Add tests to `crates/config/tests/toolchain_config_test.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
@@ -119,16 +119,16 @@ enum PlatformType {
 }
 ```
 
-- [ ] Updated enum
+- [Done ] Updated enum
 - [ ] Verified all `match` callsites handle the new variant
-- [ ] Ran `just schemas`
+- [Done ] Ran `just schemas`
 
 ### Update `moon_toolchain` crate
 
 Tasks run against the platform, so we can now attempt to detect this.
 
-- [ ] Updated `detect_task_platform`
-- [ ] Updated `detect_project_platform`
+- [Done ] Updated `detect_task_platform`
+- [Done ] Updated `detect_project_platform`
 
 ### Create tool crate
 
@@ -150,9 +150,9 @@ This is required _even when not using_ the toolchain, as we fallback to a global
 Crate must exist at `legacy/<language>/tool`. Feel free to copy an existing tool crate and update
 the implementation.
 
-- [ ] Implemented `Tool` trait
-- [ ] Implemented `PackageManager` trait (when applicable)
-- [ ] Handled `global` binary
+- [Done ] Implemented `Tool` trait
+- [Done ] Implemented `PackageManager` trait (when applicable)
+- [Done ] Handled `global` binary
 
 ### Create platform crate
 
@@ -163,10 +163,10 @@ moon.
 Crate must exist at `legacy/<language>/platform`. Feel free to copy an existing platform crate and
 update the implementation.
 
-- [ ] Implemented `Platform` trait
-- [ ] Implemented manifest hashing
-- [ ] Implemented target hashing
-- [ ] Implemented action handlers
+- [Done ] Implemented `Platform` trait
+- [Done ] Implemented manifest hashing
+- [Done ] Implemented target hashing
+- [Done ] Implemented action handlers
 - [ ] Implemented project graph bridge
 
 ### Update docs
@@ -235,9 +235,9 @@ When the moon tool has been integrated with proto's, we can update the platform 
 
 Refer to the Node.js implementation for examples (it can mostly be copied).
 
-- [ ] Enabled `is_toolchain_enabled` method
-- [ ] Updated `get_runtime_from_config` with `version` field
-- [ ] Updated `setup_toolchain`, `setup_tool`, and `teardown_toolchain` methods
+- [Done ] Enabled `is_toolchain_enabled` method
+- [Done ] Updated `get_runtime_from_config` with `version` field
+- [Done ] Updated `setup_toolchain`, `setup_tool`, and `teardown_toolchain` methods
 - [ ] Updated `create_run_target_command` to use the tool instance
 
 ### Support project-level config overrides
@@ -245,8 +245,8 @@ Refer to the Node.js implementation for examples (it can mostly be copied).
 Different projects may have different version requirements, so we need to support this through
 project-level toolchain overrides.
 
-- [ ] Updated `crates/config/src/project/overrides_config.rs`
-- [ ] Updated `get_runtime_from_config` in platform crate
+- [Done ] Updated `crates/config/src/project/overrides_config.rs`
+- [Done ] Updated `get_runtime_from_config` in platform crate
 
 ### Integrate `--profile` option
 
@@ -258,7 +258,7 @@ variants.
 The `moon bin` command uses a hard-coded tool list, and is not based on the `PlatformType` or
 `LanguageType` enums. Because of this, tools will need to be handled manually.
 
-- [ ] Updated `crates/app/src/commands/bin.rs`
+- [Done ] Updated `crates/app/src/commands/bin.rs`
 
 ### Update `docker prune` and `docker scaffold` commands
 

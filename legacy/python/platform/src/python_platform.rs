@@ -1,14 +1,14 @@
 use crate::{actions, find_requirements_txt, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_common::Id;
+use moon_common::{color, Id};
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     PythonConfig, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::ContentHasher;
-use moon_logger::info;
+use moon_logger::{debug, info};
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
@@ -25,6 +25,9 @@ use std::{
     sync::Arc,
 };
 use tracing::instrument;
+
+const LOG_TARGET: &str = "moon:python-platform";
+
 
 pub struct PythonPlatform {
     pub config: PythonConfig,
@@ -197,6 +200,7 @@ impl Platform for PythonPlatform {
         let installed = self.toolchain.setup(req, last_versions).await?;
 
         actions::setup_tool(self.toolchain.get_for_version(req)?, &self.workspace_root).await?;
+        actions::install_deps(self.toolchain.get_for_version(req)?, &self.workspace_root, &self.console).await?;
 
         Ok(installed)
     }
@@ -229,22 +233,20 @@ impl Platform for PythonPlatform {
         Ok(mutated_files)
     }
 
-    // #  Lockfile or manifests have not changed since last run, skipping dependency install
     #[instrument(skip_all)]
     async fn hash_manifest_deps(
         &self,
-        _manifest_path: &Path,
+        manifest_path: &Path,
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         if let Some(python_version) = &self.config.version {
-            let mut deps = BTreeMap::new();
-            if let Some(pip_requirements) =
-                find_requirements_txt(&get_workspace_root(), &get_workspace_root())
-            {
-                deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
-            }
-
+            let deps = BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
+            debug!(
+                target: LOG_TARGET,
+                "HASH MANIFEST {}",
+                color::path(manifest_path)
+            );
             hasher.hash_content(PythonToolchainHash {
                 version: python_version.clone(),
                 dependencies: deps,
@@ -257,7 +259,7 @@ impl Platform for PythonPlatform {
     #[instrument(skip_all)]
     async fn hash_run_target(
         &self,
-        _project: &Project,
+        project: &Project,
         _runtime: &Runtime,
         hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
@@ -265,11 +267,15 @@ impl Platform for PythonPlatform {
         if let Some(python_version) = &self.config.version {
             let mut deps = BTreeMap::new();
             if let Some(pip_requirements) =
-                find_requirements_txt(&get_workspace_root(), &get_workspace_root())
+                find_requirements_txt(&project.root, &self.workspace_root)
             {
                 deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
             }
-
+            debug!(
+                target: LOG_TARGET,
+                "HASH RUN TARGET {}",
+                color::path(&project.root)
+            );
             hasher.hash_content(PythonToolchainHash {
                 version: python_version.clone(),
                 dependencies: deps,

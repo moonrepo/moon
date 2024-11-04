@@ -11,6 +11,7 @@ cached = { workspace = true }
 cargo-lock = "9.0.0"
 cargo_toml = "0.20.4"
 miette = { workspace = true }
+pep-508 = "0.4.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

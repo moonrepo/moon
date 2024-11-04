@@ -20,7 +20,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDepen
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Ok(lines) = read_lines(&path) {
-        for line in lines.flatten() {
+        for line in lines.map_while(Result::ok) {
             if let Ok(parsed) = parse(&line) {
                 deps.entry(parsed.name.to_string()).and_modify(|dep| {
                     dep.push(line.clone());

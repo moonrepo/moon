@@ -20,27 +20,16 @@ use tracing::instrument;
 const LOG_TARGET: &str = "moon:python-tool";
 
 pub fn get_python_tool_paths(python_tool: &PythonTool) -> Vec<PathBuf> {
-    // let mut paths = get_proto_paths(proto_env);
-    // let mut paths:Vec<PathBuf> = [];
-
-    // let mut python_command = "python";
-
     let venv_python = &get_workspace_root().join(python_tool.config.venv_name.clone());
 
-    let paths;
-
-    if venv_python.exists() {
-        paths = vec![
+    let paths = if venv_python.exists() {
+        vec![
             venv_python.join("Scripts").clone(),
             venv_python.join("bin").clone(),
-        ];
+        ]
     } else {
-        // paths = python_tool.tool.get_globals_dirs()
-        //     .iter()
-        //     .cloned()
-        //     .collect::<Vec<PathBuf>>();
-        paths = get_proto_paths(&python_tool.proto_env);
-    }
+        get_proto_paths(&python_tool.proto_env)
+    };
 
     debug!(
         target: LOG_TARGET,
@@ -101,7 +90,7 @@ impl PythonTool {
         Command::new("python")
             .args(args)
             .envs(get_proto_env_vars())
-            .env("PATH", prepend_path_env_var(get_python_tool_paths(&self)))
+            .env("PATH", prepend_path_env_var(get_python_tool_paths(self)))
             .cwd(working_dir)
             .with_console(self.console.clone())
             .create_async()

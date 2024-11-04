@@ -24,7 +24,7 @@ pub async fn setup_tool(python: &PythonTool, workspace_root: &Path) -> miette::R
 
         if let Some(pip_version) = &pip_config.version {
             let p_version: String = if pip_version.is_latest() {
-                format!("pip")
+                "pip".to_string()
             } else {
                 format!(
                     "pip{}",
@@ -42,7 +42,7 @@ pub async fn setup_tool(python: &PythonTool, workspace_root: &Path) -> miette::R
 
     // Create version file
     if let Some(python_version) = &python.config.version {
-        let rc_path = workspace_root.join(".python-version".to_string());
+        let rc_path = workspace_root.join(".python-version");
         fs::write_file(&rc_path, python_version.to_string())?;
     }
 

@@ -51,7 +51,6 @@ fn runs_install_deps_via_args() {
         pip: Some(PartialPipConfig {
             version: Some(UnresolvedVersionSpec::parse("latest").unwrap()),
             install_args: Some(vec!["poetry==1.8.4".to_string()]),
-            ..PartialPipConfig::default()
         }),
         ..PartialPythonConfig::default()
     });

@@ -8,7 +8,7 @@ use moon_config::{
 };
 use moon_console::Console;
 use moon_hash::ContentHasher;
-use moon_logger::{debug, info};
+use moon_logger::debug;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
@@ -307,7 +307,7 @@ impl Platform for PythonPlatform {
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {
                 command.env("PROTO_PYTHON_VERSION", version);
-                command.env("PATH", prepend_path_env_var(get_python_tool_paths(&python)));
+                command.env("PATH", prepend_path_env_var(get_python_tool_paths(python)));
             }
         }
 

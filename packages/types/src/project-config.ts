@@ -66,18 +66,7 @@ export interface ProjectDockerConfig {
 }
 
 /** Supported programming languages that each project can be written in. */
-export type LanguageType =
-	| 'bash'
-	| 'batch'
-	| 'go'
-	| 'javascript'
-	| 'php'
-	| 'python'
-	| 'ruby'
-	| 'rust'
-	| 'typescript'
-	| 'unknown'
-	| string;
+export type LanguageType = 'bash' | 'batch' | 'go' | 'javascript' | 'php' | 'python' | 'ruby' | 'rust' | 'typescript' | 'unknown' | string;
 
 export type OwnersPaths = string[] | Record<string, string[]>;
 
@@ -173,14 +162,7 @@ export interface ProjectToolchainConfig {
 }
 
 /** The type of project, for categorizing. */
-export type ProjectType =
-	| 'application'
-	| 'automation'
-	| 'configuration'
-	| 'library'
-	| 'scaffolding'
-	| 'tool'
-	| 'unknown';
+export type ProjectType = 'application' | 'automation' | 'configuration' | 'library' | 'scaffolding' | 'tool' | 'unknown';
 
 /** Controls how tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {

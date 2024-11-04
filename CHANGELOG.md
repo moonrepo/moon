@@ -37,6 +37,43 @@
 
 - Fixed an issue running `npx` commands (primarily through lockfile deduping).
 
+## 1.29.4
+
+#### 🚀 Updates
+
+- Added an `experiments.strictProjectIds` setting to `.moon/workspace.yml`. When enabled, will
+  disallow using original IDs for renamed projects (via the `id` setting) when building the project
+  graph.
+- Updated codegen/template `destination` to be relative from the workspace root if prefixed with
+  `/`, otherwise the current working directory.
+
+#### 🐞 Fixes
+
+- Fixed an issue where moon would attempt to execute a folder if it has the same name as the current
+  shell.
+- Fixed an issue where `[working_dir]` and `[workspace_root]` variables were not working in the
+  `template.yml` `destination` setting.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+- Updated proto to v0.42.0 (from 0.41.3).
+
+## 1.29.3
+
+#### 🐞 Fixes
+
+- Fixed an issue running `npx` commands (primarily through lockfile deduping).
+
+## Unreleased
+
+- Added Python tier 3 support.
+  - Will download and install Python into the toolchain when a `version` is configured.
+  - Will parse the `requirements.txt` to resolve and install dependencies.
+  - Added a `python.version` setting to `.moon/toolchain.yml`.
+  - Added a `toolchain.python` setting to `moon.yml`.
+  - Updated `moon bin` and `moon docker` commands to support Python.
+
 ## 1.29.2
 
 #### 🚀 Updates

@@ -3032,6 +3032,9 @@ dependencies = [
  "moon_python_lang",
  "moon_python_platform",
  "moon_python_tool",
+ "moon_python_lang",
+ "moon_python_platform",
+ "moon_python_tool",
  "moon_query",
  "moon_rust_lang",
  "moon_rust_platform",
@@ -3043,6 +3046,7 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_typescript_lang",
  "moon_vcs",
+ "moon_workspace",
  "moon_workspace",
  "once_cell",
  "open",
@@ -3757,6 +3761,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils2",
  "moon_workspace",
+ "moon_workspace",
  "petgraph",
  "rustc-hash 2.0.0",
  "scc",
@@ -4093,6 +4098,7 @@ dependencies = [
  "moon_system_platform",
  "moon_vcs",
  "moon_workspace",
+ "moon_workspace",
  "proto_core",
  "starbase_events",
  "starbase_sandbox",
@@ -4243,6 +4249,29 @@ dependencies = [
  "starbase_utils",
  "system_env",
  "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_workspace"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "moon_cache",
+ "moon_common",
+ "moon_config",
+ "moon_hash",
+ "moon_project",
+ "moon_project_builder",
+ "moon_project_constraints",
+ "moon_project_graph",
+ "moon_vcs",
+ "petgraph",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_events",
+ "starbase_utils",
+ "thiserror",
  "tracing",
 ]
 

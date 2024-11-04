@@ -28,7 +28,6 @@ use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:python-platform";
 
-
 pub struct PythonPlatform {
     pub config: PythonConfig,
 
@@ -200,7 +199,12 @@ impl Platform for PythonPlatform {
         let installed = self.toolchain.setup(req, last_versions).await?;
 
         actions::setup_tool(self.toolchain.get_for_version(req)?, &self.workspace_root).await?;
-        actions::install_deps(self.toolchain.get_for_version(req)?, &self.workspace_root, &self.console).await?;
+        actions::install_deps(
+            self.toolchain.get_for_version(req)?,
+            &self.workspace_root,
+            &self.console,
+        )
+        .await?;
 
         Ok(installed)
     }
@@ -241,7 +245,8 @@ impl Platform for PythonPlatform {
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         if let Some(python_version) = &self.config.version {
-            let deps = BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
+            let deps =
+                BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
             debug!(
                 target: LOG_TARGET,
                 "HASH MANIFEST {}",

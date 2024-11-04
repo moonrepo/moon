@@ -32,7 +32,16 @@ export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
 /** A list of available shells on Unix. */
-export type TaskUnixShell = 'bash' | 'elvish' | 'fish' | 'ion' | 'murex' | 'nu' | 'pwsh' | 'xonsh' | 'zsh';
+export type TaskUnixShell =
+	| 'bash'
+	| 'elvish'
+	| 'fish'
+	| 'ion'
+	| 'murex'
+	| 'nu'
+	| 'pwsh'
+	| 'xonsh'
+	| 'zsh';
 
 /** A list of available shells on Windows. */
 export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pwsh' | 'xonsh';

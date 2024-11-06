@@ -3,30 +3,20 @@ use crate::project_matcher::matches_criteria;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
+use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ExpanderContext, ProjectExpander};
 use moon_query::{build_query, Criteria};
-use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::visit::EdgeRef;
-use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use scc::HashMap;
-use serde::Serialize;
 use starbase_utils::env::bool_var;
-use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
 pub type ProjectGraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
-
-#[derive(Serialize)]
-pub struct ProjectGraphCache<'graph> {
-    graph: &'graph ProjectGraphType,
-    projects: &'graph ProjectsCache,
-}
 
 #[derive(Clone, Debug, Default)]
 pub struct ProjectNode {
@@ -96,34 +86,6 @@ impl ProjectGraph {
             .collect()
     }
 
-    /// Return a list of project IDs that the provide project depends on.
-    pub fn dependencies_of(&self, project: &Project) -> miette::Result<Vec<&Id>> {
-        let deps = self
-            .graph
-            .neighbors_directed(
-                self.nodes.get(&project.id).unwrap().index,
-                Direction::Outgoing,
-            )
-            .map(|idx| &self.graph.node_weight(idx).unwrap().id)
-            .collect();
-
-        Ok(deps)
-    }
-
-    /// Return a list of project IDs that require the provided project.
-    pub fn dependents_of(&self, project: &Project) -> miette::Result<Vec<&Id>> {
-        let deps = self
-            .graph
-            .neighbors_directed(
-                self.nodes.get(&project.id).unwrap().index,
-                Direction::Incoming,
-            )
-            .map(|idx| &self.graph.node_weight(idx).unwrap().id)
-            .collect();
-
-        Ok(deps)
-    }
-
     /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     #[instrument(name = "get_project", skip(self))]
@@ -183,20 +145,6 @@ impl ProjectGraph {
         self.get(&id)
     }
 
-    /// Return a list of IDs for all projects currently within the graph.
-    pub fn ids(&self) -> Vec<&Id> {
-        self.graph
-            .raw_nodes()
-            .iter()
-            .map(|n| &n.weight.id)
-            .collect()
-    }
-
-    /// Get a labelled representation of the graph (which can be serialized easily).
-    pub fn labeled_graph(&self) -> DiGraph<String, DependencyScope> {
-        self.graph.map(|_, n| n.id.to_string(), |_, e| *e)
-    }
-
     /// Return all expanded projects that match the query criteria.
     #[instrument(name = "query_project", skip_all)]
     pub fn query<'input, Q: AsRef<Criteria<'input>>>(
@@ -220,34 +168,13 @@ impl ProjectGraph {
             .collect()
     }
 
-    pub fn into_focused(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
+    pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let upstream = self.dependencies_of(&project)?;
-        let downstream = self.dependents_of(&project)?;
-        let mut nodes = FxHashMap::default();
-
-        // Create a new graph
-        let graph = self.graph.filter_map(
-            |_, node| {
-                let node_id = &node.id;
-
-                if
-                // Self
-                node_id == &project.id ||
-                    // Dependencies
-                    upstream.contains(&node_id) ||
-                    // Dependents
-                    with_dependents && downstream.contains(&node_id)
-                {
-                    Some(node.clone())
-                } else {
-                    None
-                }
-            },
-            |_, edge| Some(*edge),
-        );
+        let graph = self.to_focused_graph(&project, with_dependents);
 
         // Copy over nodes
+        let mut nodes = FxHashMap::default();
+
         for new_index in graph.node_indices() {
             let project_id = &graph[new_index].id;
 
@@ -268,45 +195,6 @@ impl ProjectGraph {
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
         })
-    }
-
-    /// Format graph as a DOT string.
-    pub fn to_dot(&self) -> String {
-        let dot = Dot::with_attr_getters(
-            &self.graph,
-            &[Config::EdgeNoLabel, Config::NodeNoLabel],
-            &|_, e| {
-                let label = e.weight().to_string();
-
-                if e.source().index() == 0 {
-                    format!("label=\"{label}\" arrowhead=none")
-                } else {
-                    format!("label=\"{label}\" arrowhead=box, arrowtail=box")
-                }
-            },
-            &|_, n| {
-                let label = &n.1.id;
-
-                format!(
-                    "label=\"{label}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
-                )
-            },
-        );
-
-        format!("{dot:?}")
-    }
-
-    /// Format graph as a JSON string.
-    pub fn to_json(&self) -> miette::Result<String> {
-        let projects = self.read_cache();
-
-        Ok(json::format(
-            &ProjectGraphCache {
-                graph: &self.graph,
-                projects: &projects,
-            },
-            true,
-        )?)
     }
 
     fn internal_get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
@@ -470,3 +358,25 @@ impl ProjectGraph {
             .expect("Failed to acquire write access to project graph!")
     }
 }
+
+impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
+    fn get_graph(&self) -> &DiGraph<Project, DependencyScope> {
+        &self.graph
+    }
+
+    fn get_node_index(&self, node: &Project) -> NodeIndex {
+        self.nodes.get(&node.id).unwrap().index
+    }
+
+    fn get_node_key(&self, node: &Project) -> Id {
+        node.id.clone()
+    }
+}
+
+impl GraphConnections<Project, DependencyScope, Id> for ProjectGraph {}
+
+impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
+
+impl GraphToDot<Project, DependencyScope, Id> for ProjectGraph {}
+
+impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {}

@@ -1,4 +1,5 @@
 use crate::project_error::ProjectError;
+use core::fmt;
 use moon_common::{
     cacheable,
     path::{is_root_level_source, WorkspaceRelativePathBuf},
@@ -143,5 +144,11 @@ impl PartialEq for Project {
             && self.stack == other.stack
             && self.tasks == other.tasks
             && self.type_of == other.type_of
+    }
+}
+
+impl fmt::Display for Project {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.id)
     }
 }

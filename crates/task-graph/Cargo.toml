@@ -9,7 +9,9 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_config = { path = "../config" }
 moon_target = { path = "../target" }
+moon_task = { path = "../task" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

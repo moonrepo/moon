@@ -1,7 +1,7 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
 use moon_action_graph::ActionGraph;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::{GraphConversions, ProjectGraph};
 use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
@@ -80,7 +80,7 @@ pub fn extract_nodes_and_edges_from_graph<T: Display>(
 
 /// Get a serialized representation of the project graph.
 pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
-    let labeled_graph = project_graph.labeled_graph();
+    let labeled_graph = project_graph.to_labelled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, true)
 }
 

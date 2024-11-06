@@ -3429,6 +3429,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_graph_utils"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "petgraph",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_utils",
+]
+
+[[package]]
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
@@ -3735,6 +3746,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_graph_utils",
  "moon_project",
  "moon_project_expander",
  "moon_query",
@@ -3914,7 +3926,9 @@ name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_config",
  "moon_target",
+ "moon_task",
  "petgraph",
  "rustc-hash 2.0.0",
  "serde",

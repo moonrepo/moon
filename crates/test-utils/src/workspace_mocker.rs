@@ -154,6 +154,8 @@ impl WorkspaceMocker {
             }
         }
 
+        builder.load_tasks().await.unwrap();
+
         let project_graph = builder.build().await.unwrap().project_graph;
 
         if options.ids.is_empty() {

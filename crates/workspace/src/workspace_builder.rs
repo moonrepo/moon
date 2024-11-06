@@ -101,13 +101,14 @@ impl<'app> WorkspaceBuilder<'app> {
         let is_vcs_enabled = context
             .vcs
             .as_ref()
-            .expect("VCS is required for project graph caching!")
+            .expect("VCS is required for workspace graph caching!")
             .is_enabled();
         let mut graph = Self::new(context).await?;
 
         // No VCS to hash with, so abort caching
         if !is_vcs_enabled {
             graph.load_projects().await?;
+            graph.load_tasks().await?;
 
             return Ok(graph);
         }
@@ -150,6 +151,7 @@ impl<'app> WorkspaceBuilder<'app> {
         );
 
         graph.load_projects().await?;
+        graph.load_tasks().await?;
 
         state.data.last_hash = hash;
         state.data.projects = graph.project_data.clone();
@@ -204,14 +206,18 @@ impl<'app> WorkspaceBuilder<'app> {
         let ids = self.project_data.keys().cloned().collect::<Vec<_>>();
 
         for id in ids {
-            self.internal_load_project(&id, &mut FxHashSet::default())
-                .await?;
+            self.load_project(&id).await?;
         }
 
         Ok(())
     }
 
-    #[instrument(name = "load_project", skip(self, cycle))]
+    /// Load all tasks into the graph, derived from the loaded projects.
+    pub async fn load_tasks(&mut self) -> miette::Result<()> {
+        Ok(())
+    }
+
+    #[instrument(skip(self, cycle))]
     async fn internal_load_project(
         &mut self,
         id_or_alias: &str,

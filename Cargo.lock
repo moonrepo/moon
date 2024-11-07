@@ -3926,6 +3926,7 @@ name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "moon_config",
  "moon_graph_utils",
  "moon_target",
@@ -3934,6 +3935,7 @@ dependencies = [
  "rustc-hash 2.0.0",
  "serde",
  "starbase_utils",
+ "thiserror",
  "tracing",
 ]
 

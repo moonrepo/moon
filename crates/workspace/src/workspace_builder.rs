@@ -1,4 +1,4 @@
-use crate::project_build_data::*;
+use crate::build_data::*;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
 use crate::workspace_builder_error::WorkspaceBuilderError;
@@ -17,7 +17,8 @@ use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
-use moon_task_graph::{TaskGraph, TaskGraphType};
+use moon_task::Target;
+use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -72,6 +73,8 @@ pub struct WorkspaceBuilder<'app> {
     /// The root project ID (only if a monorepo).
     root_project_id: Option<Id>,
 
+    task_data: FxHashMap<Target, TaskBuildData>,
+
     /// The task DAG.
     task_graph: TaskGraphType,
 }
@@ -90,6 +93,7 @@ impl<'app> WorkspaceBuilder<'app> {
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
+            task_data: FxHashMap::default(),
             task_graph: TaskGraphType::default(),
         };
 
@@ -218,7 +222,7 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(name = "load_project", skip(self))]
     async fn internal_load_project(
         &mut self,
         id_or_alias: &str,
@@ -233,11 +237,6 @@ impl<'app> WorkspaceBuilder<'app> {
 
             // Already loaded, exit early with existing index
             if let Some(index) = &build_data.node_index {
-                trace!(
-                    project_id = id.as_str(),
-                    "Project already exists in the project graph, skipping load",
-                );
-
                 return Ok((id, *index));
             }
         }
@@ -278,6 +277,12 @@ impl<'app> WorkspaceBuilder<'app> {
             if dep_id != dep_config.id {
                 dep_config.id = dep_id;
             }
+        }
+
+        // Create task build data
+        for task in project.tasks.values() {
+            self.task_data
+                .insert(task.target.clone(), TaskBuildData::default());
         }
 
         // And finally add to the graph
@@ -363,18 +368,79 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(project)
     }
 
-    /// Load all tasks into the graph, derived from the loaded projects.
-    pub async fn load_tasks(&mut self) -> miette::Result<()> {
+    /// Load a single task by target into the graph.
+    pub async fn load_task(&mut self, target: &Target) -> miette::Result<()> {
+        self.internal_load_task(target, &mut FxHashSet::default())
+            .await?;
+
         Ok(())
     }
 
-    // #[instrument(skip(self))]
-    // async fn internal_load_project(
-    //     &mut self,
-    //     id_or_alias: &str,
-    //     cycle: &mut FxHashSet<Id>,
-    // ) -> miette::Result<(Id, NodeIndex)> {
-    // }
+    /// Load all tasks into the graph, derived from the loaded projects.
+    pub async fn load_tasks(&mut self) -> miette::Result<()> {
+        let mut targets = vec![];
+
+        for project in self.project_graph.node_weights() {
+            for task in project.tasks.values() {
+                targets.push(task.target.clone());
+            }
+        }
+
+        for target in targets {
+            self.load_task(&target).await?;
+        }
+
+        Ok(())
+    }
+
+    #[instrument(name = "load_task", skip(self))]
+    async fn internal_load_task(
+        &mut self,
+        target: &Target,
+        cycle: &mut FxHashSet<Target>,
+    ) -> miette::Result<NodeIndex> {
+        {
+            let Some(build_data) = self.task_data.get(&target) else {
+                return Err(TaskGraphError::UnconfiguredTarget(target.to_owned()).into());
+            };
+
+            // Already loaded, exit early with existing index
+            if let Some(index) = &build_data.node_index {
+                return Ok(*index);
+            }
+        }
+
+        // Not loaded, resolve the task
+        trace!(
+            target = target.as_str(),
+            "Task does not exist in the task graph, attempting to load",
+        );
+
+        let (_, project_index) = self
+            .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
+            .await?;
+
+        let project = self.project_graph.node_weight_mut(project_index).unwrap();
+        let task = project.tasks.remove(&target.task_id).unwrap();
+
+        cycle.insert(target.clone());
+
+        // Then resolve dependency tasks
+        // let mut edges = vec![];
+
+        // And finally add to the graph
+        let index = self.task_graph.add_node(task);
+
+        self.task_data.get_mut(target).unwrap().node_index = Some(index);
+
+        // for edge in edges {
+        //     self.project_graph.add_edge(index, edge.0, edge.1);
+        // }
+
+        cycle.clear();
+
+        Ok(index)
+    }
 
     /// Determine the repository type/structure based on the number of project
     /// sources, and where the point to.

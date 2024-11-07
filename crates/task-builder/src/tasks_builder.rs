@@ -302,8 +302,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
-        let global_deps = self.build_global_deps(&target)?;
-        let mut global_inputs = self.build_global_inputs(&target, &task.options)?;
+        let global_deps = self.inherit_global_deps(&target)?;
+        let mut global_inputs = self.inherit_global_inputs(&target, &task.options)?;
 
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
@@ -311,7 +311,7 @@ impl<'proj> TasksBuilder<'proj> {
             task.args = self.merge_vec(task.args, args, task.options.merge_args, index, false);
         }
 
-        task.env = self.build_env(&target)?;
+        task.env = self.inherit_project_env(&target)?;
 
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
@@ -666,7 +666,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
-    fn build_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {
+    fn inherit_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {
         let global_deps = self
             .implicit_deps
             .iter()
@@ -684,7 +684,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_deps)
     }
 
-    fn build_global_inputs(
+    fn inherit_global_inputs(
         &self,
         target: &Target,
         options: &TaskOptions,
@@ -716,7 +716,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    fn build_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
+    fn inherit_project_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
         let env = self
             .project_env
             .iter()

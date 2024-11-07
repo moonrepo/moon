@@ -27,6 +27,13 @@ pub struct ProjectBuildData {
     pub source: WorkspaceRelativePathBuf,
 }
 
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default)]
+pub struct TaskBuildData {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node_index: Option<NodeIndex>,
+}
+
 // Extend the project graph with additional information.
 
 #[derive(Debug)]

@@ -16,7 +16,7 @@ use moon_config::{
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectNode};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -169,13 +169,13 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let context = self.context.take().unwrap();
 
-        let project_nodes = self
+        let project_metadata = self
             .project_data
             .into_iter()
             .map(|(id, data)| {
                 (
                     id,
-                    ProjectNode {
+                    ProjectMetadata {
                         alias: data.alias,
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
@@ -186,7 +186,7 @@ impl<'app> WorkspaceBuilder<'app> {
             .collect::<FxHashMap<_, _>>();
 
         let mut project_graph =
-            ProjectGraph::new(self.project_graph, project_nodes, context.workspace_root);
+            ProjectGraph::new(self.project_graph, project_metadata, context.workspace_root);
 
         project_graph.working_dir = context.working_dir.to_owned();
 

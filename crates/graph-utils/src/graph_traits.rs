@@ -43,7 +43,7 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: PartialEq>
     GraphConnections<N, E, K>
 {
     /// Return the graph with display labels.
-    fn to_labelled_graph(&self) -> DiGraph<String, String> {
+    fn to_labeled_graph(&self) -> DiGraph<String, String> {
         self.get_graph()
             .map(|_, node| node.to_string(), |_, edge| edge.to_string())
     }

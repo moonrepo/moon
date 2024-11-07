@@ -80,7 +80,7 @@ pub fn extract_nodes_and_edges_from_graph<T: Display>(
 
 /// Get a serialized representation of the project graph.
 pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
-    let labeled_graph = project_graph.to_labelled_graph();
+    let labeled_graph = project_graph.to_labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, true)
 }
 

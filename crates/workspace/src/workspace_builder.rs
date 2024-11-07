@@ -17,6 +17,7 @@ use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
+use moon_task_graph::{TaskGraph, TaskGraphType};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -43,6 +44,7 @@ pub struct WorkspaceBuilderContext<'app> {
 
 pub struct WorkspaceBuildResult {
     pub project_graph: ProjectGraph,
+    // pub task_graph: TaskGraph,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -69,6 +71,9 @@ pub struct WorkspaceBuilder<'app> {
 
     /// The root project ID (only if a monorepo).
     root_project_id: Option<Id>,
+
+    /// The task DAG.
+    task_graph: TaskGraphType,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -85,6 +90,7 @@ impl<'app> WorkspaceBuilder<'app> {
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
+            task_graph: TaskGraphType::default(),
         };
 
         graph.preload_build_data().await?;
@@ -212,12 +218,7 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    /// Load all tasks into the graph, derived from the loaded projects.
-    pub async fn load_tasks(&mut self) -> miette::Result<()> {
-        Ok(())
-    }
-
-    #[instrument(skip(self, cycle))]
+    #[instrument(skip(self))]
     async fn internal_load_project(
         &mut self,
         id_or_alias: &str,
@@ -361,6 +362,19 @@ impl<'app> WorkspaceBuilder<'app> {
 
         Ok(project)
     }
+
+    /// Load all tasks into the graph, derived from the loaded projects.
+    pub async fn load_tasks(&mut self) -> miette::Result<()> {
+        Ok(())
+    }
+
+    // #[instrument(skip(self))]
+    // async fn internal_load_project(
+    //     &mut self,
+    //     id_or_alias: &str,
+    //     cycle: &mut FxHashSet<Id>,
+    // ) -> miette::Result<(Id, NodeIndex)> {
+    // }
 
     /// Determine the repository type/structure based on the number of project
     /// sources, and where the point to.
@@ -622,6 +636,14 @@ impl<'app> WorkspaceBuilder<'app> {
             // Track ID renames
             if let Some(new_id) = &config.id {
                 if new_id != &id {
+                    debug!(
+                        old_id = id.as_str(),
+                        new_id = new_id.as_str(),
+                        "Project has been configured with an explicit identifier of {}, renaming from {}",
+                        color::id(new_id),
+                        color::id(id.as_str()),
+                    );
+
                     build_data.original_id = Some(id.clone());
 
                     if renamed_ids.contains_key(&id) {

@@ -60,6 +60,9 @@ cacheable!(
         /// Tasks specific to the project. Inherits all tasks from the global config.
         pub tasks: BTreeMap<Id, Task>,
 
+        /// List of IDs fro all tasks configured or inherited for the project.
+        pub task_ids: Vec<Id>,
+
         /// The type of project.
         #[serde(rename = "type")]
         pub type_of: ProjectType,

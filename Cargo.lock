@@ -4189,6 +4189,8 @@ dependencies = [
  "moon_project_builder",
  "moon_project_constraints",
  "moon_project_graph",
+ "moon_task",
+ "moon_task_graph",
  "moon_vcs",
  "petgraph",
  "rustc-hash 2.0.0",

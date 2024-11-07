@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_common::path::is_root_level_source;
+use moon_common::path::{is_root_level_source, WorkspaceRelativePath};
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
@@ -73,10 +73,10 @@ pub struct TasksBuilderContext<'proj> {
 pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
 
-    project_id: &'proj str,
+    project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
-    project_source: &'proj str,
+    project_source: &'proj WorkspaceRelativePath,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
@@ -92,8 +92,8 @@ pub struct TasksBuilder<'proj> {
 
 impl<'proj> TasksBuilder<'proj> {
     pub fn new(
-        project_id: &'proj str,
-        project_source: &'proj str,
+        project_id: &'proj Id,
+        project_source: &'proj WorkspaceRelativePath,
         project_platform: &'proj PlatformType,
         context: TasksBuilderContext<'proj>,
     ) -> Self {
@@ -135,7 +135,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            project_id = self.project_id,
+            project_id = self.project_id.as_str(),
             tasks = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Filtering global tasks",
         );
@@ -214,7 +214,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            project_id = self.project_id,
+            project_id = self.project_id.as_str(),
             tasks = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Loading local tasks",
         );
@@ -670,7 +670,7 @@ impl<'proj> TasksBuilder<'proj> {
         let global_deps = self
             .implicit_deps
             .iter()
-            .map(|d| (*d).to_owned().into_config())
+            .map(|dep| (*dep).to_owned().into_config())
             .collect::<Vec<_>>();
 
         if !global_deps.is_empty() {
@@ -692,7 +692,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut global_inputs = self
             .implicit_inputs
             .iter()
-            .map(|d| (*d).to_owned())
+            .map(|dep| (*dep).to_owned())
             .collect::<Vec<_>>();
 
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));

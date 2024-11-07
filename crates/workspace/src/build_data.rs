@@ -3,6 +3,7 @@ use moon_common::Id;
 use moon_config::{
     DependencyConfig, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList, TaskConfig,
 };
+use moon_task::TaskOptions;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -32,6 +33,9 @@ pub struct ProjectBuildData {
 pub struct TaskBuildData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_index: Option<NodeIndex>,
+
+    #[serde(skip)]
+    pub options: TaskOptions,
 }
 
 // Extend the project graph with additional information.

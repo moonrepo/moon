@@ -1,6 +1,7 @@
 use crate::build_data::*;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
+use crate::tasks_querent::*;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::*;
 use moon_cache::CacheEngine;
@@ -18,6 +19,7 @@ use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
 use moon_task::Target;
+use moon_task_builder::TaskDepsBuilder;
 use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
@@ -52,6 +54,9 @@ pub struct WorkspaceBuildResult {
 pub struct WorkspaceBuilder<'app> {
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext<'app>>>,
+
+    /// Projects grouped by tag, for use in task dependency resolution.
+    projects_by_tag: FxHashMap<Id, Vec<Id>>,
 
     /// Mapping of project IDs to associated data required for building
     /// the project itself. Currently we track the following:
@@ -88,6 +93,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let mut graph = WorkspaceBuilder {
             context: Some(Arc::new(context)),
+            projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph: ProjectGraphType::default(),
             renamed_project_ids: FxHashMap::default(),
@@ -251,6 +257,14 @@ impl<'app> WorkspaceBuilder<'app> {
 
         cycle.insert(id.clone());
 
+        // Then group projects by relevant data
+        for tag in &project.config.tags {
+            self.projects_by_tag
+                .entry(tag.to_owned())
+                .or_default()
+                .push(id.clone());
+        }
+
         // Then build dependency projects
         let mut edges = vec![];
 
@@ -281,8 +295,13 @@ impl<'app> WorkspaceBuilder<'app> {
 
         // Create task build data
         for task in project.tasks.values() {
-            self.task_data
-                .insert(task.target.clone(), TaskBuildData::default());
+            self.task_data.insert(
+                task.target.clone(),
+                TaskBuildData {
+                    options: task.options.clone(),
+                    ..Default::default()
+                },
+            );
         }
 
         // And finally add to the graph
@@ -420,10 +439,23 @@ impl<'app> WorkspaceBuilder<'app> {
             .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
             .await?;
 
-        let project = self.project_graph.node_weight_mut(project_index).unwrap();
-        let task = project.tasks.remove(&target.task_id).unwrap();
+        // TODO change to a remove in a follow-up PR
+        let project = self.project_graph.node_weight(project_index).unwrap();
+        let mut task = project.tasks.get(&target.task_id).unwrap().clone();
 
         cycle.insert(target.clone());
+
+        // Resolve the task dependencies so we can link edges correctly
+        TaskDepsBuilder {
+            querent: Box::new(WorkspaceBuilderTasksQuerent {
+                projects_by_tag: &self.projects_by_tag,
+                task_data: &self.task_data,
+            }),
+            project_id: &project.id,
+            project_dependencies: &project.dependencies,
+            task: &mut task,
+        }
+        .build()?;
 
         // Then resolve dependency tasks
         // let mut edges = vec![];

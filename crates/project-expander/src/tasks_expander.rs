@@ -1,9 +1,10 @@
+use std::mem;
+
 use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
-use moon_config::{TaskArgs, TaskDependencyConfig};
-use moon_project::Project;
-use moon_task::{Target, TargetScope, Task};
+use moon_config::TaskArgs;
+use moon_task::Task;
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
 use tracing::{instrument, trace, warn};
@@ -73,165 +74,23 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
         trace!(
             target = task.target.as_str(),
             deps = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
-            "Expanding target scopes for deps",
+            "Expanding tokens and variables in deps args and env",
         );
 
-        let project = &self.context.project;
+        let mut deps = mem::take(&mut task.deps);
 
-        // Dont use a `HashSet` as we want to preserve order
-        let mut deps: Vec<TaskDependencyConfig> = vec![];
-
-        let mut check_and_push_dep = |dep_project: &Project,
-                                      dep: &TaskDependencyConfig,
-                                      skip_if_missing: bool|
-         -> miette::Result<()> {
-            // Allow internal tasks!
-            let Some(dep_task) = dep_project.tasks.get(&dep.target.task_id) else {
-                if skip_if_missing {
-                    return Ok(());
-                }
-
-                return Err(TasksExpanderError::UnknownTarget {
-                    dep: Target::new(&dep_project.id, &dep.target.task_id)?,
-                    task: task.target.to_owned(),
-                }
-                .into());
-            };
-
-            // Do not depend on tasks that can fail
-            if dep_task.options.allow_failure {
-                return Err(TasksExpanderError::AllowFailureDepRequirement {
-                    dep: dep_task.target.to_owned(),
-                    task: task.target.to_owned(),
-                }
-                .into());
-            }
-
-            // Do not depend on tasks that can't run in CI
-            if self.context.check_ci_relationships
-                && !dep_task.options.run_in_ci
-                && task.options.run_in_ci
-            {
-                return Err(TasksExpanderError::RunInCiDepRequirement {
-                    dep: dep_task.target.to_owned(),
-                    task: task.target.to_owned(),
-                }
-                .into());
-            }
-
-            // Enforce persistent constraints
-            if dep_task.is_persistent() && !task.is_persistent() {
-                return Err(TasksExpanderError::PersistentDepRequirement {
-                    dep: dep_task.target.to_owned(),
-                    task: task.target.to_owned(),
-                }
-                .into());
-            }
-
-            // Add the dep if it has not already been
-            let mut dep_args = parse_task_args(&dep.args)?;
+        for dep in deps.iter_mut() {
+            let dep_args = self
+                .token
+                .expand_args_with_task(task, &parse_task_args(&dep.args)?)?;
             let dep_env = self.token.expand_env_with_task(task, &dep.env)?;
 
-            if !dep_args.is_empty() {
-                dep_args = self.token.expand_args_with_task(task, &dep_args)?;
-            }
-
-            let dep = TaskDependencyConfig {
-                args: if dep_args.is_empty() {
-                    TaskArgs::None
-                } else {
-                    TaskArgs::List(dep_args)
-                },
-                env: substitute_env_vars(dep_env),
-                optional: dep.optional,
-                target: Target::new(&dep_project.id, &dep.target.task_id)?,
+            dep.args = if dep_args.is_empty() {
+                TaskArgs::None
+            } else {
+                TaskArgs::List(dep_args)
             };
-
-            if !deps.contains(&dep) {
-                deps.push(dep);
-            }
-
-            Ok(())
-        };
-
-        for dep in &task.deps {
-            let dep_target = &dep.target;
-
-            match &dep_target.scope {
-                // :task
-                TargetScope::All => {
-                    return Err(TasksExpanderError::UnsupportedTargetScopeInDeps {
-                        dep: dep_target.to_owned(),
-                        task: task.target.to_owned(),
-                    }
-                    .into());
-                }
-                // ^:task
-                TargetScope::Deps => {
-                    let mut dep_ids = project
-                        .get_dependency_ids()
-                        .iter()
-                        .map(|id| id.to_string())
-                        .collect::<Vec<_>>();
-
-                    if !dep_ids.is_empty() {
-                        // Sort so query cache is more deterministic
-                        dep_ids.sort();
-
-                        let input = if dep_ids.len() == 1 {
-                            format!("project={id}", id = dep_ids[0])
-                        } else {
-                            format!("project=[{ids}]", ids = dep_ids.join(","))
-                        };
-
-                        for dep_project in (self.context.query)(input)? {
-                            check_and_push_dep(dep_project, dep, dep.optional.unwrap_or(true))?;
-                        }
-                    }
-                }
-                // ~:task
-                TargetScope::OwnSelf => {
-                    if dep_target.task_id == task.id {
-                        // Avoid circular references
-                    } else {
-                        check_and_push_dep(project, dep, dep.optional.unwrap_or(false))?;
-                    }
-                }
-                // id:task
-                TargetScope::Project(project_locator) => {
-                    if project.matches_locator(project_locator) {
-                        if dep_target.task_id == task.id {
-                            // Avoid circular references
-                        } else {
-                            check_and_push_dep(project, dep, false)?;
-                        }
-                    } else {
-                        let results = (self.context.query)(format!("project={}", project_locator))?;
-
-                        if results.is_empty() {
-                            return Err(TasksExpanderError::UnknownTarget {
-                                dep: dep_target.to_owned(),
-                                task: task.target.to_owned(),
-                            }
-                            .into());
-                        }
-
-                        for dep_project in results {
-                            check_and_push_dep(dep_project, dep, false)?;
-                        }
-                    }
-                }
-                // #tag:task
-                TargetScope::Tag(tag) => {
-                    for dep_project in (self.context.query)(format!("tag={tag}"))? {
-                        if dep_project.id == project.id {
-                            // Avoid circular references
-                        } else {
-                            check_and_push_dep(dep_project, dep, dep.optional.unwrap_or(true))?;
-                        }
-                    }
-                }
-            }
+            dep.env = substitute_env_vars(dep_env);
         }
 
         task.deps = deps;

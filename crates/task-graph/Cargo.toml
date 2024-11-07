@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_graph_utils = { path = "../graph-utils" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 miette = { workspace = true }

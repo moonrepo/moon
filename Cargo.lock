@@ -3927,6 +3927,7 @@ version = "0.0.1"
 dependencies = [
  "miette",
  "moon_config",
+ "moon_graph_utils",
  "moon_target",
  "moon_task",
  "petgraph",

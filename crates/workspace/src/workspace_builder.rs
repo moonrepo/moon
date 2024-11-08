@@ -11,8 +11,8 @@ use moon_common::{
     Id,
 };
 use moon_config::{
-    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectsSourcesList, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectsSourcesList,
+    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -20,7 +20,7 @@ use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_r
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
 use moon_task::Target;
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType};
+use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata};
 use moon_vcs::BoxedVcs;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -47,7 +47,7 @@ pub struct WorkspaceBuilderContext<'app> {
 
 pub struct WorkspaceBuildResult {
     pub project_graph: ProjectGraph,
-    // pub task_graph: TaskGraph,
+    pub task_graph: TaskGraph,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -78,6 +78,9 @@ pub struct WorkspaceBuilder<'app> {
     /// The root project ID (only if a monorepo).
     root_project_id: Option<Id>,
 
+    /// Mapping of task targets to associated data required for building
+    /// the project itself. Currently we track the following:
+    ///   - Their task options, for resolving deps.
     task_data: FxHashMap<Target, TaskBuildData>,
 
     /// The task DAG.
@@ -206,7 +209,25 @@ impl<'app> WorkspaceBuilder<'app> {
 
         project_graph.working_dir = context.working_dir.to_owned();
 
-        Ok(WorkspaceBuildResult { project_graph })
+        let task_metadata = self
+            .task_data
+            .into_iter()
+            .map(|(id, data)| {
+                (
+                    id,
+                    TaskMetadata {
+                        index: data.node_index.unwrap_or_default(),
+                    },
+                )
+            })
+            .collect::<FxHashMap<_, _>>();
+
+        let task_graph = TaskGraph::new(self.task_graph, task_metadata);
+
+        Ok(WorkspaceBuildResult {
+            project_graph,
+            task_graph,
+        })
     }
 
     /// Load a single project by ID or alias into the graph.
@@ -458,16 +479,37 @@ impl<'app> WorkspaceBuilder<'app> {
         .build()?;
 
         // Then resolve dependency tasks
-        // let mut edges = vec![];
+        let mut edges = vec![];
+
+        for dep_config in &mut task.deps {
+            if cycle.contains(&dep_config.target) {
+                debug!(
+                    target = target.as_str(),
+                    dependency_target = dep_config.target.as_str(),
+                    "Encountered a dependency cycle (from task); will disconnect nodes to avoid recursion",
+                );
+
+                continue;
+            }
+
+            edges.push((
+                Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?,
+                if dep_config.optional.is_some_and(|v| v) {
+                    DependencyType::Optional
+                } else {
+                    DependencyType::Required
+                },
+            ));
+        }
 
         // And finally add to the graph
         let index = self.task_graph.add_node(task);
 
         self.task_data.get_mut(target).unwrap().node_index = Some(index);
 
-        // for edge in edges {
-        //     self.project_graph.add_edge(index, edge.0, edge.1);
-        // }
+        for edge in edges {
+            self.task_graph.add_edge(index, edge.0, edge.1);
+        }
 
         cycle.clear();
 

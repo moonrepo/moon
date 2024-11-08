@@ -3022,6 +3022,7 @@ dependencies = [
  "moon_rust_tool",
  "moon_system_platform",
  "moon_task",
+ "moon_task_graph",
  "moon_tool",
  "moon_toolchain",
  "moon_toolchain_plugin",

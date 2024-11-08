@@ -27,18 +27,16 @@ impl<'app> TasksQuerent for WorkspaceBuilderTasksQuerent<'app> {
         // May be an alias!
         let project_ids = project_ids
             .iter()
-            .map(|id| ProjectBuildData::resolve_id(id, &self.project_data))
+            .map(|id| ProjectBuildData::resolve_id(id, self.project_data))
             .collect::<Vec<_>>();
 
         let results = self
             .task_data
             .iter()
             .filter_map(|(target, data)| {
-                let Some(project_id) = target.get_project_id() else {
-                    return None;
-                };
+                let project_id = target.get_project_id()?;
 
-                if &target.task_id == task_id && project_ids.contains(&project_id) {
+                if &target.task_id == task_id && project_ids.contains(project_id) {
                     Some((target, &data.options))
                 } else {
                     None

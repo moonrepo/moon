@@ -14,7 +14,6 @@ use moon_task::{Target, TargetLocator};
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
-use std::env;
 use std::sync::Arc;
 use tracing::instrument;
 

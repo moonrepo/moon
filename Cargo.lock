@@ -3774,17 +3774,11 @@ name = "moon_python_lang"
 version = "0.0.1"
 dependencies = [
  "cached",
- "cargo-lock",
- "cargo_toml",
  "miette",
  "moon_lang",
- "moon_logger",
  "moon_test_utils",
  "pep-508",
  "rustc-hash 2.0.0",
- "serde",
- "starbase_styles",
- "starbase_utils",
 ]
 
 [[package]]

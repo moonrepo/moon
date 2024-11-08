@@ -1,5 +1,4 @@
 pub mod actions;
-mod manifest_hash;
 mod python_platform;
 mod target_hash;
 mod toolchain_hash;

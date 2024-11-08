@@ -22,9 +22,11 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDepen
     if let Ok(lines) = read_lines(&path) {
         for line in lines.map_while(Result::ok) {
             if let Ok(parsed) = parse(&line) {
-                deps.entry(parsed.name.to_string()).and_modify(|dep| {
-                    dep.push(line.clone());
-                });
+                deps.entry(parsed.name.to_string())
+                    .and_modify(|dep| {
+                        dep.push(line.clone());
+                    })
+                    .or_insert(vec![line.clone()]);
             }
         }
     }

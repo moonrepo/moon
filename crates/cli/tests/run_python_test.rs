@@ -49,7 +49,6 @@ fn runs_install_deps_via_args() {
     let sandbox = python_sandbox(PartialPythonConfig {
         version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
         pip: Some(PartialPipConfig {
-            version: Some(UnresolvedVersionSpec::parse("latest").unwrap()),
             install_args: Some(vec!["poetry==1.8.4".to_string()]),
         }),
         ..PartialPythonConfig::default()

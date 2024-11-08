@@ -1,14 +1,13 @@
 use crate::{actions, find_requirements_txt, toolchain_hash::PythonToolchainHash};
 use moon_action::Operation;
 use moon_action_context::ActionContext;
-use moon_common::{color, Id};
+use moon_common::{path::is_root_level_source, Id};
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesList, ProjectsSourcesList,
     PythonConfig, UnresolvedVersionSpec,
 };
 use moon_console::Console;
 use moon_hash::ContentHasher;
-use moon_logger::debug;
 use moon_platform::{Platform, Runtime, RuntimeReq};
 use moon_process::Command;
 use moon_project::Project;
@@ -16,7 +15,7 @@ use moon_python_lang::pip_requirements::load_lockfile_dependencies;
 use moon_python_tool::{get_python_tool_paths, PythonTool};
 use moon_task::Task;
 use moon_tool::{get_proto_version_env, prepend_path_env_var, Tool, ToolManager};
-use moon_utils::{async_trait, get_workspace_root};
+use moon_utils::async_trait;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use std::{
@@ -25,8 +24,6 @@ use std::{
     sync::Arc,
 };
 use tracing::instrument;
-
-const LOG_TARGET: &str = "moon:python-platform";
 
 pub struct PythonPlatform {
     pub config: PythonConfig,
@@ -100,9 +97,17 @@ impl Platform for PythonPlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, _project_source: &str) -> miette::Result<bool> {
+    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
         // Single version policy / only a root requirements.txt
-        Ok(true)
+        if self.config.root_requirements_only {
+            return Ok(true);
+        }
+
+        if is_root_level_source(project_source) {
+            return Ok(true);
+        }
+
+        Ok(false)
     }
 
     #[instrument(skip_all)]
@@ -198,14 +203,6 @@ impl Platform for PythonPlatform {
 
         let installed = self.toolchain.setup(req, last_versions).await?;
 
-        actions::setup_tool(self.toolchain.get_for_version(req)?, &self.workspace_root).await?;
-        actions::install_deps(
-            self.toolchain.get_for_version(req)?,
-            &self.workspace_root,
-            &self.console,
-        )
-        .await?;
-
         Ok(installed)
     }
 
@@ -214,11 +211,12 @@ impl Platform for PythonPlatform {
         &self,
         _context: &ActionContext,
         runtime: &Runtime,
-        _working_dir: &Path,
+        working_dir: &Path,
     ) -> miette::Result<Vec<Operation>> {
         actions::install_deps(
             self.toolchain.get_for_version(&runtime.requirement)?,
-            &get_workspace_root(),
+            self.workspace_root.as_path(),
+            working_dir,
             &self.console,
         )
         .await
@@ -231,10 +229,7 @@ impl Platform for PythonPlatform {
         _project: &Project,
         _dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
-        let mutated_files = false;
-        //TODO: Here we can modifiy something
-
-        Ok(mutated_files)
+        Ok(false)
     }
 
     #[instrument(skip_all)]
@@ -247,11 +242,6 @@ impl Platform for PythonPlatform {
         if let Some(python_version) = &self.config.version {
             let deps =
                 BTreeMap::from_iter(load_lockfile_dependencies(manifest_path.to_path_buf())?);
-            debug!(
-                target: LOG_TARGET,
-                "HASH MANIFEST {}",
-                color::path(manifest_path)
-            );
             hasher.hash_content(PythonToolchainHash {
                 version: python_version.clone(),
                 dependencies: deps,
@@ -276,11 +266,6 @@ impl Platform for PythonPlatform {
             {
                 deps = BTreeMap::from_iter(load_lockfile_dependencies(pip_requirements)?);
             }
-            debug!(
-                target: LOG_TARGET,
-                "HASH RUN TARGET {}",
-                color::path(&project.root)
-            );
             hasher.hash_content(PythonToolchainHash {
                 version: python_version.clone(),
                 dependencies: deps,
@@ -297,7 +282,7 @@ impl Platform for PythonPlatform {
         _project: &Project,
         task: &Task,
         runtime: &Runtime,
-        _working_dir: &Path,
+        working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
         command.with_console(self.console.clone());
@@ -307,7 +292,10 @@ impl Platform for PythonPlatform {
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {
                 command.env("PROTO_PYTHON_VERSION", version);
-                command.env("PATH", prepend_path_env_var(get_python_tool_paths(python)));
+                command.env(
+                    "PATH",
+                    prepend_path_env_var(get_python_tool_paths(python, working_dir)),
+                );
             }
         }
 

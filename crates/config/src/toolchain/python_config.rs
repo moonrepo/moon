@@ -8,9 +8,6 @@ use warpgate_api::PluginLocator;
 pub struct PipConfig {
     /// List of arguments to append to `pip install` commands.
     pub install_args: Option<Vec<String>>,
-
-    /// The version of pip to download, install, and run `pip` tasks with.
-    pub version: Option<UnresolvedVersionSpec>,
 }
 
 #[derive(Clone, Config, Debug, PartialEq)]
@@ -24,6 +21,11 @@ pub struct PythonConfig {
 
     #[setting(default = ".venv", skip)]
     pub venv_name: String,
+
+    /// Assumes only the root `requirements.txt` is used for dependencies.
+    /// Can be used to support the "one version policy" pattern.
+    #[setting(default = true)]
+    pub root_requirements_only: bool,
 
     /// The version of Python to download, install, and run `python` tasks with.
     #[setting(env = "MOON_PYTHON_VERSION")]

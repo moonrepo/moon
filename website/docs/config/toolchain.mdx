@@ -743,6 +743,20 @@ python:
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
+### `rootPackageOnly`
+
+<HeadingApiLink to="/api/types/interface/PythonConfig#rootPackageOnly" />
+
+Supports the "single version policy" or "one version rule" patterns by only allowing dependencies in
+the root `requirements.txt`, and only installing dependencies in the workspace root, and not within
+individual projects. It also bypasses all `workspaces` checks to determine package locations.
+Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+python:
+  rootPackageOnly: false
+```
+
 ### `venv_name`
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#venv_name" />
@@ -759,25 +773,7 @@ python:
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#pip" />
 
-#### `version`
-
-<HeadingApiLink to="/api/types/interface/PipConfig#version" />
-
-The `version` setting defines the explicit pip
-[version specification](../concepts/toolchain#version-specification) to use. If this field is _not
-defined_, the built-in library will be used.
-
-A list of plugins that will automatically be imported using `yarn plugin import` (Yarn 2+ only). For
-performance reasons, plugins will only be imported when the Yarn version changes.
-
-```yaml title=".moon/toolchain.yml" {4}
-python:
-  version: '3.11.10'
-  pip:
-    version: 'latest'
-```
-
-### `install_args`
+#### `install_args`
 
 <HeadingApiLink to="/api/types/interface/PipConfig#install_args" />
 

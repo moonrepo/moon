@@ -8,12 +8,3 @@ hash_content!(
         pub dependencies: BTreeMap<String, Vec<String>>,
     }
 );
-
-// impl PythonToolchainHash {
-//     pub fn new(python_version: UnresolvedVersionSpec) -> Self {
-//         PythonToolchainHash {
-//             version: python_version,
-//             dependencies: BTreeMap::new(),
-//         }
-//     }
-// }

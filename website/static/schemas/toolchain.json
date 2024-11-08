@@ -598,19 +598,6 @@
             }
           ],
           "markdownDescription": "List of arguments to append to `pip install` commands."
-        },
-        "version": {
-          "title": "version",
-          "description": "The version of pip to download, install, and run pip tasks with.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/UnresolvedVersionSpec"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "The version of pip to download, install, and run `pip` tasks with."
         }
       },
       "additionalProperties": false
@@ -686,6 +673,13 @@
               "type": "null"
             }
           ]
+        },
+        "rootRequirementsOnly": {
+          "title": "rootRequirementsOnly",
+          "description": "Assumes only the root requirements.txt is used for dependencies. Can be used to support the \"one version policy\" pattern.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Assumes only the root `requirements.txt` is used for dependencies. Can be used to support the \"one version policy\" pattern."
         },
         "version": {
           "title": "version",

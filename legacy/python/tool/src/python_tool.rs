@@ -7,7 +7,6 @@ use moon_tool::{
     use_global_tool_on_path, Tool,
 };
 use moon_toolchain::RuntimeReq;
-use moon_utils::get_workspace_root;
 use proto_core::flow::install::InstallOptions;
 use proto_core::{Id, ProtoEnvironment, Tool as ProtoTool, UnresolvedVersionSpec};
 use rustc_hash::FxHashMap;
@@ -19,8 +18,8 @@ use tracing::instrument;
 
 const LOG_TARGET: &str = "moon:python-tool";
 
-pub fn get_python_tool_paths(python_tool: &PythonTool) -> Vec<PathBuf> {
-    let venv_python = &get_workspace_root().join(python_tool.config.venv_name.clone());
+pub fn get_python_tool_paths(python_tool: &PythonTool, working_dir: &Path) -> Vec<PathBuf> {
+    let venv_python = working_dir.join(python_tool.config.venv_name.clone());
 
     let paths = if venv_python.exists() {
         vec![
@@ -90,7 +89,10 @@ impl PythonTool {
         Command::new("python")
             .args(args)
             .envs(get_proto_env_vars())
-            .env("PATH", prepend_path_env_var(get_python_tool_paths(self)))
+            .env(
+                "PATH",
+                prepend_path_env_var(get_python_tool_paths(self, working_dir)),
+            )
             .cwd(working_dir)
             .with_console(self.console.clone())
             .create_async()

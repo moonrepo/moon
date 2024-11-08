@@ -253,8 +253,6 @@ export interface NodeConfig {
 export interface PipConfig {
 	/** List of arguments to append to `pip install` commands. */
 	installArgs: string[] | null;
-	/** The version of pip to download, install, and run `pip` tasks with. */
-	version: UnresolvedVersionSpec | null;
 }
 
 export interface PythonConfig {
@@ -262,6 +260,13 @@ export interface PythonConfig {
 	pip: PipConfig | null;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin: PluginLocator | null;
+	/**
+	 * Assumes only the root `requirements.txt` is used for dependencies.
+	 * Can be used to support the "one version policy" pattern.
+	 *
+	 * @default true
+	 */
+	rootRequirementsOnly?: boolean;
 	/**
 	 * The version of Python to download, install, and run `python` tasks with.
 	 *
@@ -632,8 +637,6 @@ export interface PartialNodeConfig {
 export interface PartialPipConfig {
 	/** List of arguments to append to `pip install` commands. */
 	installArgs?: string[] | null;
-	/** The version of pip to download, install, and run `pip` tasks with. */
-	version?: UnresolvedVersionSpec | null;
 }
 
 export interface PartialPythonConfig {
@@ -641,6 +644,13 @@ export interface PartialPythonConfig {
 	pip?: PartialPipConfig | null;
 	/** Location of the WASM plugin to use for Python support. */
 	plugin?: PluginLocator | null;
+	/**
+	 * Assumes only the root `requirements.txt` is used for dependencies.
+	 * Can be used to support the "one version policy" pattern.
+	 *
+	 * @default true
+	 */
+	rootRequirementsOnly?: boolean | null;
 	/**
 	 * The version of Python to download, install, and run `python` tasks with.
 	 *

@@ -4,13 +4,13 @@ use moon_task::{Target, TaskOptions};
 use moon_task_builder::TasksQuerent;
 use rustc_hash::FxHashMap;
 
-pub struct WorkspaceBuilderTasksQuerent<'app> {
-    pub project_data: &'app FxHashMap<Id, ProjectBuildData>,
-    pub projects_by_tag: &'app FxHashMap<Id, Vec<Id>>,
-    pub task_data: &'app FxHashMap<Target, TaskBuildData>,
+pub struct WorkspaceBuilderTasksQuerent<'builder> {
+    pub project_data: &'builder FxHashMap<Id, ProjectBuildData>,
+    pub projects_by_tag: &'builder FxHashMap<Id, Vec<Id>>,
+    pub task_data: &'builder FxHashMap<Target, TaskBuildData>,
 }
 
-impl<'app> TasksQuerent for WorkspaceBuilderTasksQuerent<'app> {
+impl<'builder> TasksQuerent for WorkspaceBuilderTasksQuerent<'builder> {
     fn query_projects_by_tag(&self, tag: &str) -> miette::Result<Vec<&Id>> {
         Ok(self
             .projects_by_tag

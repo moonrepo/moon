@@ -1209,12 +1209,8 @@ mod action_graph {
                 expected = "Task ci:ci1-dependant cannot depend on task ci:ci1-dependency"
             )]
             async fn errors_if_dependency_is_ci_false_and_constraint_enabled() {
-                env::set_var("MOON_INTERNAL_CONSTRAINT_RUNINCI", "true");
-
                 let sandbox = create_sandbox("tasks");
                 ActionGraphContainer::new(sandbox.path()).await;
-
-                env::remove_var("MOON_INTERNAL_CONSTRAINT_RUNINCI");
             }
         }
     }

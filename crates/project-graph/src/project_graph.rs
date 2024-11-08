@@ -10,7 +10,6 @@ use moon_query::{build_query, Criteria};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use scc::HashMap;
-use starbase_utils::env::bool_var;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -223,7 +222,6 @@ impl ProjectGraph {
 
         let expander = ProjectExpander::new(ExpanderContext {
             aliases: self.aliases(),
-            check_ci_relationships: bool_var("MOON_INTERNAL_CONSTRAINT_RUNINCI"),
             project: self.get_unexpanded(&id)?,
             query: Box::new(query),
             workspace_root: &self.workspace_root,

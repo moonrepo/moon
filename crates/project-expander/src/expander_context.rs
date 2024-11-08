@@ -10,9 +10,6 @@ pub struct ExpanderContext<'graph, 'query> {
     /// Mapping of aliases to their project IDs.
     pub aliases: FxHashMap<&'graph str, &'graph Id>,
 
-    /// Check `runInCI` relationships are legitimate.
-    pub check_ci_relationships: bool,
-
     /// The base unexpanded project.
     pub project: &'graph Project,
 

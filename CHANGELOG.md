@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- If you renamed a project using the `id` setting in `moon.yml`, you can no longer reference that
+  project in dependencies and targets using its original ID.
+
+#### 🚀 Updates
+
+- Resolved the `strictProjectIds` experiment and you can no longer reference the original ID.
+- Resolved the `disallowRunInCiMismatch` experiment and you can no longer have a CI based task
+  depend on a non-CI based task.
+- Added a new task graph, that enables new granular based functionality for task related features.
+
 ## 1.29.4
 
 #### 🚀 Updates

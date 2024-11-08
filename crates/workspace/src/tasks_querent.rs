@@ -1,10 +1,11 @@
-use crate::build_data::TaskBuildData;
+use crate::build_data::{ProjectBuildData, TaskBuildData};
 use moon_common::Id;
 use moon_task::{Target, TaskOptions};
 use moon_task_builder::TasksQuerent;
 use rustc_hash::FxHashMap;
 
 pub struct WorkspaceBuilderTasksQuerent<'app> {
+    pub project_data: &'app FxHashMap<Id, ProjectBuildData>,
     pub projects_by_tag: &'app FxHashMap<Id, Vec<Id>>,
     pub task_data: &'app FxHashMap<Target, TaskBuildData>,
 }
@@ -23,20 +24,28 @@ impl<'app> TasksQuerent for WorkspaceBuilderTasksQuerent<'app> {
         project_ids: Vec<&Id>,
         task_id: &Id,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
-        Ok(self
+        // May be an alias!
+        let project_ids = project_ids
+            .iter()
+            .map(|id| ProjectBuildData::resolve_id(id, &self.project_data))
+            .collect::<Vec<_>>();
+
+        let results = self
             .task_data
             .iter()
             .filter_map(|(target, data)| {
-                if &target.task_id == task_id
-                    && target
-                        .get_project_id()
-                        .is_some_and(|id| project_ids.contains(&id))
-                {
+                let Some(project_id) = target.get_project_id() else {
+                    return None;
+                };
+
+                if &target.task_id == task_id && project_ids.contains(&project_id) {
                     Some((target, &data.options))
                 } else {
                     None
                 }
             })
-            .collect::<Vec<_>>())
+            .collect::<Vec<_>>();
+
+        Ok(results)
     }
 }

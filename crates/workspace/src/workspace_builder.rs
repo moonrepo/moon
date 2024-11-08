@@ -37,7 +37,6 @@ pub struct WorkspaceBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
-    pub strict_project_ids: bool,
     pub toolchain_config: &'app ToolchainConfig,
     pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
@@ -255,7 +254,7 @@ impl<'app> WorkspaceBuilder<'app> {
         id_or_alias: &str,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<(Id, NodeIndex)> {
-        let id = self.resolve_project_id(id_or_alias);
+        let id = ProjectBuildData::resolve_id(id_or_alias, &self.project_data);
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
@@ -439,9 +438,11 @@ impl<'app> WorkspaceBuilder<'app> {
         target: &Target,
         cycle: &mut FxHashSet<Target>,
     ) -> miette::Result<NodeIndex> {
+        let target = TaskBuildData::resolve_target(target, &self.project_data);
+
         {
-            let Some(build_data) = self.task_data.get(target) else {
-                return Err(TaskGraphError::UnconfiguredTarget(target.to_owned()).into());
+            let Some(build_data) = self.task_data.get(&target) else {
+                return Err(TaskGraphError::UnconfiguredTarget(target).into());
             };
 
             // Already loaded, exit early with existing index
@@ -469,6 +470,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // Resolve the task dependencies so we can link edges correctly
         TaskDepsBuilder {
             querent: Box::new(WorkspaceBuilderTasksQuerent {
+                project_data: &self.project_data,
                 projects_by_tag: &self.projects_by_tag,
                 task_data: &self.task_data,
             }),
@@ -505,7 +507,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // And finally add to the graph
         let index = self.task_graph.add_node(task);
 
-        self.task_data.get_mut(target).unwrap().node_index = Some(index);
+        self.task_data.get_mut(&target).unwrap().node_index = Some(index);
 
         for edge in edges {
             self.task_graph.add_edge(index, edge.0, edge.1);
@@ -830,40 +832,6 @@ impl<'app> WorkspaceBuilder<'app> {
         self.renamed_project_ids.extend(renamed_ids);
 
         Ok(())
-    }
-
-    fn resolve_project_id(&self, id_or_alias: &str) -> Id {
-        let id = if self.project_data.contains_key(id_or_alias) {
-            Id::raw(id_or_alias)
-        } else {
-            match self.project_data.iter().find_map(|(id, build_data)| {
-                if build_data
-                    .alias
-                    .as_ref()
-                    .is_some_and(|alias| alias == id_or_alias)
-                {
-                    Some(id)
-                } else {
-                    None
-                }
-            }) {
-                Some(project_id) => project_id.to_owned(),
-                None => Id::raw(id_or_alias),
-            }
-        };
-
-        if self
-            .context
-            .as_ref()
-            .is_some_and(|ctx| ctx.strict_project_ids)
-        {
-            return id;
-        }
-
-        match self.renamed_project_ids.get(&id) {
-            Some(new_id) => new_id.to_owned(),
-            None => id,
-        }
     }
 
     fn context(&self) -> Arc<WorkspaceBuilderContext<'app>> {

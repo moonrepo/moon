@@ -440,7 +440,7 @@ impl<'app> WorkspaceBuilder<'app> {
         cycle: &mut FxHashSet<Target>,
     ) -> miette::Result<NodeIndex> {
         {
-            let Some(build_data) = self.task_data.get(&target) else {
+            let Some(build_data) = self.task_data.get(target) else {
                 return Err(TaskGraphError::UnconfiguredTarget(target.to_owned()).into());
             };
 

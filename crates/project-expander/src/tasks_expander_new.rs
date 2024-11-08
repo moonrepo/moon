@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::expander_context::*;
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
@@ -7,6 +5,7 @@ use moon_config::TaskArgs;
 use moon_task::Task;
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
+use std::mem;
 use tracing::{instrument, trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {

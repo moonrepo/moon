@@ -66,11 +66,23 @@ impl<'proj> TaskDepsBuilder<'proj> {
                 .query_tasks(project_ids, &dep_config.target.task_id)?;
 
             if results.is_empty() && !skip_if_missing {
-                return Err(TasksBuilderError::UnknownDepTarget {
-                    dep: dep_config.target.to_owned(),
-                    task: self.task.target.to_owned(),
-                }
-                .into());
+                return Err(match &dep_config.target.scope {
+                    TargetScope::Deps => TasksBuilderError::UnknownDepTargetParentScope {
+                        dep: dep_config.target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into(),
+                    TargetScope::Tag(_) => TasksBuilderError::UnknownDepTargetTagScope {
+                        dep: dep_config.target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into(),
+                    _ => TasksBuilderError::UnknownDepTarget {
+                        dep: dep_config.target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into(),
+                });
             }
 
             for (dep_task_target, dep_task_options) in results {
@@ -104,7 +116,7 @@ impl<'proj> TaskDepsBuilder<'proj> {
         dep_task_options: &TaskOptions,
         dep_config: &TaskDependencyConfig,
         deps_list: &mut Vec<TaskDependencyConfig>,
-        skip_if_missing: bool,
+        _skip_if_missing: bool,
     ) -> miette::Result<()> {
         // Do not depend on tasks that can fail
         if dep_task_options.allow_failure {
@@ -136,7 +148,7 @@ impl<'proj> TaskDepsBuilder<'proj> {
         // Add the dep if it has not already been
         let dep = TaskDependencyConfig {
             target: dep_task_target.to_owned(),
-            optional: Some(skip_if_missing),
+            // optional: Some(skip_if_missing),
             ..dep_config.clone()
         };
 

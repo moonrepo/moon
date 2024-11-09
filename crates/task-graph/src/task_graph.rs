@@ -4,7 +4,8 @@ use moon_target::Target;
 use moon_task::Task;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::Arc;
+// use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::debug;
 
 pub type TaskGraphType = DiGraph<Task, DependencyType>;
@@ -22,9 +23,8 @@ pub struct TaskGraph {
 
     /// Task metadata, mapped by target.
     metadata: FxHashMap<Target, TaskMetadata>,
-
-    /// Expanded tasks, mapped by target.
-    tasks: Arc<RwLock<TasksCache>>,
+    // /// Expanded tasks, mapped by target.
+    // tasks: Arc<RwLock<TasksCache>>,
 }
 
 impl TaskGraph {
@@ -34,21 +34,21 @@ impl TaskGraph {
         Self {
             graph,
             metadata,
-            tasks: Arc::new(RwLock::new(FxHashMap::default())),
+            // tasks: Arc::new(RwLock::new(FxHashMap::default())),
         }
     }
 
-    fn read_cache(&self) -> RwLockReadGuard<TasksCache> {
-        self.tasks
-            .read()
-            .expect("Failed to acquire read access to task graph!")
-    }
+    // fn read_cache(&self) -> RwLockReadGuard<TasksCache> {
+    //     self.tasks
+    //         .read()
+    //         .expect("Failed to acquire read access to task graph!")
+    // }
 
-    fn write_cache(&self) -> RwLockWriteGuard<TasksCache> {
-        self.tasks
-            .write()
-            .expect("Failed to acquire write access to task graph!")
-    }
+    // fn write_cache(&self) -> RwLockWriteGuard<TasksCache> {
+    //     self.tasks
+    //         .write()
+    //         .expect("Failed to acquire write access to task graph!")
+    // }
 }
 
 impl GraphData<Task, DependencyType, Target> for TaskGraph {

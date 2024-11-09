@@ -52,6 +52,24 @@ pub enum TasksBuilderError {
     )]
     UnknownDepTarget { dep: Target, task: Target },
 
+    #[diagnostic(code(task_builder::unknown_target_in_project_deps))]
+    #[error(
+        "Invalid dependency {} for {}, no matching targets in project dependencies. Mark the dependency as {} to allow no results.",
+        .dep.style(Style::Label),
+        .task.style(Style::Label),
+        "optional".style(Style::Property),
+    )]
+    UnknownDepTargetParentScope { dep: Target, task: Target },
+
+    #[diagnostic(code(task_builder::unknown_target_in_tag))]
+    #[error(
+        "Invalid dependency {} for {}, no matching targets within this tag. Mark the dependency as {} to allow no results.",
+        .dep.style(Style::Label),
+        .task.style(Style::Label),
+        "optional".style(Style::Property),
+    )]
+    UnknownDepTargetTagScope { dep: Target, task: Target },
+
     #[diagnostic(code(task_builder::unsupported_target_scope))]
     #[error(
         "Invalid dependency {} for {}. All (:) scope is not supported.",

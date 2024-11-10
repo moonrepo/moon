@@ -68,6 +68,106 @@ fn build_task_deps_with_data(task: &mut Task, data: FxHashMap<Target, TaskOption
 mod task_deps_builder {
     use super::*;
 
+    #[test]
+    #[should_panic(expected = "Task project:task cannot depend on task project:allow-failure")]
+    fn errors_if_dep_on_allow_failure() {
+        let mut task = create_task();
+        task.deps.push(TaskDependencyConfig::new(
+            Target::parse("allow-failure").unwrap(),
+        ));
+
+        build_task_deps_with_data(
+            &mut task,
+            FxHashMap::from_iter([(
+                Target::parse("project:allow-failure").unwrap(),
+                TaskOptions {
+                    allow_failure: true,
+                    ..Default::default()
+                },
+            )]),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
+    fn errors_if_dep_not_run_in_ci() {
+        let mut task = create_task();
+        task.options.run_in_ci = true;
+        task.deps
+            .push(TaskDependencyConfig::new(Target::parse("no-ci").unwrap()));
+
+        build_task_deps_with_data(
+            &mut task,
+            FxHashMap::from_iter([(
+                Target::parse("project:no-ci").unwrap(),
+                TaskOptions {
+                    run_in_ci: false,
+                    ..Default::default()
+                },
+            )]),
+        );
+    }
+
+    #[test]
+    fn doesnt_errors_if_dep_run_in_ci() {
+        let mut task = create_task();
+        task.options.run_in_ci = false;
+        task.deps
+            .push(TaskDependencyConfig::new(Target::parse("ci").unwrap()));
+
+        build_task_deps_with_data(
+            &mut task,
+            FxHashMap::from_iter([(
+                Target::parse("project:ci").unwrap(),
+                TaskOptions {
+                    run_in_ci: true,
+                    ..Default::default()
+                },
+            )]),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Non-persistent task project:task cannot depend on persistent task")]
+    fn errors_for_invalid_persistent_chain() {
+        let mut task = create_task();
+        task.options.persistent = false;
+        task.deps.push(TaskDependencyConfig::new(
+            Target::parse("persistent").unwrap(),
+        ));
+
+        build_task_deps_with_data(
+            &mut task,
+            FxHashMap::from_iter([(
+                Target::parse("project:persistent").unwrap(),
+                TaskOptions {
+                    persistent: true,
+                    ..Default::default()
+                },
+            )]),
+        );
+    }
+
+    #[test]
+    fn doesnt_errors_for_valid_persistent_chain() {
+        let mut task = create_task();
+        task.options.persistent = true;
+        task.deps.push(TaskDependencyConfig::new(
+            Target::parse("not-persistent").unwrap(),
+        ));
+
+        build_task_deps_with_data(
+            &mut task,
+            FxHashMap::from_iter([(
+                Target::parse("project:not-persistent").unwrap(),
+                TaskOptions {
+                    persistent: false,
+                    ..Default::default()
+                },
+            )]),
+        );
+    }
+
     mod all_scope {
         use super::*;
 

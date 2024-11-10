@@ -461,9 +461,8 @@ impl<'app> WorkspaceBuilder<'app> {
             .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
             .await?;
 
-        // TODO change to a remove in a follow-up PR
-        let project = self.project_graph.node_weight(project_index).unwrap();
-        let mut task = project.tasks.get(&target.task_id).unwrap().clone();
+        let project = self.project_graph.node_weight_mut(project_index).unwrap();
+        let mut task = project.tasks.remove(&target.task_id).unwrap();
 
         cycle.insert(target.clone());
 

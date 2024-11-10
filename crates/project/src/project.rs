@@ -10,7 +10,7 @@ use moon_config::{
     StackType,
 };
 use moon_file_group::FileGroup;
-use moon_task::Task;
+use moon_task::{Target, Task};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::path::PathBuf;
@@ -60,8 +60,8 @@ cacheable!(
         /// Tasks specific to the project. Inherits all tasks from the global config.
         pub tasks: BTreeMap<Id, Task>,
 
-        /// List of IDs of all tasks configured or inherited for the project.
-        pub task_ids: Vec<Id>,
+        /// List of targets of non-internal tasks configured or inherited for the project.
+        pub task_targets: Vec<Target>,
 
         /// The type of project.
         #[serde(rename = "type")]
@@ -79,6 +79,7 @@ impl Project {
     }
 
     /// Return a task with the defined ID.
+    #[deprecated]
     pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
         let task_id = Id::raw(task_id.as_ref());
 
@@ -101,6 +102,7 @@ impl Project {
     }
 
     /// Return a list of all visible task IDs.
+    #[deprecated]
     pub fn get_task_ids(&self) -> miette::Result<Vec<&Id>> {
         Ok(self
             .get_tasks()?
@@ -110,6 +112,7 @@ impl Project {
     }
 
     /// Return all visible tasks within the project. Does not include internal tasks!
+    #[deprecated]
     pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
         let mut tasks = vec![];
 
@@ -146,6 +149,7 @@ impl PartialEq for Project {
             && self.source == other.source
             && self.stack == other.stack
             && self.tasks == other.tasks
+            && self.task_targets == other.task_targets
             && self.type_of == other.type_of
     }
 }

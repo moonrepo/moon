@@ -17,11 +17,8 @@ pub struct ProjectArgs {
 
 #[instrument(skip_all)]
 pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
-    let project_graph = session
-        .get_project_graph()
-        .await?
-        .focus_for(&args.id, false)?;
-    let project = project_graph.get(&args.id)?;
+    let workspace_graph = session.get_workspace_graph().await?;
+    let project = workspace_graph.projects.get(&args.id)?;
     let config = &project.config;
 
     let console = session.console.stdout();
@@ -128,7 +125,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
         }
     }
 
-    let tasks = project.get_tasks()?;
+    let tasks = workspace_graph.tasks.get_all_for_project(&args.id, false)?;
 
     if !tasks.is_empty() {
         console.print_entry_header("Tasks")?;

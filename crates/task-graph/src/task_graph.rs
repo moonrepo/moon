@@ -1,4 +1,5 @@
 use crate::task_graph_error::TaskGraphError;
+use moon_common::Id;
 use moon_config::DependencyType;
 use moon_graph_utils::*;
 use moon_project_graph::ProjectGraph;
@@ -82,6 +83,30 @@ impl TaskGraph {
 
         for target in self.metadata.keys() {
             all.push(self.internal_get(target)?);
+        }
+
+        Ok(all)
+    }
+
+    /// Return all tasks for a specific project from the graph.
+    #[instrument(name = "get_all_project_tasks", skip(self))]
+    pub fn get_all_for_project(
+        &self,
+        project_id: &Id,
+        include_internal: bool,
+    ) -> miette::Result<Vec<Arc<Task>>> {
+        let mut all = vec![];
+
+        for target in self.metadata.keys() {
+            if target.get_project_id().is_some_and(|id| id == project_id) {
+                let task = self.internal_get(target)?;
+
+                if !include_internal && task.is_internal() {
+                    continue;
+                }
+
+                all.push(task);
+            }
         }
 
         Ok(all)

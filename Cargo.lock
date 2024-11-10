@@ -3744,7 +3744,6 @@ dependencies = [
  "moon_graph_utils",
  "moon_project",
  "moon_project_expander",
- "moon_query",
  "moon_task",
  "moon_test_utils2",
  "moon_workspace",

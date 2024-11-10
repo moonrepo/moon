@@ -18,9 +18,9 @@ mod task_runner {
 
         #[tokio::test]
         async fn skips_if_noop() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
-            let node = container.create_action_node("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             runner.run_with_panic(&context, &node).await.unwrap();
@@ -41,9 +41,9 @@ mod task_runner {
             #[tokio::test]
             #[should_panic(expected = "Encountered a missing hash for task project:dep")]
             async fn errors_if_dep_hasnt_ran() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("has-deps");
-                let node = container.create_action_node("has-deps");
+                let container = TaskRunnerContainer::new("runner", "has-deps").await;
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -51,9 +51,9 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_dep_skipped() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("has-deps");
-                let node = container.create_action_node("has-deps");
+                let container = TaskRunnerContainer::new("runner", "has-deps").await;
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
 
                 let context = ActionContext::default();
                 context
@@ -75,9 +75,9 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_dep_failed() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("has-deps");
-                let node = container.create_action_node("has-deps");
+                let container = TaskRunnerContainer::new("runner", "has-deps").await;
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
 
                 let context = ActionContext::default();
                 context
@@ -103,11 +103,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn creates_cache_state_file() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("create-file");
-                let node = container.create_action_node("create-file");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -123,11 +123,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn generates_a_hash() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("create-file");
-                let node = container.create_action_node("create-file");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
@@ -137,11 +137,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn generates_a_hash_for_noop() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "noop").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("noop");
-                let node = container.create_action_node("noop");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
@@ -151,11 +151,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn generates_same_hashes_based_on_input() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "hash-inputs").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("hash-inputs");
-                let node = container.create_action_node("hash-inputs");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 container
@@ -170,11 +170,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn generates_different_hashes_based_on_input() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "hash-inputs").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("hash-inputs");
-                let node = container.create_action_node("hash-inputs");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 container
@@ -194,11 +194,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn creates_operations_for_each_step() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("create-file");
-                let node = container.create_action_node("create-file");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
@@ -216,11 +216,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn running_again_hits_the_output_cache() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "create-file").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("create-file");
-                let node = container.create_action_node("create-file");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let before = runner.run_with_panic(&context, &node).await.unwrap();
@@ -240,11 +240,11 @@ mod task_runner {
             #[tokio::test]
             #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "missing-output").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("missing-output");
-                let node = container.create_action_node("missing-output");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -253,11 +253,11 @@ mod task_runner {
             #[tokio::test]
             #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing_via_glob() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "missing-output-glob").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("missing-output-glob");
-                let node = container.create_action_node("missing-output-glob");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -269,11 +269,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn creates_cache_state_file() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("without-cache");
-                let node = container.create_action_node("without-cache");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -289,11 +289,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn doesnt_generate_a_hash() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("without-cache");
-                let node = container.create_action_node("without-cache");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
@@ -303,11 +303,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn doesnt_create_non_task_operations() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("without-cache");
-                let node = container.create_action_node("without-cache");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
@@ -320,11 +320,11 @@ mod task_runner {
 
             #[tokio::test]
             async fn running_again_reexecutes_task() {
-                let container = TaskRunnerContainer::new_os("runner").await;
+                let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("without-cache");
-                let node = container.create_action_node("without-cache");
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
                 let context = ActionContext::default();
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
@@ -347,16 +347,16 @@ mod task_runner {
 
         #[tokio::test]
         async fn returns_none_by_default() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
 
             assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
         }
 
         #[tokio::test]
         async fn sets_the_hash_to_cache() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
 
             runner.is_cached("hash123").await.unwrap();
 
@@ -368,8 +368,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn returns_if_hashes_match() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
@@ -382,8 +382,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_hashes_dont_match() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "otherhash456".into();
@@ -393,8 +393,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_codes_dont_match() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 2;
                 runner.cache.data.hash = "hash123".into();
@@ -404,8 +404,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_outputs_dont_exist() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
@@ -415,8 +415,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn returns_if_outputs_do_exist() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
@@ -430,8 +430,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn returns_none_if_non_zero_exit() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 1;
 
@@ -444,8 +444,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn returns_if_archive_exists() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 container
                     .sandbox
@@ -459,16 +459,16 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_archive_doesnt_exist() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
 
             #[tokio::test]
             async fn skips_if_cache_isnt_readable() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 container
                     .sandbox
@@ -486,8 +486,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn skips_if_cache_is_writeonly() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("base");
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut runner = container.create_runner();
 
                 container
                     .sandbox
@@ -510,8 +510,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn returns_if_within_the_ttl() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("cache-lifetime");
+                let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
@@ -525,8 +525,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn misses_if_passed_the_ttl() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("cache-lifetime");
+                let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
+                let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
@@ -557,8 +557,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn returns_true_if_no_deps() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let runner = container.create_runner("no-deps");
+            let container = TaskRunnerContainer::new("runner", "no-deps").await;
+            let runner = container.create_runner();
             let context = ActionContext::default();
 
             assert!(runner.is_dependencies_complete(&context).unwrap());
@@ -566,8 +566,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn returns_false_if_dep_failed() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let runner = container.create_runner("has-deps");
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            let runner = container.create_runner();
             let context = ActionContext::default();
 
             context
@@ -580,8 +580,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn returns_false_if_dep_skipped() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let runner = container.create_runner("has-deps");
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            let runner = container.create_runner();
             let context = ActionContext::default();
 
             context
@@ -594,8 +594,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn returns_true_if_dep_passed() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let runner = container.create_runner("no-deps");
+            let container = TaskRunnerContainer::new("runner", "no-deps").await;
+            let runner = container.create_runner();
             let context = ActionContext::default();
 
             context
@@ -612,8 +612,8 @@ mod task_runner {
         #[tokio::test]
         #[should_panic(expected = "Encountered a missing hash for task project:dep")]
         async fn errors_if_dep_not_ran() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let runner = container.create_runner("has-deps");
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            let runner = container.create_runner();
             let context = ActionContext::default();
 
             runner.is_dependencies_complete(&context).unwrap();
@@ -625,12 +625,12 @@ mod task_runner {
 
         #[tokio::test]
         async fn generates_a_hash() {
-            let container = TaskRunnerContainer::new("runner").await;
+            let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("base");
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
-            let node = container.create_action_node("base");
+            let node = container.create_action_node();
 
             let hash = runner.generate_hash(&context, &node).await.unwrap();
 
@@ -640,12 +640,12 @@ mod task_runner {
 
         #[tokio::test]
         async fn generates_a_different_hash_via_passthrough_args() {
-            let container = TaskRunnerContainer::new("runner").await;
+            let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("base");
+            let mut runner = container.create_runner();
             let mut context = ActionContext::default();
-            let node = container.create_action_node("base");
+            let node = container.create_action_node();
 
             let before_hash = runner.generate_hash(&context, &node).await.unwrap();
 
@@ -661,12 +661,12 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_an_operation() {
-            let container = TaskRunnerContainer::new("runner").await;
+            let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("base");
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
-            let node = container.create_action_node("base");
+            let node = container.create_action_node();
 
             runner.generate_hash(&context, &node).await.unwrap();
 
@@ -678,12 +678,12 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_a_manifest_file() {
-            let container = TaskRunnerContainer::new("runner").await;
+            let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("base");
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
-            let node = container.create_action_node("base");
+            let node = container.create_action_node();
 
             let hash = runner.generate_hash(&context, &node).await.unwrap();
 
@@ -701,11 +701,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn executes_and_sets_success_state() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("success");
-            let node = container.create_action_node("success");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             runner.report_item.hash = Some("hash123".into());
@@ -723,11 +723,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn executes_and_sets_success_state_without_hash() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("success");
-            let node = container.create_action_node("success");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             runner.execute(&context, &node).await.unwrap();
@@ -744,11 +744,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn executes_and_sets_failed_state() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "failure").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("failure");
-            let node = container.create_action_node("failure");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             // Swallow panic so we can check operations
@@ -767,11 +767,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn executes_and_creates_operation_on_success() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("success");
-            let node = container.create_action_node("success");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             runner.report_item.hash = Some("hash123".into());
@@ -790,11 +790,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn executes_and_creates_operation_on_failure() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "failure").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("failure");
-            let node = container.create_action_node("failure");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             // Swallow panic so we can check operations
@@ -813,11 +813,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn saves_stdlog_file_to_cache() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "success").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("success");
-            let node = container.create_action_node("success");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             runner.report_item.hash = Some("hash123".into());
@@ -834,11 +834,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_operation_for_mutex_acquire() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "with-mutex").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("with-mutex");
-            let node = container.create_action_node("with-mutex");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             // Swallow panic so we can check operations
@@ -857,11 +857,11 @@ mod task_runner {
         #[tokio::test]
         #[should_panic(expected = "failed to run")]
         async fn errors_when_task_exec_fails() {
-            let container = TaskRunnerContainer::new_os("runner").await;
+            let container = TaskRunnerContainer::new_os("runner", "failure").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("failure");
-            let node = container.create_action_node("failure");
+            let mut runner = container.create_runner();
+            let node = container.create_action_node();
             let context = ActionContext::default();
 
             runner.report_item.hash = Some("hash123".into());
@@ -874,8 +874,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_an_operation() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
 
             runner.skip(&context).unwrap();
@@ -888,8 +888,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn sets_skipped_state() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
 
             runner.skip(&context).unwrap();
@@ -910,8 +910,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_an_operation() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
 
             runner.skip_no_op(&context).unwrap();
@@ -924,8 +924,8 @@ mod task_runner {
 
         #[tokio::test]
         async fn sets_passthrough_state() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
 
             runner.skip_no_op(&context).unwrap();
@@ -941,8 +941,8 @@ mod task_runner {
         }
         #[tokio::test]
         async fn sets_completed_state() {
-            let container = TaskRunnerContainer::new("runner").await;
-            let mut runner = container.create_runner("base");
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
             let context = ActionContext::default();
 
             runner.report_item.hash = Some("hash123".into());
@@ -965,11 +965,11 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_a_passed_operation_if_archived() {
-            let container = TaskRunnerContainer::new("runner").await;
+            let container = TaskRunnerContainer::new("runner", "outputs").await;
             container.sandbox.enable_git();
             container.sandbox.create_file("project/file.txt", "");
 
-            let mut runner = container.create_runner("outputs");
+            let mut runner = container.create_runner();
             let result = runner.archive("hash123").await.unwrap();
 
             assert!(result);
@@ -982,10 +982,10 @@ mod task_runner {
 
         #[tokio::test]
         async fn creates_a_skipped_operation_if_not_archiveable() {
-            let container = TaskRunnerContainer::new("runner").await;
+            let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
-            let mut runner = container.create_runner("base");
+            let mut runner = container.create_runner();
             let result = runner.archive("hash123").await.unwrap();
 
             assert!(!result);
@@ -998,7 +998,7 @@ mod task_runner {
 
         #[tokio::test]
         async fn can_archive_tasks_without_outputs() {
-            let mut container = TaskRunnerContainer::new("runner").await;
+            let mut container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();
 
             if let Some(config) = Arc::get_mut(&mut container.app_context.workspace_config) {
@@ -1008,7 +1008,7 @@ mod task_runner {
                     .push(Target::new("project", "base").unwrap());
             }
 
-            let mut runner = container.create_runner("base");
+            let mut runner = container.create_runner();
 
             assert!(runner.archive("hash123").await.unwrap());
         }
@@ -1022,10 +1022,10 @@ mod task_runner {
 
             #[tokio::test]
             async fn creates_a_skipped_operation_if_no_cache() {
-                let container = TaskRunnerContainer::new("runner").await;
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
                 container.sandbox.enable_git();
 
-                let mut runner = container.create_runner("outputs");
+                let mut runner = container.create_runner();
 
                 let context = ActionContext::default();
                 let result = runner.hydrate(&context, "hash123").await.unwrap();
@@ -1052,8 +1052,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn creates_a_cached_operation() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 setup_previous_state(&container, &mut runner);
 
@@ -1070,8 +1070,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn sets_passed_state() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 setup_previous_state(&container, &mut runner);
 
@@ -1090,19 +1090,18 @@ mod task_runner {
         }
 
         mod local_cache {
-            use std::fs;
-
             use super::*;
+            use std::fs;
 
             fn setup_local_state(container: &TaskRunnerContainer, _runner: &mut TaskRunner) {
                 container.sandbox.enable_git();
-                container.pack_archive("outputs");
+                container.pack_archive();
             }
 
             #[tokio::test]
             async fn creates_a_cached_operation() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 setup_local_state(&container, &mut runner);
 
@@ -1119,8 +1118,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn sets_passed_state() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 setup_local_state(&container, &mut runner);
 
@@ -1139,8 +1138,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn unpacks_archive_into_project() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 setup_local_state(&container, &mut runner);
 
@@ -1155,8 +1154,8 @@ mod task_runner {
 
             #[tokio::test]
             async fn loads_stdlogs_in_archive_into_operation() {
-                let container = TaskRunnerContainer::new("runner").await;
-                let mut runner = container.create_runner("outputs");
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
 
                 setup_local_state(&container, &mut runner);
 

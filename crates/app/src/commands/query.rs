@@ -261,7 +261,7 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         options.affected = Some(affected_tracker.build());
     }
 
-    let mut projects = query_projects(&workspace_graph.projects, &options).await?;
+    let mut projects = query_projects(&workspace_graph, &options).await?;
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
@@ -348,7 +348,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         type_of: args.type_of,
         ..QueryProjectsOptions::default()
     };
-    let projects = query_projects(&workspace_graph.projects, &options).await?;
+    let projects = query_projects(&workspace_graph, &options).await?;
 
     // Group tasks by project
     let mut grouped_tasks = BTreeMap::default();

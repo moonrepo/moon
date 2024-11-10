@@ -1,12 +1,10 @@
 use crate::project_graph_error::ProjectGraphError;
-use crate::project_matcher::matches_criteria;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_common::{color, Id};
+use moon_common::Id;
 use moon_config::DependencyScope;
 use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
-use moon_query::Criteria;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use scc::HashMap;
@@ -49,9 +47,6 @@ pub struct ProjectGraph {
     /// Expanded projects, mapped by project ID.
     projects: Arc<RwLock<ProjectsCache>>,
 
-    /// Cache of query results, mapped by query input to project IDs.
-    query_cache: HashMap<String, Arc<Vec<Id>>>,
-
     /// The current working directory.
     pub working_dir: PathBuf,
 
@@ -70,7 +65,6 @@ impl ProjectGraph {
             working_dir: PathBuf::new(),
             workspace_root: PathBuf::new(),
             fs_cache: HashMap::new(),
-            query_cache: HashMap::new(),
         }
     }
 
@@ -141,21 +135,6 @@ impl ProjectGraph {
         self.get(&id)
     }
 
-    /// Return all expanded projects that match the query criteria.
-    #[instrument(name = "query_project", skip(self))]
-    pub fn query<'input, Q: AsRef<Criteria<'input>> + Debug>(
-        &self,
-        query: Q,
-    ) -> miette::Result<Vec<Arc<Project>>> {
-        let mut projects = vec![];
-
-        for id in self.internal_query(query)?.iter() {
-            projects.push(self.get(id)?);
-        }
-
-        Ok(projects)
-    }
-
     /// Return a map of project IDs to their file source paths.
     pub fn sources(&self) -> FxHashMap<&Id, &WorkspaceRelativePathBuf> {
         self.metadata
@@ -188,7 +167,6 @@ impl ProjectGraph {
             graph,
             metadata,
             projects: self.projects.clone(),
-            query_cache: HashMap::new(),
             working_dir: self.working_dir.clone(),
             workspace_root: self.workspace_root.clone(),
         })
@@ -211,51 +189,6 @@ impl ProjectGraph {
         self.write_cache().insert(id.clone(), Arc::clone(&project));
 
         Ok(project)
-    }
-
-    fn internal_query<'input, Q: AsRef<Criteria<'input>>>(
-        &self,
-        query: Q,
-    ) -> miette::Result<Arc<Vec<Id>>> {
-        let query = query.as_ref();
-        let query_input = query
-            .input
-            .as_ref()
-            .expect("Querying the project graph requires a query input string.");
-        let cache_key = query_input.to_string();
-
-        if let Some(cache) = self.query_cache.read(&cache_key, |_, v| v.clone()) {
-            return Ok(cache);
-        }
-
-        debug!("Querying projects with {}", color::shell(query_input));
-
-        let mut project_ids = vec![];
-
-        // Don't use `get_all` as it recursively calls `query`,
-        // which runs into a deadlock! This should be faster also...
-        for project in self.get_all_unexpanded() {
-            if matches_criteria(project, query)? {
-                project_ids.push(project.id.clone());
-            }
-        }
-
-        // Sort so that the order is deterministic
-        project_ids.sort();
-
-        debug!(
-            projects = ?project_ids
-                .iter()
-                .map(|id| id.as_str())
-                .collect::<Vec<_>>(),
-            "Found {} matches",
-            project_ids.len(),
-        );
-
-        let ids = Arc::new(project_ids);
-        let _ = self.query_cache.insert(cache_key, Arc::clone(&ids));
-
-        Ok(ids)
     }
 
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {

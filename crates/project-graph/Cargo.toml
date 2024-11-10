@@ -14,7 +14,6 @@ moon_config = { path = "../config" }
 moon_graph_utils = { path = "../graph-utils" }
 moon_project = { path = "../project" }
 moon_project_expander = { path = "../project-expander" }
-moon_query = { path = "../query" }
 moon_task = { path = "../task" }
 miette = { workspace = true }
 petgraph = { workspace = true }

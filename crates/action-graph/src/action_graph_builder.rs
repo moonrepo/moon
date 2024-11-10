@@ -516,7 +516,7 @@ impl<'app> ActionGraphBuilder<'app> {
                 let mut projects = vec![];
 
                 if let Some(all_query) = &self.all_query {
-                    projects.extend(self.workspace_graph.projects.query(all_query)?);
+                    projects.extend(self.workspace_graph.query(all_query)?);
                 } else {
                     projects.extend(self.workspace_graph.projects.get_all()?);
                 };
@@ -564,7 +564,6 @@ impl<'app> ActionGraphBuilder<'app> {
             TargetScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
-                    .projects
                     .query(build_query(format!("tag={}", tag).as_str())?)?;
 
                 for project in projects {

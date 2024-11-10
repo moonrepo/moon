@@ -3022,6 +3022,7 @@ dependencies = [
  "moon_rust_tool",
  "moon_system_platform",
  "moon_task",
+ "moon_task_graph",
  "moon_tool",
  "moon_toolchain",
  "moon_toolchain_plugin",
@@ -3429,6 +3430,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_graph_utils"
+version = "0.0.1"
+dependencies = [
+ "miette",
+ "petgraph",
+ "rustc-hash 2.0.0",
+ "serde",
+ "starbase_utils",
+]
+
+[[package]]
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
@@ -3735,6 +3747,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_graph_utils",
  "moon_project",
  "moon_project_expander",
  "moon_query",
@@ -3914,11 +3927,16 @@ name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
+ "moon_config",
+ "moon_graph_utils",
  "moon_target",
+ "moon_task",
  "petgraph",
  "rustc-hash 2.0.0",
  "serde",
  "starbase_utils",
+ "thiserror",
  "tracing",
 ]
 
@@ -4174,6 +4192,9 @@ dependencies = [
  "moon_project_builder",
  "moon_project_constraints",
  "moon_project_graph",
+ "moon_task",
+ "moon_task_builder",
+ "moon_task_graph",
  "moon_vcs",
  "petgraph",
  "rustc-hash 2.0.0",

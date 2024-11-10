@@ -5,7 +5,7 @@ use clap::Args;
 use moon_common::consts::*;
 use moon_common::{path, Id};
 use moon_config::LanguageType;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::{GraphConnections, ProjectGraph};
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use moon_toolchain::detect::detect_language_files;
 use rustc_hash::FxHashSet;
@@ -371,9 +371,9 @@ async fn scaffold_sources(
     }
 
     // Include non-focused projects in the manifest
-    for project_id in project_graph.ids() {
-        if !manifest.focused_projects.contains(project_id) {
-            manifest.unfocused_projects.insert(project_id.to_owned());
+    for project_id in project_graph.get_node_keys() {
+        if !manifest.focused_projects.contains(&project_id) {
+            manifest.unfocused_projects.insert(project_id);
         }
     }
 

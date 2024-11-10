@@ -1,0 +1,12 @@
+tasks:
+  # Note: No longer allowed!
+  ci1-dependency:
+    inputs:
+      - 'input.txt'
+    options:
+      runInCI: false
+  ci1-dependent:
+    deps:
+      - ci1-dependency
+    options:
+      runInCI: true

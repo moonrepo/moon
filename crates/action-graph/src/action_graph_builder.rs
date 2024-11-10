@@ -10,7 +10,7 @@ use moon_common::{color, Id};
 use moon_config::{PlatformType, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::{Project, ProjectError};
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::{GraphConnections, ProjectGraph};
 use moon_query::{build_query, Criteria};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
@@ -458,8 +458,8 @@ impl<'app> ActionGraphBuilder<'app> {
             projects_to_build.push(self_project.clone());
 
             // From other projects
-            for dependent_id in self.project_graph.dependents_of(&self_project)? {
-                projects_to_build.push(self.project_graph.get(dependent_id)?);
+            for dependent_id in self.project_graph.dependents_of(&self_project) {
+                projects_to_build.push(self.project_graph.get(&dependent_id)?);
             }
 
             for project in projects_to_build {
@@ -672,12 +672,12 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut edges = vec![setup_tool_index];
 
         // And we should also depend on other projects
-        for dep_project_id in self.project_graph.dependencies_of(project)? {
-            if cycle.contains(dep_project_id) {
+        for dep_project_id in self.project_graph.dependencies_of(project) {
+            if cycle.contains(&dep_project_id) {
                 continue;
             }
 
-            let dep_project = self.project_graph.get(dep_project_id)?;
+            let dep_project = self.project_graph.get(&dep_project_id)?;
             let dep_project_index = self.internal_sync_project(&dep_project, cycle)?;
 
             if index != dep_project_index {

@@ -1,0 +1,15 @@
+[package]
+name = "moon_graph_utils"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+miette = { workspace = true }
+petgraph = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+starbase_utils = { workspace = true }
+
+[lints]
+workspace = true

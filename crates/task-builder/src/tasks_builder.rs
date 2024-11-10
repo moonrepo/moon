@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use moon_common::path::is_root_level_source;
+use moon_common::path::{is_root_level_source, WorkspaceRelativePath};
 use moon_common::{color, supports_pkl_configs, Id};
 use moon_config::{
     is_glob_like, InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
@@ -73,10 +73,10 @@ pub struct TasksBuilderContext<'proj> {
 pub struct TasksBuilder<'proj> {
     context: TasksBuilderContext<'proj>,
 
-    project_id: &'proj str,
+    project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
-    project_source: &'proj str,
+    project_source: &'proj WorkspaceRelativePath,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj TaskDependency>,
@@ -92,8 +92,8 @@ pub struct TasksBuilder<'proj> {
 
 impl<'proj> TasksBuilder<'proj> {
     pub fn new(
-        project_id: &'proj str,
-        project_source: &'proj str,
+        project_id: &'proj Id,
+        project_source: &'proj WorkspaceRelativePath,
         project_platform: &'proj PlatformType,
         context: TasksBuilderContext<'proj>,
     ) -> Self {
@@ -135,7 +135,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            project_id = self.project_id,
+            project_id = self.project_id.as_str(),
             tasks = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Filtering global tasks",
         );
@@ -214,7 +214,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         trace!(
-            project_id = self.project_id,
+            project_id = self.project_id.as_str(),
             tasks = ?local_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
             "Loading local tasks",
         );
@@ -302,8 +302,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
-        let global_deps = self.build_global_deps(&target)?;
-        let mut global_inputs = self.build_global_inputs(&target, &task.options)?;
+        let global_deps = self.inherit_global_deps(&target)?;
+        let mut global_inputs = self.inherit_global_inputs(&target, &task.options)?;
 
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
@@ -311,7 +311,7 @@ impl<'proj> TasksBuilder<'proj> {
             task.args = self.merge_vec(task.args, args, task.options.merge_args, index, false);
         }
 
-        task.env = self.build_env(&target)?;
+        task.env = self.inherit_project_env(&target)?;
 
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
@@ -666,11 +666,11 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
-    fn build_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {
+    fn inherit_global_deps(&self, target: &Target) -> miette::Result<Vec<TaskDependencyConfig>> {
         let global_deps = self
             .implicit_deps
             .iter()
-            .map(|d| (*d).to_owned().into_config())
+            .map(|dep| (*dep).to_owned().into_config())
             .collect::<Vec<_>>();
 
         if !global_deps.is_empty() {
@@ -684,7 +684,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_deps)
     }
 
-    fn build_global_inputs(
+    fn inherit_global_inputs(
         &self,
         target: &Target,
         options: &TaskOptions,
@@ -692,7 +692,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut global_inputs = self
             .implicit_inputs
             .iter()
-            .map(|d| (*d).to_owned())
+            .map(|dep| (*dep).to_owned())
             .collect::<Vec<_>>();
 
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
@@ -716,7 +716,7 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    fn build_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
+    fn inherit_project_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
         let env = self
             .project_env
             .iter()

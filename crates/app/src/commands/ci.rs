@@ -14,7 +14,6 @@ use moon_task::{Target, TargetLocator};
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
-use std::env;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -85,16 +84,6 @@ impl CiConsole {
 }
 
 async fn generate_project_graph(session: &CliSession) -> AppResult<Arc<ProjectGraph>> {
-    // We have no easy way of passing this experiment boolean into the
-    // project graph, so use an environment variable for now...
-    if session
-        .workspace_config
-        .experiments
-        .disallow_run_in_ci_mismatch
-    {
-        env::set_var("MOON_INTERNAL_CONSTRAINT_RUNINCI", "true");
-    }
-
     session.get_project_graph().await
 }
 

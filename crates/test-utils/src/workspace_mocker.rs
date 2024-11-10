@@ -108,7 +108,6 @@ impl WorkspaceMocker {
             extend_project: Emitter::<ExtendProjectEvent>::new(),
             extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
-            strict_project_ids: self.workspace_config.experiments.strict_project_ids,
             toolchain_config: &self.toolchain_config,
             vcs: self.vcs.clone(),
             working_dir: &self.workspace_root,
@@ -153,6 +152,8 @@ impl WorkspaceMocker {
                 builder.load_project(id).await.unwrap();
             }
         }
+
+        builder.load_tasks().await.unwrap();
 
         let project_graph = builder.build().await.unwrap().project_graph;
 

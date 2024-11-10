@@ -60,7 +60,8 @@ cacheable!(
         /// Tasks specific to the project. Inherits all tasks from the global config.
         pub tasks: BTreeMap<Id, Task>,
 
-        /// List of targets of non-internal tasks configured or inherited for the project.
+        /// List of targets of all tasks configured or inherited for the project.
+        /// Includes internal tasks!
         pub task_targets: Vec<Target>,
 
         /// The type of project.

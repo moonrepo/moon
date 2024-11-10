@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_project_graph::{Project, ProjectGraph};
 use moon_task_graph::{Target, Task, TaskGraph};
 use std::sync::Arc;
@@ -37,7 +38,13 @@ impl WorkspaceGraph {
         self.tasks.get(target)
     }
 
-    pub fn get_tasks_for_project(&self, project_id: &str) -> miette::Result<Vec<Arc<Task>>> {
+    pub fn get_task_for_project(&self, project_id: &Id, task_id: &Id) -> miette::Result<Arc<Task>> {
+        let target = Target::new(project_id, task_id)?;
+
+        self.tasks.get(&target)
+    }
+
+    pub fn get_tasks_for_project(&self, project_id: &Id) -> miette::Result<Vec<Arc<Task>>> {
         let project = self.get_project(project_id)?;
         let mut all = vec![];
 

@@ -4229,6 +4229,7 @@ name = "moon_workspace_graph"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_common",
  "moon_graph_utils",
  "moon_project_graph",
  "moon_task_graph",

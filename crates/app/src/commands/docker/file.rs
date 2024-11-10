@@ -41,10 +41,11 @@ pub struct DockerFileArgs {
 #[instrument(skip_all)]
 pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     let console = &session.console;
-    let project_graph = session.get_project_graph().await?;
+    let workspace_graph = session.get_workspace_graph().await?;
 
     // Ensure the project exists
-    let project = project_graph.get(&args.id)?;
+    let project = workspace_graph.get_project(&args.id)?;
+    let tasks = workspace_graph.get_tasks_for_project(&project.id)?;
 
     // Build the options
     let mut options = GenerateDockerfileOptions {
@@ -87,7 +88,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     } else if args.defaults {
         project.config.docker.file.build_task.as_ref()
     } else {
-        let mut ids = project.get_task_ids()?;
+        let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
         ids.sort();
 
         let starting_cursor = project
@@ -106,7 +107,10 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     };
 
     if let Some(task_id) = build_task_id {
-        let target = project.get_task(task_id)?.target.to_owned();
+        let target = workspace_graph
+            .get_task_for_project(&project.id, task_id)?
+            .target
+            .to_owned();
 
         debug!(task = target.as_str(), "Using build task");
 
@@ -120,7 +124,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     } else if args.defaults {
         project.config.docker.file.start_task.as_ref()
     } else {
-        let mut ids = project.get_task_ids()?;
+        let mut ids = tasks.iter().map(|task| &task.id).collect::<Vec<_>>();
         ids.sort();
 
         let starting_cursor = project
@@ -139,7 +143,10 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
     };
 
     if let Some(task_id) = start_task_id {
-        let target = project.get_task(task_id)?.target.to_owned();
+        let target = workspace_graph
+            .get_task_for_project(&project.id, task_id)?
+            .target
+            .to_owned();
 
         debug!(task = target.as_str(), "Using start task");
 

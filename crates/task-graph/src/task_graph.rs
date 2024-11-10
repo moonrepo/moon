@@ -96,6 +96,35 @@ impl TaskGraph {
             .collect()
     }
 
+    /// Focus the graph for a specific project by target.
+    pub fn focus_for(&self, target: &Target, with_dependents: bool) -> miette::Result<Self> {
+        let task = self.get(target)?;
+        let graph = self.to_focused_graph(&task, with_dependents);
+
+        // Copy over metadata
+        let mut metadata = FxHashMap::default();
+
+        for new_index in graph.node_indices() {
+            let inner_target = &graph[new_index].target;
+
+            if let Some(old_node) = self.metadata.get(inner_target) {
+                let mut new_node = old_node.to_owned();
+                new_node.index = new_index;
+
+                metadata.insert(inner_target.to_owned(), new_node);
+            }
+        }
+
+        Ok(Self {
+            graph,
+            metadata,
+            project_graph: self.project_graph.clone(),
+            tasks: self.tasks.clone(),
+            working_dir: self.working_dir.clone(),
+            workspace_root: self.workspace_root.clone(),
+        })
+    }
+
     fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
         if let Some(task) = self.read_cache().get(target) {
             return Ok(Arc::clone(task));

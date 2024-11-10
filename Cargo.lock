@@ -2852,11 +2852,11 @@ dependencies = [
  "moon_config",
  "moon_platform",
  "moon_project",
- "moon_project_graph",
  "moon_query",
  "moon_task",
  "moon_task_args",
  "moon_test_utils2",
+ "moon_workspace_graph",
  "petgraph",
  "rustc-hash 2.0.0",
  "starbase_sandbox",
@@ -2935,10 +2935,10 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_project",
- "moon_project_graph",
  "moon_target",
  "moon_task",
  "moon_test_utils2",
+ "moon_workspace_graph",
  "rustc-hash 2.0.0",
  "serde",
  "tokio",
@@ -4228,6 +4228,8 @@ dependencies = [
 name = "moon_workspace_graph"
 version = "0.0.1"
 dependencies = [
+ "miette",
+ "moon_graph_utils",
  "moon_project_graph",
  "moon_task_graph",
 ]

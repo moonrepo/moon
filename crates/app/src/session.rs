@@ -89,9 +89,9 @@ impl CliSession {
 
     pub async fn build_action_graph<'graph>(
         &self,
-        project_graph: &'graph ProjectGraph,
+        workspace_graph: &'graph WorkspaceGraph,
     ) -> AppResult<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(project_graph)
+        ActionGraphBuilder::new(workspace_graph)
     }
 
     pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {

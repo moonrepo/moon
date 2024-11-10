@@ -13,7 +13,7 @@ use warpgate::host::{create_host_functions as create_shared_host_functions, Host
 pub struct PluginHostData {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
-    pub workspace_graph: Arc<WorkspaceGraph>,
+    pub workspace_graph: WorkspaceGraph,
 }
 
 impl fmt::Debug for PluginHostData {

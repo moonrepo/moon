@@ -466,7 +466,7 @@ impl<'app> ActionGraphBuilder<'app> {
             for project in projects_to_build {
                 // Don't skip internal tasks, since they are a dependency of the parent
                 // task, and must still run! They just can't be ran manually.
-                for dep_task in project.tasks.values() {
+                for dep_task in self.workspace_graph.get_tasks_for_project(&project.id)? {
                     // But do skip persistent tasks!
                     if dep_task.is_persistent() {
                         continue;
@@ -481,7 +481,7 @@ impl<'app> ActionGraphBuilder<'app> {
                     }
 
                     if dep_task.deps.iter().any(|dep| dep.target == task.target) {
-                        if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
+                        if let Some(index) = self.run_task(&project, &dep_task, &reqs)? {
                             indices.push(index);
                         }
                     }

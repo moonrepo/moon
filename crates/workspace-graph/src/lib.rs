@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 pub use moon_graph_utils::*;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct WorkspaceGraph {
     pub projects: Arc<ProjectGraph>,
     pub tasks: Arc<TaskGraph>,

@@ -4,8 +4,8 @@ use moon_action_context::ActionContext;
 use moon_actions::actions::*;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_project_graph::ProjectGraph;
 use moon_toolchain_plugin::ToolchainRegistry;
+use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tracing::{instrument, trace};
 
@@ -14,7 +14,7 @@ pub async fn run_action(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    project_graph: Arc<ProjectGraph>,
+    workspace_graph: WorkspaceGraph,
     toolchain_registry: Arc<ToolchainRegistry>,
     emitter: Arc<EventEmitter>,
 ) -> miette::Result<()> {
@@ -42,7 +42,7 @@ pub async fn run_action(
                 action,
                 action_context,
                 app_context,
-                project_graph,
+                workspace_graph.clone(),
                 toolchain_registry,
             )
             .await;
@@ -57,7 +57,7 @@ pub async fn run_action(
         }
 
         ActionNode::SyncProject(inner) => {
-            let project = project_graph.get(&inner.project)?;
+            let project = workspace_graph.get_project(&inner.project)?;
 
             emitter
                 .emit(Event::ProjectSyncing {
@@ -66,8 +66,14 @@ pub async fn run_action(
                 })
                 .await?;
 
-            let result =
-                sync_project(action, action_context, app_context, project_graph, inner).await;
+            let result = sync_project(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await;
 
             emitter
                 .emit(Event::ProjectSynced {
@@ -111,7 +117,7 @@ pub async fn run_action(
                 action,
                 action_context,
                 app_context,
-                project_graph,
+                workspace_graph.clone(),
                 &inner.runtime,
                 None,
             )
@@ -129,7 +135,7 @@ pub async fn run_action(
         }
 
         ActionNode::InstallProjectDeps(inner) => {
-            let project = project_graph.get(&inner.project)?;
+            let project = workspace_graph.get_project(&inner.project)?;
 
             emitter
                 .emit(Event::DependenciesInstalling {
@@ -142,7 +148,7 @@ pub async fn run_action(
                 action,
                 action_context,
                 app_context,
-                project_graph,
+                workspace_graph.clone(),
                 &inner.runtime,
                 Some(&project),
             )
@@ -167,7 +173,14 @@ pub async fn run_action(
                 })
                 .await?;
 
-            let result = run_task(action, action_context, app_context, project_graph, inner).await;
+            let result = run_task(
+                action,
+                action_context,
+                app_context,
+                workspace_graph.clone(),
+                inner,
+            )
+            .await;
 
             emitter
                 .emit(Event::TaskRan {

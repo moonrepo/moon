@@ -57,6 +57,7 @@ cacheable!(
         pub source: WorkspaceRelativePathBuf,
 
         /// Tasks specific to the project. Inherits all tasks from the global config.
+        /// Note: This map is empty when the project is in the project graph!
         pub tasks: BTreeMap<Id, Task>,
 
         /// List of targets of all tasks configured or inherited for the project.

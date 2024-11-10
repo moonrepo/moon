@@ -42,14 +42,15 @@ pub fn matches_criteria(project: &Project, query: &Criteria) -> miette::Result<b
                             .collect::<Vec<_>>(),
                     ),
                     Field::Task(ids) => Ok(project
-                        .tasks
-                        .values()
-                        .any(|task| condition.matches(ids, &task.id).unwrap_or_default())),
+                        .task_targets
+                        .iter()
+                        .any(|target| condition.matches(ids, &target.task_id).unwrap_or_default())),
                     Field::TaskPlatform(platforms) => Ok(project.tasks.values().any(|task| {
                         condition
                             .matches_enum(platforms, &task.platform)
                             .unwrap_or_default()
                     })),
+                    // TODO
                     Field::TaskType(types) => Ok(project.tasks.values().any(|task| {
                         condition
                             .matches_enum(types, &task.type_of)

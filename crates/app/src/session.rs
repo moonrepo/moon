@@ -120,13 +120,13 @@ impl CliSession {
     }
 
     pub async fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
-        let project_graph = self.get_project_graph().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
 
         let item = self.extension_registry.get_or_init(|| {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
-                project_graph,
                 proto_env: Arc::clone(&self.proto_env),
+                workspace_graph,
             });
 
             // Convert moon IDs to plugin IDs
@@ -157,13 +157,13 @@ impl CliSession {
     }
 
     pub async fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
-        let project_graph = self.get_project_graph().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
 
         let item = self.toolchain_registry.get_or_init(|| {
             let mut registry = ToolchainRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
-                project_graph,
                 proto_env: Arc::clone(&self.proto_env),
+                workspace_graph,
             });
 
             // Convert moon IDs to plugin IDs

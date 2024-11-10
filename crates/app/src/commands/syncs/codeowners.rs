@@ -35,8 +35,8 @@ pub async fn sync(session: CliSession, args: SyncCodeownersArgs) -> AppResult {
             true,
         );
     } else {
-        let project_graph = session.get_project_graph().await?;
-        let codeowners_path = sync_codeowners(&context, &project_graph, args.force).await?;
+        let workspace_graph = session.get_workspace_graph().await?;
+        let codeowners_path = sync_codeowners(&context, &workspace_graph, args.force).await?;
 
         done(
             format!(

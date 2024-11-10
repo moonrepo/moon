@@ -19,6 +19,7 @@ use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
+use moon_workspace_graph::WorkspaceGraph;
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use semver::Version;
@@ -191,6 +192,13 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
+    pub async fn get_workspace_graph(&self) -> AppResult<WorkspaceGraph> {
+        let projects = self.get_project_graph().await?;
+        let tasks = self.get_task_graph().await?;
+
+        Ok(WorkspaceGraph { projects, tasks })
+    }
+
     pub fn is_telemetry_enabled(&self) -> bool {
         self.workspace_config.telemetry
     }
@@ -215,8 +223,8 @@ impl CliSession {
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
         let result = builder.build().await?;
 
-        let _ = self.project_graph.set(Arc::new(result.project_graph));
-        let _ = self.task_graph.set(Arc::new(result.task_graph));
+        let _ = self.project_graph.set(result.projects);
+        let _ = self.task_graph.set(result.tasks);
 
         Ok(())
     }

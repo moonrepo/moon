@@ -3029,6 +3029,7 @@ dependencies = [
  "moon_typescript_lang",
  "moon_vcs",
  "moon_workspace",
+ "moon_workspace_graph",
  "once_cell",
  "open",
  "petgraph",
@@ -3721,17 +3722,10 @@ dependencies = [
 name = "moon_project_expander"
 version = "0.0.1"
 dependencies = [
- "dotenvy",
  "miette",
- "moon_args",
  "moon_common",
  "moon_config",
  "moon_project",
- "moon_task",
- "moon_task_args",
- "moon_time",
- "pathdiff",
- "regex",
  "rustc-hash 2.0.0",
  "starbase_sandbox",
  "starbase_utils",
@@ -3923,6 +3917,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_task_expander"
+version = "0.0.1"
+dependencies = [
+ "dotenvy",
+ "miette",
+ "moon_args",
+ "moon_common",
+ "moon_config",
+ "moon_project",
+ "moon_task",
+ "moon_task_args",
+ "moon_time",
+ "pathdiff",
+ "regex",
+ "rustc-hash 2.0.0",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
@@ -3930,8 +3946,10 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_graph_utils",
+ "moon_project_graph",
  "moon_target",
  "moon_task",
+ "moon_task_expander",
  "petgraph",
  "rustc-hash 2.0.0",
  "serde",
@@ -4196,6 +4214,7 @@ dependencies = [
  "moon_task_builder",
  "moon_task_graph",
  "moon_vcs",
+ "moon_workspace_graph",
  "petgraph",
  "rustc-hash 2.0.0",
  "serde",
@@ -4203,6 +4222,14 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tracing",
+]
+
+[[package]]
+name = "moon_workspace_graph"
+version = "0.0.1"
+dependencies = [
+ "moon_project_graph",
+ "moon_task_graph",
 ]
 
 [[package]]

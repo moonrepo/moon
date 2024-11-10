@@ -155,7 +155,7 @@ impl WorkspaceMocker {
 
         builder.load_tasks().await.unwrap();
 
-        let project_graph = builder.build().await.unwrap().project_graph;
+        let project_graph = Arc::into_inner(builder.build().await.unwrap().projects).unwrap();
 
         if options.ids.is_empty() {
             project_graph.get_all().unwrap();

@@ -5,8 +5,8 @@ use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_graph_utils::*;
 use moon_project::Project;
-use moon_project_expander::{ExpanderContext, ProjectExpander};
-use moon_query::{build_query, Criteria};
+use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
+use moon_query::Criteria;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use scc::HashMap;
@@ -60,19 +60,15 @@ pub struct ProjectGraph {
 }
 
 impl ProjectGraph {
-    pub fn new(
-        graph: ProjectGraphType,
-        metadata: FxHashMap<Id, ProjectMetadata>,
-        workspace_root: &Path,
-    ) -> Self {
+    pub fn new(graph: ProjectGraphType, metadata: FxHashMap<Id, ProjectMetadata>) -> Self {
         debug!("Creating project graph");
 
         Self {
             graph,
             metadata,
             projects: Arc::new(RwLock::new(FxHashMap::default())),
-            working_dir: workspace_root.to_owned(),
-            workspace_root: workspace_root.to_owned(),
+            working_dir: PathBuf::new(),
+            workspace_root: PathBuf::new(),
             fs_cache: HashMap::new(),
             query_cache: HashMap::new(),
         }
@@ -201,33 +197,16 @@ impl ProjectGraph {
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
         let id = self.resolve_id(id_or_alias);
 
-        // Check if the expanded project has been created, if so return it
         if let Some(project) = self.read_cache().get(&id) {
             return Ok(Arc::clone(project));
         }
 
-        // Otherwise expand the project and cache it with an Arc
-        let query = |input: String| {
-            let mut results = vec![];
-
-            // Don't use get() for expanded projects, since it'll overflow the
-            // stack trying to recursively expand projects! Using unexpanded
-            // dependent projects works just fine for the this entire process.
-            for result_id in self.internal_query(build_query(&input)?)?.iter() {
-                results.push(self.get_unexpanded(result_id)?);
-            }
-
-            Ok(results)
-        };
-
-        let expander = ProjectExpander::new(ExpanderContext {
+        let expander = ProjectExpander::new(ProjectExpanderContext {
             aliases: self.aliases(),
-            project: self.get_unexpanded(&id)?,
-            query: Box::new(query),
             workspace_root: &self.workspace_root,
         });
 
-        let project = Arc::new(expander.expand()?);
+        let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
 
         self.write_cache().insert(id.clone(), Arc::clone(&project));
 

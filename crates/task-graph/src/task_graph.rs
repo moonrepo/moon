@@ -1,10 +1,13 @@
 use crate::task_graph_error::TaskGraphError;
 use moon_config::DependencyType;
 use moon_graph_utils::*;
+use moon_project_graph::ProjectGraph;
 use moon_target::Target;
 use moon_task::Task;
+use moon_task_expander::{TaskExpander, TaskExpanderContext};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
@@ -24,18 +27,34 @@ pub struct TaskGraph {
     /// Task metadata, mapped by target.
     metadata: FxHashMap<Target, TaskMetadata>,
 
+    /// Project graph, required for expansion.
+    project_graph: Arc<ProjectGraph>,
+
     /// Expanded tasks, mapped by target.
     tasks: Arc<RwLock<TasksCache>>,
+
+    /// The current working directory.
+    pub working_dir: PathBuf,
+
+    /// Workspace root, required for expansion.
+    pub workspace_root: PathBuf,
 }
 
 impl TaskGraph {
-    pub fn new(graph: TaskGraphType, metadata: FxHashMap<Target, TaskMetadata>) -> Self {
+    pub fn new(
+        graph: TaskGraphType,
+        metadata: FxHashMap<Target, TaskMetadata>,
+        project_graph: Arc<ProjectGraph>,
+    ) -> Self {
         debug!("Creating task graph");
 
         Self {
             graph,
             metadata,
+            project_graph,
             tasks: Arc::new(RwLock::new(FxHashMap::default())),
+            working_dir: PathBuf::new(),
+            workspace_root: PathBuf::new(),
         }
     }
 
@@ -77,39 +96,27 @@ impl TaskGraph {
             .collect()
     }
 
-    // fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
-    //     // Check if the expanded task has been created, if so return it
-    //     if let Some(task) = self.read_cache().get(target) {
-    //         return Ok(Arc::clone(task));
-    //     }
+    fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        if let Some(task) = self.read_cache().get(target) {
+            return Ok(Arc::clone(task));
+        }
 
-    //     // Otherwise expand the project and cache it with an Arc
-    //     let query = |input: String| {
-    //         let mut results = vec![];
+        let expander = TaskExpander::new(TaskExpanderContext {
+            project: self.project_graph.get_unexpanded(
+                target
+                    .get_project_id()
+                    .expect("Project scope required for target."),
+            )?,
+            workspace_root: &self.workspace_root,
+        });
 
-    //         // Don't use get() for expanded projects, since it'll overflow the
-    //         // stack trying to recursively expand projects! Using unexpanded
-    //         // dependent projects works just fine for the this entire process.
-    //         for result_id in self.internal_query(build_query(&input)?)?.iter() {
-    //             results.push(self.get_unexpanded(result_id)?);
-    //         }
+        let task = Arc::new(expander.expand(self.get_unexpanded(target)?)?);
 
-    //         Ok(results)
-    //     };
+        self.write_cache()
+            .insert(target.to_owned(), Arc::clone(&task));
 
-    //     let expander = ProjectExpander::new(ExpanderContext {
-    //         aliases: self.aliases(),
-    //         project: self.get_unexpanded(&id)?,
-    //         query: Box::new(query),
-    //         workspace_root: &self.workspace_root,
-    //     });
-
-    //     let project = Arc::new(expander.expand()?);
-
-    //     self.write_cache().insert(id.clone(), Arc::clone(&project));
-
-    //     Ok(project)
-    // }
+        Ok(task)
+    }
 
     fn read_cache(&self) -> RwLockReadGuard<TasksCache> {
         self.tasks

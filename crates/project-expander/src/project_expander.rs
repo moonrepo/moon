@@ -18,7 +18,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
     }
 
     #[instrument(name = "expand_project", skip_all)]
-    pub fn expand(&mut self) -> miette::Result<Project> {
+    pub fn expand(mut self) -> miette::Result<Project> {
         // Clone before expanding!
         let mut project = self.context.project.to_owned();
 

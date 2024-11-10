@@ -15,6 +15,7 @@ use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
 use moon_project_graph::ProjectGraph;
+use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
@@ -45,6 +46,7 @@ pub struct CliSession {
     cache_engine: OnceCell<Arc<CacheEngine>>,
     extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     project_graph: OnceCell<Arc<ProjectGraph>>,
+    task_graph: OnceCell<Arc<TaskGraph>>,
     toolchain_registry: OnceCell<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
 
@@ -72,6 +74,7 @@ impl CliSession {
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceCell::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
+            task_graph: OnceCell::new(),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
             toolchain_registry: OnceCell::new(),
@@ -144,6 +147,14 @@ impl CliSession {
         Ok(self.project_graph.get().map(Arc::clone).unwrap())
     }
 
+    pub async fn get_task_graph(&self) -> AppResult<Arc<TaskGraph>> {
+        if self.task_graph.get().is_none() {
+            self.load_workspace_graph().await?;
+        }
+
+        Ok(self.task_graph.get().map(Arc::clone).unwrap())
+    }
+
     pub async fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
         let project_graph = self.get_project_graph().await?;
 
@@ -205,6 +216,7 @@ impl CliSession {
         let result = builder.build().await?;
 
         let _ = self.project_graph.set(Arc::new(result.project_graph));
+        let _ = self.task_graph.set(Arc::new(result.task_graph));
 
         Ok(())
     }

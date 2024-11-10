@@ -12,6 +12,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_task::Task;
 use std::collections::BTreeMap;
+use std::fmt;
 use std::path::PathBuf;
 
 cacheable!(
@@ -58,6 +59,9 @@ cacheable!(
 
         /// Tasks specific to the project. Inherits all tasks from the global config.
         pub tasks: BTreeMap<Id, Task>,
+
+        /// List of IDs of all tasks configured or inherited for the project.
+        pub task_ids: Vec<Id>,
 
         /// The type of project.
         #[serde(rename = "type")]
@@ -143,5 +147,11 @@ impl PartialEq for Project {
             && self.stack == other.stack
             && self.tasks == other.tasks
             && self.type_of == other.type_of
+    }
+}
+
+impl fmt::Display for Project {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.id)
     }
 }

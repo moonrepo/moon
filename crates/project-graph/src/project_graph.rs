@@ -3,18 +3,14 @@ use crate::project_matcher::matches_criteria;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
+use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ExpanderContext, ProjectExpander};
 use moon_query::{build_query, Criteria};
-use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::visit::EdgeRef;
-use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use scc::HashMap;
-use serde::Serialize;
-use starbase_utils::env::bool_var;
-use starbase_utils::json;
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
@@ -22,25 +18,19 @@ use tracing::{debug, instrument};
 pub type ProjectGraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
 
-#[derive(Serialize)]
-pub struct ProjectGraphCache<'graph> {
-    graph: &'graph ProjectGraphType,
-    projects: &'graph ProjectsCache,
-}
-
 #[derive(Clone, Debug, Default)]
-pub struct ProjectNode {
+pub struct ProjectMetadata {
     pub alias: Option<String>,
     pub index: NodeIndex,
     pub original_id: Option<Id>,
     pub source: WorkspaceRelativePathBuf,
 }
 
-impl ProjectNode {
+impl ProjectMetadata {
     pub fn new(index: usize) -> Self {
-        ProjectNode {
+        ProjectMetadata {
             index: NodeIndex::new(index),
-            ..ProjectNode::default()
+            ..ProjectMetadata::default()
         }
     }
 }
@@ -53,8 +43,8 @@ pub struct ProjectGraph {
     /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
     graph: ProjectGraphType,
 
-    /// Graph node information, mapped by project ID.
-    nodes: FxHashMap<Id, ProjectNode>,
+    /// Project metadata, mapped by project ID.
+    metadata: FxHashMap<Id, ProjectMetadata>,
 
     /// Expanded projects, mapped by project ID.
     projects: Arc<RwLock<ProjectsCache>>,
@@ -72,14 +62,14 @@ pub struct ProjectGraph {
 impl ProjectGraph {
     pub fn new(
         graph: ProjectGraphType,
-        nodes: FxHashMap<Id, ProjectNode>,
+        metadata: FxHashMap<Id, ProjectMetadata>,
         workspace_root: &Path,
     ) -> Self {
         debug!("Creating project graph");
 
         Self {
             graph,
-            nodes,
+            metadata,
             projects: Arc::new(RwLock::new(FxHashMap::default())),
             working_dir: workspace_root.to_owned(),
             workspace_root: workspace_root.to_owned(),
@@ -90,57 +80,29 @@ impl ProjectGraph {
 
     /// Return a map of aliases to their project IDs. Projects without aliases are omitted.
     pub fn aliases(&self) -> FxHashMap<&str, &Id> {
-        self.nodes
+        self.metadata
             .iter()
-            .filter_map(|(id, node)| node.alias.as_ref().map(|alias| (alias.as_str(), id)))
+            .filter_map(|(id, metadata)| metadata.alias.as_ref().map(|alias| (alias.as_str(), id)))
             .collect()
     }
 
-    /// Return a list of project IDs that the provide project depends on.
-    pub fn dependencies_of(&self, project: &Project) -> miette::Result<Vec<&Id>> {
-        let deps = self
-            .graph
-            .neighbors_directed(
-                self.nodes.get(&project.id).unwrap().index,
-                Direction::Outgoing,
-            )
-            .map(|idx| &self.graph.node_weight(idx).unwrap().id)
-            .collect();
-
-        Ok(deps)
-    }
-
-    /// Return a list of project IDs that require the provided project.
-    pub fn dependents_of(&self, project: &Project) -> miette::Result<Vec<&Id>> {
-        let deps = self
-            .graph
-            .neighbors_directed(
-                self.nodes.get(&project.id).unwrap().index,
-                Direction::Incoming,
-            )
-            .map(|idx| &self.graph.node_weight(idx).unwrap().id)
-            .collect();
-
-        Ok(deps)
-    }
-
-    /// Return a project with the provided name or alias from the graph.
+    /// Return a project with the provided ID or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     #[instrument(name = "get_project", skip(self))]
     pub fn get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
         self.internal_get(id_or_alias)
     }
 
-    /// Return an unexpanded project with the provided name or alias from the graph.
+    /// Return an unexpanded project with the provided ID or alias from the graph.
     pub fn get_unexpanded(&self, id_or_alias: &str) -> miette::Result<&Project> {
         let id = self.resolve_id(id_or_alias);
 
-        let node = self
-            .nodes
+        let metadata = self
+            .metadata
             .get(&id)
             .ok_or(ProjectGraphError::UnconfiguredID(id))?;
 
-        Ok(self.graph.node_weight(node.index).unwrap())
+        Ok(self.graph.node_weight(metadata.index).unwrap())
     }
 
     /// Return all projects from the graph.
@@ -148,7 +110,7 @@ impl ProjectGraph {
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
         let mut all = vec![];
 
-        for id in self.nodes.keys() {
+        for id in self.metadata.keys() {
             all.push(self.internal_get(id)?);
         }
 
@@ -183,23 +145,9 @@ impl ProjectGraph {
         self.get(&id)
     }
 
-    /// Return a list of IDs for all projects currently within the graph.
-    pub fn ids(&self) -> Vec<&Id> {
-        self.graph
-            .raw_nodes()
-            .iter()
-            .map(|n| &n.weight.id)
-            .collect()
-    }
-
-    /// Get a labelled representation of the graph (which can be serialized easily).
-    pub fn labeled_graph(&self) -> DiGraph<String, DependencyScope> {
-        self.graph.map(|_, n| n.id.to_string(), |_, e| *e)
-    }
-
     /// Return all expanded projects that match the query criteria.
-    #[instrument(name = "query_project", skip_all)]
-    pub fn query<'input, Q: AsRef<Criteria<'input>>>(
+    #[instrument(name = "query_project", skip(self))]
+    pub fn query<'input, Q: AsRef<Criteria<'input>> + Debug>(
         &self,
         query: Q,
     ) -> miette::Result<Vec<Arc<Project>>> {
@@ -214,55 +162,35 @@ impl ProjectGraph {
 
     /// Return a map of project IDs to their file source paths.
     pub fn sources(&self) -> FxHashMap<&Id, &WorkspaceRelativePathBuf> {
-        self.nodes
+        self.metadata
             .iter()
-            .map(|(id, node)| (id, &node.source))
+            .map(|(id, metadata)| (id, &metadata.source))
             .collect()
     }
 
-    pub fn into_focused(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
+    /// Focus the graph for a specific project by ID.
+    pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let upstream = self.dependencies_of(&project)?;
-        let downstream = self.dependents_of(&project)?;
-        let mut nodes = FxHashMap::default();
+        let graph = self.to_focused_graph(&project, with_dependents);
 
-        // Create a new graph
-        let graph = self.graph.filter_map(
-            |_, node| {
-                let node_id = &node.id;
+        // Copy over metadata
+        let mut metadata = FxHashMap::default();
 
-                if
-                // Self
-                node_id == &project.id ||
-                    // Dependencies
-                    upstream.contains(&node_id) ||
-                    // Dependents
-                    with_dependents && downstream.contains(&node_id)
-                {
-                    Some(node.clone())
-                } else {
-                    None
-                }
-            },
-            |_, edge| Some(*edge),
-        );
-
-        // Copy over nodes
         for new_index in graph.node_indices() {
             let project_id = &graph[new_index].id;
 
-            if let Some(old_node) = self.nodes.get(project_id) {
+            if let Some(old_node) = self.metadata.get(project_id) {
                 let mut new_node = old_node.to_owned();
                 new_node.index = new_index;
 
-                nodes.insert(project_id.to_owned(), new_node);
+                metadata.insert(project_id.to_owned(), new_node);
             }
         }
 
         Ok(Self {
             fs_cache: HashMap::new(),
             graph,
-            nodes,
+            metadata,
             projects: self.projects.clone(),
             query_cache: HashMap::new(),
             working_dir: self.working_dir.clone(),
@@ -270,83 +198,40 @@ impl ProjectGraph {
         })
     }
 
-    /// Format graph as a DOT string.
-    pub fn to_dot(&self) -> String {
-        let dot = Dot::with_attr_getters(
-            &self.graph,
-            &[Config::EdgeNoLabel, Config::NodeNoLabel],
-            &|_, e| {
-                let label = e.weight().to_string();
-
-                if e.source().index() == 0 {
-                    format!("label=\"{label}\" arrowhead=none")
-                } else {
-                    format!("label=\"{label}\" arrowhead=box, arrowtail=box")
-                }
-            },
-            &|_, n| {
-                let label = &n.1.id;
-
-                format!(
-                    "label=\"{label}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
-                )
-            },
-        );
-
-        format!("{dot:?}")
-    }
-
-    /// Format graph as a JSON string.
-    pub fn to_json(&self) -> miette::Result<String> {
-        let projects = self.read_cache();
-
-        Ok(json::format(
-            &ProjectGraphCache {
-                graph: &self.graph,
-                projects: &projects,
-            },
-            true,
-        )?)
-    }
-
-    fn internal_get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
-        let id = self.resolve_id(alias_or_id);
+    fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
+        let id = self.resolve_id(id_or_alias);
 
         // Check if the expanded project has been created, if so return it
-        {
-            if let Some(project) = self.read_cache().get(&id) {
-                return Ok(Arc::clone(project));
-            }
+        if let Some(project) = self.read_cache().get(&id) {
+            return Ok(Arc::clone(project));
         }
 
         // Otherwise expand the project and cache it with an Arc
-        {
-            let query = |input: String| {
-                let mut results = vec![];
+        let query = |input: String| {
+            let mut results = vec![];
 
-                // Don't use get() for expanded projects, since it'll overflow the
-                // stack trying to recursively expand projects! Using unexpanded
-                // dependent projects works just fine for the this entire process.
-                for result_id in self.internal_query(build_query(&input)?)?.iter() {
-                    results.push(self.get_unexpanded(result_id)?);
-                }
+            // Don't use get() for expanded projects, since it'll overflow the
+            // stack trying to recursively expand projects! Using unexpanded
+            // dependent projects works just fine for the this entire process.
+            for result_id in self.internal_query(build_query(&input)?)?.iter() {
+                results.push(self.get_unexpanded(result_id)?);
+            }
 
-                Ok(results)
-            };
+            Ok(results)
+        };
 
-            let mut expander = ProjectExpander::new(ExpanderContext {
-                aliases: self.aliases(),
-                check_ci_relationships: bool_var("MOON_INTERNAL_CONSTRAINT_RUNINCI"),
-                project: self.get_unexpanded(&id)?,
-                query: Box::new(query),
-                workspace_root: &self.workspace_root,
-            });
+        let expander = ProjectExpander::new(ExpanderContext {
+            aliases: self.aliases(),
+            project: self.get_unexpanded(&id)?,
+            query: Box::new(query),
+            workspace_root: &self.workspace_root,
+        });
 
-            self.write_cache()
-                .insert(id.clone(), Arc::new(expander.expand()?));
-        }
+        let project = Arc::new(expander.expand()?);
 
-        Ok(Arc::clone(self.read_cache().get(&id).unwrap()))
+        self.write_cache().insert(id.clone(), Arc::clone(&project));
+
+        Ok(project)
     }
 
     fn internal_query<'input, Q: AsRef<Criteria<'input>>>(
@@ -370,9 +255,7 @@ impl ProjectGraph {
 
         // Don't use `get_all` as it recursively calls `query`,
         // which runs into a deadlock! This should be faster also...
-        for node in self.graph.raw_nodes() {
-            let project = &node.weight;
-
+        for project in self.get_all_unexpanded() {
             if matches_criteria(project, query)? {
                 project_ids.push(project.id.clone());
             }
@@ -407,12 +290,12 @@ impl ProjectGraph {
         let mut remaining_length = 1000; // Start with a really fake number
         let mut possible_id = String::new();
 
-        for (id, node) in &self.nodes {
-            if !search.starts_with(node.source.as_str()) {
+        for (id, metadata) in &self.metadata {
+            if !search.starts_with(metadata.source.as_str()) {
                 continue;
             }
 
-            if let Ok(diff) = search.relative_to(node.source.as_str()) {
+            if let Ok(diff) = search.relative_to(metadata.source.as_str()) {
                 let diff_comps = diff.components().count();
 
                 // Exact match, abort
@@ -439,21 +322,22 @@ impl ProjectGraph {
     }
 
     fn resolve_id(&self, id_or_alias: &str) -> Id {
-        Id::raw(if self.nodes.contains_key(id_or_alias) {
+        Id::raw(if self.metadata.contains_key(id_or_alias) {
             id_or_alias
         } else {
-            self.nodes
+            self.metadata
                 .iter()
-                .find(|(_, node)| {
-                    node.alias
+                .find_map(|(id, metadata)| {
+                    if metadata
+                        .alias
                         .as_ref()
                         .is_some_and(|alias| alias == id_or_alias)
-                        || node
-                            .original_id
-                            .as_ref()
-                            .is_some_and(|id| id == id_or_alias)
+                    {
+                        Some(id.as_str())
+                    } else {
+                        None
+                    }
                 })
-                .map(|(id, _)| id.as_str())
                 .unwrap_or(id_or_alias)
         })
     }
@@ -470,3 +354,25 @@ impl ProjectGraph {
             .expect("Failed to acquire write access to project graph!")
     }
 }
+
+impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
+    fn get_graph(&self) -> &DiGraph<Project, DependencyScope> {
+        &self.graph
+    }
+
+    fn get_node_index(&self, node: &Project) -> NodeIndex {
+        self.metadata.get(&node.id).unwrap().index
+    }
+
+    fn get_node_key(&self, node: &Project) -> Id {
+        node.id.clone()
+    }
+}
+
+impl GraphConnections<Project, DependencyScope, Id> for ProjectGraph {}
+
+impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
+
+impl GraphToDot<Project, DependencyScope, Id> for ProjectGraph {}
+
+impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {}

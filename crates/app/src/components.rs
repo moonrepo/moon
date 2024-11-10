@@ -61,7 +61,6 @@ pub async fn create_workspace_graph_context(
         extend_project: Emitter::<ExtendProjectEvent>::new(),
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,
-        strict_project_ids: session.workspace_config.experiments.strict_project_ids,
         toolchain_config: &session.toolchain_config,
         vcs: Some(session.get_vcs_adapter()?),
         working_dir: &session.working_dir,

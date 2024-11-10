@@ -2,7 +2,7 @@ use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::{GraphConnections, ProjectGraph};
 use moon_task::{Target, TargetScope, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
@@ -198,9 +198,9 @@ impl<'app> AffectedTracker<'app> {
             }
         }
 
-        for dep_id in self.project_graph.dependencies_of(project)? {
+        for dep_id in self.project_graph.dependencies_of(project) {
             self.projects
-                .entry(dep_id.to_owned())
+                .entry(dep_id.clone())
                 .or_default()
                 .push(AffectedBy::DownstreamProject(project.id.clone()));
 
@@ -208,7 +208,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.project_graph.get(dep_id)?;
+            let dep_project = self.project_graph.get(&dep_id)?;
 
             self.track_project_dependencies(&dep_project, depth + 1)?;
         }
@@ -240,9 +240,9 @@ impl<'app> AffectedTracker<'app> {
             }
         }
 
-        for dep_id in self.project_graph.dependents_of(project)? {
+        for dep_id in self.project_graph.dependents_of(project) {
             self.projects
-                .entry(dep_id.to_owned())
+                .entry(dep_id.clone())
                 .or_default()
                 .push(AffectedBy::UpstreamProject(project.id.clone()));
 
@@ -250,7 +250,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.project_graph.get(dep_id)?;
+            let dep_project = self.project_graph.get(&dep_id)?;
 
             self.track_project_dependents(&dep_project, depth + 1)?;
         }

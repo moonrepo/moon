@@ -128,6 +128,16 @@ impl TaskDependencyConfig {
             ..Default::default()
         }
     }
+
+    pub fn optional(mut self) -> Self {
+        self.optional = Some(true);
+        self
+    }
+
+    pub fn required(mut self) -> Self {
+        self.optional = Some(false);
+        self
+    }
 }
 
 cacheable!(

@@ -4,7 +4,7 @@ use moon_config::{
     WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project};
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::*;
 use moon_query::build_query;
 use moon_task::Target;
 use moon_test_utils2::*;
@@ -29,8 +29,8 @@ pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     writeln!(file, "\n\n{data}").unwrap();
 }
 
-fn map_ids(ids: Vec<&Id>) -> Vec<String> {
-    ids.iter().map(|id| id.to_string()).collect()
+fn map_ids(ids: Vec<Id>) -> Vec<String> {
+    ids.into_iter().map(|id| id.to_string()).collect()
 }
 
 fn get_ids_from_projects(projects: Vec<Arc<Project>>) -> Vec<String> {
@@ -294,7 +294,7 @@ mod project_graph {
             .await;
             let cached_graph = do_generate(sandbox.path()).await;
 
-            assert_eq!(graph.ids(), cached_graph.ids());
+            assert_eq!(graph.get_node_keys(), cached_graph.get_node_keys());
         }
 
         #[tokio::test]
@@ -441,17 +441,17 @@ mod project_graph {
             );
 
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("a").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("a").unwrap())),
                 ["b"]
             );
 
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("b").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("b").unwrap())),
                 ["c"]
             );
 
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("c").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("c").unwrap())),
                 string_vec![]
             );
         }
@@ -477,7 +477,15 @@ mod project_graph {
             let graph = generate_inheritance_project_graph("inheritance/scoped").await;
 
             assert_eq!(
-                map_ids(graph.get("node").unwrap().tasks.keys().collect::<Vec<_>>()),
+                map_ids(
+                    graph
+                        .get("node")
+                        .unwrap()
+                        .tasks
+                        .keys()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                ),
                 ["global", "global-node", "node"]
             );
 
@@ -488,6 +496,7 @@ mod project_graph {
                         .unwrap()
                         .tasks
                         .keys()
+                        .cloned()
                         .collect::<Vec<_>>()
                 ),
                 [
@@ -505,6 +514,7 @@ mod project_graph {
                         .unwrap()
                         .tasks
                         .keys()
+                        .cloned()
                         .collect::<Vec<_>>()
                 ),
                 ["global", "system-library"]
@@ -516,7 +526,15 @@ mod project_graph {
             let graph = generate_inheritance_project_graph("inheritance/tagged").await;
 
             assert_eq!(
-                map_ids(graph.get("mage").unwrap().tasks.keys().collect::<Vec<_>>()),
+                map_ids(
+                    graph
+                        .get("mage")
+                        .unwrap()
+                        .tasks
+                        .keys()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                ),
                 ["mage", "magic"]
             );
 
@@ -527,6 +545,7 @@ mod project_graph {
                         .unwrap()
                         .tasks
                         .keys()
+                        .cloned()
                         .collect::<Vec<_>>()
                 ),
                 ["warrior", "weapons"]
@@ -539,6 +558,7 @@ mod project_graph {
                         .unwrap()
                         .tasks
                         .keys()
+                        .cloned()
                         .collect::<Vec<_>>()
                 ),
                 ["magic", "priest", "weapons"]
@@ -687,19 +707,19 @@ mod project_graph {
             let graph = generate_project_graph("dependencies").await;
 
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("a").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("a").unwrap())),
                 ["b"]
             );
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("b").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("b").unwrap())),
                 ["c"]
             );
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("c").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("c").unwrap())),
                 string_vec![]
             );
             assert_eq!(
-                map_ids(graph.dependencies_of(&graph.get("d").unwrap()).unwrap()),
+                map_ids(graph.dependencies_of(&graph.get("d").unwrap())),
                 ["c", "b", "a"]
             );
         }
@@ -709,19 +729,19 @@ mod project_graph {
             let graph = generate_project_graph("dependencies").await;
 
             assert_eq!(
-                map_ids(graph.dependents_of(&graph.get("a").unwrap()).unwrap()),
+                map_ids(graph.dependents_of(&graph.get("a").unwrap())),
                 ["d"]
             );
             assert_eq!(
-                map_ids(graph.dependents_of(&graph.get("b").unwrap()).unwrap()),
+                map_ids(graph.dependents_of(&graph.get("b").unwrap())),
                 ["d", "a"]
             );
             assert_eq!(
-                map_ids(graph.dependents_of(&graph.get("c").unwrap()).unwrap()),
+                map_ids(graph.dependents_of(&graph.get("c").unwrap())),
                 ["d", "b"]
             );
             assert_eq!(
-                map_ids(graph.dependents_of(&graph.get("d").unwrap()).unwrap()),
+                map_ids(graph.dependents_of(&graph.get("d").unwrap())),
                 string_vec![]
             );
         }
@@ -736,7 +756,7 @@ mod project_graph {
 
                 let graph = mock.build_project_graph_for(&["no-depends-on"]).await;
 
-                assert_eq!(map_ids(graph.ids()), ["no-depends-on"]);
+                assert_eq!(map_ids(graph.get_node_keys()), ["no-depends-on"]);
             }
 
             #[tokio::test]
@@ -746,7 +766,10 @@ mod project_graph {
 
                 let graph = mock.build_project_graph_for(&["some-depends-on"]).await;
 
-                assert_eq!(map_ids(graph.ids()), ["a", "c", "some-depends-on"]);
+                assert_eq!(
+                    map_ids(graph.get_node_keys()),
+                    ["a", "c", "some-depends-on"]
+                );
             }
 
             #[tokio::test]
@@ -756,7 +779,7 @@ mod project_graph {
 
                 let graph = mock.build_project_graph_for(&["from-task-deps"]).await;
 
-                assert_eq!(map_ids(graph.ids()), ["b", "c", "from-task-deps"]);
+                assert_eq!(map_ids(graph.get_node_keys()), ["b", "c", "from-task-deps"]);
 
                 let deps = &graph.get("from-task-deps").unwrap().dependencies;
 
@@ -771,7 +794,10 @@ mod project_graph {
 
                 let graph = mock.build_project_graph_for(&["from-root-task-deps"]).await;
 
-                assert_eq!(map_ids(graph.ids()), ["root", "from-root-task-deps"]);
+                assert_eq!(
+                    map_ids(graph.get_node_keys()),
+                    ["root", "from-root-task-deps"]
+                );
 
                 let deps = &graph.get("from-root-task-deps").unwrap().dependencies;
 
@@ -785,7 +811,7 @@ mod project_graph {
 
                 let graph = mock.build_project_graph_for(&["self-task-deps"]).await;
 
-                assert_eq!(map_ids(graph.ids()), ["self-task-deps"]);
+                assert_eq!(map_ids(graph.get_node_keys()), ["self-task-deps"]);
             }
         }
     }
@@ -914,29 +940,17 @@ mod project_graph {
             let graph = generate_aliases_project_graph().await;
 
             assert_eq!(
-                map_ids(
-                    graph
-                        .dependencies_of(&graph.get("explicit").unwrap())
-                        .unwrap()
-                ),
+                map_ids(graph.dependencies_of(&graph.get("explicit").unwrap())),
                 ["alias-two", "alias-one"]
             );
 
             assert_eq!(
-                map_ids(
-                    graph
-                        .dependencies_of(&graph.get("explicit-and-implicit").unwrap())
-                        .unwrap()
-                ),
+                map_ids(graph.dependencies_of(&graph.get("explicit-and-implicit").unwrap())),
                 ["alias-three", "alias-two"]
             );
 
             assert_eq!(
-                map_ids(
-                    graph
-                        .dependencies_of(&graph.get("implicit").unwrap())
-                        .unwrap()
-                ),
+                map_ids(graph.dependencies_of(&graph.get("implicit").unwrap())),
                 ["alias-three", "alias-one"]
             );
         }

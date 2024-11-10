@@ -6,7 +6,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum AffectedBy {
     AlreadyMarked,
     AlwaysAffected,

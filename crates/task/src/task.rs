@@ -11,6 +11,7 @@ use moon_target::Target;
 use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 cacheable!(
@@ -213,5 +214,11 @@ impl Task {
         }
 
         self.is_build_type() || self.is_test_type()
+    }
+}
+
+impl fmt::Display for Task {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.target)
     }
 }

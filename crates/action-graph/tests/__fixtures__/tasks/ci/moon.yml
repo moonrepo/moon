@@ -1,21 +1,22 @@
 tasks:
-  ci1-dependency:
-    inputs:
-      - 'input.txt'
-    options:
-      runInCI: false
-  ci1-dependant:
-    deps:
-      - ci1-dependency
-    options:
-      runInCI: true
+  # Note: No longer allowed!
+  # ci1-dependency:
+  #   inputs:
+  #     - 'input.txt'
+  #   options:
+  #     runInCI: false
+  # ci1-dependent:
+  #   deps:
+  #     - ci1-dependency
+  #   options:
+  #     runInCI: true
 
   ci2-dependency:
     inputs:
       - 'input.txt'
     options:
       runInCI: false
-  ci2-dependant:
+  ci2-dependent:
     deps:
       - ci2-dependency
     options:
@@ -26,7 +27,7 @@ tasks:
       - 'input.txt'
     options:
       runInCI: true
-  ci3-dependant:
+  ci3-dependent:
     deps:
       - ci2-dependency
     options:
@@ -37,7 +38,7 @@ tasks:
       - 'input.txt'
     options:
       runInCI: true
-  ci4-dependant:
+  ci4-dependent:
     deps:
       - ci4-dependency
     options:

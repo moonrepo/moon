@@ -108,10 +108,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             }
 
             // Do not depend on tasks that can't run in CI
-            if self.context.check_ci_relationships
-                && !dep_task.options.run_in_ci
-                && task.options.run_in_ci
-            {
+            if !dep_task.options.run_in_ci && task.options.run_in_ci {
                 return Err(TasksExpanderError::RunInCiDepRequirement {
                     dep: dep_task.target.to_owned(),
                     task: task.target.to_owned(),

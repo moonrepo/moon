@@ -2,6 +2,17 @@ use moon_common::{cacheable, Id};
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(
+    /// The task-to-task relationship of the dependency.
+    #[derive(ConfigEnum, Copy, Default)]
+    pub enum DependencyType {
+        Cleanup,
+        #[default]
+        Required,
+        Optional,
+    }
+);
+
+derive_enum!(
     /// The scope and or relationship of the dependency.
     #[derive(ConfigEnum, Copy, Default)]
     pub enum DependencyScope {

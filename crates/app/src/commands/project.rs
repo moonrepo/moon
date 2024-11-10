@@ -20,7 +20,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
     let project_graph = session
         .get_project_graph()
         .await?
-        .into_focused(&args.id, false)?;
+        .focus_for(&args.id, false)?;
     let project = project_graph.get(&args.id)?;
     let config = &project.config;
 

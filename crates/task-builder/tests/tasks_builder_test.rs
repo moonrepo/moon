@@ -1,3 +1,4 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::*;
 use moon_target::Target;
@@ -17,10 +18,12 @@ async fn build_tasks_with_config(
     monorepo: bool,
 ) -> BTreeMap<Id, Task> {
     let platform = local_config.platform.unwrap_or_default();
+    let id = Id::raw("project");
+    let source = WorkspaceRelativePathBuf::from(source);
 
     let mut builder = TasksBuilder::new(
-        "project",
-        source,
+        &id,
+        &source,
         &platform,
         TasksBuilderContext {
             monorepo,

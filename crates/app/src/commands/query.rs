@@ -355,13 +355,13 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     let mut targets_list = vec![];
 
     for project in projects {
-        let filtered_tasks = project
-            .get_tasks()?
+        let filtered_tasks = workspace_graph
+            .get_tasks_for_project(&project.id)?
             .into_iter()
             .map(|task| {
                 targets_list.push(task.target.clone());
 
-                (task.id.to_owned(), task.to_owned())
+                (task.id.to_owned(), task)
             })
             .collect::<BTreeMap<_, _>>();
 

@@ -6,7 +6,6 @@ use moon_deno_tool::DenoTool;
 use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
-use moon_project_graph::ProjectGraph;
 use moon_rust_tool::RustTool;
 use moon_tool::DependencyManager;
 use rustc_hash::FxHashSet;

@@ -23,8 +23,8 @@ pub async fn task(session: CliSession, args: TaskArgs) -> AppResult {
     };
 
     let workspace_graph = session.get_workspace_graph().await?;
-    let project = workspace_graph.projects.get(&project_locator)?;
-    let task = workspace_graph.tasks.get(&args.target)?;
+    let project = workspace_graph.get_project(&project_locator)?;
+    let task = workspace_graph.get_task(&args.target)?;
 
     let console = session.console.stdout();
 

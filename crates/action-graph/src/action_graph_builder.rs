@@ -1,4 +1,5 @@
 use crate::action_graph::ActionGraph;
+use crate::action_graph_error::ActionGraphError;
 use moon_action::{
     ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
     SyncProjectNode,
@@ -9,7 +10,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_config::{PlatformType, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_query::{build_query, Criteria};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
@@ -547,7 +548,7 @@ impl<'app> ActionGraphBuilder<'app> {
 
                 // Don't allow internal tasks to be ran
                 if task.is_internal() && reqs.has_target(&task.target) {
-                    return Err(ProjectError::UnknownTask {
+                    return Err(ActionGraphError::UnknownTask {
                         task_id: task.target.task_id.clone(),
                         project_id: project.id.clone(),
                     }

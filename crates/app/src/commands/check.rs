@@ -35,18 +35,18 @@ pub struct CheckArgs {
 
 #[instrument(skip_all)]
 pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
-    let project_graph = session.get_project_graph().await?;
+    let workspace_graph = session.get_workspace_graph().await?;
     let mut projects: Vec<Arc<Project>> = vec![];
 
     // Load projects
     if args.all {
         trace!("Running check on all projects");
 
-        projects.extend(project_graph.get_all()?);
+        projects.extend(workspace_graph.get_all_projects()?);
     } else if args.ids.is_empty() {
         trace!("Loading from path");
 
-        projects.push(project_graph.get_from_path(None)?);
+        projects.push(workspace_graph.projects.get_from_path(None)?);
     } else {
         trace!(
             ids = ?args.ids,
@@ -54,7 +54,7 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
         );
 
         for id in &args.ids {
-            projects.push(project_graph.get(id)?);
+            projects.push(workspace_graph.get_project(id)?);
         }
     };
 
@@ -62,7 +62,7 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
     let mut targets = vec![];
 
     for project in projects {
-        for task in project.get_tasks()? {
+        for task in workspace_graph.get_tasks_for_project(&project.id)? {
             if !task.is_internal() && (task.is_build_type() || task.is_test_type()) {
                 targets.push(TargetLocator::Qualified(task.target.clone()));
             }

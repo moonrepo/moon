@@ -43,7 +43,7 @@ pub struct QueryProjectsResult {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryTasksResult {
-    pub tasks: BTreeMap<Id, BTreeMap<Id, Task>>,
+    pub tasks: BTreeMap<Id, BTreeMap<Id, Arc<Task>>>,
     pub options: QueryProjectsOptions,
 }
 
@@ -152,9 +152,9 @@ fn load_with_regex(
 
         if let Some(regex) = &tasks_regex {
             let has_task = project
-                .get_task_ids()?
+                .task_targets
                 .iter()
-                .any(|task_id| regex.is_match(task_id));
+                .any(|target| regex.is_match(&target.task_id));
 
             if !has_task {
                 continue;

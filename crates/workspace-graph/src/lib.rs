@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 pub use moon_graph_utils::*;
 
+#[derive(Default)]
 pub struct WorkspaceGraph {
     pub projects: Arc<ProjectGraph>,
     pub tasks: Arc<TaskGraph>,
@@ -30,7 +31,7 @@ impl WorkspaceGraph {
         Ok(project)
     }
 
-    pub fn get_all_project(&self) -> miette::Result<Vec<Arc<Project>>> {
+    pub fn get_all_projects(&self) -> miette::Result<Vec<Arc<Project>>> {
         self.projects.get_all()
     }
 

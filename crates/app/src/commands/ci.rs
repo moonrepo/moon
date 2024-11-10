@@ -9,7 +9,6 @@ use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
-use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetLocator};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
@@ -151,7 +150,7 @@ async fn gather_potential_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    let projects = workspace_graph.get_all_project()?;
+    workspace_graph.get_all_projects()?;
 
     if args.targets.is_empty() {
         for task in workspace_graph.get_all_tasks()? {

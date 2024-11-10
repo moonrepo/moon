@@ -1,4 +1,3 @@
-use crate::project_error::ProjectError;
 use moon_common::{
     cacheable,
     path::{is_root_level_source, WorkspaceRelativePathBuf},
@@ -77,55 +76,6 @@ impl Project {
             .iter()
             .map(|dep| &dep.id)
             .collect::<Vec<_>>()
-    }
-
-    /// Return a task with the defined ID.
-    #[deprecated]
-    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
-        let task_id = Id::raw(task_id.as_ref());
-
-        let task = self
-            .tasks
-            .get(&task_id)
-            .ok_or_else(|| ProjectError::UnknownTask {
-                task_id: task_id.clone(),
-                project_id: self.id.clone(),
-            })?;
-
-        if !task.is_expanded() {
-            return Err(ProjectError::UnexpandedTask {
-                task_id,
-                project_id: self.id.clone(),
-            })?;
-        }
-
-        Ok(task)
-    }
-
-    /// Return a list of all visible task IDs.
-    #[deprecated]
-    pub fn get_task_ids(&self) -> miette::Result<Vec<&Id>> {
-        Ok(self
-            .get_tasks()?
-            .iter()
-            .map(|task| &task.id)
-            .collect::<Vec<_>>())
-    }
-
-    /// Return all visible tasks within the project. Does not include internal tasks!
-    #[deprecated]
-    pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
-        let mut tasks = vec![];
-
-        for task_id in self.tasks.keys() {
-            let task = self.get_task(task_id)?;
-
-            if !task.is_internal() {
-                tasks.push(task);
-            }
-        }
-
-        Ok(tasks)
     }
 
     /// Return true if the root-level project.

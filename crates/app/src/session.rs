@@ -196,7 +196,7 @@ impl CliSession {
         let projects = self.get_project_graph().await?;
         let tasks = self.get_task_graph().await?;
 
-        Ok(WorkspaceGraph { projects, tasks })
+        Ok(WorkspaceGraph::new(projects, tasks))
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {

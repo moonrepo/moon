@@ -223,10 +223,7 @@ impl<'app> WorkspaceBuilder<'app> {
         task_graph.workspace_root = context.workspace_root.to_owned();
         let task_graph = Arc::new(task_graph);
 
-        Ok(WorkspaceGraph {
-            projects: project_graph,
-            tasks: task_graph,
-        })
+        Ok(WorkspaceGraph::new(project_graph, task_graph))
     }
 
     /// Load a single project by ID or alias into the graph.

@@ -1,7 +1,8 @@
 use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
+use moon_task::Task;
 use moon_task_hasher::{TaskHash, TaskHasher};
-use moon_test_utils2::{create_project_graph_mocker, ProjectGraph};
+use moon_test_utils2::{create_workspace_graph_mocker, WorkspaceGraph};
 use moon_vcs::BoxedVcs;
 use starbase_sandbox::create_sandbox;
 use std::fs;
@@ -31,13 +32,13 @@ fn create_hasher_configs() -> (HasherConfig, HasherConfig) {
     )
 }
 
-async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, Arc<BoxedVcs>) {
-    let mut mock = create_project_graph_mocker(workspace_root);
+async fn generate_graph(workspace_root: &Path) -> (WorkspaceGraph, Arc<BoxedVcs>) {
+    let mut mock = create_workspace_graph_mocker(workspace_root);
     mock.with_vcs();
 
     create_out_files(workspace_root);
 
-    let graph = mock.build_project_graph().await;
+    let graph = mock.build_workspace_graph().await;
     let vcs = mock.vcs.take().unwrap();
 
     (graph, vcs)
@@ -45,18 +46,12 @@ async fn generate_project_graph(workspace_root: &Path) -> (ProjectGraph, Arc<Box
 
 async fn generate_hash<'a>(
     project: &'a Project,
-    task_name: &'a str,
+    task: &'a Task,
     vcs: &'a BoxedVcs,
     workspace_root: &'a Path,
     hasher_config: &'a HasherConfig,
 ) -> TaskHash<'a> {
-    let mut hasher = TaskHasher::new(
-        project,
-        project.get_task(task_name).unwrap(),
-        vcs,
-        workspace_root,
-        hasher_config,
-    );
+    let mut hasher = TaskHasher::new(project, task, vcs, workspace_root, hasher_config);
     hasher.hash_inputs().await.unwrap();
     hasher.hash()
 }
@@ -69,22 +64,16 @@ mod task_hasher {
         let sandbox = create_sandbox("ignore-patterns");
         sandbox.enable_git();
 
-        let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
-        let project = project_graph.get("root").unwrap();
+        let (wg, vcs) = generate_graph(sandbox.path()).await;
+        let project = wg.get_project("root").unwrap();
+        let task = wg.get_task_for_project("root", "testPatterns").unwrap();
 
         let hasher_config = HasherConfig {
             ignore_patterns: vec![GlobPath::from_str("**/out/**").unwrap()],
             ..HasherConfig::default()
         };
 
-        let result = generate_hash(
-            &project,
-            "testPatterns",
-            &vcs,
-            sandbox.path(),
-            &hasher_config,
-        )
-        .await;
+        let result = generate_hash(&project, &task, &vcs, sandbox.path(), &hasher_config).await;
 
         assert_eq!(
             result.inputs.keys().collect::<Vec<_>>(),
@@ -100,19 +89,20 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "files").unwrap();
 
             let expected = ["2.txt", "dir/abc.txt"];
 
             // VCS
-            let result = generate_hash(&project, "files", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(&project, "files", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -122,19 +112,20 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "dirs").unwrap();
 
             let expected = ["dir/abc.txt", "dir/az.txt", "dir/xyz.txt"];
 
             // VCS
-            let result = generate_hash(&project, "dirs", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(&project, "dirs", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -144,21 +135,20 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "globStar").unwrap();
 
             let expected = ["1.txt", "2.txt", "3.txt"];
 
             // VCS
-            let result =
-                generate_hash(&project, "globStar", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result =
-                generate_hash(&project, "globStar", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -168,9 +158,10 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "globNestedStar").unwrap();
 
             let expected = [
                 "1.txt",
@@ -182,26 +173,12 @@ mod task_hasher {
             ];
 
             // VCS
-            let result = generate_hash(
-                &project,
-                "globNestedStar",
-                &vcs,
-                sandbox.path(),
-                &vcs_config,
-            )
-            .await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(
-                &project,
-                "globNestedStar",
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            )
-            .await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -211,21 +188,20 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "globGroup").unwrap();
 
             let expected = ["dir/az.txt", "dir/xyz.txt"];
 
             // VCS
-            let result =
-                generate_hash(&project, "globGroup", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result =
-                generate_hash(&project, "globGroup", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -235,12 +211,13 @@ mod task_hasher {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
-            let project = project_graph.get("root").unwrap();
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "none").unwrap();
+
             let hasher_config = HasherConfig::default();
 
-            let result =
-                generate_hash(&project, "none", &vcs, sandbox.path(), &hasher_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &hasher_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), Vec::<&str>::new());
         }
@@ -255,12 +232,13 @@ mod task_hasher {
                 cmd.args(["add", "created.txt", "filtered.txt"]);
             });
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
-            let project = project_graph.get("root").unwrap();
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "touched").unwrap();
+
             let hasher_config = HasherConfig::default();
 
-            let result =
-                generate_hash(&project, "touched", &vcs, sandbox.path(), &hasher_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &hasher_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), ["created.txt"]);
         }
@@ -271,21 +249,20 @@ mod task_hasher {
             sandbox.enable_git();
             sandbox.create_file(".env", "");
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "envFile").unwrap();
 
             let expected = [".env"];
 
             // VCS
-            let result =
-                generate_hash(&project, "envFile", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result =
-                generate_hash(&project, "envFile", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -297,21 +274,20 @@ mod task_hasher {
             sandbox.create_file(".env.prod", "");
             sandbox.create_file(".env.local", "");
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "envFileList").unwrap();
 
             let expected = [".env.local", ".env.prod"];
 
             // VCS
-            let result =
-                generate_hash(&project, "envFileList", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result =
-                generate_hash(&project, "envFileList", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -325,9 +301,10 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "inFileOutFile").unwrap();
 
             let expected = [
                 ".moon/toolchain.yml",
@@ -337,20 +314,12 @@ mod task_hasher {
             ];
 
             // VCS
-            let result =
-                generate_hash(&project, "inFileOutFile", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(
-                &project,
-                "inFileOutFile",
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            )
-            .await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -360,21 +329,20 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "inFileOutDir").unwrap();
 
             let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
 
             // VCS
-            let result =
-                generate_hash(&project, "inFileOutDir", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result =
-                generate_hash(&project, "inFileOutDir", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -384,27 +352,20 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "inFileOutGlob").unwrap();
 
             let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
 
             // VCS
-            let result =
-                generate_hash(&project, "inFileOutGlob", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(
-                &project,
-                "inFileOutGlob",
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            )
-            .await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -414,9 +375,10 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "inGlobOutFile").unwrap();
 
             let expected = [
                 ".gitignore",
@@ -429,20 +391,12 @@ mod task_hasher {
             ];
 
             // VCS
-            let result =
-                generate_hash(&project, "inGlobOutFile", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(
-                &project,
-                "inGlobOutFile",
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            )
-            .await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -452,9 +406,10 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "inGlobOutDir").unwrap();
 
             let expected = [
                 ".gitignore",
@@ -464,14 +419,12 @@ mod task_hasher {
             ];
 
             // VCS
-            let result =
-                generate_hash(&project, "inGlobOutDir", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result =
-                generate_hash(&project, "inGlobOutDir", &vcs, sandbox.path(), &glob_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }
@@ -481,9 +434,10 @@ mod task_hasher {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
 
-            let (project_graph, vcs) = generate_project_graph(sandbox.path()).await;
+            let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
-            let project = project_graph.get("root").unwrap();
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_for_project("root", "inGlobOutGlob").unwrap();
 
             let expected = [
                 ".gitignore",
@@ -493,20 +447,12 @@ mod task_hasher {
             ];
 
             // VCS
-            let result =
-                generate_hash(&project, "inGlobOutGlob", &vcs, sandbox.path(), &vcs_config).await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &vcs_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
 
             // Glob
-            let result = generate_hash(
-                &project,
-                "inGlobOutGlob",
-                &vcs,
-                sandbox.path(),
-                &glob_config,
-            )
-            .await;
+            let result = generate_hash(&project, &task, &vcs, sandbox.path(), &glob_config).await;
 
             assert_eq!(result.inputs.keys().collect::<Vec<_>>(), expected);
         }

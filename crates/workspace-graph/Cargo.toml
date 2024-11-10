@@ -12,8 +12,11 @@ publish = false
 moon_common = { path = "../common" }
 moon_graph_utils = { path = "../graph-utils" }
 moon_project_graph = { path = "../project-graph" }
+moon_query = { path = "../query" }
 moon_task_graph = { path = "../task-graph" }
 miette = { workspace = true }
+scc = { workspace = true }
+tracing = { workspace = true }
 
 [lints]
 workspace = true

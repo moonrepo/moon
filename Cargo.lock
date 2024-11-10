@@ -4042,8 +4042,10 @@ dependencies = [
  "moon_project_graph",
  "moon_rust_platform",
  "moon_system_platform",
+ "moon_task_graph",
  "moon_vcs",
  "moon_workspace",
+ "moon_workspace_graph",
  "proto_core",
  "starbase_events",
  "starbase_sandbox",
@@ -4232,7 +4234,10 @@ dependencies = [
  "moon_common",
  "moon_graph_utils",
  "moon_project_graph",
+ "moon_query",
  "moon_task_graph",
+ "scc",
+ "tracing",
 ]
 
 [[package]]

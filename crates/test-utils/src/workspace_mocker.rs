@@ -1,8 +1,8 @@
 use moon_cache::CacheEngine;
 use moon_config::*;
-use moon_project_graph::ProjectGraph;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::*;
+use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoConfig;
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
@@ -116,23 +116,23 @@ impl WorkspaceMocker {
         }
     }
 
-    pub async fn build_project_graph(&self) -> ProjectGraph {
-        self.build_project_graph_with_options(ProjectGraphMockOptions::default())
+    pub async fn build_workspace_graph(&self) -> WorkspaceGraph {
+        self.build_workspace_graph_with_options(WorkspaceMockOptions::default())
             .await
     }
 
-    pub async fn build_project_graph_for(&self, ids: &[&str]) -> ProjectGraph {
-        self.build_project_graph_with_options(ProjectGraphMockOptions {
+    pub async fn build_workspace_graph_for(&self, ids: &[&str]) -> WorkspaceGraph {
+        self.build_workspace_graph_with_options(WorkspaceMockOptions {
             ids: Vec::from_iter(ids.iter().map(|id| id.to_string())),
             ..Default::default()
         })
         .await
     }
 
-    pub async fn build_project_graph_with_options<'l>(
+    pub async fn build_workspace_graph_with_options<'l>(
         &self,
-        mut options: ProjectGraphMockOptions<'l>,
-    ) -> ProjectGraph {
+        mut options: WorkspaceMockOptions<'l>,
+    ) -> WorkspaceGraph {
         let context = options
             .context
             .take()
@@ -155,22 +155,22 @@ impl WorkspaceMocker {
 
         builder.load_tasks().await.unwrap();
 
-        let project_graph = Arc::into_inner(builder.build().await.unwrap().projects).unwrap();
+        let workspace_graph = builder.build().await.unwrap();
 
         if options.ids.is_empty() {
-            project_graph.get_all().unwrap();
+            workspace_graph.projects.get_all().unwrap();
         } else {
             for id in &options.ids {
-                project_graph.get(id).unwrap();
+                workspace_graph.projects.get(id).unwrap();
             }
         }
 
-        project_graph
+        workspace_graph
     }
 }
 
 #[derive(Default)]
-pub struct ProjectGraphMockOptions<'l> {
+pub struct WorkspaceMockOptions<'l> {
     pub cache: Option<CacheEngine>,
     pub context: Option<WorkspaceBuilderContext<'l>>,
     pub ids: Vec<String>,

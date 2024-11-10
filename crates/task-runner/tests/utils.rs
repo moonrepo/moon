@@ -6,7 +6,7 @@ use moon_app_context::AppContext;
 use moon_platform::{PlatformManager, Runtime};
 use moon_process::Command;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Target, Task};
 use moon_task_runner::command_builder::CommandBuilder;
 use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
@@ -14,7 +14,7 @@ use moon_task_runner::output_hydrater::OutputHydrater;
 use moon_task_runner::TaskRunner;
 use moon_test_utils2::{
     generate_app_context_from_sandbox, generate_platform_manager_from_sandbox,
-    generate_project_graph_from_sandbox, ProjectGraph,
+    generate_workspace_graph_from_sandbox, WorkspaceGraph,
 };
 use starbase_archive::Archiver;
 use starbase_sandbox::{create_sandbox, Sandbox};
@@ -33,24 +33,24 @@ pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
     pub app_context: AppContext,
     pub platform_manager: PlatformManager,
-    pub project_graph: ProjectGraph,
     pub project: Arc<Project>,
     pub project_id: String,
+    pub workspace_graph: WorkspaceGraph,
 }
 
 impl TaskRunnerContainer {
     pub async fn new_for_project(fixture: &str, project_id: &str) -> Self {
         let sandbox = create_sandbox(fixture);
         let app_context = generate_app_context_from_sandbox(sandbox.path());
-        let project_graph = generate_project_graph_from_sandbox(sandbox.path()).await;
-        let project = project_graph.get(project_id).unwrap();
+        let workspace_graph = generate_workspace_graph_from_sandbox(sandbox.path()).await;
+        let project = workspace_graph.get_project(project_id).unwrap();
         let platform_manager = generate_platform_manager_from_sandbox(sandbox.path()).await;
 
         Self {
             sandbox,
             app_context,
             platform_manager,
-            project_graph,
+            workspace_graph,
             project,
             project_id: project_id.to_owned(),
         }
@@ -65,7 +65,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_archiver(&self, task_id: &str) -> OutputArchiver {
-        let task = self.project.get_task(task_id).unwrap();
+        let task = self.internal_get_task(task_id);
 
         OutputArchiver {
             app: &self.app_context,
@@ -75,7 +75,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_hydrator(&self, task_id: &str) -> OutputHydrater {
-        let task = self.project.get_task(task_id).unwrap();
+        let task = self.internal_get_task(task_id);
 
         OutputHydrater {
             app: &self.app_context,
@@ -92,7 +92,7 @@ impl TaskRunnerContainer {
         context: ActionContext,
         mut op: impl FnMut(&mut Task, &mut ActionNode),
     ) -> Command {
-        let mut task = self.project.get_task("base").unwrap().clone();
+        let mut task = self.internal_get_task("base").to_owned();
         let mut node = create_node(&task);
 
         op(&mut task, &mut node);
@@ -105,7 +105,7 @@ impl TaskRunnerContainer {
         task_id: &str,
         context: &ActionContext,
     ) -> CommandExecutor {
-        let task = self.project.get_task(task_id).unwrap();
+        let task = self.internal_get_task(task_id);
         let node = create_node(task);
 
         CommandExecutor::new(
@@ -118,7 +118,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self, task_id: &str) -> TaskRunner {
-        let task = self.project.get_task(task_id).unwrap();
+        let task = self.internal_get_task(task_id);
 
         let mut runner = TaskRunner::new(&self.app_context, &self.project, task).unwrap();
         runner.set_platform_manager(&self.platform_manager);
@@ -126,7 +126,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_action_node(&self, task_id: &str) -> ActionNode {
-        let task = self.project.get_task(task_id).unwrap();
+        let task = self.internal_get_task(task_id);
 
         create_node(task)
     }
@@ -174,5 +174,10 @@ impl TaskRunnerContainer {
         let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
         builder.set_platform_manager(&self.platform_manager);
         builder.build(context).await.unwrap()
+    }
+
+    fn internal_get_task(&self, task_id: &str) -> &Task {
+        let target = Target::new(&self.project_id, task_id).unwrap();
+        self.workspace_graph.tasks.get_unexpanded(&target).unwrap()
     }
 }

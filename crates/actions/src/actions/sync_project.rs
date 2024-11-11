@@ -17,7 +17,8 @@ pub async fn sync_project(
     workspace_graph: WorkspaceGraph,
     node: &SyncProjectNode,
 ) -> miette::Result<ActionStatus> {
-    let project = workspace_graph.get_project(&node.project)?;
+    // Include tasks for snapshot!
+    let project = workspace_graph.get_project_with_tasks(&node.project)?;
 
     if let Some(value) = should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", &project.id) {
         debug!(

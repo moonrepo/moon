@@ -63,7 +63,7 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
 
     for project in projects {
         for task in workspace_graph.get_tasks_from_project(&project.id)? {
-            if !task.is_internal() && (task.is_build_type() || task.is_test_type()) {
+            if task.is_build_type() || task.is_test_type() {
                 targets.push(TargetLocator::Qualified(task.target.clone()));
             }
         }

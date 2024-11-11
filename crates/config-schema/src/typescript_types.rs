@@ -8,6 +8,7 @@ use std::path::Path;
 
 fn generate_project(out_dir: &Path) -> miette::Result<()> {
     let mut generator = SchemaGenerator::default();
+    generator.add::<DependencyType>();
     generator.add::<DependencyConfig>();
     generator.add::<ProjectConfig>();
     generator.add::<PartialProjectConfig>();

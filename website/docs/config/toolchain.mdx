@@ -733,8 +733,8 @@ Enables and configures Python.
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#version" />
 
-Defines the explicit Python toolchain
-If this field is _not defined_, the global `python` binary will be used.
+Defines the explicit Python toolchain If this field is _not defined_, the global `python` binary
+will be used.
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
@@ -761,8 +761,8 @@ python:
 
 <HeadingApiLink to="/api/types/interface/PythonConfig#venv_name" />
 
-Defines the virtual environment name which will be created on workspace root,
-project dependencies will be installed into this. Defaults to `.venv`
+Defines the virtual environment name which will be created on workspace root, project dependencies
+will be installed into this. Defaults to `.venv`
 
 ```yaml title=".moon/toolchain.yml" {2}
 python:
@@ -777,8 +777,8 @@ python:
 
 <HeadingApiLink to="/api/types/interface/PipConfig#install_args" />
 
-Customize the arguments that will be passed to the pip install command, when the
-`InstallDeps` action is triggered in the pipeline. These arguments are used both locally and in CI.
+Customize the arguments that will be passed to the pip install command, when the `InstallDeps`
+action is triggered in the pipeline. These arguments are used both locally and in CI.
 
 ```yaml title=".moon/toolchain.yml" {3}
 python:

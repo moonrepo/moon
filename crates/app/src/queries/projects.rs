@@ -5,9 +5,9 @@ use miette::IntoDiagnostic;
 use moon_affected::Affected;
 use moon_common::{is_ci, path::WorkspaceRelativePathBuf, Id};
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_task::Task;
 use moon_vcs::BoxedVcs;
+use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
@@ -43,7 +43,7 @@ pub struct QueryProjectsResult {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryTasksResult {
-    pub tasks: BTreeMap<Id, BTreeMap<Id, Task>>,
+    pub tasks: BTreeMap<Id, BTreeMap<Id, Arc<Task>>>,
     pub options: QueryProjectsOptions,
 }
 
@@ -103,12 +103,15 @@ pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<Workspace
     Ok(result.files)
 }
 
-fn load_with_query(project_graph: &ProjectGraph, query: &str) -> miette::Result<Vec<Arc<Project>>> {
-    project_graph.query(moon_query::build_query(query)?)
+fn load_with_query(
+    workspace_graph: &WorkspaceGraph,
+    query: &str,
+) -> miette::Result<Vec<Arc<Project>>> {
+    workspace_graph.query_projects(moon_query::build_query(query)?)
 }
 
 fn load_with_regex(
-    project_graph: &ProjectGraph,
+    workspace_graph: &WorkspaceGraph,
     options: &QueryProjectsOptions,
 ) -> miette::Result<Vec<Arc<Project>>> {
     let alias_regex = convert_to_regex("alias", &options.alias)?;
@@ -121,7 +124,7 @@ fn load_with_regex(
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
-    for project in project_graph.get_all()? {
+    for project in workspace_graph.get_all_projects()? {
         if let Some(regex) = &id_regex {
             if !regex.is_match(&project.id) {
                 continue;
@@ -152,9 +155,9 @@ fn load_with_regex(
 
         if let Some(regex) = &tasks_regex {
             let has_task = project
-                .get_task_ids()?
+                .task_targets
                 .iter()
-                .any(|task_id| regex.is_match(task_id));
+                .any(|target| regex.is_match(&target.task_id));
 
             if !has_task {
                 continue;
@@ -186,15 +189,15 @@ fn load_with_regex(
 }
 
 pub async fn query_projects(
-    project_graph: &ProjectGraph,
+    workspace_graph: &WorkspaceGraph,
     options: &QueryProjectsOptions,
 ) -> AppResult<Vec<Arc<Project>>> {
     debug!("Querying for projects");
 
     let mut projects = if let Some(query) = &options.query {
-        load_with_query(project_graph, query)?
+        load_with_query(workspace_graph, query)?
     } else {
-        load_with_regex(project_graph, options)?
+        load_with_regex(workspace_graph, options)?
     };
 
     if let Some(affected) = &options.affected {

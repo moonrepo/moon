@@ -1,92 +1,209 @@
+use crate::task_graph_error::TaskGraphError;
+use moon_common::Id;
+use moon_config::DependencyType;
+use moon_graph_utils::*;
+use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use petgraph::dot::{Config, Dot};
+use moon_task::Task;
+use moon_task_expander::{TaskExpander, TaskExpanderContext};
 use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::visit::EdgeRef;
-use petgraph::Direction;
 use rustc_hash::FxHashMap;
-use serde::Serialize;
-use starbase_utils::json;
-use tracing::debug;
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tracing::{debug, instrument};
 
-pub type GraphType = DiGraph<Target, ()>;
+pub type TaskGraphType = DiGraph<Task, DependencyType>;
+pub type TasksCache = FxHashMap<Target, Arc<Task>>;
 
-#[derive(Serialize)]
-pub struct TaskGraphCache<'graph> {
-    graph: &'graph GraphType,
+#[derive(Clone, Debug, Default)]
+pub struct TaskMetadata {
+    pub index: NodeIndex,
 }
 
 #[derive(Default)]
 pub struct TaskGraph {
-    /// Directed-acyclic graph (DAG) of targets and their relationships.
-    graph: GraphType,
+    /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
+    graph: TaskGraphType,
 
-    /// Mapping of task targets to graph node indices.
-    nodes: FxHashMap<Target, NodeIndex>,
+    /// Task metadata, mapped by target.
+    metadata: FxHashMap<Target, TaskMetadata>,
+
+    /// Project graph, required for expansion.
+    project_graph: Arc<ProjectGraph>,
+
+    /// Expanded tasks, mapped by target.
+    tasks: Arc<RwLock<TasksCache>>,
+
+    /// The current working directory.
+    pub working_dir: PathBuf,
+
+    /// Workspace root, required for expansion.
+    pub workspace_root: PathBuf,
 }
 
 impl TaskGraph {
-    pub fn new(graph: GraphType, nodes: FxHashMap<Target, NodeIndex>) -> Self {
+    pub fn new(
+        graph: TaskGraphType,
+        metadata: FxHashMap<Target, TaskMetadata>,
+        project_graph: Arc<ProjectGraph>,
+    ) -> Self {
         debug!("Creating task graph");
 
-        Self { graph, nodes }
+        Self {
+            graph,
+            metadata,
+            project_graph,
+            tasks: Arc::new(RwLock::new(FxHashMap::default())),
+            working_dir: PathBuf::new(),
+            workspace_root: PathBuf::new(),
+        }
     }
 
-    pub fn dependencies_of(&self, target: &Target) -> miette::Result<Vec<&Target>> {
-        let deps = self
-            .graph
-            .neighbors_directed(*self.nodes.get(target).unwrap(), Direction::Outgoing)
-            .map(|idx| self.graph.node_weight(idx).unwrap())
-            .collect();
-
-        Ok(deps)
+    /// Return a task with the provided target from the graph.
+    /// If the task does not exist or has been misconfigured, return an error.
+    #[instrument(name = "get_task", skip(self))]
+    pub fn get(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        self.internal_get(target)
     }
 
-    pub fn dependents_of(&self, target: &Target) -> miette::Result<Vec<&Target>> {
-        let deps = self
-            .graph
-            .neighbors_directed(*self.nodes.get(target).unwrap(), Direction::Incoming)
-            .map(|idx| self.graph.node_weight(idx).unwrap())
-            .collect();
+    /// Return an unexpanded task with the provided target from the graph.
+    pub fn get_unexpanded(&self, target: &Target) -> miette::Result<&Task> {
+        let metadata = self
+            .metadata
+            .get(target)
+            .ok_or(TaskGraphError::UnconfiguredTarget(target.to_owned()))?;
 
-        Ok(deps)
+        Ok(self.graph.node_weight(metadata.index).unwrap())
     }
 
-    /// Return a list of targets for all tasks currently within the graph.
-    pub fn targets(&self) -> Vec<&Target> {
-        self.graph.raw_nodes().iter().map(|n| &n.weight).collect()
+    /// Return all tasks from the graph.
+    #[instrument(name = "get_all_tasks", skip(self))]
+    pub fn get_all(&self) -> miette::Result<Vec<Arc<Task>>> {
+        let mut all = vec![];
+
+        for target in self.metadata.keys() {
+            all.push(self.internal_get(target)?);
+        }
+
+        Ok(all)
     }
 
-    /// Get a labelled representation of the graph (which can be serialized easily).
-    pub fn labeled_graph(&self) -> DiGraph<String, ()> {
-        self.graph.map(|_, n| n.to_string(), |_, e| *e)
-    }
+    /// Return all tasks for a specific project from the graph.
+    #[instrument(name = "get_all_project_tasks", skip(self))]
+    pub fn get_all_for_project(
+        &self,
+        project_id: &Id,
+        include_internal: bool,
+    ) -> miette::Result<Vec<Arc<Task>>> {
+        let mut all = vec![];
 
-    /// Format graph as a DOT string.
-    pub fn to_dot(&self) -> String {
-        let dot = Dot::with_attr_getters(
-            &self.graph,
-            &[Config::EdgeNoLabel, Config::NodeNoLabel],
-            &|_, e| {
-                if e.source().index() == 0 {
-                    "arrowhead=none".into()
-                } else {
-                    "arrowhead=box, arrowtail=box".into()
+        for target in self.metadata.keys() {
+            if target.get_project_id().is_some_and(|id| id == project_id) {
+                let task = self.internal_get(target)?;
+
+                if !include_internal && task.is_internal() {
+                    continue;
                 }
-            },
-            &|_, n| {
-                let label = &n.1.id;
 
-                format!(
-                    "label=\"{label}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
-                )
-            },
-        );
+                all.push(task);
+            }
+        }
 
-        format!("{dot:?}")
+        Ok(all)
     }
 
-    /// Format graph as a JSON string.
-    pub fn to_json(&self) -> miette::Result<String> {
-        Ok(json::format(&TaskGraphCache { graph: &self.graph }, true)?)
+    /// Return all unexpanded tasks from the graph.
+    pub fn get_all_unexpanded(&self) -> Vec<&Task> {
+        self.graph
+            .raw_nodes()
+            .iter()
+            .map(|node| &node.weight)
+            .collect()
+    }
+
+    /// Focus the graph for a specific project by target.
+    pub fn focus_for(&self, target: &Target, with_dependents: bool) -> miette::Result<Self> {
+        let task = self.get(target)?;
+        let graph = self.to_focused_graph(&task, with_dependents);
+
+        // Copy over metadata
+        let mut metadata = FxHashMap::default();
+
+        for new_index in graph.node_indices() {
+            let inner_target = &graph[new_index].target;
+
+            if let Some(old_node) = self.metadata.get(inner_target) {
+                let mut new_node = old_node.to_owned();
+                new_node.index = new_index;
+
+                metadata.insert(inner_target.to_owned(), new_node);
+            }
+        }
+
+        Ok(Self {
+            graph,
+            metadata,
+            project_graph: self.project_graph.clone(),
+            tasks: self.tasks.clone(),
+            working_dir: self.working_dir.clone(),
+            workspace_root: self.workspace_root.clone(),
+        })
+    }
+
+    fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        if let Some(task) = self.read_cache().get(target) {
+            return Ok(Arc::clone(task));
+        }
+
+        let mut cache = self.write_cache();
+
+        let expander = TaskExpander::new(TaskExpanderContext {
+            project: self.project_graph.get_unexpanded(
+                target
+                    .get_project_id()
+                    .expect("Project scope required for target."),
+            )?,
+            workspace_root: &self.workspace_root,
+        });
+
+        let task = Arc::new(expander.expand(self.get_unexpanded(target)?)?);
+
+        cache.insert(target.to_owned(), Arc::clone(&task));
+
+        Ok(task)
+    }
+
+    fn read_cache(&self) -> RwLockReadGuard<TasksCache> {
+        self.tasks
+            .read()
+            .expect("Failed to acquire read access to task graph!")
+    }
+
+    fn write_cache(&self) -> RwLockWriteGuard<TasksCache> {
+        self.tasks
+            .write()
+            .expect("Failed to acquire write access to task graph!")
     }
 }
+
+impl GraphData<Task, DependencyType, Target> for TaskGraph {
+    fn get_graph(&self) -> &DiGraph<Task, DependencyType> {
+        &self.graph
+    }
+
+    fn get_node_index(&self, node: &Task) -> NodeIndex {
+        self.metadata.get(&node.target).unwrap().index
+    }
+
+    fn get_node_key(&self, node: &Task) -> Target {
+        node.target.clone()
+    }
+}
+
+impl GraphConnections<Task, DependencyType, Target> for TaskGraph {}
+
+impl GraphConversions<Task, DependencyType, Target> for TaskGraph {}
+
+impl GraphToDot<Task, DependencyType, Target> for TaskGraph {}
+
+impl GraphToJson<Task, DependencyType, Target> for TaskGraph {}

@@ -1,6 +1,7 @@
-use crate::project_build_data::*;
+use crate::build_data::*;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
+use crate::tasks_querent::*;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::*;
 use moon_cache::CacheEngine;
@@ -10,14 +11,18 @@ use moon_common::{
     Id,
 };
 use moon_config::{
-    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectsSourcesList, ToolchainConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, DependencyScope, DependencyType, InheritedTasksManager, ProjectsSourcesList,
+    ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectNode};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
+use moon_task::Target;
+use moon_task_builder::TaskDepsBuilder;
+use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata};
 use moon_vcs::BoxedVcs;
+use moon_workspace_graph::WorkspaceGraph;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -33,7 +38,6 @@ pub struct WorkspaceBuilderContext<'app> {
     pub extend_project: Emitter<ExtendProjectEvent>,
     pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
-    pub strict_project_ids: bool,
     pub toolchain_config: &'app ToolchainConfig,
     pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
@@ -41,14 +45,13 @@ pub struct WorkspaceBuilderContext<'app> {
     pub workspace_root: &'app Path,
 }
 
-pub struct WorkspaceBuildResult {
-    pub project_graph: ProjectGraph,
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilder<'app> {
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext<'app>>>,
+
+    /// Projects grouped by tag, for use in task dependency resolution.
+    projects_by_tag: FxHashMap<Id, Vec<Id>>,
 
     /// Mapping of project IDs to associated data required for building
     /// the project itself. Currently we track the following:
@@ -69,6 +72,14 @@ pub struct WorkspaceBuilder<'app> {
 
     /// The root project ID (only if a monorepo).
     root_project_id: Option<Id>,
+
+    /// Mapping of task targets to associated data required for building
+    /// the project itself. Currently we track the following:
+    ///   - Their task options, for resolving deps.
+    task_data: FxHashMap<Target, TaskBuildData>,
+
+    /// The task DAG.
+    task_graph: TaskGraphType,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -80,11 +91,14 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let mut graph = WorkspaceBuilder {
             context: Some(Arc::new(context)),
+            projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph: ProjectGraphType::default(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
+            task_data: FxHashMap::default(),
+            task_graph: TaskGraphType::default(),
         };
 
         graph.preload_build_data().await?;
@@ -101,13 +115,14 @@ impl<'app> WorkspaceBuilder<'app> {
         let is_vcs_enabled = context
             .vcs
             .as_ref()
-            .expect("VCS is required for project graph caching!")
+            .expect("VCS is required for workspace graph caching!")
             .is_enabled();
         let mut graph = Self::new(context).await?;
 
         // No VCS to hash with, so abort caching
         if !is_vcs_enabled {
             graph.load_projects().await?;
+            graph.load_tasks().await?;
 
             return Ok(graph);
         }
@@ -150,6 +165,7 @@ impl<'app> WorkspaceBuilder<'app> {
         );
 
         graph.load_projects().await?;
+        graph.load_tasks().await?;
 
         state.data.last_hash = hash;
         state.data.projects = graph.project_data.clone();
@@ -162,18 +178,18 @@ impl<'app> WorkspaceBuilder<'app> {
 
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
-    pub async fn build(mut self) -> miette::Result<WorkspaceBuildResult> {
+    pub async fn build(mut self) -> miette::Result<WorkspaceGraph> {
         self.enforce_constraints()?;
 
         let context = self.context.take().unwrap();
 
-        let project_nodes = self
+        let project_metadata = self
             .project_data
             .into_iter()
             .map(|(id, data)| {
                 (
                     id,
-                    ProjectNode {
+                    ProjectMetadata {
                         alias: data.alias,
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
@@ -183,12 +199,31 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let mut project_graph =
-            ProjectGraph::new(self.project_graph, project_nodes, context.workspace_root);
-
+        let mut project_graph = ProjectGraph::new(self.project_graph, project_metadata);
         project_graph.working_dir = context.working_dir.to_owned();
+        project_graph.workspace_root = context.workspace_root.to_owned();
+        let project_graph = Arc::new(project_graph);
 
-        Ok(WorkspaceBuildResult { project_graph })
+        let task_metadata = self
+            .task_data
+            .into_iter()
+            .map(|(id, data)| {
+                (
+                    id,
+                    TaskMetadata {
+                        index: data.node_index.unwrap_or_default(),
+                    },
+                )
+            })
+            .collect::<FxHashMap<_, _>>();
+
+        let mut task_graph =
+            TaskGraph::new(self.task_graph, task_metadata, Arc::clone(&project_graph));
+        task_graph.working_dir = context.working_dir.to_owned();
+        task_graph.workspace_root = context.workspace_root.to_owned();
+        let task_graph = Arc::new(task_graph);
+
+        Ok(WorkspaceGraph::new(project_graph, task_graph))
     }
 
     /// Load a single project by ID or alias into the graph.
@@ -204,20 +239,19 @@ impl<'app> WorkspaceBuilder<'app> {
         let ids = self.project_data.keys().cloned().collect::<Vec<_>>();
 
         for id in ids {
-            self.internal_load_project(&id, &mut FxHashSet::default())
-                .await?;
+            self.load_project(&id).await?;
         }
 
         Ok(())
     }
 
-    #[instrument(name = "load_project", skip(self, cycle))]
+    #[instrument(name = "load_project", skip(self))]
     async fn internal_load_project(
         &mut self,
         id_or_alias: &str,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<(Id, NodeIndex)> {
-        let id = self.resolve_project_id(id_or_alias);
+        let id = ProjectBuildData::resolve_id(id_or_alias, &self.project_data);
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
@@ -226,11 +260,6 @@ impl<'app> WorkspaceBuilder<'app> {
 
             // Already loaded, exit early with existing index
             if let Some(index) = &build_data.node_index {
-                trace!(
-                    project_id = id.as_str(),
-                    "Project already exists in the project graph, skipping load",
-                );
-
                 return Ok((id, *index));
             }
         }
@@ -244,6 +273,14 @@ impl<'app> WorkspaceBuilder<'app> {
         let mut project = self.build_project(&id).await?;
 
         cycle.insert(id.clone());
+
+        // Then group projects by relevant data
+        for tag in &project.config.tags {
+            self.projects_by_tag
+                .entry(tag.to_owned())
+                .or_default()
+                .push(id.clone());
+        }
 
         // Then build dependency projects
         let mut edges = vec![];
@@ -271,6 +308,17 @@ impl<'app> WorkspaceBuilder<'app> {
             if dep_id != dep_config.id {
                 dep_config.id = dep_id;
             }
+        }
+
+        // Create task build data
+        for task in project.tasks.values() {
+            self.task_data.insert(
+                task.target.clone(),
+                TaskBuildData {
+                    options: task.options.clone(),
+                    ..Default::default()
+                },
+            );
         }
 
         // And finally add to the graph
@@ -354,6 +402,116 @@ impl<'app> WorkspaceBuilder<'app> {
         let project = builder.build().await?;
 
         Ok(project)
+    }
+
+    /// Load a single task by target into the graph.
+    pub async fn load_task(&mut self, target: &Target) -> miette::Result<()> {
+        self.internal_load_task(target, &mut FxHashSet::default())
+            .await?;
+
+        Ok(())
+    }
+
+    /// Load all tasks into the graph, derived from the loaded projects.
+    pub async fn load_tasks(&mut self) -> miette::Result<()> {
+        let mut targets = vec![];
+
+        for project in self.project_graph.node_weights() {
+            for task in project.tasks.values() {
+                targets.push(task.target.clone());
+            }
+        }
+
+        for target in targets {
+            self.load_task(&target).await?;
+        }
+
+        Ok(())
+    }
+
+    #[instrument(name = "load_task", skip(self))]
+    async fn internal_load_task(
+        &mut self,
+        target: &Target,
+        cycle: &mut FxHashSet<Target>,
+    ) -> miette::Result<NodeIndex> {
+        let target = TaskBuildData::resolve_target(target, &self.project_data);
+
+        {
+            let Some(build_data) = self.task_data.get(&target) else {
+                return Err(TaskGraphError::UnconfiguredTarget(target).into());
+            };
+
+            // Already loaded, exit early with existing index
+            if let Some(index) = &build_data.node_index {
+                return Ok(*index);
+            }
+        }
+
+        // Not loaded, resolve the task
+        trace!(
+            target = target.as_str(),
+            "Task does not exist in the task graph, attempting to load",
+        );
+
+        let (_, project_index) = self
+            .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
+            .await?;
+
+        let project = self.project_graph.node_weight_mut(project_index).unwrap();
+        let mut task = project.tasks.remove(&target.task_id).unwrap();
+
+        cycle.insert(target.clone());
+
+        // Resolve the task dependencies so we can link edges correctly
+        TaskDepsBuilder {
+            querent: Box::new(WorkspaceBuilderTasksQuerent {
+                project_data: &self.project_data,
+                projects_by_tag: &self.projects_by_tag,
+                task_data: &self.task_data,
+            }),
+            project_id: &project.id,
+            project_dependencies: &project.dependencies,
+            task: &mut task,
+        }
+        .build()?;
+
+        // Then resolve dependency tasks
+        let mut edges = vec![];
+
+        for dep_config in &mut task.deps {
+            if cycle.contains(&dep_config.target) {
+                debug!(
+                    target = target.as_str(),
+                    dependency_target = dep_config.target.as_str(),
+                    "Encountered a dependency cycle (from task); will disconnect nodes to avoid recursion",
+                );
+
+                continue;
+            }
+
+            edges.push((
+                Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?,
+                if dep_config.optional.is_some_and(|v| v) {
+                    DependencyType::Optional
+                } else {
+                    DependencyType::Required
+                },
+            ));
+        }
+
+        // And finally add to the graph
+        let index = self.task_graph.add_node(task);
+
+        self.task_data.get_mut(&target).unwrap().node_index = Some(index);
+
+        for edge in edges {
+            self.task_graph.add_edge(index, edge.0, edge.1);
+        }
+
+        cycle.clear();
+
+        Ok(index)
     }
 
     /// Determine the repository type/structure based on the number of project
@@ -616,6 +774,14 @@ impl<'app> WorkspaceBuilder<'app> {
             // Track ID renames
             if let Some(new_id) = &config.id {
                 if new_id != &id {
+                    debug!(
+                        old_id = id.as_str(),
+                        new_id = new_id.as_str(),
+                        "Project has been configured with an explicit identifier of {}, renaming from {}",
+                        color::id(new_id),
+                        color::id(id.as_str()),
+                    );
+
                     build_data.original_id = Some(id.clone());
 
                     if renamed_ids.contains_key(&id) {
@@ -662,40 +828,6 @@ impl<'app> WorkspaceBuilder<'app> {
         self.renamed_project_ids.extend(renamed_ids);
 
         Ok(())
-    }
-
-    fn resolve_project_id(&self, id_or_alias: &str) -> Id {
-        let id = if self.project_data.contains_key(id_or_alias) {
-            Id::raw(id_or_alias)
-        } else {
-            match self.project_data.iter().find_map(|(id, build_data)| {
-                if build_data
-                    .alias
-                    .as_ref()
-                    .is_some_and(|alias| alias == id_or_alias)
-                {
-                    Some(id)
-                } else {
-                    None
-                }
-            }) {
-                Some(project_id) => project_id.to_owned(),
-                None => Id::raw(id_or_alias),
-            }
-        };
-
-        if self
-            .context
-            .as_ref()
-            .is_some_and(|ctx| ctx.strict_project_ids)
-        {
-            return id;
-        }
-
-        match self.renamed_project_ids.get(&id) {
-            Some(new_id) => new_id.to_owned(),
-            None => id,
-        }
     }
 
     fn context(&self) -> Arc<WorkspaceBuilderContext<'app>> {

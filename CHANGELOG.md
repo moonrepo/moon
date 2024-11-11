@@ -2,12 +2,17 @@
 
 ## Unreleased
 
-- Added Python tier 3 support.
-  - Will download and install Python into the toolchain when a `version` is configured.
-  - Will parse the `requirements.txt` to resolve and install dependencies.
-  - Added a `python.version` setting to `.moon/toolchain.yml`.
-  - Added a `toolchain.python` setting to `moon.yml`.
-  - Updated `moon bin` commands to support Python.
+#### 💥 Breaking
+
+- If you renamed a project using the `id` setting in `moon.yml`, you can no longer reference that
+  project in dependencies and targets using its original ID.
+
+#### 🚀 Updates
+
+- Resolved the `strictProjectIds` experiment and you can no longer reference the original ID.
+- Resolved the `disallowRunInCiMismatch` experiment and you can no longer have a CI based task
+  depend on a non-CI based task.
+- Added a new task graph, that enables new granular based functionality for task related features.
 
 ## 1.29.4
 

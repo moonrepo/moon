@@ -2,14 +2,14 @@ use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
-use moon_task::{Target, TargetScope, Task};
+use moon_task::{Target, Task};
+use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker<'app> {
-    project_graph: &'app ProjectGraph,
+    workspace_graph: &'app WorkspaceGraph,
     touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
 
     projects: FxHashMap<Id, Vec<AffectedBy>>,
@@ -23,13 +23,13 @@ pub struct AffectedTracker<'app> {
 
 impl<'app> AffectedTracker<'app> {
     pub fn new(
-        project_graph: &'app ProjectGraph,
+        workspace_graph: &'app WorkspaceGraph,
         touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
     ) -> Self {
         debug!("Creating affected tracker");
 
         Self {
-            project_graph,
+            workspace_graph,
             touched_files,
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
@@ -125,7 +125,7 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
         debug!("Tracking projects and marking any affected");
 
-        for project in self.project_graph.get_all()? {
+        for project in self.workspace_graph.get_all_projects()? {
             if let Some(affected) = self.is_project_affected(&project) {
                 self.mark_project_affected(&project, affected)?;
             }
@@ -198,9 +198,9 @@ impl<'app> AffectedTracker<'app> {
             }
         }
 
-        for dep_id in self.project_graph.dependencies_of(project)? {
+        for dep_id in self.workspace_graph.projects.dependencies_of(project) {
             self.projects
-                .entry(dep_id.to_owned())
+                .entry(dep_id.clone())
                 .or_default()
                 .push(AffectedBy::DownstreamProject(project.id.clone()));
 
@@ -208,7 +208,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.project_graph.get(dep_id)?;
+            let dep_project = self.workspace_graph.get_project(&dep_id)?;
 
             self.track_project_dependencies(&dep_project, depth + 1)?;
         }
@@ -240,9 +240,9 @@ impl<'app> AffectedTracker<'app> {
             }
         }
 
-        for dep_id in self.project_graph.dependents_of(project)? {
+        for dep_id in self.workspace_graph.projects.dependents_of(project) {
             self.projects
-                .entry(dep_id.to_owned())
+                .entry(dep_id.clone())
                 .or_default()
                 .push(AffectedBy::UpstreamProject(project.id.clone()));
 
@@ -250,7 +250,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.project_graph.get(dep_id)?;
+            let dep_project = self.workspace_graph.get_project(&dep_id)?;
 
             self.track_project_dependents(&dep_project, depth + 1)?;
         }
@@ -261,11 +261,9 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_tasks(&mut self) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
-        for project in self.project_graph.get_all()? {
-            for task in project.get_tasks()? {
-                if let Some(affected) = self.is_task_affected(task)? {
-                    self.mark_task_affected(task, affected)?;
-                }
+        for task in self.workspace_graph.get_all_tasks()? {
+            if let Some(affected) = self.is_task_affected(&task)? {
+                self.mark_task_affected(&task, affected)?;
             }
         }
 
@@ -278,23 +276,11 @@ impl<'app> AffectedTracker<'app> {
             "Tracking tasks by target and marking any affected",
         );
 
-        let mut lookup = FxHashMap::<&Id, Vec<&Id>>::default();
-
         for target in targets {
-            if let TargetScope::Project(project_id) = &target.scope {
-                lookup.entry(project_id).or_default().push(&target.task_id);
-            }
-        }
+            let task = self.workspace_graph.get_task(target)?;
 
-        for (project_id, task_ids) in lookup {
-            let project = self.project_graph.get(project_id)?;
-
-            for task_id in task_ids {
-                let task = project.get_task(task_id)?;
-
-                if let Some(affected) = self.is_task_affected(task)? {
-                    self.mark_task_affected(task, affected)?;
-                }
+            if let Some(affected) = self.is_task_affected(&task)? {
+                self.mark_task_affected(&task, affected)?;
             }
         }
 
@@ -384,12 +370,9 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            if let TargetScope::Project(project_id) = &dep_config.target.scope {
-                let dep_project = self.project_graph.get(project_id)?;
-                let dep_task = dep_project.get_task(&dep_config.target.task_id)?;
+            let dep_task = self.workspace_graph.get_task(&dep_config.target)?;
 
-                self.track_task_dependencies(dep_task, depth + 1)?;
-            }
+            self.track_task_dependencies(&dep_task, depth + 1)?;
         }
 
         Ok(())

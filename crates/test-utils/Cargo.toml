@@ -14,8 +14,10 @@ moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_console = { path = "../console" }
 moon_project_graph = { path = "../project-graph" }
+moon_task_graph = { path = "../task-graph" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
+moon_workspace_graph = { path = "../workspace-graph" }
 proto_core = { workspace = true }
 starbase_events = { workspace = true }
 starbase_sandbox = { workspace = true }

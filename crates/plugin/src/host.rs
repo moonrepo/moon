@@ -1,8 +1,8 @@
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
 use moon_common::{color, serde::*, Id};
 use moon_env::MoonEnvironment;
-use moon_project_graph::ProjectGraph;
-use moon_target::{Target, TargetScope};
+use moon_target::Target;
+use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use std::fmt;
 use std::sync::Arc;
@@ -12,8 +12,8 @@ use warpgate::host::{create_host_functions as create_shared_host_functions, Host
 #[derive(Clone, Default)]
 pub struct PluginHostData {
     pub moon_env: Arc<MoonEnvironment>,
-    pub project_graph: Arc<ProjectGraph>,
     pub proto_env: Arc<ProtoEnvironment>,
+    pub workspace_graph: WorkspaceGraph,
 }
 
 impl fmt::Debug for PluginHostData {
@@ -71,7 +71,7 @@ fn load_project(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let project = data.project_graph.get(&id).map_err(map_error)?;
+    let project = data.workspace_graph.get_project(&id).map_err(map_error)?;
 
     trace!(
         plugin = &uuid,
@@ -107,7 +107,7 @@ fn load_task(
         color::label("load_task"),
     );
 
-    let TargetScope::Project(project_id) = &target.scope else {
+    if target.get_project_id().is_none() {
         return Err(Error::msg(
             "Unable to load task. Requires a fully-qualified target with a project scope.",
         ));
@@ -115,8 +115,7 @@ fn load_task(
 
     let data = user_data.get()?;
     let data = data.lock().unwrap();
-    let project = data.project_graph.get(project_id).map_err(map_error)?;
-    let task = project.get_task(&target.task_id).map_err(map_error)?;
+    let task = data.workspace_graph.get_task(&target).map_err(map_error)?;
 
     trace!(
         plugin = &uuid,
@@ -127,7 +126,7 @@ fn load_task(
 
     enable_wasm_bridge();
 
-    plugin.memory_set_val(&mut outputs[0], serde_json::to_string(task)?)?;
+    plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&task)?)?;
 
     disable_wasm_bridge();
 

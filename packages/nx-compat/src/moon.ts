@@ -1,10 +1,8 @@
-/* eslint-disable no-nested-ternary */
-
 import path from 'node:path';
 import { execa } from 'execa';
 import type {
 	ProjectGraph as NxProjectGraph,
-	ProjectGraphProjectNode,
+	// ProjectGraphProjectNode,
 } from 'nx/src/config/project-graph';
 import type { TaskGraph as NxTaskGraph } from 'nx/src/config/task-graph';
 import type {
@@ -94,19 +92,20 @@ export function createNxProjectGraphFromMoonProjectGraph(
 		nodes: {},
 	};
 
-	Object.values(projectGraph.projects).forEach((project) => {
-		const node: ProjectGraphProjectNode = {
-			data: createNxProjectFromMoonProject(project),
-			name: project.id,
-			type: project.type === 'application' ? 'app' : project.type === 'automation' ? 'e2e' : 'lib',
-		};
+	// TODO
+	// Object.values(projectGraph.projects).forEach((project) => {
+	// 	const node: ProjectGraphProjectNode = {
+	// 		data: createNxProjectFromMoonProject(project),
+	// 		name: project.id,
+	// 		type: project.type === 'application' ? 'app' : project.type === 'automation' ? 'e2e' : 'lib',
+	// 	};
 
-		graph.nodes[project.id] = node;
+	// 	graph.nodes[project.id] = node;
 
-		if (project.alias) {
-			graph.nodes[project.alias] = node;
-		}
-	});
+	// 	if (project.alias) {
+	// 		graph.nodes[project.alias] = node;
+	// 	}
+	// });
 
 	projectGraph.graph.edges.forEach((edge) => {
 		const source = projectGraph.graph.nodes[edge[0]];
@@ -146,36 +145,32 @@ export function createNxTaskGraphFromMoonGraphs(
 	};
 
 	actionGraph.nodes.forEach((node) => {
-		if (!node.label.startsWith('Run')) {
-			return;
-		}
-
-		const target = node.label
-			.replace('RunTarget(', '')
-			.replace('RunTask(', '')
-			.replace('RunInteractiveTask(', '')
-			.replace('RunPersistentTask(', '')
-			.replace(')', '');
-		const [projectId, taskId] = target.split(':');
-		const project = projectGraph.projects[projectId];
-
-		if (!project) {
-			return;
-		}
-
-		const task = project.tasks[taskId];
-
-		if (!task) {
-			return;
-		}
-
-		graph.tasks[String(node.id)] = {
-			id: String(node.id),
-			outputs: [...task.outputFiles, ...task.outputGlobs],
-			overrides: {},
-			projectRoot: project.root,
-			target: { project: projectId, target: taskId },
-		};
+		// if (!node.label.startsWith('Run')) {
+		// return
+		// }
+		// const target = node.label
+		// 	.replace('RunTarget(', '')
+		// 	.replace('RunTask(', '')
+		// 	.replace('RunInteractiveTask(', '')
+		// 	.replace('RunPersistentTask(', '')
+		// 	.replace(')', '');
+		// const [projectId, taskId] = target.split(':');
+		// TODO
+		// const project = undefined; // projectGraph.projects[projectId];
+		// if (!project) {
+		// 	return;
+		// }
+		// const task = project.tasks[taskId];
+		// if (!task) {
+		// 	return;
+		// }
+		// graph.tasks[String(node.id)] = {
+		// 	id: String(node.id),
+		// 	outputs: [...task.outputFiles, ...task.outputGlobs],
+		// 	overrides: {},
+		// 	projectRoot: project.root,
+		// 	target: { project: projectId, target: taskId },
+		// };
 	});
 
 	actionGraph.edges.forEach((edge) => {

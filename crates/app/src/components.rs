@@ -18,12 +18,12 @@ pub async fn run_action_pipeline(
     action_context: ActionContext,
     action_graph: ActionGraph,
 ) -> miette::Result<Vec<Action>> {
-    let project_graph = session.get_project_graph().await?;
+    let workspace_graph = session.get_workspace_graph().await?;
     let toolchain_registry = session.get_toolchain_registry().await?;
     let mut pipeline = ActionPipeline::new(
         session.get_app_context()?,
-        project_graph,
         toolchain_registry,
+        workspace_graph,
     );
 
     if let Some(concurrency) = &session.cli.concurrency {
@@ -61,7 +61,6 @@ pub async fn create_workspace_graph_context(
         extend_project: Emitter::<ExtendProjectEvent>::new(),
         extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
         inherited_tasks: &session.tasks_config,
-        strict_project_ids: session.workspace_config.experiments.strict_project_ids,
         toolchain_config: &session.toolchain_config,
         vcs: Some(session.get_vcs_adapter()?),
         working_dir: &session.working_dir,

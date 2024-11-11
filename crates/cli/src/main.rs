@@ -127,7 +127,6 @@ async fn main() -> MainResult {
                 Commands::Completions(args) => {
                     commands::completions::completions(session, args).await
                 }
-                Commands::DepGraph(args) => commands::graph::dep::dep_graph(session, args).await,
                 Commands::Docker { command } => match command {
                     DockerCommands::File(args) => commands::docker::file(session, args).await,
                     DockerCommands::Prune => commands::docker::prune(session).await,
@@ -185,6 +184,7 @@ async fn main() -> MainResult {
                     None => commands::sync::sync(session).await,
                 },
                 Commands::Task(args) => commands::task::task(session, args).await,
+                Commands::TaskGraph(args) => commands::graph::task::task_graph(session, args).await,
                 Commands::Teardown => commands::teardown::teardown().await,
                 Commands::Templates => commands::templates::templates(session).await,
                 Commands::Upgrade => commands::upgrade::upgrade(session).await,

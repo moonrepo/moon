@@ -15,9 +15,11 @@ use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::{PluginHostData, PluginId};
 use moon_project_graph::ProjectGraph;
+use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, Git};
 use moon_workspace::WorkspaceBuilder;
+use moon_workspace_graph::WorkspaceGraph;
 use once_cell::sync::OnceCell;
 use proto_core::ProtoEnvironment;
 use semver::Version;
@@ -45,6 +47,7 @@ pub struct CliSession {
     cache_engine: OnceCell<Arc<CacheEngine>>,
     extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     project_graph: OnceCell<Arc<ProjectGraph>>,
+    task_graph: OnceCell<Arc<TaskGraph>>,
     toolchain_registry: OnceCell<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceCell<Arc<BoxedVcs>>,
 
@@ -72,6 +75,7 @@ impl CliSession {
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceCell::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
+            task_graph: OnceCell::new(),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchain_config: Arc::new(ToolchainConfig::default()),
             toolchain_registry: OnceCell::new(),
@@ -85,9 +89,9 @@ impl CliSession {
 
     pub async fn build_action_graph<'graph>(
         &self,
-        project_graph: &'graph ProjectGraph,
+        workspace_graph: &'graph WorkspaceGraph,
     ) -> AppResult<ActionGraphBuilder<'graph>> {
-        ActionGraphBuilder::new(project_graph)
+        ActionGraphBuilder::new(workspace_graph)
     }
 
     pub fn get_app_context(&self) -> AppResult<Arc<AppContext>> {
@@ -116,13 +120,13 @@ impl CliSession {
     }
 
     pub async fn get_extension_registry(&self) -> AppResult<Arc<ExtensionRegistry>> {
-        let project_graph = self.get_project_graph().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
 
         let item = self.extension_registry.get_or_init(|| {
             let mut registry = ExtensionRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
-                project_graph,
                 proto_env: Arc::clone(&self.proto_env),
+                workspace_graph,
             });
 
             // Convert moon IDs to plugin IDs
@@ -144,14 +148,22 @@ impl CliSession {
         Ok(self.project_graph.get().map(Arc::clone).unwrap())
     }
 
+    pub async fn get_task_graph(&self) -> AppResult<Arc<TaskGraph>> {
+        if self.task_graph.get().is_none() {
+            self.load_workspace_graph().await?;
+        }
+
+        Ok(self.task_graph.get().map(Arc::clone).unwrap())
+    }
+
     pub async fn get_toolchain_registry(&self) -> AppResult<Arc<ToolchainRegistry>> {
-        let project_graph = self.get_project_graph().await?;
+        let workspace_graph = self.get_workspace_graph().await?;
 
         let item = self.toolchain_registry.get_or_init(|| {
             let mut registry = ToolchainRegistry::new(PluginHostData {
                 moon_env: Arc::clone(&self.moon_env),
-                project_graph,
                 proto_env: Arc::clone(&self.proto_env),
+                workspace_graph,
             });
 
             // Convert moon IDs to plugin IDs
@@ -180,6 +192,13 @@ impl CliSession {
         Ok(Arc::clone(item))
     }
 
+    pub async fn get_workspace_graph(&self) -> AppResult<WorkspaceGraph> {
+        let projects = self.get_project_graph().await?;
+        let tasks = self.get_task_graph().await?;
+
+        Ok(WorkspaceGraph::new(projects, tasks))
+    }
+
     pub fn is_telemetry_enabled(&self) -> bool {
         self.workspace_config.telemetry
     }
@@ -204,7 +223,8 @@ impl CliSession {
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
         let result = builder.build().await?;
 
-        let _ = self.project_graph.set(Arc::new(result.project_graph));
+        let _ = self.project_graph.set(result.projects);
+        let _ = self.task_graph.set(result.tasks);
 
         Ok(())
     }

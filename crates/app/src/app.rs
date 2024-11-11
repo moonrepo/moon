@@ -8,6 +8,7 @@ use crate::commands::ext::ExtArgs;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::action::ActionGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
+use crate::commands::graph::task::TaskGraphArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::migrate::MigrateCommands;
 use crate::commands::node::NodeCommands;
@@ -84,15 +85,6 @@ pub enum Commands {
     )]
     ActionGraph(ActionGraphArgs),
 
-    // moon dep-graph [target]
-    #[command(
-        name = "dep-graph",
-        about = "Display an interactive dependency graph of all tasks and actions.",
-        alias = "dg",
-        hide = true
-    )]
-    DepGraph(ActionGraphArgs),
-
     // moon project <id>
     #[command(
         name = "project",
@@ -108,6 +100,14 @@ pub enum Commands {
         alias = "pg"
     )]
     ProjectGraph(ProjectGraphArgs),
+
+    // moon task-graph [id]
+    #[command(
+        name = "task-graph",
+        about = "Display an interactive graph of tasks.",
+        alias = "tg"
+    )]
+    TaskGraph(TaskGraphArgs),
 
     #[command(name = "sync", about = "Sync the workspace to a healthy state.")]
     Sync {

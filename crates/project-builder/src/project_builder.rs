@@ -11,10 +11,9 @@ use moon_task::{TargetScope, Task};
 use moon_task_builder::{TasksBuilder, TasksBuilderContext};
 use moon_toolchain::detect::{detect_project_language, detect_project_platform};
 use rustc_hash::FxHashMap;
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use tracing::{debug, instrument, trace};
+use tracing::{instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
@@ -32,10 +31,10 @@ pub struct ProjectBuilder<'app> {
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
-    id: Cow<'app, Id>,
+    id: &'app Id,
     source: &'app WorkspaceRelativePath,
     alias: Option<&'app str>,
-    project_root: PathBuf,
+    root: PathBuf,
 
     pub language: LanguageType,
     pub platform: PlatformType,
@@ -55,9 +54,9 @@ impl<'app> ProjectBuilder<'app> {
         );
 
         Ok(ProjectBuilder {
-            project_root: source.to_logical_path(context.workspace_root),
+            root: source.to_logical_path(context.workspace_root),
             context,
-            id: Cow::Borrowed(id),
+            id,
             source,
             alias: None,
             global_config: None,
@@ -102,7 +101,7 @@ impl<'app> ProjectBuilder<'app> {
     pub async fn inherit_local_config(&mut self, config: &ProjectConfig) -> miette::Result<()> {
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
-            let mut language = detect_project_language(&self.project_root);
+            let mut language = detect_project_language(&self.root);
 
             if language == LanguageType::Unknown {
                 language = config.language.clone();
@@ -122,7 +121,7 @@ impl<'app> ProjectBuilder<'app> {
         // Use configured platform or infer from language
         self.platform = config.platform.unwrap_or_else(|| {
             let platform = detect_project_platform(
-                &self.project_root,
+                &self.root,
                 &self.language,
                 &self.context.toolchain_config.get_enabled_platforms(),
             );
@@ -137,21 +136,6 @@ impl<'app> ProjectBuilder<'app> {
             platform
         });
 
-        // Inherit the custom ID
-        if let Some(new_id) = &config.id {
-            if new_id != self.id.as_ref() {
-                debug!(
-                    old_id = self.id.as_str(),
-                    new_id = new_id.as_str(),
-                    "Project has been configured with an explicit identifier of {}, renaming from {}",
-                    color::id(new_id),
-                    color::id(self.id.as_str()),
-                );
-
-                self.id = Cow::Owned(new_id.to_owned());
-            }
-        }
-
         self.local_config = Some(config.to_owned());
 
         Ok(())
@@ -160,19 +144,7 @@ impl<'app> ProjectBuilder<'app> {
     /// Load a `moon.*` config file from the root of the project (derived from source).
     #[instrument(skip_all)]
     pub async fn load_local_config(&mut self) -> miette::Result<()> {
-        debug!(
-            project_id = self.id.as_str(),
-            "Attempting to load {} (optional)",
-            color::file(
-                self.source
-                    .join(self.context.config_loader.get_debug_label("moon", false))
-            )
-        );
-
-        let config = self
-            .context
-            .config_loader
-            .load_project_config(&self.project_root)?;
+        let config = self.context.config_loader.load_project_config(&self.root)?;
 
         self.inherit_local_config(&config).await?;
 
@@ -217,16 +189,21 @@ impl<'app> ProjectBuilder<'app> {
     #[instrument(name = "build_project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
         let tasks = self.build_tasks().await?;
+        let task_targets = tasks
+            .values()
+            .map(|task| task.target.clone())
+            .collect::<Vec<_>>();
 
         let mut project = Project {
             alias: self.alias.map(|a| a.to_owned()),
             dependencies: self.build_dependencies(&tasks)?,
             file_groups: self.build_file_groups()?,
+            task_targets,
             tasks,
-            id: self.id.into_owned(),
+            id: self.id.to_owned(),
             language: self.language,
             platform: self.platform,
-            root: self.project_root,
+            root: self.root,
             source: self.source.to_owned(),
             ..Project::default()
         };
@@ -271,7 +248,7 @@ impl<'app> ProjectBuilder<'app> {
                 if let TargetScope::Project(dep_id) = &task_dep.target.scope {
                     // Already a dependency, or references self
                     if deps.contains_key(dep_id)
-                        || self.id.as_ref() == dep_id
+                        || self.id == dep_id
                         || self.alias.as_ref().is_some_and(|a| *a == dep_id.as_str())
                     {
                         continue;
@@ -364,8 +341,8 @@ impl<'app> ProjectBuilder<'app> {
         trace!(id = self.id.as_str(), "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(
-            self.id.as_ref(),
-            self.source.as_str(),
+            self.id,
+            self.source,
             &self.platform,
             TasksBuilderContext {
                 monorepo: self.context.monorepo,

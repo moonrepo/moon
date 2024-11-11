@@ -9,11 +9,11 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_config::{PlatformType, TaskDependencyConfig};
 use moon_platform::{PlatformManager, Runtime};
-use moon_project::{Project, ProjectError};
-use moon_project_graph::ProjectGraph;
+use moon_project::Project;
 use moon_query::{build_query, Criteria};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
+use moon_workspace_graph::{tasks::TaskGraphError, GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -44,7 +44,7 @@ pub struct ActionGraphBuilder<'app> {
     graph: DiGraph<ActionNode, ()>,
     indices: FxHashMap<ActionNode, NodeIndex>,
     platform_manager: &'app PlatformManager,
-    project_graph: &'app ProjectGraph,
+    workspace_graph: &'app WorkspaceGraph,
 
     // Affected states
     affected: Option<AffectedTracker<'app>>,
@@ -57,13 +57,13 @@ pub struct ActionGraphBuilder<'app> {
 }
 
 impl<'app> ActionGraphBuilder<'app> {
-    pub fn new(project_graph: &'app ProjectGraph) -> miette::Result<Self> {
-        ActionGraphBuilder::with_platforms(PlatformManager::read(), project_graph)
+    pub fn new(workspace_graph: &'app WorkspaceGraph) -> miette::Result<Self> {
+        ActionGraphBuilder::with_platforms(PlatformManager::read(), workspace_graph)
     }
 
     pub fn with_platforms(
         platform_manager: &'app PlatformManager,
-        project_graph: &'app ProjectGraph,
+        workspace_graph: &'app WorkspaceGraph,
     ) -> miette::Result<Self> {
         debug!("Building action graph");
 
@@ -76,7 +76,7 @@ impl<'app> ActionGraphBuilder<'app> {
             passthrough_targets: FxHashSet::default(),
             platform_manager,
             primary_targets: FxHashSet::default(),
-            project_graph,
+            workspace_graph,
             touched_files: None,
         })
     }
@@ -146,7 +146,7 @@ impl<'app> ActionGraphBuilder<'app> {
         if downstream != DownstreamScope::None {
             debug!("Force loading all projects to determine downstream relationships");
 
-            self.project_graph.get_all()?;
+            self.workspace_graph.get_all_projects()?;
         }
 
         self.affected
@@ -168,7 +168,7 @@ impl<'app> ActionGraphBuilder<'app> {
         touched_files: &'app FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<()> {
         self.touched_files = Some(touched_files);
-        self.affected = Some(AffectedTracker::new(self.project_graph, touched_files));
+        self.affected = Some(AffectedTracker::new(self.workspace_graph, touched_files));
 
         Ok(())
     }
@@ -453,19 +453,19 @@ impl<'app> ActionGraphBuilder<'app> {
             let mut projects_to_build = vec![];
 
             // From self project
-            let self_project = self.project_graph.get(project_locator)?;
+            let self_project = self.workspace_graph.get_project(project_locator)?;
 
             projects_to_build.push(self_project.clone());
 
             // From other projects
-            for dependent_id in self.project_graph.dependents_of(&self_project)? {
-                projects_to_build.push(self.project_graph.get(dependent_id)?);
+            for dependent_id in self.workspace_graph.projects.dependents_of(&self_project) {
+                projects_to_build.push(self.workspace_graph.get_project(&dependent_id)?);
             }
 
             for project in projects_to_build {
                 // Don't skip internal tasks, since they are a dependency of the parent
                 // task, and must still run! They just can't be ran manually.
-                for dep_task in project.tasks.values() {
+                for dep_task in self.workspace_graph.get_tasks_from_project(&project.id)? {
                     // But do skip persistent tasks!
                     if dep_task.is_persistent() {
                         continue;
@@ -480,7 +480,7 @@ impl<'app> ActionGraphBuilder<'app> {
                     }
 
                     if dep_task.deps.iter().any(|dep| dep.target == task.target) {
-                        if let Some(index) = self.run_task(&project, dep_task, &reqs)? {
+                        if let Some(index) = self.run_task(&project, &dep_task, &reqs)? {
                             indices.push(index);
                         }
                     }
@@ -515,20 +515,23 @@ impl<'app> ActionGraphBuilder<'app> {
                 let mut projects = vec![];
 
                 if let Some(all_query) = &self.all_query {
-                    projects.extend(self.project_graph.query(all_query)?);
+                    projects.extend(self.workspace_graph.query_projects(all_query)?);
                 } else {
-                    projects.extend(self.project_graph.get_all()?);
+                    projects.extend(self.workspace_graph.get_all_projects()?);
                 };
 
                 for project in projects {
                     // Don't error if the task does not exist
-                    if let Ok(task) = project.get_task(&target.task_id) {
+                    if let Ok(task) = self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, &target.task_id)
+                    {
                         if task.is_internal() {
                             continue;
                         }
 
                         if let Some(index) =
-                            self.run_task_with_config(&project, task, reqs, config)?
+                            self.run_task_with_config(&project, &task, reqs, config)?
                         {
                             inserted_targets.insert(task.target.clone());
                             inserted_indices.insert(index);
@@ -542,19 +545,17 @@ impl<'app> ActionGraphBuilder<'app> {
             }
             // project:task
             TargetScope::Project(project_locator) => {
-                let project = self.project_graph.get(project_locator.as_str())?;
-                let task = project.get_task(&target.task_id)?;
+                let project = self.workspace_graph.get_project(project_locator)?;
+                let task = self
+                    .workspace_graph
+                    .get_task_from_project(&project.id, &target.task_id)?;
 
                 // Don't allow internal tasks to be ran
                 if task.is_internal() && reqs.has_target(&task.target) {
-                    return Err(ProjectError::UnknownTask {
-                        task_id: task.target.task_id.clone(),
-                        project_id: project.id.clone(),
-                    }
-                    .into());
+                    return Err(TaskGraphError::UnconfiguredTarget(task.target.clone()).into());
                 }
 
-                if let Some(index) = self.run_task_with_config(&project, task, reqs, config)? {
+                if let Some(index) = self.run_task_with_config(&project, &task, reqs, config)? {
                     inserted_targets.insert(task.target.to_owned());
                     inserted_indices.insert(index);
                 }
@@ -562,18 +563,21 @@ impl<'app> ActionGraphBuilder<'app> {
             // #tag:task
             TargetScope::Tag(tag) => {
                 let projects = self
-                    .project_graph
-                    .query(build_query(format!("tag={}", tag).as_str())?)?;
+                    .workspace_graph
+                    .query_projects(build_query(format!("tag={}", tag).as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist
-                    if let Ok(task) = project.get_task(&target.task_id) {
+                    if let Ok(task) = self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, &target.task_id)
+                    {
                         if task.is_internal() {
                             continue;
                         }
 
                         if let Some(index) =
-                            self.run_task_with_config(&project, task, reqs, config)?
+                            self.run_task_with_config(&project, &task, reqs, config)?
                         {
                             inserted_targets.insert(task.target.clone());
                             inserted_indices.insert(index);
@@ -600,9 +604,10 @@ impl<'app> ActionGraphBuilder<'app> {
         for locator in reqs.target_locators.clone() {
             let target = match locator {
                 TargetLocator::Qualified(target) => target,
-                TargetLocator::TaskFromWorkingDir(task_id) => {
-                    Target::new(&self.project_graph.get_from_path(None)?.id, task_id)?
-                }
+                TargetLocator::TaskFromWorkingDir(task_id) => Target::new(
+                    &self.workspace_graph.get_project_from_path(None)?.id,
+                    task_id,
+                )?,
             };
 
             // Track the qualified as an initial target
@@ -672,12 +677,12 @@ impl<'app> ActionGraphBuilder<'app> {
         let mut edges = vec![setup_tool_index];
 
         // And we should also depend on other projects
-        for dep_project_id in self.project_graph.dependencies_of(project)? {
-            if cycle.contains(dep_project_id) {
+        for dep_project_id in self.workspace_graph.projects.dependencies_of(project) {
+            if cycle.contains(&dep_project_id) {
                 continue;
             }
 
-            let dep_project = self.project_graph.get(dep_project_id)?;
+            let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
             let dep_project_index = self.internal_sync_project(&dep_project, cycle)?;
 
             if index != dep_project_index {

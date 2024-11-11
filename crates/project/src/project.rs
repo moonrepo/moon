@@ -1,4 +1,3 @@
-use crate::project_error::ProjectError;
 use moon_common::{
     cacheable,
     path::{is_root_level_source, WorkspaceRelativePathBuf},
@@ -10,8 +9,9 @@ use moon_config::{
     StackType,
 };
 use moon_file_group::FileGroup;
-use moon_task::Task;
+use moon_task::{Target, Task};
 use std::collections::BTreeMap;
+use std::fmt;
 use std::path::PathBuf;
 
 cacheable!(
@@ -57,7 +57,12 @@ cacheable!(
         pub source: WorkspaceRelativePathBuf,
 
         /// Tasks specific to the project. Inherits all tasks from the global config.
+        /// Note: This map is empty when the project is in the project graph!
         pub tasks: BTreeMap<Id, Task>,
+
+        /// List of targets of all tasks configured or inherited for the project.
+        /// Includes internal tasks!
+        pub task_targets: Vec<Target>,
 
         /// The type of project.
         #[serde(rename = "type")]
@@ -72,52 +77,6 @@ impl Project {
             .iter()
             .map(|dep| &dep.id)
             .collect::<Vec<_>>()
-    }
-
-    /// Return a task with the defined ID.
-    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
-        let task_id = Id::raw(task_id.as_ref());
-
-        let task = self
-            .tasks
-            .get(&task_id)
-            .ok_or_else(|| ProjectError::UnknownTask {
-                task_id: task_id.clone(),
-                project_id: self.id.clone(),
-            })?;
-
-        if !task.is_expanded() {
-            return Err(ProjectError::UnexpandedTask {
-                task_id,
-                project_id: self.id.clone(),
-            })?;
-        }
-
-        Ok(task)
-    }
-
-    /// Return a list of all visible task IDs.
-    pub fn get_task_ids(&self) -> miette::Result<Vec<&Id>> {
-        Ok(self
-            .get_tasks()?
-            .iter()
-            .map(|task| &task.id)
-            .collect::<Vec<_>>())
-    }
-
-    /// Return all visible tasks within the project. Does not include internal tasks!
-    pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
-        let mut tasks = vec![];
-
-        for task_id in self.tasks.keys() {
-            let task = self.get_task(task_id)?;
-
-            if !task.is_internal() {
-                tasks.push(task);
-            }
-        }
-
-        Ok(tasks)
     }
 
     /// Return true if the root-level project.
@@ -142,6 +101,13 @@ impl PartialEq for Project {
             && self.source == other.source
             && self.stack == other.stack
             && self.tasks == other.tasks
+            && self.task_targets == other.task_targets
             && self.type_of == other.type_of
+    }
+}
+
+impl fmt::Display for Project {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.id)
     }
 }

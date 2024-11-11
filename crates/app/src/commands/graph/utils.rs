@@ -1,7 +1,8 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
 use moon_action_graph::ActionGraph;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::{GraphConversions, ProjectGraph};
+use moon_task_graph::TaskGraph;
 use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
@@ -17,9 +18,7 @@ const INDEX_HTML: &str = include_str!("graph.html.tera");
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
     pub page_title: String,
-
     pub graph_data: String,
-
     pub js_url: String,
 }
 
@@ -80,7 +79,13 @@ pub fn extract_nodes_and_edges_from_graph<T: Display>(
 
 /// Get a serialized representation of the project graph.
 pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
-    let labeled_graph = project_graph.labeled_graph();
+    let labeled_graph = project_graph.to_labeled_graph();
+    extract_nodes_and_edges_from_graph(&labeled_graph, true)
+}
+
+/// Get a serialized representation of the task graph.
+pub async fn task_graph_repr(task_graph: &TaskGraph) -> GraphInfoDto {
+    let labeled_graph = task_graph.to_labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, true)
 }
 

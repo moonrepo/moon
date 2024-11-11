@@ -11,11 +11,12 @@ use moon_target::Target;
 use once_cell::sync::OnceCell;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct TaskMetadata {
+    pub struct TaskInternalMetadata {
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
@@ -58,7 +59,7 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub metadata: TaskMetadata,
+        pub metadata: TaskInternalMetadata,
 
         pub options: TaskOptions,
 
@@ -213,5 +214,11 @@ impl Task {
         }
 
         self.is_build_type() || self.is_test_type()
+    }
+}
+
+impl fmt::Display for Task {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.target)
     }
 }

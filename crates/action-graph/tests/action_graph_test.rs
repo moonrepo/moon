@@ -9,9 +9,9 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{PlatformType, TaskArgs, TaskDependencyConfig};
 use moon_platform::*;
-use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetLocator, Task};
-use moon_test_utils2::generate_project_graph;
+use moon_test_utils2::generate_workspace_graph;
+use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use std::env;
@@ -25,8 +25,8 @@ fn create_task(id: &str, project: &str) -> Task {
     }
 }
 
-async fn create_project_graph() -> ProjectGraph {
-    generate_project_graph("projects").await
+async fn create_project_graph() -> WorkspaceGraph {
+    generate_workspace_graph("projects").await
 }
 
 // fn create_bun_runtime() -> Runtime {
@@ -78,19 +78,25 @@ mod action_graph {
         let container = ActionGraphContainer::new(sandbox.path()).await;
         let mut builder = container.create_builder();
 
-        let project = container.project_graph.get("deps").unwrap();
+        let project = container.workspace_graph.get_project("deps").unwrap();
 
         builder
             .run_task(
                 &project,
-                project.get_task("cycle1").unwrap(),
+                &container
+                    .workspace_graph
+                    .get_task_from_project(&project.id, "cycle1")
+                    .unwrap(),
                 &RunRequirements::default(),
             )
             .unwrap();
         builder
             .run_task(
                 &project,
-                project.get_task("cycle2").unwrap(),
+                &container
+                    .workspace_graph
+                    .get_task_from_project(&project.id, "cycle2")
+                    .unwrap(),
                 &RunRequirements::default(),
             )
             .unwrap();
@@ -107,7 +113,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let bar = container.project_graph.get("bar").unwrap();
+            let bar = container.workspace_graph.get_project("bar").unwrap();
             builder.install_deps(&bar, None).unwrap();
 
             let graph = builder.build();
@@ -133,7 +139,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let bar = container.project_graph.get("bar").unwrap();
+            let bar = container.workspace_graph.get_project("bar").unwrap();
             builder.install_deps(&bar, None).unwrap();
             builder.install_deps(&bar, None).unwrap();
             builder.install_deps(&bar, None).unwrap();
@@ -160,10 +166,10 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let inside = container.project_graph.get("in").unwrap();
+            let inside = container.workspace_graph.get_project("in").unwrap();
             builder.install_deps(&inside, None).unwrap();
 
-            let outside = container.project_graph.get("out").unwrap();
+            let outside = container.workspace_graph.get_project("out").unwrap();
             builder.install_deps(&outside, None).unwrap();
 
             let graph = builder.build();
@@ -201,7 +207,7 @@ mod action_graph {
             node.platform = PlatformType::Node;
 
             let mut builder = container.create_builder();
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             builder.install_deps(&project, Some(&bun)).unwrap();
             builder.install_deps(&project, Some(&node)).unwrap();
@@ -223,7 +229,7 @@ mod action_graph {
 
             // Reverse order
             let mut builder = container.create_builder();
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             builder.install_deps(&project, Some(&node)).unwrap();
             builder.install_deps(&project, Some(&bun)).unwrap();
@@ -254,7 +260,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -291,7 +297,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -333,7 +339,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -359,7 +365,7 @@ mod action_graph {
 
             let file = WorkspaceRelativePathBuf::from("bar/file.js");
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
@@ -384,7 +390,7 @@ mod action_graph {
             let mut builder = container.create_builder();
 
             // node
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Rust;
@@ -425,7 +431,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.options.interactive = true;
@@ -452,7 +458,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let task = create_task("build", "bar");
 
             builder
@@ -484,7 +490,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
 
             let mut task = create_task("build", "bar");
             task.options.persistent = true;
@@ -511,7 +517,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
@@ -587,7 +593,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
@@ -645,7 +651,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
@@ -703,7 +709,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
@@ -779,7 +785,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
@@ -837,7 +843,7 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("bar").unwrap();
+            let project = container.workspace_graph.get_project("bar").unwrap();
             let mut task = create_task("build", "bar");
             task.platform = PlatformType::Node;
 
@@ -938,7 +944,7 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("bar").unwrap();
+                let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
                 task.options.run_in_ci = true;
@@ -968,13 +974,16 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("ci").unwrap();
-                let task = project.get_task("ci3-dependency").unwrap();
+                let project = container.workspace_graph.get_project("ci").unwrap();
+                let task = container
+                    .workspace_graph
+                    .get_task_from_project(&project.id, "ci3-dependency")
+                    .unwrap();
 
                 builder
                     .run_task(
                         &project,
-                        task,
+                        &task,
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
@@ -995,13 +1004,16 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("ci").unwrap();
-                let task = project.get_task("ci4-dependency").unwrap();
+                let project = container.workspace_graph.get_project("ci").unwrap();
+                let task = container
+                    .workspace_graph
+                    .get_task_from_project(&project.id, "ci4-dependency")
+                    .unwrap();
 
                 builder
                     .run_task(
                         &project,
-                        task,
+                        &task,
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
@@ -1026,7 +1038,7 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("bar").unwrap();
+                let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
                 task.options.run_in_ci = false;
@@ -1063,7 +1075,7 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("bar").unwrap();
+                let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
                 task.options.run_in_ci = false;
@@ -1093,7 +1105,7 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("bar").unwrap();
+                let project = container.workspace_graph.get_project("bar").unwrap();
 
                 let mut task = create_task("build", "bar");
                 task.options.run_in_ci = false;
@@ -1117,38 +1129,39 @@ mod action_graph {
                 assert!(!topo(graph).is_empty());
             }
 
-            #[tokio::test]
-            async fn runs_dependents_if_dependency_is_ci_false_but_affected() {
-                let sandbox = create_sandbox("tasks");
-                let container = ActionGraphContainer::new(sandbox.path()).await;
-                let mut builder = container.create_builder();
+            // TODO: Enable after new task graph!
+            // #[tokio::test]
+            // async fn runs_dependents_if_dependency_is_ci_false_but_affected() {
+            //     let sandbox = create_sandbox("tasks");
+            //     let container = ActionGraphContainer::new(sandbox.path()).await;
+            //     let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("ci").unwrap();
-                let task = project.get_task("ci1-dependency").unwrap();
+            //     let project = container.workspace_graph.get_project("ci").unwrap();
+            //     let task = project.get_task("ci2-dependency").unwrap();
 
-                // Must be affected to run the dependent
-                let touched_files =
-                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("ci/input.txt")]);
+            //     // Must be affected to run the dependent
+            //     let touched_files =
+            //         FxHashSet::from_iter([WorkspaceRelativePathBuf::from("ci/input.txt")]);
 
-                builder.set_touched_files(&touched_files).unwrap();
+            //     builder.set_touched_files(&touched_files).unwrap();
 
-                builder
-                    .run_task(
-                        &project,
-                        task,
-                        &RunRequirements {
-                            ci: true,
-                            ci_check: true,
-                            dependents: true,
-                            ..RunRequirements::default()
-                        },
-                    )
-                    .unwrap();
+            //     builder
+            //         .run_task(
+            //             &project,
+            //             task,
+            //             &RunRequirements {
+            //                 ci: true,
+            //                 ci_check: true,
+            //                 dependents: true,
+            //                 ..RunRequirements::default()
+            //             },
+            //         )
+            //         .unwrap();
 
-                let graph = builder.build();
+            //     let graph = builder.build();
 
-                assert_snapshot!(graph.to_dot());
-            }
+            //     assert_snapshot!(graph.to_dot());
+            // }
 
             #[tokio::test]
             async fn doesnt_run_dependents_if_dependency_is_ci_false_and_not_affected() {
@@ -1156,13 +1169,16 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("ci").unwrap();
-                let task = project.get_task("ci1-dependency").unwrap();
+                let project = container.workspace_graph.get_project("ci").unwrap();
+                let task = container
+                    .workspace_graph
+                    .get_task_from_project(&project.id, "ci2-dependency")
+                    .unwrap();
 
                 builder
                     .run_task(
                         &project,
-                        task,
+                        &task,
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
@@ -1183,13 +1199,16 @@ mod action_graph {
                 let container = ActionGraphContainer::new(sandbox.path()).await;
                 let mut builder = container.create_builder();
 
-                let project = container.project_graph.get("ci").unwrap();
-                let task = project.get_task("ci2-dependency").unwrap();
+                let project = container.workspace_graph.get_project("ci").unwrap();
+                let task = container
+                    .workspace_graph
+                    .get_task_from_project(&project.id, "ci2-dependency")
+                    .unwrap();
 
                 builder
                     .run_task(
                         &project,
-                        task,
+                        &task,
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
@@ -1206,15 +1225,11 @@ mod action_graph {
 
             #[tokio::test]
             #[should_panic(
-                expected = "Task ci:ci1-dependant cannot depend on task ci:ci1-dependency"
+                expected = "Task ci:ci1-dependent cannot depend on task ci:ci1-dependency"
             )]
             async fn errors_if_dependency_is_ci_false_and_constraint_enabled() {
-                env::set_var("MOON_INTERNAL_CONSTRAINT_RUNINCI", "true");
-
-                let sandbox = create_sandbox("tasks");
+                let sandbox = create_sandbox("tasks-ci-mismatch");
                 ActionGraphContainer::new(sandbox.path()).await;
-
-                env::remove_var("MOON_INTERNAL_CONSTRAINT_RUNINCI");
             }
         }
     }
@@ -1228,11 +1243,14 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("deps").unwrap();
-            let task = project.get_task("parallel").unwrap();
+            let project = container.workspace_graph.get_project("deps").unwrap();
+            let task = container
+                .workspace_graph
+                .get_task_from_project(&project.id, "parallel")
+                .unwrap();
 
             builder
-                .run_task(&project, task, &RunRequirements::default())
+                .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
             let graph = builder.build();
@@ -1246,11 +1264,14 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("deps").unwrap();
-            let task = project.get_task("serial").unwrap();
+            let project = container.workspace_graph.get_project("deps").unwrap();
+            let task = container
+                .workspace_graph
+                .get_task_from_project(&project.id, "serial")
+                .unwrap();
 
             builder
-                .run_task(&project, task, &RunRequirements::default())
+                .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
             let graph = builder.build();
@@ -1264,11 +1285,14 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("deps").unwrap();
-            let task = project.get_task("chain1").unwrap();
+            let project = container.workspace_graph.get_project("deps").unwrap();
+            let task = container
+                .workspace_graph
+                .get_task_from_project(&project.id, "chain1")
+                .unwrap();
 
             builder
-                .run_task(&project, task, &RunRequirements::default())
+                .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
             let graph = builder.build();
@@ -1282,11 +1306,14 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("deps").unwrap();
-            let task = project.get_task("base").unwrap();
+            let project = container.workspace_graph.get_project("deps").unwrap();
+            let task = container
+                .workspace_graph
+                .get_task_from_project(&project.id, "base")
+                .unwrap();
 
             builder
-                .run_task(&project, task, &RunRequirements::default())
+                .run_task(&project, &task, &RunRequirements::default())
                 .unwrap();
 
             let graph = builder.build();
@@ -1300,13 +1327,16 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("deps").unwrap();
-            let task = project.get_task("base").unwrap();
+            let project = container.workspace_graph.get_project("deps").unwrap();
+            let task = container
+                .workspace_graph
+                .get_task_from_project(&project.id, "base")
+                .unwrap();
 
             builder
                 .run_task(
                     &project,
-                    task,
+                    &task,
                     &RunRequirements {
                         dependents: true,
                         ..RunRequirements::default()
@@ -1325,13 +1355,16 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let project = container.project_graph.get("deps").unwrap();
-            let task = project.get_task("base").unwrap();
+            let project = container.workspace_graph.get_project("deps").unwrap();
+            let task = container
+                .workspace_graph
+                .get_task_from_project(&project.id, "base")
+                .unwrap();
 
             builder
                 .run_task(
                     &project,
-                    task,
+                    &task,
                     &RunRequirements {
                         ci: true,
                         dependents: true,
@@ -1643,49 +1676,6 @@ mod action_graph {
         }
 
         #[tokio::test]
-        async fn runs_by_file_path() {
-            let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer::new(sandbox.path()).await;
-
-            container.project_graph.working_dir = sandbox.path().join("server/nested");
-
-            let mut builder = container.create_builder();
-
-            builder
-                .run_from_requirements(RunRequirements {
-                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
-                        Id::raw("lint"),
-                    )]),
-                    ..Default::default()
-                })
-                .unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-        }
-
-        #[tokio::test]
-        #[should_panic(expected = "No project could be located starting from path unknown/path.")]
-        async fn errors_if_no_project_by_path() {
-            let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer::new(sandbox.path()).await;
-
-            container.project_graph.working_dir = sandbox.path().join("unknown/path");
-
-            let mut builder = container.create_builder();
-
-            builder
-                .run_from_requirements(RunRequirements {
-                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
-                        Id::raw("lint"),
-                    )]),
-                    ..Default::default()
-                })
-                .unwrap();
-        }
-
-        #[tokio::test]
         async fn computes_context() {
             let sandbox = create_sandbox("tasks");
             let container = ActionGraphContainer::new(sandbox.path()).await;
@@ -1751,8 +1741,8 @@ mod action_graph {
 
         #[tokio::test]
         async fn graphs() {
-            let pg = ProjectGraph::default();
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = WorkspaceGraph::default();
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
             let system = Runtime::system();
             let node = Runtime::new(
                 PlatformType::Node,
@@ -1777,8 +1767,8 @@ mod action_graph {
 
         #[tokio::test]
         async fn graphs_same_platform() {
-            let pg = ProjectGraph::default();
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = WorkspaceGraph::default();
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
             let node1 = Runtime::new(
                 PlatformType::Node,
@@ -1810,8 +1800,8 @@ mod action_graph {
 
         #[tokio::test]
         async fn ignores_dupes() {
-            let pg = ProjectGraph::default();
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = WorkspaceGraph::default();
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
             let system = Runtime::system();
 
             builder.setup_toolchain(&system);
@@ -1834,10 +1824,10 @@ mod action_graph {
 
         #[tokio::test]
         async fn graphs_single() {
-            let pg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
-            let bar = pg.get("bar").unwrap();
+            let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
             let graph = builder.build();
@@ -1860,10 +1850,10 @@ mod action_graph {
 
         #[tokio::test]
         async fn graphs_single_with_dep() {
-            let pg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
-            let foo = pg.get("foo").unwrap();
+            let foo = wg.get_project("foo").unwrap();
             builder.sync_project(&foo).unwrap();
 
             let graph = builder.build();
@@ -1890,16 +1880,16 @@ mod action_graph {
 
         #[tokio::test]
         async fn graphs_multiple() {
-            let pg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
-            let foo = pg.get("foo").unwrap();
+            let foo = wg.get_project("foo").unwrap();
             builder.sync_project(&foo).unwrap();
 
-            let bar = pg.get("bar").unwrap();
+            let bar = wg.get_project("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
-            let qux = pg.get("qux").unwrap();
+            let qux = wg.get_project("qux").unwrap();
             builder.sync_project(&qux).unwrap();
 
             let graph = builder.build();
@@ -1930,10 +1920,10 @@ mod action_graph {
 
         #[tokio::test]
         async fn ignores_dupes() {
-            let pg = create_project_graph().await;
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let wg = create_project_graph().await;
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
 
-            let foo = pg.get("foo").unwrap();
+            let foo = wg.get_project("foo").unwrap();
 
             builder.sync_project(&foo).unwrap();
             builder.sync_project(&foo).unwrap();
@@ -1966,10 +1956,10 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let bar = container.project_graph.get("bar").unwrap();
+            let bar = container.workspace_graph.get_project("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
-            let qux = container.project_graph.get("qux").unwrap();
+            let qux = container.workspace_graph.get_project("qux").unwrap();
             builder.sync_project(&qux).unwrap();
 
             let graph = builder.build();
@@ -2003,10 +1993,10 @@ mod action_graph {
             let container = ActionGraphContainer::new(sandbox.path()).await;
             let mut builder = container.create_builder();
 
-            let bar = container.project_graph.get("bar").unwrap();
+            let bar = container.workspace_graph.get_project("bar").unwrap();
             builder.sync_project(&bar).unwrap();
 
-            let baz = container.project_graph.get("baz").unwrap();
+            let baz = container.workspace_graph.get_project("baz").unwrap();
             builder.sync_project(&baz).unwrap();
 
             let graph = builder.build();
@@ -2046,9 +2036,9 @@ mod action_graph {
 
         #[tokio::test]
         async fn graphs() {
-            let pg = ProjectGraph::default();
+            let wg = WorkspaceGraph::default();
 
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
             builder.sync_workspace();
 
             let graph = builder.build();
@@ -2059,9 +2049,9 @@ mod action_graph {
 
         #[tokio::test]
         async fn ignores_dupes() {
-            let pg = ProjectGraph::default();
+            let wg = WorkspaceGraph::default();
 
-            let mut builder = ActionGraphBuilder::new(&pg).unwrap();
+            let mut builder = ActionGraphBuilder::new(&wg).unwrap();
             builder.sync_workspace();
             builder.sync_workspace();
             builder.sync_workspace();

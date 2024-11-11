@@ -2,7 +2,7 @@ mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
-use moon_project_expander::{ExpandedResult, TokenExpander};
+use moon_task_expander::{ExpandedResult, TokenExpander};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use std::borrow::Cow;
@@ -19,7 +19,7 @@ mod token_expander {
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(&project, sandbox.path());
-        let expander = TokenExpander::new(&context);
+        let expander = TokenExpander::new(context);
 
         expander.replace_function(&task, "@unknown(id)").unwrap();
     }
@@ -31,7 +31,7 @@ mod token_expander {
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(&project, sandbox.path());
-        let expander = TokenExpander::new(&context);
+        let expander = TokenExpander::new(context);
 
         expander.replace_function(&task, "@files(unknown)").unwrap();
     }
@@ -45,7 +45,7 @@ mod token_expander {
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(&project, sandbox.path());
-        let expander = TokenExpander::new(&context);
+        let expander = TokenExpander::new(context);
 
         expander.replace_function(&task, "@in(str)").unwrap();
     }
@@ -57,7 +57,7 @@ mod token_expander {
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(&project, sandbox.path());
-        let expander = TokenExpander::new(&context);
+        let expander = TokenExpander::new(context);
 
         expander.replace_function(&task, "@in(10)").unwrap();
     }
@@ -71,7 +71,7 @@ mod token_expander {
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(&project, sandbox.path());
-        let expander = TokenExpander::new(&context);
+        let expander = TokenExpander::new(context);
 
         expander.replace_function(&task, "@out(str)").unwrap();
     }
@@ -83,7 +83,7 @@ mod token_expander {
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(&project, sandbox.path());
-        let expander = TokenExpander::new(&context);
+        let expander = TokenExpander::new(context);
 
         expander.replace_function(&task, "@out(10)").unwrap();
     }
@@ -99,7 +99,7 @@ mod token_expander {
             task.inputs.push(InputPath::TokenFunc("@globs(all)".into()));
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             let result = expander.replace_function(&task, "@in(0)").unwrap();
 
@@ -119,7 +119,7 @@ mod token_expander {
                 .push(InputPath::TokenFunc("@globs(unknown)".into()));
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             expander.replace_function(&task, "@in(0)").unwrap();
         }
@@ -133,7 +133,7 @@ mod token_expander {
                 .push(OutputPath::TokenFunc("@globs(all)".into()));
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             let result = expander.replace_function(&task, "@out(0)").unwrap();
 
@@ -153,7 +153,7 @@ mod token_expander {
                 .push(OutputPath::TokenFunc("@globs(unknown)".into()));
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             expander.replace_function(&task, "@out(0)").unwrap();
         }
@@ -174,7 +174,7 @@ mod token_expander {
 
             let task = create_task();
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             let get_value = |token: &str| {
                 expander
@@ -217,7 +217,7 @@ mod token_expander {
 
             let task = create_task();
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             let get_value = |token: &str| {
                 expander
@@ -246,7 +246,7 @@ mod token_expander {
             let task = create_task();
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander
@@ -356,7 +356,7 @@ mod token_expander {
             let task = create_task();
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander
@@ -398,7 +398,7 @@ mod token_expander {
             let task = create_task();
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander
@@ -427,7 +427,7 @@ mod token_expander {
             let task = create_task();
 
             let context = create_context(&project, sandbox.path());
-            let expander = TokenExpander::new(&context);
+            let expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander
@@ -451,7 +451,7 @@ mod token_expander {
             task.command = "@files(sources)".into();
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_command(&task).unwrap();
         }
@@ -465,7 +465,7 @@ mod token_expander {
             task.command = "bin".into();
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_command(&task).unwrap(), "bin");
         }
@@ -479,7 +479,7 @@ mod token_expander {
             task.command = "$project/bin".into();
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_command(&task).unwrap(), "project/bin");
         }
@@ -493,7 +493,7 @@ mod token_expander {
             task.command = "$project/bin/$task".into();
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_command(&task).unwrap(), "project/bin/task");
         }
@@ -514,7 +514,7 @@ mod token_expander {
             task.command = "@meta(name)".into();
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_command(&task).unwrap(), "name");
         }
@@ -539,7 +539,7 @@ mod token_expander {
             task.args.push("@meta(name)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_args(&task).unwrap(), vec!["name"]);
         }
@@ -554,7 +554,7 @@ mod token_expander {
             task.args.push("$FOO/$project".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_args(&task).unwrap(), vec!["bar/project"]);
         }
@@ -572,7 +572,7 @@ mod token_expander {
             task.env.insert("KEY".into(), "value".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -589,7 +589,7 @@ mod token_expander {
             task.env.insert("VAR".into(), "$project-prod".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -607,7 +607,7 @@ mod token_expander {
                 .insert("VARS".into(), "$project-debug-$task".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -624,7 +624,7 @@ mod token_expander {
             task.env.insert("GROUP".into(), "@group(all)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -644,7 +644,7 @@ mod token_expander {
             task.env.insert("DIRS".into(), "@dirs(dirs)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -661,7 +661,7 @@ mod token_expander {
             task.env.insert("FILES".into(), "@files(all)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -681,7 +681,7 @@ mod token_expander {
             task.env.insert("GLOBS".into(), "@globs(all)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -698,7 +698,7 @@ mod token_expander {
             task.env.insert("ROOT".into(), "@root(all)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -722,7 +722,7 @@ mod token_expander {
             task.env.insert("ROOT".into(), "@meta(name)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_env(&task).unwrap(),
@@ -742,7 +742,7 @@ mod token_expander {
             task.env.insert("IN".into(), "@in(0)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_env(&task).unwrap();
         }
@@ -759,7 +759,7 @@ mod token_expander {
             task.env.insert("OUT".into(), "@out(0)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_env(&task).unwrap();
         }
@@ -776,7 +776,7 @@ mod token_expander {
             task.env.insert("OUT".into(), "@envs(envs)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_env(&task).unwrap();
         }
@@ -794,7 +794,7 @@ mod token_expander {
             task.inputs = vec![InputPath::EnvVar("FOO_BAR".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -819,7 +819,7 @@ mod token_expander {
             env::set_var("BAR_ONE", "1");
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             let mut result = expander.expand_inputs(&task).unwrap();
             result.env.sort();
@@ -847,7 +847,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@group(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -874,7 +874,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@dirs(dirs)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -898,7 +898,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@files(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -924,7 +924,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@globs(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -948,7 +948,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@root(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -969,7 +969,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@envs(envs)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -992,7 +992,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@in(0)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_inputs(&task).unwrap();
         }
@@ -1009,7 +1009,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@out(0)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_inputs(&task).unwrap();
         }
@@ -1026,7 +1026,7 @@ mod token_expander {
             task.inputs = vec![InputPath::TokenFunc("@meta(name)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_inputs(&task).unwrap();
         }
@@ -1043,7 +1043,7 @@ mod token_expander {
             ];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -1072,7 +1072,7 @@ mod token_expander {
             ];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -1103,7 +1103,7 @@ mod token_expander {
             task.inputs = vec![InputPath::ProjectFile("dir".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_inputs(&task).unwrap(),
@@ -1128,7 +1128,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@group(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1155,7 +1155,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@dirs(dirs)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1179,7 +1179,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@files(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1205,7 +1205,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@globs(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1229,7 +1229,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@root(all)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1253,7 +1253,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@in(0)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_outputs(&task).unwrap();
         }
@@ -1270,7 +1270,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@out(0)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_outputs(&task).unwrap();
         }
@@ -1287,7 +1287,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@meta(name)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_outputs(&task).unwrap();
         }
@@ -1304,7 +1304,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::TokenFunc("@envs(envs)".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             expander.expand_outputs(&task).unwrap();
         }
@@ -1323,7 +1323,7 @@ mod token_expander {
             ];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1358,7 +1358,7 @@ mod token_expander {
             ];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_outputs(&task).unwrap(),
@@ -1389,7 +1389,7 @@ mod token_expander {
             task.script = Some("bin --foo -az bar".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_script(&task).unwrap(), "bin --foo -az bar");
         }
@@ -1403,7 +1403,7 @@ mod token_expander {
             task.script = Some("$project/bin --foo -az bar".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_script(&task).unwrap(),
@@ -1420,7 +1420,7 @@ mod token_expander {
             task.script = Some("$project/bin/$task --foo -az bar".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_script(&task).unwrap(),
@@ -1438,7 +1438,7 @@ mod token_expander {
             task.outputs = vec![OutputPath::ProjectGlob("**/*.json".into())];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_script(&task).unwrap(),
@@ -1459,7 +1459,7 @@ mod token_expander {
             ];
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(
                 expander.expand_script(&task).unwrap(),
@@ -1483,7 +1483,7 @@ mod token_expander {
             task.script = Some("bin --name @meta(name)".into());
 
             let context = create_context(&project, sandbox.path());
-            let mut expander = TokenExpander::new(&context);
+            let mut expander = TokenExpander::new(context);
 
             assert_eq!(expander.expand_script(&task).unwrap(), "bin --name name");
         }

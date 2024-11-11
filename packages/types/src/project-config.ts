@@ -5,6 +5,9 @@
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 import type { UnresolvedVersionSpec } from './toolchain-config';
 
+/** The task-to-task relationship of the dependency. */
+export type DependencyType = 'cleanup' | 'required' | 'optional';
+
 /** The scope and or relationship of the dependency. */
 export type DependencyScope = 'build' | 'development' | 'peer' | 'production' | 'root';
 

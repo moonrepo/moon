@@ -2,6 +2,7 @@ use super::utils::{project_graph_repr, respond_to_request, setup_server};
 use crate::session::CliSession;
 use clap::Args;
 use moon_common::Id;
+use moon_project_graph::{GraphToDot, GraphToJson};
 use starbase::AppResult;
 use starbase_styles::color;
 use std::sync::Arc;
@@ -27,7 +28,7 @@ pub async fn project_graph(session: CliSession, args: ProjectGraphArgs) -> AppRe
     let mut project_graph = session.get_project_graph().await?;
 
     if let Some(id) = &args.id {
-        project_graph = Arc::new(project_graph.into_focused(id, args.dependents)?);
+        project_graph = Arc::new(project_graph.focus_for(id, args.dependents)?);
     }
 
     // Force expand all projects

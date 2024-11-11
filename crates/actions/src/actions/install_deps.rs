@@ -8,8 +8,8 @@ use moon_common::{color, is_ci};
 use moon_config::PlatformType;
 use moon_platform::{BoxedPlatform, PlatformManager, Runtime};
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_time::to_millis;
+use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -28,7 +28,7 @@ pub async fn install_deps(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    project_graph: Arc<ProjectGraph>,
+    workspace_graph: WorkspaceGraph,
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> miette::Result<ActionStatus> {
@@ -93,7 +93,7 @@ pub async fn install_deps(
         action,
         &action_context,
         &app_context,
-        &project_graph,
+        &workspace_graph,
         project,
         platform,
         &manifest_name,
@@ -177,7 +177,7 @@ async fn hash_manifests(
     action: &mut Action,
     action_context: &ActionContext,
     app_context: &AppContext,
-    project_graph: &ProjectGraph,
+    workspace_graph: &WorkspaceGraph,
     project: Option<&Project>,
     platform: &BoxedPlatform,
     manifest_name: &str,
@@ -216,7 +216,7 @@ async fn hash_manifests(
     }
     // When running in the workspace root, include all project manifests
     else {
-        for project in project_graph.get_all()? {
+        for project in workspace_graph.projects.get_all_unexpanded() {
             let project_manifest = project.root.join(manifest_name);
 
             if project_manifest.exists() {

@@ -223,7 +223,7 @@ pub struct QueryProjectsArgs {
 #[instrument(skip_all)]
 pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult {
     let console = &session.console;
-    let project_graph = session.get_project_graph().await?;
+    let workspace_graph = session.get_workspace_graph().await?;
 
     let mut options = QueryProjectsOptions {
         alias: args.alias,
@@ -243,7 +243,7 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
-        let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
+        let mut affected_tracker = AffectedTracker::new(&workspace_graph, &touched_files);
 
         #[allow(deprecated)]
         if args.dependents {
@@ -261,7 +261,7 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         options.affected = Some(affected_tracker.build());
     }
 
-    let mut projects = query_projects(&project_graph, &options).await?;
+    let mut projects = query_projects(&workspace_graph, &options).await?;
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
@@ -334,7 +334,7 @@ pub struct QueryTasksArgs {
 #[instrument(skip_all)]
 pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     let console = &session.console;
-    let project_graph = session.get_project_graph().await?;
+    let workspace_graph = session.get_workspace_graph().await?;
 
     // Query for projects that match the filters
     let options = QueryProjectsOptions {
@@ -348,20 +348,20 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         type_of: args.type_of,
         ..QueryProjectsOptions::default()
     };
-    let projects = query_projects(&project_graph, &options).await?;
+    let projects = query_projects(&workspace_graph, &options).await?;
 
     // Group tasks by project
     let mut grouped_tasks = BTreeMap::default();
     let mut targets_list = vec![];
 
     for project in projects {
-        let filtered_tasks = project
-            .get_tasks()?
+        let filtered_tasks = workspace_graph
+            .get_tasks_from_project(&project.id)?
             .into_iter()
             .map(|task| {
                 targets_list.push(task.target.clone());
 
-                (task.id.to_owned(), task.to_owned())
+                (task.id.to_owned(), task)
             })
             .collect::<BTreeMap<_, _>>();
 
@@ -377,7 +377,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         let vcs = session.get_vcs_adapter()?;
         let touched_files = load_touched_files(&vcs).await?;
 
-        let mut affected_tracker = AffectedTracker::new(&project_graph, &touched_files);
+        let mut affected_tracker = AffectedTracker::new(&workspace_graph, &touched_files);
         affected_tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
         affected_tracker.track_tasks_by_target(&targets_list)?;
 

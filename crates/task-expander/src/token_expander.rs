@@ -1,4 +1,4 @@
-use crate::expander_context::{substitute_env_var, ExpanderContext};
+use crate::expander_context::{substitute_env_var, TaskExpanderContext};
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
@@ -46,17 +46,17 @@ impl TokenScope {
     }
 }
 
-pub struct TokenExpander<'graph, 'query> {
+pub struct TokenExpander<'graph> {
     pub scope: TokenScope,
 
-    context: &'graph ExpanderContext<'graph, 'query>,
+    pub context: TaskExpanderContext<'graph>,
 
     // In the current process
     env_vars: Vec<String>,
 }
 
-impl<'graph, 'query> TokenExpander<'graph, 'query> {
-    pub fn new(context: &'graph ExpanderContext<'graph, 'query>) -> Self {
+impl<'graph> TokenExpander<'graph> {
+    pub fn new(context: TaskExpanderContext<'graph>) -> Self {
         Self {
             scope: TokenScope::Args,
             context,

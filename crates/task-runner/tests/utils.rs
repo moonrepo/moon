@@ -14,7 +14,7 @@ use moon_task_runner::output_hydrater::OutputHydrater;
 use moon_task_runner::TaskRunner;
 use moon_test_utils2::{
     generate_app_context_from_sandbox, generate_platform_manager_from_sandbox,
-    generate_project_graph_from_sandbox, ProjectGraph,
+    generate_workspace_graph_from_sandbox, WorkspaceGraph,
 };
 use starbase_archive::Archiver;
 use starbase_sandbox::{create_sandbox, Sandbox};
@@ -33,53 +33,61 @@ pub struct TaskRunnerContainer {
     pub sandbox: Sandbox,
     pub app_context: AppContext,
     pub platform_manager: PlatformManager,
-    pub project_graph: ProjectGraph,
     pub project: Arc<Project>,
     pub project_id: String,
+    pub task: Arc<Task>,
+    pub task_id: String,
+    pub workspace_graph: WorkspaceGraph,
 }
 
 impl TaskRunnerContainer {
-    pub async fn new_for_project(fixture: &str, project_id: &str) -> Self {
+    pub async fn new_for_project(fixture: &str, project_id: &str, task_id: &str) -> Self {
         let sandbox = create_sandbox(fixture);
         let app_context = generate_app_context_from_sandbox(sandbox.path());
-        let project_graph = generate_project_graph_from_sandbox(sandbox.path()).await;
-        let project = project_graph.get(project_id).unwrap();
+        let workspace_graph = generate_workspace_graph_from_sandbox(sandbox.path()).await;
         let platform_manager = generate_platform_manager_from_sandbox(sandbox.path()).await;
+        let project = workspace_graph.get_project(project_id).unwrap();
+        let task = workspace_graph
+            .get_task_from_project(project_id, task_id)
+            .unwrap();
 
         Self {
             sandbox,
             app_context,
             platform_manager,
-            project_graph,
+            workspace_graph,
             project,
             project_id: project_id.to_owned(),
+            task,
+            task_id: task_id.to_owned(),
         }
     }
 
-    pub async fn new_os(fixture: &str) -> Self {
-        Self::new_for_project(fixture, if cfg!(windows) { "windows" } else { "unix" }).await
+    pub async fn new_os(fixture: &str, task_id: &str) -> Self {
+        Self::new_for_project(
+            fixture,
+            if cfg!(windows) { "windows" } else { "unix" },
+            task_id,
+        )
+        .await
     }
 
-    pub async fn new(fixture: &str) -> Self {
-        Self::new_for_project(fixture, "project").await
+    pub async fn new(fixture: &str, task_id: &str) -> Self {
+        Self::new_for_project(fixture, "project", task_id).await
     }
 
-    pub fn create_archiver(&self, task_id: &str) -> OutputArchiver {
-        let task = self.project.get_task(task_id).unwrap();
-
+    pub fn create_archiver(&self) -> OutputArchiver {
         OutputArchiver {
             app: &self.app_context,
             project_config: &self.project.config,
-            task,
+            task: &self.task,
         }
     }
 
-    pub fn create_hydrator(&self, task_id: &str) -> OutputHydrater {
-        let task = self.project.get_task(task_id).unwrap();
-
+    pub fn create_hydrator(&self) -> OutputHydrater {
         OutputHydrater {
             app: &self.app_context,
-            task,
+            task: &self.task,
         }
     }
 
@@ -92,7 +100,7 @@ impl TaskRunnerContainer {
         context: ActionContext,
         mut op: impl FnMut(&mut Task, &mut ActionNode),
     ) -> Command {
-        let mut task = self.project.get_task("base").unwrap().clone();
+        let mut task = self.task.as_ref().to_owned();
         let mut node = create_node(&task);
 
         op(&mut task, &mut node);
@@ -100,49 +108,41 @@ impl TaskRunnerContainer {
         self.internal_create_command(&context, &task, &node).await
     }
 
-    pub async fn create_command_executor(
-        &self,
-        task_id: &str,
-        context: &ActionContext,
-    ) -> CommandExecutor {
-        let task = self.project.get_task(task_id).unwrap();
-        let node = create_node(task);
+    pub async fn create_command_executor(&self, context: &ActionContext) -> CommandExecutor {
+        let node = create_node(&self.task);
 
         CommandExecutor::new(
             &self.app_context,
             &self.project,
-            task,
+            &self.task,
             &node,
-            self.internal_create_command(context, task, &node).await,
+            self.internal_create_command(context, &self.task, &node)
+                .await,
         )
     }
 
-    pub fn create_runner(&self, task_id: &str) -> TaskRunner {
-        let task = self.project.get_task(task_id).unwrap();
-
-        let mut runner = TaskRunner::new(&self.app_context, &self.project, task).unwrap();
+    pub fn create_runner(&self) -> TaskRunner {
+        let mut runner = TaskRunner::new(&self.app_context, &self.project, &self.task).unwrap();
         runner.set_platform_manager(&self.platform_manager);
         runner
     }
 
-    pub fn create_action_node(&self, task_id: &str) -> ActionNode {
-        let task = self.project.get_task(task_id).unwrap();
-
-        create_node(task)
+    pub fn create_action_node(&self) -> ActionNode {
+        create_node(&self.task)
     }
 
-    pub fn pack_archive(&self, task_id: &str) -> PathBuf {
+    pub fn pack_archive(&self) -> PathBuf {
         let sandbox = &self.sandbox;
         let file = sandbox.path().join(".moon/cache/outputs/hash123.tar.gz");
 
         let out = format!(
             ".moon/cache/states/{}/{}/stdout.log",
-            self.project_id, task_id,
+            self.project_id, self.task_id,
         );
 
         let err = format!(
             ".moon/cache/states/{}/{}/stderr.log",
-            self.project_id, task_id,
+            self.project_id, self.task_id,
         );
 
         let txt = format!("{}/file.txt", self.project_id);

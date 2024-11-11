@@ -9,8 +9,8 @@ use moon_action_graph::{ActionGraph, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_console::Console;
-use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetLocator};
+use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -83,10 +83,6 @@ impl CiConsole {
     }
 }
 
-async fn generate_project_graph(session: &CliSession) -> AppResult<Arc<ProjectGraph>> {
-    session.get_project_graph().await
-}
-
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
     console: &mut CiConsole,
@@ -146,7 +142,7 @@ async fn gather_touched_files(
 /// Gather potential runnable targets.
 async fn gather_potential_targets(
     console: &mut CiConsole,
-    project_graph: &ProjectGraph,
+    workspace_graph: &WorkspaceGraph,
     args: &CiArgs,
 ) -> AppResult<TargetList> {
     console.print_header("Gathering potential targets")?;
@@ -154,13 +150,11 @@ async fn gather_potential_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    let projects = project_graph.get_all()?;
+    workspace_graph.get_all_projects()?;
 
     if args.targets.is_empty() {
-        for project in projects {
-            for task in project.get_tasks()? {
-                targets.push(task.target.clone());
-            }
+        for task in workspace_graph.get_all_tasks()? {
+            targets.push(task.target.clone());
         }
     } else {
         targets.extend(args.targets.clone());
@@ -212,13 +206,13 @@ fn distribute_targets_across_jobs(
 async fn generate_action_graph(
     console: &mut CiConsole,
     session: &CliSession,
-    project_graph: &ProjectGraph,
+    workspace_graph: &WorkspaceGraph,
     targets: &TargetList,
     touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<(ActionGraph, ActionContext)> {
     console.print_header("Generating action graph")?;
 
-    let mut action_graph_builder = session.build_action_graph(project_graph).await?;
+    let mut action_graph_builder = session.build_action_graph(workspace_graph).await?;
     action_graph_builder.set_touched_files(touched_files)?;
     action_graph_builder.set_affected_scopes(UpstreamScope::Direct, DownstreamScope::Deep)?;
 
@@ -256,9 +250,9 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
         last_title: String::new(),
     };
 
-    let project_graph = generate_project_graph(&session).await?;
+    let workspace_graph = session.get_workspace_graph().await?;
     let touched_files = gather_touched_files(&mut console, &session, &args).await?;
-    let targets = gather_potential_targets(&mut console, &project_graph, &args).await?;
+    let targets = gather_potential_targets(&mut console, &workspace_graph, &args).await?;
 
     if targets.is_empty() {
         console.write_line(color::invalid("No tasks to run"))?;
@@ -270,7 +264,7 @@ pub async fn ci(session: CliSession, args: CiArgs) -> AppResult {
     let (action_graph, action_context) = generate_action_graph(
         &mut console,
         &session,
-        &project_graph,
+        &workspace_graph,
         &targets,
         &touched_files,
     )

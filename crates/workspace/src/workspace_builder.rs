@@ -22,6 +22,7 @@ use moon_task::Target;
 use moon_task_builder::TaskDepsBuilder;
 use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata};
 use moon_vcs::BoxedVcs;
+use moon_workspace_graph::WorkspaceGraph;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -42,11 +43,6 @@ pub struct WorkspaceBuilderContext<'app> {
     pub working_dir: &'app Path,
     pub workspace_config: &'app WorkspaceConfig,
     pub workspace_root: &'app Path,
-}
-
-pub struct WorkspaceBuildResult {
-    pub project_graph: ProjectGraph,
-    pub task_graph: TaskGraph,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -182,7 +178,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
-    pub async fn build(mut self) -> miette::Result<WorkspaceBuildResult> {
+    pub async fn build(mut self) -> miette::Result<WorkspaceGraph> {
         self.enforce_constraints()?;
 
         let context = self.context.take().unwrap();
@@ -203,10 +199,10 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let mut project_graph =
-            ProjectGraph::new(self.project_graph, project_metadata, context.workspace_root);
-
+        let mut project_graph = ProjectGraph::new(self.project_graph, project_metadata);
         project_graph.working_dir = context.working_dir.to_owned();
+        project_graph.workspace_root = context.workspace_root.to_owned();
+        let project_graph = Arc::new(project_graph);
 
         let task_metadata = self
             .task_data
@@ -221,12 +217,13 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let task_graph = TaskGraph::new(self.task_graph, task_metadata);
+        let mut task_graph =
+            TaskGraph::new(self.task_graph, task_metadata, Arc::clone(&project_graph));
+        task_graph.working_dir = context.working_dir.to_owned();
+        task_graph.workspace_root = context.workspace_root.to_owned();
+        let task_graph = Arc::new(task_graph);
 
-        Ok(WorkspaceBuildResult {
-            project_graph,
-            task_graph,
-        })
+        Ok(WorkspaceGraph::new(project_graph, task_graph))
     }
 
     /// Load a single project by ID or alias into the graph.
@@ -461,9 +458,8 @@ impl<'app> WorkspaceBuilder<'app> {
             .internal_load_project(target.get_project_id().unwrap(), &mut FxHashSet::default())
             .await?;
 
-        // TODO change to a remove in a follow-up PR
-        let project = self.project_graph.node_weight(project_index).unwrap();
-        let mut task = project.tasks.get(&target.task_id).unwrap().clone();
+        let project = self.project_graph.node_weight_mut(project_index).unwrap();
+        let mut task = project.tasks.remove(&target.task_id).unwrap();
 
         cycle.insert(target.clone());
 

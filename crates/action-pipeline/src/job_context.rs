@@ -1,7 +1,7 @@
 use crate::event_emitter::EventEmitter;
 use moon_action::Action;
-use moon_project_graph::ProjectGraph;
 use moon_toolchain_plugin::ToolchainRegistry;
+use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::sync::Arc;
@@ -22,9 +22,6 @@ pub struct JobContext {
     /// Internal pipeline event emitter
     pub emitter: Arc<EventEmitter>,
 
-    /// The project graph, for use within actions
-    pub project_graph: Arc<ProjectGraph>,
-
     /// Sends results to the parent pipeline
     pub result_sender: Sender<Action>,
 
@@ -36,6 +33,9 @@ pub struct JobContext {
 
     /// The registry of all toolchain plugins
     pub toolchain_registry: Arc<ToolchainRegistry>,
+
+    /// The project and task graphs, for use within actions
+    pub workspace_graph: WorkspaceGraph,
 }
 
 impl JobContext {

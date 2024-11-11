@@ -25,8 +25,8 @@ pub struct ActionGraphArgs {
 
 #[instrument]
 pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResult {
-    let project_graph = session.get_project_graph().await?;
-    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
+    let workspace_graph = session.get_workspace_graph().await?;
+    let mut action_graph_builder = session.build_action_graph(&workspace_graph).await?;
 
     let requirements = RunRequirements {
         dependents: args.dependents,
@@ -41,9 +41,9 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
 
         // Show all targets and actions
     } else {
-        for project in project_graph.get_all()? {
-            for task in project.get_tasks()? {
-                action_graph_builder.run_task(&project, task, &requirements)?;
+        for project in workspace_graph.get_all_projects()? {
+            for task in workspace_graph.get_tasks_from_project(&project.id)? {
+                action_graph_builder.run_task(&project, &task, &requirements)?;
             }
         }
     }

@@ -6,7 +6,6 @@ use moon_deno_tool::DenoTool;
 use moon_node_lang::PackageJsonCache;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
-use moon_project_graph::ProjectGraph;
 use moon_rust_tool::RustTool;
 use moon_tool::DependencyManager;
 use rustc_hash::FxHashSet;
@@ -18,9 +17,10 @@ use tracing::{debug, instrument};
 pub async fn prune_bun(
     bun: &BunTool,
     session: &CliSession,
-    project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> AppResult {
+    let project_graph = session.get_project_graph().await?;
+
     // Some package managers do not delete stale node modules
     if session
         .workspace_config
@@ -69,7 +69,6 @@ pub async fn prune_bun(
 pub async fn prune_deno(
     deno: &DenoTool,
     session: &CliSession,
-    _project_graph: &ProjectGraph,
     _manifest: &DockerManifest,
 ) -> AppResult {
     // noop
@@ -84,9 +83,10 @@ pub async fn prune_deno(
 pub async fn prune_node(
     node: &NodeTool,
     session: &CliSession,
-    project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> AppResult {
+    let project_graph = session.get_project_graph().await?;
+
     // Some package managers do not delete stale node modules
     if session
         .workspace_config
@@ -166,7 +166,7 @@ pub async fn prune(session: CliSession) -> AppResult {
         return Err(AppDockerError::MissingManifest.into());
     }
 
-    let project_graph = session.get_project_graph().await?;
+    let workspace_graph = session.get_workspace_graph().await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let mut platforms = FxHashSet::<PlatformType>::default();
 
@@ -176,7 +176,7 @@ pub async fn prune(session: CliSession) -> AppResult {
     );
 
     for project_id in &manifest.focused_projects {
-        platforms.insert(project_graph.get(project_id)?.platform);
+        platforms.insert(workspace_graph.get_project(project_id)?.platform);
     }
 
     // Do this later so we only run once for each platform instead of per project
@@ -197,7 +197,6 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .downcast_ref::<BunTool>()
                         .unwrap(),
                     &session,
-                    &project_graph,
                     &manifest,
                 )
                 .await?;
@@ -210,7 +209,6 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .downcast_ref::<DenoTool>()
                         .unwrap(),
                     &session,
-                    &project_graph,
                     &manifest,
                 )
                 .await?;
@@ -223,7 +221,6 @@ pub async fn prune(session: CliSession) -> AppResult {
                         .downcast_ref::<NodeTool>()
                         .unwrap(),
                     &session,
-                    &project_graph,
                     &manifest,
                 )
                 .await?;

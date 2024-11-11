@@ -66,7 +66,7 @@ mod task_hasher {
 
         let (wg, vcs) = generate_graph(sandbox.path()).await;
         let project = wg.get_project("root").unwrap();
-        let task = wg.get_task_for_project("root", "testPatterns").unwrap();
+        let task = wg.get_task_from_project("root", "testPatterns").unwrap();
 
         let hasher_config = HasherConfig {
             ignore_patterns: vec![GlobPath::from_str("**/out/**").unwrap()],
@@ -92,7 +92,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "files").unwrap();
+            let task = wg.get_task_from_project("root", "files").unwrap();
 
             let expected = ["2.txt", "dir/abc.txt"];
 
@@ -115,7 +115,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "dirs").unwrap();
+            let task = wg.get_task_from_project("root", "dirs").unwrap();
 
             let expected = ["dir/abc.txt", "dir/az.txt", "dir/xyz.txt"];
 
@@ -138,7 +138,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "globStar").unwrap();
+            let task = wg.get_task_from_project("root", "globStar").unwrap();
 
             let expected = ["1.txt", "2.txt", "3.txt"];
 
@@ -161,7 +161,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "globNestedStar").unwrap();
+            let task = wg.get_task_from_project("root", "globNestedStar").unwrap();
 
             let expected = [
                 "1.txt",
@@ -191,7 +191,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "globGroup").unwrap();
+            let task = wg.get_task_from_project("root", "globGroup").unwrap();
 
             let expected = ["dir/az.txt", "dir/xyz.txt"];
 
@@ -213,7 +213,7 @@ mod task_hasher {
 
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "none").unwrap();
+            let task = wg.get_task_from_project("root", "none").unwrap();
 
             let hasher_config = HasherConfig::default();
 
@@ -234,7 +234,7 @@ mod task_hasher {
 
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "touched").unwrap();
+            let task = wg.get_task_from_project("root", "touched").unwrap();
 
             let hasher_config = HasherConfig::default();
 
@@ -252,7 +252,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "envFile").unwrap();
+            let task = wg.get_task_from_project("root", "envFile").unwrap();
 
             let expected = [".env"];
 
@@ -277,7 +277,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "envFileList").unwrap();
+            let task = wg.get_task_from_project("root", "envFileList").unwrap();
 
             let expected = [".env.local", ".env.prod"];
 
@@ -304,7 +304,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "inFileOutFile").unwrap();
+            let task = wg.get_task_from_project("root", "inFileOutFile").unwrap();
 
             let expected = [
                 ".moon/toolchain.yml",
@@ -332,7 +332,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "inFileOutDir").unwrap();
+            let task = wg.get_task_from_project("root", "inFileOutDir").unwrap();
 
             let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
 
@@ -355,7 +355,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "inFileOutGlob").unwrap();
+            let task = wg.get_task_from_project("root", "inFileOutGlob").unwrap();
 
             let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
 
@@ -378,7 +378,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "inGlobOutFile").unwrap();
+            let task = wg.get_task_from_project("root", "inGlobOutFile").unwrap();
 
             let expected = [
                 ".gitignore",
@@ -409,7 +409,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "inGlobOutDir").unwrap();
+            let task = wg.get_task_from_project("root", "inGlobOutDir").unwrap();
 
             let expected = [
                 ".gitignore",
@@ -437,7 +437,7 @@ mod task_hasher {
             let (wg, vcs) = generate_graph(sandbox.path()).await;
             let (vcs_config, glob_config) = create_hasher_configs();
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_for_project("root", "inGlobOutGlob").unwrap();
+            let task = wg.get_task_from_project("root", "inGlobOutGlob").unwrap();
 
             let expected = [
                 ".gitignore",

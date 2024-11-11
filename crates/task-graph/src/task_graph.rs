@@ -155,6 +155,8 @@ impl TaskGraph {
             return Ok(Arc::clone(task));
         }
 
+        let mut cache = self.write_cache();
+
         let expander = TaskExpander::new(TaskExpanderContext {
             project: self.project_graph.get_unexpanded(
                 target
@@ -166,8 +168,7 @@ impl TaskGraph {
 
         let task = Arc::new(expander.expand(self.get_unexpanded(target)?)?);
 
-        self.write_cache()
-            .insert(target.to_owned(), Arc::clone(&task));
+        cache.insert(target.to_owned(), Arc::clone(&task));
 
         Ok(task)
     }

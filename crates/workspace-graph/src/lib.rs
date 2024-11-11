@@ -60,7 +60,7 @@ impl WorkspaceGraph {
         self.tasks.get(target)
     }
 
-    pub fn get_task_for_project(
+    pub fn get_task_from_project(
         &self,
         project_id: impl AsRef<str>,
         task_id: impl AsRef<str>,
@@ -70,7 +70,7 @@ impl WorkspaceGraph {
         self.tasks.get(&target)
     }
 
-    pub fn get_tasks_for_project(
+    pub fn get_tasks_from_project(
         &self,
         project_id: impl AsRef<str>,
     ) -> miette::Result<Vec<Arc<Task>>> {
@@ -89,14 +89,19 @@ impl WorkspaceGraph {
     }
 
     pub fn get_all_tasks(&self) -> miette::Result<Vec<Arc<Task>>> {
-        self.tasks.get_all()
+        Ok(self
+            .tasks
+            .get_all()?
+            .into_iter()
+            .filter(|task| !task.is_internal())
+            .collect())
     }
 }
 
 impl WorkspaceGraph {
     /// Return all expanded projects that match the query criteria.
-    #[instrument(name = "query_project", skip(self))]
-    pub fn query<'input, Q: AsRef<Criteria<'input>> + Debug>(
+    #[instrument(name = "query_projects", skip(self))]
+    pub fn query_projects<'input, Q: AsRef<Criteria<'input>> + Debug>(
         &self,
         query: Q,
     ) -> miette::Result<Vec<Arc<Project>>> {

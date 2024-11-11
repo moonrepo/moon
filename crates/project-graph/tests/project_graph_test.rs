@@ -591,7 +591,7 @@ mod project_graph {
         #[tokio::test]
         async fn inherits_implicit_deps_inputs() {
             let graph = generate_inheritance_project_graph("inheritance/implicits").await;
-            let task = graph.get_task_for_project("project", "example").unwrap();
+            let task = graph.get_task_from_project("project", "example").unwrap();
 
             assert_eq!(
                 task.deps,
@@ -635,7 +635,7 @@ mod project_graph {
             );
 
             assert!(graph
-                .get_task_for_project("project", "build")
+                .get_task_from_project("project", "build")
                 .unwrap()
                 .deps
                 .is_empty());
@@ -644,7 +644,7 @@ mod project_graph {
         #[tokio::test]
         async fn expands_tasks() {
             let graph = generate_workspace_graph("expansion").await;
-            let task = graph.get_task_for_project("tasks", "build").unwrap();
+            let task = graph.get_task_from_project("tasks", "build").unwrap();
 
             assert_eq!(task.args, string_vec!["a", "../other.yaml", "b"]);
 
@@ -680,7 +680,7 @@ mod project_graph {
         #[tokio::test]
         async fn expands_tag_deps_in_task() {
             let graph = generate_workspace_graph("expansion").await;
-            let task = graph.get_task_for_project("tasks", "test-tags").unwrap();
+            let task = graph.get_task_from_project("tasks", "test-tags").unwrap();
 
             assert_eq!(
                 task.deps,
@@ -1022,7 +1022,7 @@ mod project_graph {
 
             assert_eq!(
                 graph
-                    .get_task_for_project("dupes-task-deps", "no-dupes")
+                    .get_task_from_project("dupes-task-deps", "no-dupes")
                     .unwrap()
                     .deps,
                 [TaskDependencyConfig::new(
@@ -1037,7 +1037,7 @@ mod project_graph {
 
             assert_eq!(
                 graph
-                    .get_task_for_project("tasks", "with-aliases")
+                    .get_task_from_project("tasks", "with-aliases")
                     .unwrap()
                     .deps,
                 [
@@ -1367,7 +1367,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("language!=[typescript,python]").unwrap())
+                .query_projects(build_query("language!=[typescript,python]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "d"]);
@@ -1377,7 +1377,9 @@ mod project_graph {
         async fn by_project() {
             let graph = generate_workspace_graph("query").await;
 
-            let projects = graph.query(build_query("project~{b,d}").unwrap()).unwrap();
+            let projects = graph
+                .query_projects(build_query("project~{b,d}").unwrap())
+                .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["b", "d"]);
         }
@@ -1387,7 +1389,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("projectType!=[library]").unwrap())
+                .query_projects(build_query("projectType!=[library]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "c"]);
@@ -1398,7 +1400,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("projectSource~a").unwrap())
+                .query_projects(build_query("projectSource~a").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a"]);
@@ -1409,7 +1411,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("tag=[three,five]").unwrap())
+                .query_projects(build_query("tag=[three,five]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["b", "c"]);
@@ -1420,7 +1422,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("task=[test,build]").unwrap())
+                .query_projects(build_query("task=[test,build]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "c", "d"]);
@@ -1431,13 +1433,13 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("taskPlatform=[node]").unwrap())
+                .query_projects(build_query("taskPlatform=[node]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "b"]);
 
             let projects = graph
-                .query(build_query("taskPlatform=system").unwrap())
+                .query_projects(build_query("taskPlatform=system").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["c", "d"]);
@@ -1447,7 +1449,9 @@ mod project_graph {
         async fn by_task_type() {
             let graph = generate_workspace_graph("query").await;
 
-            let projects = graph.query(build_query("taskType=run").unwrap()).unwrap();
+            let projects = graph
+                .query_projects(build_query("taskType=run").unwrap())
+                .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a"]);
         }
@@ -1457,7 +1461,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("task=build && taskPlatform=deno").unwrap())
+                .query_projects(build_query("task=build && taskPlatform=deno").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["d"]);
@@ -1468,7 +1472,7 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("language=javascript || language=typescript").unwrap())
+                .query_projects(build_query("language=javascript || language=typescript").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "b"]);
@@ -1479,7 +1483,9 @@ mod project_graph {
             let graph = generate_workspace_graph("query").await;
 
             let projects = graph
-                .query(build_query("projectType=library && (taskType=build || tag=three)").unwrap())
+                .query_projects(
+                    build_query("projectType=library && (taskType=build || tag=three)").unwrap(),
+                )
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["b", "d"]);
@@ -1524,7 +1530,7 @@ mod project_graph {
         async fn tasks_can_depend_on_new_id() {
             let sandbox = create_sandbox("custom-id");
             let graph = generate_workspace_graph_from_sandbox(sandbox.path()).await;
-            let task = graph.get_task_for_project("foo", "noop").unwrap();
+            let task = graph.get_task_from_project("foo", "noop").unwrap();
 
             assert_eq!(
                 task.deps,

@@ -46,7 +46,7 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
     } else if args.ids.is_empty() {
         trace!("Loading from path");
 
-        projects.push(workspace_graph.projects.get_from_path(None)?);
+        projects.push(workspace_graph.get_project_from_path(None)?);
     } else {
         trace!(
             ids = ?args.ids,
@@ -62,7 +62,7 @@ pub async fn check(session: CliSession, args: CheckArgs) -> AppResult {
     let mut targets = vec![];
 
     for project in projects {
-        for task in workspace_graph.get_tasks_for_project(&project.id)? {
+        for task in workspace_graph.get_tasks_from_project(&project.id)? {
             if !task.is_internal() && (task.is_build_type() || task.is_test_type()) {
                 targets.push(TargetLocator::Qualified(task.target.clone()));
             }

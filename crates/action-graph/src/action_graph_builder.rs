@@ -147,7 +147,7 @@ impl<'app> ActionGraphBuilder<'app> {
         if downstream != DownstreamScope::None {
             debug!("Force loading all projects to determine downstream relationships");
 
-            self.workspace_graph.projects.get_all()?;
+            self.workspace_graph.get_all_projects()?;
         }
 
         self.affected
@@ -466,7 +466,7 @@ impl<'app> ActionGraphBuilder<'app> {
             for project in projects_to_build {
                 // Don't skip internal tasks, since they are a dependency of the parent
                 // task, and must still run! They just can't be ran manually.
-                for dep_task in self.workspace_graph.get_tasks_for_project(&project.id)? {
+                for dep_task in self.workspace_graph.get_tasks_from_project(&project.id)? {
                     // But do skip persistent tasks!
                     if dep_task.is_persistent() {
                         continue;
@@ -516,9 +516,9 @@ impl<'app> ActionGraphBuilder<'app> {
                 let mut projects = vec![];
 
                 if let Some(all_query) = &self.all_query {
-                    projects.extend(self.workspace_graph.query(all_query)?);
+                    projects.extend(self.workspace_graph.query_projects(all_query)?);
                 } else {
-                    projects.extend(self.workspace_graph.projects.get_all()?);
+                    projects.extend(self.workspace_graph.get_all_projects()?);
                 };
 
                 for project in projects {
@@ -564,7 +564,7 @@ impl<'app> ActionGraphBuilder<'app> {
             TargetScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
-                    .query(build_query(format!("tag={}", tag).as_str())?)?;
+                    .query_projects(build_query(format!("tag={}", tag).as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist

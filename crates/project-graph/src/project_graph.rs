@@ -179,6 +179,8 @@ impl ProjectGraph {
             return Ok(Arc::clone(project));
         }
 
+        let mut cache = self.write_cache();
+
         let expander = ProjectExpander::new(ProjectExpanderContext {
             aliases: self.aliases(),
             workspace_root: &self.workspace_root,
@@ -186,7 +188,7 @@ impl ProjectGraph {
 
         let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
 
-        self.write_cache().insert(id.clone(), Arc::clone(&project));
+        cache.insert(id.clone(), Arc::clone(&project));
 
         Ok(project)
     }

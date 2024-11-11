@@ -45,7 +45,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
 
     // Ensure the project exists
     let project = workspace_graph.get_project(&args.id)?;
-    let tasks = workspace_graph.get_tasks_for_project(&project.id)?;
+    let tasks = workspace_graph.get_tasks_from_project(&project.id)?;
 
     // Build the options
     let mut options = GenerateDockerfileOptions {
@@ -108,7 +108,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
 
     if let Some(task_id) = build_task_id {
         let target = workspace_graph
-            .get_task_for_project(&project.id, task_id)?
+            .get_task_from_project(&project.id, task_id)?
             .target
             .to_owned();
 
@@ -144,7 +144,7 @@ pub async fn file(session: CliSession, args: DockerFileArgs) -> AppResult {
 
     if let Some(task_id) = start_task_id {
         let target = workspace_graph
-            .get_task_for_project(&project.id, task_id)?
+            .get_task_from_project(&project.id, task_id)?
             .target
             .to_owned();
 

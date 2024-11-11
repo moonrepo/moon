@@ -85,7 +85,7 @@ mod action_graph {
                 &project,
                 &container
                     .workspace_graph
-                    .get_task_for_project(&project.id, "cycle1")
+                    .get_task_from_project(&project.id, "cycle1")
                     .unwrap(),
                 &RunRequirements::default(),
             )
@@ -95,7 +95,7 @@ mod action_graph {
                 &project,
                 &container
                     .workspace_graph
-                    .get_task_for_project(&project.id, "cycle2")
+                    .get_task_from_project(&project.id, "cycle2")
                     .unwrap(),
                 &RunRequirements::default(),
             )
@@ -977,7 +977,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("ci").unwrap();
                 let task = container
                     .workspace_graph
-                    .get_task_for_project(&project.id, "ci3-dependency")
+                    .get_task_from_project(&project.id, "ci3-dependency")
                     .unwrap();
 
                 builder
@@ -1007,7 +1007,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("ci").unwrap();
                 let task = container
                     .workspace_graph
-                    .get_task_for_project(&project.id, "ci4-dependency")
+                    .get_task_from_project(&project.id, "ci4-dependency")
                     .unwrap();
 
                 builder
@@ -1172,7 +1172,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("ci").unwrap();
                 let task = container
                     .workspace_graph
-                    .get_task_for_project(&project.id, "ci2-dependency")
+                    .get_task_from_project(&project.id, "ci2-dependency")
                     .unwrap();
 
                 builder
@@ -1202,7 +1202,7 @@ mod action_graph {
                 let project = container.workspace_graph.get_project("ci").unwrap();
                 let task = container
                     .workspace_graph
-                    .get_task_for_project(&project.id, "ci2-dependency")
+                    .get_task_from_project(&project.id, "ci2-dependency")
                     .unwrap();
 
                 builder
@@ -1246,7 +1246,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("deps").unwrap();
             let task = container
                 .workspace_graph
-                .get_task_for_project(&project.id, "parallel")
+                .get_task_from_project(&project.id, "parallel")
                 .unwrap();
 
             builder
@@ -1267,7 +1267,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("deps").unwrap();
             let task = container
                 .workspace_graph
-                .get_task_for_project(&project.id, "serial")
+                .get_task_from_project(&project.id, "serial")
                 .unwrap();
 
             builder
@@ -1288,7 +1288,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("deps").unwrap();
             let task = container
                 .workspace_graph
-                .get_task_for_project(&project.id, "chain1")
+                .get_task_from_project(&project.id, "chain1")
                 .unwrap();
 
             builder
@@ -1309,7 +1309,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("deps").unwrap();
             let task = container
                 .workspace_graph
-                .get_task_for_project(&project.id, "base")
+                .get_task_from_project(&project.id, "base")
                 .unwrap();
 
             builder
@@ -1330,7 +1330,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("deps").unwrap();
             let task = container
                 .workspace_graph
-                .get_task_for_project(&project.id, "base")
+                .get_task_from_project(&project.id, "base")
                 .unwrap();
 
             builder
@@ -1358,7 +1358,7 @@ mod action_graph {
             let project = container.workspace_graph.get_project("deps").unwrap();
             let task = container
                 .workspace_graph
-                .get_task_for_project(&project.id, "base")
+                .get_task_from_project(&project.id, "base")
                 .unwrap();
 
             builder

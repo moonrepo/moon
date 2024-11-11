@@ -48,7 +48,7 @@ impl TaskRunnerContainer {
         let platform_manager = generate_platform_manager_from_sandbox(sandbox.path()).await;
         let project = workspace_graph.get_project(project_id).unwrap();
         let task = workspace_graph
-            .get_task_for_project(project_id, task_id)
+            .get_task_from_project(project_id, task_id)
             .unwrap();
 
         Self {

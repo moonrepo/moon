@@ -42,7 +42,7 @@ pub async fn action_graph(session: CliSession, args: ActionGraphArgs) -> AppResu
         // Show all targets and actions
     } else {
         for project in workspace_graph.get_all_projects()? {
-            for task in workspace_graph.get_tasks_for_project(&project.id)? {
+            for task in workspace_graph.get_tasks_from_project(&project.id)? {
                 action_graph_builder.run_task(&project, &task, &requirements)?;
             }
         }

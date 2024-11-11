@@ -125,7 +125,7 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_projects(&mut self) -> miette::Result<&mut Self> {
         debug!("Tracking projects and marking any affected");
 
-        for project in self.workspace_graph.projects.get_all()? {
+        for project in self.workspace_graph.get_all_projects()? {
             if let Some(affected) = self.is_project_affected(&project) {
                 self.mark_project_affected(&project, affected)?;
             }
@@ -208,7 +208,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.workspace_graph.projects.get(&dep_id)?;
+            let dep_project = self.workspace_graph.get_project(&dep_id)?;
 
             self.track_project_dependencies(&dep_project, depth + 1)?;
         }
@@ -250,7 +250,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.workspace_graph.projects.get(&dep_id)?;
+            let dep_project = self.workspace_graph.get_project(&dep_id)?;
 
             self.track_project_dependents(&dep_project, depth + 1)?;
         }
@@ -261,7 +261,7 @@ impl<'app> AffectedTracker<'app> {
     pub fn track_tasks(&mut self) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
-        for task in self.workspace_graph.tasks.get_all()? {
+        for task in self.workspace_graph.get_all_tasks()? {
             if let Some(affected) = self.is_task_affected(&task)? {
                 self.mark_task_affected(&task, affected)?;
             }
@@ -277,7 +277,7 @@ impl<'app> AffectedTracker<'app> {
         );
 
         for target in targets {
-            let task = self.workspace_graph.tasks.get(target)?;
+            let task = self.workspace_graph.get_task(target)?;
 
             if let Some(affected) = self.is_task_affected(&task)? {
                 self.mark_task_affected(&task, affected)?;
@@ -370,7 +370,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_task = self.workspace_graph.tasks.get(&dep_config.target)?;
+            let dep_task = self.workspace_graph.get_task(&dep_config.target)?;
 
             self.track_task_dependencies(&dep_task, depth + 1)?;
         }

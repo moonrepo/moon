@@ -356,7 +356,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
 
     for project in projects {
         let filtered_tasks = workspace_graph
-            .get_tasks_for_project(&project.id)?
+            .get_tasks_from_project(&project.id)?
             .into_iter()
             .map(|task| {
                 targets_list.push(task.target.clone());

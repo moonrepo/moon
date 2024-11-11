@@ -107,7 +107,7 @@ fn load_with_query(
     workspace_graph: &WorkspaceGraph,
     query: &str,
 ) -> miette::Result<Vec<Arc<Project>>> {
-    workspace_graph.query(moon_query::build_query(query)?)
+    workspace_graph.query_projects(moon_query::build_query(query)?)
 }
 
 fn load_with_regex(

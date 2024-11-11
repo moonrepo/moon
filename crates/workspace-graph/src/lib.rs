@@ -43,9 +43,7 @@ impl WorkspaceGraph {
         let base_project = self.get_project(id_or_alias)?;
         let mut project = base_project.as_ref().to_owned();
 
-        for target in &base_project.task_targets {
-            let base_task = self.get_task(target)?;
-
+        for base_task in self.get_tasks_from_project(&project.id)? {
             project
                 .tasks
                 .insert(base_task.id.clone(), base_task.as_ref().to_owned());

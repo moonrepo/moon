@@ -34,7 +34,7 @@ mod dockerfile {
         });
 
         assert.inner.stderr(predicate::str::contains(
-            "No task has been configured with the target no-tasks:missing.",
+            "Unknown task missing for project no-tasks.",
         ));
     }
 

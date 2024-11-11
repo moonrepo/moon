@@ -4,20 +4,21 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci};
 use moon_platform::PlatformManager;
-use moon_project_graph::ProjectGraph;
+use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
-#[instrument(skip(_action, action_context, app_context, project_graph))]
+#[instrument(skip(_action, action_context, app_context, workspace_graph))]
 pub async fn sync_project(
     _action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    project_graph: Arc<ProjectGraph>,
+    workspace_graph: WorkspaceGraph,
     node: &SyncProjectNode,
 ) -> miette::Result<ActionStatus> {
-    let project = project_graph.get(&node.project)?;
+    // Include tasks for snapshot!
+    let project = workspace_graph.get_project_with_tasks(&node.project)?;
 
     if let Some(value) = should_skip_action_matching("MOON_SKIP_SYNC_PROJECT", &project.id) {
         debug!(
@@ -43,7 +44,10 @@ pub async fn sync_project(
     let mut dependencies = FxHashMap::default();
 
     for dep_config in &project.dependencies {
-        dependencies.insert(dep_config.id.to_owned(), project_graph.get(&dep_config.id)?);
+        dependencies.insert(
+            dep_config.id.to_owned(),
+            workspace_graph.get_project(&dep_config.id)?,
+        );
     }
 
     // Sync the projects and return true if any files have been mutated

@@ -1,0 +1,22 @@
+[package]
+name = "moon_workspace_graph"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Workspace graph."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_graph_utils = { path = "../graph-utils" }
+moon_project_graph = { path = "../project-graph" }
+moon_query = { path = "../query" }
+moon_task_graph = { path = "../task-graph" }
+miette = { workspace = true }
+scc = { workspace = true }
+tracing = { workspace = true }
+
+[lints]
+workspace = true

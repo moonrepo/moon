@@ -7,8 +7,8 @@ use moon_action::{Action, ActionStatus, Operation};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_project_graph::ProjectGraph;
 use moon_toolchain_plugin::ToolchainRegistry;
+use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tokio::task;
 use tracing::{debug, instrument};
@@ -18,7 +18,7 @@ pub async fn sync_workspace(
     action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    project_graph: Arc<ProjectGraph>,
+    workspace_graph: WorkspaceGraph,
     toolchain_registry: Arc<ToolchainRegistry>,
 ) -> miette::Result<ActionStatus> {
     if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
@@ -59,12 +59,11 @@ pub async fn sync_workspace(
         );
 
         let app_context = Arc::clone(&app_context);
-        let project_graph = Arc::clone(&project_graph);
 
         operation_futures.push(task::spawn(async move {
             let op = Operation::sync_operation("Codeowners")
                 .track_async_with_check(
-                    || sync_codeowners(&app_context, &project_graph, false),
+                    || sync_codeowners(&app_context, &workspace_graph, false),
                     |result| result.is_some(),
                 )
                 .await?;

@@ -10,7 +10,7 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempt_on_success() {
-        let container = TaskRunnerContainer::new_os("runner").await;
+        let container = TaskRunnerContainer::new_os("runner", "success").await;
         let context = ActionContext::default();
         let mut item = TaskReportItem {
             hash: Some("hash123".into()),
@@ -18,7 +18,7 @@ mod command_executor {
         };
 
         let result = container
-            .create_command_executor("success", &context)
+            .create_command_executor(&context)
             .await
             .execute(&context, &mut item)
             .await
@@ -45,7 +45,7 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempt_on_failure() {
-        let container = TaskRunnerContainer::new_os("runner").await;
+        let container = TaskRunnerContainer::new_os("runner", "failure").await;
         let context = ActionContext::default();
         let mut item = TaskReportItem {
             hash: Some("hash123".into()),
@@ -53,7 +53,7 @@ mod command_executor {
         };
 
         let result = container
-            .create_command_executor("failure", &context)
+            .create_command_executor(&context)
             .await
             .execute(&context, &mut item)
             .await
@@ -79,12 +79,12 @@ mod command_executor {
 
     #[tokio::test]
     async fn returns_attempts_for_each_retry() {
-        let container = TaskRunnerContainer::new_os("runner").await;
+        let container = TaskRunnerContainer::new_os("runner", "retry").await;
         let context = ActionContext::default();
         let mut item = TaskReportItem::default();
 
         let result = container
-            .create_command_executor("retry", &context)
+            .create_command_executor(&context)
             .await
             .execute(&context, &mut item)
             .await

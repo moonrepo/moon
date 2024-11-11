@@ -13,8 +13,8 @@ use moon_action_graph::ActionGraph;
 use moon_api::Moonbase;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
-use moon_project_graph::ProjectGraph;
 use moon_toolchain_plugin::ToolchainRegistry;
+use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 use std::sync::Arc;
@@ -39,15 +39,15 @@ pub struct ActionPipeline {
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
     emitter: Arc<EventEmitter>,
-    project_graph: Arc<ProjectGraph>,
     toolchain_registry: Arc<ToolchainRegistry>,
+    workspace_graph: WorkspaceGraph,
 }
 
 impl ActionPipeline {
     pub fn new(
         app_context: Arc<AppContext>,
-        project_graph: Arc<ProjectGraph>,
         toolchain_registry: Arc<ToolchainRegistry>,
+        workspace_graph: WorkspaceGraph,
     ) -> Self {
         debug!("Creating pipeline to run actions");
 
@@ -60,10 +60,10 @@ impl ActionPipeline {
             concurrency: num_cpus::get(),
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
-            project_graph,
             report_name: "runReport.json".into(),
             summarize: false,
             toolchain_registry,
+            workspace_graph,
         }
     }
 
@@ -148,11 +148,11 @@ impl ActionPipeline {
             cancel_token: cancel_token.clone(),
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
             emitter: Arc::clone(&self.emitter),
-            project_graph: Arc::clone(&self.project_graph),
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
             toolchain_registry: Arc::clone(&self.toolchain_registry),
+            workspace_graph: self.workspace_graph.clone(),
         };
 
         // Monitor signals and ctrl+c

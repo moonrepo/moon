@@ -1,7 +1,7 @@
 use moon_affected::*;
 use moon_common::Id;
 use moon_task::Target;
-use moon_test_utils2::generate_project_graph;
+use moon_test_utils2::generate_workspace_graph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 
@@ -40,7 +40,7 @@ mod affected_projects {
 
     #[tokio::test]
     async fn empty_if_no_touched_files() {
-        let project_graph = generate_project_graph("projects").await;
+        let project_graph = generate_workspace_graph("projects").await;
         let touched_files = FxHashSet::default();
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -52,7 +52,7 @@ mod affected_projects {
 
     #[tokio::test]
     async fn tracks_projects() {
-        let project_graph = generate_project_graph("projects").await;
+        let project_graph = generate_workspace_graph("projects").await;
         let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -73,7 +73,7 @@ mod affected_projects {
 
     #[tokio::test]
     async fn tracks_multiple_projects() {
-        let project_graph = generate_project_graph("projects").await;
+        let project_graph = generate_workspace_graph("projects").await;
         let touched_files = FxHashSet::from_iter([
             "a/file.txt".into(),
             "b/file.txt".into(),
@@ -101,7 +101,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn none() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -120,7 +120,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn direct() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -141,7 +141,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn direct_no_deps() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -160,7 +160,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn deep() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -182,7 +182,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn deep_no_deps() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -205,7 +205,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn none() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -224,7 +224,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn direct() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -245,7 +245,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn direct_no_deps() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -264,7 +264,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn deep() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -285,7 +285,7 @@ mod affected_projects {
 
         #[tokio::test]
         async fn deep_no_deps() {
-            let project_graph = generate_project_graph("projects").await;
+            let project_graph = generate_workspace_graph("projects").await;
             let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -350,7 +350,7 @@ mod affected_tasks {
 
     #[tokio::test]
     async fn empty_if_no_touched_files() {
-        let project_graph = generate_project_graph("tasks").await;
+        let project_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::default();
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -362,7 +362,7 @@ mod affected_tasks {
 
     #[tokio::test]
     async fn self_scope() {
-        let project_graph = generate_project_graph("tasks").await;
+        let project_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["self/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -392,7 +392,7 @@ mod affected_tasks {
 
     #[tokio::test]
     async fn parent_scope() {
-        let project_graph = generate_project_graph("tasks").await;
+        let project_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["parent/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);
@@ -426,7 +426,7 @@ mod affected_tasks {
 
     #[tokio::test]
     async fn by_env_var() {
-        let project_graph = generate_project_graph("tasks").await;
+        let project_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::default();
 
         env::set_var("ENV", "affected");
@@ -450,7 +450,7 @@ mod affected_tasks {
 
     #[tokio::test]
     async fn marks_dependency_if_dependent_is_touched() {
-        let project_graph = generate_project_graph("tasks").await;
+        let project_graph = generate_workspace_graph("tasks").await;
         let touched_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(&project_graph, &touched_files);

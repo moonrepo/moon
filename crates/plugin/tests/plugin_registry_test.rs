@@ -4,7 +4,7 @@ use moon_plugin::{
     Plugin, PluginHostData, PluginId as Id, PluginLocator, PluginRegistration, PluginRegistry,
     PluginType,
 };
-use moon_project_graph::ProjectGraph;
+use moon_workspace_graph::WorkspaceGraph;
 use proto_core::{warpgate::FileLocator, ProtoEnvironment};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::fs;
@@ -30,8 +30,8 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
         PluginType::Extension,
         PluginHostData {
             moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
-            project_graph: Arc::new(ProjectGraph::default()),
             proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
+            workspace_graph: WorkspaceGraph::default(),
         },
     );
 

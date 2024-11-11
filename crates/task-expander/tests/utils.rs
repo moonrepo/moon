@@ -4,35 +4,19 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::InputPath;
 use moon_project::{FileGroup, Project};
-use moon_project_expander::ExpanderContext;
 use moon_task::{Target, Task};
-use rustc_hash::FxHashMap;
+use moon_task_expander::TaskExpanderContext;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-pub fn create_context<'g, 'q>(
+pub fn create_context<'g>(
     project: &'g Project,
     workspace_root: &'g Path,
-) -> ExpanderContext<'g, 'q> {
-    ExpanderContext {
-        aliases: FxHashMap::default(),
+) -> TaskExpanderContext<'g> {
+    TaskExpanderContext {
         project,
-        query: Box::new(|_| Ok(vec![])),
         workspace_root,
     }
-}
-
-pub fn create_context_with_query<'g, 'q, Q>(
-    project: &'g Project,
-    workspace_root: &'g Path,
-    query: Q,
-) -> ExpanderContext<'g, 'q>
-where
-    Q: Fn(String) -> miette::Result<Vec<&'q Project>> + 'g,
-{
-    let mut context = create_context(project, workspace_root);
-    context.query = Box::new(query);
-    context
 }
 
 pub fn create_project(workspace_root: &Path) -> Project {

@@ -1,6 +1,7 @@
 import type {
 	DependencyConfig,
 	DependencyScope,
+	DependencyType,
 	LanguageType,
 	ProjectConfig,
 	ProjectType,
@@ -95,6 +96,7 @@ export interface Project {
 	source: string;
 	stack: StackType;
 	tasks: Record<string, Task>;
+	taskTargets: string[];
 	type: ProjectType;
 }
 
@@ -105,15 +107,28 @@ export interface ProjectGraphInner {
 	edges: [number, number, DependencyScope][];
 }
 
-export interface PartialProjectGraph {
-	aliases: Record<string, string>;
-	graph: ProjectGraphInner;
-	nodes: Record<string, number>;
-	root_id: string | null;
-	sources: Record<string, string>;
-}
-
 export interface ProjectGraph {
 	graph: ProjectGraphInner;
-	projects: Record<string, Project>;
+}
+
+export interface TaskGraphInner {
+	nodes: Task[];
+	node_holes: string[];
+	edge_property: 'directed';
+	edges: [number, number, DependencyType][];
+}
+
+export interface TaskGraph {
+	graph: TaskGraphInner;
+}
+
+export interface WorkspaceGraph {
+	projects_by_tag: Record<string, string[]>;
+	project_data: Record<string, { alias: string; node_index: number; source: string }>;
+	project_graph: ProjectGraphInner;
+	renamed_project_ids: Record<string, string>;
+	repo_type: 'monorepo-with-root' | 'monorepo' | 'polyrepo';
+	root_project_id: string | null;
+	task_data: Record<string, { node_index: number }>;
+	task_graph: TaskGraphInner;
 }

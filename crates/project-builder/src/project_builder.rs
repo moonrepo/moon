@@ -189,12 +189,16 @@ impl<'app> ProjectBuilder<'app> {
     #[instrument(name = "build_project", skip_all)]
     pub async fn build(mut self) -> miette::Result<Project> {
         let tasks = self.build_tasks().await?;
+        let task_targets = tasks
+            .values()
+            .map(|task| task.target.clone())
+            .collect::<Vec<_>>();
 
         let mut project = Project {
             alias: self.alias.map(|a| a.to_owned()),
             dependencies: self.build_dependencies(&tasks)?,
             file_groups: self.build_file_groups()?,
-            task_ids: tasks.keys().cloned().collect(),
+            task_targets,
             tasks,
             id: self.id.to_owned(),
             language: self.language,

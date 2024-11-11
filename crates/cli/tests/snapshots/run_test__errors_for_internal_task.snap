@@ -2,7 +2,7 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
-Error: project::task::unknown
+Error: task_graph::unknown_target
 
   × Unknown task internalOnly for project base.
   help: Has this task been configured?

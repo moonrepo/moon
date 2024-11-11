@@ -124,7 +124,7 @@ export interface TaskGraph {
 
 export interface WorkspaceGraph {
 	projects_by_tag: Record<string, string[]>;
-	project_data: Record<string, { alias: string, node_index: number, source: string }>;
+	project_data: Record<string, { alias: string; node_index: number; source: string }>;
 	project_graph: ProjectGraphInner;
 	renamed_project_ids: Record<string, string>;
 	repo_type: 'monorepo-with-root' | 'monorepo' | 'polyrepo';

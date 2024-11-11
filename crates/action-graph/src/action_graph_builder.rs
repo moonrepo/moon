@@ -1,5 +1,4 @@
 use crate::action_graph::ActionGraph;
-use crate::action_graph_error::ActionGraphError;
 use moon_action::{
     ActionNode, InstallProjectDepsNode, InstallWorkspaceDepsNode, RunTaskNode, SetupToolchainNode,
     SyncProjectNode,
@@ -14,7 +13,7 @@ use moon_project::Project;
 use moon_query::{build_query, Criteria};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
-use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
+use moon_workspace_graph::{tasks::TaskGraphError, GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -523,7 +522,10 @@ impl<'app> ActionGraphBuilder<'app> {
 
                 for project in projects {
                     // Don't error if the task does not exist
-                    if let Ok(task) = self.workspace_graph.get_task(target) {
+                    if let Ok(task) = self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, &target.task_id)
+                    {
                         if task.is_internal() {
                             continue;
                         }
@@ -544,15 +546,13 @@ impl<'app> ActionGraphBuilder<'app> {
             // project:task
             TargetScope::Project(project_locator) => {
                 let project = self.workspace_graph.get_project(project_locator)?;
-                let task = self.workspace_graph.get_task(target)?;
+                let task = self
+                    .workspace_graph
+                    .get_task_from_project(&project.id, &target.task_id)?;
 
                 // Don't allow internal tasks to be ran
                 if task.is_internal() && reqs.has_target(&task.target) {
-                    return Err(ActionGraphError::UnknownTask {
-                        task_id: task.target.task_id.clone(),
-                        project_id: project.id.clone(),
-                    }
-                    .into());
+                    return Err(TaskGraphError::UnconfiguredTarget(task.target.clone()).into());
                 }
 
                 if let Some(index) = self.run_task_with_config(&project, &task, reqs, config)? {
@@ -568,7 +568,10 @@ impl<'app> ActionGraphBuilder<'app> {
 
                 for project in projects {
                     // Don't error if the task does not exist
-                    if let Ok(task) = self.workspace_graph.get_task(target) {
+                    if let Ok(task) = self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, &target.task_id)
+                    {
                         if task.is_internal() {
                             continue;
                         }
@@ -602,7 +605,7 @@ impl<'app> ActionGraphBuilder<'app> {
             let target = match locator {
                 TargetLocator::Qualified(target) => target,
                 TargetLocator::TaskFromWorkingDir(task_id) => Target::new(
-                    &self.workspace_graph.projects.get_from_path(None)?.id,
+                    &self.workspace_graph.get_project_from_path(None)?.id,
                     task_id,
                 )?,
             };

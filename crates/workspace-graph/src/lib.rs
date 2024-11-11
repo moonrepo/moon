@@ -7,6 +7,8 @@ use std::{fmt::Debug, path::Path, sync::Arc};
 use tracing::{debug, instrument};
 
 pub use moon_graph_utils::*;
+pub use moon_project_graph as projects;
+pub use moon_task_graph as tasks;
 
 #[derive(Clone, Default)]
 pub struct WorkspaceGraph {
@@ -204,21 +206,24 @@ impl WorkspaceGraph {
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
                             condition.matches(ids, &target.task_id).unwrap_or_default()
                         })),
-                        Field::TaskPlatform(platforms) => Ok(project.tasks.values().any(|task| {
-                            condition
-                                .matches_enum(platforms, &task.platform)
-                                .unwrap_or_default()
-                        })),
-                        Field::TaskType(types) => {
-                            Ok(self.tasks.get_all_unexpanded().iter().any(|task| {
-                                task.target
-                                    .get_project_id()
-                                    .is_some_and(|id| id == &project.id)
-                                    && condition
-                                        .matches_enum(types, &task.type_of)
-                                        .unwrap_or_default()
-                            }))
-                        }
+                        Field::TaskPlatform(platforms) => Ok(self
+                            .tasks
+                            .get_all_for_project(&project.id, false)?
+                            .iter()
+                            .any(|task| {
+                                condition
+                                    .matches_enum(platforms, &task.platform)
+                                    .unwrap_or_default()
+                            })),
+                        Field::TaskType(types) => Ok(self
+                            .tasks
+                            .get_all_for_project(&project.id, false)?
+                            .iter()
+                            .any(|task| {
+                                condition
+                                    .matches_enum(types, &task.type_of)
+                                    .unwrap_or_default()
+                            })),
                     };
 
                     result?

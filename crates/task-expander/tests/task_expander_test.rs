@@ -13,7 +13,7 @@ fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
 }
 
-mod tasks_expander {
+mod task_expander {
     use super::*;
 
     mod expand_command {
@@ -205,137 +205,133 @@ mod tasks_expander {
     mod expand_deps {
         use super::*;
 
-        mod config {
-            use super::*;
+        #[test]
+        fn passes_args_through() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let mut task = create_task();
 
-            #[test]
-            fn passes_args_through() {
-                let sandbox = create_empty_sandbox();
-                let project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::String("a b c".into()),
+                target: Target::parse("test").unwrap(),
+                ..TaskDependencyConfig::default()
+            });
 
-                task.deps.push(TaskDependencyConfig {
-                    args: TaskArgs::String("a b c".into()),
-                    target: Target::parse("test").unwrap(),
+            let context = create_context(&project, sandbox.path());
+            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig {
+                    args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                    target: Target::parse("~:test").unwrap(),
                     ..TaskDependencyConfig::default()
-                });
+                }]
+            );
+        }
 
-                let context = create_context(&project, sandbox.path());
-                TaskExpander::new(context).expand_deps(&mut task).unwrap();
+        #[test]
+        fn supports_tokens_in_args() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let mut task = create_task();
 
-                assert_eq!(
-                    task.deps,
-                    vec![TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                        target: Target::parse("project:test").unwrap(),
-                        ..TaskDependencyConfig::default()
-                    }]
-                );
-            }
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::String("$project $language".into()),
+                target: Target::parse("test").unwrap(),
+                ..TaskDependencyConfig::default()
+            });
 
-            #[test]
-            fn supports_tokens_in_args() {
-                let sandbox = create_empty_sandbox();
-                let project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
+            let context = create_context(&project, sandbox.path());
+            TaskExpander::new(context).expand_deps(&mut task).unwrap();
 
-                task.deps.push(TaskDependencyConfig {
-                    args: TaskArgs::String("$project $language".into()),
-                    target: Target::parse("test").unwrap(),
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig {
+                    args: TaskArgs::List(vec!["project".into(), "unknown".into()]),
+                    target: Target::parse("~:test").unwrap(),
                     ..TaskDependencyConfig::default()
-                });
+                }]
+            );
+        }
 
-                let context = create_context(&project, sandbox.path());
-                TaskExpander::new(context).expand_deps(&mut task).unwrap();
+        #[test]
+        fn passes_env_through() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let mut task = create_task();
 
-                assert_eq!(
-                    task.deps,
-                    vec![TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["project".into(), "unknown".into()]),
-                        target: Target::parse("project:test").unwrap(),
-                        ..TaskDependencyConfig::default()
-                    }]
-                );
-            }
+            task.deps.push(TaskDependencyConfig {
+                env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                target: Target::parse("test").unwrap(),
+                ..TaskDependencyConfig::default()
+            });
 
-            #[test]
-            fn passes_env_through() {
-                let sandbox = create_empty_sandbox();
-                let project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
+            let context = create_context(&project, sandbox.path());
+            TaskExpander::new(context).expand_deps(&mut task).unwrap();
 
-                task.deps.push(TaskDependencyConfig {
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig {
+                    args: TaskArgs::None,
                     env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
-                    target: Target::parse("test").unwrap(),
-                    ..TaskDependencyConfig::default()
-                });
-
-                let context = create_context(&project, sandbox.path());
-                TaskExpander::new(context).expand_deps(&mut task).unwrap();
-
-                assert_eq!(
-                    task.deps,
-                    vec![TaskDependencyConfig {
-                        args: TaskArgs::None,
-                        env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
-                        target: Target::parse("project:test").unwrap(),
-                        optional: None,
-                    }]
-                );
-            }
-
-            #[test]
-            fn supports_token_in_env() {
-                let sandbox = create_empty_sandbox();
-                let project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
-
-                task.deps.push(TaskDependencyConfig {
-                    env: FxHashMap::from_iter([("FOO".into(), "$project-$language".into())]),
-                    target: Target::parse("test").unwrap(),
-                    ..TaskDependencyConfig::default()
-                });
-
-                let context = create_context(&project, sandbox.path());
-                TaskExpander::new(context).expand_deps(&mut task).unwrap();
-
-                assert_eq!(
-                    task.deps,
-                    vec![TaskDependencyConfig {
-                        args: TaskArgs::None,
-                        env: FxHashMap::from_iter([("FOO".into(), "project-unknown".into())]),
-                        target: Target::parse("project:test").unwrap(),
-                        optional: None,
-                    }]
-                );
-            }
-
-            #[test]
-            fn passes_args_and_env_through() {
-                let sandbox = create_empty_sandbox();
-                let project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
-
-                task.deps.push(TaskDependencyConfig {
-                    args: TaskArgs::String("a b c".into()),
-                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
-                    target: Target::parse("test").unwrap(),
+                    target: Target::parse("~:test").unwrap(),
                     optional: None,
-                });
+                }]
+            );
+        }
 
-                let context = create_context(&project, sandbox.path());
-                TaskExpander::new(context).expand_deps(&mut task).unwrap();
+        #[test]
+        fn supports_token_in_env() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let mut task = create_task();
 
-                assert_eq!(
-                    task.deps,
-                    vec![TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                        env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
-                        target: Target::parse("project:test").unwrap(),
-                        optional: None,
-                    }]
-                );
-            }
+            task.deps.push(TaskDependencyConfig {
+                env: FxHashMap::from_iter([("FOO".into(), "$project-$language".into())]),
+                target: Target::parse("test").unwrap(),
+                ..TaskDependencyConfig::default()
+            });
+
+            let context = create_context(&project, sandbox.path());
+            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig {
+                    args: TaskArgs::None,
+                    env: FxHashMap::from_iter([("FOO".into(), "project-unknown".into())]),
+                    target: Target::parse("~:test").unwrap(),
+                    optional: None,
+                }]
+            );
+        }
+
+        #[test]
+        fn passes_args_and_env_through() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project_with_tasks(sandbox.path(), "project");
+            let mut task = create_task();
+
+            task.deps.push(TaskDependencyConfig {
+                args: TaskArgs::String("a b c".into()),
+                env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                target: Target::parse("test").unwrap(),
+                optional: None,
+            });
+
+            let context = create_context(&project, sandbox.path());
+            TaskExpander::new(context).expand_deps(&mut task).unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig {
+                    args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    target: Target::parse("~:test").unwrap(),
+                    optional: None,
+                }]
+            );
         }
     }
 

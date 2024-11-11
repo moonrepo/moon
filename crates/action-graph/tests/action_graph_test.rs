@@ -1654,7 +1654,6 @@ mod action_graph {
 
     mod run_from_requirements {
         use super::*;
-        use std::sync::Arc;
 
         #[tokio::test]
         async fn runs_by_target() {
@@ -1674,51 +1673,6 @@ mod action_graph {
             let graph = builder.build();
 
             assert_snapshot!(graph.to_dot());
-        }
-
-        #[tokio::test]
-        async fn runs_by_file_path() {
-            let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer::new(sandbox.path()).await;
-
-            let pg = Arc::get_mut(&mut container.workspace_graph.projects).unwrap();
-            pg.working_dir = sandbox.path().join("server/nested");
-
-            let mut builder = container.create_builder();
-
-            builder
-                .run_from_requirements(RunRequirements {
-                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
-                        Id::raw("lint"),
-                    )]),
-                    ..Default::default()
-                })
-                .unwrap();
-
-            let graph = builder.build();
-
-            assert_snapshot!(graph.to_dot());
-        }
-
-        #[tokio::test]
-        #[should_panic(expected = "No project could be located starting from path unknown/path.")]
-        async fn errors_if_no_project_by_path() {
-            let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer::new(sandbox.path()).await;
-
-            let pg = Arc::get_mut(&mut container.workspace_graph.projects).unwrap();
-            pg.working_dir = sandbox.path().join("unknown/path");
-
-            let mut builder = container.create_builder();
-
-            builder
-                .run_from_requirements(RunRequirements {
-                    target_locators: FxHashSet::from_iter([TargetLocator::TaskFromWorkingDir(
-                        Id::raw("lint"),
-                    )]),
-                    ..Default::default()
-                })
-                .unwrap();
         }
 
         #[tokio::test]

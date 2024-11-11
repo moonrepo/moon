@@ -14,8 +14,8 @@ pub async fn setup(session: CliSession) -> AppResult {
     }
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;
-    let project_graph = session.get_project_graph().await?;
-    let mut action_graph_builder = session.build_action_graph(&project_graph).await?;
+    let workspace_graph = session.get_workspace_graph().await?;
+    let mut action_graph_builder = session.build_action_graph(&workspace_graph).await?;
 
     debug!(
         projects = ?manifest.focused_projects.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
@@ -23,7 +23,7 @@ pub async fn setup(session: CliSession) -> AppResult {
     );
 
     for project_id in &manifest.focused_projects {
-        let project = project_graph.get(project_id)?;
+        let project = workspace_graph.get_project(project_id)?;
 
         action_graph_builder.install_deps(&project, None)?;
     }

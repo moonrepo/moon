@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct TaskMetadata {
+    pub struct TaskInternalMetadata {
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
@@ -59,7 +59,7 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashSet::is_empty")]
         pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub metadata: TaskMetadata,
+        pub metadata: TaskInternalMetadata,
 
         pub options: TaskOptions,
 

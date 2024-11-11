@@ -1,24 +1,53 @@
 use crate::expander_context::*;
-use crate::tasks_expander_error::TasksExpanderError;
+use crate::task_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
+use moon_common::color;
 use moon_config::TaskArgs;
 use moon_task::Task;
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
 use std::mem;
-use tracing::{instrument, trace, warn};
+use tracing::{debug, instrument, trace, warn};
 
-pub struct TasksExpander<'graph, 'query> {
-    pub context: &'graph ExpanderContext<'graph, 'query>,
-    pub token: TokenExpander<'graph, 'query>,
+pub struct TaskExpander<'graph> {
+    // pub context: TaskExpanderContext<'graph>,
+    pub token: TokenExpander<'graph>,
 }
 
-impl<'graph, 'query> TasksExpander<'graph, 'query> {
-    pub fn new(context: &'graph ExpanderContext<'graph, 'query>) -> Self {
+impl<'graph> TaskExpander<'graph> {
+    pub fn new(context: TaskExpanderContext<'graph>) -> Self {
         Self {
             token: TokenExpander::new(context),
-            context,
+            // context,
         }
+    }
+
+    #[instrument(name = "expand_task", skip_all)]
+    pub fn expand(mut self, task: &Task) -> miette::Result<Task> {
+        let mut task = task.to_owned();
+
+        debug!(
+            target = task.target.as_str(),
+            "Expanding task {}",
+            color::label(&task.target)
+        );
+
+        // Resolve in this order!
+        self.expand_env(&mut task)?;
+        self.expand_deps(&mut task)?;
+        self.expand_inputs(&mut task)?;
+        self.expand_outputs(&mut task)?;
+        self.expand_args(&mut task)?;
+
+        if task.script.is_some() {
+            self.expand_script(&mut task)?;
+        } else {
+            self.expand_command(&mut task)?;
+        }
+
+        task.metadata.expanded = true;
+
+        Ok(task)
     }
 
     #[instrument(skip_all)]
@@ -112,8 +141,8 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             let env_paths = env_files
                 .iter()
                 .map(|file| {
-                    file.to_workspace_relative(self.context.project.source.as_str())
-                        .to_path(self.context.workspace_root)
+                    file.to_workspace_relative(self.token.context.project.source.as_str())
+                        .to_path(self.token.context.workspace_root)
                 })
                 .collect::<Vec<_>>();
 

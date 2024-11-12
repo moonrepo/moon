@@ -283,7 +283,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Failed to parse TaskConfig. platform: unknown variant `perl`, expected one of `bun`, `deno`, `node`, `python`, `rust`, `system`, `unknown`"
+            expected = "Failed to parse moon.yml. platform: unknown variant `perl`, expected one of `bun`, `deno`, `node`, `python`, `rust`, `system`, `unknown`"
         )]
         fn errors_on_invalid_variant() {
             test_load_config("moon.yml", "platform: perl", |path| {

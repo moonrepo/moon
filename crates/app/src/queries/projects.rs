@@ -1,22 +1,12 @@
-use crate::queries::touched_files::{
-    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
-};
 use miette::IntoDiagnostic;
 use moon_affected::Affected;
-use moon_common::{is_ci, path::WorkspaceRelativePathBuf, Id};
+use moon_common::Id;
 use moon_project::Project;
 use moon_task::Task;
-use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
-use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
-use starbase_utils::json;
-use std::{
-    collections::BTreeMap,
-    io::{stdin, IsTerminal, Read},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 use tracing::{debug, trace};
 
 #[derive(Default, Deserialize, Serialize)]
@@ -63,44 +53,6 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<reg
         }
         None => Ok(None),
     }
-}
-
-pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
-    let mut buffer = String::new();
-
-    // Only read piped data when stdin is not a TTY,
-    // otherwise the process will hang indefinitely waiting for EOF.
-    if !stdin().is_terminal() {
-        stdin().read_to_string(&mut buffer).into_diagnostic()?;
-    }
-
-    // If piped via stdin, parse and use it
-    if !buffer.is_empty() {
-        // As JSON
-        if buffer.starts_with('{') {
-            let result: QueryTouchedFilesResult = json::parse(&buffer)?;
-
-            return Ok(result.files);
-        }
-        // As lines
-        else {
-            let files =
-                FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
-
-            return Ok(files);
-        }
-    }
-
-    let result = query_touched_files(
-        vcs,
-        &QueryTouchedFilesOptions {
-            local: !is_ci(),
-            ..QueryTouchedFilesOptions::default()
-        },
-    )
-    .await?;
-
-    Ok(result.files)
 }
 
 fn load_with_query(

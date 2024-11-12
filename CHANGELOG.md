@@ -13,6 +13,9 @@
 - Resolved the `disallowRunInCiMismatch` experiment and you can no longer have a CI based task
   depend on a non-CI based task.
 - Added a new task graph, that enables new granular based functionality for task related features.
+  - Can now control the depth of upstream (dependencies) and downstream (dependents).
+  - Affected information now tracks based on dependent graph connections.
+  - Added `--upstream` and `--downstream` options to `moon query tasks`.
 
 ## 1.29.4
 

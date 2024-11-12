@@ -198,9 +198,9 @@ impl<'app> AffectedTracker<'app> {
             }
         }
 
-        for dep_id in self.workspace_graph.projects.dependencies_of(project) {
+        for dep_config in &project.dependencies {
             self.projects
-                .entry(dep_id.clone())
+                .entry(dep_config.id.clone())
                 .or_default()
                 .push(AffectedBy::DownstreamProject(project.id.clone()));
 
@@ -208,7 +208,7 @@ impl<'app> AffectedTracker<'app> {
                 continue;
             }
 
-            let dep_project = self.workspace_graph.get_project(&dep_id)?;
+            let dep_project = self.workspace_graph.get_project(&dep_config.id)?;
 
             self.track_project_dependencies(&dep_project, depth + 1)?;
         }
@@ -233,10 +233,7 @@ impl<'app> AffectedTracker<'app> {
                     "Tracking direct dependents"
                 );
             } else {
-                trace!(
-                    project_id = project.id.as_str(),
-                    "Tracking deep dependents (entire family)"
-                );
+                trace!(project_id = project.id.as_str(), "Tracking deep dependents");
             }
         }
 
@@ -332,6 +329,7 @@ impl<'app> AffectedTracker<'app> {
             .push(affected);
 
         self.track_task_dependencies(task, 0)?;
+        self.track_task_dependents(task, 0)?;
 
         Ok(())
     }
@@ -373,6 +371,42 @@ impl<'app> AffectedTracker<'app> {
             let dep_task = self.workspace_graph.get_task(&dep_config.target)?;
 
             self.track_task_dependencies(&dep_task, depth + 1)?;
+        }
+
+        Ok(())
+    }
+
+    fn track_task_dependents(&mut self, task: &Task, depth: u16) -> miette::Result<()> {
+        if self.task_downstream == DownstreamScope::None {
+            trace!(
+                target = task.target.as_str(),
+                "Not tracking dependents as downstream scope is none"
+            );
+
+            return Ok(());
+        }
+
+        if depth == 0 {
+            if self.task_downstream == DownstreamScope::Direct {
+                trace!(target = task.target.as_str(), "Tracking direct dependents");
+            } else {
+                trace!(target = task.target.as_str(), "Tracking deep dependents");
+            }
+        }
+
+        for dep_target in self.workspace_graph.tasks.dependents_of(task) {
+            self.tasks
+                .entry(dep_target.clone())
+                .or_default()
+                .push(AffectedBy::UpstreamTask(task.target.clone()));
+
+            if depth == 0 && self.task_downstream == DownstreamScope::Direct {
+                continue;
+            }
+
+            let dep_task = self.workspace_graph.get_task(&dep_target)?;
+
+            self.track_task_dependents(&dep_task, depth + 1)?;
         }
 
         Ok(())

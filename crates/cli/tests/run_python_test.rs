@@ -49,7 +49,11 @@ fn runs_install_deps_via_args() {
     let sandbox = python_sandbox(PartialPythonConfig {
         version: Some(UnresolvedVersionSpec::parse("3.11.10").unwrap()),
         pip: Some(PartialPipConfig {
-            install_args: Some(vec!["poetry==1.8.4".to_string()]),
+            install_args: Some(vec![
+                "--quiet".to_string(),
+                "--disable-pip-version-check".to_string(),
+                "poetry==1.8.4".to_string(),
+            ]),
         }),
         ..PartialPythonConfig::default()
     });

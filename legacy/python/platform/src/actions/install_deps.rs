@@ -15,7 +15,11 @@ pub async fn install_deps(
 
     if let Some(pip_config) = &python.config.pip {
         let requirements_path = find_requirements_txt(working_dir, workspace_root);
-        let virtual_environment = &working_dir.join(python.config.venv_name.clone());
+        let virtual_environment = if python.config.root_requirements_only {
+            &workspace_root.join(python.config.venv_name.clone())
+        } else {
+            &working_dir.join(python.config.venv_name.clone())
+        };
 
         if !virtual_environment.exists() {
             console
@@ -34,7 +38,7 @@ pub async fn install_deps(
         }
 
         if let Some(install_args) = &pip_config.install_args {
-            if install_args.iter().any(|x| !x.starts_with("-")) && requirements_path.is_none() {
+            if install_args.iter().any(|x| !x.starts_with("-")) {
                 console
                     .out
                     .print_checkpoint(Checkpoint::Setup, "pip install")?;

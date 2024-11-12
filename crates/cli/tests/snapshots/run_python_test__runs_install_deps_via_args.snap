@@ -1,9 +1,11 @@
 ---
 source: crates/cli/tests/run_python_test.rs
-assertion_line: 62
+assertion_line: 60
 expression: assert.output()
+snapshot_kind: text
 ---
-▪▪▪▪ Install pip dependencies from install args
+▪▪▪▪ activate virtual environment
+▪▪▪▪ pip install
 ▪▪▪▪ python:poetry
 Poetry (version 1.8.4)
 ▪▪▪▪ python:poetry (100ms)

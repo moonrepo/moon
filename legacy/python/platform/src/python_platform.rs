@@ -285,16 +285,23 @@ impl Platform for PythonPlatform {
         working_dir: &Path,
     ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
+
         command.with_console(self.console.clone());
         command.args(&task.args);
         command.envs(&task.env);
 
         if let Ok(python) = self.toolchain.get_for_version(&runtime.requirement) {
             if let Some(version) = get_proto_version_env(&python.tool) {
+                let cwd = if python.config.root_requirements_only {
+                    self.workspace_root.as_path()
+                } else {
+                    working_dir
+                };
+
                 command.env("PROTO_PYTHON_VERSION", version);
                 command.env(
                     "PATH",
-                    prepend_path_env_var(get_python_tool_paths(python, working_dir)),
+                    prepend_path_env_var(get_python_tool_paths(python, cwd)),
                 );
             }
         }

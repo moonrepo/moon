@@ -1,6 +1,5 @@
 pub mod actions;
 mod python_platform;
-mod target_hash;
 mod toolchain_hash;
 
 pub use python_platform::*;

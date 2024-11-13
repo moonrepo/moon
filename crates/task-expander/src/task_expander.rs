@@ -1,8 +1,10 @@
-use crate::expander_context::*;
+use crate::expander_utils::*;
 use crate::task_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
 use moon_config::TaskArgs;
+use moon_graph_utils::GraphExpanderContext;
+use moon_project::Project;
 use moon_task::Task;
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
@@ -10,15 +12,17 @@ use std::mem;
 use tracing::{debug, instrument, trace, warn};
 
 pub struct TaskExpander<'graph> {
-    // pub context: TaskExpanderContext<'graph>,
+    pub context: &'graph GraphExpanderContext,
     pub token: TokenExpander<'graph>,
+    pub project: &'graph Project,
 }
 
 impl<'graph> TaskExpander<'graph> {
-    pub fn new(context: TaskExpanderContext<'graph>) -> Self {
+    pub fn new(project: &'graph Project, context: &'graph GraphExpanderContext) -> Self {
         Self {
-            token: TokenExpander::new(context),
-            // context,
+            token: TokenExpander::new(project, context),
+            context,
+            project,
         }
     }
 
@@ -141,8 +145,8 @@ impl<'graph> TaskExpander<'graph> {
             let env_paths = env_files
                 .iter()
                 .map(|file| {
-                    file.to_workspace_relative(self.token.context.project.source.as_str())
-                        .to_path(self.token.context.workspace_root)
+                    file.to_workspace_relative(self.project.source.as_str())
+                        .to_path(&self.context.workspace_root)
                 })
                 .collect::<Vec<_>>();
 

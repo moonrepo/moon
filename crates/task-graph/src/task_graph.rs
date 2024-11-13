@@ -5,7 +5,7 @@ use moon_graph_utils::*;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
 use moon_task::Task;
-use moon_task_expander::{TaskExpander, TaskExpanderContext};
+use moon_task_expander::TaskExpander;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -151,14 +151,14 @@ impl TaskGraph {
 
         let mut cache = self.write_cache();
 
-        let expander = TaskExpander::new(TaskExpanderContext {
-            project: self.project_graph.get_unexpanded(
+        let expander = TaskExpander::new(
+            self.project_graph.get_unexpanded(
                 target
                     .get_project_id()
                     .expect("Project scope required for target."),
             )?,
-            workspace_root: &self.context.workspace_root,
-        });
+            &self.context,
+        );
 
         let task = Arc::new(expander.expand(self.get_unexpanded(target)?)?);
 

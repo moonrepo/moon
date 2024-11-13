@@ -184,15 +184,19 @@ impl<'app> WorkspaceBuilder<'app> {
         self.enforce_constraints()?;
 
         let context = self.context.take().unwrap();
-        let vcs = context.vcs.as_ref().expect("VCS required!");
 
-        let graph_context = GraphExpanderContext {
-            vcs_branch: vcs.get_local_branch().await?,
-            vcs_repository: vcs.get_repository_slug().await?,
-            vcs_revision: vcs.get_local_branch_revision().await?,
+        let mut graph_context = GraphExpanderContext {
             working_dir: context.working_dir.to_owned(),
             workspace_root: context.workspace_root.to_owned(),
+            ..Default::default()
         };
+
+        // This is only in a conditional for tests!
+        if let Some(vcs) = &context.vcs {
+            graph_context.vcs_branch = vcs.get_local_branch().await?;
+            graph_context.vcs_repository = vcs.get_repository_slug().await?;
+            graph_context.vcs_revision = vcs.get_local_branch_revision().await?;
+        }
 
         let project_metadata = self
             .project_data

@@ -562,6 +562,10 @@ impl<'graph> TokenExpander<'graph> {
             };
 
         let replaced_value = match variable {
+            // Env
+            "arch" => Cow::Borrowed(env::consts::ARCH),
+            "os" => Cow::Borrowed(env::consts::OS),
+            "osFamily" => Cow::Borrowed(env::consts::FAMILY),
             "workingDir" => Cow::Owned(path::to_string(&self.context.working_dir)?),
             "workspaceRoot" => Cow::Owned(path::to_string(&self.context.workspace_root)?),
             // Project
@@ -588,6 +592,10 @@ impl<'graph> TokenExpander<'graph> {
             "datetime" => Cow::Owned(now_timestamp().format("%F_%T").to_string()),
             "time" => Cow::Owned(now_timestamp().format("%T").to_string()),
             "timestamp" => Cow::Owned((now_millis() / 1000).to_string()),
+            // VCS
+            "vcsBranch" => Cow::Borrowed(self.context.vcs_branch.as_ref().as_str()),
+            "vcsRepository" => Cow::Borrowed(self.context.vcs_repository.as_ref().as_str()),
+            "vcsRevision" => Cow::Borrowed(self.context.vcs_revision.as_ref().as_str()),
             _ => {
                 return Ok(value);
             }

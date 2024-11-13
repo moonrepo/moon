@@ -20,6 +20,7 @@
   - Can now control the depth of upstream (dependencies) and downstream (dependents).
   - Affected information now tracks based on dependent graph connections.
   - Added `--upstream` and `--downstream` options to `moon query tasks`.
+- Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`, `$vcsRevision`, `$workingDir`
 
 #### 🐞 Fixes
 

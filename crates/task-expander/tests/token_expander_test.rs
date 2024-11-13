@@ -234,6 +234,8 @@ mod token_expander {
     }
 
     mod vars {
+        use env::consts;
+
         use super::*;
 
         #[test]
@@ -310,6 +312,12 @@ mod token_expander {
             );
             assert_eq!(
                 expander
+                    .replace_variable(&task, Cow::Borrowed("$workingDir"))
+                    .unwrap(),
+                sandbox.path().to_string_lossy()
+            );
+            assert_eq!(
+                expander
                     .replace_variable(&task, Cow::Borrowed("$workspaceRoot"))
                     .unwrap(),
                 sandbox.path().to_string_lossy()
@@ -346,6 +354,44 @@ mod token_expander {
                     .replace_variable(&task, Cow::Borrowed("$timestamp"))
                     .unwrap()
             ));
+
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$arch"))
+                    .unwrap(),
+                consts::ARCH
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$os"))
+                    .unwrap(),
+                consts::OS
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$osFamily"))
+                    .unwrap(),
+                consts::FAMILY
+            );
+
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$vcsBranch"))
+                    .unwrap(),
+                "master"
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$vcsRepository"))
+                    .unwrap(),
+                "moonrepo/moon"
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$vcsRevision"))
+                    .unwrap(),
+                "abcd1234"
+            );
         }
 
         #[test]

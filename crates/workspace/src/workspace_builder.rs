@@ -191,11 +191,19 @@ impl<'app> WorkspaceBuilder<'app> {
             ..Default::default()
         };
 
-        // This is only in a conditional for tests!
+        // These are only in conditionals for tests that don't have git
+        // initialized, which is most of them!
         if let Some(vcs) = &context.vcs {
-            graph_context.vcs_branch = vcs.get_local_branch().await?;
-            graph_context.vcs_repository = vcs.get_repository_slug().await?;
-            graph_context.vcs_revision = vcs.get_local_branch_revision().await?;
+            if vcs.is_enabled() {
+                graph_context.vcs_branch = vcs.get_local_branch().await?;
+                graph_context.vcs_revision = vcs.get_local_branch_revision().await?;
+
+                if let Ok(repo) = vcs.get_repository_slug().await {
+                    graph_context.vcs_repository = repo;
+                }
+            } else {
+                graph_context.vcs_branch = vcs.get_default_branch().await?;
+            }
         }
 
         let project_metadata = self

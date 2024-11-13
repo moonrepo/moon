@@ -43,7 +43,7 @@ impl WorkspaceGraph {
         // Don't use `get_all` as it recursively calls `query`,
         // which runs into a deadlock! This should be faster also...
         for task in self.tasks.get_all_unexpanded() {
-            if self.does_task_match_criteria(task, query)? {
+            if does_task_match_criteria(task, query)? {
                 targets.push(task.target.clone());
             }
         }
@@ -67,55 +67,53 @@ impl WorkspaceGraph {
 
         Ok(targets)
     }
+}
 
-    fn does_task_match_criteria(&self, task: &Task, query: &Criteria) -> miette::Result<bool> {
-        let match_all = matches!(query.op, LogicalOperator::And);
-        let mut matched_any = false;
+fn does_task_match_criteria(task: &Task, query: &Criteria) -> miette::Result<bool> {
+    let match_all = matches!(query.op, LogicalOperator::And);
+    let mut matched_any = false;
 
-        for condition in &query.conditions {
-            let matches = match condition {
-                Condition::Field { field, .. } => {
-                    let result = match field {
-                        Field::Project(ids) => {
-                            if let Some(project_id) = task.target.get_project_id() {
-                                condition.matches(ids, project_id)
-                            } else {
-                                Ok(false)
-                            }
+    for condition in &query.conditions {
+        let matches = match condition {
+            Condition::Field { field, .. } => {
+                let result = match field {
+                    Field::Project(ids) => {
+                        if let Some(project_id) = task.target.get_project_id() {
+                            condition.matches(ids, project_id)
+                        } else {
+                            Ok(false)
                         }
-                        Field::Task(ids) => condition.matches(ids, &task.id),
-                        Field::TaskPlatform(platforms) => {
-                            condition.matches_enum(platforms, &task.platform)
-                        }
-                        Field::TaskType(types) => condition.matches_enum(types, &task.type_of),
-                        _ => Ok(false),
-                    };
+                    }
+                    Field::Task(ids) => condition.matches(ids, &task.id),
+                    Field::TaskPlatform(platforms) => {
+                        condition.matches_enum(platforms, &task.platform)
+                    }
+                    Field::TaskType(types) => condition.matches_enum(types, &task.type_of),
+                    _ => Ok(false),
+                };
 
-                    result?
-                }
-                Condition::Criteria { criteria } => {
-                    self.does_task_match_criteria(task, criteria)?
-                }
-            };
-
-            if matches {
-                matched_any = true;
-
-                if match_all {
-                    continue;
-                } else {
-                    break;
-                }
-            } else if match_all {
-                return Ok(false);
+                result?
             }
-        }
+            Condition::Criteria { criteria } => does_task_match_criteria(task, criteria)?,
+        };
 
-        // No matches using the OR condition
-        if !matched_any {
+        if matches {
+            matched_any = true;
+
+            if match_all {
+                continue;
+            } else {
+                break;
+            }
+        } else if match_all {
             return Ok(false);
         }
-
-        Ok(true)
     }
+
+    // No matches using the OR condition
+    if !matched_any {
+        return Ok(false);
+    }
+
+    Ok(true)
 }

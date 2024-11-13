@@ -1,5 +1,6 @@
-use moon_app::queries::projects::{QueryProjectsResult, QueryTasksResult};
-use moon_app::queries::touched_files::QueryTouchedFilesResult;
+use moon_app::queries::projects::*;
+use moon_app::queries::tasks::*;
+use moon_app::queries::touched_files::*;
 use moon_common::is_ci;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,

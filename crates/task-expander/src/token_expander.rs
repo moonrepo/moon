@@ -1,9 +1,10 @@
-use crate::expander_context::{substitute_env_var, TaskExpanderContext};
+use crate::expander_utils::substitute_env_var;
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{patterns, InputPath, OutputPath, ProjectMetadataConfig};
-use moon_project::FileGroup;
+use moon_graph_utils::GraphExpanderContext;
+use moon_project::{FileGroup, Project};
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
@@ -49,17 +50,20 @@ impl TokenScope {
 pub struct TokenExpander<'graph> {
     pub scope: TokenScope,
 
-    pub context: TaskExpanderContext<'graph>,
+    pub context: &'graph GraphExpanderContext,
+
+    pub project: &'graph Project,
 
     // In the current process
     env_vars: Vec<String>,
 }
 
 impl<'graph> TokenExpander<'graph> {
-    pub fn new(context: TaskExpanderContext<'graph>) -> Self {
+    pub fn new(project: &'graph Project, context: &'graph GraphExpanderContext) -> Self {
         Self {
             scope: TokenScope::Args,
             context,
+            project,
             env_vars: env::vars().map(|var| var.0).collect::<Vec<_>>(),
         }
     }
@@ -252,8 +256,7 @@ impl<'graph> TokenExpander<'graph> {
                 }
                 InputPath::TokenVar(var) => {
                     result.files.push(
-                        self.context
-                            .project
+                        self.project
                             .source
                             .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
@@ -261,9 +264,9 @@ impl<'graph> TokenExpander<'graph> {
                 InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
                     let file = self.create_path_for_task(
                         task,
-                        input.to_workspace_relative(&self.context.project.source),
+                        input.to_workspace_relative(&self.project.source),
                     )?;
-                    let abs_file = file.to_path(self.context.workspace_root);
+                    let abs_file = file.to_path(&self.context.workspace_root);
 
                     // This is a special case that converts "foo" to "foo/**/*",
                     // when the input is a directory. This is necessary for VCS hashing.
@@ -276,7 +279,7 @@ impl<'graph> TokenExpander<'graph> {
                 InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
                     let glob = self.create_path_for_task(
                         task,
-                        input.to_workspace_relative(&self.context.project.source),
+                        input.to_workspace_relative(&self.project.source),
                     )?;
 
                     result.globs.push(glob);
@@ -304,8 +307,7 @@ impl<'graph> TokenExpander<'graph> {
                 }
                 OutputPath::TokenVar(var) => {
                     result.files.push(
-                        self.context
-                            .project
+                        self.project
                             .source
                             .join(self.replace_variable(task, Cow::Borrowed(var))?.as_ref()),
                     );
@@ -313,9 +315,7 @@ impl<'graph> TokenExpander<'graph> {
                 _ => {
                     let path = self.create_path_for_task(
                         task,
-                        output
-                            .to_workspace_relative(&self.context.project.source)
-                            .unwrap(),
+                        output.to_workspace_relative(&self.project.source).unwrap(),
                     )?;
 
                     if output.is_glob() {
@@ -356,7 +356,7 @@ impl<'graph> TokenExpander<'graph> {
                 ],
             )?;
 
-            Ok(self.context.project.file_groups.get(arg).ok_or_else(|| {
+            Ok(self.project.file_groups.get(arg).ok_or_else(|| {
                 TokenExpanderError::UnknownFileGroup {
                     group: arg.to_owned(),
                     token: token.to_owned(),
@@ -367,20 +367,19 @@ impl<'graph> TokenExpander<'graph> {
         match func {
             // File groups
             "root" => {
-                result.files.push(
-                    file_group()?
-                        .root(self.context.workspace_root, &self.context.project.source)?,
-                );
+                result
+                    .files
+                    .push(file_group()?.root(&self.context.workspace_root, &self.project.source)?);
             }
             "dirs" => {
                 result
                     .files
-                    .extend(file_group()?.dirs(self.context.workspace_root, loose_check)?);
+                    .extend(file_group()?.dirs(&self.context.workspace_root, loose_check)?);
             }
             "files" => {
                 result
                     .files
-                    .extend(file_group()?.files(self.context.workspace_root, loose_check)?);
+                    .extend(file_group()?.files(&self.context.workspace_root, loose_check)?);
             }
             "globs" => {
                 result.globs.extend(file_group()?.globs()?.to_owned());
@@ -414,13 +413,13 @@ impl<'graph> TokenExpander<'graph> {
                     InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
                         result.files.push(self.create_path_for_task(
                             task,
-                            input.to_workspace_relative(&self.context.project.source),
+                            input.to_workspace_relative(&self.project.source),
                         )?);
                     }
                     InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_) => {
                         result.globs.push(self.create_path_for_task(
                             task,
-                            input.to_workspace_relative(&self.context.project.source),
+                            input.to_workspace_relative(&self.project.source),
                         )?);
                     }
                     InputPath::TokenFunc(func) => {
@@ -452,24 +451,16 @@ impl<'graph> TokenExpander<'graph> {
 
                 match output {
                     OutputPath::ProjectFile(_) | OutputPath::WorkspaceFile(_) => {
-                        result.files.push(
-                            self.create_path_for_task(
-                                task,
-                                output
-                                    .to_workspace_relative(&self.context.project.source)
-                                    .unwrap(),
-                            )?,
-                        );
+                        result.files.push(self.create_path_for_task(
+                            task,
+                            output.to_workspace_relative(&self.project.source).unwrap(),
+                        )?);
                     }
                     OutputPath::ProjectGlob(_) | OutputPath::WorkspaceGlob(_) => {
-                        result.globs.push(
-                            self.create_path_for_task(
-                                task,
-                                output
-                                    .to_workspace_relative(&self.context.project.source)
-                                    .unwrap(),
-                            )?,
-                        );
+                        result.globs.push(self.create_path_for_task(
+                            task,
+                            output.to_workspace_relative(&self.project.source).unwrap(),
+                        )?);
                     }
                     OutputPath::TokenFunc(func) => {
                         let inner_result = self.replace_function(task, func)?;
@@ -503,7 +494,7 @@ impl<'graph> TokenExpander<'graph> {
                     ],
                 )?;
 
-                let project = self.context.project;
+                let project = self.project;
                 let metadata = project.config.project.as_ref();
 
                 result.value = match arg {
@@ -562,7 +553,7 @@ impl<'graph> TokenExpander<'graph> {
 
         let token_match = matches.get(0).unwrap(); // $var
         let variable = matches.get(1).unwrap().as_str(); // var
-        let project = self.context.project;
+        let project = self.project;
 
         let get_metadata =
             |op: fn(md: &ProjectMetadataConfig) -> Option<&'_ str>| match &project.config.project {
@@ -571,7 +562,12 @@ impl<'graph> TokenExpander<'graph> {
             };
 
         let replaced_value = match variable {
-            "workspaceRoot" => Cow::Owned(path::to_string(self.context.workspace_root)?),
+            // Env
+            "arch" => Cow::Borrowed(env::consts::ARCH),
+            "os" => Cow::Borrowed(env::consts::OS),
+            "osFamily" => Cow::Borrowed(env::consts::FAMILY),
+            "workingDir" => Cow::Owned(path::to_string(&self.context.working_dir)?),
+            "workspaceRoot" => Cow::Owned(path::to_string(&self.context.workspace_root)?),
             // Project
             "language" => Cow::Owned(project.language.to_string()),
             "project" => Cow::Borrowed(project.id.as_str()),
@@ -596,6 +592,10 @@ impl<'graph> TokenExpander<'graph> {
             "datetime" => Cow::Owned(now_timestamp().format("%F_%T").to_string()),
             "time" => Cow::Owned(now_timestamp().format("%T").to_string()),
             "timestamp" => Cow::Owned((now_millis() / 1000).to_string()),
+            // VCS
+            "vcsBranch" => Cow::Borrowed(self.context.vcs_branch.as_ref().as_str()),
+            "vcsRepository" => Cow::Borrowed(self.context.vcs_repository.as_ref().as_str()),
+            "vcsRevision" => Cow::Borrowed(self.context.vcs_revision.as_ref().as_str()),
             _ => {
                 return Ok(value);
             }
@@ -662,16 +662,14 @@ impl<'graph> TokenExpander<'graph> {
             Ok(format!("./{}", path))
 
             // From project root to project file
-        } else if let Ok(proj_path) = path.strip_prefix(&self.context.project.source) {
+        } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
             Ok(format!("./{}", proj_path))
 
             // From project root to non-project file
         } else {
-            let abs_path = path.to_logical_path(self.context.workspace_root);
+            let abs_path = path.to_logical_path(&self.context.workspace_root);
 
-            path::to_virtual_string(
-                diff_paths(&abs_path, &self.context.project.root).unwrap_or(abs_path),
-            )
+            path::to_virtual_string(diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path))
         }
     }
 }

@@ -35,6 +35,8 @@ impl ProjectMetadata {
 
 #[derive(Default)]
 pub struct ProjectGraph {
+    context: GraphExpanderContext,
+
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: HashMap<PathBuf, Arc<String>>,
 
@@ -46,24 +48,21 @@ pub struct ProjectGraph {
 
     /// Expanded projects, mapped by project ID.
     projects: Arc<RwLock<ProjectsCache>>,
-
-    /// The current working directory.
-    pub working_dir: PathBuf,
-
-    /// Workspace root, required for expansion.
-    pub workspace_root: PathBuf,
 }
 
 impl ProjectGraph {
-    pub fn new(graph: ProjectGraphType, metadata: FxHashMap<Id, ProjectMetadata>) -> Self {
+    pub fn new(
+        graph: ProjectGraphType,
+        metadata: FxHashMap<Id, ProjectMetadata>,
+        context: GraphExpanderContext,
+    ) -> Self {
         debug!("Creating project graph");
 
         Self {
+            context,
             graph,
             metadata,
             projects: Arc::new(RwLock::new(FxHashMap::default())),
-            working_dir: PathBuf::new(),
-            workspace_root: PathBuf::new(),
             fs_cache: HashMap::new(),
         }
     }
@@ -120,11 +119,11 @@ impl ProjectGraph {
     /// This will attempt to find the closest matching project source.
     #[instrument(name = "get_project_from_path", skip(self))]
     pub fn get_from_path(&self, starting_file: Option<&Path>) -> miette::Result<Arc<Project>> {
-        let current_file = starting_file.unwrap_or(&self.working_dir);
+        let current_file = starting_file.unwrap_or(&self.context.working_dir);
 
-        let file = if current_file == self.workspace_root {
+        let file = if current_file == self.context.workspace_root {
             Path::new(".")
-        } else if let Ok(rel_file) = current_file.strip_prefix(&self.workspace_root) {
+        } else if let Ok(rel_file) = current_file.strip_prefix(&self.context.workspace_root) {
             rel_file
         } else {
             current_file
@@ -163,12 +162,11 @@ impl ProjectGraph {
         }
 
         Ok(Self {
+            context: self.context.clone(),
             fs_cache: HashMap::new(),
             graph,
             metadata,
             projects: self.projects.clone(),
-            working_dir: self.working_dir.clone(),
-            workspace_root: self.workspace_root.clone(),
         })
     }
 
@@ -183,7 +181,7 @@ impl ProjectGraph {
 
         let expander = ProjectExpander::new(ProjectExpanderContext {
             aliases: self.aliases(),
-            workspace_root: &self.workspace_root,
+            workspace_root: &self.context.workspace_root,
         });
 
         let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);

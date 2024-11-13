@@ -314,7 +314,7 @@ mod projects {
         let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
-        assert_eq!(ids, string_vec!["advanced", "noConfig"]);
+        assert_eq!(ids, string_vec!["advanced", "metadata", "noConfig"]);
         assert!(json.options.affected.is_some());
     }
 
@@ -349,7 +349,7 @@ mod projects {
 
         assert_eq!(
             assert.output(),
-            "advanced | advanced | frontend | application | typescript | ...\nnoConfig | no-config | unknown | unknown | unknown | ...\n\n"
+            "advanced | advanced | frontend | application | typescript | ...\nmetadata | metadata | infrastructure | configuration | unknown | Advanced example.\nnoConfig | no-config | unknown | unknown | unknown | ...\n\n"
         );
     }
 
@@ -378,7 +378,10 @@ mod projects {
         let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
-        assert_eq!(ids, string_vec!["advanced", "basic", "noConfig"]);
+        assert_eq!(
+            ids,
+            string_vec!["advanced", "basic", "metadata", "noConfig"]
+        );
         assert!(json.options.affected.is_some());
     }
 
@@ -415,7 +418,7 @@ mod projects {
         let json: QueryProjectsResult = json::parse(assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
-        assert_eq!(ids, string_vec!["advanced", "noConfig"]);
+        assert_eq!(ids, string_vec!["advanced", "metadata", "noConfig"]);
         assert!(json.options.affected.is_some());
     }
 

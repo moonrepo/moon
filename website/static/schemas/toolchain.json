@@ -619,12 +619,25 @@
       "properties": {
         "bins": {
           "title": "bins",
-          "description": "List of binaries to install into the environment using cargo install.",
+          "description": "List of binaries to install into the environment using cargo binstall.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/BinEntry"
           },
-          "markdownDescription": "List of binaries to install into the environment using `cargo install`."
+          "markdownDescription": "List of binaries to install into the environment using `cargo binstall`."
+        },
+        "binstallVersion": {
+          "title": "binstallVersion",
+          "description": "The version of cargo-binstall to install. Defaults to latest if not defined.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The version of `cargo-binstall` to install. Defaults to latest if not defined."
         },
         "components": {
           "title": "components",

@@ -6,6 +6,9 @@
 
 - If you renamed a project using the `id` setting in `moon.yml`, you can no longer reference that
   project in dependencies and targets using its original ID.
+- Refactored the `moon query tasks` command.
+  - CLI options have been replaced with new task based options, instead of being project based.
+  - Now utilizes the new task graph and affected tracker.
 
 #### 🚀 Updates
 

@@ -1,22 +1,22 @@
-use miette::IntoDiagnostic;
+use super::convert_to_regex;
 use moon_affected::Affected;
-use moon_common::Id;
 use moon_project::Project;
-use moon_task::Task;
 use moon_workspace_graph::WorkspaceGraph;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
-use std::{collections::BTreeMap, sync::Arc};
-use tracing::{debug, trace};
+use std::sync::Arc;
+use tracing::debug;
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
-    pub alias: Option<String>,
     pub affected: Option<Affected>,
-    pub id: Option<String>,
     pub json: bool,
-    pub language: Option<String>,
     pub query: Option<String>,
+
+    // Filters
+    pub alias: Option<String>,
+    pub id: Option<String>,
+    pub language: Option<String>,
     pub stack: Option<String>,
     pub source: Option<String>,
     pub tags: Option<String>,
@@ -29,30 +29,6 @@ pub struct QueryProjectsOptions {
 pub struct QueryProjectsResult {
     pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct QueryTasksResult {
-    pub tasks: BTreeMap<Id, BTreeMap<Id, Arc<Task>>>,
-    pub options: QueryProjectsOptions,
-}
-
-fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<regex::Regex>> {
-    match value {
-        Some(pattern) => {
-            trace!(
-                "Filtering projects \"{}\" by matching pattern \"{}\"",
-                field,
-                pattern
-            );
-
-            // case-insensitive by default
-            let pat = regex::Regex::new(&format!("(?i){pattern}")).into_diagnostic()?;
-
-            Ok(Some(pat))
-        }
-        None => Ok(None),
-    }
 }
 
 fn load_with_query(

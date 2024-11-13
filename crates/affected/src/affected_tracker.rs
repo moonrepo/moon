@@ -54,6 +54,7 @@ impl<'app> AffectedTracker<'app> {
                 files = ?state.files.iter().collect::<Vec<_>>(),
                 upstream = ?state.upstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
                 downstream = ?state.downstream.iter().map(|id| id.as_str()).collect::<Vec<_>>(),
+                tasks = ?state.tasks.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
                 other = state.other,
                 "Project {} is affected by", color::id(&id),
             );
@@ -330,6 +331,13 @@ impl<'app> AffectedTracker<'app> {
 
         self.track_task_dependencies(task, 0)?;
         self.track_task_dependents(task, 0)?;
+
+        if let Some(project_id) = task.target.get_project_id() {
+            self.projects
+                .entry(project_id.to_owned())
+                .or_default()
+                .push(AffectedBy::Task(task.target.clone()));
+        }
 
         Ok(())
     }

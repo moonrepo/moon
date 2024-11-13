@@ -20,6 +20,10 @@
   - Affected information now tracks based on dependent graph connections.
   - Added `--upstream` and `--downstream` options to `moon query tasks`.
 
+#### 🐞 Fixes
+
+- Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing direct relationships.
+
 ## 1.29.4
 
 #### 🚀 Updates

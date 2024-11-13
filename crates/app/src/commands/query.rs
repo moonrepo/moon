@@ -1,11 +1,8 @@
 pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::query_hash_diff;
-pub use crate::queries::projects::{
-    load_touched_files, query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
-};
-pub use crate::queries::touched_files::{
-    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
-};
+pub use crate::queries::projects::*;
+pub use crate::queries::tasks::*;
+pub use crate::queries::touched_files::*;
 use crate::session::CliSession;
 use clap::{Args, Subcommand};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
@@ -299,33 +296,54 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
 
 #[derive(Args, Clone, Debug)]
 pub struct QueryTasksArgs {
-    #[arg(help = "Filter projects using a query (takes precedence over options)")]
+    #[arg(help = "Filter tasks using a query (takes precedence over options)")]
     query: Option<String>,
 
-    #[arg(long, help = "Filter projects that match this alias", help_heading = HEADING_FILTERS)]
-    alias: Option<String>,
-
+    // Affected
     #[arg(
         long,
         help = "Filter tasks that are affected based on touched files",
-        help_heading = HEADING_AFFECTED
+        help_heading = HEADING_AFFECTED,
+        group = "affected-args"
     )]
     affected: bool,
 
-    #[arg(long, help = "Filter projects that match this ID", help_heading = HEADING_FILTERS)]
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include downstream dependents of queried tasks",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    downstream: DownstreamScope,
+
+    #[arg(
+        long,
+        default_value_t,
+        help = "Include upstream dependencies of queried tasks",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    upstream: UpstreamScope,
+
+    // Filters
+    #[arg(long, help = "Filter tasks that match this ID", help_heading = HEADING_FILTERS)]
     id: Option<String>,
 
     #[arg(long, help = "Print the tasks in JSON format")]
     json: bool,
 
-    #[arg(long, help = "Filter projects of this programming language", help_heading = HEADING_FILTERS)]
-    language: Option<String>,
+    #[arg(long, help = "Filter tasks with the provided command", help_heading = HEADING_FILTERS)]
+    command: Option<String>,
 
-    #[arg(long, help = "Filter projects that match this source path", help_heading = HEADING_FILTERS)]
-    source: Option<String>,
+    #[arg(long, help = "Filter tasks that belong to a platform", help_heading = HEADING_FILTERS)]
+    platform: Option<String>,
 
-    #[arg(long, help = "Filter projects that have the following tasks", help_heading = HEADING_FILTERS)]
-    tasks: Option<String>,
+    #[arg(long, help = "Filter tasks that belong to a project", help_heading = HEADING_FILTERS)]
+    project: Option<String>,
+
+    #[arg(long, help = "Filter tasks with the provided script", help_heading = HEADING_FILTERS)]
+    script: Option<String>,
 
     #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
     type_of: Option<String>,
@@ -336,41 +354,17 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
     let console = &session.console;
     let workspace_graph = session.get_workspace_graph().await?;
 
-    // Query for projects that match the filters
-    let options = QueryProjectsOptions {
-        alias: args.alias,
+    let mut options = QueryTasksOptions {
         id: args.id,
         json: args.json,
-        language: args.language,
+        command: args.command,
         query: args.query,
-        source: args.source,
-        tasks: args.tasks,
+        platform: args.platform,
+        project: args.project,
+        script: args.script,
         type_of: args.type_of,
-        ..QueryProjectsOptions::default()
+        ..QueryTasksOptions::default()
     };
-    let projects = query_projects(&workspace_graph, &options).await?;
-
-    // Group tasks by project
-    let mut grouped_tasks = BTreeMap::default();
-    let mut targets_list = vec![];
-
-    for project in projects {
-        let filtered_tasks = workspace_graph
-            .get_tasks_from_project(&project.id)?
-            .into_iter()
-            .map(|task| {
-                targets_list.push(task.target.clone());
-
-                (task.id.to_owned(), task)
-            })
-            .collect::<BTreeMap<_, _>>();
-
-        if filtered_tasks.is_empty() {
-            continue;
-        }
-
-        grouped_tasks.insert(project.id.clone(), filtered_tasks);
-    }
 
     // Filter down to affected tasks only
     if args.affected {
@@ -378,14 +372,27 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         let touched_files = load_touched_files(&vcs).await?;
 
         let mut affected_tracker = AffectedTracker::new(&workspace_graph, &touched_files);
-        affected_tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-        affected_tracker.track_tasks_by_target(&targets_list)?;
+        affected_tracker.with_task_scopes(args.upstream, args.downstream);
+        affected_tracker.track_tasks()?;
 
-        let affected = affected_tracker.build();
+        options.affected = Some(affected_tracker.build());
+    }
 
-        for tasks in grouped_tasks.values_mut() {
-            tasks.retain(|_, task| affected.is_task_affected(&task.target));
-        }
+    // Query for tasks that match the filters
+    let tasks = query_tasks(&workspace_graph, &options).await?;
+
+    // Group tasks by project
+    let mut grouped_tasks = BTreeMap::default();
+
+    for task in tasks {
+        let Some(project_id) = task.target.get_project_id() else {
+            continue;
+        };
+
+        grouped_tasks
+            .entry(project_id.to_owned())
+            .or_insert(BTreeMap::default())
+            .insert(task.id.clone(), task);
     }
 
     // Write to stdout directly to avoid broken pipe panics

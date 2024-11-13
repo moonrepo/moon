@@ -776,6 +776,18 @@ tasks:
     command: 'nextest run --workspace'
 ```
 
+### `binstallVersion`<VersionLabel version="1.30.0" />
+
+<HeadingApiLink to="/api/types/interface/RustConfig#binstallVersion" />
+
+The version of [`cargo-binstall`](https://crates.io/crates/cargo-binstall) to install if it does not
+already exist. Defaults to "latest" if not configured.
+
+```yaml title=".moon/toolchain.yml" {2}
+rust:
+  binstallVersion: '1.10.12'
+```
+
 ### `components`<VersionLabel version="1.16.0" />
 
 <HeadingApiLink to="/api/types/interface/RustConfig#components" />

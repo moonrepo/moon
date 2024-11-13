@@ -1,17 +1,7 @@
 use moon_config::patterns;
-use moon_project::Project;
 use rustc_hash::FxHashMap;
 use std::env;
-use std::path::Path;
 use tracing::debug;
-
-pub struct TaskExpanderContext<'graph> {
-    /// The base unexpanded project.
-    pub project: &'graph Project,
-
-    /// Workspace root, of course.
-    pub workspace_root: &'graph Path,
-}
 
 pub fn substitute_env_vars(mut env: FxHashMap<String, String>) -> FxHashMap<String, String> {
     let cloned_env = env.clone();

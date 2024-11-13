@@ -20,10 +20,14 @@
   - Can now control the depth of upstream (dependencies) and downstream (dependents).
   - Affected information now tracks based on dependent graph connections.
   - Added `--upstream` and `--downstream` options to `moon query tasks`.
+- Added 7 new token variables: `$arch`, `$os`, `$osFamily`, `$vcsBranch`, `$vcsRepository`,
+  `$vcsRevision`, `$workingDir`
+- Added a `rust.binstallVersion` setting to `.moon/toolchain.yml`.
 
 #### 🐞 Fixes
 
-- Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing direct relationships.
+- Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing
+  direct relationships.
 
 ## 1.29.4
 

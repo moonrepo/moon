@@ -3,19 +3,20 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::InputPath;
+use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
 use moon_task::{Target, Task};
-use moon_task_expander::TaskExpanderContext;
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 
-pub fn create_context<'g>(
-    project: &'g Project,
-    workspace_root: &'g Path,
-) -> TaskExpanderContext<'g> {
-    TaskExpanderContext {
-        project,
-        workspace_root,
+pub fn create_context(workspace_root: &Path) -> GraphExpanderContext {
+    GraphExpanderContext {
+        vcs_branch: Arc::new(String::from("master")),
+        vcs_repository: Arc::new(String::from("moonrepo/moon")),
+        vcs_revision: Arc::new(String::from("abcd1234")),
+        working_dir: workspace_root.to_path_buf(),
+        workspace_root: workspace_root.to_path_buf(),
     }
 }
 

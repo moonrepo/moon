@@ -20,7 +20,9 @@ use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_r
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
 use moon_task::Target;
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata};
+use moon_task_graph::{
+    GraphExpanderContext, TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata,
+};
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::prelude::*;
@@ -183,6 +185,27 @@ impl<'app> WorkspaceBuilder<'app> {
 
         let context = self.context.take().unwrap();
 
+        let mut graph_context = GraphExpanderContext {
+            working_dir: context.working_dir.to_owned(),
+            workspace_root: context.workspace_root.to_owned(),
+            ..Default::default()
+        };
+
+        // These are only in conditionals for tests that don't have git
+        // initialized, which is most of them!
+        if let Some(vcs) = &context.vcs {
+            if vcs.is_enabled() {
+                graph_context.vcs_branch = vcs.get_local_branch().await?;
+                graph_context.vcs_revision = vcs.get_local_branch_revision().await?;
+
+                if let Ok(repo) = vcs.get_repository_slug().await {
+                    graph_context.vcs_repository = repo;
+                }
+            } else {
+                graph_context.vcs_branch = vcs.get_default_branch().await?;
+            }
+        }
+
         let project_metadata = self
             .project_data
             .into_iter()
@@ -199,10 +222,11 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let mut project_graph = ProjectGraph::new(self.project_graph, project_metadata);
-        project_graph.working_dir = context.working_dir.to_owned();
-        project_graph.workspace_root = context.workspace_root.to_owned();
-        let project_graph = Arc::new(project_graph);
+        let project_graph = Arc::new(ProjectGraph::new(
+            self.project_graph,
+            project_metadata,
+            graph_context.clone(),
+        ));
 
         let task_metadata = self
             .task_data
@@ -217,11 +241,12 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let mut task_graph =
-            TaskGraph::new(self.task_graph, task_metadata, Arc::clone(&project_graph));
-        task_graph.working_dir = context.working_dir.to_owned();
-        task_graph.workspace_root = context.workspace_root.to_owned();
-        let task_graph = Arc::new(task_graph);
+        let task_graph = Arc::new(TaskGraph::new(
+            self.task_graph,
+            task_metadata,
+            graph_context,
+            Arc::clone(&project_graph),
+        ));
 
         Ok(WorkspaceGraph::new(project_graph, task_graph))
     }

@@ -8,7 +8,6 @@ use moon_task::Task;
 use moon_task_expander::{TaskExpander, TaskExpanderContext};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
-use std::path::PathBuf;
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
@@ -22,6 +21,8 @@ pub struct TaskMetadata {
 
 #[derive(Default)]
 pub struct TaskGraph {
+    context: GraphContext,
+
     /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
     graph: TaskGraphType,
 
@@ -33,29 +34,23 @@ pub struct TaskGraph {
 
     /// Expanded tasks, mapped by target.
     tasks: Arc<RwLock<TasksCache>>,
-
-    /// The current working directory.
-    pub working_dir: PathBuf,
-
-    /// Workspace root, required for expansion.
-    pub workspace_root: PathBuf,
 }
 
 impl TaskGraph {
     pub fn new(
         graph: TaskGraphType,
         metadata: FxHashMap<Target, TaskMetadata>,
+        context: GraphContext,
         project_graph: Arc<ProjectGraph>,
     ) -> Self {
         debug!("Creating task graph");
 
         Self {
+            context,
             graph,
             metadata,
             project_graph,
             tasks: Arc::new(RwLock::new(FxHashMap::default())),
-            working_dir: PathBuf::new(),
-            workspace_root: PathBuf::new(),
         }
     }
 
@@ -141,12 +136,11 @@ impl TaskGraph {
         }
 
         Ok(Self {
+            context: self.context.clone(),
             graph,
             metadata,
             project_graph: self.project_graph.clone(),
             tasks: self.tasks.clone(),
-            working_dir: self.working_dir.clone(),
-            workspace_root: self.workspace_root.clone(),
         })
     }
 
@@ -163,7 +157,7 @@ impl TaskGraph {
                     .get_project_id()
                     .expect("Project scope required for target."),
             )?,
-            workspace_root: &self.workspace_root,
+            workspace_root: &self.context.workspace_root,
         });
 
         let task = Arc::new(expander.expand(self.get_unexpanded(target)?)?);

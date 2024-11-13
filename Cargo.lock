@@ -3435,6 +3435,7 @@ name = "moon_graph_utils"
 version = "0.0.1"
 dependencies = [
  "miette",
+ "moon_vcs",
  "petgraph",
  "rustc-hash 2.0.0",
  "serde",

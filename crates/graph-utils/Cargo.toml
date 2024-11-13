@@ -5,7 +5,6 @@ edition = "2021"
 publish = false
 
 [dependencies]
-moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

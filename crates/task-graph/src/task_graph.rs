@@ -21,7 +21,7 @@ pub struct TaskMetadata {
 
 #[derive(Default)]
 pub struct TaskGraph {
-    context: GraphContext,
+    context: GraphExpanderContext,
 
     /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
     graph: TaskGraphType,
@@ -40,7 +40,7 @@ impl TaskGraph {
     pub fn new(
         graph: TaskGraphType,
         metadata: FxHashMap<Target, TaskMetadata>,
-        context: GraphContext,
+        context: GraphExpanderContext,
         project_graph: Arc<ProjectGraph>,
     ) -> Self {
         debug!("Creating task graph");

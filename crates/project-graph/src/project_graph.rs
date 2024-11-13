@@ -35,7 +35,7 @@ impl ProjectMetadata {
 
 #[derive(Default)]
 pub struct ProjectGraph {
-    context: GraphContext,
+    context: GraphExpanderContext,
 
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: HashMap<PathBuf, Arc<String>>,
@@ -54,7 +54,7 @@ impl ProjectGraph {
     pub fn new(
         graph: ProjectGraphType,
         metadata: FxHashMap<Id, ProjectMetadata>,
-        context: GraphContext,
+        context: GraphExpanderContext,
     ) -> Self {
         debug!("Creating project graph");
 

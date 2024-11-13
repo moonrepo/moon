@@ -20,7 +20,9 @@ use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_r
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectGraphType, ProjectMetadata};
 use moon_task::Target;
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphContext, TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata};
+use moon_task_graph::{
+    GraphExpanderContext, TaskGraph, TaskGraphError, TaskGraphType, TaskMetadata,
+};
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::prelude::*;
@@ -182,9 +184,12 @@ impl<'app> WorkspaceBuilder<'app> {
         self.enforce_constraints()?;
 
         let context = self.context.take().unwrap();
+        let vcs = context.vcs.as_ref().expect("VCS required!");
 
-        let graph_context = GraphContext {
-            vcs: context.vcs.clone(),
+        let graph_context = GraphExpanderContext {
+            vcs_branch: vcs.get_local_branch().await?,
+            vcs_repository: vcs.get_repository_slug().await?,
+            vcs_revision: vcs.get_local_branch_revision().await?,
             working_dir: context.working_dir.to_owned(),
             workspace_root: context.workspace_root.to_owned(),
         };

@@ -330,10 +330,16 @@ impl Platform for RustPlatform {
                     color::shell("cargo-binstall")
                 );
 
+                let package = if let Some(version) = &self.config.binstall_version {
+                    format!("cargo-binstall@{version}")
+                } else {
+                    "cargo-binstall".into()
+                };
+
                 operations.push(
                     Operation::task_execution("cargo install cargo-binstall --force")
                         .track_async(|| {
-                            tool.exec_cargo(["install", "cargo-binstall", "--force"], working_dir)
+                            tool.exec_cargo(["install", &package, "--force"], working_dir)
                         })
                         .await?,
                 );

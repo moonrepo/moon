@@ -1,5 +1,6 @@
 use super::bin_config::BinEntry;
 use schematic::Config;
+use semver::Version;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
@@ -7,9 +8,12 @@ use warpgate_api::PluginLocator;
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
 #[derive(Clone, Config, Debug)]
 pub struct RustConfig {
-    /// List of binaries to install into the environment using `cargo install`.
+    /// List of binaries to install into the environment using `cargo binstall`.
     #[setting(nested)]
     pub bins: Vec<BinEntry>,
+
+    /// The version of `cargo-binstall` to install. Defaults to latest if not defined.
+    pub binstall_version: Option<Version>,
 
     /// Rust components to automatically install.
     pub components: Vec<String>,

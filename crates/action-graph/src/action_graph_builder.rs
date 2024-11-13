@@ -144,9 +144,10 @@ impl<'app> ActionGraphBuilder<'app> {
         // If we require dependents, then we must load all projects into the
         // graph so that the edges are created!
         if downstream != DownstreamScope::None {
-            debug!("Force loading all projects to determine downstream relationships");
+            debug!("Force loading all projects and tasks to determine relationships");
 
             self.workspace_graph.get_all_projects()?;
+            self.workspace_graph.get_all_tasks()?;
         }
 
         self.affected

@@ -1,3 +1,4 @@
+use miette::IntoDiagnostic;
 use moon_common::is_ci;
 use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use moon_vcs::{BoxedVcs, TouchedStatus};
@@ -5,7 +6,9 @@ use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_styles::color;
+use starbase_utils::json;
 use std::env;
+use std::io::{stdin, IsTerminal, Read};
 use tracing::{debug, trace, warn};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
@@ -149,4 +152,42 @@ pub async fn query_touched_files(
         options: options.to_owned(),
         shallow: false,
     })
+}
+
+pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
+    let mut buffer = String::new();
+
+    // Only read piped data when stdin is not a TTY,
+    // otherwise the process will hang indefinitely waiting for EOF.
+    if !stdin().is_terminal() {
+        stdin().read_to_string(&mut buffer).into_diagnostic()?;
+    }
+
+    // If piped via stdin, parse and use it
+    if !buffer.is_empty() {
+        // As JSON
+        if buffer.starts_with('{') {
+            let result: QueryTouchedFilesResult = json::parse(&buffer)?;
+
+            return Ok(result.files);
+        }
+        // As lines
+        else {
+            let files =
+                FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
+
+            return Ok(files);
+        }
+    }
+
+    let result = query_touched_files(
+        vcs,
+        &QueryTouchedFilesOptions {
+            local: !is_ci(),
+            ..QueryTouchedFilesOptions::default()
+        },
+    )
+    .await?;
+
+    Ok(result.files)
 }

@@ -1,32 +1,22 @@
-use crate::queries::touched_files::{
-    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
-};
-use miette::IntoDiagnostic;
+use super::convert_to_regex;
 use moon_affected::Affected;
-use moon_common::{is_ci, path::WorkspaceRelativePathBuf, Id};
 use moon_project::Project;
-use moon_task::Task;
-use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
-use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
-use starbase_utils::json;
-use std::{
-    collections::BTreeMap,
-    io::{stdin, IsTerminal, Read},
-    sync::Arc,
-};
-use tracing::{debug, trace};
+use std::sync::Arc;
+use tracing::debug;
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
-    pub alias: Option<String>,
     pub affected: Option<Affected>,
-    pub id: Option<String>,
     pub json: bool,
-    pub language: Option<String>,
     pub query: Option<String>,
+
+    // Filters
+    pub alias: Option<String>,
+    pub id: Option<String>,
+    pub language: Option<String>,
     pub stack: Option<String>,
     pub source: Option<String>,
     pub tags: Option<String>,
@@ -39,68 +29,6 @@ pub struct QueryProjectsOptions {
 pub struct QueryProjectsResult {
     pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct QueryTasksResult {
-    pub tasks: BTreeMap<Id, BTreeMap<Id, Arc<Task>>>,
-    pub options: QueryProjectsOptions,
-}
-
-fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<regex::Regex>> {
-    match value {
-        Some(pattern) => {
-            trace!(
-                "Filtering projects \"{}\" by matching pattern \"{}\"",
-                field,
-                pattern
-            );
-
-            // case-insensitive by default
-            let pat = regex::Regex::new(&format!("(?i){pattern}")).into_diagnostic()?;
-
-            Ok(Some(pat))
-        }
-        None => Ok(None),
-    }
-}
-
-pub async fn load_touched_files(vcs: &BoxedVcs) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
-    let mut buffer = String::new();
-
-    // Only read piped data when stdin is not a TTY,
-    // otherwise the process will hang indefinitely waiting for EOF.
-    if !stdin().is_terminal() {
-        stdin().read_to_string(&mut buffer).into_diagnostic()?;
-    }
-
-    // If piped via stdin, parse and use it
-    if !buffer.is_empty() {
-        // As JSON
-        if buffer.starts_with('{') {
-            let result: QueryTouchedFilesResult = json::parse(&buffer)?;
-
-            return Ok(result.files);
-        }
-        // As lines
-        else {
-            let files =
-                FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
-
-            return Ok(files);
-        }
-    }
-
-    let result = query_touched_files(
-        vcs,
-        &QueryTouchedFilesOptions {
-            local: !is_ci(),
-            ..QueryTouchedFilesOptions::default()
-        },
-    )
-    .await?;
-
-    Ok(result.files)
 }
 
 fn load_with_query(

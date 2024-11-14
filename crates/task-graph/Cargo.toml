@@ -19,8 +19,6 @@ moon_task_expander = { path = "../task-expander" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
-serde = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

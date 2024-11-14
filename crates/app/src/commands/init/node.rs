@@ -7,20 +7,19 @@ use moon_config::load_toolchain_node_config_template;
 use moon_console::Console;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::PackageJsonCache;
-use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::path::Path;
 use tera::{Context, Tera};
 use tracing::instrument;
 
-pub fn render_template(context: Context) -> AppResult<String> {
+pub fn render_template(context: Context) -> miette::Result<String> {
     Tera::one_off(load_toolchain_node_config_template(), &context, false).into_diagnostic()
 }
 
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> AppResult<String> {
+fn detect_node_version(dest_dir: &Path) -> miette::Result<String> {
     Ok(if is_using_version_manager(dest_dir, ".nvmrc") {
         fully_qualify_version(fs::read_file(dest_dir.join(".nvmrc"))?.trim())
     } else if is_using_version_manager(dest_dir, ".node-version") {
@@ -30,7 +29,7 @@ fn detect_node_version(dest_dir: &Path) -> AppResult<String> {
     })
 }
 
-fn detect_node_version_manager(dest_dir: &Path) -> AppResult<String> {
+fn detect_node_version_manager(dest_dir: &Path) -> miette::Result<String> {
     Ok(if is_using_version_manager(dest_dir, ".nvmrc") {
         "nvm".to_owned()
     } else if is_using_version_manager(dest_dir, ".node-version") {
@@ -46,7 +45,7 @@ fn detect_package_manager(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> AppResult<(String, String)> {
+) -> miette::Result<(String, String)> {
     let mut pm_type = String::new();
     let mut pm_version = String::new();
 
@@ -113,7 +112,7 @@ pub async fn init_node(
     options: &InitOptions,
     theme: &ColorfulTheme,
     console: &Console,
-) -> AppResult<String> {
+) -> miette::Result<String> {
     if !options.yes {
         console.out.print_header("Node")?;
 

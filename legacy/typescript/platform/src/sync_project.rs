@@ -216,10 +216,12 @@ impl<'app> TypeScriptSyncer<'app> {
                                             if abs_ref.join(index).exists() {
                                                 tsconfig_compiler_paths.insert(
                                                     dep_package_name.clone(),
-                                                    vec![to_relative_virtual_string(
-                                                        abs_ref.join(index),
-                                                        &self.project.root,
-                                                    )?],
+                                                    vec![PathOrGlob::from(
+                                                        to_relative_virtual_string(
+                                                            abs_ref.join(index),
+                                                            &self.project.root,
+                                                        )?,
+                                                    )],
                                                 );
 
                                                 break;
@@ -228,14 +230,14 @@ impl<'app> TypeScriptSyncer<'app> {
 
                                         tsconfig_compiler_paths.insert(
                                             format!("{dep_package_name}/*"),
-                                            vec![to_relative_virtual_string(
+                                            vec![PathOrGlob::from(to_relative_virtual_string(
                                                 abs_ref.join(if abs_ref.join("src").exists() {
                                                     "src/*"
                                                 } else {
                                                     "*"
                                                 }),
                                                 &self.project.root,
-                                            )?],
+                                            )?)],
                                         );
                                     }
                                 }

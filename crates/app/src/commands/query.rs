@@ -76,7 +76,7 @@ pub async fn hash(session: CliSession, args: QueryHashArgs) -> AppResult {
 
     console.out.write_line(result.1)?;
 
-    Ok(())
+    Ok(None)
 }
 
 #[derive(Args, Clone, Debug)]
@@ -145,7 +145,7 @@ pub async fn hash_diff(session: CliSession, args: QueryHashDiffArgs) -> AppResul
         }
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[derive(Args, Clone, Debug)]
@@ -291,7 +291,7 @@ pub async fn projects(session: CliSession, args: QueryProjectsArgs) -> AppResult
         )?;
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[derive(Args, Clone, Debug)]
@@ -425,7 +425,7 @@ pub async fn tasks(session: CliSession, args: QueryTasksArgs) -> AppResult {
         }
     }
 
-    Ok(())
+    Ok(None)
 }
 
 #[derive(Args, Clone, Debug)]
@@ -482,5 +482,5 @@ pub async fn touched_files(session: CliSession, args: QueryTouchedFilesArgs) -> 
         console.out.write_line(files.join("\n"))?;
     }
 
-    Ok(())
+    Ok(None)
 }

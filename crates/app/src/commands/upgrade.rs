@@ -38,7 +38,7 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         Ok(Some(result)) if result.update_available => result.remote_version,
         Ok(_) => {
             println!("You're already on the latest version of moon!");
-            return Ok(());
+            return Ok(None);
         }
         Err(err) => {
             error!("Failed to get current version of moon from remote: {err}");
@@ -126,5 +126,5 @@ pub async fn upgrade(session: CliSession) -> AppResult {
         true,
     );
 
-    Ok(())
+    Ok(None)
 }

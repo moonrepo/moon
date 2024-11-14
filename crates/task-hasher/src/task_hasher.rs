@@ -219,7 +219,7 @@ impl<'task> TaskHasher<'task> {
             if !path.is_file() {
                 warn!(
                     "Attempted to hash input {} but only files can be hashed, try using a glob instead",
-                   color::rel_path(&rel_path),
+                    color::rel_path(&rel_path),
                 );
 
                 continue;

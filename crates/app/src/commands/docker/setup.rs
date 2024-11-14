@@ -35,5 +35,5 @@ pub async fn setup(session: CliSession) -> AppResult {
     )
     .await?;
 
-    Ok(())
+    Ok(None)
 }

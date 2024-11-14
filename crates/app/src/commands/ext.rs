@@ -33,5 +33,5 @@ pub async fn ext(session: CliSession, args: ExtArgs) -> AppResult {
         .execute(args.passthrough, extensions.create_context())
         .await?;
 
-    Ok(())
+    Ok(None)
 }

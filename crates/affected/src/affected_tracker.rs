@@ -270,7 +270,7 @@ impl<'app> AffectedTracker<'app> {
 
     pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
         debug!(
-            targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+            task_targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
             "Tracking tasks by target and marking any affected",
         );
 
@@ -322,7 +322,10 @@ impl<'app> AffectedTracker<'app> {
             return Ok(());
         }
 
-        trace!(target = task.target.as_str(), "Marking task as affected");
+        trace!(
+            task_target = task.target.as_str(),
+            "Marking task as affected"
+        );
 
         self.tasks
             .entry(task.target.clone())
@@ -345,7 +348,7 @@ impl<'app> AffectedTracker<'app> {
     fn track_task_dependencies(&mut self, task: &Task, depth: u16) -> miette::Result<()> {
         if self.task_upstream == UpstreamScope::None {
             trace!(
-                target = task.target.as_str(),
+                task_target = task.target.as_str(),
                 "Not tracking task dependencies as upstream scope is none"
             );
 
@@ -355,12 +358,12 @@ impl<'app> AffectedTracker<'app> {
         if depth == 0 {
             if self.task_upstream == UpstreamScope::Direct {
                 trace!(
-                    target = task.target.as_str(),
+                    task_target = task.target.as_str(),
                     "Tracking direct task dependencies"
                 );
             } else {
                 trace!(
-                    target = task.target.as_str(),
+                    task_target = task.target.as_str(),
                     "Tracking deep task dependencies"
                 );
             }
@@ -387,7 +390,7 @@ impl<'app> AffectedTracker<'app> {
     fn track_task_dependents(&mut self, task: &Task, depth: u16) -> miette::Result<()> {
         if self.task_downstream == DownstreamScope::None {
             trace!(
-                target = task.target.as_str(),
+                task_target = task.target.as_str(),
                 "Not tracking dependents as downstream scope is none"
             );
 
@@ -396,9 +399,15 @@ impl<'app> AffectedTracker<'app> {
 
         if depth == 0 {
             if self.task_downstream == DownstreamScope::Direct {
-                trace!(target = task.target.as_str(), "Tracking direct dependents");
+                trace!(
+                    task_target = task.target.as_str(),
+                    "Tracking direct dependents"
+                );
             } else {
-                trace!(target = task.target.as_str(), "Tracking deep dependents");
+                trace!(
+                    task_target = task.target.as_str(),
+                    "Tracking deep dependents"
+                );
             }
         }
 

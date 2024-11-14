@@ -58,5 +58,5 @@ pub async fn run_script(session: CliSession, args: RunScriptArgs) -> AppResult {
 
     command.create_async().exec_stream_output().await?;
 
-    Ok(())
+    Ok(None)
 }

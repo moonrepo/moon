@@ -14,5 +14,5 @@ pub async fn templates(session: CliSession) -> AppResult {
 
     templates_command(generator, &session.console).await?;
 
-    Ok(())
+    Ok(None)
 }

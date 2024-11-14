@@ -26,7 +26,7 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
     if args.json {
         console.write_line(json::format(&project, true)?)?;
 
-        return Ok(());
+        return Ok(None);
     }
 
     console.print_header(&project.id)?;
@@ -165,5 +165,5 @@ pub async fn project(session: CliSession, args: ProjectArgs) -> AppResult {
     console.write_newline()?;
     console.flush()?;
 
-    Ok(())
+    Ok(None)
 }

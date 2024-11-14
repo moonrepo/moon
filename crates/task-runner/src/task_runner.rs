@@ -50,7 +50,7 @@ impl<'task> TaskRunner<'task> {
         task: &'task Task,
     ) -> miette::Result<Self> {
         debug!(
-            task = task.target.as_str(),
+            task_target = task.target.as_str(),
             "Creating a task runner for target"
         );
 
@@ -102,7 +102,7 @@ impl<'task> TaskRunner<'task> {
         // If cache is enabled, then generate a hash and manage outputs
         if self.is_cache_enabled() {
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 "Caching is enabled for task, will generate a hash and manage outputs"
             );
 
@@ -125,7 +125,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Caching is disabled for task, will not generate a hash, and will attempt to run a command as normal"
         );
 
@@ -202,7 +202,7 @@ impl<'task> TaskRunner<'task> {
         let cache_engine = &self.app.cache_engine;
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             hash, "Checking if task has been cached using hash"
         );
 
@@ -217,7 +217,7 @@ impl<'task> TaskRunner<'task> {
             if let Some(duration) = cache_lifetime {
                 if is_stale(self.cache.data.last_run_time, duration) {
                     debug!(
-                        task = self.task.target.as_str(),
+                        task_target = self.task.target.as_str(),
                         hash,
                         "Cache skip, a lifetime has been configured and the last run is stale, continuing run"
                     );
@@ -240,7 +240,7 @@ impl<'task> TaskRunner<'task> {
             }
 
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash, "Hash matches previous run, reusing existing outputs"
             );
 
@@ -249,7 +249,7 @@ impl<'task> TaskRunner<'task> {
 
         if !cache_engine.is_readable() {
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash, "Cache is not readable, continuing run"
             );
 
@@ -262,7 +262,7 @@ impl<'task> TaskRunner<'task> {
         // If the previous run was a failure, avoid hydrating
         if self.cache.data.exit_code > 0 {
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash, "Previous run failed, avoiding hydration"
             );
 
@@ -283,7 +283,7 @@ impl<'task> TaskRunner<'task> {
             if let Some(duration) = cache_lifetime {
                 if fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some() {
                     debug!(
-                        task = self.task.target.as_str(),
+                        task_target = self.task.target.as_str(),
                         hash,
                         archive_file = ?archive_file,
                         "Cache skip in local cache, a lifetime has been configured and the archive is stale, continuing run"
@@ -294,7 +294,7 @@ impl<'task> TaskRunner<'task> {
             }
 
             debug!(
-                task = self.task.target.as_str(),
+                task_target = self.task.target.as_str(),
                 hash,
                 archive_file = ?archive_file,
                 "Cache hit in local cache, will reuse existing archive"
@@ -308,7 +308,7 @@ impl<'task> TaskRunner<'task> {
         if let Some(moonbase) = Moonbase::session() {
             if let Some((artifact, _)) = moonbase.read_artifact(hash).await? {
                 debug!(
-                    task = self.task.target.as_str(),
+                    task_target = self.task.target.as_str(),
                     hash,
                     artifact_id = artifact.id,
                     "Cache hit in remote cache, will attempt to download the archive"
@@ -319,7 +319,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             hash, "Cache miss, continuing run"
         );
 
@@ -345,8 +345,8 @@ impl<'task> TaskRunner<'task> {
                 }
 
                 debug!(
-                    task = self.task.target.as_str(),
-                    dependency = dep.target.as_str(),
+                    task_target = self.task.target.as_str(),
+                    dependency_target = dep.target.as_str(),
                     "Task dependency has failed or has been skipped, skipping this task",
                 );
 
@@ -370,7 +370,7 @@ impl<'task> TaskRunner<'task> {
         node: &ActionNode,
     ) -> miette::Result<String> {
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Generating a unique hash for this task"
         );
 
@@ -379,7 +379,7 @@ impl<'task> TaskRunner<'task> {
 
         // Hash common fields
         trace!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Including common task related fields in the hash"
         );
 
@@ -421,7 +421,7 @@ impl<'task> TaskRunner<'task> {
 
         // Hash platform fields
         trace!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             platform = ?self.task.platform,
             "Including toolchain specific fields in the hash"
         );
@@ -444,7 +444,7 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             hash = &hash,
             "Generated a unique hash"
         );
@@ -466,7 +466,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Building and executing the task command"
         );
 
@@ -482,8 +482,8 @@ impl<'task> TaskRunner<'task> {
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::mutex_acquisition();
 
-            debug!(
-                task = self.task.target.as_str(),
+            trace!(
+                task_target = self.task.target.as_str(),
                 mutex = mutex_name,
                 "Waiting to acquire task mutex lock"
             );
@@ -491,8 +491,8 @@ impl<'task> TaskRunner<'task> {
             let mutex = context.get_or_create_mutex(mutex_name);
             let _guard = mutex.lock().await;
 
-            debug!(
-                task = self.task.target.as_str(),
+            trace!(
+                task_target = self.task.target.as_str(),
                 mutex = mutex_name,
                 "Acquired task mutex lock"
             );
@@ -544,7 +544,7 @@ impl<'task> TaskRunner<'task> {
 
     #[instrument(skip_all)]
     pub fn skip(&mut self, context: &ActionContext) -> miette::Result<()> {
-        debug!(task = self.task.target.as_str(), "Skipping task");
+        debug!(task_target = self.task.target.as_str(), "Skipping task");
 
         self.operations.push(Operation::new_finished(
             OperationMeta::TaskExecution(Default::default()),
@@ -559,7 +559,7 @@ impl<'task> TaskRunner<'task> {
     #[instrument(skip(self, context))]
     pub fn skip_no_op(&mut self, context: &ActionContext) -> miette::Result<()> {
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Skipping task as its a no-operation"
         );
 
@@ -581,14 +581,14 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::archive_creation();
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Running cache archiving operation"
         );
 
         let archived = match self.archiver.archive(hash).await? {
             Some(archive_file) => {
                 debug!(
-                    task = self.task.target.as_str(),
+                    task_target = self.task.target.as_str(),
                     archive_file = ?archive_file,
                     "Ran cache archiving operation"
                 );
@@ -598,7 +598,10 @@ impl<'task> TaskRunner<'task> {
                 true
             }
             None => {
-                debug!(task = self.task.target.as_str(), "Nothing to archive");
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    "Nothing to archive"
+                );
 
                 operation.finish(ActionStatus::Skipped);
 
@@ -616,13 +619,16 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::output_hydration();
 
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Running cache hydration operation"
         );
 
         // Not cached
         let Some(from) = self.is_cached(hash).await? else {
-            debug!(task = self.task.target.as_str(), "Nothing to hydrate");
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Nothing to hydrate"
+            );
 
             operation.finish(ActionStatus::Skipped);
 
@@ -633,7 +639,7 @@ impl<'task> TaskRunner<'task> {
 
         // Did not hydrate
         if !self.hydrater.hydrate(hash, from).await? {
-            debug!(task = self.task.target.as_str(), "Did not hydrate");
+            debug!(task_target = self.task.target.as_str(), "Did not hydrate");
 
             operation.finish(ActionStatus::Invalid);
 
@@ -644,7 +650,7 @@ impl<'task> TaskRunner<'task> {
 
         // Did hydrate
         debug!(
-            task = self.task.target.as_str(),
+            task_target = self.task.target.as_str(),
             "Ran cache hydration operation"
         );
 

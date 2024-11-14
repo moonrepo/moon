@@ -12,5 +12,5 @@ pub async fn setup(session: CliSession) -> AppResult {
 
     done("Setup complete", true);
 
-    Ok(())
+    Ok(None)
 }

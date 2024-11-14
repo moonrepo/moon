@@ -22,7 +22,7 @@ pub struct RenderContext {
     pub js_url: String,
 }
 
-pub async fn setup_server() -> AppResult<(Server, Tera)> {
+pub async fn setup_server() -> miette::Result<(Server, Tera)> {
     let port = match env::var("MOON_PORT") {
         Ok(p) => p.parse::<u16>().unwrap(),
         Err(..) => 8000,
@@ -132,7 +132,7 @@ pub fn respond_to_request(
 
     req.respond(response).unwrap_or_default();
 
-    Ok(())
+    Ok(None)
 }
 
 // Use the local version of the JS file when in development mode otherwise the CDN URL.

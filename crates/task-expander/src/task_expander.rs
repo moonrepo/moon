@@ -31,7 +31,7 @@ impl<'graph> TaskExpander<'graph> {
         let mut task = task.to_owned();
 
         debug!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             "Expanding task {}",
             color::label(&task.target)
         );
@@ -57,7 +57,7 @@ impl<'graph> TaskExpander<'graph> {
     #[instrument(skip_all)]
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             command = &task.command,
             "Expanding tokens and variables in command"
         );
@@ -70,7 +70,7 @@ impl<'graph> TaskExpander<'graph> {
     #[instrument(skip_all)]
     pub fn expand_script(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             script = task.script.as_ref(),
             "Expanding tokens and variables in script"
         );
@@ -87,7 +87,7 @@ impl<'graph> TaskExpander<'graph> {
         }
 
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             args = ?task.args,
             "Expanding tokens and variables in args",
         );
@@ -104,7 +104,7 @@ impl<'graph> TaskExpander<'graph> {
         }
 
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             deps = ?task.deps.iter().map(|d| d.target.as_str()).collect::<Vec<_>>(),
             "Expanding tokens and variables in deps args and env",
         );
@@ -133,7 +133,7 @@ impl<'graph> TaskExpander<'graph> {
     #[instrument(skip_all)]
     pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             env = ?task.env,
             "Expanding environment variables"
         );
@@ -151,7 +151,7 @@ impl<'graph> TaskExpander<'graph> {
                 .collect::<Vec<_>>();
 
             trace!(
-                target = task.target.as_str(),
+                task_target = task.target.as_str(),
                 env_files = ?env_paths,
                 "Loading environment variables from .env files",
             );
@@ -196,7 +196,7 @@ impl<'graph> TaskExpander<'graph> {
         }
 
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             inputs = ?task.inputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
             "Expanding inputs into file system paths"
         );
@@ -218,7 +218,7 @@ impl<'graph> TaskExpander<'graph> {
         }
 
         trace!(
-            target = task.target.as_str(),
+            task_target = task.target.as_str(),
             outputs = ?task.outputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
             "Expanding outputs into file system paths"
         );

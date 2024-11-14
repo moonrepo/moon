@@ -30,6 +30,11 @@
 - Fixed `moon project-graph <id>` not including all dependencies/dependents. It was only showing
   direct relationships.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+- Updated proto to v0.42.1 (from 0.42.0).
+
 ## 1.29.4
 
 #### 🚀 Updates

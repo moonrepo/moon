@@ -4,7 +4,6 @@ use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use moon_vcs::{BoxedVcs, TouchedStatus};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::json;
 use std::env;

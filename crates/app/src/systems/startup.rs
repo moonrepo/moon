@@ -6,7 +6,6 @@ use moon_config::{ConfigLoader, InheritedTasksManager, ToolchainConfig, Workspac
 use moon_env::MoonEnvironment;
 use moon_vcs::BoxedVcs;
 use proto_core::ProtoEnvironment;
-use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
 use std::env;

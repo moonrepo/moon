@@ -1,7 +1,6 @@
 use super::hash::query_hash;
 use moon_cache::CacheEngine;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
 use tracing::debug;
 
 #[derive(Clone, Default, Deserialize, Serialize)]

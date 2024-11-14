@@ -5,7 +5,6 @@ use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_bun_config_template;
 use moon_console::Console;
-use starbase::AppResult;
 use starbase_styles::color;
 use std::path::Path;
 use tera::{Context, Tera};
